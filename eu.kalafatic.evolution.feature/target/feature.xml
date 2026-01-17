@@ -2,7 +2,7 @@
 <feature
       id="eu.kalafatic.evolution.feature"
       label="Feature"
-      version="1.0.0.202601171456">
+      version="1.0.0.202601171751">
 
    <description url="http://www.example.com/description">
       [Enter Feature Description here.]
@@ -18,10 +18,10 @@
 
    <plugin
          id="eu.kalafatic.evolution.view"
-         version="1.0.0.202601171456"/>
+         version="1.0.0.202601171751"/>
 
    <plugin
          id="eu.kalafatic.evolution.controller"
-         version="1.0.0.202601171456"/>
+         version="1.0.0.202601171751"/>
 
 </feature>
