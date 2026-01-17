@@ -1,13 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <?artifactRepository version='1.1.0'?>
 <artifacts size='1'>
-  <artifact classifier='org.eclipse.update.feature' id='eu.kalafatic.evolution.feature' version='1.0.0.202601171225'>
+  <artifact classifier='org.eclipse.update.feature' id='eu.kalafatic.evolution.feature' version='1.0.0.202601171456'>
     <properties size='10'>
       <property name='artifact.size' value='659'/>
       <property name='download.size' value='659'/>
-      <property name='download.checksum.sha-512' value='ebe75ebe325d1227dd02fbbafb48c09a285e896968f2b43511ffc1a9ec983615c7ba98778ab040b168b7599bd41a8d1833ad0745b449358c84d35402a0a2d572'/>
-      <property name='download.checksum.sha-1' value='97c7436200e182a81d1ad2f8f37d2f05eb0f1e57'/>
-      <property name='download.checksum.sha-256' value='386cf71ae080b7f6a2984a895d52f000a45767af219d5af8ae26b7d6ab3ee278'/>
+      <property name='download.checksum.sha-512' value='38eaa94337837307f6c97e83d2c56bab23e290dc5985c38f682ce68d4dd7d6859d45f90b1fcb7e3a08188c3ff4c16339d664fb68480759034b7a908b8273dbcd'/>
+      <property name='download.checksum.sha-1' value='532ac6c12dc9fc128afd7c840628a45a907fb323'/>
+      <property name='download.checksum.sha-256' value='432e4ef24c6944f6bd47985cd3c9e654f6e3296afcf3eb1a876afbefa2b25f44'/>
       <property name='maven-groupId' value='eu.kalafatic.evolution'/>
       <property name='maven-artifactId' value='eu.kalafatic.evolution.feature'/>
       <property name='maven-version' value='1.0.0-SNAPSHOT'/>

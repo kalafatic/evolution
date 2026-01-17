@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <units size='2'>
-  <unit id='eu.kalafatic.evolution.feature.feature.jar' version='1.0.0.202601171225'>
+  <unit id='eu.kalafatic.evolution.feature.feature.jar' version='1.0.0.202601171456'>
     <properties size='7'>
       <property name='org.eclipse.equinox.p2.name' value='Feature'/>
       <property name='org.eclipse.equinox.p2.description' value='[Enter Feature Description here.]'/>
@@ -11,15 +11,15 @@
       <property name='maven-type' value='eclipse-feature'/>
     </properties>
     <provides size='3'>
-      <provided namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.feature.feature.jar' version='1.0.0.202601171225'/>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.feature.feature.jar' version='1.0.0.202601171456'/>
       <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='feature' version='1.0.0'/>
-      <provided namespace='org.eclipse.update.feature' name='eu.kalafatic.evolution.feature' version='1.0.0.202601171225'/>
+      <provided namespace='org.eclipse.update.feature' name='eu.kalafatic.evolution.feature' version='1.0.0.202601171456'/>
     </provides>
     <filter>
       (org.eclipse.update.install.features=true)
     </filter>
     <artifacts size='1'>
-      <artifact classifier='org.eclipse.update.feature' id='eu.kalafatic.evolution.feature' version='1.0.0.202601171225'/>
+      <artifact classifier='org.eclipse.update.feature' id='eu.kalafatic.evolution.feature' version='1.0.0.202601171456'/>
     </artifacts>
     <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
     <touchpointData size='1'>
@@ -38,8 +38,8 @@
       [Enter Copyright Description here.]
     </copyright>
   </unit>
-  <unit id='eu.kalafatic.evolution.feature.feature.group' version='1.0.0.202601171225' singleton='false'>
-    <update id='eu.kalafatic.evolution.feature.feature.group' range='[0.0.0,1.0.0.202601171225)' severity='0'/>
+  <unit id='eu.kalafatic.evolution.feature.feature.group' version='1.0.0.202601171456' singleton='false'>
+    <update id='eu.kalafatic.evolution.feature.feature.group' range='[0.0.0,1.0.0.202601171456)' severity='0'/>
     <properties size='8'>
       <property name='org.eclipse.equinox.p2.name' value='Feature'/>
       <property name='org.eclipse.equinox.p2.description' value='[Enter Feature Description here.]'/>
@@ -51,12 +51,12 @@
       <property name='maven-type' value='eclipse-feature'/>
     </properties>
     <provides size='1'>
-      <provided namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.feature.feature.group' version='1.0.0.202601171225'/>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.feature.feature.group' version='1.0.0.202601171456'/>
     </provides>
     <requires size='3'>
-      <required namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.view' range='[1.0.0.202601171225,1.0.0.202601171225]'/>
-      <required namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.controller' range='[1.0.0.202601171225,1.0.0.202601171225]'/>
-      <required namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.feature.feature.jar' range='[1.0.0.202601171225,1.0.0.202601171225]'>
+      <required namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.view' range='[1.0.0.202601171456,1.0.0.202601171456]'/>
+      <required namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.controller' range='[1.0.0.202601171456,1.0.0.202601171456]'/>
+      <required namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.feature.feature.jar' range='[1.0.0.202601171456,1.0.0.202601171456]'>
         <filter>
           (org.eclipse.update.install.features=true)
         </filter>
