@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel" modelDirectory="/eu.kalafatic.evolution.model/src" modelPluginID="eu.kalafatic.evolution.model"
+    modelName="Evolution" rootExtendsClass="org.eclipse.emf.ecore.impl.MinimalEObjectImpl$Container"
+    importerID="org.eclipse.emf.importer.ecore" complianceLevel="5.0" copyrightFields="false"
+    operationReflection="true" importOrganizing="true">
+  <foreignModel>file:/home/petr/git/evolution/evolution.ecore</foreignModel>
+  <genPackages prefix="Orchestration" disposableProviderFactory="true" ecorePackage="evolution.ecore#/">
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//TaskStatus">
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/PENDING"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/RUNNING"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/DONE"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/FAILED"/>
+    </genEnums>
+    <genClasses ecoreClass="evolution.ecore#//Task">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/status"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference evolution.ecore#//Task/next"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//Agent">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Agent/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Agent/type"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference evolution.ecore#//Agent/tasks"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//Orchestrator">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/name"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/agents"/>
+    </genClasses>
+  </genPackages>
+</genmodel:GenModel>
