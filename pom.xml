@@ -1,0 +1,51 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>eu.kalafatic.evolution</groupId>
+    <artifactId>eu.kalafatic.evolution.parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>eu.kalafatic.evolution.controller</module>
+        <module>eu.kalafatic.evolution.feature</module>
+        <module>eu.kalafatic.evolution.model</module>
+        <module>eu.kalafatic.evolution.module</module>
+        <module>eu.kalafatic.evolution.view</module>
+    </modules>
+
+    <properties>
+        <tycho.version>4.0.5</tycho.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>eclipse-2023-09</id>
+            <url>https://download.eclipse.org/releases/2023-09</url>
+            <layout>p2</layout>
+        </repository>
+    </repositories>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.eclipse.tycho</groupId>
+                <artifactId>tycho-maven-plugin</artifactId>
+                <version>${tycho.version}</version>
+                <extensions>true</extensions>
+            </plugin>
+            <plugin>
+              <groupId>org.eclipse.tycho</groupId>
+              <artifactId>tycho-p2-plugin</artifactId>
+              <version>${tycho.version}</version>
+            </plugin>
+             <plugin>
+                 <groupId>org.eclipse.tycho</groupId>
+                 <artifactId>tycho-p2-repository-plugin</artifactId>
+                 <version>${tycho.version}</version>
+             </plugin>
+        </plugins>
+    </build>
+</project>

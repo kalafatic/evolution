@@ -1,0 +1,6 @@
+p2.eclipse.plugin:org.eclipse.core.commands:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.commands/3.11.100.v20230708-0916/org.eclipse.core.commands-3.11.100.v20230708-0916.jar
+p2.eclipse.plugin:org.eclipse.equinox.common:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.common/3.18.100.v20230730-1117/org.eclipse.equinox.common-3.18.100.v20230730-1117.jar
+p2.eclipse.plugin:org.eclipse.jface:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.jface/3.31.0.v20230821-1552/org.eclipse.jface-3.31.0.v20230821-1552.jar
+p2.eclipse.plugin:org.eclipse.osgi:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.osgi/3.18.500.v20230801-1826/org.eclipse.osgi-3.18.500.v20230801-1826.jar
+p2.eclipse.plugin:org.eclipse.swt.gtk.linux.x86_64:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.swt.gtk.linux.x86_64/3.124.100.v20230825-1346/org.eclipse.swt.gtk.linux.x86_64-3.124.100.v20230825-1346.jar
+p2.eclipse.plugin:org.eclipse.swt:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.swt/3.124.100.v20230825-1346/org.eclipse.swt-3.124.100.v20230825-1346.jar
