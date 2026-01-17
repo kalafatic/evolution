@@ -6,6 +6,11 @@ Bundle-Version: 1.0.0.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
  org.apache.felix.scr,
- org.eclipse.equinox.event
+ org.eclipse.equinox.event,
+ org.eclipse.zest.core,
+ org.eclipse.zest.layouts,
+ org.eclipse.draw2d,
+ org.eclipse.emf.ecore,
+ org.eclipse.emf.common
 Automatic-Module-Name: eu.kalafatic.evolution.view
 Bundle-RequiredExecutionEnvironment: JavaSE-17

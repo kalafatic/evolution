@@ -17,6 +17,7 @@ p2.eclipse.plugin:org.eclipse.core.databinding:eclipse-plugin @ /home/jules/.m2/
 p2.eclipse.plugin:org.eclipse.core.expressions:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.expressions/3.9.100.v20230726-0617/org.eclipse.core.expressions-3.9.100.v20230726-0617.jar
 p2.eclipse.plugin:org.eclipse.core.jobs:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.jobs/3.15.0.v20230808-1403/org.eclipse.core.jobs-3.15.0.v20230808-1403.jar
 p2.eclipse.plugin:org.eclipse.core.runtime:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.core.runtime/3.29.0.v20230726-0617/org.eclipse.core.runtime-3.29.0.v20230726-0617.jar
+p2.eclipse.plugin:org.eclipse.draw2d:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.draw2d/3.14.0.202308311129/org.eclipse.draw2d-3.14.0.202308311129.jar
 p2.eclipse.plugin:org.eclipse.e4.core.commands:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.commands/1.1.100.v20230630-1554/org.eclipse.e4.core.commands-1.1.100.v20230630-1554.jar
 p2.eclipse.plugin:org.eclipse.e4.core.contexts:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.contexts/1.12.100.v20230725-1354/org.eclipse.e4.core.contexts-1.12.100.v20230725-1354.jar
 p2.eclipse.plugin:org.eclipse.e4.core.di.annotations:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.e4.core.di.annotations/1.8.100.v20230617-1158/org.eclipse.e4.core.di.annotations-1.8.100.v20230617-1158.jar
@@ -57,6 +58,8 @@ p2.eclipse.plugin:org.eclipse.swt:eclipse-plugin @ /home/jules/.m2/repository/p2
 p2.eclipse.plugin:org.eclipse.ui.workbench:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui.workbench/3.130.0.v20230822-0911/org.eclipse.ui.workbench-3.130.0.v20230822-0911.jar
 p2.eclipse.plugin:org.eclipse.ui:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.ui/3.204.0.v20230821-1342/org.eclipse.ui-3.204.0.v20230821-1342.jar
 p2.eclipse.plugin:org.eclipse.urischeme:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.urischeme/1.3.100.v20230727-0604/org.eclipse.urischeme-1.3.100.v20230727-0604.jar
+p2.eclipse.plugin:org.eclipse.zest.core:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.zest.core/1.9.0.202308311129/org.eclipse.zest.core-1.9.0.202308311129.jar
+p2.eclipse.plugin:org.eclipse.zest.layouts:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.zest.layouts/1.3.100.202308311129/org.eclipse.zest.layouts-1.3.100.202308311129.jar
 p2.eclipse.plugin:org.w3c.css.sac:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.w3c.css.sac/1.3.1.v200903091627/org.w3c.css.sac-1.3.1.v200903091627.jar
 p2.eclipse.plugin:org.w3c.dom.events:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.w3c.dom.events/3.0.0.draft20060413_v201105210656/org.w3c.dom.events-3.0.0.draft20060413_v201105210656.jar
 p2.eclipse.plugin:org.w3c.dom.smil:eclipse-plugin @ /home/jules/.m2/repository/p2/osgi/bundle/org.w3c.dom.smil/1.0.1.v200903091627/org.w3c.dom.smil-1.0.1.v200903091627.jar

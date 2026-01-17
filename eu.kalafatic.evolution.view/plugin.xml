@@ -31,5 +31,14 @@
          </property>
       </product>
    </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            name="Ecore Zest View"
+            icon="icons/eclipse16.png"
+            class="eu.kalafatic.evolution.view.EcoreZestView"
+            id="eu.kalafatic.evolution.view.ecoreZestView">
+      </view>
+   </extension>
 
 </plugin>
