@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <units size='1'>
-  <unit id='eu.kalafatic.evolution.controller' version='1.0.0.202601171225' singleton='false' generation='2'>
-    <update id='eu.kalafatic.evolution.controller' range='[0.0.0,1.0.0.202601171225)' severity='0'/>
+  <unit id='eu.kalafatic.evolution.controller' version='1.0.0.202601171456' singleton='false' generation='2'>
+    <update id='eu.kalafatic.evolution.controller' range='[0.0.0,1.0.0.202601171456)' severity='0'/>
     <properties size='5'>
       <property name='org.eclipse.equinox.p2.name' value='Controller'/>
       <property name='maven-groupId' value='eu.kalafatic.evolution'/>
@@ -10,9 +10,9 @@
       <property name='maven-type' value='eclipse-plugin'/>
     </properties>
     <provides size='4'>
-      <provided namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.controller' version='1.0.0.202601171225'/>
-      <provided namespace='osgi.bundle' name='eu.kalafatic.evolution.controller' version='1.0.0.202601171225'/>
-      <provided namespace='osgi.identity' name='eu.kalafatic.evolution.controller' version='1.0.0.202601171225'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.evolution.controller' version='1.0.0.202601171456'/>
+      <provided namespace='osgi.bundle' name='eu.kalafatic.evolution.controller' version='1.0.0.202601171456'/>
+      <provided namespace='osgi.identity' name='eu.kalafatic.evolution.controller' version='1.0.0.202601171456'>
         <properties size='1'>
           <property name='type' value='osgi.bundle'/>
         </properties>
@@ -29,13 +29,13 @@
       </requiredProperties>
     </requires>
     <artifacts size='1'>
-      <artifact classifier='osgi.bundle' id='eu.kalafatic.evolution.controller' version='1.0.0.202601171225'/>
+      <artifact classifier='osgi.bundle' id='eu.kalafatic.evolution.controller' version='1.0.0.202601171456'/>
     </artifacts>
     <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
     <touchpointData size='1'>
       <instructions size='1'>
         <instruction key='manifest'>
-          Bundle-SymbolicName: eu.kalafatic.evolution.controller&#xA;Bundle-Version: 1.0.0.202601171225&#xA;
+          Bundle-SymbolicName: eu.kalafatic.evolution.controller&#xA;Bundle-Version: 1.0.0.202601171456&#xA;
         </instruction>
       </instructions>
     </touchpointData>
