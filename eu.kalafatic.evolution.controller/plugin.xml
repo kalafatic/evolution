@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            name="Save"
+            id="eu.kalafatic.evolution.controller.saveCommand">
+      </command>
+      <command
+            name="Maven Build"
+            id="eu.kalafatic.evolution.controller.mavenBuildCommand">
+      </command>
+      <command
+            name="Git Commit"
+            id="eu.kalafatic.evolution.controller.gitCommitCommand">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            commandId="eu.kalafatic.evolution.controller.saveCommand"
+            class="eu.kalafatic.evolution.controller.SaveCommandHandler">
+      </handler>
+      <handler
+            commandId="eu.kalafatic.evolution.controller.mavenBuildCommand"
+            class="eu.kalafatic.evolution.controller.MavenBuildCommandHandler">
+      </handler>
+      <handler
+            commandId="eu.kalafatic.evolution.controller.gitCommitCommand"
+            class="eu.kalafatic.evolution.controller.GitCommitCommandHandler">
+      </handler>
+   </extension>
+</plugin>

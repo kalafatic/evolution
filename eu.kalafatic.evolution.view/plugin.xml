@@ -49,6 +49,12 @@
             id="com.example.test"
             name="My Common Navigator">
       </view>
+      <view
+            name="Properties"
+            icon="icons/eclipse16.png"
+            class="eu.kalafatic.evolution.view.PropertiesView"
+            id="eu.kalafatic.evolution.view.propertiesView">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.navigator.viewer">

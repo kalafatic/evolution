@@ -32,6 +32,7 @@ public class Perspective implements IPerspectiveFactory {
 		IFolderLayout bottomLeft = layout.createFolder("BOTTOM_LEFT", IPageLayout.BOTTOM, 0.65f, "TOP_LEFT");
 
 		bottomLeft.addView(IPageLayout.ID_PROP_SHEET);
+		bottomLeft.addView(PropertiesView.ID);
 		bottomLeft.addView(IPageLayout.ID_OUTLINE);
 
 		IFolderLayout bottomRight = layout.createFolder("BOTTOM_RIGHT", IPageLayout.BOTTOM, 0.65f, editorArea);
