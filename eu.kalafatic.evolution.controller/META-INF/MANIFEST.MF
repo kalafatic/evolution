@@ -2,8 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Controller
 Bundle-SymbolicName: eu.kalafatic.evolution.controller
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 2.6.1.qualifier
 Require-Bundle: org.eclipse.swt,
- org.eclipse.jface
+ org.eclipse.jface,
+ eu.kalafatic.evolution.model;bundle-version="2.6.1"
 Automatic-Module-Name: eu.kalafatic.evolution.controller
 Bundle-RequiredExecutionEnvironment: JavaSE-17

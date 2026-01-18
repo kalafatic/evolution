@@ -24,4 +24,8 @@
          id="eu.kalafatic.evolution.controller"
          version="0.0.0"/>
 
+   <plugin
+         id="eu.kalafatic.evolution.model"
+         version="0.0.0"/>
+
 </feature>

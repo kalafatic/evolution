@@ -1,15 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>eu.kalafatic.evolution</groupId>
-        <artifactId>eu.kalafatic.evolution.parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    <artifactId>eu.kalafatic.evolution.view</artifactId>
-    <packaging>eclipse-plugin</packaging>
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>eu.kalafatic.evolution</groupId>
+		<artifactId>eu.kalafatic.evolution.parent</artifactId>
+		<version>2.6.1-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+	<artifactId>eu.kalafatic.evolution.view</artifactId>
+	<packaging>eclipse-plugin</packaging>
 
 	<build>
 		<plugins>
@@ -51,4 +51,22 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<repositories>
+		<repository>
+			<id>eclipse-m2e</id>
+			<url>https://download.eclipse.org/technology/m2e/releases/latest/</url>
+			<layout>p2</layout>
+		</repository>
+		<repository>
+			<id>eclipse-gef</id>
+			<url>https://download.eclipse.org/tools/gef/classic/release</url>
+			<layout>p2</layout>
+		</repository>
+		<repository>
+			<id>eclipse-release</id>
+			<url>https://download.eclipse.org/releases/latest/</url>
+			<layout>p2</layout>
+		</repository>
+	</repositories>
 </project>
