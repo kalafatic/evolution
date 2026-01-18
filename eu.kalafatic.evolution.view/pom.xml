@@ -45,6 +45,16 @@
 								<id>org.eclipse.emf.common</id>
 								<versionRange>0.0.0</versionRange>
 							</requirement>
+							<requirement>
+								<type>eclipse-plugin</type>
+								<id>org.eclipse.emf.edit</id>
+								<versionRange>0.0.0</versionRange>
+							</requirement>
+							<requirement>
+								<type>eclipse-plugin</type>
+								<id>org.eclipse.emf.ecore.xmi</id>
+								<versionRange>0.0.0</versionRange>
+							</requirement>
 						</extraRequirements>
 					</dependency-resolution>
 				</configuration>

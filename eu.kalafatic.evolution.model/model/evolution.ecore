@@ -34,7 +34,37 @@
   <eClassifiers xsi:type="ecore:EClass" name="Orchestrator">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="agents" upperBound="-1" eType="#//Agent"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="agents" upperBound="-1" eType="#//Agent" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="git" eType="#//Git" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="maven" eType="#//Maven" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="llm" eType="#//LLM" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="compiler" eType="#//Compiler" containment="true"/>
+  </eClassifiers>
+
+  <!-- Git class -->
+  <eClassifiers xsi:type="ecore:EClass" name="Git">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="repositoryUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="branch" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="username" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="localPath" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <!-- Maven class -->
+  <eClassifiers xsi:type="ecore:EClass" name="Maven">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="goals" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" upperBound="-1"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="profiles" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" upperBound="-1"/>
+  </eClassifiers>
+
+  <!-- LLM class -->
+  <eClassifiers xsi:type="ecore:EClass" name="LLM">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="model" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="temperature" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat"/>
+  </eClassifiers>
+
+  <!-- Compiler class -->
+  <eClassifiers xsi:type="ecore:EClass" name="Compiler">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
 
 </ecore:EPackage>
