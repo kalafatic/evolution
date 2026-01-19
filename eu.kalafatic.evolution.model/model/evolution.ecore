@@ -21,6 +21,10 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//TaskStatus"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="next" upperBound="-1" eType="#//Task"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="subTasks" upperBound="-1"
+        eType="#//Task"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="response" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
 
   <!-- Agent class -->
@@ -65,6 +69,20 @@
   <eClassifiers xsi:type="ecore:EClass" name="Compiler">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <!-- Enum: CommandStatus -->
+  <eClassifiers xsi:type="ecore:EEnum" name="CommandStatus" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <eLiterals name="PENDING"/>
+    <eLiterals name="RUNNING"/>
+    <eLiterals name="COMPLETED"/>
+    <eLiterals name="FAILED"/>
+  </eClassifiers>
+
+  <!-- Command class -->
+  <eClassifiers xsi:type="ecore:EClass" name="Command">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//CommandStatus"/>
   </eClassifiers>
 
 </ecore:EPackage>
