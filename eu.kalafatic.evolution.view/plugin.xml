@@ -169,6 +169,19 @@
             </command>
          </menu>
       </menuContribution>
+      <menuContribution
+            locationURI="popup:eu.kalafatic.evolution.view.taskTreeView">
+         <command
+               commandId="eu.kalafatic.evolution.view.editTask"
+               label="Edit Task"
+               style="push">
+         </command>
+         <command
+               commandId="eu.kalafatic.evolution.view.saveEvoTasks"
+               label="Save"
+               style="push">
+         </command>
+      </menuContribution>
    </extension>
    <extension
          point="org.eclipse.ui.editors">
@@ -215,6 +228,10 @@
             id="eu.kalafatic.evolution.view.saveEvoTasks"
             name="Save Evo Tasks">
       </command>
+      <command
+            id="eu.kalafatic.evolution.view.editTask"
+            name="Edit Task">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -225,6 +242,10 @@
       <handler
             class="eu.kalafatic.evolution.view.handlers.SaveEvoTasksHandler"
             commandId="eu.kalafatic.evolution.view.saveEvoTasks">
+      </handler>
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.EditTaskHandler"
+            commandId="eu.kalafatic.evolution.view.editTask">
       </handler>
    </extension>
 

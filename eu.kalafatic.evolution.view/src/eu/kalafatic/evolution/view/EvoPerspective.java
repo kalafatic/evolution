@@ -12,11 +12,11 @@ public class EvoPerspective implements IPerspectiveFactory {
         String editorArea = layout.getEditorArea();
         layout.setEditorAreaVisible(true);
 
-        // Top left: Task Tree View
-        layout.addStandaloneView(TaskTreeView.ID, true, IPageLayout.LEFT, 0.25f, editorArea);
+        // Left: Project Explorer
+        layout.addView(IPageLayout.ID_PROJECT_EXPLORER, IPageLayout.LEFT, 0.25f, editorArea);
 
-        // Bottom left: Command Stack View
-        layout.addStandaloneView(CommandStackView.ID, true, IPageLayout.BOTTOM, 0.65f, TaskTreeView.ID);
+        // Bottom left: Properties View
+        layout.addView(IPageLayout.ID_PROP_SHEET, IPageLayout.BOTTOM, 0.75f, IPageLayout.ID_PROJECT_EXPLORER);
 
         // Right: AI Output View
         layout.addStandaloneView(AIOutputView.ID, true, IPageLayout.RIGHT, 0.75f, editorArea);
