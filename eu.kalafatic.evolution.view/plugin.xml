@@ -18,6 +18,11 @@
             name="RCP Perspective"
             id="eu.kalafatic.evolution.view.perspective">
       </perspective>
+      <perspective
+            class="eu.kalafatic.evolution.view.EvoPerspective"
+            name="Evo"
+            id="eu.kalafatic.evolution.view.evoPerspective">
+      </perspective>
    </extension>
    <extension
          id="product"
@@ -54,6 +59,24 @@
             icon="icons/eclipse16.png"
             class="eu.kalafatic.evolution.view.PropertiesView"
             id="eu.kalafatic.evolution.view.propertiesView">
+      </view>
+      <view
+            class="eu.kalafatic.evolution.view.TaskTreeView"
+            icon="icons/sample.png"
+            id="eu.kalafatic.evolution.view.taskTreeView"
+            name="Task Tree">
+      </view>
+      <view
+            class="eu.kalafatic.evolution.view.CommandStackView"
+            icon="icons/sample.png"
+            id="eu.kalafatic.evolution.view.commandStackView"
+            name="Command Stack">
+      </view>
+      <view
+            class="eu.kalafatic.evolution.view.AIOutputView"
+            icon="icons/sample.png"
+            id="eu.kalafatic.evolution.view.aiOutputView"
+            name="AI Output">
       </view>
    </extension>
    <extension
@@ -98,6 +121,54 @@
    </extension>
    <extension
          point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="menu:org.eclipse.ui.main.menu">
+         <menu
+               id="file"
+               label="File">
+            <command
+                  commandId="org.eclipse.ui.newWizard"
+                  label="New Evo Task"
+                  style="push">
+               <parameter
+                     name="newWizardId"
+                     value="eu.kalafatic.evolution.view.newEvoTaskWizard">
+               </parameter>
+            </command>
+            <command
+                  commandId="eu.kalafatic.evolution.view.openEvoTasks"
+                  label="Open Evo Tasks"
+                  style="push">
+            </command>
+            <command
+                  commandId="eu.kalafatic.evolution.view.saveEvoTasks"
+                  label="Save Evo Tasks"
+                  style="push">
+            </command>
+            <separator
+                  name="org.eclipse.ui.ide.file"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="org.eclipse.ui.file.import"
+                  label="Import Evo Tasks"
+                  style="push">
+               <parameter
+                     name="importWizardId"
+                     value="eu.kalafatic.evolution.view.importEvoTasksWizard">
+               </parameter>
+            </command>
+            <command
+                  commandId="org.eclipse.ui.file.export"
+                  label="Export Evo Tasks"
+                  style="push">
+               <parameter
+                     name="exportWizardId"
+                     value="eu.kalafatic.evolution.view.exportEvoTasksWizard">
+               </parameter>
+            </command>
+         </menu>
+      </menuContribution>
    </extension>
    <extension
          point="org.eclipse.ui.editors">
@@ -109,6 +180,52 @@
             id="eu.kalafatic.evolution.view.editors.MultiPageEditor"
             name="Sample Multi-page Editor">
       </editor>
+   </extension>
+   <extension
+         point="org.eclipse.ui.newWizards">
+      <wizard
+            class="eu.kalafatic.evolution.view.wizards.NewEvoTaskWizard"
+            id="eu.kalafatic.evolution.view.newEvoTaskWizard"
+            name="New Evo Task">
+      </wizard>
+   </extension>
+   <extension
+         point="org.eclipse.ui.importWizards">
+      <wizard
+            class="eu.kalafatic.evolution.view.wizards.ImportEvoTasksWizard"
+            id="eu.kalafatic.evolution.view.importEvoTasksWizard"
+            name="Import Evo Tasks">
+      </wizard>
+   </extension>
+   <extension
+         point="org.eclipse.ui.exportWizards">
+      <wizard
+            class="eu.kalafatic.evolution.view.wizards.ExportEvoTasksWizard"
+            id="eu.kalafatic.evolution.view.exportEvoTasksWizard"
+            name="Export Evo Tasks">
+      </wizard>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            id="eu.kalafatic.evolution.view.openEvoTasks"
+            name="Open Evo Tasks">
+      </command>
+      <command
+            id="eu.kalafatic.evolution.view.saveEvoTasks"
+            name="Save Evo Tasks">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.OpenEvoTasksHandler"
+            commandId="eu.kalafatic.evolution.view.openEvoTasks">
+      </handler>
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.SaveEvoTasksHandler"
+            commandId="eu.kalafatic.evolution.view.saveEvoTasks">
+      </handler>
    </extension>
 
 </plugin>

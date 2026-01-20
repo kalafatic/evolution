@@ -6,6 +6,7 @@ Bundle-Version: 2.6.1.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
  org.apache.felix.scr,
+ eu.kalafatic.evolution.model,
  org.eclipse.equinox.event,
  org.eclipse.zest.core,
  org.eclipse.zest.layouts,
