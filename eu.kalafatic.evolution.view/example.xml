@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<orchestration:Orchestrator xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:orchestration="http://example.com/orchestration" id="1" name="MyOrchestrator">
+  <agents id="a1" type="planning">
+    <tasks id="t1" name="Setup Project" status="PENDING"/>
+    <tasks id="t2" name="Implement Features" status="PENDING"/>
+  </agents>
+  <git repositoryUrl="https://github.com/user/repo.git" branch="main" localPath="/path/to/repo"/>
+  <maven>
+    <goals>clean</goals>
+    <goals>install</goals>
+  </maven>
+  <llm model="gpt-4" temperature="0.7"/>
+  <compiler sourceVersion="1.8" targetVersion="1.8"/>
+</orchestration:Orchestrator>

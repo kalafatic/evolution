@@ -35,23 +35,26 @@ import org.eclipse.ui.ide.IDE;
 
 /**
  * An example showing how to create a multi-page editor.
- * This example has 3 pages:
+ * This example has 4 pages:
  * <ul>
- * <li>page 0 contains a nested text editor.
- * <li>page 1 allows you to change the font used in page 2
- * <li>page 2 shows the words in page 0 in sorted order
+ * <li>page 0 is a chat interface.
+ * <li>page 1 contains a nested text editor.
+ * <li>page 2 allows you to change the font used in page 3
+ * <li>page 3 shows the words in page 1 in sorted order
  * </ul>
  */
 public class MultiPageEditor extends MultiPageEditorPart implements IResourceChangeListener{
 
-	/** The text editor used in page 0. */
+	/** The text editor used in page 1. */
 	private TextEditor editor;
 
-	/** The font chosen in page 1. */
+	/** The font chosen in page 2. */
 	private Font font;
 
-	/** The text widget used in page 2. */
+	/** The text widget used in page 3. */
 	private StyledText text;
+	private StyledText requestText;
+	private StyledText responseText;
 	/**
 	 * Creates a multi-page editor example.
 	 */
@@ -60,10 +63,48 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(this);
 	}
 	/**
-	 * Creates page 0 of the multi-page editor,
+	 * Creates page 0 for AI Chat.
+	 */
+	void createAiChatPage() {
+		Composite composite = new Composite(getContainer(), SWT.NONE);
+		GridLayout layout = new GridLayout();
+		composite.setLayout(layout);
+		layout.numColumns = 1;
+
+        // Request Area
+		new org.eclipse.swt.widgets.Label(composite, SWT.NONE).setText("Request:");
+		requestText = new StyledText(composite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+		GridData requestGridData = new GridData(GridData.FILL_BOTH);
+        requestGridData.heightHint = 100;
+		requestText.setLayoutData(requestGridData);
+
+		Button sendButton = new Button(composite, SWT.PUSH);
+		sendButton.setText("Send");
+        sendButton.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				// Dummy action for now
+				responseText.setText("Response to: " + requestText.getText());
+			}
+		});
+
+
+        // Response Area
+		new org.eclipse.swt.widgets.Label(composite, SWT.NONE).setText("Response:");
+		responseText = new StyledText(composite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY | SWT.WRAP);
+		GridData responseGridData = new GridData(GridData.FILL_BOTH);
+        responseGridData.heightHint = 200;
+		responseText.setLayoutData(responseGridData);
+        responseText.setEditable(false);
+
+
+		int index = addPage(composite);
+		setPageText(index, "AI Chat");
+	}
+	/**
+	 * Creates page 1 of the multi-page editor,
 	 * which contains a text editor.
 	 */
-	void createPage0() {
+	void createPage1() {
 		try {
 			editor = new TextEditor();
 			int index = addPage(editor, getEditorInput());
@@ -77,10 +118,10 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		}
 	}
 	/**
-	 * Creates page 1 of the multi-page editor,
-	 * which allows you to change the font used in page 2.
+	 * Creates page 2 of the multi-page editor,
+	 * which allows you to change the font used in page 3.
 	 */
-	void createPage1() {
+	void createPage2() {
 
 		Composite composite = new Composite(getContainer(), SWT.NONE);
 		GridLayout layout = new GridLayout();
@@ -103,10 +144,10 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		setPageText(index, "Properties");
 	}
 	/**
-	 * Creates page 2 of the multi-page editor,
+	 * Creates page 3 of the multi-page editor,
 	 * which shows the sorted text.
 	 */
-	void createPage2() {
+	void createPage3() {
 		Composite composite = new Composite(getContainer(), SWT.NONE);
 		FillLayout layout = new FillLayout();
 		composite.setLayout(layout);
@@ -120,9 +161,10 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	 * Creates the pages of the multi-page editor.
 	 */
 	protected void createPages() {
-		createPage0();
+		createAiChatPage();
 		createPage1();
 		createPage2();
+		createPage3();
 	}
 	/**
 	 * The <code>MultiPageEditorPart</code> implementation of this 
@@ -137,7 +179,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	 * Saves the multi-page editor's document.
 	 */
 	public void doSave(IProgressMonitor monitor) {
-		getEditor(0).doSave(monitor);
+		getEditor(1).doSave(monitor);
 	}
 	/**
 	 * Saves the multi-page editor's document as another file.
@@ -145,17 +187,17 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	 * to correspond to the nested editor's.
 	 */
 	public void doSaveAs() {
-		IEditorPart editor = getEditor(0);
+		IEditorPart editor = getEditor(1);
 		editor.doSaveAs();
-		setPageText(0, editor.getTitle());
+		setPageText(1, editor.getTitle());
 		setInput(editor.getEditorInput());
 	}
 	/* (non-Javadoc)
 	 * Method declared on IEditorPart
 	 */
 	public void gotoMarker(IMarker marker) {
-		setActivePage(0);
-		IDE.gotoMarker(getEditor(0), marker);
+		setActivePage(1);
+		IDE.gotoMarker(getEditor(1), marker);
 	}
 	/**
 	 * The <code>MultiPageEditorExample</code> implementation of this method
@@ -174,11 +216,11 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		return true;
 	}
 	/**
-	 * Calculates the contents of page 2 when the it is activated.
+	 * Calculates the contents of page 3 when it is activated.
 	 */
 	protected void pageChange(int newPageIndex) {
 		super.pageChange(newPageIndex);
-		if (newPageIndex == 2) {
+		if (newPageIndex == 3) {
 			sortWords();
 		}
 	}
@@ -199,7 +241,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		}
 	}
 	/**
-	 * Sets the font related data to be applied to the text in page 2.
+	 * Sets the font related data to be applied to the text in page 3.
 	 */
 	void setFont() {
 		FontDialog fontDialog = new FontDialog(getSite().getShell());
@@ -213,7 +255,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		}
 	}
 	/**
-	 * Sorts the words in page 0, and shows them in page 2.
+	 * Sorts the words in page 1, and shows them in page 3.
 	 */
 	void sortWords() {
 
