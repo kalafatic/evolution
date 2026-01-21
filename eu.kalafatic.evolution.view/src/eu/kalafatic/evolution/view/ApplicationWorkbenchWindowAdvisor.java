@@ -232,60 +232,41 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	
 	public IProject createProject(String projectName) {
 		try {
-//			ResourceSet rs = new ResourceSetImpl();
-//			rs.getResourceFactoryRegistry()
-//			  .getExtensionToFactoryMap()
-//			  .put("xmi", new XMIResourceFactoryImpl());
-//
-//			rs.getPackageRegistry()
-//			  .put(MyPackage.eNS_URI, MyPackage.eINSTANCE);
-//
-//			Resource r = rs.createResource(URI.createFileURI("example.xmi"));
-//
-//			MyRoot root = MyFactory.eINSTANCE.createMyRoot();
-//			root.setName("test");
-//
-//			r.getContents().add(root);
-//			r.save(null);
-			
-			
-			
-			
-			Assert.isNotNull(projectName);
+			final String testProjectName = "TestProject";
+			final String fileName = "Orchestrator.orchestration";
+
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
 			IWorkspaceRoot root = workspace.getRoot();
-			IProject project = root.getProject(projectName);
+			IProject project = root.getProject(testProjectName);
 
-			IFolder folder = project.getFolder("Core");
-			IFile file = folder.getFile(projectName + ".xml");
-			// at this point, no resources have been created
 			if (!project.exists()) {
 				project.create(null);
 			}
 			if (!project.isOpen()) {
 				project.open(null);
 			}
-			if (!folder.exists()) {
-				folder.create(IResource.NONE, true, null);
-			}
+
+			IFile file = project.getFile(fileName);
 			if (!file.exists()) {
-				byte[] bytes = ("<!-- " + projectName + "� -->").getBytes();
-				InputStream source = new ByteArrayInputStream(bytes);
+				String content = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+						"<orchestration:Orchestrator xmi:version=\"2.0\" xmlns:xmi=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+						"    xmlns:orchestration=\"http://example.com/orchestration\" xsi:schemaLocation=\"http://example.com/orchestration ../eu.kalafatic.evolution.model/model/evolution.ecore\"/>\n";
+				InputStream source = new ByteArrayInputStream(content.getBytes());
 				file.create(source, IResource.NONE, null);
 			}
-			
-			IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-	        IWorkbenchPage page = window.getActivePage();
 
-	        try {
-	            page.openEditor(
-	                new FileEditorInput( getFile() ),
-	                "eu.kalafatic.evolution.view.editors.MultiPageEditor"
-	            );
-	        } catch (PartInitException e) {
-	            e.printStackTrace();
-	        }
-			
+			IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+			IWorkbenchPage page = window.getActivePage();
+
+			try {
+				page.openEditor(
+						new FileEditorInput(file),
+						"orchestration.presentation.OrchestrationEditorID"
+				);
+			} catch (PartInitException e) {
+				e.printStackTrace();
+			}
+
 			return project;
 		} catch (CoreException e) {
 			e.printStackTrace();
@@ -294,10 +275,13 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	}
 
 	private IFile getFile() {
-        return ResourcesPlugin.getWorkspace()
-            .getRoot()
-            .getFile(new Path("example.xml"));
-    }
+		final String testProjectName = "TestProject";
+		final String fileName = "Orchestrator.orchestration";
+		return ResourcesPlugin.getWorkspace()
+				.getRoot()
+				.getProject(testProjectName)
+				.getFile(fileName);
+	}
 
 		/**
 		 * Gets the splash.
