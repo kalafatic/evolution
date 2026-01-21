@@ -44,6 +44,9 @@ import org.eclipse.ui.ide.IDE;
  * </ul>
  */
 public class MultiPageEditor extends MultiPageEditorPart implements IResourceChangeListener{
+	
+	/** The Constant ID. */
+	public static final String ID = "eu.kalafatic.evolution.view.editors.MaintainEditor";
 
 	/** The text editor used in page 1. */
 	private TextEditor editor;

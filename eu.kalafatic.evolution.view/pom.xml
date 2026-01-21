@@ -79,4 +79,11 @@
 			<layout>p2</layout>
 		</repository>
 	</repositories>
+	<dependencies>
+		<dependency>
+			<groupId>eu.kalafatic.evolution</groupId>
+			<artifactId>eu.kalafatic.evolution.controller</artifactId>
+			<version>2.6.1-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
 </project>

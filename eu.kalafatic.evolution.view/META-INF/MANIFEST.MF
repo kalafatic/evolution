@@ -13,14 +13,15 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.draw2d,
  org.eclipse.emf.ecore,
  org.eclipse.emf.common,
-  org.eclipse.emf.edit,
+ org.eclipse.emf.edit,
  org.eclipse.core.resources,
  org.eclipse.ui.navigator,
  org.eclipse.ui.navigator.resources,
  org.eclipse.jface.text,
  org.eclipse.ui.editors,
-  org.eclipse.ui.ide,
-  org.eclipse.emf.ecore.xmi
+ org.eclipse.ui.ide,
+ org.eclipse.emf.ecore.xmi,
+ eu.kalafatic.utils;bundle-version="2.6.1"
 Automatic-Module-Name: eu.kalafatic.evolution.view
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: org.eclipse.ui.console

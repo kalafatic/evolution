@@ -14,14 +14,10 @@
    <extension
          point="org.eclipse.ui.perspectives">
       <perspective
-            class="eu.kalafatic.evolution.view.Perspective"
-            name="RCP Perspective"
-            id="eu.kalafatic.evolution.view.perspective">
-      </perspective>
-      <perspective
             class="eu.kalafatic.evolution.view.EvoPerspective"
-            name="Evo"
-            id="eu.kalafatic.evolution.view.evoPerspective">
+            fixed="true"
+            id="eu.kalafatic.evolution.view.evoPerspective"
+            name="Evo">
       </perspective>
    </extension>
    <extension
@@ -188,10 +184,10 @@
       <editor
             class="eu.kalafatic.evolution.view.editors.MultiPageEditor"
             contributorClass="eu.kalafatic.evolution.view.editors.MultiPageEditorContributor"
-            extensions="mpe"
+            extensions="xml"
             icon="icons/sample.png"
             id="eu.kalafatic.evolution.view.editors.MultiPageEditor"
-            name="Sample Multi-page Editor">
+            name="Evo Multi-page Editor">
       </editor>
    </extension>
    <extension

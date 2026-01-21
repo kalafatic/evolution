@@ -1,137 +1,134 @@
+/*******************************************************************************
+ * Copyright (c) 2010, Petr Kalafatic (gemini@kalafatic.eu).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU GPL Version 3
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * Contributors:
+ *     Petr Kalafatic - initial API and implementation
+ ******************************************************************************/
 package eu.kalafatic.evolution.view;
 
-import org.eclipse.jface.action.ICoolBarManager;
+import org.eclipse.jface.action.GroupMarker;
 import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.actions.ActionFactory;
-import org.eclipse.ui.actions.ActionFactory.IWorkbenchAction;
-import org.eclipse.ui.application.ActionBarAdvisor;
 import org.eclipse.ui.application.IActionBarConfigurer;
 
-public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 
-    private IWorkbenchAction newAction;
-    private IWorkbenchAction saveAction;
-    private IWorkbenchAction saveAsAction;
-    private IWorkbenchAction closeAction;
-    private IWorkbenchAction closeAllAction;
-    private IWorkbenchAction exitAction;
+import eu.kalafatic.utils.builders.WorkbenchActionBuilder;
+import eu.kalafatic.utils.lib.AppData;
 
-    private IWorkbenchAction cutAction;
-    private IWorkbenchAction copyAction;
-    private IWorkbenchAction pasteAction;
-    private IWorkbenchAction deleteAction;
-    private IWorkbenchAction selectAllAction;
+/**
+ * The Class class ApplicationActionBarAdvisor.
+ * @author Petr Kalafatic
+ * @project Gemini
+ * @version 3.0.0
+ */
+public class ApplicationActionBarAdvisor extends WorkbenchActionBuilder {
 
-    private IWorkbenchAction findAction;
+	/** The width. */
+	private final int width = 70;
 
-    private IWorkbenchAction preferencesAction;
+	/** The cpu item. */
+	private final StatusLineContributionItem cpuItem = new StatusLineContributionItem("CPU", width);
 
-    private IWorkbenchAction helpContentsAction;
-    private IWorkbenchAction aboutAction;
+	/** The lang item. */
+	private final StatusLineContributionItem langItem = new StatusLineContributionItem("NL", width);
 
-	public ApplicationActionBarAdvisor(IActionBarConfigurer configurer) {
+	/**
+	 * Instantiates a new application action bar advisor.
+	 * @param configurer the configurer
+	 */
+	ApplicationActionBarAdvisor(IActionBarConfigurer configurer) {
 		super(configurer);
 	}
-	
+
 	@Override
-	protected void makeActions(IWorkbenchWindow window) {
-        newAction = ActionFactory.NEW.create(window);
-        register(newAction);
+	protected void fillStatusLine(IStatusLineManager statusLineManager) {
+		super.fillStatusLine(statusLineManager);
 
-        saveAction = ActionFactory.SAVE.create(window);
-        register(saveAction);
+		statusLineManager.add(langItem);
+		statusLineManager.add(cpuItem);
 
-        saveAsAction = ActionFactory.SAVE_AS.create(window);
-        register(saveAsAction);
+		cpuItem.setText("CPU: 100 %");
 
-        closeAction = ActionFactory.CLOSE.create(window);
-        register(closeAction);
+		String locale = System.getProperty("osgi.nl");
+		langItem.setImage(getFlag(locale));
+		langItem.setText("NL: " + locale);
 
-        closeAllAction = ActionFactory.CLOSE_ALL.create(window);
-        register(closeAllAction);
+		langItem.setVisible(true);
+		cpuItem.setVisible(true);
 
-        exitAction = ActionFactory.QUIT.create(window);
-        register(exitAction);
+		AppData.getInstance().setStatusLineManager(statusLineManager);
 
-        cutAction = ActionFactory.CUT.create(window);
-        register(cutAction);
+		// AppData.getInstance().setCpuItem(cpuItem);
 
-        copyAction = ActionFactory.COPY.create(window);
-        register(copyAction);
-
-        pasteAction = ActionFactory.PASTE.create(window);
-        register(pasteAction);
-
-        deleteAction = ActionFactory.DELETE.create(window);
-        register(deleteAction);
-
-        selectAllAction = ActionFactory.SELECT_ALL.create(window);
-        register(selectAllAction);
-
-        findAction = ActionFactory.FIND.create(window);
-        register(findAction);
-
-        preferencesAction = ActionFactory.PREFERENCES.create(window);
-        register(preferencesAction);
-
-        helpContentsAction = ActionFactory.HELP_CONTENTS.create(window);
-        register(helpContentsAction);
-
-        aboutAction = ActionFactory.ABOUT.create(window);
-        register(aboutAction);
+		// statusLineManager.setErrorMessage("fhn");
+		statusLineManager.update(true);
 	}
-	
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.ui.application.ActionBarAdvisor#fillMenuBar(org.eclipse.jface .action.IMenuManager)
+	 */
 	@Override
 	protected void fillMenuBar(IMenuManager menuBar) {
-        // File menu
-        MenuManager fileMenu = new MenuManager("&File", "file");
-        fileMenu.add(newAction);
-        fileMenu.add(saveAction);
-        fileMenu.add(saveAsAction);
-        fileMenu.add(closeAction);
-        fileMenu.add(closeAllAction);
-        fileMenu.add(exitAction);
-        menuBar.add(fileMenu);
+		super.fillMenuBar(menuBar);
 
-        // Edit menu
-        MenuManager editMenu = new MenuManager("&Edit", "edit");
-        editMenu.add(cutAction);
-        editMenu.add(copyAction);
-        editMenu.add(pasteAction);
-        editMenu.add(deleteAction);
-        editMenu.add(selectAllAction);
-        menuBar.add(editMenu);
-
-        // Search menu
-        MenuManager searchMenu = new MenuManager("&Search", "search");
-        searchMenu.add(findAction);
-        menuBar.add(searchMenu);
-
-        // Project menu
-        MenuManager projectMenu = new MenuManager("&Project", "project");
-        menuBar.add(projectMenu);
-
-        // Run menu
-        MenuManager runMenu = new MenuManager("&Run", "run");
-        menuBar.add(runMenu);
-
-        // Window menu
-        MenuManager windowMenu = new MenuManager("&Window", "window");
-        windowMenu.add(preferencesAction);
-        menuBar.add(windowMenu);
-
-        // Help menu
-        MenuManager helpMenu = new MenuManager("&Help", "help");
-        helpMenu.add(helpContentsAction);
-        helpMenu.add(aboutAction);
-        menuBar.add(helpMenu);
-	}
-	
-	@Override
-	protected void fillCoolBar(ICoolBarManager coolBar) {
-		super.fillCoolBar(coolBar);
+		IWorkbenchWindow window = getActionBarConfigurer().getWindowConfigurer().getWindow();
+		menuBar.add(createExplorerMenu(window));
+		menuBar.add(createToolsMenu(window));
 	}
 
+	// ---------------------------------------------------------------
+
+	/**
+	 * Creates the tools menu.
+	 * @param window the window
+	 * @return the i menu manager
+	 */
+	private IMenuManager createToolsMenu(final IWorkbenchWindow window) {
+		MenuManager menuManager = new MenuManager("&Tools", "Tools");
+		menuManager.add(new GroupMarker("languageMarker"));
+		menuManager.add(new GroupMarker("toolsMarker"));
+		menuManager.add(new GroupMarker("actionMarker"));
+		return menuManager;
+	}
+
+	// ---------------------------------------------------------------
+
+	/**
+	 * Creates the tools menu.
+	 * @param window the window
+	 * @return the i menu manager
+	 */
+	private IMenuManager createExplorerMenu(final IWorkbenchWindow window) {
+		MenuManager menuManager = new MenuManager("&Explorer", "Explorer");
+
+		menuManager.add(new GroupMarker("explorerMarker"));
+		menuManager.add(new Separator());
+
+		menuManager.add(new GroupMarker("settingsMarker"));
+		menuManager.add(new Separator());
+
+		menuManager.add(new GroupMarker("actionMarker"));
+
+		return menuManager;
+	}
+
+	// ---------------------------------------------------------------
+
+	/**
+	 * Fill tray item.
+	 * @param trayMenu the tray menu
+	 */
+	public void fillTrayItem(MenuManager trayMenu) {
+		trayMenu.add(getAction(ActionFactory.ABOUT.getId()));
+		trayMenu.add(getAction(ActionFactory.CLOSE.getId()));
+	}
 }
