@@ -279,7 +279,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 
 	        try {
 	            page.openEditor(
-	                new FileEditorInput(file),
+	                new FileEditorInput( getFile() ),
 	                "eu.kalafatic.evolution.view.editors.MultiPageEditor"
 	            );
 	        } catch (PartInitException e) {
@@ -296,7 +296,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	private IFile getFile() {
         return ResourcesPlugin.getWorkspace()
             .getRoot()
-            .getFile(new Path("/project/file.txt"));
+            .getFile(new Path("example.xml"));
     }
 
 		/**
