@@ -24,6 +24,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProduct;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -54,6 +55,7 @@ import org.eclipse.ui.IWindowListener;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPreferenceConstants;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.application.ActionBarAdvisor;
 import org.eclipse.ui.application.IActionBarConfigurer;
@@ -61,6 +63,7 @@ import org.eclipse.ui.application.IWorkbenchWindowConfigurer;
 import org.eclipse.ui.application.WorkbenchWindowAdvisor;
 import org.eclipse.ui.internal.splash.SplashHandlerFactory;
 import org.eclipse.ui.part.EditorInputTransfer;
+import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.part.MarkerTransfer;
 import org.eclipse.ui.part.ResourceTransfer;
 import org.osgi.framework.Version;
@@ -115,9 +118,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 		super(configurer);
 	}
 
-	// ---------------------------------------------------------------
-	// ---------------------------------------------------------------
-
+	
 	/*
 	 * (non-Javadoc)
 	 * @see org.eclipse.ui.application.WorkbenchWindowAdvisor#createActionBarAdvisor (org.eclipse.ui.application.IActionBarConfigurer)
@@ -127,8 +128,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 		actionBarAdvisor = new ApplicationActionBarAdvisor(configurer);
 		return actionBarAdvisor;
 	}
-	// ---------------------------------------------------------------
-
+	
 	/*
 	 * (non-Javadoc)
 	 * @see org.eclipse.ui.application.WorkbenchWindowAdvisor#preWindowOpen()
@@ -163,29 +163,27 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 
 	}
 
-	// ---------------------------------------------------------------
-
 	@Override
 	public void postWindowOpen() {
-		super.postWindowOpen();
+		//super.postWindowOpen();
 
-		window = getWindowConfigurer().getWindow();
+		//window = getWindowConfigurer().getWindow();
 
 		// test
 		// openUpdatePopup();
 
-		trayItem = initTrayItem(window);
+		//trayItem = initTrayItem(window);
 
-		if (trayItem != null) {
-			createMinimize();
-			hookPopupMenu();
-
-			window.getShell().setImage(FCoreImageConstants.GEMINI_IMG);
-		}
+//		if (trayItem != null) {
+//			createMinimize();
+//			hookPopupMenu();
+//
+//			window.getShell().setImage(FCoreImageConstants.GEMINI_IMG);
+//		}
 		// Activator.processMessages();
 //		CMDUtils.getInstance().runAfterStart();
 //		AppUtils.getInstance().createProject(Platform.getProduct().getName());
-		initListeners();
+		//initListeners();
 //		setUpPreferences();
 
 		Display.getDefault().asyncExec(new Runnable() {
@@ -196,10 +194,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 			}
 		});
 	}
-
-	// ---------------------------------------------------------------
-
-		/*
+/*
 		 * (non-Javadoc)
 		 * @see org.eclipse.ui.application.WorkbenchWindowAdvisor#dispose()
 		 */
@@ -210,8 +205,6 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 				trayItem.dispose();
 			}
 		}
-
-		// ---------------------------------------------------------------
 
 		/**
 		 * Creates the minimize.
@@ -236,8 +229,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 			});
 		}
 
-	// ---------------------------------------------------------------
-
+	
 	public IProject createProject(String projectName) {
 		try {
 //			ResourceSet rs = new ResourceSetImpl();
@@ -255,6 +247,8 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 //
 //			r.getContents().add(root);
 //			r.save(null);
+			
+			
 			
 			
 			Assert.isNotNull(projectName);
@@ -279,6 +273,19 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 				InputStream source = new ByteArrayInputStream(bytes);
 				file.create(source, IResource.NONE, null);
 			}
+			
+			IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+	        IWorkbenchPage page = window.getActivePage();
+
+	        try {
+	            page.openEditor(
+	                new FileEditorInput(file),
+	                "eu.kalafatic.evolution.view.editors.MultiPageEditor"
+	            );
+	        } catch (PartInitException e) {
+	            e.printStackTrace();
+	        }
+			
 			return project;
 		} catch (CoreException e) {
 			e.printStackTrace();
@@ -286,7 +293,11 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 		return null;
 	}
 
-	// ---------------------------------------------------------------
+	private IFile getFile() {
+        return ResourcesPlugin.getWorkspace()
+            .getRoot()
+            .getFile(new Path("/project/file.txt"));
+    }
 
 		/**
 		 * Gets the splash.
