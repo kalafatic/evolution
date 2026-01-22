@@ -15,6 +15,10 @@
             name="Git Commit"
             id="eu.kalafatic.evolution.controller.gitCommitCommand">
       </command>
+      <command
+            name="Orchestrate"
+            id="eu.kalafatic.evolution.controller.orchestrationCommand">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -29,6 +33,10 @@
       <handler
             commandId="eu.kalafatic.evolution.controller.gitCommitCommand"
             class="eu.kalafatic.evolution.controller.GitCommitCommandHandler">
+      </handler>
+      <handler
+            commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
+            class="eu.kalafatic.evolution.controller.OrchestrationCommandHandler">
       </handler>
    </extension>
 </plugin>
