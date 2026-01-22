@@ -141,6 +141,11 @@
                   label="Save Evo Tasks"
                   style="push">
             </command>
+            <command
+                  commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
+                  label="Orchestrate"
+                  style="push">
+            </command>
             <separator
                   name="org.eclipse.ui.ide.file"
                   visible="true">
