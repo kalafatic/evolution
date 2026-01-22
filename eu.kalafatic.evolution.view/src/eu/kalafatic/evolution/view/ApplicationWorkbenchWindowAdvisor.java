@@ -165,7 +165,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 
 	@Override
 	public void postWindowOpen() {
-		//super.postWindowOpen();
+		super.postWindowOpen();
 
 		//window = getWindowConfigurer().getWindow();
 
@@ -185,14 +185,17 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 //		AppUtils.getInstance().createProject(Platform.getProduct().getName());
 		//initListeners();
 //		setUpPreferences();
+		
+		createProject(Platform.getProduct().getName());
+		openMultiPageEditor();
 
-		Display.getDefault().asyncExec(new Runnable() {
-			@Override
-			public void run() {
-				createProject(Platform.getProduct().getName());
-				openMultiPageEditor();
-			}
-		});
+//		Display.getDefault().asyncExec(new Runnable() {
+//			@Override
+//			public void run() {
+//				createProject(Platform.getProduct().getName());
+//				openMultiPageEditor();
+//			}
+//		});
 	}
 /*
 		 * (non-Javadoc)

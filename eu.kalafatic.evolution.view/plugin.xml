@@ -3,7 +3,7 @@
 <plugin>
 
    <extension
-         id="application"
+         id="eu.kalafatic.evolution.view.application"
          point="org.eclipse.core.runtime.applications">
       <application>
          <run
@@ -21,7 +21,7 @@
       </perspective>
    </extension>
    <extension
-         id="product"
+         id="eu.kalafatic.evolution.view.product"
          point="org.eclipse.core.runtime.products">
       <product
             name="AI Evolution"
