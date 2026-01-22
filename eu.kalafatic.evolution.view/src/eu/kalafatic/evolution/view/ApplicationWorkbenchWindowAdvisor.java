@@ -190,7 +190,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 			@Override
 			public void run() {
 				createProject(Platform.getProduct().getName());
-
+				openMultiPageEditor();
 			}
 		});
 	}
@@ -283,10 +283,49 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 				.getFile(fileName);
 	}
 
-		/**
-		 * Gets the splash.
-		 * @return the splash
-		 */
+	private void openMultiPageEditor() {
+		try {
+			final String testProjectName = "TestProject";
+			final String fileName = "Test.xml";
+
+			IWorkspace workspace = ResourcesPlugin.getWorkspace();
+			IWorkspaceRoot root = workspace.getRoot();
+			IProject project = root.getProject(testProjectName);
+
+			if (!project.exists()) {
+				project.create(null);
+			}
+			if (!project.isOpen()) {
+				project.open(null);
+			}
+
+			IFile file = project.getFile(fileName);
+			if (!file.exists()) {
+				String content = "<root>\n</root>";
+				InputStream source = new ByteArrayInputStream(content.getBytes());
+				file.create(source, IResource.NONE, null);
+			}
+
+			IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+			IWorkbenchPage page = window.getActivePage();
+
+			try {
+				page.openEditor(
+						new FileEditorInput(file),
+						"eu.kalafatic.evolution.view.editors.MultiPageEditor"
+				);
+			} catch (PartInitException e) {
+				e.printStackTrace();
+			}
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Gets the splash.
+	 * @return the splash
+	 */
 		@SuppressWarnings({ "unused" })
 		private EclipseSplashHandler getSplash() {
 			if (splash == null) {
