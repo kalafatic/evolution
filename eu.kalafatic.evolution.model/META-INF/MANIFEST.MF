@@ -7,10 +7,10 @@ Bundle-ClassPath: .
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
 Automatic-Module-Name: eu.kalafatic.evolution.model
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
-Export-Package: orchestration,
- orchestration.impl,
- orchestration.util
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Export-Package: eu.kalafatic.evolution.model.orchestration,
+ eu.kalafatic.evolution.model.orchestration.impl,
+ eu.kalafatic.evolution.model.orchestration.util
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.emf.ecore;visibility:=reexport
 Bundle-ActivationPolicy: lazy

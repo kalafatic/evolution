@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?>
+<target name="platform">
+<locations>
+    <location includeAllPlatforms="true" type="InstallableUnit">
+      <repository location="https://download.eclipse.org/releases/2025-12"/>      
+      <!-- Core platform for Tycho builds -->
+      <unit id="org.eclipse.sdk.ide"/>
+      <!-- SWT/UI bundles -->
+      <unit id="org.eclipse.swt"/>
+      <unit id="org.eclipse.ui"/>
+      <unit id="org.eclipse.ui.browser"/>
+      <!-- Data Binding bundles -->
+      <unit id="org.eclipse.core.databinding"/>
+      <unit id="org.eclipse.core.databinding.beans"/>
+      <unit id="org.eclipse.core.databinding.observable"/>
+      <unit id="org.eclipse.core.databinding.property"/>
+      <unit id="org.eclipse.jface.databinding"/>
+      <unit id="org.eclipse.jface.databinding.swt"/>
+    </location>
+  </locations>
+	<environment>
+		<os>win32</os>
+		<arch>x86_64</arch>
+		<ws>win32</ws>
+	</environment>
+</target>

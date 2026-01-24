@@ -2,10 +2,11 @@
 <genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
     xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel" modelDirectory="/eu.kalafatic.evolution.model/src" modelPluginID="eu.kalafatic.evolution.model"
     modelName="Evolution" rootExtendsClass="org.eclipse.emf.ecore.impl.MinimalEObjectImpl$Container"
-    importerID="org.eclipse.emf.importer.ecore" complianceLevel="5.0" copyrightFields="false"
+    importerID="org.eclipse.emf.importer.ecore" complianceLevel="21.0" copyrightFields="false"
     operationReflection="true" importOrganizing="true">
-  <foreignModel>file:/home/petr/git/evolution/evolution.ecore</foreignModel>
-  <genPackages prefix="Orchestration" disposableProviderFactory="true" ecorePackage="evolution.ecore#/">
+  <foreignModel>evolution.ecore</foreignModel>
+  <genPackages prefix="Orchestration" basePackage="eu.kalafatic.evolution.model" disposableProviderFactory="true"
+      ecorePackage="evolution.ecore#/">
     <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//TaskStatus">
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/PENDING"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/RUNNING"/>
@@ -34,7 +35,7 @@
     <genClasses ecoreClass="evolution.ecore#//Orchestrator">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/id"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/name"/>
-      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/agents"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/agents"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/git"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/maven"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/llm"/>

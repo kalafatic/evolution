@@ -3,7 +3,10 @@ package eu.kalafatic.evolution.view;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
-import orchestration.Task;
+import eu.kalafatic.evolution.model.orchestration.Task;
+
+
+
 
 public class TaskContentProvider implements ITreeContentProvider {
 

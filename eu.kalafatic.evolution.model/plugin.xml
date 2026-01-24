@@ -10,7 +10,7 @@
       <!-- @generated evolution -->
       <package
             uri="http://example.com/orchestration"
-            class="orchestration.OrchestrationPackage"
+            class="eu.kalafatic.evolution.model.orchestration.OrchestrationPackage"
             genModel="model/evolution.genmodel"/>
    </extension>
 

@@ -19,6 +19,8 @@ import org.eclipse.ui.handlers.HandlerUtil;
 
 import eu.kalafatic.evolution.view.PropertiesView;
 
+//import eu.kalafatic.evolution.view.PropertiesView;
+
 public class GitCommitCommandHandler extends AbstractHandler {
 
     @Override

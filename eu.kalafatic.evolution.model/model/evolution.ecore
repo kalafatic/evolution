@@ -1,88 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ecore:EPackage
-    xmi:version="2.0"
-    xmlns:xmi="http://www.omg.org/XMI"
-    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
-    name="orchestration"
-    nsURI="http://example.com/orchestration"
-    nsPrefix="orchestration">
-
-  <!-- Enum: TaskStatus -->
-  <eClassifiers xsi:type="ecore:EEnum" name="TaskStatus" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="orchestration" nsURI="http://example.com/orchestration" nsPrefix="orchestration">
+  <eClassifiers xsi:type="ecore:EEnum" name="TaskStatus">
     <eLiterals name="PENDING"/>
     <eLiterals name="RUNNING"/>
     <eLiterals name="DONE"/>
     <eLiterals name="FAILED"/>
   </eClassifiers>
-
-  <!-- Task class -->
   <eClassifiers xsi:type="ecore:EClass" name="Task">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//TaskStatus"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="next" upperBound="-1" eType="#//Task"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="subTasks" upperBound="-1"
-        eType="#//Task"
-        containment="true"/>
+        eType="#//Task" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="response" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
-
-  <!-- Agent class -->
   <eClassifiers xsi:type="ecore:EClass" name="Agent">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1" eType="#//Task"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1"
+        eType="#//Task"/>
   </eClassifiers>
-
-  <!-- Orchestrator class -->
   <eClassifiers xsi:type="ecore:EClass" name="Orchestrator">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="agents" upperBound="-1" eType="#//Agent" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="agents" upperBound="-1"
+        eType="#//Agent" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="git" eType="#//Git" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="maven" eType="#//Maven" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="maven" eType="#//Maven"
+        containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="llm" eType="#//LLM" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="compiler" eType="#//Compiler" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="compiler" eType="#//Compiler"
+        containment="true"/>
   </eClassifiers>
-
-  <!-- Git class -->
   <eClassifiers xsi:type="ecore:EClass" name="Git">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="repositoryUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="branch" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="username" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="localPath" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
-
-  <!-- Maven class -->
   <eClassifiers xsi:type="ecore:EClass" name="Maven">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="goals" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" upperBound="-1"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="profiles" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" upperBound="-1"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="goals" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="profiles" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
-
-  <!-- LLM class -->
   <eClassifiers xsi:type="ecore:EClass" name="LLM">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="model" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="temperature" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat"/>
   </eClassifiers>
-
-  <!-- Compiler class -->
   <eClassifiers xsi:type="ecore:EClass" name="Compiler">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
-
-  <!-- Enum: CommandStatus -->
-  <eClassifiers xsi:type="ecore:EEnum" name="CommandStatus" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <eClassifiers xsi:type="ecore:EEnum" name="CommandStatus">
     <eLiterals name="PENDING"/>
     <eLiterals name="RUNNING"/>
     <eLiterals name="COMPLETED"/>
     <eLiterals name="FAILED"/>
   </eClassifiers>
-
-  <!-- Command class -->
   <eClassifiers xsi:type="ecore:EClass" name="Command">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//CommandStatus"/>
   </eClassifiers>
-
 </ecore:EPackage>

@@ -2,11 +2,11 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>eu.kalafatic.evolution</groupId>
-        <artifactId>eu.kalafatic.evolution.parent</artifactId>
+    <parent>       
+        <artifactId>eu.kalafatic.evolution.view</artifactId>
         <version>2.6.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
+        <groupId>eu.kalafatic.evolution</groupId>
     </parent>
     <artifactId>eu.kalafatic.evolution.model</artifactId>
     <packaging>eclipse-plugin</packaging>
@@ -29,6 +29,8 @@
       </plugin>
     </plugins>
   </build>
+
+
   <repositories>
    <repository>
       <id>eclipse-release</id>
@@ -36,4 +38,8 @@
       <layout>p2</layout>
    </repository>
 </repositories>
+<dependencies>
+
+</dependencies>
+	<groupId>eu.kalafatic.evolution</groupId>
 </project>
