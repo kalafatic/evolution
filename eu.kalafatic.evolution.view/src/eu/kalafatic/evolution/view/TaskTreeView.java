@@ -7,8 +7,8 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.ViewPart;
 
-import orchestration.Task;
-import orchestration.TaskStatus;
+import eu.kalafatic.evolution.model.orchestration.Task;
+
 
 public class TaskTreeView extends ViewPart {
 
