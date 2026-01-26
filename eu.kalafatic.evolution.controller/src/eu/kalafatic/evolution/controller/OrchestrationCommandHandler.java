@@ -21,7 +21,11 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class OrchestrationCommandHandler extends AbstractHandler {
@@ -166,5 +170,27 @@ public class OrchestrationCommandHandler extends AbstractHandler {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         JSONObject jsonResponse = new JSONObject(response.body());
         return jsonResponse.getString("solution");
+    }
+
+    public String[] getOllamaModels() {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:11434/api/tags"))
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            JSONObject jsonResponse = new JSONObject(response.body());
+            JSONArray models = jsonResponse.getJSONArray("models");
+            List<String> modelNames = new ArrayList<>();
+            for (int i = 0; i < models.length(); i++) {
+                modelNames.add(models.getJSONObject(i).getString("name"));
+            }
+            return modelNames.toArray(new String[0]);
+        } catch (Exception e) {
+            Display.getDefault().asyncExec(() -> {
+                MessageDialog.openError(null, "Ollama API Error", "Failed to get models from Ollama API: " + e.getMessage());
+            });
+            return new String[0];
+        }
     }
 }

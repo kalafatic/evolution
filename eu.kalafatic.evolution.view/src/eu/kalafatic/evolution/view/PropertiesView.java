@@ -26,10 +26,18 @@ import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.TreeViewer;
+import eu.kalafatic.evolution.controller.OrchestrationCommandHandler;
+import org.eclipse.jface.viewers.ComboBoxCellEditor;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.ViewPart;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.swt.widgets.Display;
 
 public class PropertiesView extends ViewPart {
 
@@ -37,6 +45,8 @@ public class PropertiesView extends ViewPart {
     private TreeViewer viewer;
     private EditingDomain editingDomain;
     private EObject rootObject;
+    private OrchestrationCommandHandler orchestrationCommandHandler;
+    private String[] ollamaModels;
 
     // Wrapper class to associate an attribute with its owner instance
     class PropertyDescriptor {
@@ -108,6 +118,19 @@ public class PropertiesView extends ViewPart {
         AdapterFactory adapterFactory = new ComposedAdapterFactory(ComposedAdapterFactory.Descriptor.Registry.INSTANCE);
         BasicCommandStack commandStack = new BasicCommandStack();
         editingDomain = new AdapterFactoryEditingDomain(adapterFactory, commandStack);
+        orchestrationCommandHandler = new OrchestrationCommandHandler();
+
+        Job job = new Job("Fetching Ollama Models") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                ollamaModels = orchestrationCommandHandler.getOllamaModels();
+                Display.getDefault().asyncExec(() -> {
+                    viewer.refresh();
+                });
+                return Status.OK_STATUS;
+            }
+        };
+        job.schedule();
 
         // Load model and create an instance to edit
         ResourceSet resourceSet = editingDomain.getResourceSet();
@@ -210,12 +233,28 @@ public class PropertiesView extends ViewPart {
 
         @Override
         protected CellEditor getCellEditor(Object element) {
+		// This is a temporary solution. We should refactor this to avoid a direct dependency from the view to the controller.
+            if (element instanceof PropertyDescriptor) {
+                PropertyDescriptor desc = (PropertyDescriptor) element;
+                if (desc.owner.eClass() == OrchestrationPackage.Literals.LLM && desc.attribute == OrchestrationPackage.Literals.LLM__MODEL && ollamaModels != null && ollamaModels.length > 0) {
+                    return new ComboBoxCellEditor(viewer.getTree(), ollamaModels, SWT.READ_ONLY);
+                }
+            }
             return new TextCellEditor(viewer.getTree());
         }
 
         @Override
         protected Object getValue(Object element) {
             PropertyDescriptor desc = (PropertyDescriptor) element;
+            if (desc.owner.eClass() == OrchestrationPackage.Literals.LLM && desc.attribute == OrchestrationPackage.Literals.LLM__MODEL && ollamaModels != null && ollamaModels.length > 0) {
+                String model = (String) desc.owner.eGet(desc.attribute);
+                for (int i = 0; i < ollamaModels.length; i++) {
+                    if (ollamaModels[i].equals(model)) {
+                        return i;
+                    }
+                }
+                return 0;
+            }
             Object value = desc.owner.eGet(desc.attribute);
             return value != null ? value.toString() : "";
         }
@@ -223,6 +262,9 @@ public class PropertiesView extends ViewPart {
         @Override
         protected void setValue(Object element, Object value) {
             PropertyDescriptor desc = (PropertyDescriptor) element;
+            if (desc.owner.eClass() == OrchestrationPackage.Literals.LLM && desc.attribute == OrchestrationPackage.Literals.LLM__MODEL && ollamaModels != null && ollamaModels.length > 0) {
+                value = ollamaModels[(int) value];
+            }
             Command command = SetCommand.create(editingDomain, desc.owner, desc.attribute, value);
             editingDomain.getCommandStack().execute(command);
             viewer.update(element, null);
