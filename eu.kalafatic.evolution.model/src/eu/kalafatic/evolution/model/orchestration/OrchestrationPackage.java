@@ -268,13 +268,31 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__COMPILER = 6;
 
 	/**
+	 * The feature id for the '<em><b>Ollama</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__OLLAMA = 7;
+
+	/**
+	 * The feature id for the '<em><b>Ai Chat</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__AI_CHAT = 8;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 7;
+	int ORCHESTRATOR_FEATURE_COUNT = 9;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -534,6 +552,116 @@ public interface OrchestrationPackage extends EPackage {
 	int COMMAND_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl <em>Ollama</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getOllama()
+	 * @generated
+	 */
+	int OLLAMA = 8;
+
+	/**
+	 * The feature id for the '<em><b>Url</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int OLLAMA__URL = 0;
+
+	/**
+	 * The feature id for the '<em><b>Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int OLLAMA__MODEL = 1;
+
+	/**
+	 * The feature id for the '<em><b>Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int OLLAMA__PATH = 2;
+
+	/**
+	 * The number of structural features of the '<em>Ollama</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int OLLAMA_FEATURE_COUNT = 3;
+
+	/**
+	 * The number of operations of the '<em>Ollama</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int OLLAMA_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl <em>Ai Chat</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiChat()
+	 * @generated
+	 */
+	int AI_CHAT = 9;
+
+	/**
+	 * The feature id for the '<em><b>Url</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AI_CHAT__URL = 0;
+
+	/**
+	 * The feature id for the '<em><b>Token</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AI_CHAT__TOKEN = 1;
+
+	/**
+	 * The feature id for the '<em><b>Prompt</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AI_CHAT__PROMPT = 2;
+
+	/**
+	 * The number of structural features of the '<em>Ai Chat</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AI_CHAT_FEATURE_COUNT = 3;
+
+	/**
+	 * The number of operations of the '<em>Ai Chat</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AI_CHAT_OPERATION_COUNT = 0;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -541,7 +669,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
 	 * @generated
 	 */
-	int TASK_STATUS = 8;
+	int TASK_STATUS = 10;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
@@ -551,7 +679,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
 	 * @generated
 	 */
-	int COMMAND_STATUS = 9;
+	int COMMAND_STATUS = 11;
 
 
 	/**
@@ -761,6 +889,28 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_Compiler();
 
 	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOllama <em>Ollama</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Ollama</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getOllama()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_Ollama();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiChat <em>Ai Chat</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Ai Chat</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiChat()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_AiChat();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Git <em>Git</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -941,6 +1091,92 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getCommand_Status();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Ollama <em>Ollama</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Ollama</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Ollama
+	 * @generated
+	 */
+	EClass getOllama();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Ollama#getUrl <em>Url</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Url</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Ollama#getUrl()
+	 * @see #getOllama()
+	 * @generated
+	 */
+	EAttribute getOllama_Url();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Ollama#getModel <em>Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Ollama#getModel()
+	 * @see #getOllama()
+	 * @generated
+	 */
+	EAttribute getOllama_Model();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Ollama#getPath <em>Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Ollama#getPath()
+	 * @see #getOllama()
+	 * @generated
+	 */
+	EAttribute getOllama_Path();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.AiChat <em>Ai Chat</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Ai Chat</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiChat
+	 * @generated
+	 */
+	EClass getAiChat();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getUrl <em>Url</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Url</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiChat#getUrl()
+	 * @see #getAiChat()
+	 * @generated
+	 */
+	EAttribute getAiChat_Url();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getToken <em>Token</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Token</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiChat#getToken()
+	 * @see #getAiChat()
+	 * @generated
+	 */
+	EAttribute getAiChat_Token();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPrompt <em>Prompt</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Prompt</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiChat#getPrompt()
+	 * @see #getAiChat()
+	 * @generated
+	 */
+	EAttribute getAiChat_Prompt();
 
 	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
@@ -1144,6 +1380,22 @@ public interface OrchestrationPackage extends EPackage {
 		EReference ORCHESTRATOR__COMPILER = eINSTANCE.getOrchestrator_Compiler();
 
 		/**
+		 * The meta object literal for the '<em><b>Ollama</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__OLLAMA = eINSTANCE.getOrchestrator_Ollama();
+
+		/**
+		 * The meta object literal for the '<em><b>Ai Chat</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__AI_CHAT = eINSTANCE.getOrchestrator_AiChat();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl <em>Git</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -1288,6 +1540,74 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute COMMAND__STATUS = eINSTANCE.getCommand_Status();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl <em>Ollama</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getOllama()
+		 * @generated
+		 */
+		EClass OLLAMA = eINSTANCE.getOllama();
+
+		/**
+		 * The meta object literal for the '<em><b>Url</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute OLLAMA__URL = eINSTANCE.getOllama_Url();
+
+		/**
+		 * The meta object literal for the '<em><b>Model</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute OLLAMA__MODEL = eINSTANCE.getOllama_Model();
+
+		/**
+		 * The meta object literal for the '<em><b>Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute OLLAMA__PATH = eINSTANCE.getOllama_Path();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl <em>Ai Chat</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiChat()
+		 * @generated
+		 */
+		EClass AI_CHAT = eINSTANCE.getAiChat();
+
+		/**
+		 * The meta object literal for the '<em><b>Url</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_CHAT__URL = eINSTANCE.getAiChat_Url();
+
+		/**
+		 * The meta object literal for the '<em><b>Token</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_CHAT__TOKEN = eINSTANCE.getAiChat_Token();
+
+		/**
+		 * The meta object literal for the '<em><b>Prompt</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_CHAT__PROMPT = eINSTANCE.getAiChat_Prompt();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
