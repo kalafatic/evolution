@@ -40,6 +40,8 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/maven"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/llm"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/compiler"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/ollama"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/aiChat"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Git">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Git/repositoryUrl"/>
@@ -62,6 +64,16 @@
     <genClasses ecoreClass="evolution.ecore#//Command">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Command/name"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Command/status"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//Ollama">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Ollama/url"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Ollama/model"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Ollama/path"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//AiChat">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/url"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/token"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/prompt"/>
     </genClasses>
   </genPackages>
 </genmodel:GenModel>

@@ -120,6 +120,20 @@
       <menuContribution
             locationURI="menu:org.eclipse.ui.main.menu">
          <menu
+               id="setup"
+               label="Setup">
+            <command
+                  commandId="eu.kalafatic.evolution.view.setupOllama"
+                  label="Setup Ollama"
+                  style="push">
+            </command>
+            <command
+                  commandId="eu.kalafatic.evolution.view.setupOllamaModel"
+                  label="Setup Ollama Model"
+                  style="push">
+            </command>
+         </menu>
+         <menu
                id="file"
                label="File">
             <command
@@ -202,6 +216,16 @@
             id="eu.kalafatic.evolution.view.newEvoTaskWizard"
             name="New Evo Task">
       </wizard>
+      <wizard
+            class="eu.kalafatic.evolution.view.wizards.SetupOllamaWizard"
+            id="eu.kalafatic.evolution.view.setupOllamaWizard"
+            name="Setup Ollama">
+      </wizard>
+      <wizard
+            class="eu.kalafatic.evolution.view.wizards.SetupOllamaModelWizard"
+            id="eu.kalafatic.evolution.view.setupOllamaModelWizard"
+            name="Setup Ollama Model">
+      </wizard>
    </extension>
    <extension
          point="org.eclipse.ui.importWizards">
@@ -233,6 +257,14 @@
             id="eu.kalafatic.evolution.view.editTask"
             name="Edit Task">
       </command>
+      <command
+            id="eu.kalafatic.evolution.view.setupOllama"
+            name="Setup Ollama">
+      </command>
+      <command
+            id="eu.kalafatic.evolution.view.setupOllamaModel"
+            name="Setup Ollama Model">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -247,6 +279,14 @@
       <handler
             class="eu.kalafatic.evolution.view.handlers.EditTaskHandler"
             commandId="eu.kalafatic.evolution.view.editTask">
+      </handler>
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.SetupOllamaHandler"
+            commandId="eu.kalafatic.evolution.view.setupOllama">
+      </handler>
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.SetupOllamaModelHandler"
+            commandId="eu.kalafatic.evolution.view.setupOllamaModel">
       </handler>
    </extension>
 

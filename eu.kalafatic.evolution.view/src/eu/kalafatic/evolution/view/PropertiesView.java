@@ -33,6 +33,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.ViewPart;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -166,6 +168,12 @@ public class PropertiesView extends ViewPart {
 			EClass compilerClass = (EClass) ePackage.getEClassifier("Compiler");
 			EObject compilerObject = factory.create(compilerClass);
 			rootObject.eSet(orchestratorClass.getEStructuralFeature("compiler"), compilerObject);
+
+			// Create and set Ollama
+			if (rootObject instanceof Orchestrator) {
+				((Orchestrator) rootObject).setOllama(OrchestrationFactory.eINSTANCE.createOllama());
+				((Orchestrator) rootObject).setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+			}
 
             viewer.setInput(rootObject);
             viewer.expandAll();

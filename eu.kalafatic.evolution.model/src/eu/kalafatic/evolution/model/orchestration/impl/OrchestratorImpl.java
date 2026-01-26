@@ -3,9 +3,11 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
+import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -40,6 +42,8 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMaven <em>Maven</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getLlm <em>Llm</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getCompiler <em>Compiler</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getOllama <em>Ollama</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAiChat <em>Ai Chat</em>}</li>
  * </ul>
  *
  * @generated
@@ -136,12 +140,122 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected eu.kalafatic.evolution.model.orchestration.Compiler compiler;
 
 	/**
+	 * The cached value of the '{@link #getOllama() <em>Ollama</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getOllama()
+	 * @generated
+	 * @ordered
+	 */
+	protected Ollama ollama;
+
+	/**
+	 * The cached value of the '{@link #getAiChat() <em>Ai Chat</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAiChat()
+	 * @generated
+	 * @ordered
+	 */
+	protected AiChat aiChat;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	protected OrchestratorImpl() {
 		super();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Ollama getOllama() {
+		return ollama;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetOllama(Ollama newOllama, NotificationChain msgs) {
+		Ollama oldOllama = ollama;
+		ollama = newOllama;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OLLAMA, oldOllama, newOllama);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setOllama(Ollama newOllama) {
+		if (newOllama != ollama) {
+			NotificationChain msgs = null;
+			if (ollama != null)
+				msgs = ((InternalEObject)ollama).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__OLLAMA, null, msgs);
+			if (newOllama != null)
+				msgs = ((InternalEObject)newOllama).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__OLLAMA, null, msgs);
+			msgs = basicSetOllama(newOllama, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OLLAMA, newOllama, newOllama));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public AiChat getAiChat() {
+		return aiChat;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetAiChat(AiChat newAiChat, NotificationChain msgs) {
+		AiChat oldAiChat = aiChat;
+		aiChat = newAiChat;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_CHAT, oldAiChat, newAiChat);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAiChat(AiChat newAiChat) {
+		if (newAiChat != aiChat) {
+			NotificationChain msgs = null;
+			if (aiChat != null)
+				msgs = ((InternalEObject)aiChat).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__AI_CHAT, null, msgs);
+			if (newAiChat != null)
+				msgs = ((InternalEObject)newAiChat).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__AI_CHAT, null, msgs);
+			msgs = basicSetAiChat(newAiChat, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_CHAT, newAiChat, newAiChat));
 	}
 
 	/**
@@ -411,6 +525,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return basicSetLlm(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__COMPILER:
 				return basicSetCompiler(null, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__OLLAMA:
+				return basicSetOllama(null, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
+				return basicSetAiChat(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -437,6 +555,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getLlm();
 			case OrchestrationPackage.ORCHESTRATOR__COMPILER:
 				return getCompiler();
+			case OrchestrationPackage.ORCHESTRATOR__OLLAMA:
+				return getOllama();
+			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
+				return getAiChat();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -472,6 +594,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__COMPILER:
 				setCompiler((eu.kalafatic.evolution.model.orchestration.Compiler)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__OLLAMA:
+				setOllama((Ollama)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
+				setAiChat((AiChat)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -505,6 +633,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__COMPILER:
 				setCompiler((eu.kalafatic.evolution.model.orchestration.Compiler)null);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__OLLAMA:
+				setOllama((Ollama)null);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
+				setAiChat((AiChat)null);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -531,6 +665,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return llm != null;
 			case OrchestrationPackage.ORCHESTRATOR__COMPILER:
 				return compiler != null;
+			case OrchestrationPackage.ORCHESTRATOR__OLLAMA:
+				return ollama != null;
+			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
+				return aiChat != null;
 		}
 		return super.eIsSet(featureID);
 	}

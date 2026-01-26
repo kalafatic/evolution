@@ -22,6 +22,8 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMaven <em>Maven</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getLlm <em>Llm</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getCompiler <em>Compiler</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOllama <em>Ollama</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiChat <em>Ai Chat</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator()
@@ -172,5 +174,49 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	void setCompiler(eu.kalafatic.evolution.model.orchestration.Compiler value);
+
+	/**
+	 * Returns the value of the '<em><b>Ollama</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Ollama</em>' containment reference.
+	 * @see #setOllama(Ollama)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_Ollama()
+	 * @model containment="true"
+	 * @generated
+	 */
+	Ollama getOllama();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOllama <em>Ollama</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Ollama</em>' containment reference.
+	 * @see #getOllama()
+	 * @generated
+	 */
+	void setOllama(Ollama value);
+
+	/**
+	 * Returns the value of the '<em><b>Ai Chat</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Ai Chat</em>' containment reference.
+	 * @see #setAiChat(AiChat)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_AiChat()
+	 * @model containment="true"
+	 * @generated
+	 */
+	AiChat getAiChat();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiChat <em>Ai Chat</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Ai Chat</em>' containment reference.
+	 * @see #getAiChat()
+	 * @generated
+	 */
+	void setAiChat(AiChat value);
 
 } // Orchestrator

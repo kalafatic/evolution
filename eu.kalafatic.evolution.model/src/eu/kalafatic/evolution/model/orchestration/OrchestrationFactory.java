@@ -94,6 +94,24 @@ public interface OrchestrationFactory extends EFactory {
 	Command createCommand();
 
 	/**
+	 * Returns a new object of class '<em>Ollama</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Ollama</em>'.
+	 * @generated
+	 */
+	Ollama createOllama();
+
+	/**
+	 * Returns a new object of class '<em>Ai Chat</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Ai Chat</em>'.
+	 * @generated
+	 */
+	AiChat createAiChat();
+
+	/**
 	 * Returns the package supported by this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
