@@ -85,5 +85,11 @@
 			<type>maven-plugin</type>
 		</dependency>
 		
+		<dependency>
+			<groupId>eu.kalafatic.utils</groupId>
+			<artifactId>eu.kalafatic.utils.feature</artifactId>
+			<version>2.6.1-SNAPSHOT</version>
+		</dependency>
+		
 	</dependencies>
 </project>
