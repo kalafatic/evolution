@@ -5,7 +5,9 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 
-import orchestration.Task;
+import eu.kalafatic.evolution.model.orchestration.Task;
+
+
 
 public class TaskLabelProvider extends LabelProvider {
 

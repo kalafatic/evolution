@@ -24,9 +24,9 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONArray;
+
 
 public class OrchestrationCommandHandler extends AbstractHandler {
 

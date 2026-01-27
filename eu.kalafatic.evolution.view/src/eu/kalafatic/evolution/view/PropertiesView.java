@@ -4,6 +4,14 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Objects;
 
+import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.commands.NotEnabledException;
+import org.eclipse.core.commands.NotHandledException;
+import org.eclipse.core.commands.common.NotDefinedException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.common.command.BasicCommandStack;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.notify.AdapterFactory;
@@ -15,31 +23,28 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.edit.command.SetCommand;
 import org.eclipse.emf.edit.domain.AdapterFactoryEditingDomain;
 import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.emf.edit.provider.ComposedAdapterFactory;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.ComboBoxCellEditor;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.TreeViewer;
-import eu.kalafatic.evolution.controller.OrchestrationCommandHandler;
-import org.eclipse.jface.viewers.ComboBoxCellEditor;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.ui.part.ViewPart;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.handlers.IHandlerService;
+import org.eclipse.ui.part.ViewPart;
+
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class PropertiesView extends ViewPart {
 
@@ -47,7 +52,7 @@ public class PropertiesView extends ViewPart {
     private TreeViewer viewer;
     private EditingDomain editingDomain;
     private EObject rootObject;
-    private OrchestrationCommandHandler orchestrationCommandHandler;
+   
     private String[] ollamaModels;
 
     // Wrapper class to associate an attribute with its owner instance
@@ -81,6 +86,9 @@ public class PropertiesView extends ViewPart {
         viewer.getTree().setHeaderVisible(true);
         viewer.getTree().setLinesVisible(true);
         viewer.setContentProvider(new PropertiesContentProvider());
+        
+        // HERE you can use getViewSite()
+        IViewSite iViewSite = getViewSite();
 
         // Property Name Column
         TreeViewerColumn propColumn = new TreeViewerColumn(viewer, SWT.LEFT);
@@ -120,12 +128,20 @@ public class PropertiesView extends ViewPart {
         AdapterFactory adapterFactory = new ComposedAdapterFactory(ComposedAdapterFactory.Descriptor.Registry.INSTANCE);
         BasicCommandStack commandStack = new BasicCommandStack();
         editingDomain = new AdapterFactoryEditingDomain(adapterFactory, commandStack);
-        orchestrationCommandHandler = new OrchestrationCommandHandler();
+
 
         Job job = new Job("Fetching Ollama Models") {
             @Override
             protected IStatus run(IProgressMonitor monitor) {
-                ollamaModels = orchestrationCommandHandler.getOllamaModels();
+             
+                IHandlerService hs = iViewSite.getService(IHandlerService.class);
+                try {
+					hs.executeCommand("eu.kalafatic.evolution.controller.orchestrationCommand", null);
+				} catch (ExecutionException | NotDefinedException | NotEnabledException | NotHandledException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+                
                 Display.getDefault().asyncExec(() -> {
                     viewer.refresh();
                 });

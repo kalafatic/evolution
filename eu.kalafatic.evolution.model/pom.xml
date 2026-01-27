@@ -1,45 +1,42 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>       
-        <artifactId>eu.kalafatic.evolution.view</artifactId>
-        <version>2.6.1-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-        <groupId>eu.kalafatic.evolution</groupId>
-    </parent>
-    <artifactId>eu.kalafatic.evolution.model</artifactId>
-    <packaging>eclipse-plugin</packaging>
- <build>
-    <sourceDirectory>src</sourceDirectory>
-    <extensions>
-      <extension>
-        <groupId>org.eclipse.tycho</groupId>
-        <artifactId>tycho-maven-plugin</artifactId>
-        <version>4.0.5</version>
-      </extension>
-    </extensions>
-    <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.13.0</version>
-        <configuration>
-          <release>21</release>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-
-
-  <repositories>
-   <repository>
-      <id>eclipse-release</id>
-      <url>https://download.eclipse.org/releases/2025-12</url> <!-- Match your Eclipse version -->
-      <layout>p2</layout>
-   </repository>
-</repositories>
-<dependencies>
-
-</dependencies>
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<version>2.6.1-SNAPSHOT</version>
 	<groupId>eu.kalafatic.evolution</groupId>
+	<artifactId>eu.kalafatic.evolution.model</artifactId>
+
+	<packaging>eclipse-plugin</packaging>
+
+	<build>
+		<sourceDirectory>src</sourceDirectory>
+		<extensions>
+			<extension>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-maven-plugin</artifactId>
+				<version>4.0.5</version>
+			</extension>
+		</extensions>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.13.0</version>
+				<configuration>
+					<release>21</release>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+
+	<repositories>
+		<repository>
+			<id>eclipse-release</id>
+			<url>https://download.eclipse.org/releases/2025-12</url> <!-- Match
+			your Eclipse version -->
+			<layout>p2</layout>
+		</repository>
+	</repositories>
+
 </project>

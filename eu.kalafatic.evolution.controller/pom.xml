@@ -2,17 +2,14 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>eu.kalafatic.evolution</groupId>
-		<artifactId>eu.kalafatic.evolution.view</artifactId>
-		<version>2.6.1-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
-	</parent>
+	<groupId>eu.kalafatic.evolution</groupId>
+	<version>2.6.1-SNAPSHOT</version>
 	<artifactId>eu.kalafatic.evolution.controller</artifactId>
-	<packaging>eclipse-plugin</packaging>
+
+	<packaging>maven-plugin</packaging>
 	<properties>
-		<tycho.targetPlatform>platform</tycho.targetPlatform>
-		<tycho.version>4.0.5</tycho.version>
+		 <tycho.targetPlatform>target-platform</tycho.targetPlatform>
+		
 	</properties>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -92,19 +89,23 @@
 			<layout>p2</layout>
 			<url>https://download.eclipse.org/releases/2025-12</url>
 		</repository>
+		
+		<repository>
+			<id>mvn</id>
+			<layout>p2</layout>
+			<url>https://mvnrepository.com/artifact/org.eclipse.orbit.bundles</url>
+		</repository>
+
+		<repository>
+			<id>orbit-simrel</id>
+			<layout>p2</layout>
+			<url>
+				https://download.eclipse.org/tools/orbit/downloads/latest-R/repository/</url>
+		</repository>
+
 	</repositories>
 
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.json</groupId>
-				<artifactId>json</artifactId>
-				<version>20240303</version>
-				<scope>compile</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<dependencies>
 
@@ -119,14 +120,20 @@
 			<artifactId>eu.kalafatic.utils</artifactId>
 			<version>2.6.1-SNAPSHOT</version>
 		</dependency>
+		
 
+		<!-- Source:
+		https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api -->
 		<dependency>
-			<groupId>org.json</groupId>
-			<artifactId>json</artifactId>
-			<version>20240303</version>
+			<groupId>jakarta.validation</groupId>
+			<artifactId>jakarta.validation-api</artifactId>
+			<version>4.0.0-M1</version>
+			<scope>compile</scope>
 		</dependency>
+
+
+		<!-- Source: https://mvnrepository.com/artifact/org.json/json -->
 
 	</dependencies>
 
-	<groupId>eu.kalafatic.evolution</groupId>
 </project>

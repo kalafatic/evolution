@@ -264,7 +264,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 			try {
 				page.openEditor(
 						new FileEditorInput(file),
-						"orchestration.presentation.OrchestrationEditorID"
+						"eu.kalafatic.evolution.model.orchestration.presentation.OrchestrationEditorID"
 				);
 			} catch (PartInitException e) {
 				e.printStackTrace();
