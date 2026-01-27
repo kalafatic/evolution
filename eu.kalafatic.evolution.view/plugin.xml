@@ -202,6 +202,38 @@
                style="push">
          </command>
       </menuContribution>
+      <menuContribution
+            locationURI="popup:eu.kalafatic.evolution.view.propertiesView">
+         <command
+               commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
+               label="Orchestrate"
+               style="push">
+         </command>
+         <command
+               commandId="eu.kalafatic.evolution.controller.mavenBuildCommand"
+               label="Maven Build"
+               style="push">
+         </command>
+         <command
+               commandId="eu.kalafatic.evolution.controller.gitCommitCommand"
+               label="Git Commit"
+               style="push">
+         </command>
+         <separator
+               name="saveSeparator"
+               visible="true">
+         </separator>
+         <command
+               commandId="eu.kalafatic.evolution.controller.saveCommand"
+               label="Save to File"
+               style="push">
+         </command>
+         <command
+               commandId="eu.kalafatic.evolution.view.saveEvoTasks"
+               label="Save Tasks"
+               style="push">
+         </command>
+      </menuContribution>
    </extension>
    <extension
          point="org.eclipse.ui.editors">
