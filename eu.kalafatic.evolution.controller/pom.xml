@@ -6,10 +6,10 @@
 	<version>2.6.1-SNAPSHOT</version>
 	<artifactId>eu.kalafatic.evolution.controller</artifactId>
 
-	<packaging>maven-plugin</packaging>
+	<packaging>eclipse-plugin</packaging>
 	<properties>
 		 <tycho.targetPlatform>target-platform</tycho.targetPlatform>
-		
+		 <tycho.version>4.0.5</tycho.version>
 	</properties>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -22,16 +22,6 @@
 			</resource>
 		</resources>
 
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.eclipse.tycho</groupId>
-					<artifactId>tycho-p2-director-plugin</artifactId>
-					<version>${tycho.version}</version>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-
 		<plugins>
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
@@ -39,101 +29,48 @@
 				<version>${tycho.version}</version>
 				<extensions>true</extensions>
 			</plugin>
-			<!--Enable the replacement of the SNAPSHOT version in the final product configuration-->
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-packaging-plugin</artifactId>
-				<version>${tycho.version}</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<id>package-feature</id>
-						<configuration>
-							<finalName>
-								${project.artifactId}_${unqualifiedVersion}.${buildQualifier}</finalName>
-						</configuration>
-					</execution>
-
-				</executions>
-			</plugin>
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
 				<artifactId>target-platform-configuration</artifactId>
 				<version>${tycho.version}</version>
 				<configuration>
 					<executionEnvironment>JavaSE-21</executionEnvironment>
+					<pomDependencies>consider</pomDependencies>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
+				<version>3.13.0</version>
 				<configuration>
-					<source>11</source>
-					<target>11</target>
+					<release>21</release>
 					<compilerArgs>
 						<arg>-Xlint:unchecked</arg>
-						<arg>--add-modules</arg>
-						<arg>org.json</arg>
 					</compilerArgs>
 				</configuration>
 			</plugin>
-
 		</plugins>
-
 	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20231013</version>
+		</dependency>
+	</dependencies>
+
 	<repositories>
 		<repository>
 			<id>eclipse</id>
 			<layout>p2</layout>
 			<url>https://download.eclipse.org/releases/2025-12</url>
 		</repository>
-		
 		<repository>
-			<id>mvn</id>
+			<id>orbit</id>
 			<layout>p2</layout>
-			<url>https://mvnrepository.com/artifact/org.eclipse.orbit.bundles</url>
+			<url>https://download.eclipse.org/tools/orbit/downloads/drops/R20230531010532/repository/</url>
 		</repository>
-
-		<repository>
-			<id>orbit-simrel</id>
-			<layout>p2</layout>
-			<url>
-				https://download.eclipse.org/tools/orbit/downloads/latest-R/repository/</url>
-		</repository>
-
 	</repositories>
-
-
-
-	<dependencies>
-
-		<dependency>
-			<groupId>eu.kalafatic.evolution</groupId>
-			<artifactId>eu.kalafatic.evolution.view</artifactId>
-			<version>2.6.1-SNAPSHOT</version>
-		</dependency>
-
-		<dependency>
-			<groupId>eu.kalafatic.utils</groupId>
-			<artifactId>eu.kalafatic.utils</artifactId>
-			<version>2.6.1-SNAPSHOT</version>
-		</dependency>
-		
-
-		<!-- Source:
-		https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api -->
-		<dependency>
-			<groupId>jakarta.validation</groupId>
-			<artifactId>jakarta.validation-api</artifactId>
-			<version>4.0.0-M1</version>
-			<scope>compile</scope>
-		</dependency>
-
-
-		<!-- Source: https://mvnrepository.com/artifact/org.json/json -->
-
-	</dependencies>
 
 </project>

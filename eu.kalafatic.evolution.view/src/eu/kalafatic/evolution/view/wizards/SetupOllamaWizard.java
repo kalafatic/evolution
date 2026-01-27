@@ -5,7 +5,6 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
-import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.swt.SWT;
@@ -18,11 +17,20 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.Path;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.jface.viewers.ISelection;
 
 public class SetupOllamaWizard extends Wizard implements INewWizard {
     private Orchestrator orchestrator;
@@ -41,17 +49,25 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
     @Override
     public void init(IWorkbench workbench, IStructuredSelection selection) {
         if (orchestrator == null) {
+            orchestrator = findOrchestrator(selection);
+        }
+        if (orchestrator == null) {
             IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
             if (window != null) {
-                IWorkbenchPage page = window.getActivePage();
-                if (page != null) {
-                    org.eclipse.ui.IViewPart view = page.findView(eu.kalafatic.evolution.view.PropertiesView.ID);
-                    if (view instanceof eu.kalafatic.evolution.view.PropertiesView) {
-                        orchestrator = (Orchestrator) ((eu.kalafatic.evolution.view.PropertiesView) view).getRootObject();
-                    }
-                }
+                ISelection serviceSelection = window.getSelectionService().getSelection("eu.kalafatic.evolution.view.propertiesView");
+                orchestrator = findOrchestrator(serviceSelection);
             }
         }
+    }
+
+    private Orchestrator findOrchestrator(ISelection selection) {
+        if (selection instanceof IStructuredSelection) {
+            Object first = ((IStructuredSelection) selection).getFirstElement();
+            if (first instanceof Orchestrator) {
+                return (Orchestrator) first;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -67,30 +83,63 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
             return false;
         }
         ollama.setUrl(page.getUrl());
-        ollama.setPath(page.getPath());
 
-        if (page.isDownloadRequested()) {
-            Job job = new Job("Downloading and Installing Ollama") {
+        String path = page.getPath();
+        if (page.isDownloadToWorkspaceRequested()) {
+            IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject("TestProject");
+            File workspaceOllama = project.getLocation().append("ollama_bin").toFile();
+            path = workspaceOllama.getAbsolutePath();
+        }
+        ollama.setPath(path);
+
+        if (page.isDownloadRequested() || page.isDownloadToWorkspaceRequested() || page.isRunRequested()) {
+            final boolean toWorkspace = page.isDownloadToWorkspaceRequested();
+            final boolean runAfter = page.isRunRequested();
+            final String finalPath = path;
+
+            Job job = new Job("Ollama Task") {
                 @Override
                 protected IStatus run(IProgressMonitor monitor) {
-                    monitor.beginTask("Installing Ollama", IProgressMonitor.UNKNOWN);
+                    monitor.beginTask("Ollama Setup", IProgressMonitor.UNKNOWN);
                     try {
-                        ProcessBuilder pb = new ProcessBuilder("sh", "-c", "curl -fsSL https://ollama.com/install.sh | sh");
-                        pb.redirectErrorStream(true);
-                        Process process = pb.start();
-                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                monitor.subTask(line);
-                                if (monitor.isCanceled()) {
-                                    process.destroy();
-                                    return Status.CANCEL_STATUS;
+                        if (toWorkspace && (page.isDownloadToWorkspaceRequested())) {
+                            IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject("TestProject");
+                            File binDir = project.getLocation().toFile();
+                            if (!binDir.exists()) binDir.mkdirs();
+                            File outputFile = new File(binDir, "ollama_bin");
+
+                            monitor.subTask("Downloading from ollama.com...");
+                            URL downloadUrl = new URL("https://ollama.com/download/ollama-linux-amd64");
+                            try (ReadableByteChannel rbc = Channels.newChannel(downloadUrl.openStream());
+                                 FileOutputStream fos = new FileOutputStream(outputFile)) {
+                                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                            }
+                            outputFile.setExecutable(true);
+                            monitor.subTask("Download complete: " + outputFile.getAbsolutePath());
+                        } else if (page.isDownloadRequested()) {
+                            monitor.subTask("Installing Ollama globally...");
+                            ProcessBuilder pb = new ProcessBuilder("sh", "-c", "curl -fsSL https://ollama.com/install.sh | sh");
+                            pb.redirectErrorStream(true);
+                            Process process = pb.start();
+                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                                String line;
+                                while ((line = reader.readLine()) != null) {
+                                    monitor.subTask(line);
+                                    if (monitor.isCanceled()) {
+                                        process.destroy();
+                                        return Status.CANCEL_STATUS;
+                                    }
                                 }
                             }
+                            process.waitFor();
                         }
-                        int exitCode = process.waitFor();
-                        if (exitCode != 0) {
-                            return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", "Installation failed with exit code " + exitCode);
+
+                        if (runAfter) {
+                            monitor.subTask("Starting Ollama...");
+                            ProcessBuilder pbRun = new ProcessBuilder(finalPath, "serve");
+                            pbRun.environment().put("OLLAMA_HOST", page.getUrl());
+                            pbRun.start();
+                            monitor.subTask("Ollama started.");
                         }
                     } catch (Exception e) {
                         return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", "Installation failed", e);
@@ -110,6 +159,8 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
         private Text urlText;
         private Text pathText;
         private Button downloadBtn;
+        private Button workspaceBtn;
+        private Button runBtn;
 
         protected SetupOllamaPage() {
             super("SetupOllamaPage");
@@ -125,18 +176,26 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
             new Label(container, SWT.NONE).setText("URL:");
             urlText = new Text(container, SWT.BORDER);
             urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            String currentUrl = orchestrator.getOllama() != null ? orchestrator.getOllama().getUrl() : null;
+            String currentUrl = orchestrator != null && orchestrator.getOllama() != null ? orchestrator.getOllama().getUrl() : null;
             urlText.setText(currentUrl != null ? currentUrl : "http://localhost:11434");
 
             new Label(container, SWT.NONE).setText("Executable Path:");
             pathText = new Text(container, SWT.BORDER);
             pathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            String currentPath = orchestrator.getOllama() != null ? orchestrator.getOllama().getPath() : null;
+            String currentPath = orchestrator != null && orchestrator.getOllama() != null ? orchestrator.getOllama().getPath() : null;
             pathText.setText(currentPath != null ? currentPath : "");
 
+            workspaceBtn = new Button(container, SWT.CHECK);
+            workspaceBtn.setText("Download to Project Workspace");
+            workspaceBtn.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
+
             downloadBtn = new Button(container, SWT.CHECK);
-            downloadBtn.setText("Download and Install Ollama (Linux)");
+            downloadBtn.setText("Install Ollama Globally (Linux)");
             downloadBtn.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
+
+            runBtn = new Button(container, SWT.CHECK);
+            runBtn.setText("Run Ollama after finish");
+            runBtn.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
 
             setControl(container);
         }
@@ -144,5 +203,7 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
         public String getUrl() { return urlText.getText(); }
         public String getPath() { return pathText.getText(); }
         public boolean isDownloadRequested() { return downloadBtn.getSelection(); }
+        public boolean isDownloadToWorkspaceRequested() { return workspaceBtn.getSelection(); }
+        public boolean isRunRequested() { return runBtn.getSelection(); }
     }
 }
