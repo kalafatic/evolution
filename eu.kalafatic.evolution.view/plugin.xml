@@ -132,6 +132,11 @@
                   label="Setup Ollama Model"
                   style="push">
             </command>
+            <command
+                  commandId="eu.kalafatic.evolution.view.setupLLM"
+                  label="Setup LLM"
+                  style="push">
+            </command>
          </menu>
          <menu
                id="file"
@@ -226,6 +231,11 @@
             id="eu.kalafatic.evolution.view.setupOllamaModelWizard"
             name="Setup Ollama Model">
       </wizard>
+      <wizard
+            class="eu.kalafatic.evolution.view.wizards.SetupLLMWizard"
+            id="eu.kalafatic.evolution.view.setupLLMWizard"
+            name="Setup LLM">
+      </wizard>
    </extension>
    <extension
          point="org.eclipse.ui.importWizards">
@@ -265,6 +275,10 @@
             id="eu.kalafatic.evolution.view.setupOllamaModel"
             name="Setup Ollama Model">
       </command>
+      <command
+            id="eu.kalafatic.evolution.view.setupLLM"
+            name="Setup LLM">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -287,6 +301,10 @@
       <handler
             class="eu.kalafatic.evolution.view.handlers.SetupOllamaModelHandler"
             commandId="eu.kalafatic.evolution.view.setupOllamaModel">
+      </handler>
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.SetupLLMHandler"
+            commandId="eu.kalafatic.evolution.view.setupLLM">
       </handler>
    </extension>
 

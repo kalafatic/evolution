@@ -1,12 +1,9 @@
 package eu.kalafatic.evolution.controller;
 
-import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
@@ -17,42 +14,31 @@ import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.m2e.actions.MavenLaunchConstants;
-import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
-import eu.kalafatic.evolution.view.PropertiesView;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
-public class MavenBuildCommandHandler extends AbstractHandler {
+public class MavenBuildCommandHandler extends AbstractOrchestratorHandler {
 
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
-        IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindow(event);
-        if (window != null) {
-            IWorkbenchPage page = window.getActivePage();
-            if (page != null) {
-                IViewPart view = page.findView(PropertiesView.ID);
-                if (view instanceof PropertiesView) {
-                    EObject orchestrator = ((PropertiesView) view).getRootObject();
-                    if (orchestrator != null) {
-                        EObject maven = (EObject) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature("maven"));
-                        if (maven != null) {
-                            @SuppressWarnings("unchecked")
-                            EList<String> goals = (EList<String>) maven.eGet(maven.eClass().getEStructuralFeature("goals"));
-                            @SuppressWarnings("unchecked")
-                            EList<String> profiles = (EList<String>) maven.eGet(maven.eClass().getEStructuralFeature("profiles"));
+        Orchestrator orchestrator = getOrchestrator(event);
+        if (orchestrator != null) {
+            EObject maven = (EObject) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature("maven"));
+            if (maven != null) {
+                @SuppressWarnings("unchecked")
+                EList<String> goals = (EList<String>) maven.eGet(maven.eClass().getEStructuralFeature("goals"));
+                @SuppressWarnings("unchecked")
+                EList<String> profiles = (EList<String>) maven.eGet(maven.eClass().getEStructuralFeature("profiles"));
 
-                            if (!goals.isEmpty()) {
-                                IWorkbenchPage activePage = HandlerUtil.getActiveWorkbenchWindow(event).getActivePage();
-                                if (activePage != null && activePage.getActiveEditor() != null) {
-                                    IProject project = activePage.getActiveEditor().getEditorInput().getAdapter(IProject.class);
-                                    if(project == null) {
-                                        project = activePage.getActiveEditor().getEditorInput().getAdapter(IFile.class).getProject();
-                                    }
-                                    launchMavenBuild(String.join(" ", goals), String.join(",", profiles), project);
-                                }
-                            }
+                if (!goals.isEmpty()) {
+                    IWorkbenchPage activePage = HandlerUtil.getActiveWorkbenchWindow(event).getActivePage();
+                    if (activePage != null && activePage.getActiveEditor() != null) {
+                        IProject project = activePage.getActiveEditor().getEditorInput().getAdapter(IProject.class);
+                        if(project == null) {
+                            project = activePage.getActiveEditor().getEditorInput().getAdapter(IFile.class).getProject();
                         }
+                        launchMavenBuild(String.join(" ", goals), String.join(",", profiles), project);
                     }
                 }
             }

@@ -89,6 +89,7 @@ public class PropertiesView extends ViewPart {
         
         // HERE you can use getViewSite()
         IViewSite iViewSite = getViewSite();
+        iViewSite.setSelectionProvider(viewer);
 
         // Property Name Column
         TreeViewerColumn propColumn = new TreeViewerColumn(viewer, SWT.LEFT);

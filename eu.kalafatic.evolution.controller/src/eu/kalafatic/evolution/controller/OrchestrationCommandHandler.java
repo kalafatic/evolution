@@ -1,6 +1,5 @@
 package eu.kalafatic.evolution.controller;
 
-import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -10,11 +9,7 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.IViewPart;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.handlers.HandlerUtil;
-import eu.kalafatic.evolution.view.PropertiesView;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -28,23 +23,14 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 
 
-public class OrchestrationCommandHandler extends AbstractHandler {
+public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
 
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
-        IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindow(event);
-        if (window != null) {
-            IWorkbenchPage page = window.getActivePage();
-            if (page != null) {
-                IViewPart view = page.findView(PropertiesView.ID);
-                if (view instanceof PropertiesView) {
-                    EObject orchestrator = ((PropertiesView) view).getRootObject();
-                    if (orchestrator != null) {
-                        Job job = new OrchestrationJob("Orchestration", orchestrator);
-                        job.schedule();
-                    }
-                }
-            }
+        Orchestrator orchestrator = getOrchestrator(event);
+        if (orchestrator != null) {
+            Job job = new OrchestrationJob("Orchestration", orchestrator);
+            job.schedule();
         }
         return null;
     }

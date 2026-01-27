@@ -2,13 +2,10 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>eu.kalafatic.evolution</groupId>
-		<artifactId>eu.kalafatic.evolution.controller</artifactId>
-		<version>2.6.1-SNAPSHOT</version>
-	</parent>
+	<groupId>eu.kalafatic.evolution</groupId>
 	<artifactId>eu.kalafatic.evolution.view</artifactId>
-	<packaging>maven-plugin</packaging>
+	<version>2.6.1-SNAPSHOT</version>
+	<packaging>eclipse-plugin</packaging>
 
 	<properties>
 		<tycho.targetPlatform>platform</tycho.targetPlatform>
@@ -25,39 +22,12 @@
 			</resource>
 		</resources>
 
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.eclipse.tycho</groupId>
-					<artifactId>tycho-p2-director-plugin</artifactId>
-					<version>${tycho.version}</version>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-
 		<plugins>
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
 				<artifactId>tycho-maven-plugin</artifactId>
 				<version>${tycho.version}</version>
 				<extensions>true</extensions>
-			</plugin>
-			<!--Enable the replacement of the SNAPSHOT version in the final product configuration-->
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-packaging-plugin</artifactId>
-				<version>${tycho.version}</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<id>package-feature</id>
-						<configuration>
-							<finalName>
-								${project.artifactId}_${unqualifiedVersion}.${buildQualifier}</finalName>
-						</configuration>
-					</execution>
-
-				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
@@ -67,7 +37,6 @@
 					<executionEnvironment>JavaSE-21</executionEnvironment>
 				</configuration>
 			</plugin>
-
 		</plugins>
 
 	</build>
@@ -77,28 +46,5 @@
 			<layout>p2</layout>
 			<url>https://download.eclipse.org/releases/2025-12</url>
 		</repository>
-
-		<repository>
-			<id>eclipse-m2e</id>
-			<url>https://download.eclipse.org/technology/m2e/releases/latest/</url>
-			<layout>p2</layout>
-		</repository>
-		<repository>
-			<id>eclipse-gef</id>
-			<url>https://download.eclipse.org/tools/gef/classic/release</url>
-			<layout>p2</layout>
-		</repository>
-		<repository>
-			<id>eclipse-release</id>
-			<url>https://download.eclipse.org/releases/latest/</url>
-			<layout>p2</layout>
-		</repository>
 	</repositories>
-	<dependencies>
-		<dependency>
-			<groupId>eu.kalafatic.evolution</groupId>
-			<artifactId>eu.kalafatic.evolution.model</artifactId>
-			<version>2.6.1-SNAPSHOT</version>
-		</dependency>
-	</dependencies>
 </project>

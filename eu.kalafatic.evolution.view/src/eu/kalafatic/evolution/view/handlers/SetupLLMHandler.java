@@ -4,14 +4,16 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.jface.wizard.WizardDialog;
+import org.eclipse.ui.IViewPart;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
-import eu.kalafatic.evolution.view.wizards.SetupOllamaWizard;
+import eu.kalafatic.evolution.view.wizards.SetupLLMWizard;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 
-public class SetupOllamaHandler extends AbstractHandler {
+public class SetupLLMHandler extends AbstractHandler {
 
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -19,7 +21,7 @@ public class SetupOllamaHandler extends AbstractHandler {
         if (window != null) {
             Orchestrator orchestrator = getOrchestrator(event, window);
             if (orchestrator != null) {
-                SetupOllamaWizard wizard = new SetupOllamaWizard(orchestrator);
+                SetupLLMWizard wizard = new SetupLLMWizard(orchestrator);
                 WizardDialog dialog = new WizardDialog(window.getShell(), wizard);
                 dialog.open();
             }

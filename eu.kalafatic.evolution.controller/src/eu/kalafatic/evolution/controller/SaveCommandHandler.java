@@ -3,7 +3,6 @@ package eu.kalafatic.evolution.controller;
 import java.io.IOException;
 import java.util.Collections;
 
-import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.emf.common.util.URI;
@@ -12,32 +11,18 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.IViewPart;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-import eu.kalafatic.evolution.view.PropertiesView;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
-public class SaveCommandHandler extends AbstractHandler {
+public class SaveCommandHandler extends AbstractOrchestratorHandler {
 
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
-        IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindow(event);
-        if (window != null) {
-            IWorkbenchPage page = window.getActivePage();
-            if (page != null) {
-                IViewPart view = page.findView(PropertiesView.ID);
-                if (view instanceof PropertiesView) {
-                    EObject rootObject = ((PropertiesView) view).getRootObject();
-                    if (rootObject != null) {
-                        saveProperties(rootObject, HandlerUtil.getActiveShell(event));
-                    }
-                }
-            }
+        Orchestrator orchestrator = getOrchestrator(event);
+        if (orchestrator != null) {
+            saveProperties(orchestrator, HandlerUtil.getActiveShell(event));
         }
         return null;
     }
