@@ -26,6 +26,7 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
     private LLMSettingsPage llmPage;
     private MavenSettingsPage mavenPage;
     private AiChatSettingsPage aiChatPage;
+    private AgentSettingsPage agentPage;
 
     public AddOrchestrationWizard() {
         setWindowTitle("Add Orchestration");
@@ -60,6 +61,7 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
         llmPage = new LLMSettingsPage();
         mavenPage = new MavenSettingsPage();
         aiChatPage = new AiChatSettingsPage();
+        agentPage = new AgentSettingsPage();
 
         addPage(generalPage);
         addPage(gitPage);
@@ -67,6 +69,7 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
         addPage(llmPage);
         addPage(mavenPage);
         addPage(aiChatPage);
+        addPage(agentPage);
     }
 
     @Override
@@ -135,6 +138,21 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
             aiChat.setToken(aiChatPage.getToken());
             aiChat.setPrompt(aiChatPage.getPrompt());
             orchestrator.setAiChat(aiChat);
+
+            // Agent Settings
+            String agentsData = agentPage.getAgentsData();
+            if (agentsData != null && !agentsData.isEmpty()) {
+                String[] lines = agentsData.split("\\r?\\n");
+                for (String line : lines) {
+                    String[] parts = line.split(":");
+                    if (parts.length >= 2) {
+                        Agent agent = factory.createAgent();
+                        agent.setId(parts[0].trim());
+                        agent.setType(parts[1].trim());
+                        orchestrator.getAgents().add(agent);
+                    }
+                }
+            }
 
             evoProject.getOrchestrations().add(orchestrator);
 
