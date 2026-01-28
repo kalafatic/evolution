@@ -248,25 +248,39 @@
    </extension>
    <extension
          point="org.eclipse.ui.newWizards">
+      <category
+            id="eu.kalafatic.evolution.view.category"
+            name="AI Evolution">
+      </category>
       <wizard
+            category="eu.kalafatic.evolution.view.category"
             class="eu.kalafatic.evolution.view.wizards.NewEvoTaskWizard"
             id="eu.kalafatic.evolution.view.newEvoTaskWizard"
             name="New Evo Task">
       </wizard>
       <wizard
+            category="eu.kalafatic.evolution.view.category"
             class="eu.kalafatic.evolution.view.wizards.SetupOllamaWizard"
             id="eu.kalafatic.evolution.view.setupOllamaWizard"
             name="Setup Ollama">
       </wizard>
       <wizard
+            category="eu.kalafatic.evolution.view.category"
             class="eu.kalafatic.evolution.view.wizards.SetupOllamaModelWizard"
             id="eu.kalafatic.evolution.view.setupOllamaModelWizard"
             name="Setup Ollama Model">
       </wizard>
       <wizard
+            category="eu.kalafatic.evolution.view.category"
             class="eu.kalafatic.evolution.view.wizards.SetupLLMWizard"
             id="eu.kalafatic.evolution.view.setupLLMWizard"
             name="Setup LLM">
+      </wizard>
+      <wizard
+            category="eu.kalafatic.evolution.view.category"
+            class="eu.kalafatic.evolution.view.wizards.NewEvoProjectWizard"
+            id="eu.kalafatic.evolution.view.newEvoProjectWizard"
+            name="New Evo Project">
       </wizard>
    </extension>
    <extension
