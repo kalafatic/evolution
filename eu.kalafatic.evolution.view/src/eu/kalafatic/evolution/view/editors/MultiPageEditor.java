@@ -31,6 +31,7 @@ import org.eclipse.ui.*;
 import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.part.MultiPageEditorPart;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import org.eclipse.ui.ide.IDE;
 
 /**
@@ -208,9 +209,13 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	 */
 	public void init(IEditorSite site, IEditorInput editorInput)
 		throws PartInitException {
-		if (!(editorInput instanceof IFileEditorInput))
-			throw new PartInitException("Invalid Input: Must be IFileEditorInput");
+		if (!(editorInput instanceof IFileEditorInput) && !(editorInput instanceof OrchestratorEditorInput))
+			throw new PartInitException("Invalid Input: Must be IFileEditorInput or OrchestratorEditorInput");
 		super.init(site, editorInput);
+
+        if (editorInput instanceof OrchestratorEditorInput) {
+            setPartName(editorInput.getName());
+        }
 	}
 	/* (non-Javadoc)
 	 * Method declared on IEditorPart.
