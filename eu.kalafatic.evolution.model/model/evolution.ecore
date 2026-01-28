@@ -28,6 +28,8 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="agents" upperBound="-1"
         eType="#//Agent" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1"
+        eType="#//Task" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="git" eType="#//Git" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="maven" eType="#//Maven"
         containment="true"/>
