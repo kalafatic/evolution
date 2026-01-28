@@ -23,6 +23,8 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -95,12 +97,27 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 
 		Button sendButton = new Button(composite, SWT.PUSH);
 		sendButton.setText("Send");
+        Runnable sendAction = () -> {
+            // Dummy action for now
+            responseText.setText("Response to: " + requestText.getText());
+        };
         sendButton.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				// Dummy action for now
-				responseText.setText("Response to: " + requestText.getText());
+				sendAction.run();
 			}
 		});
+
+        requestText.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.keyCode == SWT.CR || e.keyCode == SWT.KEYPAD_CR) {
+                    if ((e.stateMask & SWT.MODIFIER_MASK) == 0) {
+                        e.doit = false;
+                        sendAction.run();
+                    }
+                }
+            }
+        });
 
 
         // Response Area

@@ -177,13 +177,22 @@ public interface OrchestrationPackage extends EPackage {
 	int AGENT__TASKS = 2;
 
 	/**
+	 * The feature id for the '<em><b>Execution Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AGENT__EXECUTION_MODE = 3;
+
+	/**
 	 * The number of structural features of the '<em>Agent</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AGENT_FEATURE_COUNT = 3;
+	int AGENT_FEATURE_COUNT = 4;
 
 	/**
 	 * The number of operations of the '<em>Agent</em>' class.
@@ -727,6 +736,16 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int COMMAND_STATUS = 12;
 
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
+	 * @generated
+	 */
+	int EXECUTION_MODE = 13;
+
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Task <em>Task</em>}'.
@@ -846,6 +865,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getAgent_Tasks();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Agent#getExecutionMode <em>Execution Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Execution Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Agent#getExecutionMode()
+	 * @see #getAgent()
+	 * @generated
+	 */
+	EAttribute getAgent_ExecutionMode();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator <em>Orchestrator</em>}'.
@@ -1277,6 +1307,16 @@ public interface OrchestrationPackage extends EPackage {
 	EEnum getCommandStatus();
 
 	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Execution Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+	 * @generated
+	 */
+	EEnum getExecutionMode();
+
+	/**
 	 * Returns the factory that creates the instances of the model.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1390,6 +1430,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EReference AGENT__TASKS = eINSTANCE.getAgent_Tasks();
+
+		/**
+		 * The meta object literal for the '<em><b>Execution Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AGENT__EXECUTION_MODE = eINSTANCE.getAgent_ExecutionMode();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl <em>Orchestrator</em>}' class.
@@ -1732,6 +1780,16 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EEnum COMMAND_STATUS = eINSTANCE.getCommandStatus();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
+		 * @generated
+		 */
+		EEnum EXECUTION_MODE = eINSTANCE.getExecutionMode();
 
 	}
 

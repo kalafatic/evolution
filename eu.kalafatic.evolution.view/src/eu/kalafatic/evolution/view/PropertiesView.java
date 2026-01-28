@@ -16,8 +16,11 @@ import org.eclipse.emf.common.command.BasicCommandStack;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.notify.AdapterFactory;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.common.util.Enumerator;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EDataType;
+import org.eclipse.emf.ecore.EEnum;
 import org.eclipse.emf.ecore.EFactory;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
@@ -289,11 +292,17 @@ public class PropertiesView extends ViewPart implements ISelectionListener {
 
         @Override
         protected CellEditor getCellEditor(Object element) {
-		// This is a temporary solution. We should refactor this to avoid a direct dependency from the view to the controller.
             if (element instanceof PropertyDescriptor) {
                 PropertyDescriptor desc = (PropertyDescriptor) element;
                 if (desc.owner.eClass() == OrchestrationPackage.Literals.LLM && desc.attribute == OrchestrationPackage.Literals.LLM__MODEL && ollamaModels != null && ollamaModels.length > 0) {
                     return new ComboBoxCellEditor(viewer.getTree(), ollamaModels, SWT.READ_ONLY);
+                }
+
+                EDataType type = desc.attribute.getEAttributeType();
+                if (type instanceof EEnum) {
+                    EEnum eEnum = (EEnum) type;
+                    String[] labels = eEnum.getELiterals().stream().map(l -> l.getLiteral()).toArray(String[]::new);
+                    return new ComboBoxCellEditor(viewer.getTree(), labels, SWT.READ_ONLY);
                 }
             }
             return new TextCellEditor(viewer.getTree());
@@ -311,7 +320,17 @@ public class PropertiesView extends ViewPart implements ISelectionListener {
                 }
                 return 0;
             }
+
             Object value = desc.owner.eGet(desc.attribute);
+            EDataType type = desc.attribute.getEAttributeType();
+            if (type instanceof EEnum) {
+                EEnum eEnum = (EEnum) type;
+                if (value instanceof Enumerator) {
+                    return eEnum.getELiterals().indexOf(eEnum.getEEnumLiteralByLiteral(((Enumerator) value).getLiteral()));
+                }
+                return 0;
+            }
+
             return value != null ? value.toString() : "";
         }
 
@@ -320,7 +339,14 @@ public class PropertiesView extends ViewPart implements ISelectionListener {
             PropertyDescriptor desc = (PropertyDescriptor) element;
             if (desc.owner.eClass() == OrchestrationPackage.Literals.LLM && desc.attribute == OrchestrationPackage.Literals.LLM__MODEL && ollamaModels != null && ollamaModels.length > 0) {
                 value = ollamaModels[(int) value];
+            } else {
+                EDataType type = desc.attribute.getEAttributeType();
+                if (type instanceof EEnum) {
+                    EEnum eEnum = (EEnum) type;
+                    value = eEnum.getELiterals().get((int) value).getInstance();
+                }
             }
+
             Command command = SetCommand.create(editingDomain, desc.owner, desc.attribute, value);
             editingDomain.getCommandStack().execute(command);
             viewer.update(element, null);

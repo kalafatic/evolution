@@ -81,4 +81,29 @@ public interface Agent extends EObject {
 	 */
 	EList<Task> getTasks();
 
+	/**
+	 * Returns the value of the '<em><b>Execution Mode</b></em>' attribute.
+	 * The literals are from the enumeration {@link eu.kalafatic.evolution.model.orchestration.ExecutionMode}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Execution Mode</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+	 * @see #setExecutionMode(ExecutionMode)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAgent_ExecutionMode()
+	 * @model
+	 * @generated
+	 */
+	ExecutionMode getExecutionMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Agent#getExecutionMode <em>Execution Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Execution Mode</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+	 * @see #getExecutionMode()
+	 * @generated
+	 */
+	void setExecutionMode(ExecutionMode value);
+
 } // Agent
