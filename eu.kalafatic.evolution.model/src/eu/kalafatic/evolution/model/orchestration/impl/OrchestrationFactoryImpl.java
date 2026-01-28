@@ -3,6 +3,7 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Command;
@@ -131,6 +132,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createTaskStatusFromString(eDataType, initialValue);
 			case OrchestrationPackage.COMMAND_STATUS:
 				return createCommandStatusFromString(eDataType, initialValue);
+			case OrchestrationPackage.EXECUTION_MODE:
+				return createExecutionModeFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -148,9 +151,31 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertTaskStatusToString(eDataType, instanceValue);
 			case OrchestrationPackage.COMMAND_STATUS:
 				return convertCommandStatusToString(eDataType, instanceValue);
+			case OrchestrationPackage.EXECUTION_MODE:
+				return convertExecutionModeToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public ExecutionMode createExecutionModeFromString(EDataType eDataType, String initialValue) {
+		ExecutionMode result = ExecutionMode.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertExecutionModeToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
 	}
 
 	/**

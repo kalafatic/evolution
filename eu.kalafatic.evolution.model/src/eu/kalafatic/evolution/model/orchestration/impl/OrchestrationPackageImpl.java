@@ -3,6 +3,7 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
@@ -152,6 +153,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	private EEnum commandStatusEEnum = null;
 
 	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum executionModeEEnum = null;
+
+	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
 	 * {@link org.eclipse.emf.ecore.EPackage.Registry EPackage.Registry} by the package
 	 * package URI value.
@@ -209,6 +217,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		// Update the registry and return the package
 		EPackage.Registry.INSTANCE.put(OrchestrationPackage.eNS_URI, theOrchestrationPackage);
 		return theOrchestrationPackage;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAgent_ExecutionMode() {
+		return (EAttribute)agentEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -697,6 +715,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EEnum getExecutionMode() {
+		return executionModeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public OrchestrationFactory getOrchestrationFactory() {
 		return (OrchestrationFactory)getEFactoryInstance();
 	}
@@ -732,6 +760,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(agentEClass, AGENT__ID);
 		createEAttribute(agentEClass, AGENT__TYPE);
 		createEReference(agentEClass, AGENT__TASKS);
+		createEAttribute(agentEClass, AGENT__EXECUTION_MODE);
 
 		orchestratorEClass = createEClass(ORCHESTRATOR);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__ID);
@@ -783,6 +812,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
 		commandStatusEEnum = createEEnum(COMMAND_STATUS);
+		executionModeEEnum = createEEnum(EXECUTION_MODE);
 	}
 
 	/**
@@ -827,6 +857,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getAgent_Id(), ecorePackage.getEString(), "id", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAgent_Type(), ecorePackage.getEString(), "type", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getAgent_Tasks(), this.getTask(), null, "tasks", null, 0, -1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAgent_ExecutionMode(), this.getExecutionMode(), "executionMode", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(orchestratorEClass, Orchestrator.class, "Orchestrator", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getOrchestrator_Id(), ecorePackage.getEString(), "id", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -887,6 +918,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(commandStatusEEnum, CommandStatus.RUNNING);
 		addEEnumLiteral(commandStatusEEnum, CommandStatus.COMPLETED);
 		addEEnumLiteral(commandStatusEEnum, CommandStatus.FAILED);
+
+		initEEnum(executionModeEEnum, ExecutionMode.class, "ExecutionMode");
+		addEEnumLiteral(executionModeEEnum, ExecutionMode.SERIAL);
+		addEEnumLiteral(executionModeEEnum, ExecutionMode.PARALLEL);
 
 		// Create resource
 		createResource(eNS_URI);

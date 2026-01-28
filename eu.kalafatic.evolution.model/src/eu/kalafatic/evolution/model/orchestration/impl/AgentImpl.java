@@ -3,6 +3,7 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
@@ -30,6 +31,7 @@ import org.eclipse.emf.ecore.util.EObjectResolvingEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl#getId <em>Id</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl#getType <em>Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl#getTasks <em>Tasks</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl#getExecutionMode <em>Execution Mode</em>}</li>
  * </ul>
  *
  * @generated
@@ -84,6 +86,49 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * @ordered
 	 */
 	protected EList<Task> tasks;
+
+	/**
+	 * The default value of the '{@link #getExecutionMode() <em>Execution Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getExecutionMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final ExecutionMode EXECUTION_MODE_EDEFAULT = ExecutionMode.SERIAL;
+
+	/**
+	 * The cached value of the '{@link #getExecutionMode() <em>Execution Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getExecutionMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected ExecutionMode executionMode = EXECUTION_MODE_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ExecutionMode getExecutionMode() {
+		return executionMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setExecutionMode(ExecutionMode newExecutionMode) {
+		ExecutionMode oldExecutionMode = executionMode;
+		executionMode = newExecutionMode == null ? EXECUTION_MODE_EDEFAULT : newExecutionMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AGENT__EXECUTION_MODE, oldExecutionMode, executionMode));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -177,6 +222,8 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 				return getType();
 			case OrchestrationPackage.AGENT__TASKS:
 				return getTasks();
+			case OrchestrationPackage.AGENT__EXECUTION_MODE:
+				return getExecutionMode();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -200,6 +247,9 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 				getTasks().clear();
 				getTasks().addAll((Collection<? extends Task>)newValue);
 				return;
+			case OrchestrationPackage.AGENT__EXECUTION_MODE:
+				setExecutionMode((ExecutionMode)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -221,6 +271,9 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 			case OrchestrationPackage.AGENT__TASKS:
 				getTasks().clear();
 				return;
+			case OrchestrationPackage.AGENT__EXECUTION_MODE:
+				setExecutionMode(EXECUTION_MODE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -239,6 +292,8 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 				return TYPE_EDEFAULT == null ? type != null : !TYPE_EDEFAULT.equals(type);
 			case OrchestrationPackage.AGENT__TASKS:
 				return tasks != null && !tasks.isEmpty();
+			case OrchestrationPackage.AGENT__EXECUTION_MODE:
+				return executionMode != EXECUTION_MODE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -257,6 +312,8 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 		result.append(id);
 		result.append(", type: ");
 		result.append(type);
+		result.append(", executionMode: ");
+		result.append(executionMode);
 		result.append(')');
 		return result.toString();
 	}
