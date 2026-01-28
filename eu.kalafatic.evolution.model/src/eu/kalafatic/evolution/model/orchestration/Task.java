@@ -17,10 +17,12 @@ import org.eclipse.emf.ecore.EObject;
  * <ul>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getId <em>Id</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getName <em>Name</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getType <em>Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getStatus <em>Status</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getNext <em>Next</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getSubTasks <em>Sub Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getResponse <em>Response</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getFeedback <em>Feedback</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -71,6 +73,28 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setName(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Type</em>' attribute.
+	 * @see #setType(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Type()
+	 * @model
+	 * @generated NOT
+	 */
+	String getType();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getType <em>Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Type</em>' attribute.
+	 * @see #getType()
+	 * @generated NOT
+	 */
+	void setType(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Status</b></em>' attribute.
@@ -142,5 +166,27 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setResponse(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Feedback</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Feedback</em>' attribute.
+	 * @see #setFeedback(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Feedback()
+	 * @model
+	 * @generated NOT
+	 */
+	String getFeedback();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getFeedback <em>Feedback</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Feedback</em>' attribute.
+	 * @see #getFeedback()
+	 * @generated NOT
+	 */
+	void setFeedback(String value);
 
 } // Task

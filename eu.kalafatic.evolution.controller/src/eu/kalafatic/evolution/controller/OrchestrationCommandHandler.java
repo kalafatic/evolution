@@ -26,6 +26,8 @@ import org.json.JSONArray;
 
 public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
 
+    private static final int MAX_RETRIES = 3;
+
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
         Orchestrator orchestrator = getOrchestrator(event);
@@ -73,70 +75,71 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         orchestrator.getTasks().addAll(tasks);
         monitor.worked(10);
 
-        // 2. Execution Loop with Specialized Roles and Hand-off
+        // 2. Execution Loop with Evaluation and Retry
         String handOffContext = orchestrator.getAiChat().getPrompt();
         int taskCount = tasks.size();
         for (int i = 0; i < taskCount; i++) {
             Task task = tasks.get(i);
             String taskName = task.getName();
-            double progress = 0.1 + (0.7 * (double) i / taskCount);
-            OrchestrationStatusManager.getInstance().updateStatus(id, progress, "Executing " + taskName);
-            monitor.subTask("Agent working on: " + taskName);
+            double baseProgress = 0.1 + (0.8 * (double) i / taskCount);
 
             task.setStatus(TaskStatus.RUNNING);
-
             Agent agent = findAgentForTask(orchestrator, task);
-            String response = executeTask(orchestrator, agent, task, handOffContext);
 
-            task.setResponse(response);
-            task.setStatus(TaskStatus.DONE);
+            boolean taskSuccess = false;
+            String lastFeedback = null;
+
+            for (int retry = 0; retry < MAX_RETRIES; retry++) {
+                String statusMsg = "Executing " + taskName + (retry > 0 ? " (Retry " + retry + ")" : "");
+                OrchestrationStatusManager.getInstance().updateStatus(id, baseProgress, statusMsg);
+                monitor.subTask(statusMsg);
+
+                String response = executeTask(orchestrator, agent, task, handOffContext, lastFeedback);
+                task.setResponse(response);
+
+                // 3. Evaluation
+                monitor.subTask("Evaluating: " + taskName);
+                String evaluationResult = evaluateTask(orchestrator, task, handOffContext);
+                JSONObject evalJson = parseEvaluation(evaluationResult);
+
+                if (evalJson.optBoolean("success", false)) {
+                    task.setStatus(TaskStatus.DONE);
+                    task.setFeedback("Success: " + evalJson.optString("comment", "Task completed."));
+                    taskSuccess = true;
+                    break;
+                } else {
+                    lastFeedback = evalJson.optString("feedback", "Task failed validation.");
+                    task.setFeedback("Failure: " + lastFeedback);
+                }
+            }
+
+            if (!taskSuccess) {
+                task.setStatus(TaskStatus.FAILED);
+                throw new Exception("Task failed after " + MAX_RETRIES + " attempts: " + taskName + ". Feedback: " + task.getFeedback());
+            }
 
             // Hand-off: output of this task becomes context for the next
-            handOffContext += "\n\nPrevious task [" + taskName + "] output:\n" + response;
-
-            monitor.worked(70 / taskCount);
+            handOffContext += "\n\nPrevious task [" + taskName + "] output:\n" + task.getResponse();
+            monitor.worked(80 / taskCount);
         }
-
-        // 3. Final Integration (Git & Maven)
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.85, "Git Commit...");
-        monitor.subTask("Committing changes");
-        String finalOutput = tasks.isEmpty() ? "No tasks completed" : tasks.get(tasks.size() - 1).getResponse();
-
-        // Sanitize commit message
-        String commitMsg = "AI Evolution: " + finalOutput.replaceAll("\\r|\\n", " ");
-        if (commitMsg.length() > 100) commitMsg = commitMsg.substring(0, 97) + "...";
-        if (commitMsg.startsWith("-")) commitMsg = " " + commitMsg;
-
-        executeCommand("git", "add", ".");
-        executeCommand("git", "commit", "-m", commitMsg);
-        monitor.worked(10);
-
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.95, "Maven Build...");
-        monitor.subTask("Running build");
-        List<String> mavenArgs = new ArrayList<>();
-        mavenArgs.add("mvn");
-        mavenArgs.addAll(orchestrator.getMaven().getGoals());
-        executeCommand(mavenArgs.toArray(new String[0]));
-        monitor.worked(10);
 
         OrchestrationStatusManager.getInstance().updateStatus(id, 1.0, "Completed");
         monitor.done();
     }
 
     private List<Task> decomposeTasks(Orchestrator orchestrator) throws Exception {
-        String plannerPrompt = "Decompose the following request into a sequence of specialized tasks for an AI agent team. " +
-                "Return ONLY a JSON array of objects with 'id', 'name', and 'role' fields. Do not include any other text.\n" +
+        String plannerPrompt = "You are a workflow planner for an agentic system. " +
+                "Decompose the user request into a sequence of atomic, specialized tasks.\n" +
+                "Available task types:\n" +
+                "- 'llm': For reasoning, coding, or text generation.\n" +
+                "- 'git': For version control actions (add/commit).\n" +
+                "- 'maven': For building and testing the project.\n\n" +
+                "Output MUST be a valid JSON array of objects. Schema:\n" +
+                "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"git\"|\"maven\" } ]\n\n" +
                 "Request: " + orchestrator.getAiChat().getPrompt();
 
         String response = sendRequest(orchestrator, plannerPrompt);
-
-        int start = response.indexOf("[");
-        int end = response.lastIndexOf("]");
-        if (start == -1 || end == -1 || end <= start) {
-            throw new Exception("LLM failed to return a valid JSON array of tasks. Response was: " + response);
-        }
-        String jsonStr = response.substring(start, end + 1);
-        JSONArray jsonArray = new JSONArray(jsonStr);
+        JSONArray jsonArray = extractJsonArray(response);
 
         List<Task> tasks = new ArrayList<>();
         OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
@@ -145,10 +148,73 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
             Task task = factory.createTask();
             task.setId(obj.optString("id", "task" + i));
             task.setName(obj.optString("name", "Task " + i));
-            // Role info can be stored in name for now as Task model lacks 'role' attribute
+            task.setType(obj.optString("taskType", "llm"));
             tasks.add(task);
         }
         return tasks;
+    }
+
+    private String evaluateTask(Orchestrator orchestrator, Task task, String context) throws Exception {
+        String evalPrompt = "You are an AI Critic. Evaluate if the following task was successfully completed.\n\n" +
+                "TASK GOAL: " + task.getName() + "\n" +
+                "AGENT OUTPUT: " + task.getResponse() + "\n" +
+                "OVERALL CONTEXT: " + context + "\n\n" +
+                "CRITERIA:\n" +
+                "1. Does the output directly address the goal?\n" +
+                "2. Is the output technically sound and complete?\n\n" +
+                "Output MUST be a valid JSON object. Schema:\n" +
+                "{ \"success\": boolean, \"feedback\": \"Detailed explanation of why it failed and how to fix it\", \"comment\": \"Brief success message\" }";
+
+        return sendRequest(orchestrator, evalPrompt);
+    }
+
+    private JSONObject parseEvaluation(String response) {
+        try {
+            return extractJsonObject(response);
+        } catch (Exception e) {
+            JSONObject fallback = new JSONObject();
+            fallback.put("success", false);
+            fallback.put("feedback", "Failed to parse evaluator response: " + e.getMessage());
+            return fallback;
+        }
+    }
+
+    private String executeTask(Orchestrator orchestrator, Agent agent, Task task, String context, String lastFeedback) throws Exception {
+        String taskType = task.getType();
+
+        if ("git".equalsIgnoreCase(taskType)) {
+            return executeGitTool(task.getName());
+        } else if ("maven".equalsIgnoreCase(taskType)) {
+            return executeMavenTool(orchestrator);
+        } else {
+            // Default to LLM
+            String agentType = (agent != null) ? agent.getType() : "general assistant";
+            String prompt = "You are acting as a " + agentType + ".\n" +
+                    "Context: " + context + "\n";
+            if (lastFeedback != null) {
+                prompt += "PREVIOUS ATTEMPT FAILED. Feedback: " + lastFeedback + "\nPlease correct your approach.\n";
+            }
+            prompt += "Your task: " + task.getName() + "\n" +
+                    "Provide your response below:";
+
+            return sendRequest(orchestrator, prompt);
+        }
+    }
+
+    private String executeGitTool(String taskName) throws Exception {
+        // Simple heuristic mapping
+        if (taskName.toLowerCase().contains("add") || taskName.toLowerCase().contains("commit")) {
+            executeCommand("git", "add", ".");
+            return executeCommand("git", "commit", "-m", "AI Evolution step: " + taskName);
+        }
+        return "No git action mapped for: " + taskName;
+    }
+
+    private String executeMavenTool(Orchestrator orchestrator) throws Exception {
+        List<String> mavenArgs = new ArrayList<>();
+        mavenArgs.add("mvn");
+        mavenArgs.addAll(orchestrator.getMaven().getGoals());
+        return executeCommand(mavenArgs.toArray(new String[0]));
     }
 
     private Agent findAgentForTask(Orchestrator orchestrator, Task task) {
@@ -157,16 +223,6 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 .filter(a -> target.contains(a.getType().toLowerCase()) || target.contains(a.getId().toLowerCase()))
                 .findFirst()
                 .orElse(orchestrator.getAgents().isEmpty() ? null : orchestrator.getAgents().get(0));
-    }
-
-    private String executeTask(Orchestrator orchestrator, Agent agent, Task task, String context) throws Exception {
-        String agentType = (agent != null) ? agent.getType() : "general assistant";
-        String prompt = "You are acting as a " + agentType + ".\n" +
-                "Context: " + context + "\n\n" +
-                "Your task: " + task.getName() + "\n" +
-                "Provide your response below:";
-
-        return sendRequest(orchestrator, prompt);
     }
 
     private String sendRequest(Orchestrator orchestrator, String prompt) throws Exception {
@@ -187,6 +243,24 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         }
     }
 
+    private JSONArray extractJsonArray(String response) throws Exception {
+        int start = response.indexOf("[");
+        int end = response.lastIndexOf("]");
+        if (start == -1 || end == -1 || end <= start) {
+            throw new Exception("LLM failed to return a valid JSON array. Response: " + response);
+        }
+        return new JSONArray(response.substring(start, end + 1));
+    }
+
+    private JSONObject extractJsonObject(String response) throws Exception {
+        int start = response.indexOf("{");
+        int end = response.lastIndexOf("}");
+        if (start == -1 || end == -1 || end <= start) {
+            throw new Exception("LLM failed to return a valid JSON object. Response: " + response);
+        }
+        return new JSONObject(response.substring(start, end + 1));
+    }
+
     private String sendAiChatRequest(String url, String token, String prompt) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         JSONObject jsonObject = new JSONObject();
@@ -199,8 +273,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        JSONObject jsonResponse = new JSONObject(response.body());
-        return jsonResponse.getString("response");
+        return new JSONObject(response.body()).getString("response");
     }
 
     private String sendOllamaRequest(String url, String model, String prompt) throws Exception {
@@ -217,12 +290,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         JSONObject jsonResponse = new JSONObject(response.body());
-        if (jsonResponse.has("response")) {
-            return jsonResponse.getString("response");
-        } else if (jsonResponse.has("solution")) {
-            return jsonResponse.getString("solution");
-        }
-        throw new Exception("Unexpected Ollama response format: " + response.body());
+        return jsonResponse.has("response") ? jsonResponse.getString("response") : jsonResponse.getString("solution");
     }
 
     public String[] getOllamaModels() {

@@ -33,10 +33,12 @@ import org.eclipse.emf.ecore.util.InternalEList;
  * <ul>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getId <em>Id</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getName <em>Name</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getType <em>Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getStatus <em>Status</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getNext <em>Next</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getSubTasks <em>Sub Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getResponse <em>Response</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getFeedback <em>Feedback</em>}</li>
  * </ul>
  *
  * @generated
@@ -81,6 +83,26 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @ordered
 	 */
 	protected String name = NAME_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getType() <em>Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getType()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String TYPE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getType() <em>Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getType()
+	 * @generated
+	 * @ordered
+	 */
+	protected String type = TYPE_EDEFAULT;
 
 	/**
 	 * The default value of the '{@link #getStatus() <em>Status</em>}' attribute.
@@ -143,6 +165,26 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected String response = RESPONSE_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getFeedback() <em>Feedback</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getFeedback()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String FEEDBACK_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getFeedback() <em>Feedback</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getFeedback()
+	 * @generated
+	 * @ordered
+	 */
+	protected String feedback = FEEDBACK_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -154,11 +196,57 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public String getType() {
+		return type;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public void setType(String newType) {
+		String oldType = type;
+		type = newType;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__TYPE, oldType, type));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.TASK;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public String getFeedback() {
+		return feedback;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public void setFeedback(String newFeedback) {
+		String oldFeedback = feedback;
+		feedback = newFeedback;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__FEEDBACK, oldFeedback, feedback));
 	}
 
 	/**
@@ -305,6 +393,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getId();
 			case OrchestrationPackage.TASK__NAME:
 				return getName();
+			case OrchestrationPackage.TASK__TYPE:
+				return getType();
 			case OrchestrationPackage.TASK__STATUS:
 				return getStatus();
 			case OrchestrationPackage.TASK__NEXT:
@@ -313,6 +403,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getSubTasks();
 			case OrchestrationPackage.TASK__RESPONSE:
 				return getResponse();
+			case OrchestrationPackage.TASK__FEEDBACK:
+				return getFeedback();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -332,6 +424,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__NAME:
 				setName((String)newValue);
 				return;
+			case OrchestrationPackage.TASK__TYPE:
+				setType((String)newValue);
+				return;
 			case OrchestrationPackage.TASK__STATUS:
 				setStatus((TaskStatus)newValue);
 				return;
@@ -345,6 +440,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return;
 			case OrchestrationPackage.TASK__RESPONSE:
 				setResponse((String)newValue);
+				return;
+			case OrchestrationPackage.TASK__FEEDBACK:
+				setFeedback((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -364,6 +462,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__NAME:
 				setName(NAME_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__TYPE:
+				setType(TYPE_EDEFAULT);
+				return;
 			case OrchestrationPackage.TASK__STATUS:
 				setStatus(STATUS_EDEFAULT);
 				return;
@@ -375,6 +476,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return;
 			case OrchestrationPackage.TASK__RESPONSE:
 				setResponse(RESPONSE_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__FEEDBACK:
+				setFeedback(FEEDBACK_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -392,6 +496,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return ID_EDEFAULT == null ? id != null : !ID_EDEFAULT.equals(id);
 			case OrchestrationPackage.TASK__NAME:
 				return NAME_EDEFAULT == null ? name != null : !NAME_EDEFAULT.equals(name);
+			case OrchestrationPackage.TASK__TYPE:
+				return TYPE_EDEFAULT == null ? type != null : !TYPE_EDEFAULT.equals(type);
 			case OrchestrationPackage.TASK__STATUS:
 				return status != STATUS_EDEFAULT;
 			case OrchestrationPackage.TASK__NEXT:
@@ -400,6 +506,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return subTasks != null && !subTasks.isEmpty();
 			case OrchestrationPackage.TASK__RESPONSE:
 				return RESPONSE_EDEFAULT == null ? response != null : !RESPONSE_EDEFAULT.equals(response);
+			case OrchestrationPackage.TASK__FEEDBACK:
+				return FEEDBACK_EDEFAULT == null ? feedback != null : !FEEDBACK_EDEFAULT.equals(feedback);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -418,10 +526,14 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(id);
 		result.append(", name: ");
 		result.append(name);
+		result.append(", type: ");
+		result.append(type);
 		result.append(", status: ");
 		result.append(status);
 		result.append(", response: ");
 		result.append(response);
+		result.append(", feedback: ");
+		result.append(feedback);
 		result.append(')');
 		return result.toString();
 	}
