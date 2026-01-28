@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: View
 Bundle-SymbolicName: eu.kalafatic.evolution.view;singleton:=true
-Bundle-Version: 2.6.1.202601280538
+Bundle-Version: 2.6.1.202601280935
 Require-Bundle: org.eclipse.core.runtime,org.eclipse.ui,org.apache.felix
  .scr,org.eclipse.equinox.event,org.eclipse.zest.core,org.eclipse.zest.l
  ayouts,org.eclipse.draw2d,org.eclipse.emf.ecore,org.eclipse.emf.common,

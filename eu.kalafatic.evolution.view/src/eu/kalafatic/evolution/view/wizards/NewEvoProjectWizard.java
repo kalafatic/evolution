@@ -191,12 +191,12 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             new Label(container, SWT.NONE).setText("Repository URL:");
             repoUrlText = new Text(container, SWT.BORDER);
             repoUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            repoUrlText.setText("https://github.com/kalafatic/evolution.git");
+            repoUrlText.setText("https://github.com/kalafatic/evo.git");
 
             new Label(container, SWT.NONE).setText("Branch:");
             branchText = new Text(container, SWT.BORDER);
             branchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            branchText.setText("main");
+            branchText.setText("master");
 
             new Label(container, SWT.NONE).setText("Username:");
             usernameText = new Text(container, SWT.BORDER);
@@ -327,7 +327,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             new Label(container, SWT.NONE).setText("Chat URL:");
             urlText = new Text(container, SWT.BORDER);
             urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            urlText.setText("http://localhost:8080/ai");
+            urlText.setText("http://localhost:58080/ai");
 
             new Label(container, SWT.NONE).setText("Token:");
             tokenText = new Text(container, SWT.BORDER | SWT.PASSWORD);
