@@ -17,6 +17,10 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
@@ -31,7 +35,32 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import eu.kalafatic.evolution.model.orchestration.*;
 import java.util.Collections;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import org.json.JSONObject;
+import org.json.JSONArray;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.jface.fieldassist.ControlDecoration;
+import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
+import org.eclipse.jface.fieldassist.ContentProposalAdapter;
+import org.eclipse.jface.fieldassist.SimpleContentProposalProvider;
+import org.eclipse.jface.fieldassist.TextContentAdapter;
+import org.eclipse.jface.wizard.WizardDialog;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.swt.widgets.Link;
+import org.eclipse.swt.widgets.Display;
 
 import eu.kalafatic.evolution.view.EvolutionNature;
 
@@ -214,4 +243,473 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         return true;
     }
 
+    private class ConfigDetailsPage extends WizardPage {
+        private Text fileNameText;
+
+        protected ConfigDetailsPage() {
+            super("ConfigDetailsPage");
+            setTitle("Configuration Details");
+            setDescription("Enter the configuration file name.");
+        }
+
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("Config File Name (.xml):");
+            fileNameText = new Text(container, SWT.BORDER);
+            fileNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            fileNameText.setText("evo_config.xml");
+
+            setControl(container);
+        }
+
+        public String getFileName() { return fileNameText.getText(); }
+    }
+
+    private class GitSettingsPage extends WizardPage {
+        private Text repoUrlText, branchText, usernameText, localPathText;
+        private ControlDecoration gitDecorator;
+        private Job validationJob;
+
+        protected GitSettingsPage() {
+            super("GitSettingsPage");
+            setTitle("Git Settings");
+            setDescription("Configure Git repository settings.");
+        }
+
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("Repository URL:");
+            repoUrlText = new Text(container, SWT.BORDER);
+            repoUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            repoUrlText.setText("https://github.com/kalafatic/evo.git");
+
+            gitDecorator = new ControlDecoration(repoUrlText, SWT.TOP | SWT.LEFT);
+            gitDecorator.setImage(FieldDecorationRegistry.getDefault()
+                    .getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+            gitDecorator.hide();
+
+            repoUrlText.addModifyListener(e -> validateGit());
+
+            Link gitHelpLink = new Link(container, SWT.NONE);
+            gitHelpLink.setText("<a>How to install Git?</a>");
+            gitHelpLink.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
+            gitHelpLink.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    openUrl("https://git-scm.com/downloads");
+                }
+            });
+
+            new Label(container, SWT.NONE).setText("Branch:");
+            branchText = new Text(container, SWT.BORDER);
+            branchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            branchText.setText("master");
+
+            new Label(container, SWT.NONE).setText("Username:");
+            usernameText = new Text(container, SWT.BORDER);
+            usernameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            usernameText.setText("admin");
+
+            new Label(container, SWT.NONE).setText("Local Path:");
+            localPathText = new Text(container, SWT.BORDER);
+            localPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            localPathText.setText("./repo");
+
+            setControl(container);
+            validateGit();
+        }
+
+        private void validateGit() {
+            if (validationJob != null) validationJob.cancel();
+            validationJob = new Job("Validate Git") {
+                @Override
+                protected IStatus run(IProgressMonitor monitor) {
+                    boolean success = false;
+                    try {
+                        Process process = new ProcessBuilder("git", "--version").start();
+                        success = (process.waitFor() == 0);
+                    } catch (Exception e) {}
+
+                    final boolean finalSuccess = success;
+                    Display.getDefault().asyncExec(() -> {
+                        if (finalSuccess) {
+                            gitDecorator.hide();
+                            setPageComplete(true);
+                            setErrorMessage(null);
+                        } else {
+                            showGitError();
+                        }
+                    });
+                    return Status.OK_STATUS;
+                }
+            };
+            validationJob.setSystem(true);
+            validationJob.schedule(500);
+        }
+
+        private void showGitError() {
+            gitDecorator.setDescriptionText("Git is not installed or not in PATH.");
+            gitDecorator.show();
+            setPageComplete(false);
+            setErrorMessage("Git is required to clone the repository.");
+        }
+
+        public String getRepoUrl() { return repoUrlText.getText(); }
+        public String getBranch() { return branchText.getText(); }
+        public String getUsername() { return usernameText.getText(); }
+        public String getLocalPath() { return localPathText.getText(); }
+    }
+
+    private class OllamaSettingsPage extends WizardPage {
+        private Text urlText, modelText, pathText;
+        private ControlDecoration pathDecorator, modelDecorator;
+        private SimpleContentProposalProvider proposalProvider;
+        private Job validationJob;
+
+        protected OllamaSettingsPage() {
+            super("OllamaSettingsPage");
+            setTitle("Ollama Settings");
+            setDescription("Configure Ollama API settings.");
+        }
+
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("Ollama URL:");
+            urlText = new Text(container, SWT.BORDER);
+            urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            urlText.setText("http://localhost:11434");
+
+            new Label(container, SWT.NONE).setText("Model Name:");
+            modelText = new Text(container, SWT.BORDER);
+            modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            modelText.setText("llama3");
+
+            new Label(container, SWT.NONE).setText("Executable Path:");
+            pathText = new Text(container, SWT.BORDER);
+            pathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            pathText.setText("/usr/bin/ollama");
+
+            pathDecorator = new ControlDecoration(pathText, SWT.TOP | SWT.LEFT);
+            pathDecorator.setImage(FieldDecorationRegistry.getDefault()
+                    .getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+            pathDecorator.hide();
+
+            modelDecorator = new ControlDecoration(modelText, SWT.TOP | SWT.LEFT);
+            modelDecorator.setImage(FieldDecorationRegistry.getDefault()
+                    .getFieldDecoration(FieldDecorationRegistry.DEC_WARNING).getImage());
+            modelDecorator.hide();
+
+            proposalProvider = new SimpleContentProposalProvider(new String[0]);
+            proposalProvider.setFiltering(true);
+            new ContentProposalAdapter(modelText, new TextContentAdapter(), proposalProvider, null, null);
+
+            Link setupLink = new Link(container, SWT.NONE);
+            setupLink.setText("<a>Setup/Download Ollama...</a>");
+            setupLink.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
+            setupLink.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
+                    Orchestrator tempOrch = factory.createOrchestrator();
+                    Ollama ollama = factory.createOllama();
+                    ollama.setUrl(urlText.getText());
+                    ollama.setPath(pathText.getText());
+                    tempOrch.setOllama(ollama);
+
+                    SetupOllamaWizard wizard = new SetupOllamaWizard(tempOrch);
+                    WizardDialog dialog = new WizardDialog(getShell(), wizard);
+                    if (dialog.open() == WizardDialog.OK) {
+                        urlText.setText(ollama.getUrl());
+                        pathText.setText(ollama.getPath());
+                        validateOllama();
+                    }
+                }
+            });
+
+            Link modelsLink = new Link(container, SWT.NONE);
+            modelsLink.setText("<a>Browse Ollama Models...</a>");
+            modelsLink.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
+            modelsLink.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    openUrl("https://ollama.com/library");
+                }
+            });
+
+            pathText.addModifyListener(e -> validateOllama());
+            urlText.addModifyListener(e -> validateOllama());
+            modelText.addModifyListener(e -> validateOllama());
+
+            setControl(container);
+            validateOllama();
+        }
+
+        private void validateOllama() {
+            String path = pathText.getText();
+            File file = new File(path);
+            if (!file.exists()) {
+                pathDecorator.setDescriptionText("Ollama executable not found at specified path.");
+                pathDecorator.show();
+                setPageComplete(false);
+                setErrorMessage("Ollama executable not found.");
+            } else {
+                pathDecorator.hide();
+                setErrorMessage(null);
+                setPageComplete(true);
+            }
+
+            // Debounced async check for models
+            if (validationJob != null) validationJob.cancel();
+            final String url = urlText.getText();
+            final String model = modelText.getText();
+            validationJob = new Job("Validate Ollama") {
+                @Override
+                protected IStatus run(IProgressMonitor monitor) {
+                    checkOllamaCommunication(url, model);
+                    return Status.OK_STATUS;
+                }
+            };
+            validationJob.setSystem(true);
+            validationJob.schedule(800);
+        }
+
+        private void checkOllamaCommunication(String url, String model) {
+            try {
+                HttpClient client = HttpClient.newBuilder()
+                        .connectTimeout(java.time.Duration.ofSeconds(2))
+                        .build();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(url + "/api/tags"))
+                        .GET()
+                        .build();
+                client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                        .thenAccept(response -> {
+                            if (response.statusCode() == 200) {
+                                JSONObject json = new JSONObject(response.body());
+                                JSONArray models = json.getJSONArray("models");
+                                List<String> modelNames = new ArrayList<>();
+                                boolean found = false;
+                                for (int i = 0; i < models.length(); i++) {
+                                    String name = models.getJSONObject(i).getString("name");
+                                    modelNames.add(name);
+                                    if (name.equals(model) || name.split(":")[0].equals(model)) {
+                                        found = true;
+                                    }
+                                }
+                                final boolean modelFound = found;
+                                final String[] names = modelNames.toArray(new String[0]);
+                                Display.getDefault().asyncExec(() -> {
+                                    proposalProvider.setProposals(names);
+                                    if (modelFound) {
+                                        modelDecorator.hide();
+                                    } else {
+                                        modelDecorator.setDescriptionText("Model not found on Ollama server.");
+                                        modelDecorator.show();
+                                    }
+                                });
+                            }
+                        }).exceptionally(ex -> {
+                            Display.getDefault().asyncExec(() -> {
+                                modelDecorator.setDescriptionText("Could not connect to Ollama server.");
+                                modelDecorator.show();
+                            });
+                            return null;
+                        });
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+
+        public String getOllamaUrl() { return urlText.getText(); }
+        public String getModelName() { return modelText.getText(); }
+        public String getExecutablePath() { return pathText.getText(); }
+    }
+
+    private class LLMSettingsPage extends WizardPage {
+        private Text modelText, tempText;
+
+        protected LLMSettingsPage() {
+            super("LLMSettingsPage");
+            setTitle("LLM Settings");
+            setDescription("Configure LLM model and parameters.");
+        }
+
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("LLM Model:");
+            modelText = new Text(container, SWT.BORDER);
+            modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            modelText.setText("gpt-4o");
+
+            new Label(container, SWT.NONE).setText("Temperature:");
+            tempText = new Text(container, SWT.BORDER);
+            tempText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            tempText.setText("0.7");
+
+            Link setupLink = new Link(container, SWT.NONE);
+            setupLink.setText("<a>Setup LLM...</a>");
+            setupLink.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
+            setupLink.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
+                    Orchestrator tempOrch = factory.createOrchestrator();
+                    tempOrch.setLlm(factory.createLLM());
+                    tempOrch.setAiChat(factory.createAiChat());
+
+                    SetupLLMWizard wizard = new SetupLLMWizard(tempOrch);
+                    WizardDialog dialog = new WizardDialog(getShell(), wizard);
+                    if (dialog.open() == WizardDialog.OK) {
+                        modelText.setText(tempOrch.getLlm().getModel());
+                        tempText.setText(String.valueOf(tempOrch.getLlm().getTemperature()));
+                    }
+                }
+            });
+
+            setControl(container);
+        }
+
+        public String getLlmModel() { return modelText.getText(); }
+        public String getTemperature() { return tempText.getText(); }
+    }
+
+    private class MavenSettingsPage extends WizardPage {
+        private Text goalsText;
+        private ControlDecoration mavenDecorator;
+        private Job validationJob;
+
+        protected MavenSettingsPage() {
+            super("MavenSettingsPage");
+            setTitle("Maven Settings");
+            setDescription("Configure Maven build goals.");
+        }
+
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("Goals (comma separated):");
+            goalsText = new Text(container, SWT.BORDER);
+            goalsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            goalsText.setText("clean, install");
+
+            mavenDecorator = new ControlDecoration(goalsText, SWT.TOP | SWT.LEFT);
+            mavenDecorator.setImage(FieldDecorationRegistry.getDefault()
+                    .getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+            mavenDecorator.hide();
+
+            goalsText.addModifyListener(e -> validateMaven());
+
+            Link mavenHelpLink = new Link(container, SWT.NONE);
+            mavenHelpLink.setText("<a>How to install Maven?</a>");
+            mavenHelpLink.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
+            mavenHelpLink.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    openUrl("https://maven.apache.org/download.cgi");
+                }
+            });
+
+            setControl(container);
+            validateMaven();
+        }
+
+        private void validateMaven() {
+            if (validationJob != null) validationJob.cancel();
+            validationJob = new Job("Validate Maven") {
+                @Override
+                protected IStatus run(IProgressMonitor monitor) {
+                    boolean success = false;
+                    try {
+                        String cmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+                        Process process = new ProcessBuilder(cmd, "-v").start();
+                        success = (process.waitFor() == 0);
+                    } catch (Exception e) {}
+
+                    final boolean finalSuccess = success;
+                    Display.getDefault().asyncExec(() -> {
+                        if (finalSuccess) {
+                            mavenDecorator.hide();
+                            setPageComplete(true);
+                            setErrorMessage(null);
+                        } else {
+                            showMavenError();
+                        }
+                    });
+                    return Status.OK_STATUS;
+                }
+            };
+            validationJob.setSystem(true);
+            validationJob.schedule(500);
+        }
+
+        private void showMavenError() {
+            mavenDecorator.setDescriptionText("Maven is not installed or not in PATH.");
+            mavenDecorator.show();
+            setPageComplete(false);
+            setErrorMessage("Maven is required to build the project.");
+        }
+
+        public String getGoals() { return goalsText.getText(); }
+    }
+
+    private void openUrl(String url) {
+        try {
+            PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL(url));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private class AiChatSettingsPage extends WizardPage {
+        private Text urlText, tokenText, promptText;
+
+        protected AiChatSettingsPage() {
+            super("AiChatSettingsPage");
+            setTitle("AI Chat Settings");
+            setDescription("Configure AI Chat service settings.");
+        }
+
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("Chat URL:");
+            urlText = new Text(container, SWT.BORDER);
+            urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            urlText.setText("http://localhost:58080/ai");
+
+            new Label(container, SWT.NONE).setText("Token:");
+            tokenText = new Text(container, SWT.BORDER | SWT.PASSWORD);
+            tokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            tokenText.setText("ENTER_TOKEN_HERE");
+
+            new Label(container, SWT.NONE).setText("Initial Prompt:");
+            promptText = new Text(container, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
+            GridData gd = new GridData(GridData.FILL_BOTH);
+            gd.heightHint = 60;
+            promptText.setLayoutData(gd);
+            promptText.setText("You are a helpful assistant.");
+
+            setControl(container);
+        }
+
+        public String getChatUrl() { return urlText.getText(); }
+        public String getToken() { return tokenText.getText(); }
+        public String getPrompt() { return promptText.getText(); }
+    }
 }
