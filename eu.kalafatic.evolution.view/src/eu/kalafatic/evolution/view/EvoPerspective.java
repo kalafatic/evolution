@@ -18,7 +18,7 @@ public class EvoPerspective implements IPerspectiveFactory {
 
 		layout.addView(IPageLayout.ID_PROJECT_EXPLORER, IPageLayout.LEFT, 0.25f, layout.getEditorArea());
 		
-		layout.addStandaloneView(EcoreZestView.ID, true, IPageLayout.RIGHT, 0.75f, layout.getEditorArea());
+		layout.addStandaloneView(OrchestrationZestView.ID, true, IPageLayout.RIGHT, 0.75f, layout.getEditorArea());
 
 		//IFolderLayout topLeft = layout.createFolder("TOP_LEFT", IPageLayout.LEFT, 0.25f, editorArea);
 
