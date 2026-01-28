@@ -235,12 +235,14 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	
 	public IProject createProject(String projectName) {
 		try {
-			final String testProjectName = "TestProject";
-			final String fileName = "Orchestrator.orchestration";
+			if (projectName == null || projectName.isEmpty()) {
+				projectName = "TestProject";
+			}
+			final String fileName = "Project.xml";
 
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
 			IWorkspaceRoot root = workspace.getRoot();
-			IProject project = root.getProject(testProjectName);
+			IProject project = root.getProject(projectName);
 
 			if (!project.exists()) {
 				project.create(null);
@@ -252,8 +254,10 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 			IFile file = project.getFile(fileName);
 			if (!file.exists()) {
 				String content = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-						"<orchestration:Orchestrator xmi:version=\"2.0\" xmlns:xmi=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
-						"    xmlns:orchestration=\"http://example.com/orchestration\" xsi:schemaLocation=\"http://example.com/orchestration ../eu.kalafatic.evolution.model/model/evolution.ecore\"/>\n";
+						"<orchestration:EvoProject xmi:version=\"2.0\" xmlns:xmi=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+						"    xmlns:orchestration=\"http://example.com/orchestration\" name=\"" + projectName + "\">\n" +
+						"  <orchestrations name=\"Default Orchestration\" id=\"orch_default\"/>\n" +
+						"</orchestration:EvoProject>";
 				InputStream source = new ByteArrayInputStream(content.getBytes());
 				file.create(source, IResource.NONE, null);
 			}
@@ -264,7 +268,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 			try {
 				page.openEditor(
 						new FileEditorInput(file),
-						"eu.kalafatic.evolution.model.orchestration.presentation.OrchestrationEditorID"
+						"eu.kalafatic.evolution.view.editors.MultiPageEditor"
 				);
 			} catch (PartInitException e) {
 				e.printStackTrace();
@@ -289,7 +293,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	private void openMultiPageEditor() {
 		try {
 			final String testProjectName = "TestProject";
-			final String fileName = "Test.xml";
+			final String fileName = "Project.xml";
 
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
 			IWorkspaceRoot root = workspace.getRoot();
@@ -304,7 +308,11 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 
 			IFile file = project.getFile(fileName);
 			if (!file.exists()) {
-				String content = "<root>\n</root>";
+				String content = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+						"<orchestration:EvoProject xmi:version=\"2.0\" xmlns:xmi=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+						"    xmlns:orchestration=\"http://example.com/orchestration\" name=\"TestProject\">\n" +
+						"  <orchestrations name=\"Default Orchestration\" id=\"orch_default\"/>\n" +
+						"</orchestration:EvoProject>";
 				InputStream source = new ByteArrayInputStream(content.getBytes());
 				file.create(source, IResource.NONE, null);
 			}
