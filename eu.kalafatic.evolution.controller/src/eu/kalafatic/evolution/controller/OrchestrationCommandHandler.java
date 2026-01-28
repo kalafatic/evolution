@@ -6,6 +6,8 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
@@ -32,7 +34,8 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
     public Object execute(ExecutionEvent event) throws ExecutionException {
         Orchestrator orchestrator = getOrchestrator(event);
         if (orchestrator != null) {
-            Job job = new OrchestrationJob("Orchestration", orchestrator);
+            IProject project = getProject(orchestrator);
+            Job job = new OrchestrationJob("Orchestration", orchestrator, project);
             job.schedule();
         }
         return null;
@@ -40,16 +43,18 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
 
     private class OrchestrationJob extends Job {
         private Orchestrator orchestrator;
+        private IProject project;
 
-        public OrchestrationJob(String name, Orchestrator orchestrator) {
+        public OrchestrationJob(String name, Orchestrator orchestrator, IProject project) {
             super(name);
             this.orchestrator = orchestrator;
+            this.project = project;
         }
 
         @Override
         protected IStatus run(IProgressMonitor monitor) {
             try {
-                executeOrchestration(orchestrator, monitor);
+                executeOrchestration(orchestrator, project, monitor);
             } catch (Exception e) {
                 e.printStackTrace();
                 Display.getDefault().asyncExec(() -> {
@@ -61,7 +66,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         }
     }
 
-    private void executeOrchestration(Orchestrator orchestrator, IProgressMonitor monitor) throws Exception {
+    private void executeOrchestration(Orchestrator orchestrator, IProject project, IProgressMonitor monitor) throws Exception {
         String id = orchestrator.getId();
         OrchestrationStatusManager.getInstance().updateStatus(id, 0.0, "Starting");
 
@@ -94,7 +99,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 OrchestrationStatusManager.getInstance().updateStatus(id, baseProgress, statusMsg);
                 monitor.subTask(statusMsg);
 
-                String response = executeTask(orchestrator, agent, task, handOffContext, lastFeedback);
+                String response = executeTask(orchestrator, project, agent, task, handOffContext, lastFeedback);
                 task.setResponse(response);
 
                 // 3. Evaluation
@@ -179,13 +184,13 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         }
     }
 
-    private String executeTask(Orchestrator orchestrator, Agent agent, Task task, String context, String lastFeedback) throws Exception {
+    private String executeTask(Orchestrator orchestrator, IProject project, Agent agent, Task task, String context, String lastFeedback) throws Exception {
         String taskType = task.getType();
 
         if ("git".equalsIgnoreCase(taskType)) {
-            return executeGitTool(task.getName());
+            return executeGitTool(project, task.getName());
         } else if ("maven".equalsIgnoreCase(taskType)) {
-            return executeMavenTool(orchestrator);
+            return executeMavenTool(project, orchestrator);
         } else {
             // Default to LLM
             String agentType = (agent != null) ? agent.getType() : "general assistant";
@@ -201,20 +206,26 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         }
     }
 
-    private String executeGitTool(String taskName) throws Exception {
+    private String executeGitTool(IProject project, String taskName) throws Exception {
+        java.io.File workingDir = (project != null) ? project.getLocation().toFile() : null;
         // Simple heuristic mapping
         if (taskName.toLowerCase().contains("add") || taskName.toLowerCase().contains("commit")) {
-            executeCommand("git", "add", ".");
-            return executeCommand("git", "commit", "-m", "AI Evolution step: " + taskName);
+            executeCommand(workingDir, "git", "add", ".");
+            String result = executeCommand(workingDir, "git", "commit", "-m", "AI Evolution step: " + taskName);
+            if (project != null) project.refreshLocal(IResource.DEPTH_INFINITE, null);
+            return result;
         }
         return "No git action mapped for: " + taskName;
     }
 
-    private String executeMavenTool(Orchestrator orchestrator) throws Exception {
+    private String executeMavenTool(IProject project, Orchestrator orchestrator) throws Exception {
+        java.io.File workingDir = (project != null) ? project.getLocation().toFile() : null;
         List<String> mavenArgs = new ArrayList<>();
         mavenArgs.add("mvn");
         mavenArgs.addAll(orchestrator.getMaven().getGoals());
-        return executeCommand(mavenArgs.toArray(new String[0]));
+        String result = executeCommand(workingDir, mavenArgs.toArray(new String[0]));
+        if (project != null) project.refreshLocal(IResource.DEPTH_INFINITE, null);
+        return result;
     }
 
     private Agent findAgentForTask(Orchestrator orchestrator, Task task) {
@@ -234,8 +245,11 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         throw new Exception("No LLM service configured (Ollama or AI Chat)");
     }
 
-    private String executeCommand(String... command) throws Exception {
+    private String executeCommand(java.io.File workingDir, String... command) throws Exception {
         ProcessBuilder processBuilder = new ProcessBuilder(command);
+        if (workingDir != null) {
+            processBuilder.directory(workingDir);
+        }
         processBuilder.redirectErrorStream(true);
         Process process = processBuilder.start();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
