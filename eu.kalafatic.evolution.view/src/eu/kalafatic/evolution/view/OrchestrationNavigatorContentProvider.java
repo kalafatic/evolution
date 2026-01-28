@@ -34,6 +34,8 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
                     // Ignore
                 }
             }
+        } else if (parentElement instanceof Orchestrator) {
+            return ((Orchestrator) parentElement).getAgents().toArray();
         }
         return new Object[0];
     }
