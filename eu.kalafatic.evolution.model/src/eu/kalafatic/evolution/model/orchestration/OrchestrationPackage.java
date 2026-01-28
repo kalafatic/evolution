@@ -662,6 +662,52 @@ public interface OrchestrationPackage extends EPackage {
 	int AI_CHAT_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl <em>Evo Project</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvoProject()
+	 * @generated
+	 */
+	int EVO_PROJECT = 10;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVO_PROJECT__NAME = 0;
+
+	/**
+	 * The feature id for the '<em><b>Orchestrations</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVO_PROJECT__ORCHESTRATIONS = 1;
+
+	/**
+	 * The number of structural features of the '<em>Evo Project</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVO_PROJECT_FEATURE_COUNT = 2;
+
+	/**
+	 * The number of operations of the '<em>Evo Project</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVO_PROJECT_OPERATION_COUNT = 0;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -669,7 +715,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
 	 * @generated
 	 */
-	int TASK_STATUS = 10;
+	int TASK_STATUS = 11;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
@@ -679,7 +725,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
 	 * @generated
 	 */
-	int COMMAND_STATUS = 11;
+	int COMMAND_STATUS = 12;
 
 
 	/**
@@ -1179,6 +1225,38 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getAiChat_Prompt();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.EvoProject <em>Evo Project</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Evo Project</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.EvoProject
+	 * @generated
+	 */
+	EClass getEvoProject();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.EvoProject#getName <em>Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.EvoProject#getName()
+	 * @see #getEvoProject()
+	 * @generated
+	 */
+	EAttribute getEvoProject_Name();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.EvoProject#getOrchestrations <em>Orchestrations</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Orchestrations</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.EvoProject#getOrchestrations()
+	 * @see #getEvoProject()
+	 * @generated
+	 */
+	EReference getEvoProject_Orchestrations();
+
+	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1608,6 +1686,32 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute AI_CHAT__PROMPT = eINSTANCE.getAiChat_Prompt();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl <em>Evo Project</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvoProject()
+		 * @generated
+		 */
+		EClass EVO_PROJECT = eINSTANCE.getEvoProject();
+
+		/**
+		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute EVO_PROJECT__NAME = eINSTANCE.getEvoProject_Name();
+
+		/**
+		 * The meta object literal for the '<em><b>Orchestrations</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference EVO_PROJECT__ORCHESTRATIONS = eINSTANCE.getEvoProject_Orchestrations();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.

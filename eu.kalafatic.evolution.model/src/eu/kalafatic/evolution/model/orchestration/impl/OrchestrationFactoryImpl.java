@@ -4,6 +4,7 @@ package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
 import eu.kalafatic.evolution.model.orchestration.Git;
@@ -79,9 +80,21 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.COMMAND: return createCommand();
 			case OrchestrationPackage.OLLAMA: return createOllama();
 			case OrchestrationPackage.AI_CHAT: return createAiChat();
+			case OrchestrationPackage.EVO_PROJECT: return createEvoProject();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EvoProject createEvoProject() {
+		EvoProjectImpl evoProject = new EvoProjectImpl();
+		return evoProject;
 	}
 
 	/**
