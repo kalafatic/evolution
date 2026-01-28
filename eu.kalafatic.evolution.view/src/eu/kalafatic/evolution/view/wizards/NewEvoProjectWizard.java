@@ -13,7 +13,9 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
@@ -72,7 +74,8 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         try {
             IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
             if (!project.exists()) {
-                project.create(null);
+                IProjectDescription desc = ResourcesPlugin.getWorkspace().newProjectDescription(projectName);
+                project.create(desc, null);
             }
             if (!project.isOpen()) {
                 project.open(null);
@@ -146,11 +149,14 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             if (file.exists() && workbench != null) {
                 IWorkbenchWindow dw = workbench.getActiveWorkbenchWindow();
                 if (dw != null) {
-                    BasicNewResourceWizard.selectAndReveal(file, dw);
                     IWorkbenchPage page = dw.getActivePage();
                     if (page != null) {
                         try {
-                            IDE.openEditor(page, file, true);
+                            // Ensure Project Explorer is visible
+                            page.showView(IPageLayout.ID_PROJECT_EXPLORER);
+                            BasicNewResourceWizard.selectAndReveal(file, dw);
+                            // Open created file with the specific MultiPageEditor ID
+                            IDE.openEditor(page, file, "eu.kalafatic.evolution.view.editors.MultiPageEditor", true);
                         } catch (PartInitException e) {
                             e.printStackTrace();
                         }
