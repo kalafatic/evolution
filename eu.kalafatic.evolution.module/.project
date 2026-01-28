@@ -3,6 +3,7 @@
 	<name>eu.kalafatic.evolution.module</name>
 	<comment></comment>
 	<projects>
+		<project>eu.kalafatic.evolution.feature</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

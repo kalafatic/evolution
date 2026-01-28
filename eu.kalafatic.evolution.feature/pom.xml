@@ -2,15 +2,14 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>eu.kalafatic.evolution</groupId>
-		<artifactId>eu.kalafatic.evolution.module</artifactId>
-		<version>2.6.1-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
-	</parent>
+
 	<artifactId>eu.kalafatic.evolution.feature</artifactId>
+	<groupId>eu.kalafatic.evolution</groupId>
+	<version>2.6.1-SNAPSHOT</version>
+
 	<packaging>eclipse-feature</packaging>
-		<properties>
+
+	<properties>
 		<tycho.targetPlatform>platform</tycho.targetPlatform>
 		<tycho.version>4.0.5</tycho.version>
 	</properties>
@@ -77,6 +76,12 @@
 			<layout>p2</layout>
 			<url>https://download.eclipse.org/releases/2025-12</url>
 		</repository>
+		
+		<repository>
+        <id>eclipse-orbit</id>
+        <layout>p2</layout>
+        <url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/latest/</url>
+    </repository>
 	</repositories>
 	<dependencies>
 
@@ -100,5 +105,4 @@
 		</dependency>
 	</dependencies>
 
-	<groupId>eu.kalafatic.evolution</groupId>
 </project>
