@@ -13,7 +13,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -21,10 +20,16 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import eu.kalafatic.evolution.model.orchestration.*;
 import java.util.Collections;
+import java.util.Arrays;
 import org.eclipse.swt.layout.GridData;
 
 public class NewEvoProjectWizard extends Wizard implements INewWizard {
-    private NewEvoProjectPage page;
+    private NewEvoProjectPage projectPage;
+    private GitSettingsPage gitPage;
+    private OllamaSettingsPage ollamaPage;
+    private LLMSettingsPage llmPage;
+    private MavenSettingsPage mavenPage;
+    private AiChatSettingsPage aiChatPage;
 
     public NewEvoProjectWizard() {
         setWindowTitle("New Evo Project");
@@ -36,14 +41,25 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
     @Override
     public void addPages() {
-        page = new NewEvoProjectPage();
-        addPage(page);
+        projectPage = new NewEvoProjectPage();
+        gitPage = new GitSettingsPage();
+        ollamaPage = new OllamaSettingsPage();
+        llmPage = new LLMSettingsPage();
+        mavenPage = new MavenSettingsPage();
+        aiChatPage = new AiChatSettingsPage();
+
+        addPage(projectPage);
+        addPage(gitPage);
+        addPage(ollamaPage);
+        addPage(llmPage);
+        addPage(mavenPage);
+        addPage(aiChatPage);
     }
 
     @Override
     public boolean performFinish() {
-        final String projectName = page.getProjectName();
-        final String fileName = page.getFileName();
+        final String projectName = projectPage.getProjectName();
+        final String fileName = projectPage.getFileName();
 
         try {
             IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
@@ -71,44 +87,50 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             orchestrator.setName("Initial Orchestration");
             orchestrator.setId("orch1");
 
-            // Default Git
+            // Git Settings
             Git git = factory.createGit();
-            git.setRepositoryUrl("https://github.com/kalafatic/evolution.git");
-            git.setBranch("main");
-            git.setUsername("admin");
-            git.setLocalPath("./repo");
+            git.setRepositoryUrl(gitPage.getRepoUrl());
+            git.setBranch(gitPage.getBranch());
+            git.setUsername(gitPage.getUsername());
+            git.setLocalPath(gitPage.getLocalPath());
             orchestrator.setGit(git);
 
-            // Default Ollama
+            // Ollama Settings
             Ollama ollama = factory.createOllama();
-            ollama.setUrl("http://localhost:11434");
-            ollama.setModel("llama3");
-            ollama.setPath("/usr/bin/ollama");
+            ollama.setUrl(ollamaPage.getOllamaUrl());
+            ollama.setModel(ollamaPage.getModelName());
+            ollama.setPath(ollamaPage.getExecutablePath());
             orchestrator.setOllama(ollama);
 
-            // Default LLM
+            // LLM Settings
             LLM llm = factory.createLLM();
-            llm.setModel("gpt-4");
-            llm.setTemperature(0.7f);
+            llm.setModel(llmPage.getLlmModel());
+            try {
+                llm.setTemperature(Float.parseFloat(llmPage.getTemperature()));
+            } catch (NumberFormatException e) {
+                llm.setTemperature(0.7f);
+            }
             orchestrator.setLlm(llm);
 
-            // Default Maven
+            // Maven Settings
             Maven maven = factory.createMaven();
-            maven.getGoals().add("clean");
-            maven.getGoals().add("install");
+            String goals = mavenPage.getGoals();
+            if (goals != null && !goals.isEmpty()) {
+                maven.getGoals().addAll(Arrays.asList(goals.split("[,\\s]+")));
+            }
             orchestrator.setMaven(maven);
 
-            // Default AiChat
+            // AiChat Settings
             AiChat aiChat = factory.createAiChat();
-            aiChat.setUrl("http://localhost:8080/ai");
-            aiChat.setToken("ENTER_TOKEN_HERE");
-            aiChat.setPrompt("You are a helpful assistant.");
+            aiChat.setUrl(aiChatPage.getChatUrl());
+            aiChat.setToken(aiChatPage.getToken());
+            aiChat.setPrompt(aiChatPage.getPrompt());
             orchestrator.setAiChat(aiChat);
 
             evoProject.getOrchestrations().add(orchestrator);
             resource.getContents().add(evoProject);
 
-            resource.save(Collections.EMPTY_MAP);
+            resource.save(Collections.emptyMap());
             project.refreshLocal(IProject.DEPTH_INFINITE, null);
 
         } catch (Exception e) {
@@ -148,12 +170,182 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             setControl(container);
         }
 
-        public String getProjectName() {
-            return projectNameText.getText();
+        public String getProjectName() { return projectNameText.getText(); }
+        public String getFileName() { return fileNameText.getText(); }
+    }
+
+    private class GitSettingsPage extends WizardPage {
+        private Text repoUrlText, branchText, usernameText, localPathText;
+
+        protected GitSettingsPage() {
+            super("GitSettingsPage");
+            setTitle("Git Settings");
+            setDescription("Configure Git repository settings.");
         }
 
-        public String getFileName() {
-            return fileNameText.getText();
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("Repository URL:");
+            repoUrlText = new Text(container, SWT.BORDER);
+            repoUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            repoUrlText.setText("https://github.com/kalafatic/evolution.git");
+
+            new Label(container, SWT.NONE).setText("Branch:");
+            branchText = new Text(container, SWT.BORDER);
+            branchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            branchText.setText("main");
+
+            new Label(container, SWT.NONE).setText("Username:");
+            usernameText = new Text(container, SWT.BORDER);
+            usernameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            usernameText.setText("admin");
+
+            new Label(container, SWT.NONE).setText("Local Path:");
+            localPathText = new Text(container, SWT.BORDER);
+            localPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            localPathText.setText("./repo");
+
+            setControl(container);
         }
+
+        public String getRepoUrl() { return repoUrlText.getText(); }
+        public String getBranch() { return branchText.getText(); }
+        public String getUsername() { return usernameText.getText(); }
+        public String getLocalPath() { return localPathText.getText(); }
+    }
+
+    private class OllamaSettingsPage extends WizardPage {
+        private Text urlText, modelText, pathText;
+
+        protected OllamaSettingsPage() {
+            super("OllamaSettingsPage");
+            setTitle("Ollama Settings");
+            setDescription("Configure Ollama API settings.");
+        }
+
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("Ollama URL:");
+            urlText = new Text(container, SWT.BORDER);
+            urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            urlText.setText("http://localhost:11434");
+
+            new Label(container, SWT.NONE).setText("Model Name:");
+            modelText = new Text(container, SWT.BORDER);
+            modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            modelText.setText("llama3");
+
+            new Label(container, SWT.NONE).setText("Executable Path:");
+            pathText = new Text(container, SWT.BORDER);
+            pathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            pathText.setText("/usr/bin/ollama");
+
+            setControl(container);
+        }
+
+        public String getOllamaUrl() { return urlText.getText(); }
+        public String getModelName() { return modelText.getText(); }
+        public String getExecutablePath() { return pathText.getText(); }
+    }
+
+    private class LLMSettingsPage extends WizardPage {
+        private Text modelText, tempText;
+
+        protected LLMSettingsPage() {
+            super("LLMSettingsPage");
+            setTitle("LLM Settings");
+            setDescription("Configure LLM model and parameters.");
+        }
+
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("LLM Model:");
+            modelText = new Text(container, SWT.BORDER);
+            modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            modelText.setText("gpt-4o");
+
+            new Label(container, SWT.NONE).setText("Temperature:");
+            tempText = new Text(container, SWT.BORDER);
+            tempText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            tempText.setText("0.7");
+
+            setControl(container);
+        }
+
+        public String getLlmModel() { return modelText.getText(); }
+        public String getTemperature() { return tempText.getText(); }
+    }
+
+    private class MavenSettingsPage extends WizardPage {
+        private Text goalsText;
+
+        protected MavenSettingsPage() {
+            super("MavenSettingsPage");
+            setTitle("Maven Settings");
+            setDescription("Configure Maven build goals.");
+        }
+
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("Goals (comma separated):");
+            goalsText = new Text(container, SWT.BORDER);
+            goalsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            goalsText.setText("clean, install");
+
+            setControl(container);
+        }
+
+        public String getGoals() { return goalsText.getText(); }
+    }
+
+    private class AiChatSettingsPage extends WizardPage {
+        private Text urlText, tokenText, promptText;
+
+        protected AiChatSettingsPage() {
+            super("AiChatSettingsPage");
+            setTitle("AI Chat Settings");
+            setDescription("Configure AI Chat service settings.");
+        }
+
+        @Override
+        public void createControl(Composite parent) {
+            Composite container = new Composite(parent, SWT.NONE);
+            container.setLayout(new GridLayout(2, false));
+
+            new Label(container, SWT.NONE).setText("Chat URL:");
+            urlText = new Text(container, SWT.BORDER);
+            urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            urlText.setText("http://localhost:8080/ai");
+
+            new Label(container, SWT.NONE).setText("Token:");
+            tokenText = new Text(container, SWT.BORDER | SWT.PASSWORD);
+            tokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            tokenText.setText("ENTER_TOKEN_HERE");
+
+            new Label(container, SWT.NONE).setText("Initial Prompt:");
+            promptText = new Text(container, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
+            GridData gd = new GridData(GridData.FILL_BOTH);
+            gd.heightHint = 60;
+            promptText.setLayoutData(gd);
+            promptText.setText("You are a helpful assistant.");
+
+            setControl(container);
+        }
+
+        public String getChatUrl() { return urlText.getText(); }
+        public String getToken() { return tokenText.getText(); }
+        public String getPrompt() { return promptText.getText(); }
     }
 }
