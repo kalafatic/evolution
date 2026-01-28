@@ -60,9 +60,6 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
     }
 
     private void executeOrchestration(EObject orchestrator, IProgressMonitor monitor) throws Exception {
-        String id = (String) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature("id"));
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.0, "Starting");
-
         // Get AI Chat properties
         monitor.subTask("Getting AI Chat properties");
         EObject aiChat = (EObject) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature("aiChat"));
@@ -91,21 +88,18 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         monitor.worked(1);
 
         // 1. AI Chat Request
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.1, "AI Chat Request...");
         monitor.subTask("Sending AI Chat Request");
         String aiResponse = sendAiChatRequest(aiChatUrl, aiChatToken, aiChatPrompt);
         System.out.println("AI Chat Response: " + aiResponse);
         monitor.worked(1);
 
         // 2. Ollama LLM Solution
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.35, "Ollama Request...");
         monitor.subTask("Sending Ollama Request");
         String llmSolution = sendOllamaRequest(ollamaUrl, ollamaModel, aiResponse);
         System.out.println("LLM Solution: " + llmSolution);
         monitor.worked(1);
 
         // 3. Git Commit
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.6, "Git Commit...");
         monitor.subTask("Committing to Git");
         // Sanitize the commit message to prevent it from being interpreted as a command-line option.
         if (llmSolution.startsWith("-")) {
@@ -117,12 +111,10 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         monitor.worked(1);
 
         // 4. Maven Build
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.85, "Maven Build...");
         monitor.subTask("Running Maven Build");
         String mavenBuildOutput = executeCommand("mvn", goals);
         System.out.println("Maven Build Output: " + mavenBuildOutput);
         monitor.worked(1);
-        OrchestrationStatusManager.getInstance().updateStatus(id, 1.0, "Completed");
     }
 
     private String executeCommand(String... command) throws Exception {

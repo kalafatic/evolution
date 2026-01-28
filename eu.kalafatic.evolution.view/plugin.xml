@@ -34,6 +34,10 @@
                name="appName"
                value="AI Evolution">
          </property>
+         <property
+               name="preferenceCustomization"
+               value="plugin_customization.ini">
+         </property>
       </product>
    </extension>
    <extension
@@ -291,12 +295,6 @@
             class="eu.kalafatic.evolution.view.wizards.NewEvoProjectWizard"
             id="eu.kalafatic.evolution.view.newEvoProjectWizard"
             name="New Evo Project">
-      </wizard>
-      <wizard
-            category="eu.kalafatic.evolution.view.category"
-            class="eu.kalafatic.evolution.view.wizards.AddOrchestrationWizard"
-            id="eu.kalafatic.evolution.view.addOrchestrationWizard"
-            name="Add Orchestration">
       </wizard>
    </extension>
    <extension
