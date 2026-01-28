@@ -38,6 +38,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getId <em>Id</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getName <em>Name</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAgents <em>Agents</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getTasks <em>Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getGit <em>Git</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMaven <em>Maven</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getLlm <em>Llm</em>}</li>
@@ -98,6 +99,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected EList<Agent> agents;
+
+	/**
+	 * The cached value of the '{@link #getTasks() <em>Tasks</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTasks()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<eu.kalafatic.evolution.model.orchestration.Task> tasks;
 
 	/**
 	 * The cached value of the '{@link #getGit() <em>Git</em>}' containment reference.
@@ -166,6 +177,19 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 */
 	protected OrchestratorImpl() {
 		super();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EList<eu.kalafatic.evolution.model.orchestration.Task> getTasks() {
+		if (tasks == null) {
+			tasks = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.Task>(eu.kalafatic.evolution.model.orchestration.Task.class, this, OrchestrationPackage.ORCHESTRATOR__TASKS);
+		}
+		return tasks;
 	}
 
 	/**
@@ -517,6 +541,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		switch (featureID) {
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
 				return ((InternalEList<?>)getAgents()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__TASKS:
+				return ((InternalEList<?>)getTasks()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				return basicSetGit(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__MAVEN:
@@ -547,6 +573,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getName();
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
 				return getAgents();
+			case OrchestrationPackage.ORCHESTRATOR__TASKS:
+				return getTasks();
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				return getGit();
 			case OrchestrationPackage.ORCHESTRATOR__MAVEN:
@@ -581,6 +609,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
 				getAgents().clear();
 				getAgents().addAll((Collection<? extends Agent>)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__TASKS:
+				getTasks().clear();
+				getTasks().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.Task>)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				setGit((Git)newValue);
@@ -621,6 +653,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
 				getAgents().clear();
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__TASKS:
+				getTasks().clear();
+				return;
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				setGit((Git)null);
 				return;
@@ -657,6 +692,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return NAME_EDEFAULT == null ? name != null : !NAME_EDEFAULT.equals(name);
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
 				return agents != null && !agents.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__TASKS:
+				return tasks != null && !tasks.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				return git != null;
 			case OrchestrationPackage.ORCHESTRATOR__MAVEN:

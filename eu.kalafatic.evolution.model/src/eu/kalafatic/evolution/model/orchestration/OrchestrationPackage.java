@@ -241,13 +241,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__AGENTS = 2;
 
 	/**
+	 * The feature id for the '<em><b>Tasks</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__TASKS = 3;
+
+	/**
 	 * The feature id for the '<em><b>Git</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__GIT = 3;
+	int ORCHESTRATOR__GIT = 4;
 
 	/**
 	 * The feature id for the '<em><b>Maven</b></em>' containment reference.
@@ -256,7 +265,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__MAVEN = 4;
+	int ORCHESTRATOR__MAVEN = 5;
 
 	/**
 	 * The feature id for the '<em><b>Llm</b></em>' containment reference.
@@ -265,7 +274,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__LLM = 5;
+	int ORCHESTRATOR__LLM = 6;
 
 	/**
 	 * The feature id for the '<em><b>Compiler</b></em>' containment reference.
@@ -274,7 +283,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__COMPILER = 6;
+	int ORCHESTRATOR__COMPILER = 7;
 
 	/**
 	 * The feature id for the '<em><b>Ollama</b></em>' containment reference.
@@ -283,7 +292,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__OLLAMA = 7;
+	int ORCHESTRATOR__OLLAMA = 8;
 
 	/**
 	 * The feature id for the '<em><b>Ai Chat</b></em>' containment reference.
@@ -292,7 +301,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__AI_CHAT = 8;
+	int ORCHESTRATOR__AI_CHAT = 9;
 
 	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
@@ -301,7 +310,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 9;
+	int ORCHESTRATOR_FEATURE_COUNT = 10;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -921,6 +930,17 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_Agents();
 
 	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getTasks <em>Tasks</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Tasks</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getTasks()
+	 * @see #getOrchestrator()
+	 * @generated NOT
+	 */
+	EReference getOrchestrator_Tasks();
+
+	/**
 	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getGit <em>Git</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1472,6 +1492,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EReference ORCHESTRATOR__AGENTS = eINSTANCE.getOrchestrator_Agents();
+
+		/**
+		 * The meta object literal for the '<em><b>Tasks</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__TASKS = eINSTANCE.getOrchestrator_Tasks();
 
 		/**
 		 * The meta object literal for the '<em><b>Git</b></em>' containment reference feature.

@@ -9,7 +9,7 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -18,6 +18,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -36,93 +37,145 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
     }
 
     private class OrchestrationJob extends Job {
-        private EObject orchestrator;
+        private Orchestrator orchestrator;
 
-        public OrchestrationJob(String name, EObject orchestrator) {
+        public OrchestrationJob(String name, Orchestrator orchestrator) {
             super(name);
             this.orchestrator = orchestrator;
         }
 
         @Override
         protected IStatus run(IProgressMonitor monitor) {
-            monitor.beginTask("Orchestration", 4);
             try {
                 executeOrchestration(orchestrator, monitor);
             } catch (Exception e) {
+                e.printStackTrace();
                 Display.getDefault().asyncExec(() -> {
                     MessageDialog.openError(null, "Orchestration Failed", e.getMessage());
                 });
                 return Status.CANCEL_STATUS;
             }
-            monitor.done();
             return Status.OK_STATUS;
         }
     }
 
-    private void executeOrchestration(EObject orchestrator, IProgressMonitor monitor) throws Exception {
-        String id = (String) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature("id"));
+    private void executeOrchestration(Orchestrator orchestrator, IProgressMonitor monitor) throws Exception {
+        String id = orchestrator.getId();
         OrchestrationStatusManager.getInstance().updateStatus(id, 0.0, "Starting");
 
-        // Get AI Chat properties
-        monitor.subTask("Getting AI Chat properties");
-        EObject aiChat = (EObject) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature("aiChat"));
-        String aiChatUrl = (String) aiChat.eGet(aiChat.eClass().getEStructuralFeature("url"));
-        String aiChatToken = (String) aiChat.eGet(aiChat.eClass().getEStructuralFeature("token"));
-        String aiChatPrompt = (String) aiChat.eGet(aiChat.eClass().getEStructuralFeature("prompt"));
-        monitor.worked(1);
+        monitor.beginTask("Orchestration: " + orchestrator.getName(), 100);
 
-        // Get Ollama properties
-        monitor.subTask("Getting Ollama properties");
-        EObject ollama = (EObject) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature("ollama"));
-        String ollamaUrl = (String) ollama.eGet(ollama.eClass().getEStructuralFeature("url"));
-        String ollamaModel = (String) ollama.eGet(ollama.eClass().getEStructuralFeature("model"));
-        monitor.worked(1);
+        // 1. Task Decomposition
+        OrchestrationStatusManager.getInstance().updateStatus(id, 0.05, "Decomposing tasks...");
+        monitor.subTask("Planning workflow...");
+        List<Task> tasks = decomposeTasks(orchestrator);
+        orchestrator.getTasks().clear();
+        orchestrator.getTasks().addAll(tasks);
+        monitor.worked(10);
 
-        // Get Git properties
-        monitor.subTask("Getting Git properties");
-        EObject git = (EObject) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature("git"));
-        String repositoryUrl = (String) git.eGet(git.eClass().getEStructuralFeature("repositoryUrl"));
-        monitor.worked(1);
+        // 2. Execution Loop with Specialized Roles and Hand-off
+        String handOffContext = orchestrator.getAiChat().getPrompt();
+        int taskCount = tasks.size();
+        for (int i = 0; i < taskCount; i++) {
+            Task task = tasks.get(i);
+            String taskName = task.getName();
+            double progress = 0.1 + (0.7 * (double) i / taskCount);
+            OrchestrationStatusManager.getInstance().updateStatus(id, progress, "Executing " + taskName);
+            monitor.subTask("Agent working on: " + taskName);
 
-        // Get Maven properties
-        monitor.subTask("Getting Maven properties");
-        EObject maven = (EObject) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature("maven"));
-        String goals = String.join(" ", (java.util.List<String>) maven.eGet(maven.eClass().getEStructuralFeature("goals")));
-        monitor.worked(1);
+            task.setStatus(TaskStatus.RUNNING);
 
-        // 1. AI Chat Request
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.1, "AI Chat Request...");
-        monitor.subTask("Sending AI Chat Request");
-        String aiResponse = sendAiChatRequest(aiChatUrl, aiChatToken, aiChatPrompt);
-        System.out.println("AI Chat Response: " + aiResponse);
-        monitor.worked(1);
+            Agent agent = findAgentForTask(orchestrator, task);
+            String response = executeTask(orchestrator, agent, task, handOffContext);
 
-        // 2. Ollama LLM Solution
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.35, "Ollama Request...");
-        monitor.subTask("Sending Ollama Request");
-        String llmSolution = sendOllamaRequest(ollamaUrl, ollamaModel, aiResponse);
-        System.out.println("LLM Solution: " + llmSolution);
-        monitor.worked(1);
+            task.setResponse(response);
+            task.setStatus(TaskStatus.DONE);
 
-        // 3. Git Commit
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.6, "Git Commit...");
-        monitor.subTask("Committing to Git");
-        // Sanitize the commit message to prevent it from being interpreted as a command-line option.
-        if (llmSolution.startsWith("-")) {
-            llmSolution = " " + llmSolution;
+            // Hand-off: output of this task becomes context for the next
+            handOffContext += "\n\nPrevious task [" + taskName + "] output:\n" + response;
+
+            monitor.worked(70 / taskCount);
         }
-        executeCommand("git", "add", ".");
-        executeCommand("git", "commit", "-m", llmSolution);
-        System.out.println("Git commit successful.");
-        monitor.worked(1);
 
-        // 4. Maven Build
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.85, "Maven Build...");
-        monitor.subTask("Running Maven Build");
-        String mavenBuildOutput = executeCommand("mvn", goals);
-        System.out.println("Maven Build Output: " + mavenBuildOutput);
-        monitor.worked(1);
+        // 3. Final Integration (Git & Maven)
+        OrchestrationStatusManager.getInstance().updateStatus(id, 0.85, "Git Commit...");
+        monitor.subTask("Committing changes");
+        String finalOutput = tasks.isEmpty() ? "No tasks completed" : tasks.get(tasks.size() - 1).getResponse();
+
+        // Sanitize commit message
+        String commitMsg = "AI Evolution: " + finalOutput.replaceAll("\\r|\\n", " ");
+        if (commitMsg.length() > 100) commitMsg = commitMsg.substring(0, 97) + "...";
+        if (commitMsg.startsWith("-")) commitMsg = " " + commitMsg;
+
+        executeCommand("git", "add", ".");
+        executeCommand("git", "commit", "-m", commitMsg);
+        monitor.worked(10);
+
+        OrchestrationStatusManager.getInstance().updateStatus(id, 0.95, "Maven Build...");
+        monitor.subTask("Running build");
+        List<String> mavenArgs = new ArrayList<>();
+        mavenArgs.add("mvn");
+        mavenArgs.addAll(orchestrator.getMaven().getGoals());
+        executeCommand(mavenArgs.toArray(new String[0]));
+        monitor.worked(10);
+
         OrchestrationStatusManager.getInstance().updateStatus(id, 1.0, "Completed");
+        monitor.done();
+    }
+
+    private List<Task> decomposeTasks(Orchestrator orchestrator) throws Exception {
+        String plannerPrompt = "Decompose the following request into a sequence of specialized tasks for an AI agent team. " +
+                "Return ONLY a JSON array of objects with 'id', 'name', and 'role' fields. Do not include any other text.\n" +
+                "Request: " + orchestrator.getAiChat().getPrompt();
+
+        String response = sendRequest(orchestrator, plannerPrompt);
+
+        int start = response.indexOf("[");
+        int end = response.lastIndexOf("]");
+        if (start == -1 || end == -1 || end <= start) {
+            throw new Exception("LLM failed to return a valid JSON array of tasks. Response was: " + response);
+        }
+        String jsonStr = response.substring(start, end + 1);
+        JSONArray jsonArray = new JSONArray(jsonStr);
+
+        List<Task> tasks = new ArrayList<>();
+        OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject obj = jsonArray.getJSONObject(i);
+            Task task = factory.createTask();
+            task.setId(obj.optString("id", "task" + i));
+            task.setName(obj.optString("name", "Task " + i));
+            // Role info can be stored in name for now as Task model lacks 'role' attribute
+            tasks.add(task);
+        }
+        return tasks;
+    }
+
+    private Agent findAgentForTask(Orchestrator orchestrator, Task task) {
+        String target = task.getName().toLowerCase();
+        return orchestrator.getAgents().stream()
+                .filter(a -> target.contains(a.getType().toLowerCase()) || target.contains(a.getId().toLowerCase()))
+                .findFirst()
+                .orElse(orchestrator.getAgents().isEmpty() ? null : orchestrator.getAgents().get(0));
+    }
+
+    private String executeTask(Orchestrator orchestrator, Agent agent, Task task, String context) throws Exception {
+        String agentType = (agent != null) ? agent.getType() : "general assistant";
+        String prompt = "You are acting as a " + agentType + ".\n" +
+                "Context: " + context + "\n\n" +
+                "Your task: " + task.getName() + "\n" +
+                "Provide your response below:";
+
+        return sendRequest(orchestrator, prompt);
+    }
+
+    private String sendRequest(Orchestrator orchestrator, String prompt) throws Exception {
+        if (orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null && !orchestrator.getOllama().getUrl().isEmpty()) {
+            return sendOllamaRequest(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel(), prompt);
+        } else if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
+            return sendAiChatRequest(orchestrator.getAiChat().getUrl(), orchestrator.getAiChat().getToken(), prompt);
+        }
+        throw new Exception("No LLM service configured (Ollama or AI Chat)");
     }
 
     private String executeCommand(String... command) throws Exception {
@@ -155,6 +208,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("model", model);
         jsonObject.put("prompt", prompt);
+        jsonObject.put("stream", false);
         String json = jsonObject.toString();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -163,7 +217,12 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         JSONObject jsonResponse = new JSONObject(response.body());
-        return jsonResponse.getString("solution");
+        if (jsonResponse.has("response")) {
+            return jsonResponse.getString("response");
+        } else if (jsonResponse.has("solution")) {
+            return jsonResponse.getString("solution");
+        }
+        throw new Exception("Unexpected Ollama response format: " + response.body());
     }
 
     public String[] getOllamaModels() {
@@ -181,9 +240,6 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
             }
             return modelNames.toArray(new String[0]);
         } catch (Exception e) {
-            Display.getDefault().asyncExec(() -> {
-                MessageDialog.openError(null, "Ollama API Error", "Failed to get models from Ollama API: " + e.getMessage());
-            });
             return new String[0];
         }
     }

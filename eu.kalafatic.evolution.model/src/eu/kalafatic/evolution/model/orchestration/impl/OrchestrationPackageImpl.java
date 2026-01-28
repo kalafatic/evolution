@@ -34,6 +34,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EReference getOrchestrator_Tasks() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	private EClass taskEClass = null;
@@ -236,7 +246,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 */
 	@Override
 	public EReference getOrchestrator_Ollama() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(7);
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(8);
 	}
 
 	/**
@@ -246,7 +256,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 */
 	@Override
 	public EReference getOrchestrator_AiChat() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(8);
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(9);
 	}
 
 	/**
@@ -486,16 +496,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 */
 	@Override
 	public EReference getOrchestrator_Git() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_Maven() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(4);
 	}
 
@@ -505,7 +505,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getOrchestrator_Llm() {
+	public EReference getOrchestrator_Maven() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(5);
 	}
 
@@ -515,8 +515,18 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getOrchestrator_Compiler() {
+	public EReference getOrchestrator_Llm() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_Compiler() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(7);
 	}
 
 	/**
@@ -766,6 +776,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__ID);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__NAME);
 		createEReference(orchestratorEClass, ORCHESTRATOR__AGENTS);
+		createEReference(orchestratorEClass, ORCHESTRATOR__TASKS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__GIT);
 		createEReference(orchestratorEClass, ORCHESTRATOR__MAVEN);
 		createEReference(orchestratorEClass, ORCHESTRATOR__LLM);
@@ -863,6 +874,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getOrchestrator_Id(), ecorePackage.getEString(), "id", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_Name(), ecorePackage.getEString(), "name", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Agents(), this.getAgent(), null, "agents", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_Tasks(), this.getTask(), null, "tasks", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Git(), this.getGit(), null, "git", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Maven(), this.getMaven(), null, "maven", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Llm(), this.getLLM(), null, "llm", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

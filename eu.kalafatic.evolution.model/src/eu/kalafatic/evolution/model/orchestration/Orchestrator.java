@@ -18,6 +18,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getId <em>Id</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getName <em>Name</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAgents <em>Agents</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getTasks <em>Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getGit <em>Git</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMaven <em>Maven</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getLlm <em>Llm</em>}</li>
@@ -86,6 +87,18 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	EList<Agent> getAgents();
+
+	/**
+	 * Returns the value of the '<em><b>Tasks</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.Task}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Tasks</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_Tasks()
+	 * @model containment="true"
+	 * @generated NOT
+	 */
+	EList<Task> getTasks();
 
 	/**
 	 * Returns the value of the '<em><b>Git</b></em>' containment reference.
