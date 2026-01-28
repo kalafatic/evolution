@@ -86,13 +86,22 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__NAME = 1;
 
 	/**
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__TYPE = 2;
+
+	/**
 	 * The feature id for the '<em><b>Status</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK__STATUS = 2;
+	int TASK__STATUS = 3;
 
 	/**
 	 * The feature id for the '<em><b>Next</b></em>' reference list.
@@ -101,7 +110,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int TASK__NEXT = 3;
+	int TASK__NEXT = 4;
 
 	/**
 	 * The feature id for the '<em><b>Sub Tasks</b></em>' containment reference list.
@@ -110,7 +119,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int TASK__SUB_TASKS = 4;
+	int TASK__SUB_TASKS = 5;
 
 	/**
 	 * The feature id for the '<em><b>Response</b></em>' attribute.
@@ -119,7 +128,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int TASK__RESPONSE = 5;
+	int TASK__RESPONSE = 6;
+
+	/**
+	 * The feature id for the '<em><b>Feedback</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__FEEDBACK = 7;
 
 	/**
 	 * The number of structural features of the '<em>Task</em>' class.
@@ -128,7 +146,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 6;
+	int TASK_FEATURE_COUNT = 8;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -789,6 +807,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getTask_Name();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getType <em>Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getType()
+	 * @see #getTask()
+	 * @generated NOT
+	 */
+	EAttribute getTask_Type();
+
+	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getStatus <em>Status</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -831,6 +860,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getTask_Response();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getFeedback <em>Feedback</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Feedback</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getFeedback()
+	 * @see #getTask()
+	 * @generated NOT
+	 */
+	EAttribute getTask_Feedback();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
@@ -1386,6 +1426,14 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute TASK__NAME = eINSTANCE.getTask_Name();
 
 		/**
+		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated NOT
+		 */
+		EAttribute TASK__TYPE = eINSTANCE.getTask_Type();
+
+		/**
 		 * The meta object literal for the '<em><b>Status</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -1416,6 +1464,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__RESPONSE = eINSTANCE.getTask_Response();
+
+		/**
+		 * The meta object literal for the '<em><b>Feedback</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated NOT
+		 */
+		EAttribute TASK__FEEDBACK = eINSTANCE.getTask_Feedback();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.
