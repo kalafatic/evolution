@@ -33,6 +33,14 @@ import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.part.MultiPageEditorPart;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import org.eclipse.ui.ide.IDE;
+import org.eclipse.ui.views.properties.IPropertySheetPage;
+import org.eclipse.ui.views.properties.PropertySheetPage;
+import org.eclipse.jface.viewers.ISelectionProvider;
+import org.eclipse.jface.viewers.StructuredSelection;
+import eu.kalafatic.evolution.controller.OrchestrationStatusManager;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.widgets.Canvas;
 
 /**
  * An example showing how to create a multi-page editor.
@@ -59,6 +67,9 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	private StyledText text;
 	private StyledText requestText;
 	private StyledText responseText;
+
+    private Orchestrator orchestrator;
+    private Canvas statusCanvas;
 	/**
 	 * Creates a multi-page editor example.
 	 */
@@ -130,11 +141,62 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		Composite composite = new Composite(getContainer(), SWT.NONE);
 		GridLayout layout = new GridLayout();
 		composite.setLayout(layout);
-		layout.numColumns = 2;
+		layout.numColumns = 1;
+
+		new org.eclipse.swt.widgets.Label(composite, SWT.NONE).setText("Orchestration Status:");
+
+        statusCanvas = new Canvas(composite, SWT.DOUBLE_BUFFERED | SWT.BORDER);
+        GridData canvasData = new GridData(GridData.FILL_HORIZONTAL);
+        canvasData.heightHint = 100;
+        statusCanvas.setLayoutData(canvasData);
+
+        statusCanvas.addPaintListener(new PaintListener() {
+            @Override
+            public void paintControl(PaintEvent e) {
+                if (orchestrator == null) {
+                    e.gc.drawString("No Orchestrator selected", 10, 10);
+                    return;
+                }
+                String id = orchestrator.getId();
+                double progress = OrchestrationStatusManager.getInstance().getProgress(id);
+                String status = OrchestrationStatusManager.getInstance().getStatus(id);
+
+                int width = statusCanvas.getClientArea().width;
+                int height = statusCanvas.getClientArea().height;
+
+                // Draw background
+                e.gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
+                e.gc.fillRectangle(0, 0, width, height);
+
+                // Draw Progress Bar
+                e.gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_GRAY));
+                e.gc.fillRectangle(10, 30, width - 20, 20);
+
+                e.gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_GREEN));
+                e.gc.fillRectangle(10, 30, (int) ((width - 20) * progress), 20);
+
+                e.gc.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
+                e.gc.drawRectangle(10, 30, width - 20, 20);
+
+                e.gc.drawString("Status: " + status, 10, 60);
+                e.gc.drawString("Progress: " + (int)(progress * 100) + "%", 10, 10);
+            }
+        });
+
+        // Start a timer to refresh the canvas
+        Runnable timer = new Runnable() {
+            @Override
+            public void run() {
+                if (!statusCanvas.isDisposed()) {
+                    statusCanvas.redraw();
+                    Display.getDefault().timerExec(500, this);
+                }
+            }
+        };
+        Display.getDefault().timerExec(500, timer);
 
 		Button fontButton = new Button(composite, SWT.NONE);
 		GridData gd = new GridData(GridData.BEGINNING);
-		gd.horizontalSpan = 2;
 		fontButton.setLayoutData(gd);
 		fontButton.setText("Change Font...");
 		
@@ -214,9 +276,28 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		super.init(site, editorInput);
 
         if (editorInput instanceof OrchestratorEditorInput) {
+            this.orchestrator = ((OrchestratorEditorInput) editorInput).getOrchestrator();
             setPartName(editorInput.getName());
         }
+
+        // If we have an orchestrator, set it as selection
+        if (this.orchestrator != null) {
+            getSite().setSelectionProvider(new ISelectionProvider() {
+                @Override public void setSelection(org.eclipse.jface.viewers.ISelection selection) {}
+                @Override public void removeSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener listener) {}
+                @Override public org.eclipse.jface.viewers.ISelection getSelection() { return new StructuredSelection(orchestrator); }
+                @Override public void addSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener listener) {}
+            });
+        }
 	}
+
+    @Override
+    public <T> T getAdapter(Class<T> adapter) {
+        if (adapter == IPropertySheetPage.class) {
+            return adapter.cast(new PropertySheetPage());
+        }
+        return super.getAdapter(adapter);
+    }
 	/* (non-Javadoc)
 	 * Method declared on IEditorPart.
 	 */

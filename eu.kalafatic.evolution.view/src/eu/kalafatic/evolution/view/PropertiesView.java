@@ -40,15 +40,19 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
+import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.part.ViewPart;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
 
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
-public class PropertiesView extends ViewPart {
+public class PropertiesView extends ViewPart implements ISelectionListener {
 
     public static final String ID = "eu.kalafatic.evolution.view.propertiesView";
     private TreeViewer viewer;
@@ -92,6 +96,7 @@ public class PropertiesView extends ViewPart {
         // HERE you can use getViewSite()
         IViewSite iViewSite = getViewSite();
         iViewSite.setSelectionProvider(viewer);
+        getSite().getWorkbenchWindow().getSelectionService().addSelectionListener(this);
 
         MenuManager menuMgr = new MenuManager("#PopupMenu");
         menuMgr.setRemoveAllWhenShown(true);
@@ -205,6 +210,24 @@ public class PropertiesView extends ViewPart {
 
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void dispose() {
+        getSite().getWorkbenchWindow().getSelectionService().removeSelectionListener(this);
+        super.dispose();
+    }
+
+    @Override
+    public void selectionChanged(IWorkbenchPart part, ISelection selection) {
+        if (selection instanceof IStructuredSelection) {
+            Object first = ((IStructuredSelection) selection).getFirstElement();
+            if (first instanceof Orchestrator) {
+                rootObject = (Orchestrator) first;
+                viewer.setInput(rootObject);
+                viewer.expandAll();
+            }
         }
     }
 
