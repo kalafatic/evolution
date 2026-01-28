@@ -34,6 +34,22 @@
                name="appName"
                value="AI Evolution">
          </property>
+         <property
+               name="preferenceCustomization"
+               value="plugin_customization.ini">
+         </property>
+         <property
+               name="startupProgressRect"
+               value="5,275,445,15">
+         </property>
+         <property
+               name="startupMessageRect"
+               value="7,252,445,20">
+         </property>
+         <property
+               name="startupForegroundColor"
+               value="000000">
+         </property>
       </product>
    </extension>
    <extension
@@ -386,6 +402,17 @@
             id="eu.kalafatic.evolution.view.evolutionNatureImage"
             natureId="eu.kalafatic.evolution.view.evolutionNature">
       </image>
+   </extension>
+   <extension
+         point="org.eclipse.ui.splashHandlers">
+      <splashHandler
+            class="eu.kalafatic.utils.dialogs.GeminiSplashHandler"
+            id="eu.kalafatic.evolution.view.splashHandler">
+      </splashHandler>
+      <splashHandlerProductBinding
+            productId="eu.kalafatic.evolution.view.product"
+            splashHandlerId="eu.kalafatic.evolution.view.splashHandler">
+      </splashHandlerProductBinding>
    </extension>
 
 </plugin>

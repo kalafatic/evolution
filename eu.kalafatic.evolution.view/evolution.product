@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="AI Evolution" uid="evolution" id="eu.kalafatic.evolution.view.product" application="eu.kalafatic.evolution.view.application" version="1.0.0.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
+<product name="AI Evolution" uid="evolution" id="eu.kalafatic.evolution.view.product" application="eu.kalafatic.evolution.view.application" version="1.0.0.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true" preferenceCustomization="plugin_customization.ini">
 
 
    <configIni use="default">
