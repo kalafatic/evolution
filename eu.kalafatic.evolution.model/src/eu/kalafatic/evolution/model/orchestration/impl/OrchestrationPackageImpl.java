@@ -2,8 +2,13 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
+import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
+import eu.kalafatic.evolution.model.orchestration.MemoryRule;
+import eu.kalafatic.evolution.model.orchestration.NetworkRule;
+import eu.kalafatic.evolution.model.orchestration.Rule;
+import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
@@ -61,6 +66,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EClass agentEClass = null;
+
+	private EClass ruleEClass = null;
+	private EClass accessRuleEClass = null;
+	private EClass networkRuleEClass = null;
+	private EClass memoryRuleEClass = null;
+	private EClass secretRuleEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -237,6 +248,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getAgent_ExecutionMode() {
 		return (EAttribute)agentEClass.getEStructuralFeatures().get(3);
+	}
+
+	@Override
+	public EReference getAgent_Rules() {
+		return (EReference)agentEClass.getEStructuralFeatures().get(4);
 	}
 
 	/**
@@ -749,6 +765,25 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		return executionModeEEnum;
 	}
 
+	@Override public EClass getRule() { return ruleEClass; }
+	@Override public EAttribute getRule_Name() { return (EAttribute)ruleEClass.getEStructuralFeatures().get(0); }
+	@Override public EAttribute getRule_Description() { return (EAttribute)ruleEClass.getEStructuralFeatures().get(1); }
+
+	@Override public EClass getAccessRule() { return accessRuleEClass; }
+	@Override public EAttribute getAccessRule_AllowedPaths() { return (EAttribute)accessRuleEClass.getEStructuralFeatures().get(2); }
+	@Override public EAttribute getAccessRule_DeniedPaths() { return (EAttribute)accessRuleEClass.getEStructuralFeatures().get(3); }
+
+	@Override public EClass getNetworkRule() { return networkRuleEClass; }
+	@Override public EAttribute getNetworkRule_AllowedDomains() { return (EAttribute)networkRuleEClass.getEStructuralFeatures().get(2); }
+	@Override public EAttribute getNetworkRule_AllowAll() { return (EAttribute)networkRuleEClass.getEStructuralFeatures().get(3); }
+
+	@Override public EClass getMemoryRule() { return memoryRuleEClass; }
+	@Override public EAttribute getMemoryRule_StorageLimit() { return (EAttribute)memoryRuleEClass.getEStructuralFeatures().get(2); }
+	@Override public EAttribute getMemoryRule_RetentionPeriod() { return (EAttribute)memoryRuleEClass.getEStructuralFeatures().get(3); }
+
+	@Override public EClass getSecretRule() { return secretRuleEClass; }
+	@Override public EAttribute getSecretRule_AllowedSecrets() { return (EAttribute)secretRuleEClass.getEStructuralFeatures().get(2); }
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -793,6 +828,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(agentEClass, AGENT__TYPE);
 		createEReference(agentEClass, AGENT__TASKS);
 		createEAttribute(agentEClass, AGENT__EXECUTION_MODE);
+		createEReference(agentEClass, AGENT__RULES);
 
 		orchestratorEClass = createEClass(ORCHESTRATOR);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__ID);
@@ -842,6 +878,25 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(evoProjectEClass, EVO_PROJECT__NAME);
 		createEReference(evoProjectEClass, EVO_PROJECT__ORCHESTRATIONS);
 
+		ruleEClass = createEClass(RULE);
+		createEAttribute(ruleEClass, RULE__NAME);
+		createEAttribute(ruleEClass, RULE__DESCRIPTION);
+
+		accessRuleEClass = createEClass(ACCESS_RULE);
+		createEAttribute(accessRuleEClass, ACCESS_RULE__ALLOWED_PATHS);
+		createEAttribute(accessRuleEClass, ACCESS_RULE__DENIED_PATHS);
+
+		networkRuleEClass = createEClass(NETWORK_RULE);
+		createEAttribute(networkRuleEClass, NETWORK_RULE__ALLOWED_DOMAINS);
+		createEAttribute(networkRuleEClass, NETWORK_RULE__ALLOW_ALL);
+
+		memoryRuleEClass = createEClass(MEMORY_RULE);
+		createEAttribute(memoryRuleEClass, MEMORY_RULE__STORAGE_LIMIT);
+		createEAttribute(memoryRuleEClass, MEMORY_RULE__RETENTION_PERIOD);
+
+		secretRuleEClass = createEClass(SECRET_RULE);
+		createEAttribute(secretRuleEClass, SECRET_RULE__ALLOWED_SECRETS);
+
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
 		commandStatusEEnum = createEEnum(COMMAND_STATUS);
@@ -876,6 +931,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		// Set bounds for type parameters
 
 		// Add supertypes to classes
+		accessRuleEClass.getESuperTypes().add(this.getRule());
+		networkRuleEClass.getESuperTypes().add(this.getRule());
+		memoryRuleEClass.getESuperTypes().add(this.getRule());
+		secretRuleEClass.getESuperTypes().add(this.getRule());
 
 		// Initialize classes, features, and operations; add parameters
 		initEClass(taskEClass, Task.class, "Task", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -893,6 +952,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getAgent_Type(), ecorePackage.getEString(), "type", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getAgent_Tasks(), this.getTask(), null, "tasks", null, 0, -1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAgent_ExecutionMode(), this.getExecutionMode(), "executionMode", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getAgent_Rules(), this.getRule(), null, "rules", null, 0, -1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(orchestratorEClass, Orchestrator.class, "Orchestrator", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getOrchestrator_Id(), ecorePackage.getEString(), "id", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -941,6 +1001,25 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEClass(evoProjectEClass, eu.kalafatic.evolution.model.orchestration.EvoProject.class, "EvoProject", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getEvoProject_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.EvoProject.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getEvoProject_Orchestrations(), this.getOrchestrator(), null, "orchestrations", null, 0, -1, eu.kalafatic.evolution.model.orchestration.EvoProject.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(ruleEClass, Rule.class, "Rule", IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getRule_Name(), ecorePackage.getEString(), "name", null, 0, 1, Rule.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getRule_Description(), ecorePackage.getEString(), "description", null, 0, 1, Rule.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(accessRuleEClass, AccessRule.class, "AccessRule", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getAccessRule_AllowedPaths(), ecorePackage.getEString(), "allowedPaths", null, 0, -1, AccessRule.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAccessRule_DeniedPaths(), ecorePackage.getEString(), "deniedPaths", null, 0, -1, AccessRule.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(networkRuleEClass, NetworkRule.class, "NetworkRule", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getNetworkRule_AllowedDomains(), ecorePackage.getEString(), "allowedDomains", null, 0, -1, NetworkRule.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkRule_AllowAll(), ecorePackage.getEBoolean(), "allowAll", "false", 0, 1, NetworkRule.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(memoryRuleEClass, MemoryRule.class, "MemoryRule", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getMemoryRule_StorageLimit(), ecorePackage.getEInt(), "storageLimit", null, 0, 1, MemoryRule.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getMemoryRule_RetentionPeriod(), ecorePackage.getEInt(), "retentionPeriod", null, 0, 1, MemoryRule.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(secretRuleEClass, SecretRule.class, "SecretRule", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getSecretRule_AllowedSecrets(), ecorePackage.getEString(), "allowedSecrets", null, 0, -1, SecretRule.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Initialize enums and add enum literals
 		initEEnum(taskStatusEEnum, TaskStatus.class, "TaskStatus");

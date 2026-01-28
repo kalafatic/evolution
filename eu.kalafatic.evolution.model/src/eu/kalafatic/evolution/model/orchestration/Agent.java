@@ -18,6 +18,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Agent#getId <em>Id</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Agent#getType <em>Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Agent#getTasks <em>Tasks</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Agent#getRules <em>Rules</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAgent()
@@ -105,5 +106,17 @@ public interface Agent extends EObject {
 	 * @generated
 	 */
 	void setExecutionMode(ExecutionMode value);
+
+	/**
+	 * Returns the value of the '<em><b>Rules</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.Rule}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Rules</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAgent_Rules()
+	 * @model containment="true"
+	 * @generated NOT
+	 */
+	EList<Rule> getRules();
 
 } // Agent

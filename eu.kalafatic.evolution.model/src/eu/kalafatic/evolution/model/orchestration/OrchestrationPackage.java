@@ -204,13 +204,22 @@ public interface OrchestrationPackage extends EPackage {
 	int AGENT__EXECUTION_MODE = 3;
 
 	/**
+	 * The feature id for the '<em><b>Rules</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AGENT__RULES = 4;
+
+	/**
 	 * The number of structural features of the '<em>Agent</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AGENT_FEATURE_COUNT = 4;
+	int AGENT_FEATURE_COUNT = 5;
 
 	/**
 	 * The number of operations of the '<em>Agent</em>' class.
@@ -773,6 +782,156 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int EXECUTION_MODE = 13;
 
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.RuleImpl <em>Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.RuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getRule()
+	 * @generated
+	 */
+	int RULE = 14;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int RULE__NAME = 0;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int RULE__DESCRIPTION = 1;
+
+	/**
+	 * The number of structural features of the '<em>Rule</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int RULE_FEATURE_COUNT = 2;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl <em>Access Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAccessRule()
+	 * @generated
+	 */
+	int ACCESS_RULE = 15;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACCESS_RULE__NAME = RULE__NAME;
+
+	/**
+	 * The feature id for the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACCESS_RULE__DESCRIPTION = RULE__DESCRIPTION;
+
+	/**
+	 * The feature id for the '<em><b>Allowed Paths</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACCESS_RULE__ALLOWED_PATHS = RULE_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Denied Paths</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACCESS_RULE__DENIED_PATHS = RULE_FEATURE_COUNT + 1;
+
+	/**
+	 * The number of structural features of the '<em>Access Rule</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ACCESS_RULE_FEATURE_COUNT = RULE_FEATURE_COUNT + 2;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl <em>Network Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkRule()
+	 * @generated
+	 */
+	int NETWORK_RULE = 16;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_RULE__NAME = RULE__NAME;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl <em>Memory Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMemoryRule()
+	 * @generated
+	 */
+	int MEMORY_RULE = 17;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl <em>Secret Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSecretRule()
+	 * @generated
+	 */
+	int SECRET_RULE = 18;
+
+	// Note: Shortened for brevity, but I need to be careful with feature IDs.
+	// Actually, I should define them all.
+
+	int NETWORK_RULE__DESCRIPTION = RULE__DESCRIPTION;
+	int NETWORK_RULE__ALLOWED_DOMAINS = RULE_FEATURE_COUNT + 0;
+	int NETWORK_RULE__ALLOW_ALL = RULE_FEATURE_COUNT + 1;
+	int NETWORK_RULE_FEATURE_COUNT = RULE_FEATURE_COUNT + 2;
+
+	int MEMORY_RULE__NAME = RULE__NAME;
+	int MEMORY_RULE__DESCRIPTION = RULE__DESCRIPTION;
+	int MEMORY_RULE__STORAGE_LIMIT = RULE_FEATURE_COUNT + 0;
+	int MEMORY_RULE__RETENTION_PERIOD = RULE_FEATURE_COUNT + 1;
+	int MEMORY_RULE_FEATURE_COUNT = RULE_FEATURE_COUNT + 2;
+
+	int SECRET_RULE__NAME = RULE__NAME;
+	int SECRET_RULE__DESCRIPTION = RULE__DESCRIPTION;
+	int SECRET_RULE__ALLOWED_SECRETS = RULE_FEATURE_COUNT + 0;
+	int SECRET_RULE_FEATURE_COUNT = RULE_FEATURE_COUNT + 1;
+
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Task <em>Task</em>}'.
@@ -925,6 +1084,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getAgent_ExecutionMode();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Agent#getRules <em>Rules</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Rules</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Agent#getRules()
+	 * @see #getAgent()
+	 * @generated
+	 */
+	EReference getAgent_Rules();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator <em>Orchestrator</em>}'.
@@ -1377,6 +1547,45 @@ public interface OrchestrationPackage extends EPackage {
 	EEnum getExecutionMode();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Rule <em>Rule</em>}'.
+	 * @generated
+	 */
+	EClass getRule();
+	EAttribute getRule_Name();
+	EAttribute getRule_Description();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.AccessRule <em>Access Rule</em>}'.
+	 * @generated
+	 */
+	EClass getAccessRule();
+	EAttribute getAccessRule_AllowedPaths();
+	EAttribute getAccessRule_DeniedPaths();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.NetworkRule <em>Network Rule</em>}'.
+	 * @generated
+	 */
+	EClass getNetworkRule();
+	EAttribute getNetworkRule_AllowedDomains();
+	EAttribute getNetworkRule_AllowAll();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.MemoryRule <em>Memory Rule</em>}'.
+	 * @generated
+	 */
+	EClass getMemoryRule();
+	EAttribute getMemoryRule_StorageLimit();
+	EAttribute getMemoryRule_RetentionPeriod();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SecretRule <em>Secret Rule</em>}'.
+	 * @generated
+	 */
+	EClass getSecretRule();
+	EAttribute getSecretRule_AllowedSecrets();
+
+	/**
 	 * Returns the factory that creates the instances of the model.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1514,6 +1723,11 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute AGENT__EXECUTION_MODE = eINSTANCE.getAgent_ExecutionMode();
+
+		/**
+		 * @generated
+		 */
+		EReference AGENT__RULES = eINSTANCE.getAgent_Rules();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl <em>Orchestrator</em>}' class.
@@ -1875,6 +2089,27 @@ public interface OrchestrationPackage extends EPackage {
 		 */
 		EEnum EXECUTION_MODE = eINSTANCE.getExecutionMode();
 
+		/**
+		 * @generated
+		 */
+		EClass RULE = eINSTANCE.getRule();
+		EAttribute RULE__NAME = eINSTANCE.getRule_Name();
+		EAttribute RULE__DESCRIPTION = eINSTANCE.getRule_Description();
+
+		EClass ACCESS_RULE = eINSTANCE.getAccessRule();
+		EAttribute ACCESS_RULE__ALLOWED_PATHS = eINSTANCE.getAccessRule_AllowedPaths();
+		EAttribute ACCESS_RULE__DENIED_PATHS = eINSTANCE.getAccessRule_DeniedPaths();
+
+		EClass NETWORK_RULE = eINSTANCE.getNetworkRule();
+		EAttribute NETWORK_RULE__ALLOWED_DOMAINS = eINSTANCE.getNetworkRule_AllowedDomains();
+		EAttribute NETWORK_RULE__ALLOW_ALL = eINSTANCE.getNetworkRule_AllowAll();
+
+		EClass MEMORY_RULE = eINSTANCE.getMemoryRule();
+		EAttribute MEMORY_RULE__STORAGE_LIMIT = eINSTANCE.getMemoryRule_StorageLimit();
+		EAttribute MEMORY_RULE__RETENTION_PERIOD = eINSTANCE.getMemoryRule_RetentionPeriod();
+
+		EClass SECRET_RULE = eINSTANCE.getSecretRule();
+		EAttribute SECRET_RULE__ALLOWED_SECRETS = eINSTANCE.getSecretRule_AllowedSecrets();
 	}
 
 } //OrchestrationPackage

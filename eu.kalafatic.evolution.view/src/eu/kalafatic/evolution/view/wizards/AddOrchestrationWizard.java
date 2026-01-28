@@ -15,6 +15,7 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import eu.kalafatic.evolution.model.orchestration.*;
+import eu.kalafatic.evolution.model.orchestration.util.RuleParser;
 import java.util.Collections;
 import java.util.Arrays;
 
@@ -144,11 +145,14 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
             if (agentsData != null && !agentsData.isEmpty()) {
                 String[] lines = agentsData.split("\\r?\\n");
                 for (String line : lines) {
-                    String[] parts = line.split(":");
+                    String[] parts = line.split(":", 3);
                     if (parts.length >= 2) {
                         Agent agent = factory.createAgent();
                         agent.setId(parts[0].trim());
                         agent.setType(parts[1].trim());
+                        if (parts.length >= 3) {
+                            RuleParser.parseAndAddRules(agent, parts[2].trim());
+                        }
                         orchestrator.getAgents().add(agent);
                     }
                 }
