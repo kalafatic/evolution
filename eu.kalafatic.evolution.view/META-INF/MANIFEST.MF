@@ -23,6 +23,8 @@ Require-Bundle: org.eclipse.core.runtime,
  eu.kalafatic.utils;bundle-version="2.6.1",
  eu.kalafatic.evolution.model;bundle-version="2.6.1"
 Import-Package: org.json
+ eu.kalafatic.evolution.model;bundle-version="2.6.1",
+ eu.kalafatic.evolution.controller;bundle-version="2.6.1"
 Automatic-Module-Name: eu.kalafatic.evolution.view
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: eu.kalafatic.evolution.view

@@ -6,7 +6,7 @@ import org.eclipse.ui.application.WorkbenchWindowAdvisor;
 
 public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 
-	private static final String PERSPECTIVE_ID = "eu.kalafatic.evolution.view.perspective"; //$NON-NLS-1$
+	private static final String PERSPECTIVE_ID = "eu.kalafatic.evolution.view.evoPerspective"; //$NON-NLS-1$
 
 	@Override
     public WorkbenchWindowAdvisor createWorkbenchWindowAdvisor(IWorkbenchWindowConfigurer configurer) {

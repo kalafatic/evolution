@@ -292,6 +292,12 @@
             id="eu.kalafatic.evolution.view.newEvoProjectWizard"
             name="New Evo Project">
       </wizard>
+      <wizard
+            category="eu.kalafatic.evolution.view.category"
+            class="eu.kalafatic.evolution.view.wizards.AddOrchestrationWizard"
+            id="eu.kalafatic.evolution.view.addOrchestrationWizard"
+            name="Add Orchestration">
+      </wizard>
    </extension>
    <extension
          point="org.eclipse.ui.importWizards">
