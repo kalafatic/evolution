@@ -8,6 +8,11 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.resource.Resource;
 
 public abstract class AbstractOrchestratorHandler extends AbstractHandler {
 
@@ -23,6 +28,19 @@ public abstract class AbstractOrchestratorHandler extends AbstractHandler {
             }
         }
         return orchestrator;
+    }
+
+    protected IProject getProject(Orchestrator orchestrator) {
+        if (orchestrator == null) return null;
+        Resource res = orchestrator.eResource();
+        if (res != null) {
+            URI uri = res.getURI();
+            if (uri.isPlatformResource()) {
+                String path = uri.toPlatformString(true);
+                return ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(path)).getProject();
+            }
+        }
+        return null;
     }
 
     private Orchestrator findOrchestrator(ISelection selection) {
