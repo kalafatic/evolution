@@ -11,8 +11,14 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.ide.IDE;
+import org.eclipse.ui.wizards.newresource.BasicNewResourceWizard;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -24,6 +30,7 @@ import java.util.Arrays;
 import org.eclipse.swt.layout.GridData;
 
 public class NewEvoProjectWizard extends Wizard implements INewWizard {
+    private IWorkbench workbench;
     private NewEvoProjectPage projectPage;
     private GitSettingsPage gitPage;
     private OllamaSettingsPage ollamaPage;
@@ -37,6 +44,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
     @Override
     public void init(IWorkbench workbench, IStructuredSelection selection) {
+        this.workbench = workbench;
     }
 
     @Override
@@ -132,6 +140,23 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
             resource.save(Collections.emptyMap());
             project.refreshLocal(IProject.DEPTH_INFINITE, null);
+
+            // Automatically open project in project view and open editor with project orchestration
+            IFile file = project.getFile(fileName);
+            if (file.exists() && workbench != null) {
+                IWorkbenchWindow dw = workbench.getActiveWorkbenchWindow();
+                if (dw != null) {
+                    BasicNewResourceWizard.selectAndReveal(file, dw);
+                    IWorkbenchPage page = dw.getActivePage();
+                    if (page != null) {
+                        try {
+                            IDE.openEditor(page, file, true);
+                        } catch (PartInitException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
 
         } catch (Exception e) {
             MessageDialog.openError(getShell(), "Error", "Could not create project: " + e.getMessage());
