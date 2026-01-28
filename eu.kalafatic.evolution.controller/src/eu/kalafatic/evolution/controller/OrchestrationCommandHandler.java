@@ -184,6 +184,40 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         }
     }
 
+    private void validateRules(Agent agent, Task task, Orchestrator orchestrator) throws Exception {
+        if (agent == null) return;
+        for (Rule rule : agent.getRules()) {
+            if (rule instanceof AccessRule) {
+                AccessRule ar = (AccessRule) rule;
+                String taskName = task.getName().toLowerCase();
+                for (String denied : ar.getDeniedPaths()) {
+                    if (taskName.contains(denied.toLowerCase())) {
+                        throw new Exception("Rule Violation: Agent [" + agent.getId() + "] is denied access to [" + denied + "] (found in task: " + task.getName() + ")");
+                    }
+                }
+            } else if (rule instanceof NetworkRule) {
+                NetworkRule nr = (NetworkRule) rule;
+                if (!nr.isAllowAll() && !nr.getAllowedDomains().isEmpty()) {
+                    String url = (orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null) ?
+                                 orchestrator.getOllama().getUrl() :
+                                 (orchestrator.getAiChat() != null ? orchestrator.getAiChat().getUrl() : null);
+                    if (url != null) {
+                        boolean allowed = false;
+                        for (String domain : nr.getAllowedDomains()) {
+                            if (url.contains(domain)) {
+                                allowed = true;
+                                break;
+                            }
+                        }
+                        if (!allowed) throw new Exception("Rule Violation: Agent [" + agent.getId() + "] is not allowed to access URL [" + url + "]");
+                    }
+                }
+            }
+        }
+    }
+
+    private String executeTask(Orchestrator orchestrator, Agent agent, Task task, String context, String lastFeedback) throws Exception {
+        validateRules(agent, task, orchestrator);
     private String executeTask(Orchestrator orchestrator, IProject project, Agent agent, Task task, String context, String lastFeedback) throws Exception {
         String taskType = task.getType();
 

@@ -120,6 +120,11 @@ public interface OrchestrationFactory extends EFactory {
 	 */
 	EvoProject createEvoProject();
 
+	AccessRule createAccessRule();
+	NetworkRule createNetworkRule();
+	MemoryRule createMemoryRule();
+	SecretRule createSecretRule();
+
 	/**
 	 * Returns the package supported by this factory.
 	 * <!-- begin-user-doc -->
