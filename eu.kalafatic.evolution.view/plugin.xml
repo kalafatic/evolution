@@ -353,5 +353,23 @@
             commandId="eu.kalafatic.evolution.view.setupLLM">
       </handler>
    </extension>
+   <extension
+         id="eu.kalafatic.evolution.view.evolutionNature"
+         name="Evolution Project Nature"
+         point="org.eclipse.core.resources.natures">
+      <runtime>
+         <run
+               class="eu.kalafatic.evolution.view.EvolutionNature">
+         </run>
+      </runtime>
+   </extension>
+   <extension
+         point="org.eclipse.ui.ide.projectNatureImages">
+      <image
+            icon="icons/sample.png"
+            id="eu.kalafatic.evolution.view.evolutionNatureImage"
+            natureId="eu.kalafatic.evolution.view.evolutionNature">
+      </image>
+   </extension>
 
 </plugin>

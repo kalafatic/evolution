@@ -6,6 +6,7 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.dialogs.WizardNewProjectCreationPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -15,6 +16,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
@@ -31,9 +33,12 @@ import java.util.Collections;
 import java.util.Arrays;
 import org.eclipse.swt.layout.GridData;
 
+import eu.kalafatic.evolution.view.EvolutionNature;
+
 public class NewEvoProjectWizard extends Wizard implements INewWizard {
     private IWorkbench workbench;
-    private NewEvoProjectPage projectPage;
+    private WizardNewProjectCreationPage projectPage;
+    private ConfigDetailsPage configPage;
     private GitSettingsPage gitPage;
     private OllamaSettingsPage ollamaPage;
     private LLMSettingsPage llmPage;
@@ -51,7 +56,11 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
     @Override
     public void addPages() {
-        projectPage = new NewEvoProjectPage();
+        projectPage = new WizardNewProjectCreationPage("NewEvoProjectPage");
+        projectPage.setTitle("Evo Project");
+        projectPage.setDescription("Create a new AI Evolution Project.");
+
+        configPage = new ConfigDetailsPage();
         gitPage = new GitSettingsPage();
         ollamaPage = new OllamaSettingsPage();
         llmPage = new LLMSettingsPage();
@@ -59,6 +68,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         aiChatPage = new AiChatSettingsPage();
 
         addPage(projectPage);
+        addPage(configPage);
         addPage(gitPage);
         addPage(ollamaPage);
         addPage(llmPage);
@@ -69,17 +79,30 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
     @Override
     public boolean performFinish() {
         final String projectName = projectPage.getProjectName();
-        final String fileName = projectPage.getFileName();
+        final IPath location = projectPage.getLocationPath();
+        final String fileName = configPage.getFileName();
 
         try {
-            IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+            IProject project = projectPage.getProjectHandle();
+            IProjectDescription desc = ResourcesPlugin.getWorkspace().newProjectDescription(projectName);
+            if (!projectPage.useDefaults()) {
+                desc.setLocation(location);
+            }
+
+            // Add Evolution Nature
+            String[] natures = desc.getNatureIds();
+            String[] newNatures = new String[natures.length + 1];
+            System.arraycopy(natures, 0, newNatures, 0, natures.length);
+            newNatures[natures.length] = EvolutionNature.NATURE_ID;
+            desc.setNatureIds(newNatures);
+
             if (!project.exists()) {
-                IProjectDescription desc = ResourcesPlugin.getWorkspace().newProjectDescription(projectName);
                 project.create(desc, null);
             }
             if (!project.isOpen()) {
                 project.open(null);
             }
+            project.setDescription(desc, null);
 
             String filePath = project.getLocation().append(fileName).toOSString();
             ResourceSet resSet = new ResourceSetImpl();
@@ -173,25 +196,19 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         return true;
     }
 
-    private class NewEvoProjectPage extends WizardPage {
-        private Text projectNameText;
+    private class ConfigDetailsPage extends WizardPage {
         private Text fileNameText;
 
-        protected NewEvoProjectPage() {
-            super("NewEvoProjectPage");
-            setTitle("Evo Project Details");
-            setDescription("Enter the name for your new Evo project and the configuration file name.");
+        protected ConfigDetailsPage() {
+            super("ConfigDetailsPage");
+            setTitle("Configuration Details");
+            setDescription("Enter the configuration file name.");
         }
 
         @Override
         public void createControl(Composite parent) {
             Composite container = new Composite(parent, SWT.NONE);
             container.setLayout(new GridLayout(2, false));
-
-            new Label(container, SWT.NONE).setText("Project Name:");
-            projectNameText = new Text(container, SWT.BORDER);
-            projectNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            projectNameText.setText("MyEvoProject");
 
             new Label(container, SWT.NONE).setText("Config File Name (.xml):");
             fileNameText = new Text(container, SWT.BORDER);
@@ -201,7 +218,6 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             setControl(container);
         }
 
-        public String getProjectName() { return projectNameText.getText(); }
         public String getFileName() { return fileNameText.getText(); }
     }
 
