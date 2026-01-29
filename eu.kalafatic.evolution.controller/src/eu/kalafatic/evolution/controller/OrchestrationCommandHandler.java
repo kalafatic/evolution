@@ -216,8 +216,11 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         }
     }
 
-    private String executeTask(Orchestrator orchestrator, Agent agent, Task task, String context, String lastFeedback) throws Exception {
-        validateRules(agent, task, orchestrator);
+//    private String executeTask(Orchestrator orchestrator, Agent agent, Task task, String context, String lastFeedback) throws Exception {
+//        validateRules(agent, task, orchestrator);
+//        
+//        
+//    }
     private String executeTask(Orchestrator orchestrator, IProject project, Agent agent, Task task, String context, String lastFeedback) throws Exception {
         String taskType = task.getType();
 

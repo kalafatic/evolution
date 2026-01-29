@@ -6,10 +6,13 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jface.dialogs.ProgressIndicator;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 
 import eu.kalafatic.utils.constants.FCoreImageConstants;
@@ -101,6 +104,8 @@ public class EvoSplashHandler extends EclipseSplashHandler {
 
 	/** The sub progress monitor. */
 	private SubProgressMonitor subProgressMonitor;
+	
+	private ProgressBar customBar;
 
 	/**
 	 * Instantiates a new gemini splash handler.
@@ -234,6 +239,31 @@ public class EvoSplashHandler extends EclipseSplashHandler {
 	@Override
 	public void init(Shell splash) {
 		super.init(splash);
+		
+		// Optional: still use built-in positions if you want, or fully custom
+        // setProgressRect(new Rectangle(10, 280, 400, 20));
+        // setMessageRect(new Rectangle(10, 250, 400, 20));
+
+        // But for color change → create your own ProgressBar
+//        Composite content = getContent();  // the composite covering the splash image
+
+//        customBar = new ProgressBar(content, SWT.HORIZONTAL | SWT.SMOOTH);
+//        customBar.setBounds(10, 280, 400, 20);  // position as needed
+
+        // Key: set the foreground color (fill color of the bar)
+//        Color barColor = new Color(Display.getCurrent(), 255, 0, 0);  // red; use any RGB
+//        customBar.setForeground(barColor);
+
+        // Optional: background color (area not filled yet)
+//        customBar.setBackground(new Color(Display.getCurrent(), 50, 50, 50));  // dark gray
+
+        // Hook progress updates to your custom bar instead of built-in
+        // (you may need to override getBundleProgressMonitor() or listen to events)
+    
+
+    // Important: if you want automatic bundle-loading progress
+    // override getBundleProgressMonitor() and update customBar.setSelection(percent)
+
 	}
 
 	// ---------------------------------------------------------------

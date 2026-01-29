@@ -4,6 +4,8 @@ import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
+
+import org.eclipse.draw2d.IFigure;
 import org.eclipse.jface.resource.ColorRegistry;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -80,8 +82,19 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
         return null;
     }
 
-    @Override
     public boolean fishEyeHighlightNode(Object entity) {
         return false;
     }
+
+	@Override
+	public IFigure getTooltip(Object entity) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean fisheyeNode(Object entity) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
