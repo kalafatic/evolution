@@ -84,6 +84,12 @@
             id="eu.kalafatic.evolution.view.aiOutputView"
             name="AI Output">
       </view>
+      <view
+            class="org.eclipse.ui.navigator.CommonNavigator"
+            icon="icons/sample.png"
+            id="eu.kalafatic.views.EvoNavigator"
+            name="Evo Navigator">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.navigator.navigatorContent">
@@ -149,6 +155,31 @@
             </contentExtension>
             <contentExtension
                   pattern="eu.kalafatic.evolution.view.orchestrationContent">
+            </contentExtension>
+         </includes>
+      </viewerContentBinding>
+      <viewerActionBinding
+            viewerId="eu.kalafatic.views.EvoNavigator">
+         <includes>
+            <actionExtension
+                  pattern="org.eclipse.ui.navigator.resources.*">
+            </actionExtension>
+         </includes>
+      </viewerActionBinding>
+      <viewerContentBinding
+            viewerId="eu.kalafatic.views.EvoNavigator">
+         <includes>
+            <contentExtension
+                  pattern="org.eclipse.ui.navigator.resourceContent">
+            </contentExtension>
+            <contentExtension
+                  pattern="org.eclipse.ui.navigator.resources.filters.*">
+            </contentExtension>
+            <contentExtension
+                  pattern="org.eclipse.ui.navigator.resources.linkHelper">
+            </contentExtension>
+            <contentExtension
+                  pattern="org.eclipse.ui.navigator.resources.workingSets">
             </contentExtension>
          </includes>
       </viewerContentBinding>
@@ -438,6 +469,20 @@
             class="eu.kalafatic.evolution.view.splashHandlers.EvoSplashHandler"
             id="eu.kalafatic.evolution.view.splashHandlers.EvoSplashHandler">
       </splashHandler>
+   </extension>
+   <extension
+         id="eu.kalafatic.views.EvoNavigator"
+         name="Evo Navigator"
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.ui.resourcePerspective">
+         <view
+               id="eu.kalafatic.views.EvoNavigator"
+               ratio="0.5"
+               relationship="stack"
+               relative="org.eclipse.ui.navigator.ProjectExplorer">
+         </view>
+      </perspectiveExtension>
    </extension>
    
 </plugin>
