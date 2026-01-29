@@ -175,6 +175,11 @@
                   label="Setup LLM"
                   style="push">
             </command>
+            <command
+                  commandId="eu.kalafatic.evolution.view.setupWorkspace"
+                  label="Setup Workspace"
+                  style="push">
+            </command>
          </menu>
          <menu
                id="file"
@@ -369,6 +374,10 @@
             id="eu.kalafatic.evolution.view.setupLLM"
             name="Setup LLM">
       </command>
+      <command
+            id="eu.kalafatic.evolution.view.setupWorkspace"
+            name="Setup Workspace">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -395,6 +404,10 @@
       <handler
             class="eu.kalafatic.evolution.view.handlers.SetupLLMHandler"
             commandId="eu.kalafatic.evolution.view.setupLLM">
+      </handler>
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.SetupWorkspaceHandler"
+            commandId="eu.kalafatic.evolution.view.setupWorkspace">
       </handler>
    </extension>
    <extension
