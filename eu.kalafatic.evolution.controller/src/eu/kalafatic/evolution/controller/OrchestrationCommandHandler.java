@@ -278,8 +278,12 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
             return sendOllamaRequest(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel(), prompt);
         } else if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
             return sendAiChatRequest(orchestrator.getAiChat().getUrl(), orchestrator.getAiChat().getToken(), prompt);
-        } else if (orchestrator.getNeuronAI() != null && orchestrator.getNeuronAI().getUrl() != null && !orchestrator.getNeuronAI().getUrl().isEmpty()) {
-            return sendNeuronAIRequest(orchestrator.getNeuronAI().getUrl(), orchestrator.getNeuronAI().getModel(), prompt);
+        } else if (orchestrator.getNeuronAI() != null) {
+            String url = orchestrator.getNeuronAI().getUrl();
+            if (url == null || url.isEmpty() || url.equalsIgnoreCase("local")) {
+                return new NeuronEngine().runModel(orchestrator.getNeuronAI().getType(), orchestrator.getNeuronAI().getModel(), prompt);
+            }
+            return sendNeuronAIRequest(url, orchestrator.getNeuronAI().getModel(), prompt);
         }
         throw new Exception("No LLM service configured (Ollama, AI Chat or Neuron AI)");
     }

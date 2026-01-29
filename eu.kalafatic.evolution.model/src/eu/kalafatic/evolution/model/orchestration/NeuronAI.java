@@ -15,6 +15,7 @@ import org.eclipse.emf.ecore.EObject;
  * <ul>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getUrl <em>Url</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getModel <em>Model</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getType <em>Type</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNeuronAI()
@@ -65,5 +66,30 @@ public interface NeuronAI extends EObject {
 	 * @generated
 	 */
 	void setModel(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Type</b></em>' attribute.
+	 * The literals are from the enumeration {@link eu.kalafatic.evolution.model.orchestration.NeuronType}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Type</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+	 * @see #setType(NeuronType)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNeuronAI_Type()
+	 * @model
+	 * @generated
+	 */
+	NeuronType getType();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getType <em>Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Type</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+	 * @see #getType()
+	 * @generated
+	 */
+	void setType(NeuronType value);
 
 } // NeuronAI

@@ -15,6 +15,7 @@ import eu.kalafatic.evolution.model.orchestration.CommandStatus;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
+import eu.kalafatic.evolution.model.orchestration.NeuronType;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
@@ -37,6 +38,16 @@ import org.eclipse.emf.ecore.impl.EPackageImpl;
  * @generated
  */
 public class OrchestrationPackageImpl extends EPackageImpl implements OrchestrationPackage {
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNeuronAI_Type() {
+		return (EAttribute)neuronAIEClass.getEStructuralFeatures().get(2);
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -178,6 +189,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EEnum executionModeEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum neuronTypeEEnum = null;
 
 	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
@@ -815,6 +833,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		return executionModeEEnum;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getNeuronType() {
+		return neuronTypeEEnum;
+	}
+
 	@Override public EClass getRule() { return ruleEClass; }
 	@Override public EAttribute getRule_Name() { return (EAttribute)ruleEClass.getEStructuralFeatures().get(0); }
 	@Override public EAttribute getRule_Description() { return (EAttribute)ruleEClass.getEStructuralFeatures().get(1); }
@@ -928,6 +956,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		neuronAIEClass = createEClass(NEURON_AI);
 		createEAttribute(neuronAIEClass, NEURON_AI__URL);
 		createEAttribute(neuronAIEClass, NEURON_AI__MODEL);
+		createEAttribute(neuronAIEClass, NEURON_AI__TYPE);
 
 		evoProjectEClass = createEClass(EVO_PROJECT);
 		createEAttribute(evoProjectEClass, EVO_PROJECT__NAME);
@@ -1057,6 +1086,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEClass(neuronAIEClass, NeuronAI.class, "NeuronAI", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getNeuronAI_Url(), ecorePackage.getEString(), "url", null, 0, 1, NeuronAI.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getNeuronAI_Model(), ecorePackage.getEString(), "model", null, 0, 1, NeuronAI.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNeuronAI_Type(), this.getNeuronType(), "type", null, 0, 1, NeuronAI.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(evoProjectEClass, eu.kalafatic.evolution.model.orchestration.EvoProject.class, "EvoProject", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getEvoProject_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.EvoProject.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1097,6 +1127,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEEnum(executionModeEEnum, ExecutionMode.class, "ExecutionMode");
 		addEEnumLiteral(executionModeEEnum, ExecutionMode.SERIAL);
 		addEEnumLiteral(executionModeEEnum, ExecutionMode.PARALLEL);
+
+		initEEnum(neuronTypeEEnum, NeuronType.class, "NeuronType");
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.MLP);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.CNN);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.RNN);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.LSTM);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.TRANSFORMER);
 
 		// Create resource
 		createResource(eNS_URI);

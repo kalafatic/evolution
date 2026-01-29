@@ -219,6 +219,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 NeuronAI neuronAI = factory.createNeuronAI();
                 neuronAI.setUrl(neuronAIPage.getUrl());
                 neuronAI.setModel(neuronAIPage.getModelName());
+                neuronAI.setType(neuronAIPage.getModelType());
                 orchestrator.setNeuronAI(neuronAI);
             }
 
