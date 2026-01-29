@@ -278,8 +278,10 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
             return sendOllamaRequest(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel(), prompt);
         } else if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
             return sendAiChatRequest(orchestrator.getAiChat().getUrl(), orchestrator.getAiChat().getToken(), prompt);
+        } else if (orchestrator.getNeuronAI() != null && orchestrator.getNeuronAI().getUrl() != null && !orchestrator.getNeuronAI().getUrl().isEmpty()) {
+            return sendNeuronAIRequest(orchestrator.getNeuronAI().getUrl(), orchestrator.getNeuronAI().getModel(), prompt);
         }
-        throw new Exception("No LLM service configured (Ollama or AI Chat)");
+        throw new Exception("No LLM service configured (Ollama, AI Chat or Neuron AI)");
     }
 
     private String executeCommand(java.io.File workingDir, String... command) throws Exception {
@@ -342,6 +344,22 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         JSONObject jsonResponse = new JSONObject(response.body());
         return jsonResponse.has("response") ? jsonResponse.getString("response") : jsonResponse.getString("solution");
+    }
+
+    private String sendNeuronAIRequest(String url, String model, String prompt) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("model", model);
+        jsonObject.put("prompt", prompt);
+        String json = jsonObject.toString();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        JSONObject jsonResponse = new JSONObject(response.body());
+        return jsonResponse.optString("response", jsonResponse.optString("output", "No response from Neuron AI"));
     }
 
     public String[] getOllamaModels() {

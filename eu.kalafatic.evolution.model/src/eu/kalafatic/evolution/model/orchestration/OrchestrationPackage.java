@@ -331,13 +331,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__AI_CHAT = 9;
 
 	/**
+	 * The feature id for the '<em><b>Neuron AI</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__NEURON_AI = 10;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 10;
+	int ORCHESTRATOR_FEATURE_COUNT = 11;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -932,6 +941,51 @@ public interface OrchestrationPackage extends EPackage {
 	int SECRET_RULE__ALLOWED_SECRETS = RULE_FEATURE_COUNT + 0;
 	int SECRET_RULE_FEATURE_COUNT = RULE_FEATURE_COUNT + 1;
 
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl <em>Neuron AI</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronAI()
+	 * @generated
+	 */
+	int NEURON_AI = 19;
+
+	/**
+	 * The feature id for the '<em><b>Url</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI__URL = 0;
+
+	/**
+	 * The feature id for the '<em><b>Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI__MODEL = 1;
+
+	/**
+	 * The number of structural features of the '<em>Neuron AI</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI_FEATURE_COUNT = 2;
+
+	/**
+	 * The number of operations of the '<em>Neuron AI</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI_OPERATION_COUNT = 0;
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Task <em>Task</em>}'.
@@ -1217,6 +1271,17 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_AiChat();
 
 	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getNeuronAI <em>Neuron AI</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Neuron AI</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getNeuronAI()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_NeuronAI();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Git <em>Git</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1483,6 +1548,38 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getAiChat_Prompt();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.NeuronAI <em>Neuron AI</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Neuron AI</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronAI
+	 * @generated
+	 */
+	EClass getNeuronAI();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getUrl <em>Url</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Url</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronAI#getUrl()
+	 * @see #getNeuronAI()
+	 * @generated
+	 */
+	EAttribute getNeuronAI_Url();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getModel <em>Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronAI#getModel()
+	 * @see #getNeuronAI()
+	 * @generated
+	 */
+	EAttribute getNeuronAI_Model();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.EvoProject <em>Evo Project</em>}'.
@@ -1820,6 +1917,14 @@ public interface OrchestrationPackage extends EPackage {
 		EReference ORCHESTRATOR__AI_CHAT = eINSTANCE.getOrchestrator_AiChat();
 
 		/**
+		 * The meta object literal for the '<em><b>Neuron AI</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__NEURON_AI = eINSTANCE.getOrchestrator_NeuronAI();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl <em>Git</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -2032,6 +2137,32 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute AI_CHAT__PROMPT = eINSTANCE.getAiChat_Prompt();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl <em>Neuron AI</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronAI()
+		 * @generated
+		 */
+		EClass NEURON_AI = eINSTANCE.getNeuronAI();
+
+		/**
+		 * The meta object literal for the '<em><b>Url</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NEURON_AI__URL = eINSTANCE.getNeuronAI_Url();
+
+		/**
+		 * The meta object literal for the '<em><b>Model</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NEURON_AI__MODEL = eINSTANCE.getNeuronAI_Model();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl <em>Evo Project</em>}' class.
