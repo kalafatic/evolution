@@ -40,6 +40,14 @@
 		</plugins>
 
 	</build>
+	
+	<dependencies>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20231013</version>
+		</dependency>
+	</dependencies>
 	<repositories>
 		<repository>
 			<id>eclipse</id>

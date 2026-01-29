@@ -35,7 +35,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                         }
                     }
                 };
-                actionBars.setGlobalActionHandler(org.eclipse.ui.IWorkbenchActionConstants.OPEN, openAction);
+                actionBars.setGlobalActionHandler(org.eclipse.ui.IWorkbenchActionConstants.OPEN_PROJECT, openAction);
             }
         }
     }

@@ -21,10 +21,12 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.ide,
  org.eclipse.emf.ecore.xmi,
  eu.kalafatic.utils;bundle-version="2.6.1",
- eu.kalafatic.evolution.model;bundle-version="2.6.1"
-Import-Package: org.json
  eu.kalafatic.evolution.model;bundle-version="2.6.1",
- eu.kalafatic.evolution.controller;bundle-version="2.6.1"
+ org.eclipse.swt,
+ org.eclipse.jface,
+ org.eclipse.ui.workbench
+Import-Package: eu.kalafatic.evolution.controller;bundle-version="2.6.1",
+ org.json
 Automatic-Module-Name: eu.kalafatic.evolution.view
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: eu.kalafatic.evolution.view

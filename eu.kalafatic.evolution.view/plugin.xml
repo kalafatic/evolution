@@ -38,17 +38,17 @@
                name="preferenceCustomization"
                value="plugin_customization.ini">
          </property>
-         <property
+   		 <property
                name="startupProgressRect"
-               value="5,275,445,15">
+               value="212,345,350,5">
          </property>
          <property
                name="startupMessageRect"
-               value="7,252,445,20">
+               value="212,335,350,5">
          </property>
          <property
                name="startupForegroundColor"
-               value="000000">
+               value="FF0000">
          </property>
       </product>
    </extension>
@@ -405,14 +405,14 @@
    </extension>
    <extension
          point="org.eclipse.ui.splashHandlers">
-      <splashHandler
-            class="eu.kalafatic.utils.dialogs.GeminiSplashHandler"
-            id="eu.kalafatic.evolution.view.splashHandler">
-      </splashHandler>
       <splashHandlerProductBinding
             productId="eu.kalafatic.evolution.view.product"
-            splashHandlerId="eu.kalafatic.evolution.view.splashHandler">
+            splashId="eu.kalafatic.evolution.view.splashHandlers.EvoSplashHandler">
       </splashHandlerProductBinding>
+      <splashHandler
+            class="eu.kalafatic.evolution.view.splashHandlers.EvoSplashHandler"
+            id="eu.kalafatic.evolution.view.splashHandlers.EvoSplashHandler">
+      </splashHandler>
    </extension>
 
 </plugin>
