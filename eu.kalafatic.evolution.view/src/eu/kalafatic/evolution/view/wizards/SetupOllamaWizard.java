@@ -26,9 +26,12 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.jface.viewers.ISelection;
 
@@ -76,6 +79,20 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
         addPage(page);
     }
 
+    private IProject getProject() {
+        if (orchestrator != null && orchestrator.eResource() != null) {
+            org.eclipse.emf.common.util.URI uri = orchestrator.eResource().getURI();
+            if (uri.isPlatformResource()) {
+                String platformString = uri.toPlatformString(true);
+                org.eclipse.core.resources.IResource res = ResourcesPlugin.getWorkspace().getRoot().findMember(platformString);
+                if (res != null) {
+                    return res.getProject();
+                }
+            }
+        }
+        return ResourcesPlugin.getWorkspace().getRoot().getProject("TestProject");
+    }
+
     @Override
     public boolean performFinish() {
         Ollama ollama = orchestrator.getOllama();
@@ -84,10 +101,14 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
         }
         ollama.setUrl(page.getUrl());
 
+        final String os = System.getProperty("os.name").toLowerCase();
+        final boolean isWin = os.contains("win");
+
         String path = page.getPath();
         if (page.isDownloadToWorkspaceRequested()) {
-            IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject("TestProject");
-            File workspaceOllama = project.getLocation().append("ollama_bin").toFile();
+            IProject project = getProject();
+            String binName = isWin ? "ollama.exe" : "ollama_bin";
+            File workspaceOllama = project.getLocation().append(binName).toFile();
             path = workspaceOllama.getAbsolutePath();
         }
         ollama.setPath(path);
@@ -102,36 +123,65 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
                 protected IStatus run(IProgressMonitor monitor) {
                     monitor.beginTask("Ollama Setup", IProgressMonitor.UNKNOWN);
                     try {
-                        if (toWorkspace && (page.isDownloadToWorkspaceRequested())) {
-                            IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject("TestProject");
+                        if (toWorkspace) {
+                            IProject project = getProject();
                             File binDir = project.getLocation().toFile();
                             if (!binDir.exists()) binDir.mkdirs();
-                            File outputFile = new File(binDir, "ollama_bin");
 
-                            monitor.subTask("Downloading from ollama.com...");
-                            URL downloadUrl = new URL("https://ollama.com/download/ollama-linux-amd64");
-                            try (ReadableByteChannel rbc = Channels.newChannel(downloadUrl.openStream());
-                                 FileOutputStream fos = new FileOutputStream(outputFile)) {
-                                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                            }
-                            outputFile.setExecutable(true);
-                            monitor.subTask("Download complete: " + outputFile.getAbsolutePath());
-                        } else if (page.isDownloadRequested()) {
-                            monitor.subTask("Installing Ollama globally...");
-                            ProcessBuilder pb = new ProcessBuilder("sh", "-c", "curl -fsSL https://ollama.com/install.sh | sh");
-                            pb.redirectErrorStream(true);
-                            Process process = pb.start();
-                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                                String line;
-                                while ((line = reader.readLine()) != null) {
-                                    monitor.subTask(line);
-                                    if (monitor.isCanceled()) {
-                                        process.destroy();
-                                        return Status.CANCEL_STATUS;
+                            if (isWin) {
+                                monitor.subTask("Downloading Ollama for Windows ZIP...");
+                                URL downloadUrl = new URL("https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip");
+                                try (InputStream in = downloadUrl.openStream();
+                                     ZipInputStream zis = new ZipInputStream(in)) {
+                                    ZipEntry entry;
+                                    while ((entry = zis.getNextEntry()) != null) {
+                                        if (entry.getName().equals("ollama.exe")) {
+                                            File outputFile = new File(binDir, "ollama.exe");
+                                            try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+                                                byte[] buffer = new byte[8192];
+                                                int len;
+                                                while ((len = zis.read(buffer)) > 0) {
+                                                    fos.write(buffer, 0, len);
+                                                }
+                                            }
+                                            outputFile.setExecutable(true);
+                                            break;
+                                        }
+                                        zis.closeEntry();
                                     }
                                 }
+                            } else {
+                                monitor.subTask("Downloading Ollama for Linux...");
+                                File outputFile = new File(binDir, "ollama_bin");
+                                URL downloadUrl = new URL("https://ollama.com/download/ollama-linux-amd64");
+                                try (ReadableByteChannel rbc = Channels.newChannel(downloadUrl.openStream());
+                                     FileOutputStream fos = new FileOutputStream(outputFile)) {
+                                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                                }
+                                outputFile.setExecutable(true);
                             }
-                            process.waitFor();
+                            monitor.subTask("Download complete to workspace.");
+                        } else if (page.isDownloadRequested()) {
+                            if (isWin) {
+                                monitor.subTask("Opening Ollama download page for Windows...");
+                                PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL("https://ollama.com/download/windows"));
+                            } else {
+                                monitor.subTask("Installing Ollama globally (Linux)...");
+                                ProcessBuilder pb = new ProcessBuilder("sh", "-c", "curl -fsSL https://ollama.com/install.sh | sh");
+                                pb.redirectErrorStream(true);
+                                Process process = pb.start();
+                                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                                    String line;
+                                    while ((line = reader.readLine()) != null) {
+                                        monitor.subTask(line);
+                                        if (monitor.isCanceled()) {
+                                            process.destroy();
+                                            return Status.CANCEL_STATUS;
+                                        }
+                                    }
+                                }
+                                process.waitFor();
+                            }
                         }
 
                         if (runAfter) {
@@ -190,7 +240,12 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
             workspaceBtn.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
 
             downloadBtn = new Button(container, SWT.CHECK);
-            downloadBtn.setText("Install Ollama Globally (Linux)");
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win")) {
+                downloadBtn.setText("Download/Install Ollama (Windows)");
+            } else {
+                downloadBtn.setText("Install Ollama Globally (Linux)");
+            }
             downloadBtn.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
 
             runBtn = new Button(container, SWT.CHECK);
