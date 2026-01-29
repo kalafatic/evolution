@@ -10,24 +10,32 @@ Package orchestration <http://example.com/orchestration>
   Class Task
     Attribute id : EString
     Attribute name : EString
+    Attribute type : EString
     Attribute status : TaskStatus
     Reference next : Task<<0..*>>
     Reference subTasks : Task<<0..*>>
     Attribute response : EString
+    Attribute feedback : EString
 
   Class Agent
     Attribute id : EString
     Attribute type : EString
     Reference tasks : Task<<0..*>>
+    Attribute executionMode : ExecutionMode
+    Reference rules : Rule<<0..*>>
 
   Class Orchestrator
     Attribute id : EString
     Attribute name : EString
     Reference agents : Agent<<0..*>>
+    Reference tasks : Task<<0..*>>
     Reference git : Git
     Reference maven : Maven
     Reference llm : LLM
     Reference compiler : Compiler
+    Reference ollama : Ollama
+    Reference aiChat : AiChat
+    Reference neuronAI : NeuronAI
 
   Class Git
     Attribute repositoryUrl : EString
@@ -51,6 +59,44 @@ Package orchestration <http://example.com/orchestration>
     Attribute name : EString
     Attribute status : CommandStatus
 
+  Class Ollama
+    Attribute url : EString
+    Attribute model : EString
+    Attribute path : EString
+
+  Class AiChat
+    Attribute url : EString
+    Attribute token : EString
+    Attribute prompt : EString
+
+  Class NeuronAI
+    Attribute url : EString
+    Attribute model : EString
+    Attribute type : NeuronType
+
+  Class EvoProject
+    Attribute name : EString
+    Reference orchestrations : Orchestrator<<0..*>>
+
+  Class Rule
+    Attribute name : EString
+    Attribute description : EString
+
+  Class AccessRule -> Rule
+    Attribute allowedPaths : EString<<0..*>>
+    Attribute deniedPaths : EString<<0..*>>
+
+  Class NetworkRule -> Rule
+    Attribute allowedDomains : EString<<0..*>>
+    Attribute allowAll : EBoolean
+
+  Class MemoryRule -> Rule
+    Attribute storageLimit : EInt
+    Attribute retentionPeriod : EInt
+
+  Class SecretRule -> Rule
+    Attribute allowedSecrets : EString<<0..*>>
+
   Enum TaskStatus
     Literal PENDING = 0
     Literal RUNNING = 0
@@ -62,3 +108,14 @@ Package orchestration <http://example.com/orchestration>
     Literal RUNNING = 0
     Literal COMPLETED = 0
     Literal FAILED = 0
+
+  Enum ExecutionMode
+    Literal SERIAL = 0
+    Literal PARALLEL = 0
+
+  Enum NeuronType
+    Literal MLP = 0
+    Literal CNN = 0
+    Literal RNN = 0
+    Literal LSTM = 0
+    Literal TRANSFORMER = 0

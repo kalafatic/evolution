@@ -439,19 +439,5 @@
             id="eu.kalafatic.evolution.view.splashHandlers.EvoSplashHandler">
       </splashHandler>
    </extension>
-   <extension
-         point="org.eclipse.ui.views">
-         <view
-         id="org.eclipse.ui.navigator.ProjectExplorer"
-         name="Project Explorer"
-         class="org.eclipse.ui.navigator.CommonNavigator"
-         restorable="true">        
-   </view>
-    <view
-      id="org.eclipse.ui.views.ResourceNavigator"
-      name="Navigator"
-      class="org.eclipse.ui.views.ResourceNavigator"
-      restorable="true"/>
-   </extension>
-
+   
 </plugin>

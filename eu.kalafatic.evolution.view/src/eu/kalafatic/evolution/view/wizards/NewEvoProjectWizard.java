@@ -265,7 +265,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                             page.showView(IPageLayout.ID_PROJECT_EXPLORER);
                             BasicNewResourceWizard.selectAndReveal(file, dw);
                             
-                            ProjectCreator.selectAndReveal(project);
+                            //ProjectCreator.selectAndReveal(project);
                             
                             // Open created file with the specific MultiPageEditor ID
                             IDE.openEditor(page, file, "eu.kalafatic.evolution.view.editors.MultiPageEditor", true);
