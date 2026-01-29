@@ -54,7 +54,7 @@ public class Application implements IApplication {
 		// Show workspace selection dialog
 		ChooseWorkspaceData launchData = new ChooseWorkspaceData(Platform.getConfigurationLocation().getURL());
 		ChooseWorkspaceDialog dialog = new ChooseWorkspaceDialog(null, launchData, false, true);
-		dialog.prompt(true);
+		dialog.prompt(false);
 
 		String selection = launchData.getSelection();
 		if (selection == null) {
