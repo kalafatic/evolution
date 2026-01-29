@@ -264,6 +264,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
     private class ConfigDetailsPage extends WizardPage {
         private Text fileNameText;
+        private ControlDecoration fileDecorator;
 
         protected ConfigDetailsPage() {
             super("ConfigDetailsPage");
@@ -281,7 +282,34 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             fileNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             fileNameText.setText("evo_config.xml");
 
+            fileDecorator = new ControlDecoration(fileNameText, SWT.TOP | SWT.LEFT);
+            fileDecorator.setImage(FieldDecorationRegistry.getDefault()
+                    .getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+            fileDecorator.hide();
+
+            fileNameText.addModifyListener(e -> validateFile());
+
             setControl(container);
+            validateFile();
+        }
+
+        private void validateFile() {
+            String name = fileNameText.getText();
+            if (name.isEmpty()) {
+                fileDecorator.setDescriptionText("File name cannot be empty.");
+                fileDecorator.show();
+                setErrorMessage("File name cannot be empty.");
+                setPageComplete(false);
+            } else if (!name.endsWith(".xml") && !name.endsWith(".evo")) {
+                fileDecorator.setDescriptionText("File name must end with .xml or .evo");
+                fileDecorator.show();
+                setErrorMessage("File name must end with .xml or .evo");
+                setPageComplete(false);
+            } else {
+                fileDecorator.hide();
+                setErrorMessage(null);
+                setPageComplete(true);
+            }
         }
 
         public String getFileName() { return fileNameText.getText(); }
@@ -363,6 +391,17 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 setErrorMessage(null);
                 return;
             }
+
+            String repoUrl = repoUrlText.getText();
+            if (repoUrl.isEmpty()) {
+                gitDecorator.setDescriptionText("Repository URL cannot be empty.");
+                gitDecorator.show();
+                setPageComplete(false);
+                setErrorMessage("Repository URL is required.");
+                return;
+            }
+
+            setPageComplete(false);
             if (validationJob != null) validationJob.cancel();
             validationJob = new Job("Validate Git") {
                 @Override
@@ -524,6 +563,20 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 setErrorMessage(null);
                 return;
             }
+
+            String url = urlText.getText();
+            String model = modelText.getText();
+            if (url.isEmpty()) {
+                setErrorMessage("Ollama URL is required.");
+                setPageComplete(false);
+                return;
+            }
+            if (model.isEmpty()) {
+                setErrorMessage("Model name is required.");
+                setPageComplete(false);
+                return;
+            }
+
             String path = pathText.getText();
             File file = new File(path);
             if (!file.exists()) {
@@ -531,20 +584,21 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 pathDecorator.show();
                 setPageComplete(false);
                 setErrorMessage("Ollama executable not found.");
+                return;
             } else {
                 pathDecorator.hide();
-                setErrorMessage(null);
-                setPageComplete(true);
+                setErrorMessage("Checking Ollama connection and model...");
+                setPageComplete(false);
             }
 
             // Debounced async check for models
             if (validationJob != null) validationJob.cancel();
-            final String url = urlText.getText();
-            final String model = modelText.getText();
+            final String finalUrl = urlText.getText();
+            final String finalModel = modelText.getText();
             validationJob = new Job("Validate Ollama") {
                 @Override
                 protected IStatus run(IProgressMonitor monitor) {
-                    checkOllamaCommunication(url, model);
+                    checkOllamaCommunication(finalUrl, finalModel);
                     return Status.OK_STATUS;
                 }
             };
@@ -581,9 +635,13 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                                     proposalProvider.setProposals(names);
                                     if (modelFound) {
                                         modelDecorator.hide();
+                                        setErrorMessage(null);
+                                        setPageComplete(true);
                                     } else {
                                         modelDecorator.setDescriptionText("Model not found on Ollama server.");
                                         modelDecorator.show();
+                                        setErrorMessage("Model not found on Ollama server.");
+                                        setPageComplete(false);
                                     }
                                 });
                             }
@@ -591,6 +649,8 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                             Display.getDefault().asyncExec(() -> {
                                 modelDecorator.setDescriptionText("Could not connect to Ollama server.");
                                 modelDecorator.show();
+                                setErrorMessage("Could not connect to Ollama server.");
+                                setPageComplete(false);
                             });
                             return null;
                         });
@@ -608,6 +668,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
     private class LLMSettingsPage extends WizardPage {
         private Text modelText, tempText;
         private Button skipCheck;
+        private ControlDecoration modelDecorator;
 
         protected LLMSettingsPage() {
             super("LLMSettingsPage");
@@ -624,6 +685,13 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             modelText = new Text(container, SWT.BORDER);
             modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             modelText.setText("gpt-4o");
+
+            modelDecorator = new ControlDecoration(modelText, SWT.TOP | SWT.LEFT);
+            modelDecorator.setImage(FieldDecorationRegistry.getDefault()
+                    .getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+            modelDecorator.hide();
+
+            modelText.addModifyListener(e -> validateLLM());
 
             new Label(container, SWT.NONE).setText("Temperature:");
             tempText = new Text(container, SWT.BORDER);
@@ -653,8 +721,34 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             skipCheck = new Button(container, SWT.CHECK);
             skipCheck.setText("Skip this step and setup later");
             skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
+            skipCheck.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    validateLLM();
+                }
+            });
 
             setControl(container);
+            validateLLM();
+        }
+
+        private void validateLLM() {
+            if (skipCheck.getSelection()) {
+                modelDecorator.hide();
+                setErrorMessage(null);
+                setPageComplete(true);
+                return;
+            }
+            if (modelText.getText().isEmpty()) {
+                modelDecorator.setDescriptionText("Model name cannot be empty.");
+                modelDecorator.show();
+                setErrorMessage("Model name is required.");
+                setPageComplete(false);
+            } else {
+                modelDecorator.hide();
+                setErrorMessage(null);
+                setPageComplete(true);
+            }
         }
 
         public String getLlmModel() { return modelText.getText(); }
@@ -723,6 +817,16 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 setErrorMessage(null);
                 return;
             }
+
+            if (goalsText.getText().isEmpty()) {
+                mavenDecorator.setDescriptionText("Maven goals cannot be empty.");
+                mavenDecorator.show();
+                setErrorMessage("Maven goals are required.");
+                setPageComplete(false);
+                return;
+            }
+
+            setPageComplete(false);
             if (validationJob != null) validationJob.cancel();
             validationJob = new Job("Validate Maven") {
                 @Override
@@ -773,6 +877,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
     private class AiChatSettingsPage extends WizardPage {
         private Text urlText, tokenText, promptText;
         private Button skipCheck;
+        private ControlDecoration urlDecorator, tokenDecorator;
 
         protected AiChatSettingsPage() {
             super("AiChatSettingsPage");
@@ -790,10 +895,24 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             urlText.setText("http://localhost:58080/ai");
 
+            urlDecorator = new ControlDecoration(urlText, SWT.TOP | SWT.LEFT);
+            urlDecorator.setImage(FieldDecorationRegistry.getDefault()
+                    .getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+            urlDecorator.hide();
+
+            urlText.addModifyListener(e -> validateAiChat());
+
             new Label(container, SWT.NONE).setText("Token:");
             tokenText = new Text(container, SWT.BORDER | SWT.PASSWORD);
             tokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             tokenText.setText("ENTER_TOKEN_HERE");
+
+            tokenDecorator = new ControlDecoration(tokenText, SWT.TOP | SWT.LEFT);
+            tokenDecorator.setImage(FieldDecorationRegistry.getDefault()
+                    .getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+            tokenDecorator.hide();
+
+            tokenText.addModifyListener(e -> validateAiChat());
 
             new Label(container, SWT.NONE).setText("Initial Prompt:");
             promptText = new Text(container, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
@@ -805,8 +924,48 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             skipCheck = new Button(container, SWT.CHECK);
             skipCheck.setText("Skip this step and setup later");
             skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
+            skipCheck.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    validateAiChat();
+                }
+            });
 
             setControl(container);
+            validateAiChat();
+        }
+
+        private void validateAiChat() {
+            if (skipCheck.getSelection()) {
+                urlDecorator.hide();
+                tokenDecorator.hide();
+                setErrorMessage(null);
+                setPageComplete(true);
+                return;
+            }
+            boolean valid = true;
+            if (urlText.getText().isEmpty()) {
+                urlDecorator.setDescriptionText("Chat URL cannot be empty.");
+                urlDecorator.show();
+                valid = false;
+            } else {
+                urlDecorator.hide();
+            }
+            if (tokenText.getText().isEmpty()) {
+                tokenDecorator.setDescriptionText("Token cannot be empty.");
+                tokenDecorator.show();
+                valid = false;
+            } else {
+                tokenDecorator.hide();
+            }
+
+            if (!valid) {
+                setErrorMessage("Chat URL and Token are required.");
+                setPageComplete(false);
+            } else {
+                setErrorMessage(null);
+                setPageComplete(true);
+            }
         }
 
         public String getChatUrl() { return urlText.getText(); }
