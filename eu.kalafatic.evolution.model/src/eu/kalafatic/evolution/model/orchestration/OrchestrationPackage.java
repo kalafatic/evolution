@@ -970,13 +970,22 @@ public interface OrchestrationPackage extends EPackage {
 	int NEURON_AI__MODEL = 1;
 
 	/**
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI__TYPE = 2;
+
+	/**
 	 * The number of structural features of the '<em>Neuron AI</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int NEURON_AI_FEATURE_COUNT = 2;
+	int NEURON_AI_FEATURE_COUNT = 3;
 
 	/**
 	 * The number of operations of the '<em>Neuron AI</em>' class.
@@ -986,6 +995,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int NEURON_AI_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
+	 * @generated
+	 */
+	int NEURON_TYPE = 20;
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Task <em>Task</em>}'.
@@ -1582,6 +1601,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getNeuronAI_Model();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getType <em>Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronAI#getType()
+	 * @see #getNeuronAI()
+	 * @generated
+	 */
+	EAttribute getNeuronAI_Type();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.EvoProject <em>Evo Project</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1642,6 +1672,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EEnum getExecutionMode();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Neuron Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+	 * @generated
+	 */
+	EEnum getNeuronType();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Rule <em>Rule</em>}'.
@@ -2165,6 +2205,14 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute NEURON_AI__MODEL = eINSTANCE.getNeuronAI_Model();
 
 		/**
+		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NEURON_AI__TYPE = eINSTANCE.getNeuronAI_Type();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl <em>Evo Project</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -2219,6 +2267,16 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EEnum EXECUTION_MODE = eINSTANCE.getExecutionMode();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
+		 * @generated
+		 */
+		EEnum NEURON_TYPE = eINSTANCE.getNeuronType();
 
 		/**
 		 * @generated

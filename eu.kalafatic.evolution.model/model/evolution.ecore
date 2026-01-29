@@ -77,6 +77,13 @@
     <eLiterals name="SERIAL"/>
     <eLiterals name="PARALLEL"/>
   </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="NeuronType">
+    <eLiterals name="MLP"/>
+    <eLiterals name="CNN"/>
+    <eLiterals name="RNN"/>
+    <eLiterals name="LSTM"/>
+    <eLiterals name="TRANSFORMER"/>
+  </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Command">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//CommandStatus"/>
@@ -94,6 +101,7 @@
   <eClassifiers xsi:type="ecore:EClass" name="NeuronAI">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="url" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="model" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="#//NeuronType"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="EvoProject">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

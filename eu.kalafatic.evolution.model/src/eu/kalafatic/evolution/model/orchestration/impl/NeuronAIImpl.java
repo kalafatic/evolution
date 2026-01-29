@@ -3,6 +3,7 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
+import eu.kalafatic.evolution.model.orchestration.NeuronType;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 
 import org.eclipse.emf.common.notify.Notification;
@@ -22,6 +23,7 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  * <ul>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl#getUrl <em>Url</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl#getModel <em>Model</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl#getType <em>Type</em>}</li>
  * </ul>
  *
  * @generated
@@ -68,12 +70,55 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 	protected String model = MODEL_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getType() <em>Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getType()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final NeuronType TYPE_EDEFAULT = NeuronType.MLP;
+
+	/**
+	 * The cached value of the '{@link #getType() <em>Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getType()
+	 * @generated
+	 * @ordered
+	 */
+	protected NeuronType type = TYPE_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	protected NeuronAIImpl() {
 		super();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public NeuronType getType() {
+		return type;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setType(NeuronType newType) {
+		NeuronType oldType = type;
+		type = newType == null ? TYPE_EDEFAULT : newType;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NEURON_AI__TYPE, oldType, type));
 	}
 
 	/**
@@ -144,6 +189,8 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 				return getUrl();
 			case OrchestrationPackage.NEURON_AI__MODEL:
 				return getModel();
+			case OrchestrationPackage.NEURON_AI__TYPE:
+				return getType();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -161,6 +208,9 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 				return;
 			case OrchestrationPackage.NEURON_AI__MODEL:
 				setModel((String)newValue);
+				return;
+			case OrchestrationPackage.NEURON_AI__TYPE:
+				setType((NeuronType)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -180,6 +230,9 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 			case OrchestrationPackage.NEURON_AI__MODEL:
 				setModel(MODEL_EDEFAULT);
 				return;
+			case OrchestrationPackage.NEURON_AI__TYPE:
+				setType(TYPE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -196,6 +249,8 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 				return URL_EDEFAULT == null ? url != null : !URL_EDEFAULT.equals(url);
 			case OrchestrationPackage.NEURON_AI__MODEL:
 				return MODEL_EDEFAULT == null ? model != null : !MODEL_EDEFAULT.equals(model);
+			case OrchestrationPackage.NEURON_AI__TYPE:
+				return type != TYPE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -214,6 +269,8 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 		result.append(url);
 		result.append(", model: ");
 		result.append(model);
+		result.append(", type: ");
+		result.append(type);
 		result.append(')');
 		return result.toString();
 	}

@@ -5,12 +5,16 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
+import eu.kalafatic.evolution.model.orchestration.NeuronType;
+
 public class NeuronAISettingsPage extends WizardPage {
     private Text urlText, modelText;
+    private Combo typeCombo;
     private Button skipCheck;
 
     public NeuronAISettingsPage() {
@@ -34,6 +38,14 @@ public class NeuronAISettingsPage extends WizardPage {
         modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         modelText.setText("default-neuron-model");
 
+        new Label(container, SWT.NONE).setText("Model Type:");
+        typeCombo = new Combo(container, SWT.READ_ONLY);
+        typeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        for (NeuronType type : NeuronType.VALUES) {
+            typeCombo.add(type.getName());
+        }
+        typeCombo.select(0); // MLP
+
         skipCheck = new Button(container, SWT.CHECK);
         skipCheck.setText("Skip this step and setup later");
         skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
@@ -43,5 +55,8 @@ public class NeuronAISettingsPage extends WizardPage {
 
     public String getUrl() { return urlText.getText(); }
     public String getModelName() { return modelText.getText(); }
+    public NeuronType getModelType() {
+        return NeuronType.getByName(typeCombo.getText());
+    }
     public boolean isSkipped() { return skipCheck.getSelection(); }
 }
