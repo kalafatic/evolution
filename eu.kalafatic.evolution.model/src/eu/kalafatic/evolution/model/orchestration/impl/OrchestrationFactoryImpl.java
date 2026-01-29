@@ -16,6 +16,7 @@ import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
+import eu.kalafatic.evolution.model.orchestration.NeuronType;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
@@ -160,6 +161,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createCommandStatusFromString(eDataType, initialValue);
 			case OrchestrationPackage.EXECUTION_MODE:
 				return createExecutionModeFromString(eDataType, initialValue);
+			case OrchestrationPackage.NEURON_TYPE:
+				return createNeuronTypeFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -179,6 +182,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertCommandStatusToString(eDataType, instanceValue);
 			case OrchestrationPackage.EXECUTION_MODE:
 				return convertExecutionModeToString(eDataType, instanceValue);
+			case OrchestrationPackage.NEURON_TYPE:
+				return convertNeuronTypeToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -201,6 +206,26 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	public String convertExecutionModeToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NeuronType createNeuronTypeFromString(EDataType eDataType, String initialValue) {
+		NeuronType result = NeuronType.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertNeuronTypeToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 
