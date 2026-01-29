@@ -36,15 +36,6 @@ import org.eclipse.emf.ecore.impl.EPackageImpl;
  * @generated
  */
 public class OrchestrationPackageImpl extends EPackageImpl implements OrchestrationPackage {
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public EReference getOrchestrator_Tasks() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(3);
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -226,6 +217,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 
 		isInited = true;
 
+		// Update the registry as soon as it's created to avoid circularity issues
+		EPackage.Registry.INSTANCE.put(OrchestrationPackage.eNS_URI, theOrchestrationPackage);
+
 		// Create package meta-data objects
 		theOrchestrationPackage.createPackageContents();
 
@@ -235,8 +229,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		// Mark meta-data to indicate it can't be changed
 		theOrchestrationPackage.freeze();
 
-		// Update the registry and return the package
-		EPackage.Registry.INSTANCE.put(OrchestrationPackage.eNS_URI, theOrchestrationPackage);
 		return theOrchestrationPackage;
 	}
 
@@ -528,6 +520,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EReference getOrchestrator_Tasks() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	@Override
@@ -770,19 +772,19 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override public EAttribute getRule_Description() { return (EAttribute)ruleEClass.getEStructuralFeatures().get(1); }
 
 	@Override public EClass getAccessRule() { return accessRuleEClass; }
-	@Override public EAttribute getAccessRule_AllowedPaths() { return (EAttribute)accessRuleEClass.getEStructuralFeatures().get(2); }
-	@Override public EAttribute getAccessRule_DeniedPaths() { return (EAttribute)accessRuleEClass.getEStructuralFeatures().get(3); }
+	@Override public EAttribute getAccessRule_AllowedPaths() { return (EAttribute)accessRuleEClass.getEStructuralFeatures().get(0); }
+	@Override public EAttribute getAccessRule_DeniedPaths() { return (EAttribute)accessRuleEClass.getEStructuralFeatures().get(1); }
 
 	@Override public EClass getNetworkRule() { return networkRuleEClass; }
-	@Override public EAttribute getNetworkRule_AllowedDomains() { return (EAttribute)networkRuleEClass.getEStructuralFeatures().get(2); }
-	@Override public EAttribute getNetworkRule_AllowAll() { return (EAttribute)networkRuleEClass.getEStructuralFeatures().get(3); }
+	@Override public EAttribute getNetworkRule_AllowedDomains() { return (EAttribute)networkRuleEClass.getEStructuralFeatures().get(0); }
+	@Override public EAttribute getNetworkRule_AllowAll() { return (EAttribute)networkRuleEClass.getEStructuralFeatures().get(1); }
 
 	@Override public EClass getMemoryRule() { return memoryRuleEClass; }
-	@Override public EAttribute getMemoryRule_StorageLimit() { return (EAttribute)memoryRuleEClass.getEStructuralFeatures().get(2); }
-	@Override public EAttribute getMemoryRule_RetentionPeriod() { return (EAttribute)memoryRuleEClass.getEStructuralFeatures().get(3); }
+	@Override public EAttribute getMemoryRule_StorageLimit() { return (EAttribute)memoryRuleEClass.getEStructuralFeatures().get(0); }
+	@Override public EAttribute getMemoryRule_RetentionPeriod() { return (EAttribute)memoryRuleEClass.getEStructuralFeatures().get(1); }
 
 	@Override public EClass getSecretRule() { return secretRuleEClass; }
-	@Override public EAttribute getSecretRule_AllowedSecrets() { return (EAttribute)secretRuleEClass.getEStructuralFeatures().get(2); }
+	@Override public EAttribute getSecretRule_AllowedSecrets() { return (EAttribute)secretRuleEClass.getEStructuralFeatures().get(0); }
 
 	/**
 	 * <!-- begin-user-doc -->

@@ -972,7 +972,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @return the meta object for the attribute '<em>Type</em>'.
 	 * @see eu.kalafatic.evolution.model.orchestration.Task#getType()
 	 * @see #getTask()
-	 * @generated NOT
+	 * @generated
 	 */
 	EAttribute getTask_Type();
 
@@ -1027,7 +1027,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @return the meta object for the attribute '<em>Feedback</em>'.
 	 * @see eu.kalafatic.evolution.model.orchestration.Task#getFeedback()
 	 * @see #getTask()
-	 * @generated NOT
+	 * @generated
 	 */
 	EAttribute getTask_Feedback();
 
@@ -1146,7 +1146,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @return the meta object for the containment reference list '<em>Tasks</em>'.
 	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getTasks()
 	 * @see #getOrchestrator()
-	 * @generated NOT
+	 * @generated
 	 */
 	EReference getOrchestrator_Tasks();
 
@@ -1638,7 +1638,7 @@ public interface OrchestrationPackage extends EPackage {
 		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
-		 * @generated NOT
+		 * @generated
 		 */
 		EAttribute TASK__TYPE = eINSTANCE.getTask_Type();
 
@@ -1678,7 +1678,7 @@ public interface OrchestrationPackage extends EPackage {
 		 * The meta object literal for the '<em><b>Feedback</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
-		 * @generated NOT
+		 * @generated
 		 */
 		EAttribute TASK__FEEDBACK = eINSTANCE.getTask_Feedback();
 
