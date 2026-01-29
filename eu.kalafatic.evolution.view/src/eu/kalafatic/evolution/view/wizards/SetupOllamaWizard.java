@@ -32,6 +32,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.core.runtime.IPath;
 
 public class SetupOllamaWizard extends Wizard implements INewWizard {
     private Orchestrator orchestrator;
