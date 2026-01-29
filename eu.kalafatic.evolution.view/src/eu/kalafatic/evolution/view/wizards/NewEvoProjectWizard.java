@@ -400,7 +400,19 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             new Label(container, SWT.NONE).setText("Executable Path:");
             pathText = new Text(container, SWT.BORDER);
             pathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            pathText.setText("/usr/bin/ollama");
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win")) {
+                String localAppData = System.getenv("LOCALAPPDATA");
+                if (localAppData != null) {
+                    pathText.setText(localAppData + "\\Ollama\\ollama.exe");
+                } else {
+                    pathText.setText("C:\\Users\\" + System.getProperty("user.name") + "\\AppData\\Local\\Ollama\\ollama.exe");
+                }
+            } else if (os.contains("mac")) {
+                pathText.setText("/usr/local/bin/ollama");
+            } else {
+                pathText.setText("/usr/bin/ollama");
+            }
 
             pathDecorator = new ControlDecoration(pathText, SWT.TOP | SWT.LEFT);
             pathDecorator.setImage(FieldDecorationRegistry.getDefault()
