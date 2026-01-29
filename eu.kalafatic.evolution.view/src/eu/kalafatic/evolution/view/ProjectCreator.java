@@ -52,11 +52,12 @@ public class ProjectCreator {
             // In real code → show error dialog
         }
     }
+    
 
     /**
      * Selects the project in Project Explorer and reveals it.
      */
-    private static void selectAndReveal(Object element) {
+    public static void selectAndReveal(Object element) {
         IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
         if (window == null) return;
 

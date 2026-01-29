@@ -11,9 +11,13 @@ import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -32,6 +36,7 @@ import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.jface.fieldassist.SimpleContentProposalProvider;
 import org.eclipse.jface.fieldassist.TextContentAdapter;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.jface.wizard.WizardPage;
@@ -55,6 +60,7 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.WizardNewProjectCreationPage;
 import org.eclipse.ui.ide.IDE;
+import org.eclipse.ui.navigator.resources.ProjectExplorer;
 import org.eclipse.ui.wizards.newresource.BasicNewResourceWizard;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -69,6 +75,7 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.EvolutionNature;
+import eu.kalafatic.evolution.view.ProjectCreator;
 
 public class NewEvoProjectWizard extends Wizard implements INewWizard {
     private IWorkbench workbench;
@@ -244,6 +251,9 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                             // Ensure Project Explorer is visible
                             page.showView(IPageLayout.ID_PROJECT_EXPLORER);
                             BasicNewResourceWizard.selectAndReveal(file, dw);
+                            
+                            ProjectCreator.selectAndReveal(project);
+                            
                             // Open created file with the specific MultiPageEditor ID
                             IDE.openEditor(page, file, "eu.kalafatic.evolution.view.editors.MultiPageEditor", true);
                         } catch (PartInitException e) {
@@ -261,6 +271,8 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
         return true;
     }
+    
+    
 
     private class ConfigDetailsPage extends WizardPage {
         private Text fileNameText;
