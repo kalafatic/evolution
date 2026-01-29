@@ -94,16 +94,28 @@
             labelProvider="eu.kalafatic.evolution.view.OrchestrationNavigatorLabelProvider"
             name="Orchestrations">
          <triggerPoints>
-            <or>
+            <and>
                <instanceof
-                     value="org.eclipse.core.resources.IFile">
+                     value="org.eclipse.core.resources.IProject">
                </instanceof>
-            </or>
+               <test
+                     property="org.eclipse.core.resources.projectNature"
+                     value="eu.kalafatic.evolution.view.evolutionNature">
+               </test>
+            </and>
          </triggerPoints>
          <possibleChildren>
-            <instanceof
-                  value="eu.kalafatic.evolution.model.orchestration.Orchestrator">
-            </instanceof>
+            <or>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.EvoProject">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Orchestrator">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Agent">
+               </instanceof>
+            </or>
          </possibleChildren>
          <actionProvider
                class="eu.kalafatic.evolution.view.OrchestrationEditorActionProvider">
