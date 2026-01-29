@@ -112,6 +112,15 @@ public interface OrchestrationFactory extends EFactory {
 	AiChat createAiChat();
 
 	/**
+	 * Returns a new object of class '<em>Neuron AI</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Neuron AI</em>'.
+	 * @generated
+	 */
+	NeuronAI createNeuronAI();
+
+	/**
 	 * Returns a new object of class '<em>Evo Project</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

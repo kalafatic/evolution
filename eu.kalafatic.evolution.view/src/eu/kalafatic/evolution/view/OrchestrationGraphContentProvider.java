@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -18,6 +19,9 @@ public class OrchestrationGraphContentProvider extends ArrayContentProvider impl
             List<Object> connections = new ArrayList<>();
             connections.addAll(o.getAgents());
             connections.addAll(o.getTasks());
+            if (o.getNeuronAI() != null) {
+                connections.add(o.getNeuronAI());
+            }
             return connections.toArray();
         } else if (entity instanceof Task) {
             Task t = (Task) entity;

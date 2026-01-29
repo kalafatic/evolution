@@ -7,6 +7,7 @@ import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
+import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -171,6 +172,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected AiChat aiChat;
 
 	/**
+	 * The cached value of the '{@link #getNeuronAI() <em>Neuron AI</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNeuronAI()
+	 * @generated
+	 * @ordered
+	 */
+	protected NeuronAI neuronAI;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -280,6 +291,51 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		}
 		else if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_CHAT, newAiChat, newAiChat));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public NeuronAI getNeuronAI() {
+		return neuronAI;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetNeuronAI(NeuronAI newNeuronAI, NotificationChain msgs) {
+		NeuronAI oldNeuronAI = neuronAI;
+		neuronAI = newNeuronAI;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__NEURON_AI, oldNeuronAI, newNeuronAI);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setNeuronAI(NeuronAI newNeuronAI) {
+		if (newNeuronAI != neuronAI) {
+			NotificationChain msgs = null;
+			if (neuronAI != null)
+				msgs = ((InternalEObject)neuronAI).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__NEURON_AI, null, msgs);
+			if (newNeuronAI != null)
+				msgs = ((InternalEObject)newNeuronAI).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__NEURON_AI, null, msgs);
+			msgs = basicSetNeuronAI(newNeuronAI, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__NEURON_AI, newNeuronAI, newNeuronAI));
 	}
 
 	/**
@@ -555,6 +611,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return basicSetOllama(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
 				return basicSetAiChat(null, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
+				return basicSetNeuronAI(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -587,6 +645,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getOllama();
 			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
 				return getAiChat();
+			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
+				return getNeuronAI();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -632,6 +692,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
 				setAiChat((AiChat)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
+				setNeuronAI((NeuronAI)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -674,6 +737,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
 				setAiChat((AiChat)null);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
+				setNeuronAI((NeuronAI)null);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -706,6 +772,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return ollama != null;
 			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
 				return aiChat != null;
+			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
+				return neuronAI != null;
 		}
 		return super.eIsSet(featureID);
 	}

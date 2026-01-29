@@ -232,4 +232,26 @@ public interface Orchestrator extends EObject {
 	 */
 	void setAiChat(AiChat value);
 
+	/**
+	 * Returns the value of the '<em><b>Neuron AI</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Neuron AI</em>' containment reference.
+	 * @see #setNeuronAI(NeuronAI)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_NeuronAI()
+	 * @model containment="true"
+	 * @generated
+	 */
+	NeuronAI getNeuronAI();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getNeuronAI <em>Neuron AI</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Neuron AI</em>' containment reference.
+	 * @see #getNeuronAI()
+	 * @generated
+	 */
+	void setNeuronAI(NeuronAI value);
+
 } // Orchestrator

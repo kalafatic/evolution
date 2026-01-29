@@ -15,6 +15,7 @@ import eu.kalafatic.evolution.model.orchestration.CommandStatus;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
+import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
@@ -85,6 +86,7 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.COMMAND: return createCommand();
 			case OrchestrationPackage.OLLAMA: return createOllama();
 			case OrchestrationPackage.AI_CHAT: return createAiChat();
+			case OrchestrationPackage.NEURON_AI: return createNeuronAI();
 			case OrchestrationPackage.EVO_PROJECT: return createEvoProject();
 			case OrchestrationPackage.ACCESS_RULE: return createAccessRule();
 			case OrchestrationPackage.NETWORK_RULE: return createNetworkRule();
@@ -93,6 +95,17 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public NeuronAI createNeuronAI() {
+		NeuronAIImpl neuronAI = new NeuronAIImpl();
+		return neuronAI;
 	}
 
 	/**

@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
@@ -34,6 +35,8 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
             return t.getName() + " (" + t.getStatus() + ")";
         } else if (element instanceof Agent) {
             return "Agent: " + ((Agent) element).getId();
+        } else if (element instanceof NeuronAI) {
+            return "Neuron AI: " + ((NeuronAI) element).getModel();
         }
         return super.getText(element);
     }
@@ -73,6 +76,8 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
             return getColor("ORCHESTRATOR_BG", new RGB(200, 200, 255)); // Blue
         } else if (entity instanceof Agent) {
             return getColor("AGENT_BG", new RGB(230, 230, 230)); // Grey
+        } else if (entity instanceof NeuronAI) {
+            return getColor("NEURON_AI_BG", new RGB(255, 200, 255)); // Pink
         }
         return null;
     }

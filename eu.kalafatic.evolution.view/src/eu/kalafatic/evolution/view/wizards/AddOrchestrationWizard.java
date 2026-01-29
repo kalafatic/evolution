@@ -27,6 +27,7 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
     private LLMSettingsPage llmPage;
     private MavenSettingsPage mavenPage;
     private AiChatSettingsPage aiChatPage;
+    private NeuronAISettingsPage neuronAIPage;
     private AgentSettingsPage agentPage;
 
     public AddOrchestrationWizard() {
@@ -62,6 +63,7 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
         llmPage = new LLMSettingsPage();
         mavenPage = new MavenSettingsPage();
         aiChatPage = new AiChatSettingsPage();
+        neuronAIPage = new NeuronAISettingsPage();
         agentPage = new AgentSettingsPage();
 
         addPage(generalPage);
@@ -70,6 +72,7 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
         addPage(llmPage);
         addPage(mavenPage);
         addPage(aiChatPage);
+        addPage(neuronAIPage);
         addPage(agentPage);
     }
 
@@ -139,6 +142,14 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
             aiChat.setToken(aiChatPage.getToken());
             aiChat.setPrompt(aiChatPage.getPrompt());
             orchestrator.setAiChat(aiChat);
+
+            // Neuron AI Settings
+            if (!neuronAIPage.isSkipped()) {
+                NeuronAI neuronAI = factory.createNeuronAI();
+                neuronAI.setUrl(neuronAIPage.getUrl());
+                neuronAI.setModel(neuronAIPage.getModelName());
+                orchestrator.setNeuronAI(neuronAI);
+            }
 
             // Agent Settings
             String agentsData = agentPage.getAgentsData();
