@@ -43,9 +43,9 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * Creates the default factory implementation.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated
+	 * @generated NOT
 	 */
-	public static OrchestrationFactory init() {
+	public static synchronized OrchestrationFactory init() {
 		try {
 			OrchestrationFactory theOrchestrationFactory = (OrchestrationFactory)EPackage.Registry.INSTANCE.getEFactory(OrchestrationPackage.eNS_URI);
 			if (theOrchestrationFactory != null) {

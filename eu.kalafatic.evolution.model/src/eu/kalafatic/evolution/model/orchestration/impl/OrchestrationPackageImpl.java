@@ -210,10 +210,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @see org.eclipse.emf.ecore.EPackage.Registry
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#eNS_URI
 	 * @see #init()
-	 * @generated
+	 * @generated NOT
 	 */
 	private OrchestrationPackageImpl() {
-		super(eNS_URI, OrchestrationFactory.eINSTANCE);
+		super(eNS_URI);
 	}
 	/**
 	 * <!-- begin-user-doc -->
@@ -232,9 +232,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @see #eNS_URI
 	 * @see #createPackageContents()
 	 * @see #initializePackageContents()
-	 * @generated
+	 * @generated NOT
 	 */
-	public static OrchestrationPackage init() {
+	public static synchronized OrchestrationPackage init() {
 		if (isInited) return (OrchestrationPackage)EPackage.Registry.INSTANCE.getEPackage(OrchestrationPackage.eNS_URI);
 
 		// Obtain or create and register package
@@ -244,8 +244,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		// Update the registry as soon as it's created to avoid circularity issues
 		EPackage.Registry.INSTANCE.put(OrchestrationPackage.eNS_URI, theOrchestrationPackage);
 
-		isInited = true;
-
 		// Create package meta-data objects
 		theOrchestrationPackage.createPackageContents();
 
@@ -254,6 +252,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 
 		// Mark meta-data to indicate it can't be changed
 		theOrchestrationPackage.freeze();
+
+		// Set the factory instance
+		theOrchestrationPackage.setEFactoryInstance(OrchestrationFactory.eINSTANCE);
+
+		isInited = true;
 
 		return theOrchestrationPackage;
 	}
