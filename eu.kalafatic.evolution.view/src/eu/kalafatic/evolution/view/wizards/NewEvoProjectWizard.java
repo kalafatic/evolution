@@ -158,56 +158,68 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             orchestrator.setId("orch1");
 
             // Git Settings
-            Git git = factory.createGit();
-            git.setRepositoryUrl(gitPage.getRepoUrl());
-            git.setBranch(gitPage.getBranch());
-            git.setUsername(gitPage.getUsername());
-            git.setLocalPath(gitPage.getLocalPath());
-            orchestrator.setGit(git);
+            if (!gitPage.isSkipped()) {
+                Git git = factory.createGit();
+                git.setRepositoryUrl(gitPage.getRepoUrl());
+                git.setBranch(gitPage.getBranch());
+                git.setUsername(gitPage.getUsername());
+                git.setLocalPath(gitPage.getLocalPath());
+                orchestrator.setGit(git);
+            }
 
             // Ollama Settings
-            Ollama ollama = factory.createOllama();
-            ollama.setUrl(ollamaPage.getOllamaUrl());
-            ollama.setModel(ollamaPage.getModelName());
-            ollama.setPath(ollamaPage.getExecutablePath());
-            orchestrator.setOllama(ollama);
+            if (!ollamaPage.isSkipped()) {
+                Ollama ollama = factory.createOllama();
+                ollama.setUrl(ollamaPage.getOllamaUrl());
+                ollama.setModel(ollamaPage.getModelName());
+                ollama.setPath(ollamaPage.getExecutablePath());
+                orchestrator.setOllama(ollama);
+            }
 
             // LLM Settings
-            LLM llm = factory.createLLM();
-            llm.setModel(llmPage.getLlmModel());
-            try {
-                llm.setTemperature(Float.parseFloat(llmPage.getTemperature()));
-            } catch (NumberFormatException e) {
-                llm.setTemperature(0.7f);
+            if (!llmPage.isSkipped()) {
+                LLM llm = factory.createLLM();
+                llm.setModel(llmPage.getLlmModel());
+                try {
+                    llm.setTemperature(Float.parseFloat(llmPage.getTemperature()));
+                } catch (NumberFormatException e) {
+                    llm.setTemperature(0.7f);
+                }
+                orchestrator.setLlm(llm);
             }
-            orchestrator.setLlm(llm);
 
             // Maven Settings
-            Maven maven = factory.createMaven();
-            String goals = mavenPage.getGoals();
-            if (goals != null && !goals.isEmpty()) {
-                maven.getGoals().addAll(Arrays.asList(goals.split("[,\\s]+")));
+            if (!mavenPage.isSkipped()) {
+                Maven maven = factory.createMaven();
+                String goals = mavenPage.getGoals();
+                if (goals != null && !goals.isEmpty()) {
+                    maven.getGoals().addAll(Arrays.asList(goals.split("[,\\s]+")));
+                }
+                orchestrator.setMaven(maven);
             }
-            orchestrator.setMaven(maven);
 
             // AiChat Settings
-            AiChat aiChat = factory.createAiChat();
-            aiChat.setUrl(aiChatPage.getChatUrl());
-            aiChat.setToken(aiChatPage.getToken());
-            aiChat.setPrompt(aiChatPage.getPrompt());
-            orchestrator.setAiChat(aiChat);
+            if (!aiChatPage.isSkipped()) {
+                AiChat aiChat = factory.createAiChat();
+                aiChat.setUrl(aiChatPage.getChatUrl());
+                aiChat.setToken(aiChatPage.getToken());
+                aiChat.setPrompt(aiChatPage.getPrompt());
+                orchestrator.setAiChat(aiChat);
+            }
 
             // Agent Settings
-            String agentsData = agentPage.getAgentsData();
-            if (agentsData != null && !agentsData.isEmpty()) {
-                String[] lines = agentsData.split("\\r?\\n");
-                for (String line : lines) {
-                    String[] parts = line.split(":");
-                    if (parts.length >= 2) {
-                        Agent agent = factory.createAgent();
-                        agent.setId(parts[0].trim());
-                        agent.setType(parts[1].trim());
-                        orchestrator.getAgents().add(agent);
+            if (!agentPage.isSkipped()) {
+                String agentsData = agentPage.getAgentsData();
+                if (agentsData != null && !agentsData.isEmpty()) {
+                    String[] lines = agentsData.split("\\r?\\n");
+                    for (String line : lines) {
+                        String[] parts = line.split(":");
+                        if (parts.length >= 2) {
+                            Agent agent = factory.createAgent();
+                            agent.setId(parts[0].trim());
+                            agent.setType(parts[1].trim());
+                            orchestrator.getAgents().add(agent);
+                        }
                     }
                 }
             }
@@ -274,6 +286,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
     private class GitSettingsPage extends WizardPage {
         private Text repoUrlText, branchText, usernameText, localPathText;
+        private Button skipCheck;
         private ControlDecoration gitDecorator;
         private Job validationJob;
 
@@ -325,11 +338,28 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             localPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             localPathText.setText("./repo");
 
+            skipCheck = new Button(container, SWT.CHECK);
+            skipCheck.setText("Skip this step and setup later");
+            skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
+            skipCheck.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    validateGit();
+                }
+            });
+
             setControl(container);
             validateGit();
         }
 
         private void validateGit() {
+            if (skipCheck.getSelection()) {
+                if (validationJob != null) validationJob.cancel();
+                gitDecorator.hide();
+                setPageComplete(true);
+                setErrorMessage(null);
+                return;
+            }
             if (validationJob != null) validationJob.cancel();
             validationJob = new Job("Validate Git") {
                 @Override
@@ -368,10 +398,12 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         public String getBranch() { return branchText.getText(); }
         public String getUsername() { return usernameText.getText(); }
         public String getLocalPath() { return localPathText.getText(); }
+        public boolean isSkipped() { return skipCheck.getSelection(); }
     }
 
     private class OllamaSettingsPage extends WizardPage {
         private Text urlText, modelText, pathText;
+        private Button skipCheck;
         private ControlDecoration pathDecorator, modelDecorator;
         private SimpleContentProposalProvider proposalProvider;
         private Job validationJob;
@@ -400,7 +432,20 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             new Label(container, SWT.NONE).setText("Executable Path:");
             pathText = new Text(container, SWT.BORDER);
             pathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            pathText.setText("/usr/bin/ollama");
+
+            String defaultPath = "/usr/bin/ollama";
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win")) {
+                String localAppData = System.getenv("LOCALAPPDATA");
+                if (localAppData != null) {
+                    defaultPath = localAppData + "\\Programs\\Ollama\\ollama.exe";
+                } else {
+                    defaultPath = "C:\\Users\\" + System.getProperty("user.name") + "\\AppData\\Local\\Programs\\Ollama\\ollama.exe";
+                }
+            } else if (os.contains("mac")) {
+                defaultPath = "/usr/local/bin/ollama";
+            }
+            pathText.setText(defaultPath);
 
             pathDecorator = new ControlDecoration(pathText, SWT.TOP | SWT.LEFT);
             pathDecorator.setImage(FieldDecorationRegistry.getDefault()
@@ -453,11 +498,29 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             urlText.addModifyListener(e -> validateOllama());
             modelText.addModifyListener(e -> validateOllama());
 
+            skipCheck = new Button(container, SWT.CHECK);
+            skipCheck.setText("Skip this step and setup later");
+            skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
+            skipCheck.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    validateOllama();
+                }
+            });
+
             setControl(container);
             validateOllama();
         }
 
         private void validateOllama() {
+            if (skipCheck.getSelection()) {
+                if (validationJob != null) validationJob.cancel();
+                pathDecorator.hide();
+                modelDecorator.hide();
+                setPageComplete(true);
+                setErrorMessage(null);
+                return;
+            }
             String path = pathText.getText();
             File file = new File(path);
             if (!file.exists()) {
@@ -536,10 +599,12 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         public String getOllamaUrl() { return urlText.getText(); }
         public String getModelName() { return modelText.getText(); }
         public String getExecutablePath() { return pathText.getText(); }
+        public boolean isSkipped() { return skipCheck.getSelection(); }
     }
 
     private class LLMSettingsPage extends WizardPage {
         private Text modelText, tempText;
+        private Button skipCheck;
 
         protected LLMSettingsPage() {
             super("LLMSettingsPage");
@@ -582,15 +647,21 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 }
             });
 
+            skipCheck = new Button(container, SWT.CHECK);
+            skipCheck.setText("Skip this step and setup later");
+            skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
+
             setControl(container);
         }
 
         public String getLlmModel() { return modelText.getText(); }
         public String getTemperature() { return tempText.getText(); }
+        public boolean isSkipped() { return skipCheck.getSelection(); }
     }
 
     private class MavenSettingsPage extends WizardPage {
         private Text goalsText;
+        private Button skipCheck;
         private ControlDecoration mavenDecorator;
         private Job validationJob;
 
@@ -617,6 +688,16 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
             goalsText.addModifyListener(e -> validateMaven());
 
+            skipCheck = new Button(container, SWT.CHECK);
+            skipCheck.setText("Skip this step and setup later");
+            skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
+            skipCheck.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    validateMaven();
+                }
+            });
+
             Link mavenHelpLink = new Link(container, SWT.NONE);
             mavenHelpLink.setText("<a>How to install Maven?</a>");
             mavenHelpLink.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
@@ -632,6 +713,13 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         }
 
         private void validateMaven() {
+            if (skipCheck.getSelection()) {
+                if (validationJob != null) validationJob.cancel();
+                mavenDecorator.hide();
+                setPageComplete(true);
+                setErrorMessage(null);
+                return;
+            }
             if (validationJob != null) validationJob.cancel();
             validationJob = new Job("Validate Maven") {
                 @Override
@@ -668,6 +756,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         }
 
         public String getGoals() { return goalsText.getText(); }
+        public boolean isSkipped() { return skipCheck.getSelection(); }
     }
 
     private void openUrl(String url) {
@@ -680,6 +769,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
     private class AiChatSettingsPage extends WizardPage {
         private Text urlText, tokenText, promptText;
+        private Button skipCheck;
 
         protected AiChatSettingsPage() {
             super("AiChatSettingsPage");
@@ -709,11 +799,16 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             promptText.setLayoutData(gd);
             promptText.setText("You are a helpful assistant.");
 
+            skipCheck = new Button(container, SWT.CHECK);
+            skipCheck.setText("Skip this step and setup later");
+            skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
+
             setControl(container);
         }
 
         public String getChatUrl() { return urlText.getText(); }
         public String getToken() { return tokenText.getText(); }
         public String getPrompt() { return promptText.getText(); }
+        public boolean isSkipped() { return skipCheck.getSelection(); }
     }
 }

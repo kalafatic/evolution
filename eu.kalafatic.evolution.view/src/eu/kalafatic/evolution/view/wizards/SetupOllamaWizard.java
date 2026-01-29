@@ -86,8 +86,9 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
 
         String path = page.getPath();
         if (page.isDownloadToWorkspaceRequested()) {
-            IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject("TestProject");
-            File workspaceOllama = project.getLocation().append("ollama_bin").toFile();
+            IProject project = getProject();
+            String binName = System.getProperty("os.name").toLowerCase().contains("win") ? "ollama.exe" : "ollama";
+            File workspaceOllama = project.getLocation().append(binName).toFile();
             path = workspaceOllama.getAbsolutePath();
         }
         ollama.setPath(path);
@@ -103,13 +104,23 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
                     monitor.beginTask("Ollama Setup", IProgressMonitor.UNKNOWN);
                     try {
                         if (toWorkspace && (page.isDownloadToWorkspaceRequested())) {
-                            IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject("TestProject");
+                            IProject project = getProject();
                             File binDir = project.getLocation().toFile();
                             if (!binDir.exists()) binDir.mkdirs();
-                            File outputFile = new File(binDir, "ollama_bin");
+
+                            String os = System.getProperty("os.name").toLowerCase();
+                            String binName = os.contains("win") ? "ollama-windows-amd64.zip" : "ollama";
+                            File outputFile = new File(binDir, binName);
 
                             monitor.subTask("Downloading from ollama.com...");
-                            URL downloadUrl = new URL("https://ollama.com/download/ollama-linux-amd64");
+                            String urlStr = "https://ollama.com/download/ollama-linux-amd64";
+                            if (os.contains("win")) {
+                                urlStr = "https://ollama.com/download/ollama-windows-amd64.zip";
+                            } else if (os.contains("mac")) {
+                                urlStr = "https://ollama.com/download/ollama-darwin-amd64";
+                            }
+
+                            URL downloadUrl = new URL(urlStr);
                             try (ReadableByteChannel rbc = Channels.newChannel(downloadUrl.openStream());
                                  FileOutputStream fos = new FileOutputStream(outputFile)) {
                                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
@@ -155,6 +166,22 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
         return true;
     }
 
+    private IProject getProject() {
+        if (orchestrator != null && orchestrator.eResource() != null) {
+            URI uri = orchestrator.eResource().getURI();
+            if (uri.isPlatformResource()) {
+                IPath path = new Path(uri.toPlatformString(true));
+                return ResourcesPlugin.getWorkspace().getRoot().getFile(path).getProject();
+            }
+        }
+        // If no project found, look for first project in workspace
+        IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+        if (projects.length > 0) {
+            return projects[0];
+        }
+        return ResourcesPlugin.getWorkspace().getRoot().getProject("TestProject");
+    }
+
     private class SetupOllamaPage extends WizardPage {
         private Text urlText;
         private Text pathText;
@@ -183,6 +210,21 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
             pathText = new Text(container, SWT.BORDER);
             pathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
             String currentPath = orchestrator != null && orchestrator.getOllama() != null ? orchestrator.getOllama().getPath() : null;
+            if (currentPath == null || currentPath.isEmpty()) {
+                String os = System.getProperty("os.name").toLowerCase();
+                if (os.contains("win")) {
+                    String localAppData = System.getenv("LOCALAPPDATA");
+                    if (localAppData != null) {
+                        currentPath = localAppData + "\\Programs\\Ollama\\ollama.exe";
+                    } else {
+                        currentPath = "C:\\Users\\" + System.getProperty("user.name") + "\\AppData\\Local\\Programs\\Ollama\\ollama.exe";
+                    }
+                } else if (os.contains("mac")) {
+                    currentPath = "/usr/local/bin/ollama";
+                } else {
+                    currentPath = "/usr/bin/ollama";
+                }
+            }
             pathText.setText(currentPath != null ? currentPath : "");
 
             workspaceBtn = new Button(container, SWT.CHECK);

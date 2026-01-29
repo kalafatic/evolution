@@ -4,12 +4,14 @@ import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 public class AgentSettingsPage extends WizardPage {
     private Text agentsText;
+    private Button skipCheck;
 
     public AgentSettingsPage() {
         super("AgentSettingsPage");
@@ -29,7 +31,15 @@ public class AgentSettingsPage extends WizardPage {
         agentsText.setLayoutData(gd);
         agentsText.setText("developer:coder\nreviewer:critic\nmanager:orchestrator");
 
+        skipCheck = new Button(container, SWT.CHECK);
+        skipCheck.setText("Skip this step and setup later");
+        skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
+
         setControl(container);
+    }
+
+    public boolean isSkipped() {
+        return skipCheck != null && skipCheck.getSelection();
     }
 
     public String getAgentsData() {
