@@ -244,6 +244,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		// Update the registry as soon as it's created to avoid circularity issues
 		EPackage.Registry.INSTANCE.put(OrchestrationPackage.eNS_URI, theOrchestrationPackage);
 
+		isInited = true;
+
 		// Create package meta-data objects
 		theOrchestrationPackage.createPackageContents();
 
@@ -255,8 +257,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 
 		// Set the factory instance
 		theOrchestrationPackage.setEFactoryInstance(OrchestrationFactory.eINSTANCE);
-
-		isInited = true;
 
 		return theOrchestrationPackage;
 	}
@@ -988,6 +988,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		taskStatusEEnum = createEEnum(TASK_STATUS);
 		commandStatusEEnum = createEEnum(COMMAND_STATUS);
 		executionModeEEnum = createEEnum(EXECUTION_MODE);
+		neuronTypeEEnum = createEEnum(NEURON_TYPE);
 	}
 
 	/**
