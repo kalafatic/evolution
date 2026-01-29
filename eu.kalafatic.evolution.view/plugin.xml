@@ -55,10 +55,10 @@
    <extension
          point="org.eclipse.ui.views">
       <view
-            name="View"
+            name="Orchestration Graph"
             icon="icons/eclipse16.png"
-            class="eu.kalafatic.evolution.view.EcoreZestView"
-            id="eu.kalafatic.evolution.view.ecoreZestView">
+            class="eu.kalafatic.evolution.view.OrchestrationZestView"
+            id="eu.kalafatic.evolution.view.orchestrationZestView">
       </view>
       <view
             name="Properties"

@@ -10,11 +10,13 @@
   <eClassifiers xsi:type="ecore:EClass" name="Task">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//TaskStatus"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="next" upperBound="-1" eType="#//Task"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="subTasks" upperBound="-1"
         eType="#//Task" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="response" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="feedback" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Agent">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -22,12 +24,16 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1"
         eType="#//Task"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="executionMode" eType="#//ExecutionMode"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="rules" upperBound="-1"
+        eType="#//Rule" containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Orchestrator">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="agents" upperBound="-1"
         eType="#//Agent" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1"
+        eType="#//Task" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="git" eType="#//Git" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="maven" eType="#//Maven"
         containment="true"/>
@@ -87,5 +93,29 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="orchestrations" upperBound="-1"
         eType="#//Orchestrator" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Rule" abstract="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="AccessRule" eSuperTypes="#//Rule">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="allowedPaths" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="deniedPaths" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="NetworkRule" eSuperTypes="#//Rule">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="allowedDomains" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="allowAll" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="MemoryRule" eSuperTypes="#//Rule">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="storageLimit" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="retentionPeriod" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SecretRule" eSuperTypes="#//Rule">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="allowedSecrets" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
 </ecore:EPackage>

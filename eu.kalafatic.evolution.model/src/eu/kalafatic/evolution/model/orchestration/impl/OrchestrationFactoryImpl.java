@@ -2,8 +2,12 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
+import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
+import eu.kalafatic.evolution.model.orchestration.MemoryRule;
+import eu.kalafatic.evolution.model.orchestration.NetworkRule;
+import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Command;
@@ -82,6 +86,10 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.OLLAMA: return createOllama();
 			case OrchestrationPackage.AI_CHAT: return createAiChat();
 			case OrchestrationPackage.EVO_PROJECT: return createEvoProject();
+			case OrchestrationPackage.ACCESS_RULE: return createAccessRule();
+			case OrchestrationPackage.NETWORK_RULE: return createNetworkRule();
+			case OrchestrationPackage.MEMORY_RULE: return createMemoryRule();
+			case OrchestrationPackage.SECRET_RULE: return createSecretRule();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -97,6 +105,11 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 		EvoProjectImpl evoProject = new EvoProjectImpl();
 		return evoProject;
 	}
+
+	@Override public AccessRule createAccessRule() { return new AccessRuleImpl(); }
+	@Override public NetworkRule createNetworkRule() { return new NetworkRuleImpl(); }
+	@Override public MemoryRule createMemoryRule() { return new MemoryRuleImpl(); }
+	@Override public SecretRule createSecretRule() { return new SecretRuleImpl(); }
 
 	/**
 	 * <!-- begin-user-doc -->

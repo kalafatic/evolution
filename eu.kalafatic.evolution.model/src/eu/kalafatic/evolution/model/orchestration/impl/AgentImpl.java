@@ -5,6 +5,7 @@ package eu.kalafatic.evolution.model.orchestration.impl;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
 import java.util.Collection;
@@ -18,7 +19,9 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.EObjectResolvingEList;
+import org.eclipse.emf.ecore.InternalEObject;
 
 /**
  * <!-- begin-user-doc -->
@@ -32,6 +35,7 @@ import org.eclipse.emf.ecore.util.EObjectResolvingEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl#getType <em>Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl#getTasks <em>Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl#getExecutionMode <em>Execution Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl#getRules <em>Rules</em>}</li>
  * </ul>
  *
  * @generated
@@ -106,6 +110,29 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * @ordered
 	 */
 	protected ExecutionMode executionMode = EXECUTION_MODE_EDEFAULT;
+
+	/**
+	 * The cached value of the '{@link #getRules() <em>Rules</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRules()
+	 * @generated NOT
+	 * @ordered
+	 */
+	protected EList<Rule> rules;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EList<Rule> getRules() {
+		if (rules == null) {
+			rules = new EObjectContainmentEList<Rule>(Rule.class, this, OrchestrationPackage.AGENT__RULES);
+		}
+		return rules;
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -224,6 +251,8 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 				return getTasks();
 			case OrchestrationPackage.AGENT__EXECUTION_MODE:
 				return getExecutionMode();
+			case OrchestrationPackage.AGENT__RULES:
+				return getRules();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -250,6 +279,10 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 			case OrchestrationPackage.AGENT__EXECUTION_MODE:
 				setExecutionMode((ExecutionMode)newValue);
 				return;
+			case OrchestrationPackage.AGENT__RULES:
+				getRules().clear();
+				getRules().addAll((Collection<? extends Rule>)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -274,6 +307,9 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 			case OrchestrationPackage.AGENT__EXECUTION_MODE:
 				setExecutionMode(EXECUTION_MODE_EDEFAULT);
 				return;
+			case OrchestrationPackage.AGENT__RULES:
+				getRules().clear();
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -294,6 +330,8 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 				return tasks != null && !tasks.isEmpty();
 			case OrchestrationPackage.AGENT__EXECUTION_MODE:
 				return executionMode != EXECUTION_MODE_EDEFAULT;
+			case OrchestrationPackage.AGENT__RULES:
+				return rules != null && !rules.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}
