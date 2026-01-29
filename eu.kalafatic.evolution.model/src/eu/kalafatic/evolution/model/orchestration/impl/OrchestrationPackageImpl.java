@@ -241,10 +241,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		Object registeredOrchestrationPackage = EPackage.Registry.INSTANCE.get(eNS_URI);
 		OrchestrationPackageImpl theOrchestrationPackage = registeredOrchestrationPackage instanceof OrchestrationPackageImpl ? (OrchestrationPackageImpl)registeredOrchestrationPackage : new OrchestrationPackageImpl();
 
-		isInited = true;
-
 		// Update the registry as soon as it's created to avoid circularity issues
 		EPackage.Registry.INSTANCE.put(OrchestrationPackage.eNS_URI, theOrchestrationPackage);
+
+		isInited = true;
 
 		// Create package meta-data objects
 		theOrchestrationPackage.createPackageContents();
