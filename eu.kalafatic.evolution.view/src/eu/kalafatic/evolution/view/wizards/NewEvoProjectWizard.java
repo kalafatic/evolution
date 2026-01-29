@@ -17,6 +17,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.common.util.URI;
@@ -39,6 +40,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -114,7 +116,8 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
     @Override
     public boolean performFinish() {
-        final String projectName = projectPage.getProjectName();
+    	IProgressMonitor monitor = new NullProgressMonitor();
+        final String projectName = projectPage.getProjectName();        
         final IPath location = projectPage.getLocationPath();
         final String fileName = configPage.getFileName();
 
@@ -133,12 +136,12 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             desc.setNatureIds(newNatures);
 
             if (!project.exists()) {
-                project.create(desc, null);
+                project.create(desc, monitor);
             }
             if (!project.isOpen()) {
-                project.open(null);
+                project.open(monitor);
             }
-            project.setDescription(desc, null);
+            project.setDescription(desc, monitor);
 
             String filePath = project.getLocation().append(fileName).toOSString();
             ResourceSet resSet = new ResourceSetImpl();
