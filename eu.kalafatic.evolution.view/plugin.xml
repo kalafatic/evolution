@@ -192,9 +192,6 @@
             <contentExtension
                   pattern="org.eclipse.ui.navigator.resources.workingSets">
             </contentExtension>
-            <contentExtension
-                  pattern="eu.kalafatic.evolution.view.orchestrationContent">
-            </contentExtension>
          </includes>
          <excludes>
             <contentExtension
@@ -599,7 +596,7 @@
       </handler>
    </extension>
    <extension
-         id="evolutionNature"
+         id="eu.kalafatic.evolution.view.evolutionNature"
          name="Evolution Project Nature"
          point="org.eclipse.core.resources.natures">
       <runtime>
