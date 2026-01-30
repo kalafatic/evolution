@@ -11,7 +11,7 @@
       </vmArgsMac>
    </launcherArgs>
 
-   <windowImages i16="icons/eclipse16.png" i32="icons/eclipse32.png" i48="icons/eclipse48.png" i64="icons/eclipse64.png" i128=" icons/eclipse128.png" i256="icons/eclipse256.png"/>
+   <windowImages i16="icons/eclipse16.png" i32="icons/eclipse32.png" i48="icons/eclipse48.png" i64="icons/eclipse64.png" i128="icons/eclipse128.png" i256="icons/eclipse256.png"/>
 
    <splash
       location="eu.kalafatic.evolution.view"

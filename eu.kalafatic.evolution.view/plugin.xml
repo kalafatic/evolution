@@ -68,31 +68,31 @@
       </view>
       <view
             class="eu.kalafatic.evolution.view.views.TaskTreeView"
-            icon="icons/sample.png"
+            icon="icons/eclipse16.png"
             id="eu.kalafatic.evolution.view.taskTreeView"
             name="Task Tree">
       </view>
       <view
             class="eu.kalafatic.evolution.view.views.CommandStackView"
-            icon="icons/sample.png"
+            icon="icons/eclipse16.png"
             id="eu.kalafatic.evolution.view.commandStackView"
             name="Command Stack">
       </view>
       <view
             class="eu.kalafatic.evolution.view.views.AIOutputView"
-            icon="icons/sample.png"
+            icon="icons/eclipse16.png"
             id="eu.kalafatic.evolution.view.aiOutputView"
             name="AI Output">
       </view>
       <view
             class="org.eclipse.ui.navigator.CommonNavigator"
-            icon="icons/sample.png"
+            icon="icons/eclipse16.png"
             id="eu.kalafatic.views.EvoNavigator"
             name="Evo Navigator">
       </view>
       <view
             class="eu.kalafatic.evolution.view.views.InternalBrowserView"
-            icon="icons/sample.png"
+            icon="icons/eclipse16.png"
             id="eu.kalafatic.evolution.view.views.InternalBrowserView"
             name="Internal Browser">
       </view>
@@ -331,7 +331,7 @@
             class="eu.kalafatic.evolution.view.editors.MultiPageEditor"
             contributorClass="eu.kalafatic.evolution.view.editors.MultiPageEditorContributor"
             extensions="xml"
-            icon="icons/sample.png"
+            icon="icons/eclipse16.png"
             id="eu.kalafatic.evolution.view.editors.MultiPageEditor"
             name="Evo Multi-page Editor">
       </editor>
@@ -470,7 +470,7 @@
    <extension
          point="org.eclipse.ui.ide.projectNatureImages">
       <image
-            icon="icons/sample.png"
+            icon="icons/evo_project.png"
             id="eu.kalafatic.evolution.view.evolutionNatureImage"
             natureId="eu.kalafatic.evolution.view.evolutionNature">
       </image>

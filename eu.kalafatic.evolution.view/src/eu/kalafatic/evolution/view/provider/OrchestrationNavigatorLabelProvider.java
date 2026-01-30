@@ -1,14 +1,22 @@
 package eu.kalafatic.evolution.view.provider;
 
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.ui.ISharedImages;
-import org.eclipse.ui.PlatformUI;
+import org.osgi.framework.Bundle;
+
+import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.Agent;
 
 public class OrchestrationNavigatorLabelProvider extends LabelProvider {
+
+    private final Map<String, Image> imageCache = new HashMap<>();
 
     @Override
     public String getText(Object element) {
@@ -28,13 +36,38 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider {
     @Override
     public Image getImage(Object element) {
         if (element instanceof EvoProject) {
-            return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_PROJECT);
+            return getCachedImage("icons/evo_project.png");
         } else if (element instanceof Orchestrator) {
-            return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_ELEMENT);
+            return getCachedImage("icons/orchestrator.png");
         } else if (element instanceof Agent) {
-            // Using a different icon for Agents
-            return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_DEF_VIEW);
+            return getCachedImage("icons/agent.png");
         }
         return super.getImage(element);
+    }
+
+    private Image getCachedImage(String path) {
+        Image image = imageCache.get(path);
+        if (image == null) {
+            Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.view");
+            if (bundle != null) {
+                URL url = bundle.getEntry(path);
+                if (url != null) {
+                    image = ImageDescriptor.createFromURL(url).createImage();
+                    imageCache.put(path, image);
+                }
+            }
+        }
+        return image;
+    }
+
+    @Override
+    public void dispose() {
+        for (Image image : imageCache.values()) {
+            if (image != null && !image.isDisposed()) {
+                image.dispose();
+            }
+        }
+        imageCache.clear();
+        super.dispose();
     }
 }
