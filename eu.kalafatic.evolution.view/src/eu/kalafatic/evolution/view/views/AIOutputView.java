@@ -65,6 +65,17 @@ public class AIOutputView extends ViewPart {
             }
         });
 
+        // Try to initialize from selection
+        Orchestrator initialOrch = findOrchestrator();
+        if (initialOrch != null && initialOrch.getAiChat() != null) {
+            String initialProxy = initialOrch.getAiChat().getProxyUrl();
+            if (initialProxy != null && !initialProxy.isEmpty()) {
+                proxyUrlText.setText(initialProxy);
+                useProxyCheck.setSelection(true);
+                proxyUrlText.setEnabled(true);
+            }
+        }
+
         // Middle for Output
         viewer = new TextViewer(mainContainer, SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER);
         viewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));

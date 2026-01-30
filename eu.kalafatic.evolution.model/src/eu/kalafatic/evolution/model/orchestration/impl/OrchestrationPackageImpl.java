@@ -427,6 +427,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	}
 
 	/**
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAiChat_ProxyUrl() {
+		return (EAttribute)aiChatEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -955,6 +963,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(aiChatEClass, AI_CHAT__URL);
 		createEAttribute(aiChatEClass, AI_CHAT__TOKEN);
 		createEAttribute(aiChatEClass, AI_CHAT__PROMPT);
+		createEAttribute(aiChatEClass, AI_CHAT__PROXY_URL);
 
 		neuronAIEClass = createEClass(NEURON_AI);
 		createEAttribute(neuronAIEClass, NEURON_AI__URL);
@@ -1086,6 +1095,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getAiChat_Url(), ecorePackage.getEString(), "url", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAiChat_Token(), ecorePackage.getEString(), "token", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAiChat_Prompt(), ecorePackage.getEString(), "prompt", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAiChat_ProxyUrl(), ecorePackage.getEString(), "proxyUrl", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(neuronAIEClass, NeuronAI.class, "NeuronAI", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getNeuronAI_Url(), ecorePackage.getEString(), "url", null, 0, 1, NeuronAI.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

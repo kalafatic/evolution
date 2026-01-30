@@ -41,6 +41,23 @@ public class LLMSettingsPage extends WizardPage {
         tempText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         tempText.setText("0.7");
 
+        Link pullModelLink = new Link(container, SWT.NONE);
+        pullModelLink.setText("<a>Setup/Pull Ollama Model...</a>");
+        pullModelLink.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
+        pullModelLink.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
+                Orchestrator tempOrch = factory.createOrchestrator();
+                tempOrch.setOllama(factory.createOllama());
+                SetupOllamaModelWizard wizard = new SetupOllamaModelWizard(tempOrch);
+                WizardDialog dialog = new WizardDialog(getShell(), wizard);
+                if (dialog.open() == WizardDialog.OK) {
+                    modelText.setText(tempOrch.getOllama().getModel());
+                }
+            }
+        });
+
         Link setupLink = new Link(container, SWT.NONE);
         setupLink.setText("<a>Setup LLM...</a>");
         setupLink.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));

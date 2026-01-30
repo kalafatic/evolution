@@ -23,6 +23,7 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl#getUrl <em>Url</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl#getToken <em>Token</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl#getPrompt <em>Prompt</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl#getProxyUrl <em>Proxy Url</em>}</li>
  * </ul>
  *
  * @generated
@@ -87,6 +88,26 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	 * @ordered
 	 */
 	protected String prompt = PROMPT_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getProxyUrl() <em>Proxy Url</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getProxyUrl()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String PROXY_URL_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getProxyUrl() <em>Proxy Url</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getProxyUrl()
+	 * @generated
+	 * @ordered
+	 */
+	protected String proxyUrl = PROXY_URL_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -179,6 +200,29 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public String getProxyUrl() {
+		return proxyUrl;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public void setProxyUrl(String newProxyUrl) {
+		String oldProxyUrl = proxyUrl;
+		proxyUrl = newProxyUrl;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_CHAT__PROXY_URL, oldProxyUrl, proxyUrl));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	@Override
@@ -190,6 +234,8 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 				return getToken();
 			case OrchestrationPackage.AI_CHAT__PROMPT:
 				return getPrompt();
+			case OrchestrationPackage.AI_CHAT__PROXY_URL:
+				return getProxyUrl();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -210,6 +256,9 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 				return;
 			case OrchestrationPackage.AI_CHAT__PROMPT:
 				setPrompt((String)newValue);
+				return;
+			case OrchestrationPackage.AI_CHAT__PROXY_URL:
+				setProxyUrl((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -232,6 +281,9 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 			case OrchestrationPackage.AI_CHAT__PROMPT:
 				setPrompt(PROMPT_EDEFAULT);
 				return;
+			case OrchestrationPackage.AI_CHAT__PROXY_URL:
+				setProxyUrl(PROXY_URL_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -250,6 +302,8 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 				return TOKEN_EDEFAULT == null ? token != null : !TOKEN_EDEFAULT.equals(token);
 			case OrchestrationPackage.AI_CHAT__PROMPT:
 				return PROMPT_EDEFAULT == null ? prompt != null : !PROMPT_EDEFAULT.equals(prompt);
+			case OrchestrationPackage.AI_CHAT__PROXY_URL:
+				return PROXY_URL_EDEFAULT == null ? proxyUrl != null : !PROXY_URL_EDEFAULT.equals(proxyUrl);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -270,6 +324,8 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 		result.append(token);
 		result.append(", prompt: ");
 		result.append(prompt);
+		result.append(", proxyUrl: ");
+		result.append(proxyUrl);
 		result.append(')');
 		return result.toString();
 	}

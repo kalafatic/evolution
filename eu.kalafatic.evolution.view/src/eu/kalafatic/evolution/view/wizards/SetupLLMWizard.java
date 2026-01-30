@@ -84,6 +84,7 @@ public class SetupLLMWizard extends Wizard implements INewWizard {
             chat.setUrl(page.getChatUrl());
             chat.setToken(page.getChatToken());
             chat.setPrompt(page.getChatPrompt());
+            chat.setProxyUrl(page.getProxyUrl());
         }
 
         LLM llm = orchestrator.getLlm();
@@ -123,7 +124,11 @@ public class SetupLLMWizard extends Wizard implements INewWizard {
                             if (project == null) return Status.OK_STATUS;
 
                             IFile configFile = project.getFile("ai_config.json");
-                            String content = "{\n  \"chat_url\": \"" + page.getChatUrl() + "\",\n  \"llm_model\": \"" + page.getLlmModel() + "\"\n}";
+                            String content = "{\n" +
+                                             "  \"chat_url\": \"" + page.getChatUrl() + "\",\n" +
+                                             "  \"llm_model\": \"" + page.getLlmModel() + "\",\n" +
+                                             "  \"proxy_url\": \"" + page.getProxyUrl() + "\"\n" +
+                                             "}";
                             InputStream source = new ByteArrayInputStream(content.getBytes());
                             if (configFile.exists()) {
                                 configFile.setContents(source, true, true, null);
@@ -158,7 +163,7 @@ public class SetupLLMWizard extends Wizard implements INewWizard {
     }
 
     private class SetupLLMPage extends WizardPage {
-        private Text chatUrlText, chatTokenText, chatPromptText;
+        private Text chatUrlText, chatTokenText, chatPromptText, proxyUrlText;
         private Text llmModelText, llmTempText;
         private Button downloadBtn;
         private Button testBtn;
@@ -188,11 +193,32 @@ public class SetupLLMWizard extends Wizard implements INewWizard {
             gd.heightHint = 60;
             chatPromptText.setLayoutData(gd);
 
+            new Label(container, SWT.NONE).setText("Proxy URL:");
+            proxyUrlText = new Text(container, SWT.BORDER);
+            proxyUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            proxyUrlText.setMessage("e.g. http://proxy.example.com:8080");
+
             new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL).setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
             new Label(container, SWT.NONE).setText("LLM Model:");
             llmModelText = new Text(container, SWT.BORDER);
             llmModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+            Link pullModelLink = new Link(container, SWT.NONE);
+            pullModelLink.setText("<a>Setup/Pull Ollama Model...</a>");
+            pullModelLink.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
+            pullModelLink.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override
+                public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                    SetupOllamaModelWizard wizard = new SetupOllamaModelWizard(orchestrator);
+                    org.eclipse.jface.wizard.WizardDialog dialog = new org.eclipse.jface.wizard.WizardDialog(getShell(), wizard);
+                    if (dialog.open() == org.eclipse.jface.wizard.WizardDialog.OK) {
+                        if (orchestrator.getOllama() != null) {
+                            llmModelText.setText(orchestrator.getOllama().getModel());
+                        }
+                    }
+                }
+            });
 
             new Label(container, SWT.NONE).setText("Temperature:");
             llmTempText = new Text(container, SWT.BORDER);
@@ -213,6 +239,7 @@ public class SetupLLMWizard extends Wizard implements INewWizard {
                     chatUrlText.setText(chat.getUrl() != null ? chat.getUrl() : "");
                     chatTokenText.setText(chat.getToken() != null ? chat.getToken() : "");
                     chatPromptText.setText(chat.getPrompt() != null ? chat.getPrompt() : "");
+                    proxyUrlText.setText(chat.getProxyUrl() != null ? chat.getProxyUrl() : "");
                 }
                 LLM llm = orchestrator.getLlm();
                 if (llm != null) {
@@ -227,6 +254,7 @@ public class SetupLLMWizard extends Wizard implements INewWizard {
         public String getChatUrl() { return chatUrlText.getText(); }
         public String getChatToken() { return chatTokenText.getText(); }
         public String getChatPrompt() { return chatPromptText.getText(); }
+        public String getProxyUrl() { return proxyUrlText.getText(); }
         public String getLlmModel() { return llmModelText.getText(); }
         public String getLlmTemperature() { return llmTempText.getText(); }
         public boolean isDownloadRequested() { return downloadBtn.getSelection(); }
