@@ -324,6 +324,144 @@
                style="push">
          </command>
       </menuContribution>
+      <menuContribution
+            allPopups="true"
+            locationURI="popup:org.eclipse.ui.popup.any">
+         <menu
+               id="eu.kalafatic.evolution.view.contextMenu"
+               label="AI Evolution">
+            <visibleWhen
+                  checkEnabled="false">
+               <or>
+                  <with
+                        variable="activePartId">
+                     <or>
+                        <equals
+                              value="eu.kalafatic.evolution.view.orchestrationZestView">
+                        </equals>
+                        <equals
+                              value="eu.kalafatic.evolution.view.taskTreeView">
+                        </equals>
+                        <equals
+                              value="eu.kalafatic.evolution.view.aiOutputView">
+                        </equals>
+                        <equals
+                              value="eu.kalafatic.evolution.view.editors.MultiPageEditor">
+                        </equals>
+                        <equals
+                              value="eu.kalafatic.views.EvoNavigator">
+                        </equals>
+                     </or>
+                  </with>
+                  <with
+                        variable="selection">
+                     <iterate
+                           ifEmpty="false"
+                           operator="or">
+                        <or>
+                           <instanceof
+                                 value="eu.kalafatic.evolution.model.orchestration.EvoProject">
+                           </instanceof>
+                           <instanceof
+                                 value="eu.kalafatic.evolution.model.orchestration.Orchestrator">
+                           </instanceof>
+                           <instanceof
+                                 value="eu.kalafatic.evolution.model.orchestration.Agent">
+                           </instanceof>
+                           <instanceof
+                                 value="eu.kalafatic.evolution.model.orchestration.Task">
+                           </instanceof>
+                           <adapt
+                                 type="org.eclipse.core.resources.IResource">
+                              <test
+                                    property="org.eclipse.core.resources.projectNature"
+                                    value="eu.kalafatic.evolution.view.evolutionNature">
+                              </test>
+                           </adapt>
+                        </or>
+                     </iterate>
+                  </with>
+               </or>
+            </visibleWhen>
+            <command
+                  commandId="org.eclipse.ui.newWizard"
+                  label="New Evo Project"
+                  style="push">
+               <parameter
+                     name="newWizardId"
+                     value="eu.kalafatic.evolution.view.newEvoProjectWizard">
+               </parameter>
+            </command>
+            <command
+                  commandId="org.eclipse.ui.newWizard"
+                  label="New Evo Task"
+                  style="push">
+               <parameter
+                     name="newWizardId"
+                     value="eu.kalafatic.evolution.view.newEvoTaskWizard">
+               </parameter>
+            </command>
+            <command
+                  commandId="org.eclipse.ui.newWizard"
+                  label="Add Orchestration"
+                  style="push">
+               <parameter
+                     name="newWizardId"
+                     value="eu.kalafatic.evolution.view.addOrchestrationWizard">
+               </parameter>
+            </command>
+            <separator
+                  name="fileSeparator"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="eu.kalafatic.evolution.view.openEvoTasks"
+                  label="Open Evo Tasks"
+                  style="push">
+            </command>
+            <command
+                  commandId="eu.kalafatic.evolution.view.saveEvoTasks"
+                  label="Save Evo Tasks"
+                  style="push">
+            </command>
+            <separator
+                  name="ioSeparator"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="org.eclipse.ui.file.import"
+                  label="Import Evo Tasks"
+                  style="push">
+               <parameter
+                     name="importWizardId"
+                     value="eu.kalafatic.evolution.view.importEvoTasksWizard">
+               </parameter>
+            </command>
+            <command
+                  commandId="org.eclipse.ui.file.export"
+                  label="Export Evo Tasks"
+                  style="push">
+               <parameter
+                     name="exportWizardId"
+                     value="eu.kalafatic.evolution.view.exportEvoTasksWizard">
+               </parameter>
+            </command>
+            <separator
+                  name="setupSeparator"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="eu.kalafatic.evolution.view.setupOllama"
+                  label="Setup Ollama"
+                  style="push">
+            </command>
+            <command
+                  commandId="eu.kalafatic.evolution.view.setupLLM"
+                  label="Setup LLM"
+                  style="push">
+            </command>
+         </menu>
+      </menuContribution>
    </extension>
    <extension
          point="org.eclipse.ui.editors">
