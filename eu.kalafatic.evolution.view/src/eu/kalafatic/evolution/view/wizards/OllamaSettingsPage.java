@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.net.http.HttpClient;
 
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -33,10 +35,12 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -73,8 +77,25 @@ public class OllamaSettingsPage extends WizardPage {
         modelText.setText("llama3");
 
         new Label(container, SWT.NONE).setText("Executable Path:");
-        pathText = new Text(container, SWT.BORDER);
+        Composite pathComposite = new Composite(container, SWT.NONE);
+        pathComposite.setLayout(new GridLayout(2, false));
+        pathComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        pathText = new Text(pathComposite, SWT.BORDER);
         pathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button browseBtn = new Button(pathComposite, SWT.PUSH);
+        browseBtn.setText("Browse...");
+        browseBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                FileDialog dialog = new FileDialog(getShell(), SWT.OPEN);
+                String path = dialog.open();
+                if (path != null) {
+                    pathText.setText(path);
+                }
+            }
+        });
 
         String defaultPath = "/usr/bin/ollama";
         String os = System.getProperty("os.name").toLowerCase();
@@ -144,6 +165,16 @@ public class OllamaSettingsPage extends WizardPage {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 downloadLatestOllama();
+            }
+        });
+
+        Button loadFromDiskBtn = new Button(container, SWT.PUSH);
+        loadFromDiskBtn.setText("Load Install Package from Disk...");
+        loadFromDiskBtn.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
+        loadFromDiskBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                loadInstallPackageFromDisk();
             }
         });
 
@@ -249,6 +280,47 @@ public class OllamaSettingsPage extends WizardPage {
         }
     }
 
+    private void loadInstallPackageFromDisk() {
+        FileDialog dialog = new FileDialog(getShell(), SWT.OPEN);
+        dialog.setText("Select Ollama Install Package");
+        String sourcePath = dialog.open();
+        if (sourcePath != null) {
+            File sourceFile = new File(sourcePath);
+            Job job = new Job("Loading Ollama Package") {
+                @Override
+                protected IStatus run(IProgressMonitor monitor) {
+                    monitor.beginTask("Copying Ollama", IProgressMonitor.UNKNOWN);
+                    try {
+                        File targetFile = new File(System.getProperty("user.home"), sourceFile.getName());
+                        try {
+                            IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+                            if (root != null && root.getLocation() != null) {
+                                File workspaceDir = root.getLocation().toFile();
+                                targetFile = new File(workspaceDir, sourceFile.getName());
+                            }
+                        } catch (Exception e) {}
+
+                        Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        targetFile.setExecutable(true);
+
+                        final String installedPath = targetFile.getAbsolutePath();
+                        Display.getDefault().asyncExec(() -> {
+                            pathText.setText(installedPath);
+                            MessageDialog.openInformation(getShell(), "Load Complete", "Ollama package loaded to: " + installedPath);
+                        });
+                    } catch (Exception e) {
+                        return new Status(IStatus.ERROR, "eu.kalafatic.evolution.view", "Load failed", e);
+                    } finally {
+                        monitor.done();
+                    }
+                    return Status.OK_STATUS;
+                }
+            };
+            job.setUser(true);
+            job.schedule();
+        }
+    }
+
     private void downloadLatestOllama() {
         Job job = new Job("Download Ollama") {
             @Override
@@ -307,7 +379,8 @@ public class OllamaSettingsPage extends WizardPage {
 
     private void openUrl(String url) {
         try {
-            PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL(url));
+            IWorkbenchBrowserSupport support = PlatformUI.getWorkbench().getBrowserSupport();
+            support.createBrowser(IWorkbenchBrowserSupport.AS_EDITOR, "evoOllamaHelp", "Ollama Help", "Ollama Help").openURL(new URL(url));
         } catch (Exception e) {
             e.printStackTrace();
         }
