@@ -73,4 +73,10 @@ public class TaskTreeView extends ViewPart {
     public void setFocus() {
         viewer.getControl().setFocus();
     }
+
+    public void refresh() {
+        if (viewer != null && !viewer.getControl().isDisposed()) {
+            viewer.refresh();
+        }
+    }
 }

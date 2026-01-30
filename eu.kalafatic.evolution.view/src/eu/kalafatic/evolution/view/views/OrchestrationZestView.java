@@ -106,7 +106,7 @@ public class OrchestrationZestView extends ViewPart implements ISelectionListene
         }
     }
 
-    private void refreshViewer() {
+    public void refreshViewer() {
         Display.getDefault().asyncExec(() -> {
             if (viewer != null && !viewer.getControl().isDisposed()) {
                 viewer.refresh();
