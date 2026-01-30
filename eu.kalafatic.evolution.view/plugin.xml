@@ -280,67 +280,6 @@
          </menu>
       </menuContribution>
       <menuContribution
-            locationURI="popup:eu.kalafatic.evolution.view.taskTreeView">
-         <command
-               commandId="eu.kalafatic.evolution.view.editTask"
-               label="Edit Task"
-               style="push">
-         </command>
-         <command
-               commandId="eu.kalafatic.evolution.view.saveEvoTasks"
-               label="Save"
-               style="push">
-         </command>
-      </menuContribution>
-      <menuContribution
-            locationURI="popup:org.eclipse.ui.navigator.ProjectExplorer#PopupMenu?after=additions">
-         <command
-               commandId="eu.kalafatic.evolution.view.reloadOrchestration"
-               label="Refresh View (Reload)"
-               style="push">
-         </command>
-      </menuContribution>
-      <menuContribution
-            locationURI="popup:eu.kalafatic.views.EvoNavigator#PopupMenu?after=additions">
-         <command
-               commandId="eu.kalafatic.evolution.view.reloadOrchestration"
-               label="Refresh View (Reload)"
-               style="push">
-         </command>
-      </menuContribution>
-      <menuContribution
-            locationURI="popup:eu.kalafatic.evolution.view.propertiesView">
-         <command
-               commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
-               label="Orchestrate"
-               style="push">
-         </command>
-         <command
-               commandId="eu.kalafatic.evolution.controller.mavenBuildCommand"
-               label="Maven Build"
-               style="push">
-         </command>
-         <command
-               commandId="eu.kalafatic.evolution.controller.gitCommitCommand"
-               label="Git Commit"
-               style="push">
-         </command>
-         <separator
-               name="saveSeparator"
-               visible="true">
-         </separator>
-         <command
-               commandId="eu.kalafatic.evolution.controller.saveCommand"
-               label="Save to File"
-               style="push">
-         </command>
-         <command
-               commandId="eu.kalafatic.evolution.view.saveEvoTasks"
-               label="Save Tasks"
-               style="push">
-         </command>
-      </menuContribution>
-      <menuContribution
             allPopups="true"
             locationURI="popup:org.eclipse.ui.popup.any">
          <menu
@@ -366,6 +305,12 @@
                         </equals>
                         <equals
                               value="eu.kalafatic.views.EvoNavigator">
+                        </equals>
+                        <equals
+                              value="org.eclipse.ui.navigator.ProjectExplorer">
+                        </equals>
+                        <equals
+                              value="eu.kalafatic.evolution.view.propertiesView">
                         </equals>
                      </or>
                   </with>
@@ -427,6 +372,20 @@
                </parameter>
             </command>
             <separator
+                  name="evolutionSeparator"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
+                  label="Orchestrate"
+                  style="push">
+            </command>
+            <command
+                  commandId="eu.kalafatic.evolution.view.editTask"
+                  label="Edit Task"
+                  style="push">
+            </command>
+            <separator
                   name="fileSeparator"
                   visible="true">
             </separator>
@@ -438,6 +397,34 @@
             <command
                   commandId="eu.kalafatic.evolution.view.saveEvoTasks"
                   label="Save Evo Tasks"
+                  style="push">
+            </command>
+            <command
+                  commandId="eu.kalafatic.evolution.controller.saveCommand"
+                  label="Save to File"
+                  style="push">
+            </command>
+            <separator
+                  name="buildSeparator"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="eu.kalafatic.evolution.controller.mavenBuildCommand"
+                  label="Maven Build"
+                  style="push">
+            </command>
+            <command
+                  commandId="eu.kalafatic.evolution.controller.gitCommitCommand"
+                  label="Git Commit"
+                  style="push">
+            </command>
+            <separator
+                  name="reloadSeparator"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="eu.kalafatic.evolution.view.reloadOrchestration"
+                  label="Refresh View (Reload)"
                   style="push">
             </command>
             <separator
