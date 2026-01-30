@@ -16,6 +16,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getUrl <em>Url</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getToken <em>Token</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPrompt <em>Prompt</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getProxyUrl <em>Proxy Url</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAiChat()
@@ -88,5 +89,27 @@ public interface AiChat extends EObject {
 	 * @generated
 	 */
 	void setPrompt(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Proxy Url</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Proxy Url</em>' attribute.
+	 * @see #setProxyUrl(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAiChat_ProxyUrl()
+	 * @model
+	 * @generated NOT
+	 */
+	String getProxyUrl();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getProxyUrl <em>Proxy Url</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Proxy Url</em>' attribute.
+	 * @see #getProxyUrl()
+	 * @generated NOT
+	 */
+	void setProxyUrl(String value);
 
 } // AiChat

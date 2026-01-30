@@ -698,13 +698,18 @@ public interface OrchestrationPackage extends EPackage {
 	int AI_CHAT__PROMPT = 2;
 
 	/**
+	 * @generated
+	 */
+	int AI_CHAT__PROXY_URL = 3;
+
+	/**
 	 * The number of structural features of the '<em>Ai Chat</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AI_CHAT_FEATURE_COUNT = 3;
+	int AI_CHAT_FEATURE_COUNT = 4;
 
 	/**
 	 * The number of operations of the '<em>Ai Chat</em>' class.
@@ -1569,6 +1574,11 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getAiChat_Prompt();
 
 	/**
+	 * @generated
+	 */
+	EAttribute getAiChat_ProxyUrl();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.NeuronAI <em>Neuron AI</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2177,6 +2187,11 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute AI_CHAT__PROMPT = eINSTANCE.getAiChat_Prompt();
+
+		/**
+		 * @generated
+		 */
+		EAttribute AI_CHAT__PROXY_URL = eINSTANCE.getAiChat_ProxyUrl();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl <em>Neuron AI</em>}' class.

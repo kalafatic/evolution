@@ -147,7 +147,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"git\"|\"maven\" } ]\n\n" +
                 "Request: " + orchestrator.getAiChat().getPrompt();
 
-        String response = sendRequest(orchestrator, plannerPrompt);
+        String response = sendRequest(orchestrator, plannerPrompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
         JSONArray jsonArray = extractJsonArray(response);
 
         List<Task> tasks = new ArrayList<>();
@@ -174,7 +174,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 "Output MUST be a valid JSON object. Schema:\n" +
                 "{ \"success\": boolean, \"feedback\": \"Detailed explanation of why it failed and how to fix it\", \"comment\": \"Brief success message\" }";
 
-        return sendRequest(orchestrator, evalPrompt);
+        return sendRequest(orchestrator, evalPrompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
     }
 
     private JSONObject parseEvaluation(String response) {
@@ -243,7 +243,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
             prompt += "Your task: " + task.getName() + "\n" +
                     "Provide your response below:";
 
-            return sendRequest(orchestrator, prompt);
+            return sendRequest(orchestrator, prompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
         }
     }
 

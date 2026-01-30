@@ -10,7 +10,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 public class AiChatSettingsPage extends WizardPage {
-    private Text urlText, tokenText, promptText;
+    private Text urlText, tokenText, promptText, proxyUrlText;
     private Button skipCheck;
 
     public AiChatSettingsPage() {
@@ -41,6 +41,10 @@ public class AiChatSettingsPage extends WizardPage {
         promptText.setLayoutData(gd);
         promptText.setText("You are a helpful assistant.");
 
+        new Label(container, SWT.NONE).setText("Proxy URL:");
+        proxyUrlText = new Text(container, SWT.BORDER);
+        proxyUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
         skipCheck = new Button(container, SWT.CHECK);
         skipCheck.setText("Skip this step and setup later");
         skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
@@ -51,5 +55,6 @@ public class AiChatSettingsPage extends WizardPage {
     public String getChatUrl() { return urlText.getText(); }
     public String getToken() { return tokenText.getText(); }
     public String getPrompt() { return promptText.getText(); }
+    public String getProxyUrl() { return proxyUrlText.getText(); }
     public boolean isSkipped() { return skipCheck.getSelection(); }
 }

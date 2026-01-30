@@ -199,6 +199,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 aiChat.setUrl(aiChatPage.getChatUrl());
                 aiChat.setToken(aiChatPage.getToken());
                 aiChat.setPrompt(aiChatPage.getPrompt());
+                aiChat.setProxyUrl(aiChatPage.getProxyUrl());
                 orchestrator.setAiChat(aiChat);
             }
 
