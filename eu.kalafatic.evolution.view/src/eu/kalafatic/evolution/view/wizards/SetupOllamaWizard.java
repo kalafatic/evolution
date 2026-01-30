@@ -95,17 +95,19 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
         }
         ollama.setPath(path);
 
-        if (page.isDownloadRequested() || page.isDownloadToWorkspaceRequested() || page.isRunRequested()) {
-            final boolean toWorkspace = page.isDownloadToWorkspaceRequested();
-            final boolean runAfter = page.isRunRequested();
-            final String finalPath = path;
+        final boolean toWorkspace = page.isDownloadToWorkspaceRequested();
+        final boolean isDownloadRequested = page.isDownloadRequested();
+        final boolean runAfter = page.isRunRequested();
+        final String finalUrl = page.getUrl();
+        final String finalPath = path;
 
+        if (isDownloadRequested || toWorkspace || runAfter) {
             Job job = new Job("Ollama Task") {
                 @Override
                 protected IStatus run(IProgressMonitor monitor) {
                     monitor.beginTask("Ollama Setup", IProgressMonitor.UNKNOWN);
                     try {
-                        if (toWorkspace && (page.isDownloadToWorkspaceRequested())) {
+                        if (toWorkspace) {
                             IProject project = getProject();
                             File binDir = project.getLocation().toFile();
                             if (!binDir.exists()) binDir.mkdirs();
@@ -129,7 +131,7 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
                             }
                             outputFile.setExecutable(true);
                             monitor.subTask("Download complete: " + outputFile.getAbsolutePath());
-                        } else if (page.isDownloadRequested()) {
+                        } else if (isDownloadRequested) {
                             monitor.subTask("Installing Ollama globally...");
                             ProcessBuilder pb = new ProcessBuilder("sh", "-c", "curl -fsSL https://ollama.com/install.sh | sh");
                             pb.redirectErrorStream(true);
@@ -150,7 +152,7 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
                         if (runAfter) {
                             monitor.subTask("Starting Ollama...");
                             ProcessBuilder pbRun = new ProcessBuilder(finalPath, "serve");
-                            pbRun.environment().put("OLLAMA_HOST", page.getUrl());
+                            pbRun.environment().put("OLLAMA_HOST", finalUrl);
                             pbRun.start();
                             monitor.subTask("Ollama started.");
                         }

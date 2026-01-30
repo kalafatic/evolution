@@ -186,19 +186,8 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 		//initListeners();
 //		setUpPreferences();
 		
-		String projectName = Platform.getProduct().getName();
-		if (projectName == null || projectName.isEmpty()) {
-			projectName = "AI Evolution";
-		}
-
-		try {
-			ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, null);
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
-
-		createProject(projectName);
-		openMultiPageEditor(projectName);
+		createProject(Platform.getProduct().getName());
+		openMultiPageEditor();
 
 //		Display.getDefault().asyncExec(new Runnable() {
 //			@Override
@@ -246,6 +235,9 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	
 	public IProject createProject(String projectName) {
 		try {
+			if (projectName == null || projectName.isEmpty()) {
+				projectName = "TestProject";
+			}
 			final String fileName = "Project.xml";
 
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -259,24 +251,6 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 				project.open(null);
 			}
 
-			// Add Evolution Nature
-			org.eclipse.core.resources.IProjectDescription desc = project.getDescription();
-			String[] natures = desc.getNatureIds();
-			boolean hasNature = false;
-			for (String nature : natures) {
-				if (eu.kalafatic.evolution.view.nature.EvolutionNature.NATURE_ID.equals(nature)) {
-					hasNature = true;
-					break;
-				}
-			}
-			if (!hasNature) {
-				String[] newNatures = new String[natures.length + 1];
-				System.arraycopy(natures, 0, newNatures, 0, natures.length);
-				newNatures[natures.length] = eu.kalafatic.evolution.view.nature.EvolutionNature.NATURE_ID;
-				desc.setNatureIds(newNatures);
-				project.setDescription(desc, null);
-			}
-
 			IFile file = project.getFile(fileName);
 			if (!file.exists()) {
 				String content = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -288,21 +262,16 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 				file.create(source, IResource.NONE, null);
 			}
 
-			project.refreshLocal(IResource.DEPTH_INFINITE, null);
-
 			IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-			if (window != null) {
-				IWorkbenchPage page = window.getActivePage();
-				if (page != null) {
-					try {
-						page.openEditor(
-								new FileEditorInput(file),
-								"eu.kalafatic.evolution.view.editors.MultiPageEditor"
-						);
-					} catch (PartInitException e) {
-						e.printStackTrace();
-					}
-				}
+			IWorkbenchPage page = window.getActivePage();
+
+			try {
+				page.openEditor(
+						new FileEditorInput(file),
+						"eu.kalafatic.evolution.view.editors.MultiPageEditor"
+				);
+			} catch (PartInitException e) {
+				e.printStackTrace();
 			}
 
 			return project;
@@ -312,37 +281,52 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 		return null;
 	}
 
-	private void openMultiPageEditor(String projectName) {
+	private IFile getFile() {
+		final String testProjectName = "TestProject";
+		final String fileName = "Orchestrator.orchestration";
+		return ResourcesPlugin.getWorkspace()
+				.getRoot()
+				.getProject(testProjectName)
+				.getFile(fileName);
+	}
+
+	private void openMultiPageEditor() {
 		try {
+			final String testProjectName = "TestProject";
 			final String fileName = "Project.xml";
 
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
 			IWorkspaceRoot root = workspace.getRoot();
-			IProject project = root.getProject(projectName);
+			IProject project = root.getProject(testProjectName);
 
 			if (!project.exists()) {
-				return;
+				project.create(null);
 			}
 			if (!project.isOpen()) {
 				project.open(null);
 			}
 
 			IFile file = project.getFile(fileName);
-			if (file.exists()) {
-				IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-				if (window != null) {
-					IWorkbenchPage page = window.getActivePage();
-					if (page != null) {
-						try {
-							page.openEditor(
-									new FileEditorInput(file),
-									"eu.kalafatic.evolution.view.editors.MultiPageEditor"
-							);
-						} catch (PartInitException e) {
-							e.printStackTrace();
-						}
-					}
-				}
+			if (!file.exists()) {
+				String content = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+						"<orchestration:EvoProject xmi:version=\"2.0\" xmlns:xmi=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+						"    xmlns:orchestration=\"http://example.com/orchestration\" name=\"TestProject\">\n" +
+						"  <orchestrations name=\"Default Orchestration\" id=\"orch_default\"/>\n" +
+						"</orchestration:EvoProject>";
+				InputStream source = new ByteArrayInputStream(content.getBytes());
+				file.create(source, IResource.NONE, null);
+			}
+
+			IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+			IWorkbenchPage page = window.getActivePage();
+
+			try {
+				page.openEditor(
+						new FileEditorInput(file),
+						"eu.kalafatic.evolution.view.editors.MultiPageEditor"
+				);
+			} catch (PartInitException e) {
+				e.printStackTrace();
 			}
 		} catch (CoreException e) {
 			e.printStackTrace();

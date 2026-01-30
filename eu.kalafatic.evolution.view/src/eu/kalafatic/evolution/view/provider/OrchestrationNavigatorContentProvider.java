@@ -3,9 +3,7 @@ package eu.kalafatic.evolution.view.provider;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -14,8 +12,6 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Agent;
-import eu.kalafatic.evolution.view.nature.EvolutionNature;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,11 +19,6 @@ import java.util.List;
 public class OrchestrationNavigatorContentProvider implements ITreeContentProvider {
 
     private ResourceSet resourceSet = new ResourceSetImpl();
-
-    public OrchestrationNavigatorContentProvider() {
-        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xml", new XMIResourceFactoryImpl());
-        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("evo", new XMIResourceFactoryImpl());
-    }
 
     @Override
     public Object[] getElements(Object inputElement) {
@@ -91,7 +82,7 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
                 URI uri = ep.eResource().getURI();
                 if (uri.isPlatformResource()) {
                     String path = uri.toPlatformString(true);
-                    IResource res = ResourcesPlugin.getWorkspace().getRoot().findMember(new Path(path));
+                    IResource res = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().findMember(path);
                     if (res != null) {
                         return res.getProject();
                     }

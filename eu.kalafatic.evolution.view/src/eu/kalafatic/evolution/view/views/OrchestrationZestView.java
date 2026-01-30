@@ -1,8 +1,6 @@
 package eu.kalafatic.evolution.view.views;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.view.provider.OrchestrationGraphContentProvider;
-import eu.kalafatic.evolution.view.provider.OrchestrationGraphLabelProvider;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.impl.AdapterImpl;
