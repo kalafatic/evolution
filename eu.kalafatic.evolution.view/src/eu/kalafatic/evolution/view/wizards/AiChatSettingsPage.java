@@ -4,12 +4,14 @@ import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 public class AiChatSettingsPage extends WizardPage {
     private Text urlText, tokenText, promptText;
+    private Button skipCheck;
 
     public AiChatSettingsPage() {
         super("AiChatSettingsPage");
@@ -39,10 +41,15 @@ public class AiChatSettingsPage extends WizardPage {
         promptText.setLayoutData(gd);
         promptText.setText("You are a helpful assistant.");
 
+        skipCheck = new Button(container, SWT.CHECK);
+        skipCheck.setText("Skip this step and setup later");
+        skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
+
         setControl(container);
     }
 
     public String getChatUrl() { return urlText.getText(); }
     public String getToken() { return tokenText.getText(); }
     public String getPrompt() { return promptText.getText(); }
+    public boolean isSkipped() { return skipCheck.getSelection(); }
 }

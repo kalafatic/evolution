@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view;
+package eu.kalafatic.evolution.view.views;
 
 import java.io.IOException;
 import java.util.Collections;

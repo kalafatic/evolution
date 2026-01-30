@@ -24,19 +24,19 @@
          point="org.eclipse.ui.handlers">
       <handler
             commandId="eu.kalafatic.evolution.controller.saveCommand"
-            class="eu.kalafatic.evolution.controller.SaveCommandHandler">
+            class="eu.kalafatic.evolution.controller.handlers.SaveCommandHandler">
       </handler>
       <handler
             commandId="eu.kalafatic.evolution.controller.mavenBuildCommand"
-            class="eu.kalafatic.evolution.controller.MavenBuildCommandHandler">
+            class="eu.kalafatic.evolution.controller.handlers.MavenBuildCommandHandler">
       </handler>
       <handler
             commandId="eu.kalafatic.evolution.controller.gitCommitCommand"
-            class="eu.kalafatic.evolution.controller.GitCommitCommandHandler">
+            class="eu.kalafatic.evolution.controller.handlers.GitCommitCommandHandler">
       </handler>
       <handler
             commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
-            class="eu.kalafatic.evolution.controller.OrchestrationCommandHandler">
+            class="eu.kalafatic.evolution.controller.handlers.OrchestrationCommandHandler">
       </handler>
    </extension>
 </plugin>

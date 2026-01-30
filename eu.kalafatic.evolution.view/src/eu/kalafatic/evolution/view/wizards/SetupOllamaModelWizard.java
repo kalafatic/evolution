@@ -42,9 +42,9 @@ public class SetupOllamaModelWizard extends Wizard implements INewWizard {
             if (window != null) {
                 IWorkbenchPage page = window.getActivePage();
                 if (page != null) {
-                    org.eclipse.ui.IViewPart view = page.findView(eu.kalafatic.evolution.view.PropertiesView.ID);
-                    if (view instanceof eu.kalafatic.evolution.view.PropertiesView) {
-                        orchestrator = (Orchestrator) ((eu.kalafatic.evolution.view.PropertiesView) view).getRootObject();
+                    org.eclipse.ui.IViewPart view = page.findView(eu.kalafatic.evolution.view.views.PropertiesView.ID);
+                    if (view instanceof eu.kalafatic.evolution.view.views.PropertiesView) {
+                        orchestrator = (Orchestrator) ((eu.kalafatic.evolution.view.views.PropertiesView) view).getRootObject();
                     }
                 }
             }

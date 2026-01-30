@@ -181,7 +181,7 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
         if (projects.length > 0) {
             return projects[0];
         }
-        return ResourcesPlugin.getWorkspace().getRoot().getProject("TestProject");
+        return null;
     }
 
     private class SetupOllamaPage extends WizardPage {

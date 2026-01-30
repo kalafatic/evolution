@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view;
+package eu.kalafatic.evolution.view.views;
 
 import org.eclipse.jface.text.TextViewer;
 import org.eclipse.swt.SWT;

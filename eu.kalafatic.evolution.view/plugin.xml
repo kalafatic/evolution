@@ -7,14 +7,14 @@
          point="org.eclipse.core.runtime.applications">
       <application>
          <run
-               class="eu.kalafatic.evolution.view.Application">
+               class="eu.kalafatic.evolution.view.application.Application">
          </run>
       </application>
    </extension>
    <extension
          point="org.eclipse.ui.perspectives">
       <perspective
-            class="eu.kalafatic.evolution.view.EvoPerspective"
+            class="eu.kalafatic.evolution.view.perspective.EvoPerspective"
             fixed="true"
             id="eu.kalafatic.evolution.view.evoPerspective"
             name="Evo">
@@ -57,29 +57,29 @@
       <view
             name="Orchestration Graph"
             icon="icons/eclipse16.png"
-            class="eu.kalafatic.evolution.view.OrchestrationZestView"
+            class="eu.kalafatic.evolution.view.views.OrchestrationZestView"
             id="eu.kalafatic.evolution.view.orchestrationZestView">
       </view>
       <view
             name="Properties"
             icon="icons/eclipse16.png"
-            class="eu.kalafatic.evolution.view.PropertiesView"
+            class="eu.kalafatic.evolution.view.views.PropertiesView"
             id="eu.kalafatic.evolution.view.propertiesView">
       </view>
       <view
-            class="eu.kalafatic.evolution.view.TaskTreeView"
+            class="eu.kalafatic.evolution.view.views.TaskTreeView"
             icon="icons/sample.png"
             id="eu.kalafatic.evolution.view.taskTreeView"
             name="Task Tree">
       </view>
       <view
-            class="eu.kalafatic.evolution.view.CommandStackView"
+            class="eu.kalafatic.evolution.view.views.CommandStackView"
             icon="icons/sample.png"
             id="eu.kalafatic.evolution.view.commandStackView"
             name="Command Stack">
       </view>
       <view
-            class="eu.kalafatic.evolution.view.AIOutputView"
+            class="eu.kalafatic.evolution.view.views.AIOutputView"
             icon="icons/sample.png"
             id="eu.kalafatic.evolution.view.aiOutputView"
             name="AI Output">
@@ -90,14 +90,20 @@
             id="eu.kalafatic.views.EvoNavigator"
             name="Evo Navigator">
       </view>
+      <view
+            class="eu.kalafatic.evolution.view.views.InternalBrowserView"
+            icon="icons/sample.png"
+            id="eu.kalafatic.evolution.view.views.InternalBrowserView"
+            name="Internal Browser">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.navigator.navigatorContent">
       <navigatorContent
             activeByDefault="true"
-            contentProvider="eu.kalafatic.evolution.view.OrchestrationNavigatorContentProvider"
+            contentProvider="eu.kalafatic.evolution.view.provider.OrchestrationNavigatorContentProvider"
             id="eu.kalafatic.evolution.view.orchestrationContent"
-            labelProvider="eu.kalafatic.evolution.view.OrchestrationNavigatorLabelProvider"
+            labelProvider="eu.kalafatic.evolution.view.provider.OrchestrationNavigatorLabelProvider"
             name="Orchestrations">
          <triggerPoints>
             <and>
@@ -124,7 +130,7 @@
             </or>
          </possibleChildren>
          <actionProvider
-               class="eu.kalafatic.evolution.view.OrchestrationEditorActionProvider">
+               class="eu.kalafatic.evolution.view.provider.OrchestrationEditorActionProvider">
          </actionProvider>
       </navigatorContent>
    </extension>
@@ -157,6 +163,11 @@
                   pattern="eu.kalafatic.evolution.view.orchestrationContent">
             </contentExtension>
          </includes>
+         <excludes>
+            <contentExtension
+                  pattern="org.eclipse.ui.navigator.resources.filters.dotProject">
+            </contentExtension>
+         </excludes>
       </viewerContentBinding>
       <viewerActionBinding
             viewerId="eu.kalafatic.views.EvoNavigator">
@@ -182,6 +193,11 @@
                   pattern="org.eclipse.ui.navigator.resources.workingSets">
             </contentExtension>
          </includes>
+         <excludes>
+            <contentExtension
+                  pattern="org.eclipse.ui.navigator.resources.filters.dotProject">
+            </contentExtension>
+         </excludes>
       </viewerContentBinding>
    </extension>
    <extension
@@ -447,7 +463,7 @@
          point="org.eclipse.core.resources.natures">
       <runtime>
          <run
-               class="eu.kalafatic.evolution.view.EvolutionNature">
+               class="eu.kalafatic.evolution.view.nature.EvolutionNature">
          </run>
       </runtime>
    </extension>
