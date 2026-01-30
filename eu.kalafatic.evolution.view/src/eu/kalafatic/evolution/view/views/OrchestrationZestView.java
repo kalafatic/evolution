@@ -20,11 +20,22 @@ import org.eclipse.zest.layouts.LayoutAlgorithm;
 import org.eclipse.zest.layouts.LayoutStyles;
 import org.eclipse.zest.layouts.algorithms.*;
 
+import org.eclipse.draw2d.IFigure;
+import org.eclipse.draw2d.Viewport;
+import org.eclipse.gef.editparts.ZoomManager;
+import org.eclipse.gef.ui.actions.ZoomComboContributionItem;
+import org.eclipse.gef.ui.actions.ZoomInAction;
+import org.eclipse.gef.ui.actions.ZoomOutAction;
+import org.eclipse.jface.action.Separator;
+import java.util.ArrayList;
+import java.util.List;
+
 public class OrchestrationZestView extends ViewPart implements ISelectionListener {
 
     public static final String ID = "eu.kalafatic.evolution.view.orchestrationZestView";
     private GraphViewer viewer;
     private Orchestrator currentOrchestrator;
+    private ZoomManager zoomManager;
 
     private Adapter modelAdapter = new AdapterImpl() {
         @Override
@@ -43,7 +54,23 @@ public class OrchestrationZestView extends ViewPart implements ISelectionListene
 
         getSite().getPage().addSelectionListener(this);
 
+        setupZoomSupport();
         createToolbar();
+    }
+
+    private void setupZoomSupport() {
+        IFigure contents = viewer.getGraphControl().getContents();
+        Viewport viewport = viewer.getGraphControl().getViewport();
+        zoomManager = new ZoomManager(contents, viewport);
+
+        double[] zoomLevels = { 0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0 };
+        zoomManager.setZoomLevels(zoomLevels);
+
+        List<String> zoomContributions = new ArrayList<>();
+        zoomContributions.add(ZoomManager.FIT_ALL);
+        zoomContributions.add(ZoomManager.FIT_HEIGHT);
+        zoomContributions.add(ZoomManager.FIT_WIDTH);
+        zoomManager.setZoomLevelContributions(zoomContributions);
     }
 
     private void createToolbar() {
@@ -83,6 +110,21 @@ public class OrchestrationZestView extends ViewPart implements ISelectionListene
                 viewer.setLayoutAlgorithm(new HorizontalTreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true);
             }
         });
+
+        mgr.add(new Separator());
+
+        if (zoomManager != null) {
+            mgr.add(new ZoomComboContributionItem(getViewSite().getPage()));
+            mgr.add(new ZoomInAction(zoomManager));
+            mgr.add(new ZoomOutAction(zoomManager));
+
+            mgr.add(new Action("Fit to Page") {
+                @Override
+                public void run() {
+                    zoomManager.setZoomAsText(ZoomManager.FIT_ALL);
+                }
+            });
+        }
     }
 
     @Override
@@ -118,6 +160,14 @@ public class OrchestrationZestView extends ViewPart implements ISelectionListene
     @Override
     public void setFocus() {
         viewer.getControl().setFocus();
+    }
+
+    @Override
+    public <T> T getAdapter(Class<T> adapter) {
+        if (adapter == ZoomManager.class) {
+            return adapter.cast(zoomManager);
+        }
+        return super.getAdapter(adapter);
     }
 
     @Override

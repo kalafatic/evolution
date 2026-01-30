@@ -24,7 +24,8 @@ Require-Bundle: org.eclipse.core.runtime,
  eu.kalafatic.evolution.model;bundle-version="2.6.1",
  org.eclipse.swt,
  org.eclipse.jface,
- org.eclipse.ui.workbench
+ org.eclipse.ui.workbench,
+ org.eclipse.gef
 Import-Package: eu.kalafatic.evolution.controller;bundle-version="2.6.1",
  eu.kalafatic.evolution.controller.engine;bundle-version="2.6.1",
  eu.kalafatic.evolution.controller.handlers;bundle-version="2.6.1",
