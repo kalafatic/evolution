@@ -13,6 +13,7 @@ import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.view.nature.EvolutionNature;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,6 +21,11 @@ import java.util.List;
 public class OrchestrationNavigatorContentProvider implements ITreeContentProvider {
 
     private ResourceSet resourceSet = new ResourceSetImpl();
+
+    public OrchestrationNavigatorContentProvider() {
+        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xml", new XMIResourceFactoryImpl());
+        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("evo", new XMIResourceFactoryImpl());
+    }
 
     @Override
     public Object[] getElements(Object inputElement) {
