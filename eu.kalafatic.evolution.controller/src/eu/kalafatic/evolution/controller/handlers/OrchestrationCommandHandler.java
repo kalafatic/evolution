@@ -16,6 +16,8 @@ import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.engine.NeuronEngine;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -275,17 +277,21 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 .orElse(orchestrator.getAgents().isEmpty() ? null : orchestrator.getAgents().get(0));
     }
 
-    private String sendRequest(Orchestrator orchestrator, String prompt) throws Exception {
+    public String sendRequest(Orchestrator orchestrator, String prompt) throws Exception {
+        return sendRequest(orchestrator, prompt, null);
+    }
+
+    public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl) throws Exception {
         if (orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null && !orchestrator.getOllama().getUrl().isEmpty()) {
-            return sendOllamaRequest(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel(), prompt);
+            return sendOllamaRequest(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel(), prompt, proxyUrl);
         } else if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
-            return sendAiChatRequest(orchestrator.getAiChat().getUrl(), orchestrator.getAiChat().getToken(), prompt);
+            return sendAiChatRequest(orchestrator.getAiChat().getUrl(), orchestrator.getAiChat().getToken(), prompt, proxyUrl);
         } else if (orchestrator.getNeuronAI() != null) {
             String url = orchestrator.getNeuronAI().getUrl();
             if (url == null || url.isEmpty() || url.equalsIgnoreCase("local")) {
                 return new NeuronEngine().runModel(orchestrator.getNeuronAI().getType(), orchestrator.getNeuronAI().getModel(), prompt);
             }
-            return sendNeuronAIRequest(url, orchestrator.getNeuronAI().getModel(), prompt);
+            return sendNeuronAIRequest(url, orchestrator.getNeuronAI().getModel(), prompt, proxyUrl);
         }
         throw new Exception("No LLM service configured (Ollama, AI Chat or Neuron AI)");
     }
@@ -320,8 +326,21 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return new JSONObject(response.substring(start, end + 1));
     }
 
-    private String sendAiChatRequest(String url, String token, String prompt) throws Exception {
-        HttpClient client = HttpClient.newHttpClient();
+    private HttpClient getClient(String proxyUrl) {
+        HttpClient.Builder builder = HttpClient.newBuilder();
+        if (proxyUrl != null && !proxyUrl.isEmpty()) {
+            try {
+                URI proxyUri = URI.create(proxyUrl);
+                builder.proxy(ProxySelector.of(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort())));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return builder.build();
+    }
+
+    private String sendAiChatRequest(String url, String token, String prompt, String proxyUrl) throws Exception {
+        HttpClient client = getClient(proxyUrl);
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("prompt", prompt);
         String json = jsonObject.toString();
@@ -335,8 +354,8 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return new JSONObject(response.body()).getString("response");
     }
 
-    private String sendOllamaRequest(String url, String model, String prompt) throws Exception {
-        HttpClient client = HttpClient.newHttpClient();
+    private String sendOllamaRequest(String url, String model, String prompt, String proxyUrl) throws Exception {
+        HttpClient client = getClient(proxyUrl);
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("model", model);
         jsonObject.put("prompt", prompt);
@@ -352,8 +371,8 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return jsonResponse.has("response") ? jsonResponse.getString("response") : jsonResponse.getString("solution");
     }
 
-    private String sendNeuronAIRequest(String url, String model, String prompt) throws Exception {
-        HttpClient client = HttpClient.newHttpClient();
+    private String sendNeuronAIRequest(String url, String model, String prompt, String proxyUrl) throws Exception {
+        HttpClient client = getClient(proxyUrl);
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("model", model);
         jsonObject.put("prompt", prompt);
