@@ -5,6 +5,8 @@ import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IPerspectiveFactory;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
+import eu.kalafatic.evolution.view.views.OrchestrationZestView;
+import eu.kalafatic.evolution.view.views.AIOutputView;
 
 public class EvoPerspective implements IPerspectiveFactory {
 
