@@ -6,6 +6,9 @@ import org.eclipse.ui.IPerspectiveFactory;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
+import eu.kalafatic.evolution.view.views.AIOutputView;
+import eu.kalafatic.evolution.view.views.OrchestrationZestView;
+
 public class EvoPerspective implements IPerspectiveFactory {
 
     public static final String ID = "eu.kalafatic.evolution.view.evoPerspective";
