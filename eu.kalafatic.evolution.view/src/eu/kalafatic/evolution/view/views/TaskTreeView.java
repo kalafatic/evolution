@@ -4,19 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Menu;
+import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.part.ViewPart;
 
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.model.orchestration.TaskStatus;
-import eu.kalafatic.evolution.model.orchestration.impl.TaskImpl;
 
 
-public class TaskTreeView extends ViewPart {
+public class TaskTreeView extends ViewPart implements ISelectionListener {
 
     public static final String ID = "eu.kalafatic.evolution.view.taskTreeView";
     private TreeViewer viewer;
@@ -29,9 +31,9 @@ public class TaskTreeView extends ViewPart {
         viewer = new TreeViewer(parent);
         viewer.setContentProvider(new TaskContentProvider());
         viewer.setLabelProvider(new TaskLabelProvider());
-        viewer.setInput(createSampleTasks());
         
-     // HERE you can use getViewSite()
+        getSite().getPage().addSelectionListener(this);
+
         IViewSite iViewSite = getViewSite();
         iViewSite.setSelectionProvider(viewer);
 
@@ -42,31 +44,23 @@ public class TaskTreeView extends ViewPart {
         getSite().registerContextMenu(menuMgr, viewer);
     }
 
-    private Task[] createSampleTasks() {
-        Task task1 = OrchestrationFactory.eINSTANCE.createTask();
-        task1.setName("Task 1");
-        task1.setStatus(TaskStatus.PENDING);
+    @Override
+    public void selectionChanged(IWorkbenchPart part, ISelection selection) {
+        if (selection instanceof IStructuredSelection) {
+            Object first = ((IStructuredSelection) selection).getFirstElement();
+            if (first instanceof Orchestrator) {
+                Orchestrator orch = (Orchestrator) first;
+                viewer.setInput(orch.getTasks().toArray());
+            } else if (first instanceof Task) {
+                // Optionally handle task selection
+            }
+        }
+    }
 
-        Task task2 = OrchestrationFactory.eINSTANCE.createTask();
-        task2.setName("Task 2");
-        task2.setStatus(TaskStatus.RUNNING);
-
-        Task task3 = OrchestrationFactory.eINSTANCE.createTask();
-        task3.setName("Task 3");
-        task3.setStatus(TaskStatus.DONE);
-
-        Task subTask1 = OrchestrationFactory.eINSTANCE.createTask();
-        subTask1.setName("Sub-task 1.1");
-        subTask1.setStatus(TaskStatus.PENDING);
-
-        Task subTask2 = OrchestrationFactory.eINSTANCE.createTask();
-        subTask2.setName("Sub-task 1.2");
-        subTask2.setStatus(TaskStatus.PENDING);
-
-        task1.getSubTasks().add(subTask1);
-        task1.getSubTasks().add(subTask2);
-
-        return new Task[] { task1, task2, task3 };
+    @Override
+    public void dispose() {
+        getSite().getPage().removeSelectionListener(this);
+        super.dispose();
     }
 
     @Override

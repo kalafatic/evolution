@@ -142,9 +142,10 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 "Available task types:\n" +
                 "- 'llm': For reasoning, coding, or text generation.\n" +
                 "- 'git': For version control actions (add/commit).\n" +
-                "- 'maven': For building and testing the project.\n\n" +
+                "- 'maven': For building and testing the project.\n" +
+                "- 'file': For creating or modifying specific source files.\n\n" +
                 "Output MUST be a valid JSON array of objects. Schema:\n" +
-                "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"git\"|\"maven\" } ]\n\n" +
+                "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"git\"|\"maven\"|\"file\" } ]\n\n" +
                 "Request: " + orchestrator.getAiChat().getPrompt();
 
         String response = sendRequest(orchestrator, plannerPrompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
@@ -225,48 +226,27 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
 //        
 //        
 //    }
+    private List<ITaskTool> taskTools;
+
+    private void initTaskTools() {
+        if (taskTools == null) {
+            taskTools = new ArrayList<>();
+            taskTools.add(new GitTool());
+            taskTools.add(new MavenTool());
+            taskTools.add(new FileTool());
+            taskTools.add(new LlmTool()); // Should be last as default
+        }
+    }
+
     private String executeTask(Orchestrator orchestrator, IProject project, Agent agent, Task task, String context, String lastFeedback) throws Exception {
-        String taskType = task.getType();
-
-        if ("git".equalsIgnoreCase(taskType)) {
-            return executeGitTool(project, task.getName());
-        } else if ("maven".equalsIgnoreCase(taskType)) {
-            return executeMavenTool(project, orchestrator);
-        } else {
-            // Default to LLM
-            String agentType = (agent != null) ? agent.getType() : "general assistant";
-            String prompt = "You are acting as a " + agentType + ".\n" +
-                    "Context: " + context + "\n";
-            if (lastFeedback != null) {
-                prompt += "PREVIOUS ATTEMPT FAILED. Feedback: " + lastFeedback + "\nPlease correct your approach.\n";
+        initTaskTools();
+        for (ITaskTool tool : taskTools) {
+            if (tool.canHandle(task.getType())) {
+                return tool.execute(orchestrator, project, agent, task, context, lastFeedback, this);
             }
-            prompt += "Your task: " + task.getName() + "\n" +
-                    "Provide your response below:";
-
-            return sendRequest(orchestrator, prompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
         }
-    }
-
-    private String executeGitTool(IProject project, String taskName) throws Exception {
-        java.io.File workingDir = (project != null) ? project.getLocation().toFile() : null;
-        // Simple heuristic mapping
-        if (taskName.toLowerCase().contains("add") || taskName.toLowerCase().contains("commit")) {
-            executeCommand(workingDir, "git", "add", ".");
-            String result = executeCommand(workingDir, "git", "commit", "-m", "AI Evolution step: " + taskName);
-            if (project != null) project.refreshLocal(IResource.DEPTH_INFINITE, null);
-            return result;
-        }
-        return "No git action mapped for: " + taskName;
-    }
-
-    private String executeMavenTool(IProject project, Orchestrator orchestrator) throws Exception {
-        java.io.File workingDir = (project != null) ? project.getLocation().toFile() : null;
-        List<String> mavenArgs = new ArrayList<>();
-        mavenArgs.add("mvn");
-        mavenArgs.addAll(orchestrator.getMaven().getGoals());
-        String result = executeCommand(workingDir, mavenArgs.toArray(new String[0]));
-        if (project != null) project.refreshLocal(IResource.DEPTH_INFINITE, null);
-        return result;
+        // Fallback to LLM if no tool matches
+        return new LlmTool().execute(orchestrator, project, agent, task, context, lastFeedback, this);
     }
 
     private Agent findAgentForTask(Orchestrator orchestrator, Task task) {
@@ -281,22 +261,29 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return sendRequest(orchestrator, prompt, null);
     }
 
+    private List<IAiService> aiServices;
+
+    private void initAiServices() {
+        if (aiServices == null) {
+            aiServices = new ArrayList<>();
+            aiServices.add(new OllamaService());
+            aiServices.add(new AiChatService());
+            aiServices.add(new NeuronAiService());
+        }
+    }
+
     public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl) throws Exception {
-        if (orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null && !orchestrator.getOllama().getUrl().isEmpty()) {
-            return sendOllamaRequest(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel(), prompt, proxyUrl);
-        } else if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
-            return sendAiChatRequest(orchestrator.getAiChat().getUrl(), orchestrator.getAiChat().getToken(), prompt, proxyUrl);
-        } else if (orchestrator.getNeuronAI() != null) {
-            String url = orchestrator.getNeuronAI().getUrl();
-            if (url == null || url.isEmpty() || url.equalsIgnoreCase("local")) {
-                return new NeuronEngine().runModel(orchestrator.getNeuronAI().getType(), orchestrator.getNeuronAI().getModel(), prompt);
+        initAiServices();
+        for (IAiService service : aiServices) {
+            String result = service.sendRequest(orchestrator, prompt, proxyUrl);
+            if (result != null) {
+                return result;
             }
-            return sendNeuronAIRequest(url, orchestrator.getNeuronAI().getModel(), prompt, proxyUrl);
         }
         throw new Exception("No LLM service configured (Ollama, AI Chat or Neuron AI)");
     }
 
-    private String executeCommand(java.io.File workingDir, String... command) throws Exception {
+    public String executeCommandExternal(java.io.File workingDir, String... command) throws Exception {
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         if (workingDir != null) {
             processBuilder.directory(workingDir);
@@ -326,66 +313,6 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return new JSONObject(response.substring(start, end + 1));
     }
 
-    private HttpClient getClient(String proxyUrl) {
-        HttpClient.Builder builder = HttpClient.newBuilder();
-        if (proxyUrl != null && !proxyUrl.isEmpty()) {
-            try {
-                URI proxyUri = URI.create(proxyUrl);
-                builder.proxy(ProxySelector.of(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort())));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return builder.build();
-    }
-
-    private String sendAiChatRequest(String url, String token, String prompt, String proxyUrl) throws Exception {
-        HttpClient client = getClient(proxyUrl);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("prompt", prompt);
-        String json = jsonObject.toString();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Bearer " + token)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return new JSONObject(response.body()).getString("response");
-    }
-
-    private String sendOllamaRequest(String url, String model, String prompt, String proxyUrl) throws Exception {
-        HttpClient client = getClient(proxyUrl);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("model", model);
-        jsonObject.put("prompt", prompt);
-        jsonObject.put("stream", false);
-        String json = jsonObject.toString();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        JSONObject jsonResponse = new JSONObject(response.body());
-        return jsonResponse.has("response") ? jsonResponse.getString("response") : jsonResponse.getString("solution");
-    }
-
-    private String sendNeuronAIRequest(String url, String model, String prompt, String proxyUrl) throws Exception {
-        HttpClient client = getClient(proxyUrl);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("model", model);
-        jsonObject.put("prompt", prompt);
-        String json = jsonObject.toString();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        JSONObject jsonResponse = new JSONObject(response.body());
-        return jsonResponse.optString("response", jsonResponse.optString("output", "No response from Neuron AI"));
-    }
 
     public String[] getOllamaModels() {
         try {
