@@ -12,6 +12,7 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.view.nature.EvolutionNature;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
