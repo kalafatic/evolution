@@ -21,6 +21,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 
 public class GitSettingsPage extends WizardPage {
     private Text repoUrlText, branchText, usernameText, localPathText;
@@ -134,7 +135,8 @@ public class GitSettingsPage extends WizardPage {
 
     private void openUrl(String url) {
         try {
-            PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL(url));
+            IWorkbenchBrowserSupport support = PlatformUI.getWorkbench().getBrowserSupport();
+            support.createBrowser(IWorkbenchBrowserSupport.AS_EDITOR, "evoGitHelp", "Git Help", "Git Help").openURL(new URL(url));
         } catch (Exception e) {
             e.printStackTrace();
         }
