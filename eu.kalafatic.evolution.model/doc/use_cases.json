@@ -1,0 +1,63 @@
+{
+  "project": "AI Evolution",
+  "use_cases": [
+    {
+      "id": "interactive_code_assistance",
+      "name": "Interactive Code Assistance",
+      "description": "User interacts with AI Chat to brainstorm and generate code snippets, which are then manually or semi-automatically integrated into the project.",
+      "primary_components": ["AiChat", "LLM"],
+      "workflow": [
+        "User opens AI Chat view.",
+        "User provides a prompt for code generation.",
+        "AI returns code.",
+        "User reviews and copies code to workspace."
+      ]
+    },
+    {
+      "id": "autonomous_agent_workflow",
+      "name": "Autonomous Agentic Workflow",
+      "description": "A set of agents (e.g., developer, reviewer) work together to complete a complex task without constant user intervention.",
+      "primary_components": ["Agent", "Task", "LLM", "Orchestrator"],
+      "workflow": [
+        "Orchestrator initiates a high-level task.",
+        "Task is decomposed into subtasks for specific agents.",
+        "Agents use LLM to process subtasks.",
+        "Feedback loop allows agents to refine outputs based on peer review."
+      ]
+    },
+    {
+      "id": "specialized_neuron_processing",
+      "name": "Specialized Neuron Processing",
+      "description": "Offloading specific technical tasks (like signal processing or complex pattern matching) to specialized Neuron AI models.",
+      "primary_components": ["NeuronAI", "Agent", "NeuronEngine"],
+      "workflow": [
+        "Agent identifies a task requiring specialized neural architecture (e.g., LSTM for time-series).",
+        "Request is routed to NeuronAI service (or internal NeuronEngine).",
+        "Results are integrated back into the main workflow."
+      ]
+    },
+    {
+      "id": "end_to_end_cicd_automation",
+      "name": "End-to-End CI/CD Automation",
+      "description": "Full loop from fetching code, generating features, building with Maven, and pushing back to Git.",
+      "primary_components": ["Git", "Maven", "Agent", "Task"],
+      "workflow": [
+        "Git component pulls latest source.",
+        "Agents generate new code or fixes.",
+        "Maven component runs 'clean install' and tests.",
+        "Successful builds are committed and pushed via Git."
+      ]
+    },
+    {
+      "id": "hybrid_local_remote_inference",
+      "name": "Hybrid Local/Remote Inference",
+      "description": "Using Ollama for sensitive/local data processing while using high-capacity cloud LLMs for complex reasoning.",
+      "primary_components": ["Ollama", "LLM", "AiChat"],
+      "workflow": [
+        "Simple or sensitive tasks are handled by local Ollama model.",
+        "Complex orchestration logic is processed by remote LLM.",
+        "Unified view in AI Output View aggregates both sources."
+      ]
+    }
+  ]
+}
