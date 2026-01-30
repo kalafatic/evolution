@@ -296,6 +296,22 @@
          </command>
       </menuContribution>
       <menuContribution
+            locationURI="popup:org.eclipse.ui.navigator.ProjectExplorer#PopupMenu?after=additions">
+         <command
+               commandId="eu.kalafatic.evolution.view.reloadOrchestration"
+               label="Refresh View (Reload)"
+               style="push">
+         </command>
+      </menuContribution>
+      <menuContribution
+            locationURI="popup:eu.kalafatic.views.EvoNavigator#PopupMenu?after=additions">
+         <command
+               commandId="eu.kalafatic.evolution.view.reloadOrchestration"
+               label="Refresh View (Reload)"
+               style="push">
+         </command>
+      </menuContribution>
+      <menuContribution
             locationURI="popup:eu.kalafatic.evolution.view.propertiesView">
          <command
                commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
@@ -566,6 +582,10 @@
             id="eu.kalafatic.evolution.view.setupWorkspace"
             name="Setup Workspace">
       </command>
+      <command
+            id="eu.kalafatic.evolution.view.reloadOrchestration"
+            name="Reload Orchestration">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -596,6 +616,10 @@
       <handler
             class="eu.kalafatic.evolution.view.handlers.SetupWorkspaceHandler"
             commandId="eu.kalafatic.evolution.view.setupWorkspace">
+      </handler>
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.ReloadOrchestrationHandler"
+            commandId="eu.kalafatic.evolution.view.reloadOrchestration">
       </handler>
    </extension>
    <extension

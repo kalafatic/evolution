@@ -38,8 +38,8 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
     public Object[] getChildren(Object parentElement) {
         if (parentElement instanceof IProject) {
             IProject project = (IProject) parentElement;
-            if (project.isOpen()) {
-                try {
+            try {
+                if (project.isOpen() && project.hasNature(EvolutionNature.NATURE_ID)) {
                     List<EvoProject> results = new ArrayList<>();
                     // Only scan root level for performance
                     for (IResource res : project.members()) {
@@ -51,9 +51,9 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
                         }
                     }
                     return results.toArray();
-                } catch (CoreException e) {
-                    // Ignore
                 }
+            } catch (CoreException e) {
+                // Ignore
             }
         } else if (parentElement instanceof EvoProject) {
             return ((EvoProject) parentElement).getOrchestrations().toArray();
@@ -105,7 +105,11 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
     public boolean hasChildren(Object element) {
         if (element instanceof IProject) {
             IProject project = (IProject) element;
-            return project.isOpen();
+            try {
+                return project.isOpen() && project.hasNature(EvolutionNature.NATURE_ID);
+            } catch (CoreException e) {
+                return false;
+            }
         }
         return getChildren(element).length > 0;
     }
