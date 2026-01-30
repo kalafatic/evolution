@@ -13,6 +13,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
 import eu.kalafatic.evolution.model.orchestration.*;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
+import eu.kalafatic.evolution.controller.manager.TrainingManager;
 import eu.kalafatic.evolution.controller.engine.NeuronEngine;
 import java.io.BufferedReader;
 import java.io.File;
@@ -145,9 +146,12 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 "- 'llm': For reasoning, planning, or general text generation.\n" +
                 "- 'file': For writing or creating files (e.g., Java source code, POM, README). Task name should be 'Write <path/to/file>'.\n" +
                 "- 'git': For version control actions (add, commit, push).\n" +
-                "- 'maven': For building, testing, or packaging the project.\n\n" +
+                "- 'maven': For building, testing, or packaging the project.\n" +
+                "- 'train_nn': For local project neural network training.\n" +
+                "- 'train_llm': For local project LLM fine-tuning.\n" +
+                "- 'train_agent': For local project agent behavior training.\n\n" +
                 "Output MUST be a valid JSON array of objects. Schema:\n" +
-                "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\" } ]\n\n" +
+                "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"train_nn\"|\"train_llm\"|\"train_agent\" } ]\n\n" +
                 "Request: " + orchestrator.getAiChat().getPrompt();
 
         String response = sendRequest(orchestrator, plannerPrompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
@@ -237,6 +241,8 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
             return executeMavenTool(project, orchestrator);
         } else if ("file".equalsIgnoreCase(taskType)) {
             return executeFileTool(orchestrator, project, agent, task, context, lastFeedback);
+        } else if (taskType.startsWith("train_")) {
+            return executeTrainingTool(orchestrator, agent, task);
         } else {
             // Default to LLM
             String agentType = (agent != null) ? agent.getType() : "general assistant";
@@ -309,6 +315,22 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         String result = executeCommand(workingDir, mavenArgs.toArray(new String[0]));
         if (project != null) project.refreshLocal(IResource.DEPTH_INFINITE, null);
         return result;
+    }
+
+    private String executeTrainingTool(Orchestrator orchestrator, Agent agent, Task task) throws Exception {
+        String taskType = task.getType();
+        TrainingManager tm = TrainingManager.getInstance();
+        String modelName = (agent != null) ? agent.getId() : orchestrator.getName();
+        String testData = tm.getTestData().getOrDefault(taskType.substring(6), "Generic dataset for " + taskType);
+
+        if ("train_nn".equalsIgnoreCase(taskType)) {
+            return tm.trainNeuronNetwork(modelName, testData);
+        } else if ("train_llm".equalsIgnoreCase(taskType)) {
+            return tm.trainLLM(modelName, testData);
+        } else if ("train_agent".equalsIgnoreCase(taskType)) {
+            return tm.trainAgent(modelName, testData);
+        }
+        return "Unsupported training type: " + taskType;
     }
 
     private String executeFileTool(Orchestrator orchestrator, IProject project, Agent agent, Task task, String context, String lastFeedback) throws Exception {
