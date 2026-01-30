@@ -8,26 +8,10 @@
 		<version>2.6.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-	<artifactId>eu.kalafatic.evolution.view</artifactId>
-	<packaging>eclipse-plugin</packaging>
+	<artifactId>eu.kalafatic.evolution.model.tests</artifactId>
+	<packaging>eclipse-test-plugin</packaging>
 
 	<build>
 		<sourceDirectory>src</sourceDirectory>
-		<resources>
-			<resource>
-				<directory>icons</directory>
-				<excludes>
-					<exclude>**/*.java</exclude>
-				</excludes>
-			</resource>
-		</resources>
 	</build>
-	
-	<dependencies>
-		<dependency>
-			<groupId>org.json</groupId>
-			<artifactId>json</artifactId>
-			<version>20231013</version>
-		</dependency>
-	</dependencies>
 </project>

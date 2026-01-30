@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: %pluginName
 Bundle-SymbolicName: eu.kalafatic.evolution.model.edit;singleton:=true
 Automatic-Module-Name: eu.kalafatic.evolution.model.edit
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 2.6.1.qualifier
 Bundle-ClassPath: .
 Bundle-Activator: eu.kalafatic.evolution.model.orchestration.provider.EvolutionEditPlugin$Implementation
 Bundle-Vendor: %providerName

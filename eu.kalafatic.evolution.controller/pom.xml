@@ -1,16 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>eu.kalafatic.evolution</groupId>
-	<version>2.6.1-SNAPSHOT</version>
+	<parent>
+		<groupId>eu.kalafatic.evolution</groupId>
+		<artifactId>eu.kalafatic.evolution.aggregator</artifactId>
+		<version>2.6.1-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
 	<artifactId>eu.kalafatic.evolution.controller</artifactId>
 
 	<packaging>eclipse-plugin</packaging>
-	<properties>
-		 <tycho.targetPlatform>target-platform</tycho.targetPlatform>
-		 <tycho.version>4.0.5</tycho.version>
-	</properties>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<resources>
@@ -23,21 +23,6 @@
 		</resources>
 
 		<plugins>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
-				<version>${tycho.version}</version>
-				<extensions>true</extensions>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>target-platform-configuration</artifactId>
-				<version>${tycho.version}</version>
-				<configuration>
-					<executionEnvironment>JavaSE-21</executionEnvironment>
-					<pomDependencies>consider</pomDependencies>
-				</configuration>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -59,18 +44,5 @@
 			<version>20231013</version>
 		</dependency>
 	</dependencies>
-
-	<repositories>
-		<repository>
-			<id>eclipse</id>
-			<layout>p2</layout>
-			<url>https://download.eclipse.org/releases/2025-12</url>
-		</repository>
-		<repository>
-			<id>orbit</id>
-			<layout>p2</layout>
-			<url>https://download.eclipse.org/tools/orbit/downloads/drops/R20230531010532/repository/</url>
-		</repository>
-	</repositories>
 
 </project>
