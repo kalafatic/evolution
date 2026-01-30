@@ -26,6 +26,9 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jface,
  org.eclipse.ui.workbench
 Import-Package: eu.kalafatic.evolution.controller;bundle-version="2.6.1",
+ eu.kalafatic.evolution.controller.engine;bundle-version="2.6.1",
+ eu.kalafatic.evolution.controller.handlers;bundle-version="2.6.1",
+ eu.kalafatic.evolution.controller.manager;bundle-version="2.6.1",
  org.json
 Automatic-Module-Name: eu.kalafatic.evolution.view
 Bundle-RequiredExecutionEnvironment: JavaSE-17
