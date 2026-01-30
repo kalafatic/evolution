@@ -1,0 +1,50 @@
+{
+  "api_metadata": {
+    "bundle_id": "eu.kalafatic.evolution.model",
+    "base_package": "eu.kalafatic.evolution.model.orchestration",
+    "model_uri": "http://example.com/orchestration",
+    "core_interfaces": [
+      {
+        "name": "Orchestrator",
+        "role": "Central hub for service integration and agent management.",
+        "relationships": ["Git", "Maven", "LLM", "Ollama", "AiChat", "NeuronAI", "Agent", "Task"]
+      },
+      {
+        "name": "Agent",
+        "role": "Autonomous entity responsible for executing tasks using a specific LLM context or Neuron model.",
+        "attributes": ["id", "type", "executionMode"]
+      },
+      {
+        "name": "Task",
+        "role": "Unit of work within an orchestration, support sub-tasks and sequential execution.",
+        "attributes": ["id", "name", "type", "status", "response"]
+      },
+      {
+        "name": "NeuronAI",
+        "role": "Integration point for specialized neural networks (CNN, RNN, etc.).",
+        "attributes": ["url", "model", "type"]
+      },
+      {
+        "name": "AiChat",
+        "role": "Configuration for interactive LLM communication.",
+        "attributes": ["url", "token", "prompt", "proxyUrl"]
+      }
+    ],
+    "enums": {
+      "NeuronType": ["MLP", "CNN", "RNN", "LSTM", "TRANSFORMER"],
+      "TaskStatus": ["PENDING", "RUNNING", "DONE", "FAILED"],
+      "ExecutionMode": ["SERIAL", "PARALLEL"]
+    },
+    "extension_points": [
+      {
+        "id": "eu.kalafatic.evolution.view.orchestrationContent",
+        "description": "Allows custom content to be displayed in the Project Explorer and Evo Navigator."
+      },
+      {
+        "id": "org.eclipse.core.resources.natures",
+        "nature_id": "eu.kalafatic.evolution.view.evolutionNature",
+        "description": "Marker nature for AI Evolution projects."
+      }
+    ]
+  }
+}

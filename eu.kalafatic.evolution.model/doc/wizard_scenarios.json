@@ -1,0 +1,96 @@
+{
+  "project": "AI Evolution",
+  "wizard": "NewEvoProjectWizard",
+  "scenarios": [
+    {
+      "id": "full_integration",
+      "name": "Full Lifecycle Integration",
+      "description": "Complete setup including version control, local and remote AI, build automation, and initial agents.",
+      "configuration": {
+        "git": "configured",
+        "ollama": "configured",
+        "llm": "configured",
+        "maven": "configured",
+        "ai_chat": "configured",
+        "neuron_ai": "configured",
+        "agents": "defined"
+      },
+      "use_case_tags": ["cicd", "hybrid-ai", "multi-agent"]
+    },
+    {
+      "id": "local_first",
+      "name": "Local-First Privacy Focus",
+      "description": "Uses local Ollama for LLM tasks and Git for local versioning, skipping remote AI services.",
+      "configuration": {
+        "git": "configured",
+        "ollama": "configured",
+        "llm": "skipped",
+        "maven": "skipped",
+        "ai_chat": "skipped",
+        "neuron_ai": "skipped",
+        "agents": "defined"
+      },
+      "use_case_tags": ["privacy", "offline", "local-development"]
+    },
+    {
+      "id": "cloud_ai_chat",
+      "name": "Cloud AI Chat Hub",
+      "description": "Optimized for interactive AI chat using remote LLM providers via AiChat and LLM settings.",
+      "configuration": {
+        "git": "skipped",
+        "ollama": "skipped",
+        "llm": "configured",
+        "maven": "skipped",
+        "ai_chat": "configured",
+        "neuron_ai": "skipped",
+        "agents": "minimal"
+      },
+      "use_case_tags": ["interactive", "cloud-ai", "rapid-prototyping"]
+    },
+    {
+      "id": "neural_specialist",
+      "name": "Neural Network Specialist",
+      "description": "Configured specifically for interacting with Neuron AI services (MLP, CNN, etc.) using specialized agents.",
+      "configuration": {
+        "git": "skipped",
+        "ollama": "skipped",
+        "llm": "skipped",
+        "maven": "skipped",
+        "ai_chat": "skipped",
+        "neuron_ai": "configured",
+        "agents": "neural-specialists"
+      },
+      "use_case_tags": ["deep-learning", "neuron-agents", "pattern-recognition"]
+    },
+    {
+      "id": "automated_developer",
+      "name": "Automated Agentic Developer",
+      "description": "Focuses on Git, Maven, and Agent definitions for automated code generation and build validation.",
+      "configuration": {
+        "git": "configured",
+        "ollama": "skipped",
+        "llm": "configured",
+        "maven": "configured",
+        "ai_chat": "skipped",
+        "neuron_ai": "skipped",
+        "agents": "coder-reviewer-duo"
+      },
+      "use_case_tags": ["autodev", "code-generation", "agentic-workflow"]
+    },
+    {
+      "id": "minimalist",
+      "name": "Minimalist Starting Point",
+      "description": "Quickest path to a project, skipping all optional configurations to be defined later.",
+      "configuration": {
+        "git": "skipped",
+        "ollama": "skipped",
+        "llm": "skipped",
+        "maven": "skipped",
+        "ai_chat": "skipped",
+        "neuron_ai": "skipped",
+        "agents": "none"
+      },
+      "use_case_tags": ["manual-setup", "quick-start"]
+    }
+  ]
+}
