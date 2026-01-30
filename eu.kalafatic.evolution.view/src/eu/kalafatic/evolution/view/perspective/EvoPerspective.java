@@ -11,6 +11,15 @@ import eu.kalafatic.evolution.view.views.AIOutputView;
 import eu.kalafatic.evolution.view.views.AIOutputView;
 import eu.kalafatic.evolution.view.views.OrchestrationZestView;
 
+import eu.kalafatic.evolution.view.views.AIOutputView;
+import eu.kalafatic.evolution.view.views.InternalBrowserView;
+import eu.kalafatic.evolution.view.views.OrchestrationZestView;
+
+/**
+ * Default perspective for the AI Evolution Software platform.
+ * Organized with Navigators on the left, AI Output below them,
+ * and the main editor area flanked by the Orchestration Graph and Internal Browser.
+ */
 public class EvoPerspective implements IPerspectiveFactory {
 
     public static final String ID = "eu.kalafatic.evolution.view.evoPerspective";
@@ -19,76 +28,57 @@ public class EvoPerspective implements IPerspectiveFactory {
     public void createInitialLayout(IPageLayout layout) {
         String editorArea = layout.getEditorArea();
         layout.setEditorAreaVisible(true);
-  
 
-		layout.addView(IPageLayout.ID_PROJECT_EXPLORER, IPageLayout.LEFT, 0.25f, layout.getEditorArea());
-		
-		layout.addStandaloneView(OrchestrationZestView.ID, true, IPageLayout.RIGHT, 0.75f, layout.getEditorArea());
+        // Left column - Top: Navigators (Project Explorer and Evo Navigator)
+        IFolderLayout topLeft = layout.createFolder("topLeft", IPageLayout.LEFT, 0.22f, editorArea);
+        topLeft.addView(IPageLayout.ID_PROJECT_EXPLORER);
+        topLeft.addView("eu.kalafatic.views.EvoNavigator");
 
-		//IFolderLayout topLeft = layout.createFolder("TOP_LEFT", IPageLayout.LEFT, 0.25f, editorArea);
+        // Left column - Bottom: AI Output View
+        IFolderLayout bottomLeft = layout.createFolder("bottomLeft", IPageLayout.BOTTOM, 0.40f, "topLeft");
+        bottomLeft.addView(AIOutputView.ID);
 
-		// topLeft.addView("eu.kalafatic.maintain.view.views.ProjectNavigator");
+        // Main Area - Top: Orchestration Zest View (Graph)
+        layout.addView(OrchestrationZestView.ID, IPageLayout.TOP, 0.45f, editorArea);
 
-//		IFolderLayout bottomLeft = layout.createFolder("BOTTOM_LEFT", IPageLayout.BOTTOM, 0.65f, "TOP_LEFT");
-//
-//		bottomLeft.addView(IPageLayout.ID_PROP_SHEET);
-//		bottomLeft.addView(PropertiesView.ID);
-//		bottomLeft.addView(IPageLayout.ID_OUTLINE);
-//
-//		IFolderLayout bottomRight = layout.createFolder("BOTTOM_RIGHT", IPageLayout.BOTTOM, 0.65f, editorArea);
-//		
-//		IWorkbenchPage page = PlatformUI.getWorkbench()
-//		        .getActiveWorkbenchWindow()
-//		        .getActivePage();
+        // Main Area - Bottom: Internal Browser View
+        layout.addView(InternalBrowserView.ID, IPageLayout.BOTTOM, 0.25f, editorArea);
 
-		//page.showView(IConsoleConstants.ID_CONSOLE_VIEW);
-				
-		addActionSets(layout);
-		addViewShortcuts(layout);
-		addNewWizardShortcuts(layout);
-
-//        // Left: Project Explorer
-//        layout.addView(IPageLayout.ID_PROJECT_EXPLORER, IPageLayout.LEFT, 0.25f, editorArea);
-//
-//        // Bottom left: Properties View
-//        layout.addView(IPageLayout.ID_PROP_SHEET, IPageLayout.BOTTOM, 0.75f, IPageLayout.ID_PROJECT_EXPLORER);
-
-        // Right: AI Output View
-        layout.addStandaloneView(AIOutputView.ID, true, IPageLayout.RIGHT, 0.75f, editorArea);
-
-        // Bottom: Internal Browser
-        layout.addView("eu.kalafatic.evolution.view.views.InternalBrowserView", IPageLayout.BOTTOM, 0.75f, AIOutputView.ID);
+        // Configure generic workbench features
+        addActionSets(layout);
+        addViewShortcuts(layout);
+        addNewWizardShortcuts(layout);
     }
+
     /**
-	 * Adds the action sets.
-	 * @param layout the layout
-	 */
-	private void addActionSets(IPageLayout layout) {
-		layout.addActionSet(IPageLayout.ID_NAVIGATE_ACTION_SET);
-	}
+     * Adds the action sets to the layout.
+     */
+    private void addActionSets(IPageLayout layout) {
+        layout.addActionSet(IPageLayout.ID_NAVIGATE_ACTION_SET);
+    }
 
-	
-	/**
-	 * Adds the view shortcuts.
-	 * @param layout the layout
-	 */
-	private void addViewShortcuts(IPageLayout layout) {		
-		layout.addShowViewShortcut(IPageLayout.ID_PROJECT_EXPLORER);
-		layout.addShowViewShortcut(IPageLayout.ID_PROBLEM_VIEW);
-		layout.addShowViewShortcut(IPageLayout.ID_OUTLINE);
-		layout.addShowViewShortcut(IPageLayout.ID_PROP_SHEET);
-		layout.addShowViewShortcut(IPageLayout.ID_PROGRESS_VIEW);
-		layout.addShowViewShortcut(IPageLayout.ID_PROJECT_EXPLORER);
-	}
+    /**
+     * Adds view shortcuts to the "Show View" menu.
+     */
+    private void addViewShortcuts(IPageLayout layout) {
+        layout.addShowViewShortcut(IPageLayout.ID_PROJECT_EXPLORER);
+        layout.addShowViewShortcut("eu.kalafatic.views.EvoNavigator");
+        layout.addShowViewShortcut(AIOutputView.ID);
+        layout.addShowViewShortcut(OrchestrationZestView.ID);
+        layout.addShowViewShortcut(InternalBrowserView.ID);
+        layout.addShowViewShortcut(IPageLayout.ID_OUTLINE);
+        layout.addShowViewShortcut(IPageLayout.ID_PROP_SHEET);
+        layout.addShowViewShortcut(IPageLayout.ID_PROGRESS_VIEW);
+    }
 
-	
-	/**
-	 * Adds the new wizard shortcuts.
-	 * @param layout the layout
-	 */
-	private void addNewWizardShortcuts(IPageLayout layout) {
-		layout.addNewWizardShortcut("org.eclipse.ui.wizards.new.folder");
-		layout.addNewWizardShortcut("org.eclipse.ui.wizards.new.file");
-	}
+    /**
+     * Adds new wizard shortcuts to the "New" menu.
+     */
+    private void addNewWizardShortcuts(IPageLayout layout) {
+        layout.addNewWizardShortcut("eu.kalafatic.evolution.view.wizards.NewEvoProjectWizard");
+        layout.addNewWizardShortcut("eu.kalafatic.evolution.view.wizards.AddOrchestrationWizard");
+        layout.addNewWizardShortcut("eu.kalafatic.evolution.view.wizards.NewEvoTaskWizard");
+        layout.addNewWizardShortcut("org.eclipse.ui.wizards.new.folder");
+        layout.addNewWizardShortcut("org.eclipse.ui.wizards.new.file");
+    }
 }
-
