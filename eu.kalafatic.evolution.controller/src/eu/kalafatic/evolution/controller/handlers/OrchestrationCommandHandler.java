@@ -255,6 +255,12 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
     private String executeGitTool(IProject project, Orchestrator orchestrator, String taskName) throws Exception {
         java.io.File workingDir = (project != null) ? project.getLocation().toFile() : null;
         Git gitSettings = orchestrator.getGit();
+        if (gitSettings != null && gitSettings.getLocalPath() != null && !gitSettings.getLocalPath().isEmpty()) {
+            java.io.File subDir = new java.io.File(workingDir, gitSettings.getLocalPath());
+            if (subDir.exists() && subDir.isDirectory()) {
+                workingDir = subDir;
+            }
+        }
         String branch = (gitSettings != null && gitSettings.getBranch() != null && !gitSettings.getBranch().isEmpty()) ? gitSettings.getBranch() : "master";
 
         StringBuilder output = new StringBuilder();
@@ -285,8 +291,16 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         String mavenCmd = os.contains("win") ? "mvn.cmd" : "mvn";
         mavenArgs.add(mavenCmd);
 
-        if (orchestrator.getMaven() != null && !orchestrator.getMaven().getGoals().isEmpty()) {
-            mavenArgs.addAll(orchestrator.getMaven().getGoals());
+        if (orchestrator.getMaven() != null) {
+            if (!orchestrator.getMaven().getGoals().isEmpty()) {
+                mavenArgs.addAll(orchestrator.getMaven().getGoals());
+            } else {
+                mavenArgs.add("clean");
+                mavenArgs.add("install");
+            }
+            if (!orchestrator.getMaven().getProfiles().isEmpty()) {
+                mavenArgs.add("-P" + String.join(",", orchestrator.getMaven().getProfiles()));
+            }
         } else {
             mavenArgs.add("clean");
             mavenArgs.add("install");
@@ -348,10 +362,15 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
     }
 
     public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl) throws Exception {
+        float temperature = 0.7f;
+        if (orchestrator.getLlm() != null) {
+            temperature = orchestrator.getLlm().getTemperature();
+        }
+
         if (orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null && !orchestrator.getOllama().getUrl().isEmpty()) {
-            return sendOllamaRequest(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel(), prompt, proxyUrl);
+            return sendOllamaRequest(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel(), prompt, proxyUrl, temperature);
         } else if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
-            return sendAiChatRequest(orchestrator.getAiChat().getUrl(), orchestrator.getAiChat().getToken(), prompt, proxyUrl);
+            return sendAiChatRequest(orchestrator.getAiChat().getUrl(), orchestrator.getAiChat().getToken(), prompt, proxyUrl, temperature);
         } else if (orchestrator.getNeuronAI() != null) {
             String url = orchestrator.getNeuronAI().getUrl();
             if (url == null || url.isEmpty() || url.equalsIgnoreCase("local")) {
@@ -405,10 +424,11 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return builder.build();
     }
 
-    private String sendAiChatRequest(String url, String token, String prompt, String proxyUrl) throws Exception {
+    private String sendAiChatRequest(String url, String token, String prompt, String proxyUrl, float temperature) throws Exception {
         HttpClient client = getClient(proxyUrl);
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("prompt", prompt);
+        jsonObject.put("temperature", temperature);
         String json = jsonObject.toString();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -420,12 +440,15 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return new JSONObject(response.body()).getString("response");
     }
 
-    private String sendOllamaRequest(String url, String model, String prompt, String proxyUrl) throws Exception {
+    private String sendOllamaRequest(String url, String model, String prompt, String proxyUrl, float temperature) throws Exception {
         HttpClient client = getClient(proxyUrl);
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("model", model);
         jsonObject.put("prompt", prompt);
         jsonObject.put("stream", false);
+        JSONObject options = new JSONObject();
+        options.put("temperature", temperature);
+        jsonObject.put("options", options);
         String json = jsonObject.toString();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))

@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
 public class MavenSettingsPage extends WizardPage {
-    private Text goalsText;
+    private Text goalsText, profilesText;
     private Button skipCheck;
     private ControlDecoration mavenDecorator;
     private Job validationJob;
@@ -43,6 +43,10 @@ public class MavenSettingsPage extends WizardPage {
         goalsText = new Text(container, SWT.BORDER);
         goalsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         goalsText.setText("clean, install");
+
+        new Label(container, SWT.NONE).setText("Profiles (comma separated):");
+        profilesText = new Text(container, SWT.BORDER);
+        profilesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         mavenDecorator = new ControlDecoration(goalsText, SWT.TOP | SWT.LEFT);
         mavenDecorator.setImage(FieldDecorationRegistry.getDefault()
@@ -127,5 +131,6 @@ public class MavenSettingsPage extends WizardPage {
     }
 
     public String getGoals() { return goalsText.getText(); }
+    public String getProfiles() { return profilesText.getText(); }
     public boolean isSkipped() { return skipCheck.getSelection(); }
 }

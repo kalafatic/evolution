@@ -190,6 +190,10 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 if (goals != null && !goals.isEmpty()) {
                     maven.getGoals().addAll(Arrays.asList(goals.split("[,\\s]+")));
                 }
+                String profiles = mavenPage.getProfiles();
+                if (profiles != null && !profiles.isEmpty()) {
+                    maven.getProfiles().addAll(Arrays.asList(profiles.split("[,\\s]+")));
+                }
                 orchestrator.setMaven(maven);
             }
 
