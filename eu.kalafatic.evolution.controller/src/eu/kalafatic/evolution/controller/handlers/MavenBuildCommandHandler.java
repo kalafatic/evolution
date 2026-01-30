@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.controller;
+package eu.kalafatic.evolution.controller.handlers;
 
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;

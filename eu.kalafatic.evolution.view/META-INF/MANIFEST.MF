@@ -29,4 +29,11 @@ Import-Package: eu.kalafatic.evolution.controller;bundle-version="2.6.1",
  org.json
 Automatic-Module-Name: eu.kalafatic.evolution.view
 Bundle-RequiredExecutionEnvironment: JavaSE-17
-Export-Package: eu.kalafatic.evolution.view
+Export-Package: eu.kalafatic.evolution.view,
+ eu.kalafatic.evolution.view.application,
+ eu.kalafatic.evolution.view.nature,
+ eu.kalafatic.evolution.view.perspective,
+ eu.kalafatic.evolution.view.project,
+ eu.kalafatic.evolution.view.provider,
+ eu.kalafatic.evolution.view.views,
+ eu.kalafatic.evolution.view.wizards

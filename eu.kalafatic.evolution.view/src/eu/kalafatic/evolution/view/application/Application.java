@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view;
+package eu.kalafatic.evolution.view.application;
 
 import java.io.File;
 import java.net.URL;

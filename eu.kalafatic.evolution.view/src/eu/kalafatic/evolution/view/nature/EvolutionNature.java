@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view;
+package eu.kalafatic.evolution.view.nature;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectNature;

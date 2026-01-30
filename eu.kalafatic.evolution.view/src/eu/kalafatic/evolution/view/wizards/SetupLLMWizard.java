@@ -106,9 +106,21 @@ public class SetupLLMWizard extends Wizard implements INewWizard {
                 protected IStatus run(IProgressMonitor monitor) {
                     try {
                         if (page.isDownloadRequested()) {
-                            IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject("TestProject");
-                            if (!project.exists()) project.create(null);
-                            if (!project.isOpen()) project.open(null);
+                            IProject project = null;
+                            if (orchestrator != null && orchestrator.eResource() != null) {
+                                org.eclipse.emf.common.util.URI uri = orchestrator.eResource().getURI();
+                                if (uri.isPlatformResource()) {
+                                    org.eclipse.core.runtime.IPath path = new org.eclipse.core.runtime.Path(uri.toPlatformString(true));
+                                    project = ResourcesPlugin.getWorkspace().getRoot().getFile(path).getProject();
+                                }
+                            }
+                            if (project == null) {
+                                IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+                                if (projects.length > 0) {
+                                    project = projects[0];
+                                }
+                            }
+                            if (project == null) return Status.OK_STATUS;
 
                             IFile configFile = project.getFile("ai_config.json");
                             String content = "{\n  \"chat_url\": \"" + page.getChatUrl() + "\",\n  \"llm_model\": \"" + page.getLlmModel() + "\"\n}";

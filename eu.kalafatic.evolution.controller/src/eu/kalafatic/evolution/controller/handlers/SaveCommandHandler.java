@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.controller;
+package eu.kalafatic.evolution.controller.handlers;
 
 import java.io.IOException;
 import java.util.Collections;

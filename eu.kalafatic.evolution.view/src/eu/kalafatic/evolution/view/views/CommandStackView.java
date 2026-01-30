@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view;
+package eu.kalafatic.evolution.view.views;
 
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.widgets.Composite;

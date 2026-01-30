@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view;
+package eu.kalafatic.evolution.view.provider;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;

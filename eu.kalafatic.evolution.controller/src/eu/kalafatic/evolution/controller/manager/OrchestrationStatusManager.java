@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.controller;
+package eu.kalafatic.evolution.controller.manager;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

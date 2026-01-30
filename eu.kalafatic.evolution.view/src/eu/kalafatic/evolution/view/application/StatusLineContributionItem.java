@@ -8,7 +8,7 @@
  * Contributors:
  *     Petr Kalafatic - initial API and implementation
  ******************************************************************************/
-package eu.kalafatic.evolution.view;
+package eu.kalafatic.evolution.view.application;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;

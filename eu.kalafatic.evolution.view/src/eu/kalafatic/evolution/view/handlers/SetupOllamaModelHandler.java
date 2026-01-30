@@ -8,7 +8,7 @@ import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
-import eu.kalafatic.evolution.view.PropertiesView;
+import eu.kalafatic.evolution.view.views.PropertiesView;
 import eu.kalafatic.evolution.view.wizards.SetupOllamaModelWizard;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 

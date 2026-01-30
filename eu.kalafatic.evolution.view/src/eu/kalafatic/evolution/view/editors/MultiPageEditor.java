@@ -39,7 +39,7 @@ import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.PropertySheetPage;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
-import eu.kalafatic.evolution.controller.OrchestrationStatusManager;
+import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.widgets.Canvas;

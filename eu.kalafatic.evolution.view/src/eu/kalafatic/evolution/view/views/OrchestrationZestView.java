@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view;
+package eu.kalafatic.evolution.view.views;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import org.eclipse.emf.common.notify.Adapter;

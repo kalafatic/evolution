@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.controller;
+package eu.kalafatic.evolution.controller.engine;
 
 import eu.kalafatic.evolution.model.orchestration.NeuronType;
 import java.util.Random;

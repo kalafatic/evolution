@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view;
+package eu.kalafatic.evolution.view.perspective;
 
 import org.eclipse.ui.IFolderLayout;
 import org.eclipse.ui.IPageLayout;
@@ -50,6 +50,9 @@ public class EvoPerspective implements IPerspectiveFactory {
 
         // Right: AI Output View
         layout.addStandaloneView(AIOutputView.ID, true, IPageLayout.RIGHT, 0.75f, editorArea);
+
+        // Bottom: Internal Browser
+        layout.addView("eu.kalafatic.evolution.view.views.InternalBrowserView", IPageLayout.BOTTOM, 0.75f, AIOutputView.ID);
     }
     /**
 	 * Adds the action sets.
