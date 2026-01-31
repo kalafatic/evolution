@@ -3,13 +3,17 @@ package eu.kalafatic.evolution.view.wizards;
 import java.util.Arrays;
 import java.util.Collections;
 
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -119,6 +123,13 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 project.open(monitor);
             }
             project.setDescription(desc, monitor);
+
+            // Create default structure
+            createFolder(project, "resources/download", monitor);
+            createFolder(project, "resources/lib", monitor);
+            createFolder(project, "resources/models", monitor);
+            createFolder(project, "git", monitor);
+            createFolder(project, "mvn", monitor);
 
             // Create basic pom.xml
             IFile pomFile = project.getFile("pom.xml");
@@ -267,5 +278,15 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         }
 
         return true;
+    }
+
+    private void createFolder(IContainer container, String path, IProgressMonitor monitor) throws CoreException {
+        IPath folderPath = new Path(path);
+        for (int i = 1; i <= folderPath.segmentCount(); i++) {
+            IFolder folder = container.getFolder(folderPath.uptoSegment(i));
+            if (!folder.exists()) {
+                folder.create(true, true, monitor);
+            }
+        }
     }
 }
