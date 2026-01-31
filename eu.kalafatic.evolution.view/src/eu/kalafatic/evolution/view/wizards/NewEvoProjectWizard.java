@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.view.wizards;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -8,12 +10,16 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -43,8 +49,6 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.nature.EvolutionNature;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 
 public class NewEvoProjectWizard extends Wizard implements INewWizard {
     private IWorkbench workbench;
@@ -250,8 +254,12 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             resource.save(Collections.emptyMap());
             project.refreshLocal(IProject.DEPTH_INFINITE, null);
 
-            // Automatically open project in project view and open editor with project orchestration
+            
             IFile file = project.getFile(fileName);
+   		 // Automatically open project in project view and open editor with project orchestration 
+            
+//            new ProjectManager().openProject(workbench, project, fileName);            
+            
             if (file.exists() && workbench != null) {
                 IWorkbenchWindow dw = workbench.getActiveWorkbenchWindow();
                 if (dw != null) {
@@ -270,6 +278,27 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                     }
                 }
             }
+            
+            Job job = new Job("Background Refresh") {
+                @Override
+                protected IStatus run(IProgressMonitor monitor) {
+                    try {
+                    	project.open(new NullProgressMonitor());
+                    	
+                        // Refresh everything asynchronously
+                        ResourcesPlugin.getWorkspace().getRoot()
+                            .refreshLocal(IResource.DEPTH_INFINITE, monitor);
+                        
+                        return Status.OK_STATUS;
+                    } catch (CoreException e) {
+                        return e.getStatus();
+                    }
+                }
+            };
+
+            // Priority DECORATE tells Eclipse this is a UI-update priority job
+            job.setPriority(Job.DECORATE);
+            job.schedule();
 
         } catch (Exception e) {
             MessageDialog.openError(getShell(), "Error", "Could not create project: " + e.getMessage());

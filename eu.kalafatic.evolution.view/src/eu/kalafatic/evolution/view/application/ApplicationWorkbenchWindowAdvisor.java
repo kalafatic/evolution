@@ -68,6 +68,7 @@ import org.eclipse.ui.part.MarkerTransfer;
 import org.eclipse.ui.part.ResourceTransfer;
 import org.osgi.framework.Version;
 
+import eu.kalafatic.evolution.view.provider.ProjectManager;
 import eu.kalafatic.utils.constants.FCoreImageConstants;
 import eu.kalafatic.utils.dialogs.GeminiSplashHandler;
 import eu.kalafatic.utils.dialogs.GeminiSplashHandler.GSHf;
@@ -186,16 +187,17 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 		//initListeners();
 //		setUpPreferences();
 		
-		createProject(Platform.getProduct().getName());
-		openMultiPageEditor();
+//		createProject(Platform.getProduct().getName());
+//		openMultiPageEditor();
 
-//		Display.getDefault().asyncExec(new Runnable() {
-//			@Override
-//			public void run() {
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
 //				createProject(Platform.getProduct().getName());
 //				openMultiPageEditor();
-//			}
-//		});
+				new ProjectManager().refreshAllProjects();
+			}
+		});
 	}
 /*
 		 * (non-Javadoc)

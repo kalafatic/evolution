@@ -13,6 +13,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.navigator.CommonNavigator;
 
+import eu.kalafatic.evolution.view.provider.ProjectManager;
 import eu.kalafatic.evolution.view.views.OrchestrationZestView;
 import eu.kalafatic.evolution.view.views.TaskTreeView;
 
@@ -42,6 +43,8 @@ public class ReloadOrchestrationHandler extends AbstractHandler {
                 }
             }
         }
+        new ProjectManager().refreshView("org.eclipse.ui.navigator.ProjectExplorer");
+        
         return null;
     }
 
