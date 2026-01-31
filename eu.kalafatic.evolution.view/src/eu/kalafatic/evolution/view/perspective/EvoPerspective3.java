@@ -14,7 +14,7 @@ import eu.kalafatic.evolution.view.views.OrchestrationZestView;
  * Organized with Navigators on the left, AI Output below them,
  * and the main editor area flanked by the Orchestration Graph and Internal Browser.
  */
-public class EvoPerspective implements IPerspectiveFactory {
+public class EvoPerspective3 implements IPerspectiveFactory {
 
     public static final String ID = "eu.kalafatic.evolution.view.evoPerspective";
 
