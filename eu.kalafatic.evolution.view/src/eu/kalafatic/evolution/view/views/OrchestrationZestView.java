@@ -1,6 +1,9 @@
 package eu.kalafatic.evolution.view.views;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.provider.OrchestrationGraphContentProvider;
+import eu.kalafatic.evolution.view.provider.OrchestrationGraphLabelProvider;
+
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.impl.AdapterImpl;
@@ -21,6 +24,7 @@ import org.eclipse.zest.layouts.LayoutStyles;
 import org.eclipse.zest.layouts.algorithms.*;
 
 import org.eclipse.draw2d.IFigure;
+import org.eclipse.draw2d.ScalableFigure;
 import org.eclipse.draw2d.Viewport;
 import org.eclipse.gef.editparts.ZoomManager;
 import org.eclipse.gef.ui.actions.ZoomComboContributionItem;
@@ -61,7 +65,7 @@ public class OrchestrationZestView extends ViewPart implements ISelectionListene
     private void setupZoomSupport() {
         IFigure contents = viewer.getGraphControl().getContents();
         Viewport viewport = viewer.getGraphControl().getViewport();
-        zoomManager = new ZoomManager(contents, viewport);
+        zoomManager = new ZoomManager((ScalableFigure) contents, viewport);
 
         double[] zoomLevels = { 0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0 };
         zoomManager.setZoomLevels(zoomLevels);

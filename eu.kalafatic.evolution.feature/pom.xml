@@ -2,17 +2,16 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
+	<parent>
+		<groupId>eu.kalafatic.evolution</groupId>
+		<artifactId>eu.kalafatic.evolution.aggregator</artifactId>
+		<version>2.6.1-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
 	<artifactId>eu.kalafatic.evolution.feature</artifactId>
-	<groupId>eu.kalafatic.evolution</groupId>
-	<version>2.6.1-SNAPSHOT</version>
 
 	<packaging>eclipse-feature</packaging>
 
-	<properties>
-		<tycho.targetPlatform>platform</tycho.targetPlatform>
-		<tycho.version>4.0.5</tycho.version>
-	</properties>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<resources>
@@ -23,86 +22,6 @@
 				</excludes>
 			</resource>
 		</resources>
-
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.eclipse.tycho</groupId>
-					<artifactId>tycho-p2-director-plugin</artifactId>
-					<version>${tycho.version}</version>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-
-		<plugins>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
-				<version>${tycho.version}</version>
-				<extensions>true</extensions>
-			</plugin>
-			<!--Enable the replacement of the SNAPSHOT version in the final product configuration-->
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-packaging-plugin</artifactId>
-				<version>${tycho.version}</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<id>package-feature</id>
-						<configuration>
-							<finalName>
-								${project.artifactId}_${unqualifiedVersion}.${buildQualifier}</finalName>
-						</configuration>
-					</execution>
-
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>target-platform-configuration</artifactId>
-				<version>${tycho.version}</version>
-				<configuration>
-					<executionEnvironment>JavaSE-21</executionEnvironment>
-				</configuration>
-			</plugin>
-
-		</plugins>
-
 	</build>
-	<repositories>
-		<repository>
-			<id>eclipse</id>
-			<layout>p2</layout>
-			<url>https://download.eclipse.org/releases/2025-12</url>
-		</repository>
-		
-		<repository>
-        <id>eclipse-orbit</id>
-        <layout>p2</layout>
-        <url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/latest/</url>
-    </repository>
-	</repositories>
-	<dependencies>
-
-		<dependency>
-			<groupId>eu.kalafatic.evolution</groupId>
-			<artifactId>eu.kalafatic.evolution.model</artifactId>
-			<version>2.6.1-SNAPSHOT</version>
-			<type>maven-plugin</type>
-		</dependency>
-		<dependency>
-			<groupId>eu.kalafatic.evolution</groupId>
-			<artifactId>eu.kalafatic.evolution.view</artifactId>
-			<version>2.6.1-SNAPSHOT</version>
-			<type>maven-plugin</type>
-		</dependency>
-		<dependency>
-			<groupId>eu.kalafatic.evolution</groupId>
-			<artifactId>eu.kalafatic.evolution.controller</artifactId>
-			<version>2.6.1-SNAPSHOT</version>
-			<type>maven-plugin</type>
-		</dependency>
-	</dependencies>
 
 </project>

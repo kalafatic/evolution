@@ -14,6 +14,8 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.model.orchestration.impl.TaskImpl;
+import eu.kalafatic.evolution.view.provider.TaskContentProvider;
+import eu.kalafatic.evolution.view.provider.TaskLabelProvider;
 
 
 public class TaskTreeView extends ViewPart {
