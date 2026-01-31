@@ -5,7 +5,6 @@ Bundle-SymbolicName: eu.kalafatic.evolution.module;singleton:=true
 Bundle-Version: 2.6.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Import-Package: com.ibm.icu.text;version="[0.0.0,1.0.0)",
- eu.kalafatic.utils.application;version="[0.0.0,1.0.0)",
  org.apache.commons.logging,
  org.eclipse.compare,
  org.eclipse.compare.structuremergeviewer,
