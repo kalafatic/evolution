@@ -76,7 +76,7 @@ public class ExplorerModelManager extends AModelManager {
 			// PREFERENCES.get(ECorePreferences.MODELS_LOC.getName(),
 			// (String) ECorePreferences.MODELS_LOC.getDef());
 
-			String models = "C:\\GE\\workspace\\models";
+			String models = "./models";
 
 			super.initModel(models, "Explorer", MODEL_NAME);
 
