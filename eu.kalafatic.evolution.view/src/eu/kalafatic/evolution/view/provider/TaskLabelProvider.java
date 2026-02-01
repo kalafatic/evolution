@@ -15,7 +15,8 @@ public class TaskLabelProvider extends LabelProvider {
     public String getText(Object element) {
         if (element instanceof Task) {
             Task task = (Task) element;
-            return task.getName();
+            String status = task.getStatus() != null ? "[" + task.getStatus().toString() + "] " : "";
+            return status + (task.getName() != null ? task.getName() : (task.getId() != null ? task.getId() : "Task"));
         }
         return super.getText(element);
     }

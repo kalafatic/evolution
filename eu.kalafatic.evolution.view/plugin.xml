@@ -106,15 +106,32 @@
             labelProvider="eu.kalafatic.evolution.view.provider.OrchestrationNavigatorLabelProvider"
             name="Orchestrations">
          <triggerPoints>
-            <and>
-               <instanceof
-                     value="org.eclipse.core.resources.IProject">
-               </instanceof>
-               <test
-                     property="org.eclipse.core.resources.projectNature"
-                     value="eu.kalafatic.evolution.view.evolutionNature">
-               </test>
-            </and>
+            <or>
+               <and>
+                  <instanceof
+                        value="org.eclipse.core.resources.IProject">
+                  </instanceof>
+                  <test
+                        property="org.eclipse.core.resources.projectNature"
+                        value="eu.kalafatic.evolution.view.evolutionNature">
+                  </test>
+               </and>
+               <and>
+                  <instanceof
+                        value="org.eclipse.core.resources.IFile">
+                  </instanceof>
+                  <or>
+                     <test
+                           property="org.eclipse.core.resources.extension"
+                           value="evo">
+                     </test>
+                     <test
+                           property="org.eclipse.core.resources.extension"
+                           value="xml">
+                     </test>
+                  </or>
+               </and>
+            </or>
          </triggerPoints>
          <possibleChildren>
             <or>
@@ -126,6 +143,30 @@
                </instanceof>
                <instanceof
                      value="eu.kalafatic.evolution.model.orchestration.Agent">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Task">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Git">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Maven">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.LLM">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Compiler">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Ollama">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.AiChat">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.NeuronAI">
                </instanceof>
             </or>
          </possibleChildren>
@@ -191,6 +232,9 @@
             </contentExtension>
             <contentExtension
                   pattern="org.eclipse.ui.navigator.resources.workingSets">
+            </contentExtension>
+            <contentExtension
+                  pattern="eu.kalafatic.evolution.view.orchestrationContent">
             </contentExtension>
          </includes>
          <excludes>
