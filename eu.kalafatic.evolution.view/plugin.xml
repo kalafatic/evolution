@@ -112,7 +112,7 @@
                      value="org.eclipse.core.resources.IProject">
                </instanceof>
                <instanceof
-                     value="org.eclipse.core.resources.IFilet">
+                     value="org.eclipse.core.resources.IFile">
                </instanceof>
             </or>
          </triggerPoints>
@@ -126,6 +126,30 @@
                </instanceof>
                <instanceof
                      value="eu.kalafatic.evolution.model.orchestration.Agent">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Task">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Git">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Maven">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.LLM">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Compiler">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.Ollama">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.AiChat">
+               </instanceof>
+               <instanceof
+                     value="eu.kalafatic.evolution.model.orchestration.NeuronAI">
                </instanceof>
             </or>
          </possibleChildren>
@@ -191,6 +215,9 @@
             </contentExtension>
             <contentExtension
                   pattern="org.eclipse.ui.navigator.resources.workingSets">
+            </contentExtension>
+            <contentExtension
+                  pattern="eu.kalafatic.evolution.view.orchestrationContent">
             </contentExtension>
          </includes>
          <excludes>

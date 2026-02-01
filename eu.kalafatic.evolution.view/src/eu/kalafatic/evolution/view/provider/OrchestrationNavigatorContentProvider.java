@@ -11,8 +11,19 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.nature.EvolutionNature;
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.Git;
+import eu.kalafatic.evolution.model.orchestration.Maven;
+import eu.kalafatic.evolution.model.orchestration.LLM;
+import eu.kalafatic.evolution.model.orchestration.Compiler;
+import eu.kalafatic.evolution.model.orchestration.Ollama;
+import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.NeuronAI;
+
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,6 +32,11 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
 
     private ResourceSet resourceSet = new ResourceSetImpl();
 
+    public OrchestrationNavigatorContentProvider() {
+        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("evo", new XMIResourceFactoryImpl());
+        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xml", new XMIResourceFactoryImpl());
+    }
+
     @Override
     public Object[] getElements(Object inputElement) {
         return getChildren(inputElement);
@@ -28,7 +44,12 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
 
     @Override
     public Object[] getChildren(Object parentElement) {
-        if (parentElement instanceof IProject) {
+        if (parentElement instanceof IFile) {
+            EvoProject ep = loadEvoProject((IFile) parentElement);
+            if (ep != null) {
+                return new Object[] { ep };
+            }
+        } else if (parentElement instanceof IProject) {
             IProject project = (IProject) parentElement;
             try {
                 if (project.isOpen() && project.hasNature(EvolutionNature.NATURE_ID)) {
@@ -50,7 +71,20 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
         } else if (parentElement instanceof EvoProject) {
             return ((EvoProject) parentElement).getOrchestrations().toArray();
         } else if (parentElement instanceof Orchestrator) {
-            return ((Orchestrator) parentElement).getAgents().toArray();
+            Orchestrator orch = (Orchestrator) parentElement;
+            List<Object> children = new ArrayList<>();
+            children.addAll(orch.getAgents());
+            children.addAll(orch.getTasks());
+            if (orch.getGit() != null) children.add(orch.getGit());
+            if (orch.getMaven() != null) children.add(orch.getMaven());
+            if (orch.getLlm() != null) children.add(orch.getLlm());
+            if (orch.getCompiler() != null) children.add(orch.getCompiler());
+            if (orch.getOllama() != null) children.add(orch.getOllama());
+            if (orch.getAiChat() != null) children.add(orch.getAiChat());
+            if (orch.getNeuronAI() != null) children.add(orch.getNeuronAI());
+            return children.toArray();
+        } else if (parentElement instanceof Task) {
+            return ((Task) parentElement).getSubTasks().toArray();
         }
         return new Object[0];
     }
@@ -95,6 +129,9 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
 
     @Override
     public boolean hasChildren(Object element) {
+        if (element instanceof IFile) {
+            return loadEvoProject((IFile) element) != null;
+        }
         if (element instanceof IProject) {
             IProject project = (IProject) element;
             try {
@@ -102,6 +139,9 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
             } catch (CoreException e) {
                 return false;
             }
+        }
+        if (element instanceof Task) {
+            return !((Task) element).getSubTasks().isEmpty();
         }
         return getChildren(element).length > 0;
     }
