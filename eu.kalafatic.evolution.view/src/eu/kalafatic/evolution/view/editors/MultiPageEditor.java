@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors;
 
 
+import java.io.File;
 import java.io.StringWriter;
 import java.text.Collator;
 import java.util.List;
@@ -37,6 +38,13 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.PropertySheetPage;
+
+import com.github.tjake.jlama.model.AbstractModel;
+import com.github.tjake.jlama.model.ModelSupport;
+import com.github.tjake.jlama.safetensors.DType;
+import com.github.tjake.jlama.safetensors.prompt.PromptContext;
+import com.github.tjake.jlama.util.Downloader;
+
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
@@ -94,12 +102,18 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		GridData requestGridData = new GridData(GridData.FILL_BOTH);
         requestGridData.heightHint = 100;
 		requestText.setLayoutData(requestGridData);
+		
+		// Loading a local GGUF model file
+//		Model model = Model.load("path/to/model.gguf");
+//		String output = model.generate("Hello world!");
 
 		Button sendButton = new Button(composite, SWT.PUSH);
 		sendButton.setText("Send");
         Runnable sendAction = () -> {
             // Dummy action for now
-            responseText.setText("Response to: " + requestText.getText());
+//            responseText.setText("Response to: " + requestText.getText());
+            
+        	responseText.setText(jlama(requestText.getText()));
         };
         sendButton.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -131,6 +145,56 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 
 		int index = addPage(composite);
 		setPageText(index, "AI Chat");
+	}
+	
+	private String jlama(String request) {
+		String modelName = "tjake/Llama-3.2-1B-Instruct-JQ4"; // A tiny, fast model
+        String workingDir = "./models";
+
+        // 1. Download model from Hugging Face if not present
+//        File modelPath = new Downloader(workingDir, modelName).huggingFaceModel();
+        
+        File modelPath = new File("c:\\Users\\petrk\\Documents\\Projects\\AI\\evo\\Qwen3-0.6B.Q2_K.gguf");
+
+        // 2. Load the model into memory
+        // DType.I8 uses 8-bit quantization to save RAM
+        AbstractModel model = ModelSupport.loadModel(modelPath, DType.F32, DType.I8);
+
+        // 3. Create a prompt with a System Message
+//        PromptContext ctx = model.promptSupport().get().builder()
+//                .addSystemMessage("You are a helpful assistant.")
+//                .addUserMessage("Explain what a Java Vector is in one sentence.")
+//                .build();
+
+        // 4. Generate and print the response
+//        System.out.print("AI Response: ");
+//        String response = model.generateBuilder()
+//                .promptContext(ctx)
+//                .ntokens(128)      // Max length of response
+//                .temperature(0.7f) // Creativity (0.0 is robotic, 1.0 is creative)
+//                // This callback prints tokens as they are generated (streaming)
+//                .onTokenWithTimings((token, time) -> System.out.print(token))
+//                .generate();
+        
+        return getAiResponse(model, request);
+	}
+	
+	public String getAiResponse(AbstractModel model, String userQuery) {
+	    // 1. Build the context
+	    PromptContext ctx = model.promptSupport().get().builder()
+	            .addUserMessage(userQuery)
+	            .build();
+
+	    // 2. Generate and capture the response
+	    // We remove .onTokenWithTimings if we don't want console output
+	    String result = model.generateBuilder()
+	            .promptContext(ctx)
+	            .ntokens(256)
+	            .temperature(0.7f)
+	            .generate()
+	            .toString(); // Jlama's response object implements toString() for the result text
+
+	    return result.trim();
 	}
 	/**
 	 * Creates page 1 of the multi-page editor,

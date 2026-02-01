@@ -250,7 +250,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
             evoProject.getOrchestrations().add(orchestrator);
             resource.getContents().add(evoProject);
-
+                       
             resource.save(Collections.emptyMap());
             project.refreshLocal(IProject.DEPTH_INFINITE, null);
 
