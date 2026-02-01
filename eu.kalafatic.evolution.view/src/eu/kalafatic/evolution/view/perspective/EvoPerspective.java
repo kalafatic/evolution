@@ -31,6 +31,7 @@ public class EvoPerspective implements IPerspectiveFactory {
         // Left column - Bottom: AI Output View
         IFolderLayout bottomLeft = layout.createFolder(EFolder.BOTTOM_LEFT.ID, IPageLayout.BOTTOM, 0.40f, EFolder.TOP_LEFT.ID);
         bottomLeft.addView(AIOutputView.ID);
+        bottomLeft.addView(IPageLayout.ID_PROP_SHEET);
 
         // Main Area - Top: Orchestration Zest View (Graph)
     	IFolderLayout center = layout.createFolder(EFolder.CENTER.ID, IPageLayout.TOP, 0.40f, IPageLayout.ID_EDITOR_AREA);

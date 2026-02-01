@@ -85,7 +85,7 @@
             name="AI Output">
       </view>
       <view
-            class="org.eclipse.ui.navigator.CommonNavigator"
+            class="eu.kalafatic.evolution.view.views.EvoNavigator"
             icon="icons/eclipse16.png"
             id="eu.kalafatic.views.EvoNavigator"
             name="Evo Navigator">
@@ -106,31 +106,14 @@
             labelProvider="eu.kalafatic.evolution.view.provider.OrchestrationNavigatorLabelProvider"
             name="Orchestrations">
          <triggerPoints>
+           
             <or>
-               <and>
-                  <instanceof
-                        value="org.eclipse.core.resources.IProject">
-                  </instanceof>
-                  <test
-                        property="org.eclipse.core.resources.projectNature"
-                        value="eu.kalafatic.evolution.view.evolutionNature">
-                  </test>
-               </and>
-               <and>
-                  <instanceof
-                        value="org.eclipse.core.resources.IFile">
-                  </instanceof>
-                  <or>
-                     <test
-                           property="org.eclipse.core.resources.extension"
-                           value="evo">
-                     </test>
-                     <test
-                           property="org.eclipse.core.resources.extension"
-                           value="xml">
-                     </test>
-                  </or>
-               </and>
+            <instanceof
+                     value="org.eclipse.core.resources.IProject">
+               </instanceof>
+               <instanceof
+                     value="org.eclipse.core.resources.IFile">
+               </instanceof>
             </or>
          </triggerPoints>
          <possibleChildren>
