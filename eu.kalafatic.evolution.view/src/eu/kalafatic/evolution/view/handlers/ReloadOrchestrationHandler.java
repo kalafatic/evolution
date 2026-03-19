@@ -43,8 +43,8 @@ public class ReloadOrchestrationHandler extends AbstractHandler {
                 }
             }
         }
-        new ProjectManager().refreshView("org.eclipse.ui.navigator.ProjectExplorer");
-        
+        //new ProjectManager().refreshView("org.eclipse.ui.navigator.ProjectExplorer");
+        new ProjectManager().refreshOpenProjects();
         return null;
     }
 

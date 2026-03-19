@@ -1,0 +1,18 @@
+# General
+org.eclipse.osgi/debug=true
+org.eclipse.osgi/resolver= true
+org.eclipse.osgi/debug/activation=true       # bundle activation
+org.eclipse.osgi/debug/extension= true       # extension point loading
+
+# Navigator / CNF specific
+org.eclipse.ui.navigator/debug = true
+org.eclipse.ui.navigator/content = true
+org.eclipse.ui.navigator/resourceContent = true
+
+# Your plugin
+eu.kalafatic.evolution.view/debug = true
+eu.kalafatic.evolution.view/contentProvider = true   # if you define custom options
+
+# Resources / natures
+org.eclipse.core.resources/debug = true
+org.eclipse.core.resources/natures = true
