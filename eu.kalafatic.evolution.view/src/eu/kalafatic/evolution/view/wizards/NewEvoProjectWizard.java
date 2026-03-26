@@ -30,10 +30,12 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IPageLayout;
+import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.WizardNewProjectCreationPage;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.wizards.newresource.BasicNewResourceWizard;
@@ -289,6 +291,21 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                         ResourcesPlugin.getWorkspace().getRoot()
                             .refreshLocal(IResource.DEPTH_INFINITE, monitor);
                         
+                        // Explicitly refresh Evo Navigator
+                        Display.getDefault().asyncExec(() -> {
+                            IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+                            if (page != null) {
+                                try {
+                                    IViewPart view = page.showView("eu.kalafatic.views.EvoNavigator");
+                                    if (view instanceof eu.kalafatic.evolution.view.views.EvoNavigator) {
+                                        ((eu.kalafatic.evolution.view.views.EvoNavigator) view).refresh();
+                                    }
+                                } catch (PartInitException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+
                         return Status.OK_STATUS;
                     } catch (CoreException e) {
                         return e.getStatus();

@@ -39,6 +39,13 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
 
     @Override
     public Object[] getElements(Object inputElement) {
+        // Clear resource set on full refresh to ensure we reload from disk
+        if (inputElement instanceof org.eclipse.core.resources.IWorkspaceRoot) {
+            for (Resource res : new ArrayList<>(resourceSet.getResources())) {
+                res.unload();
+            }
+            resourceSet.getResources().clear();
+        }
         return getChildren(inputElement);
     }
 

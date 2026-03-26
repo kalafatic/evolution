@@ -460,6 +460,11 @@
                   label="Refresh View (Reload)"
                   style="push">
             </command>
+            <command
+                  commandId="eu.kalafatic.evolution.view.refreshNavigator"
+                  label="Refresh Navigator"
+                  style="push">
+            </command>
             <separator
                   name="ioSeparator"
                   visible="true">
@@ -603,6 +608,10 @@
             id="eu.kalafatic.evolution.view.reloadOrchestration"
             name="Reload Orchestration">
       </command>
+      <command
+            id="eu.kalafatic.evolution.view.refreshNavigator"
+            name="Refresh Navigator">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -637,6 +646,10 @@
       <handler
             class="eu.kalafatic.evolution.view.handlers.ReloadOrchestrationHandler"
             commandId="eu.kalafatic.evolution.view.reloadOrchestration">
+      </handler>
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.RefreshNavigatorHandler"
+            commandId="eu.kalafatic.evolution.view.refreshNavigator">
       </handler>
    </extension>
    <extension
