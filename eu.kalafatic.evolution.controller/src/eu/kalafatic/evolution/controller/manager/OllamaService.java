@@ -14,6 +14,7 @@ import java.util.List;
 public class OllamaService {
 
     private final String url;
+    private final String baseUrl;
     private final String model;
     private final HttpClient httpClient;
     private final List<Message> messages = new ArrayList<>();
@@ -26,11 +27,11 @@ public class OllamaService {
     private float repeatPenalty = 1.1f;
 
     public OllamaService(String url, String model) {
-        String baseUrl = url != null ? url : "http://localhost:11434";
-        if (baseUrl.endsWith("/api/chat")) {
-            this.url = baseUrl;
+        this.baseUrl = url != null ? url : "http://localhost:11434";
+        if (this.baseUrl.endsWith("/api/chat")) {
+            this.url = this.baseUrl;
         } else {
-            this.url = baseUrl + (baseUrl.endsWith("/") ? "" : "/") + "api/chat";
+            this.url = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/chat";
         }
         this.model = model != null ? model : "llama3.2:3b";
         this.httpClient = HttpClient.newBuilder()
@@ -64,6 +65,24 @@ public class OllamaService {
     public OllamaService setRepeatPenalty(float repeatPenalty) {
         this.repeatPenalty = repeatPenalty;
         return this;
+    }
+
+    /**
+     * Pings the Ollama server to check if it is reachable.
+     * @return true if reachable, false otherwise.
+     */
+    public boolean ping() {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(this.baseUrl))
+                    .timeout(Duration.ofSeconds(2))
+                    .GET()
+                    .build();
+            HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+            return response.statusCode() == 200;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public String chat(String userInput) throws Exception {
