@@ -77,6 +77,9 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
     private Orchestrator orchestrator;
     private Canvas statusCanvas;
     private OllamaService ollamaService;
+
+    private org.eclipse.swt.widgets.Label ollamaStatusLabel;
+    private org.eclipse.swt.widgets.Label modelStatusLabel;
 	/**
 	 * Creates a multi-page editor example.
 	 */
@@ -180,10 +183,65 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		responseText.setLayoutData(responseGridData);
         responseText.setEditable(false);
 
+        // Status Bar
+        Composite statusBar = new Composite(composite, SWT.NONE);
+        statusBar.setLayout(new GridLayout(4, false));
+        statusBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new org.eclipse.swt.widgets.Label(statusBar, SWT.NONE).setText("Ollama Status:");
+        ollamaStatusLabel = new org.eclipse.swt.widgets.Label(statusBar, SWT.NONE);
+        ollamaStatusLabel.setText("Unknown");
+        ollamaStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new org.eclipse.swt.widgets.Label(statusBar, SWT.NONE).setText("Model:");
+        modelStatusLabel = new org.eclipse.swt.widgets.Label(statusBar, SWT.NONE);
+        modelStatusLabel.setText("Not Configured");
+        modelStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        updateStatusInfo();
 
 		int index = addPage(composite);
 		setPageText(index, "AI Chat");
 	}
+
+    private void updateStatusInfo() {
+        if (orchestrator != null && orchestrator.getOllama() != null) {
+            String url = orchestrator.getOllama().getUrl();
+            String model = orchestrator.getOllama().getModel();
+
+            if (ollamaService == null) {
+                float temperature = 0.7f;
+                if (orchestrator.getLlm() != null) {
+                    temperature = orchestrator.getLlm().getTemperature();
+                }
+                ollamaService = new OllamaService(url, model)
+                        .setTemperature(temperature)
+                        .setNumPredict(1024)
+                        .setTopP(0.9f)
+                        .setTopK(40)
+                        .setRepeatPenalty(1.1f);
+            }
+
+            modelStatusLabel.setText(model != null ? model : "Not Configured");
+
+            new Thread(() -> {
+                boolean isOnline = ollamaService.ping();
+                Display.getDefault().asyncExec(() -> {
+                    if (ollamaStatusLabel.isDisposed()) return;
+                    if (isOnline) {
+                        ollamaStatusLabel.setText("Online (" + url + ")");
+                        ollamaStatusLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_GREEN));
+                    } else {
+                        ollamaStatusLabel.setText("Offline (" + url + ")");
+                        ollamaStatusLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_RED));
+                    }
+                });
+            }).start();
+        } else {
+            ollamaStatusLabel.setText("Not Configured");
+            modelStatusLabel.setText("Not Configured");
+        }
+    }
 	
 	/**
 	 * Creates page 1 of the multi-page editor,
@@ -379,6 +437,9 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	 */
 	protected void pageChange(int newPageIndex) {
 		super.pageChange(newPageIndex);
+		if (newPageIndex == 0) {
+            updateStatusInfo();
+        }
 		if (newPageIndex == 3) {
 			sortWords();
 		}
