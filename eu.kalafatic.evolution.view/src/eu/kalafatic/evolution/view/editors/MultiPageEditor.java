@@ -113,11 +113,22 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
             if (ollamaService == null) {
                 String url = null;
                 String model = null;
-                if (orchestrator != null && orchestrator.getOllama() != null) {
-                    url = orchestrator.getOllama().getUrl();
-                    model = orchestrator.getOllama().getModel();
+                float temperature = 0.7f;
+                if (orchestrator != null) {
+                    if (orchestrator.getOllama() != null) {
+                        url = orchestrator.getOllama().getUrl();
+                        model = orchestrator.getOllama().getModel();
+                    }
+                    if (orchestrator.getLlm() != null) {
+                        temperature = orchestrator.getLlm().getTemperature();
+                    }
                 }
-                ollamaService = new OllamaService(url, model);
+                ollamaService = new OllamaService(url, model)
+                        .setTemperature(temperature)
+                        .setNumPredict(1024)
+                        .setTopP(0.9f)
+                        .setTopK(40)
+                        .setRepeatPenalty(1.1f);
             }
 
             String currentResponse = responseText.getText();

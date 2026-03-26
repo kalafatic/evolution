@@ -21,12 +21,22 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.ide,
  org.eclipse.emf.ecore.xmi,
  eu.kalafatic.utils;bundle-version="2.6.1",
+<<<<<<< HEAD
+=======
+ eu.kalafatic.evolution.model;bundle-version="2.6.1",
+ eu.kalafatic.evolution.controller;bundle-version="2.6.1",
+>>>>>>> branch 'master' of https://github.com/kalafatic/evolution.git
  org.eclipse.swt,
  org.eclipse.jface,
  org.eclipse.ui.workbench,
  org.eclipse.gef,
+<<<<<<< HEAD
  org.eclipse.equinox.p2.ui;bundle-version="2.8.1000",
  eu.kalafatic.evolution.controller;bundle-version="2.6.1";visibility:=reexport
+=======
+ org.json,
+ org.eclipse.equinox.p2.ui;bundle-version="2.8.1000"
+>>>>>>> branch 'master' of https://github.com/kalafatic/evolution.git
 Automatic-Module-Name: eu.kalafatic.evolution.view
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: eu.kalafatic.evolution.view.application,
