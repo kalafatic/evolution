@@ -85,6 +85,37 @@ public class OllamaService {
         }
     }
 
+    /**
+     * Fetches the Ollama version.
+     * @return version string or "Unknown"
+     */
+    public String getVersion() {
+        try {
+            String versionUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/version";
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(versionUrl))
+                    .timeout(Duration.ofSeconds(2))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                String body = response.body();
+                // Simple parsing for {"version": "0.1.2"}
+                int start = body.indexOf("\"version\":\"");
+                if (start != -1) {
+                    start += 11;
+                    int end = body.indexOf("\"", start);
+                    if (end != -1) {
+                        return body.substring(start, end);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // silent fail
+        }
+        return "Unknown";
+    }
+
     public String chat(String userInput) throws Exception {
         messages.add(new Message("user", userInput));
 
