@@ -39,11 +39,7 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.PropertySheetPage;
 
-import com.github.tjake.jlama.model.AbstractModel;
-import com.github.tjake.jlama.model.ModelSupport;
-import com.github.tjake.jlama.safetensors.DType;
-import com.github.tjake.jlama.safetensors.prompt.PromptContext;
-import com.github.tjake.jlama.util.Downloader;
+import eu.kalafatic.evolution.controller.manager.OllamaService;
 
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
@@ -80,6 +76,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 
     private Orchestrator orchestrator;
     private Canvas statusCanvas;
+    private OllamaService ollamaService;
 	/**
 	 * Creates a multi-page editor example.
 	 */
@@ -110,10 +107,40 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		Button sendButton = new Button(composite, SWT.PUSH);
 		sendButton.setText("Send");
         Runnable sendAction = () -> {
-            // Dummy action for now
-//            responseText.setText("Response to: " + requestText.getText());
+            String request = requestText.getText().trim();
+            if (request.isEmpty()) return;
             
-        	responseText.setText(jlama(requestText.getText()));
+            if (ollamaService == null) {
+                String url = null;
+                String model = null;
+                if (orchestrator != null && orchestrator.getOllama() != null) {
+                    url = orchestrator.getOllama().getUrl();
+                    model = orchestrator.getOllama().getModel();
+                }
+                ollamaService = new OllamaService(url, model);
+            }
+
+            String currentResponse = responseText.getText();
+            responseText.setText(currentResponse + (currentResponse.isEmpty() ? "" : "\n\n") + "You: " + request + "\n\nOllama: thinking...");
+            requestText.setText("");
+
+            new Thread(() -> {
+                try {
+                    String reply = ollamaService.chat(request);
+                    Display.getDefault().asyncExec(() -> {
+                        String updatedResponse = responseText.getText();
+                        updatedResponse = updatedResponse.replace("Ollama: thinking...", "Ollama: " + reply);
+                        responseText.setText(updatedResponse);
+                        responseText.setSelection(responseText.getCharCount());
+                    });
+                } catch (Exception e) {
+                    Display.getDefault().asyncExec(() -> {
+                        String updatedResponse = responseText.getText();
+                        updatedResponse = updatedResponse.replace("Ollama: thinking...", "Error: " + e.getMessage());
+                        responseText.setText(updatedResponse);
+                    });
+                }
+            }).start();
         };
         sendButton.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -147,42 +174,6 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		setPageText(index, "AI Chat");
 	}
 	
-	private String jlama(String request) {
-		try {
-			String modelName = "tjake/Llama-3.2-1B-Instruct-JQ4"; // A tiny, fast model
-			String workingDir = "./models";
-
-			// 1. Download model from Hugging Face if not present
-			File modelPath = new Downloader(workingDir, modelName).huggingFaceModel();
-
-			// 2. Load the model into memory
-			// DType.I8 uses 8-bit quantization to save RAM
-			AbstractModel model = ModelSupport.loadModel(modelPath, DType.F32, DType.I8);
-
-			return getAiResponse(model, request);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return "Error: " + e.getMessage();
-		}
-	}
-	
-	public String getAiResponse(AbstractModel model, String userQuery) {
-	    // 1. Build the context
-	    PromptContext ctx = model.promptSupport().get().builder()
-	            .addUserMessage(userQuery)
-	            .build();
-
-	    // 2. Generate and capture the response
-	    // We remove .onTokenWithTimings if we don't want console output
-	    String result = model.generateBuilder()
-	            .promptContext(ctx)
-	            .ntokens(256)
-	            .temperature(0.7f)
-	            .generate()
-	            .toString(); // Jlama's response object implements toString() for the result text
-
-	    return result.trim();
-	}
 	/**
 	 * Creates page 1 of the multi-page editor,
 	 * which contains a text editor.
