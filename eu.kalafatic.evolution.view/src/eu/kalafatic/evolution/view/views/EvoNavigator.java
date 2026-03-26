@@ -64,6 +64,11 @@ public class EvoNavigator extends CommonNavigator {
 		super();
 	}
 
+    @Override
+    protected Object getInitialInput() {
+        return ResourcesPlugin.getWorkspace().getRoot();
+    }
+
 	@Override
 	public void createPartControl(final Composite parent) {
 		super.createPartControl(parent);
