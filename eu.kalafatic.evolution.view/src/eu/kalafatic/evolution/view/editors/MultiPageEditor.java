@@ -35,6 +35,7 @@ import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.part.MultiPageEditorPart;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.PropertySheetPage;
@@ -43,6 +44,14 @@ import eu.kalafatic.evolution.controller.manager.OllamaService;
 
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
@@ -66,7 +75,7 @@ import eu.kalafatic.evolution.model.orchestration.Agent;
  * <li>page 3 shows the words in page 1 in sorted order
  * </ul>
  */
-public class MultiPageEditor extends MultiPageEditorPart implements IResourceChangeListener{
+public class MultiPageEditor extends MultiPageEditorPart implements IResourceChangeListener, ISelectionListener {
 	
 	/** The Constant ID. */
 	public static final String ID = "eu.kalafatic.evolution.view.editors.MultiPageEditor";
@@ -88,6 +97,8 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 
     private org.eclipse.swt.widgets.Label ollamaStatusLabel;
     private org.eclipse.swt.widgets.Label modelStatusLabel;
+
+    private ResourceSet resourceSet = new ResourceSetImpl();
 
     // Properties fields
     private Text orchIdText;
@@ -113,6 +124,8 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	public MultiPageEditor() {
 		super();
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(this);
+        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("evo", new XMIResourceFactoryImpl());
+        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xml", new XMIResourceFactoryImpl());
 	}
 	/**
 	 * Creates page 0 for AI Chat.
@@ -567,6 +580,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	 */
 	public void dispose() {
 		ResourcesPlugin.getWorkspace().removeResourceChangeListener(this);
+        getSite().getWorkbenchWindow().getSelectionService().removeSelectionListener(this);
 		super.dispose();
 	}
 	/**
@@ -606,6 +620,11 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
         if (editorInput instanceof OrchestratorEditorInput) {
             this.orchestrator = ((OrchestratorEditorInput) editorInput).getOrchestrator();
             setPartName(editorInput.getName());
+        } else if (editorInput instanceof IFileEditorInput) {
+            this.orchestrator = loadOrchestratorFromFile(((IFileEditorInput) editorInput).getFile());
+            if (this.orchestrator != null) {
+                setPartName(this.orchestrator.getName());
+            }
         }
 
         // If we have an orchestrator, set it as selection
@@ -617,7 +636,53 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
                 @Override public void addSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener listener) {}
             });
         }
+
+        getSite().getWorkbenchWindow().getSelectionService().addSelectionListener(this);
 	}
+
+    private Orchestrator loadOrchestratorFromFile(IFile file) {
+        String ext = file.getFileExtension();
+        if ("xml".equals(ext) || "evo".equals(ext)) {
+            try {
+                URI uri = URI.createPlatformResourceURI(file.getFullPath().toString(), true);
+                Resource resource = resourceSet.getResource(uri, true);
+                if (!resource.getContents().isEmpty() && resource.getContents().get(0) instanceof EvoProject) {
+                    EvoProject ep = (EvoProject) resource.getContents().get(0);
+                    if (!ep.getOrchestrations().isEmpty()) {
+                        return ep.getOrchestrations().get(0);
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void selectionChanged(IWorkbenchPart part, ISelection selection) {
+        if (part.getSite().getId().equals("eu.kalafatic.views.EvoNavigator")) {
+            if (selection instanceof IStructuredSelection) {
+                Object first = ((IStructuredSelection) selection).getFirstElement();
+                Orchestrator selectedOrch = null;
+                if (first instanceof Orchestrator) {
+                    selectedOrch = (Orchestrator) first;
+                } else if (first instanceof IFile) {
+                    selectedOrch = loadOrchestratorFromFile((IFile) first);
+                }
+
+                if (selectedOrch != null && selectedOrch != this.orchestrator) {
+                    this.orchestrator = selectedOrch;
+                    this.ollamaService = null; // Reset service to re-initialize with new config
+                    setPartName(this.orchestrator.getName());
+                    Display.getDefault().asyncExec(() -> {
+                        updatePropertiesInfo();
+                        updateStatusInfo();
+                    });
+                }
+            }
+        }
+    }
 
     @Override
     public <T> T getAdapter(Class<T> adapter) {
