@@ -43,6 +43,12 @@
 			<artifactId>json</artifactId>
 			<version>20231013</version>
 		</dependency>
+		
+		<dependency>
+    <groupId>dev.langchain4j</groupId>
+    <artifactId>langchain4j-ollama</artifactId>
+    <version>1.12.2</version>
+</dependency>
 	</dependencies>
 
 </project>
