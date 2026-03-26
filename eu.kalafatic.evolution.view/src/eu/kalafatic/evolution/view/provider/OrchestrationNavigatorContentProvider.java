@@ -1,10 +1,13 @@
 package eu.kalafatic.evolution.view.provider;
 
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
@@ -51,29 +54,42 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
 
     @Override
     public Object[] getChildren(Object parentElement) {
-        if (parentElement instanceof IFile) {
+        if (parentElement instanceof IWorkspaceRoot) {
+            IProject[] projects = ((IWorkspaceRoot) parentElement).getProjects();
+            List<IProject> evolutionProjects = new ArrayList<>();
+            for (IProject project : projects) {
+                try {
+                    if (project.isOpen() && project.hasNature(EvolutionNature.NATURE_ID)) {
+                        evolutionProjects.add(project);
+                    }
+                } catch (CoreException e) {
+                    // Ignore
+                }
+            }
+            return evolutionProjects.toArray();
+        } else if (parentElement instanceof IContainer) {
+            IContainer container = (IContainer) parentElement;
+            try {
+                IResource[] members = container.members();
+                List<Object> children = new ArrayList<>();
+                for (IResource member : members) {
+                    if (member instanceof IFile) {
+                        EvoProject ep = loadEvoProject((IFile) member);
+                        if (ep != null) {
+                            children.add(member); // Add the IFile, which will then have the EvoProject as its child
+                        }
+                    } else if (member instanceof IContainer) {
+                        children.add(member);
+                    }
+                }
+                return children.toArray();
+            } catch (CoreException e) {
+                // Ignore
+            }
+        } else if (parentElement instanceof IFile) {
             EvoProject ep = loadEvoProject((IFile) parentElement);
             if (ep != null) {
                 return new Object[] { ep };
-            }
-        } else if (parentElement instanceof IProject) {
-            IProject project = (IProject) parentElement;
-            try {
-                if (project.isOpen() && project.hasNature(EvolutionNature.NATURE_ID)) {
-                    List<EvoProject> results = new ArrayList<>();
-                    // Only scan root level for performance
-                    for (IResource res : project.members()) {
-                        if (res instanceof IFile) {
-                            EvoProject ep = loadEvoProject((IFile) res);
-                            if (ep != null) {
-                                results.add(ep);
-                            }
-                        }
-                    }
-                    return results.toArray();
-                }
-            } catch (CoreException e) {
-                // Ignore
             }
         } else if (parentElement instanceof EvoProject) {
             return ((EvoProject) parentElement).getOrchestrations().toArray();
@@ -114,28 +130,19 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
 
     @Override
     public Object getParent(Object element) {
-        if (element instanceof Agent) {
-            return ((Agent) element).eContainer();
-        } else if (element instanceof Orchestrator) {
-            return ((Orchestrator) element).eContainer();
-        } else if (element instanceof EvoProject) {
-            EvoProject ep = (EvoProject) element;
-            if (ep.eResource() != null) {
-                URI uri = ep.eResource().getURI();
-                if (uri.isPlatformResource()) {
-                    String path = uri.toPlatformString(true);
-                    IResource res = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().findMember(path);
-                    if (res != null) {
-                        return res.getProject();
-                    }
-                }
-            }
+        if (element instanceof EObject) {
+            return ((EObject) element).eContainer();
+        } else if (element instanceof IResource) {
+            return ((IResource) element).getParent();
         }
         return null;
     }
 
     @Override
     public boolean hasChildren(Object element) {
+        if (element instanceof IWorkspaceRoot) {
+            return getChildren(element).length > 0;
+        }
         if (element instanceof IFile) {
             return loadEvoProject((IFile) element) != null;
         }
