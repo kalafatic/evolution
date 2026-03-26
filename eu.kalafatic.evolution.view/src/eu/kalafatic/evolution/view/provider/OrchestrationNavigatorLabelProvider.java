@@ -4,12 +4,15 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.ide.IDE;
 import org.osgi.framework.Bundle;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
@@ -63,28 +66,42 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider {
 
     @Override
     public Image getImage(Object element) {
-        if (element instanceof EvoProject) {
-            return getCachedImage("icons/evo_project.png");
+        if (element instanceof IProject) {
+            return PlatformUI.getWorkbench().getSharedImages().getImage(IDE.SharedImages.IMG_OBJ_PROJECT);
+        } else if (element instanceof IFile) {
+            return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
+        } else if (element instanceof EvoProject) {
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_project.png");
         } else if (element instanceof Orchestrator) {
-            return getCachedImage("icons/orchestrator.png");
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Orchestrator.gif");
         } else if (element instanceof Agent) {
-            return getCachedImage("icons/agent.png");
-        } else if (element instanceof Task || element instanceof Git || element instanceof Maven || element instanceof LLM ||
-                   element instanceof Compiler || element instanceof Ollama || element instanceof AiChat || element instanceof NeuronAI) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Agent.gif");
+        } else if (element instanceof Task) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Task.gif");
+        } else if (element instanceof Git) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Git.gif");
+        } else if (element instanceof Maven) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Maven.gif");
+        } else if (element instanceof LLM) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/LLM.gif");
+        } else if (element instanceof Compiler) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Compiler.gif");
+        } else if (element instanceof Ollama || element instanceof AiChat || element instanceof NeuronAI) {
             return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_ELEMENT);
         }
         return super.getImage(element);
     }
 
-    private Image getCachedImage(String path) {
-        Image image = imageCache.get(path);
+    private Image getCachedImage(String bundleId, String path) {
+        String cacheKey = bundleId + "/" + path;
+        Image image = imageCache.get(cacheKey);
         if (image == null) {
-            Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.view");
+            Bundle bundle = Platform.getBundle(bundleId);
             if (bundle != null) {
                 URL url = bundle.getEntry(path);
                 if (url != null) {
                     image = ImageDescriptor.createFromURL(url).createImage();
-                    imageCache.put(path, image);
+                    imageCache.put(cacheKey, image);
                 }
             }
         }

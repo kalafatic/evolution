@@ -6,14 +6,18 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.navigator.CommonActionProvider;
 import org.eclipse.ui.navigator.ICommonActionConstants;
 import org.eclipse.ui.navigator.ICommonActionExtensionSite;
+import org.eclipse.ui.navigator.ICommonMenuConstants;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Agent;
@@ -22,9 +26,21 @@ import eu.kalafatic.evolution.view.editors.OrchestratorEditorInput;
 
 public class OrchestrationEditorActionProvider extends CommonActionProvider {
 
+    private Action refreshAction;
+
     @Override
     public void init(ICommonActionExtensionSite aSite) {
         super.init(aSite);
+        makeActions();
+    }
+
+    private void makeActions() {
+        refreshAction = new Action("Refresh") {
+            @Override
+            public void run() {
+                getActionSite().getStructuredViewer().refresh();
+            }
+        };
     }
 
     @Override
@@ -34,9 +50,11 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
             final Object firstElement = ((IStructuredSelection) selection).getFirstElement();
             Action openAction = createOpenAction(firstElement);
             if (openAction != null) {
-                menu.add(openAction);
+                menu.insertAfter(ICommonMenuConstants.GROUP_OPEN, openAction);
             }
         }
+        menu.appendToGroup(ICommonMenuConstants.GROUP_BUILD, refreshAction);
+        menu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
     }
 
     private Action createOpenAction(final Object element) {
@@ -105,5 +123,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                 actionBars.setGlobalActionHandler(ICommonActionConstants.OPEN, openAction);
             }
         }
+        actionBars.setGlobalActionHandler(ActionFactory.REFRESH.getId(), refreshAction);
+        actionBars.updateActionBars();
     }
 }
