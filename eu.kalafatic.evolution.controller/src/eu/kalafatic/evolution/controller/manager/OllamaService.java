@@ -18,6 +18,13 @@ public class OllamaService {
     private final HttpClient httpClient;
     private final List<Message> messages = new ArrayList<>();
 
+    // Advanced options
+    private float temperature = 0.7f;
+    private int numPredict = 1024;
+    private float topP = 0.9f;
+    private int topK = 40;
+    private float repeatPenalty = 1.1f;
+
     public OllamaService(String url, String model) {
         String baseUrl = url != null ? url : "http://localhost:11434";
         if (baseUrl.endsWith("/api/chat")) {
@@ -32,6 +39,31 @@ public class OllamaService {
 
         // Optional system prompt
         messages.add(new Message("system", "You are a concise, helpful Java programming assistant."));
+    }
+
+    public OllamaService setTemperature(float temperature) {
+        this.temperature = temperature;
+        return this;
+    }
+
+    public OllamaService setNumPredict(int numPredict) {
+        this.numPredict = numPredict;
+        return this;
+    }
+
+    public OllamaService setTopP(float topP) {
+        this.topP = topP;
+        return this;
+    }
+
+    public OllamaService setTopK(int topK) {
+        this.topK = topK;
+        return this;
+    }
+
+    public OllamaService setRepeatPenalty(float repeatPenalty) {
+        this.repeatPenalty = repeatPenalty;
+        return this;
     }
 
     public String chat(String userInput) throws Exception {
@@ -66,6 +98,16 @@ public class OllamaService {
         StringBuilder sb = new StringBuilder();
         sb.append("{\"model\":\"").append(this.model).append("\",");
         sb.append("\"stream\":").append(stream).append(",");
+
+        // Add options
+        sb.append("\"options\":{");
+        sb.append("\"temperature\":").append(this.temperature).append(",");
+        sb.append("\"num_predict\":").append(this.numPredict).append(",");
+        sb.append("\"top_p\":").append(this.topP).append(",");
+        sb.append("\"top_k\":").append(this.topK).append(",");
+        sb.append("\"repeat_penalty\":").append(this.repeatPenalty);
+        sb.append("},");
+
         sb.append("\"messages\":[");
 
         for (int i = 0; i < messages.size(); i++) {
