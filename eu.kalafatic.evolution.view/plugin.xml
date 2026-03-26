@@ -166,6 +166,9 @@
             <actionExtension
                   pattern="org.eclipse.ui.navigator.resources.*">
             </actionExtension>
+            <actionExtension
+                  pattern="eu.kalafatic.evolution.view.orchestrationContent">
+            </actionExtension>
          </includes>
       </viewerActionBinding>
       <viewerContentBinding
@@ -198,6 +201,9 @@
          <includes>
             <actionExtension
                   pattern="org.eclipse.ui.navigator.resources.*">
+            </actionExtension>
+            <actionExtension
+                  pattern="eu.kalafatic.evolution.view.orchestrationContent">
             </actionExtension>
          </includes>
       </viewerActionBinding>

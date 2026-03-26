@@ -69,7 +69,7 @@ import eu.kalafatic.evolution.model.orchestration.Agent;
 public class MultiPageEditor extends MultiPageEditorPart implements IResourceChangeListener{
 	
 	/** The Constant ID. */
-	public static final String ID = "eu.kalafatic.evolution.view.editors.MaintainEditor";
+	public static final String ID = "eu.kalafatic.evolution.view.editors.MultiPageEditor";
 
 	/** The text editor used in page 1. */
 	private TextEditor editor;

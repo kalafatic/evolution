@@ -22,7 +22,6 @@ import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeSelection;
-import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -36,10 +35,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.Saveable;
 import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.part.DrillDownAdapter;
-import org.eclipse.ui.part.ViewPart;
 
-import eu.kalafatic.evolution.view.provider.EvoNavigatorContentProvider;
-import eu.kalafatic.evolution.view.provider.EvoNavigatorLabelProvider;
 import eu.kalafatic.utils.application.ValidationUtils;
 import eu.kalafatic.utils.constants.FCoreImageConstants;
 import eu.kalafatic.utils.constants.FTextConstants;
@@ -56,16 +52,7 @@ import static eu.kalafatic.utils.constants.FTextConstants.COLLAPSE_ALL;
 import static eu.kalafatic.utils.constants.FTextConstants.EXPAND_ALL;
 import static eu.kalafatic.utils.constants.FTextConstants.REMOVE;
 
-public class EvoNavigator extends ViewPart {
-
-	/** The parent. */
-	private Composite parent;
-
-	/** The viewer. */
-	private TreeViewer viewer;
-
-	/** The drill down adapter. */
-	private DrillDownAdapter drillDownAdapter;
+public class EvoNavigator extends CommonNavigator {
 
 	/** The lock. */
 	private final Lock lock = new ReentrantLock(true);
@@ -73,72 +60,16 @@ public class EvoNavigator extends ViewPart {
 	/** The remove action. */
 	private Action expandAllAction, collapseAllAction, addFolderAction, addPageAction, removeAction;
 
-	/** The tree. */
-	private Tree tree;
-
 	public EvoNavigator() {
 		super();
 	}
 
 	@Override
 	public void createPartControl(final Composite parent) {
-		this.parent = parent;
+		super.createPartControl(parent);
 
-		createContents(parent);
 		makeActions();
-		hookContextMenu();
-//		contributeToActionBars();
-
-		// Create the help context id for the viewer's control
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), "eu.kalafatic.explorer.view.viewer");
-		makeActions();
-		hookContextMenu();
-		hookDoubleClickAction();
 		contributeToActionBars();
-	}
-
-	private void createContents(Composite parent) {
-
-		viewer = new TreeViewer(parent, /* SWT.MULTI | */SWT.H_SCROLL | SWT.V_SCROLL);
-		drillDownAdapter = new DrillDownAdapter(viewer);
-
-//			EMap<String, Folder> inputMap = RCModelManager.getInstance().getRc().getTree();
-		IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
-
-		viewer.setContentProvider(new EvoNavigatorContentProvider(projects));
-		viewer.setLabelProvider(new EvoNavigatorLabelProvider(projects));
-
-		viewer.setUseHashlookup(true);
-		tree = viewer.getTree();
-
-		tree.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-		viewer.setInput(projects);
-
-		getSite().setSelectionProvider(viewer);
-	}
-	
-	private void hookDoubleClickAction() {
-		viewer.addDoubleClickListener(new IDoubleClickListener() {
-			@Override
-			public void doubleClick(final DoubleClickEvent event) {
-//				doubleClickAction.run();
-				if (event.getSelection() instanceof IStructuredSelection) {
-
-					final IStructuredSelection s = (IStructuredSelection) event.getSelection();
-
-					refresh(s.toArray());
-
-					// Display.getDefault().asyncExec(new Runnable() {
-					// @Override
-					// public void run() {
-					// viewer.refresh(s.toArray()[0], true);
-					// }
-					// });
-				}
-
-			}
-		});
 	}
 
 	public void refresh(Object... objects) {
@@ -166,23 +97,10 @@ public class EvoNavigator extends ViewPart {
 	 * @param message the message
 	 */
 	private void showMessage(String message) {
-		MessageDialog.openInformation(viewer.getControl().getShell(), "Sample View", message);
+		MessageDialog.openInformation(getCommonViewer().getControl().getShell(), "Sample View", message);
 	}
 
 
-	private void hookContextMenu() {
-		MenuManager menuMgr = new MenuManager("#PopupMenu");
-		menuMgr.setRemoveAllWhenShown(true);
-		menuMgr.addMenuListener(new IMenuListener() {
-			@Override
-			public void menuAboutToShow(IMenuManager manager) {
-//					RCNavigator.this.fillContextMenu(manager);
-			}
-		});
-		Menu menu = menuMgr.createContextMenu(viewer.getControl());
-		viewer.getControl().setMenu(menu);
-		getSite().registerContextMenu(menuMgr, viewer);
-	}
 
 	/**
 	 * Contribute to action bars.
@@ -226,13 +144,13 @@ public class EvoNavigator extends ViewPart {
 	 * @param manager the manager
 	 */
 	private void fillLocalToolBar(IToolBarManager manager) {
-		manager.add(addFolderAction);
-		manager.add(addPageAction);
-		manager.add(removeAction);
-		manager.add(new Separator());
+//		manager.add(addFolderAction);
+//		manager.add(addPageAction);
+//		manager.add(removeAction);
+//		manager.add(new Separator());
 		manager.add(expandAllAction);
 		manager.add(collapseAllAction);
-		drillDownAdapter.addNavigationActions(manager);
+//		drillDownAdapter.addNavigationActions(manager);
 	}
 
 	/**
@@ -243,7 +161,7 @@ public class EvoNavigator extends ViewPart {
 			expandAllAction = new Action() {
 				@Override
 				public void run() {
-					viewer.expandAll();
+					getCommonViewer().expandAll();
 				}
 			};
 			expandAllAction.setToolTipText(FTextConstants.EXPAND_ALL);
@@ -252,7 +170,7 @@ public class EvoNavigator extends ViewPart {
 			collapseAllAction = new Action() {
 				@Override
 				public void run() {
-					viewer.collapseAll();
+					getCommonViewer().collapseAll();
 				}
 			};
 
@@ -301,7 +219,7 @@ public class EvoNavigator extends ViewPart {
 	 * Adds the folder.
 	 */
 	private void addFolder() {
-		ISelection selection = viewer.getSelection();
+		ISelection selection = getCommonViewer().getSelection();
 		if (selection instanceof TreeSelection) {
 			TreeSelection treeSelection = (TreeSelection) selection;
 
@@ -332,7 +250,7 @@ public class EvoNavigator extends ViewPart {
 	 * Removes the.
 	 */
 	private void remove() {
-		ISelection selection = viewer.getSelection();
+		ISelection selection = getCommonViewer().getSelection();
 		if (selection instanceof TreeSelection) {
 			TreeSelection treeSelection = (TreeSelection) selection;
 
@@ -362,7 +280,7 @@ public class EvoNavigator extends ViewPart {
 //			Page page = RcFactory.eINSTANCE.createPage();
 //			page.setAddress(address);
 //
-//			ISelection selection = viewer.getSelection();
+//			ISelection selection = getCommonViewer().getSelection();
 //			if (selection instanceof TreeSelection) {
 //				TreeSelection treeSelection = (TreeSelection) selection;
 //				if (treeSelection.getFirstElement() instanceof FolderImpl) {
@@ -394,10 +312,10 @@ public class EvoNavigator extends ViewPart {
 		public void run() {
 			lock.lock();
 			try {
-				if (viewer != null && viewer.getControl() != null && !viewer.getControl().isDisposed()
-						&& viewer.getControl().isVisible()) {
+				if (getCommonViewer() != null && getCommonViewer().getControl() != null && !getCommonViewer().getControl().isDisposed()
+						&& getCommonViewer().getControl().isVisible()) {
 
-					viewer.refresh();
+					getCommonViewer().refresh();
 				}
 			} catch (Exception e) {
 				// e.printStackTrace();
@@ -414,6 +332,6 @@ public class EvoNavigator extends ViewPart {
 	 */
 	@Override
 	public void setFocus() {
-		viewer.getControl().setFocus();
+		getCommonViewer().getControl().setFocus();
 	}
 }
