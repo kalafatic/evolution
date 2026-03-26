@@ -3,7 +3,7 @@
 <plugin>
 
    <extension
-         id="application"
+         id="eu.kalafatic.evolution.view.application.Application"
          point="org.eclipse.core.runtime.applications">
       <application>
          <run
@@ -25,7 +25,7 @@
          point="org.eclipse.core.runtime.products">
       <product
             name="AI Evolution"
-            application="eu.kalafatic.evolution.view.application">
+            application="eu.kalafatic.evolution.view.application.Application">
          <property
                name="windowImages"
                value="icons/eclipse16.png,icons/eclipse32.png,icons/eclipse48.png,icons/eclipse64.png, icons/eclipse128.png,icons/eclipse256.png">
@@ -675,6 +675,38 @@
                relative="org.eclipse.ui.navigator.ProjectExplorer">
          </view>
       </perspectiveExtension>
+   </extension>
+   <extension
+         id="product"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="eu.kalafatic.evolution.view.application"
+            name="AI Evolution">
+         <property
+               name="windowImages"
+               value="icons/eclipse16.png,icons/eclipse32.png,icons/eclipse48.png,icons/eclipse64.png, icons/eclipse128.png,icons/eclipse256.png">
+         </property>
+         <property
+               name="startupForegroundColor"
+               value="FF0000">
+         </property>
+         <property
+               name="startupProgressRect"
+               value="212,348,350,2">
+         </property>
+         <property
+               name="startupMessageRect"
+               value="212,335,350,5">
+         </property>
+         <property
+               name="appName"
+               value="AI Evolution">
+         </property>
+         <property
+               name="preferenceCustomization"
+               value="plugin_customization.ini">
+         </property>
+      </product>
    </extension>
    
 </plugin>

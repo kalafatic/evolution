@@ -22,6 +22,8 @@ public class EvoNavigatorLabelProvider extends LabelProvider {
 
 	// FILE STRUCTURE
 	/** The Constant FOLDER_IMG. */
+//	public static final Image PROJECT_IMG = sharedImages.getImageDescriptor(org.eclipse.ui.ide.IDE.SharedImages.IMG_OBJ_PROJECT).createImage();
+
 	public static final Image FOLDER_IMG = sharedImages.getImageDescriptor(ISharedImages.IMG_OBJ_FOLDER).createImage();
 
 	/** The Constant FILE_IMG. */
@@ -62,12 +64,16 @@ public class EvoNavigatorLabelProvider extends LabelProvider {
 
 	@Override
 	public Image getImage(Object element) {
-		if (element instanceof IFolder) {
+//		if (element instanceof IProject) {
+//			return PROJECT_IMG;
+//		} else 
+			if (element instanceof IFolder) {
 			return FOLDER_IMG;
 		} else if (element instanceof IFile) {
 			return FILE_IMG;
 		}
-		return imageDescriptor.createImage();
+		return FILE_IMG;
+		//return imageDescriptor.createImage();
 	}
 
 }
