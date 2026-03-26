@@ -47,6 +47,14 @@ import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
+import eu.kalafatic.evolution.model.orchestration.Agent;
 
 /**
  * An example showing how to create a multi-page editor.
@@ -80,6 +88,25 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 
     private org.eclipse.swt.widgets.Label ollamaStatusLabel;
     private org.eclipse.swt.widgets.Label modelStatusLabel;
+
+    // Properties fields
+    private Text orchIdText;
+    private Text orchNameText;
+    private Text llmModelText;
+    private Text llmTempText;
+    private Text ollamaUrlText;
+    private Text ollamaModelText;
+    private Text ollamaPathText;
+    private Text ollamaVersionText;
+    private Table agentsTable;
+    private Text gitRepoText;
+    private Text gitBranchText;
+    private Text mavenGoalsText;
+    private Text mavenProfilesText;
+    private Text aiChatUrlText;
+    private Text neuronAiUrlText;
+    private Text compilerSourceText;
+
 	/**
 	 * Creates a multi-page editor example.
 	 */
@@ -204,6 +231,67 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		setPageText(index, "AI Chat");
 	}
 
+    private void updatePropertiesInfo() {
+        if (orchestrator == null) return;
+
+        orchIdText.setText(orchestrator.getId() != null ? orchestrator.getId() : "");
+        orchNameText.setText(orchestrator.getName() != null ? orchestrator.getName() : "");
+
+        if (orchestrator.getLlm() != null) {
+            llmModelText.setText(orchestrator.getLlm().getModel() != null ? orchestrator.getLlm().getModel() : "");
+            llmTempText.setText(String.valueOf(orchestrator.getLlm().getTemperature()));
+        }
+
+        if (orchestrator.getOllama() != null) {
+            ollamaUrlText.setText(orchestrator.getOllama().getUrl() != null ? orchestrator.getOllama().getUrl() : "");
+            ollamaModelText.setText(orchestrator.getOllama().getModel() != null ? orchestrator.getOllama().getModel() : "");
+            ollamaPathText.setText(orchestrator.getOllama().getPath() != null ? orchestrator.getOllama().getPath() : "");
+
+            new Thread(() -> {
+                String version = "Offline";
+                if (ollamaService != null && ollamaService.ping()) {
+                    version = ollamaService.getVersion();
+                }
+                final String v = version;
+                Display.getDefault().asyncExec(() -> {
+                    if (!ollamaVersionText.isDisposed()) {
+                        ollamaVersionText.setText(v);
+                    }
+                });
+            }).start();
+        }
+
+        agentsTable.removeAll();
+        for (Agent agent : orchestrator.getAgents()) {
+            TableItem item = new TableItem(agentsTable, SWT.NONE);
+            item.setText(0, agent.getId() != null ? agent.getId() : "");
+            item.setText(1, agent.getType() != null ? agent.getType() : "");
+            item.setText(2, agent.getExecutionMode() != null ? agent.getExecutionMode().name() : "");
+        }
+
+        if (orchestrator.getGit() != null) {
+            gitRepoText.setText(orchestrator.getGit().getRepositoryUrl() != null ? orchestrator.getGit().getRepositoryUrl() : "");
+            gitBranchText.setText(orchestrator.getGit().getBranch() != null ? orchestrator.getGit().getBranch() : "");
+        }
+
+        if (orchestrator.getMaven() != null) {
+            mavenGoalsText.setText(orchestrator.getMaven().getGoals().toString());
+            mavenProfilesText.setText(orchestrator.getMaven().getProfiles().toString());
+        }
+
+        if (orchestrator.getAiChat() != null) {
+            aiChatUrlText.setText(orchestrator.getAiChat().getUrl() != null ? orchestrator.getAiChat().getUrl() : "");
+        }
+
+        if (orchestrator.getNeuronAI() != null) {
+            neuronAiUrlText.setText(orchestrator.getNeuronAI().getUrl() != null ? orchestrator.getNeuronAI().getUrl() : "");
+        }
+
+        if (orchestrator.getCompiler() != null) {
+            compilerSourceText.setText(orchestrator.getCompiler().getSourceVersion() != null ? orchestrator.getCompiler().getSourceVersion() : "");
+        }
+    }
+
     private void updateStatusInfo() {
         if (orchestrator != null && orchestrator.getOllama() != null) {
             String url = orchestrator.getOllama().getUrl();
@@ -265,17 +353,24 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	 * which allows you to change the font used in page 3.
 	 */
 	void createPage2() {
+        ScrolledComposite sc = new ScrolledComposite(getContainer(), SWT.H_SCROLL | SWT.V_SCROLL);
+        sc.setExpandHorizontal(true);
+        sc.setExpandVertical(true);
 
-		Composite composite = new Composite(getContainer(), SWT.NONE);
+		Composite composite = new Composite(sc, SWT.NONE);
 		GridLayout layout = new GridLayout();
 		composite.setLayout(layout);
 		layout.numColumns = 1;
 
-		new org.eclipse.swt.widgets.Label(composite, SWT.NONE).setText("Orchestration Status:");
+        // --- Status Group ---
+        Group statusGroup = new Group(composite, SWT.NONE);
+        statusGroup.setText("Orchestration Status");
+        statusGroup.setLayout(new GridLayout(1, false));
+        statusGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        statusCanvas = new Canvas(composite, SWT.DOUBLE_BUFFERED | SWT.BORDER);
+        statusCanvas = new Canvas(statusGroup, SWT.DOUBLE_BUFFERED | SWT.BORDER);
         GridData canvasData = new GridData(GridData.FILL_HORIZONTAL);
-        canvasData.heightHint = 100;
+        canvasData.heightHint = 80;
         statusCanvas.setLayoutData(canvasData);
 
         statusCanvas.addPaintListener(new PaintListener() {
@@ -292,11 +387,9 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
                 int width = statusCanvas.getClientArea().width;
                 int height = statusCanvas.getClientArea().height;
 
-                // Draw background
                 e.gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
                 e.gc.fillRectangle(0, 0, width, height);
 
-                // Draw Progress Bar
                 e.gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_GRAY));
                 e.gc.fillRectangle(10, 30, width - 20, 20);
 
@@ -311,30 +404,137 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
             }
         });
 
-        // Start a timer to refresh the canvas
+        // Timer for status refresh
         Runnable timer = new Runnable() {
             @Override
             public void run() {
                 if (!statusCanvas.isDisposed()) {
                     statusCanvas.redraw();
-                    Display.getDefault().timerExec(500, this);
+                    Display.getDefault().timerExec(1000, this);
                 }
             }
         };
-        Display.getDefault().timerExec(500, timer);
+        Display.getDefault().timerExec(1000, timer);
 
-		Button fontButton = new Button(composite, SWT.NONE);
-		GridData gd = new GridData(GridData.BEGINNING);
-		fontButton.setLayoutData(gd);
-		fontButton.setText("Change Font...");
-		
-		fontButton.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent event) {
-				setFont();
-			}
-		});
+        // --- Orchestrator Group ---
+        Group orchGroup = new Group(composite, SWT.NONE);
+        orchGroup.setText("Orchestrator");
+        orchGroup.setLayout(new GridLayout(2, false));
+        orchGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		int index = addPage(composite);
+        new Label(orchGroup, SWT.NONE).setText("ID:");
+        orchIdText = new Text(orchGroup, SWT.BORDER | SWT.READ_ONLY);
+        orchIdText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(orchGroup, SWT.NONE).setText("Name:");
+        orchNameText = new Text(orchGroup, SWT.BORDER | SWT.READ_ONLY);
+        orchNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        // --- LLM Group ---
+        Group llmGroup = new Group(composite, SWT.NONE);
+        llmGroup.setText("LLM Settings");
+        llmGroup.setLayout(new GridLayout(2, false));
+        llmGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(llmGroup, SWT.NONE).setText("Model:");
+        llmModelText = new Text(llmGroup, SWT.BORDER | SWT.READ_ONLY);
+        llmModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(llmGroup, SWT.NONE).setText("Temperature:");
+        llmTempText = new Text(llmGroup, SWT.BORDER | SWT.READ_ONLY);
+        llmTempText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        // --- Ollama Group ---
+        Group ollamaGroup = new Group(composite, SWT.NONE);
+        ollamaGroup.setText("Ollama Settings");
+        ollamaGroup.setLayout(new GridLayout(2, false));
+        ollamaGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(ollamaGroup, SWT.NONE).setText("URL:");
+        ollamaUrlText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
+        ollamaUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(ollamaGroup, SWT.NONE).setText("Model:");
+        ollamaModelText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
+        ollamaModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(ollamaGroup, SWT.NONE).setText("Model Path:");
+        ollamaPathText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
+        ollamaPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(ollamaGroup, SWT.NONE).setText("Version:");
+        ollamaVersionText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
+        ollamaVersionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        // --- Agents Group ---
+        Group agentsGroup = new Group(composite, SWT.NONE);
+        agentsGroup.setText("Agents");
+        agentsGroup.setLayout(new GridLayout(1, false));
+        GridData agentsGd = new GridData(GridData.FILL_BOTH);
+        agentsGd.heightHint = 150;
+        agentsGroup.setLayoutData(agentsGd);
+
+        agentsTable = new Table(agentsGroup, SWT.BORDER | SWT.FULL_SELECTION);
+        agentsTable.setHeaderVisible(true);
+        agentsTable.setLinesVisible(true);
+        agentsTable.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        TableColumn colId = new TableColumn(agentsTable, SWT.NONE);
+        colId.setText("ID");
+        colId.setWidth(100);
+
+        TableColumn colType = new TableColumn(agentsTable, SWT.NONE);
+        colType.setText("Type");
+        colType.setWidth(100);
+
+        TableColumn colMode = new TableColumn(agentsTable, SWT.NONE);
+        colMode.setText("Execution Mode");
+        colMode.setWidth(120);
+
+        // --- Git & Maven Group ---
+        Group gitMavenGroup = new Group(composite, SWT.NONE);
+        gitMavenGroup.setText("Git & Maven");
+        gitMavenGroup.setLayout(new GridLayout(2, false));
+        gitMavenGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(gitMavenGroup, SWT.NONE).setText("Git Repo:");
+        gitRepoText = new Text(gitMavenGroup, SWT.BORDER | SWT.READ_ONLY);
+        gitRepoText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(gitMavenGroup, SWT.NONE).setText("Git Branch:");
+        gitBranchText = new Text(gitMavenGroup, SWT.BORDER | SWT.READ_ONLY);
+        gitBranchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(gitMavenGroup, SWT.NONE).setText("Maven Goals:");
+        mavenGoalsText = new Text(gitMavenGroup, SWT.BORDER | SWT.READ_ONLY);
+        mavenGoalsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(gitMavenGroup, SWT.NONE).setText("Maven Profiles:");
+        mavenProfilesText = new Text(gitMavenGroup, SWT.BORDER | SWT.READ_ONLY);
+        mavenProfilesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        // --- Others Group ---
+        Group othersGroup = new Group(composite, SWT.NONE);
+        othersGroup.setText("Additional AI & Tools");
+        othersGroup.setLayout(new GridLayout(2, false));
+        othersGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(othersGroup, SWT.NONE).setText("AI Chat URL:");
+        aiChatUrlText = new Text(othersGroup, SWT.BORDER | SWT.READ_ONLY);
+        aiChatUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(othersGroup, SWT.NONE).setText("Neuron AI URL:");
+        neuronAiUrlText = new Text(othersGroup, SWT.BORDER | SWT.READ_ONLY);
+        neuronAiUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        new Label(othersGroup, SWT.NONE).setText("Compiler Source:");
+        compilerSourceText = new Text(othersGroup, SWT.BORDER | SWT.READ_ONLY);
+        compilerSourceText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        sc.setContent(composite);
+        sc.setMinSize(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+
+		int index = addPage(sc);
 		setPageText(index, "Properties");
 	}
 	/**
@@ -439,6 +639,8 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		super.pageChange(newPageIndex);
 		if (newPageIndex == 0) {
             updateStatusInfo();
+        } else if (newPageIndex == 2) {
+            updatePropertiesInfo();
         }
 		if (newPageIndex == 3) {
 			sortWords();
