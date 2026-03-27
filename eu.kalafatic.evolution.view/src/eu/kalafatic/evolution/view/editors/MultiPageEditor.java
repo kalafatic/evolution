@@ -15,7 +15,11 @@ import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.jface.fieldassist.ControlDecoration;
+import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -117,6 +121,14 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
     private Text aiChatUrlText;
     private Text neuronAiUrlText;
     private Text compilerSourceText;
+
+    private ControlDecoration ollamaUrlDecorator;
+    private ControlDecoration ollamaPathDecorator;
+    private ControlDecoration llmTempDecorator;
+    private ControlDecoration gitRepoDecorator;
+
+    private boolean dirty = false;
+    private boolean isUpdating = false;
 
 	/**
 	 * Creates a multi-page editor example.
@@ -245,7 +257,8 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	}
 
     private void updatePropertiesInfo() {
-        if (orchestrator == null) return;
+        if (orchestrator == null || isUpdating) return;
+        isUpdating = true;
 
         orchIdText.setText(orchestrator.getId() != null ? orchestrator.getId() : "");
         orchNameText.setText(orchestrator.getName() != null ? orchestrator.getName() : "");
@@ -303,6 +316,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
         if (orchestrator.getCompiler() != null) {
             compilerSourceText.setText(orchestrator.getCompiler().getSourceVersion() != null ? orchestrator.getCompiler().getSourceVersion() : "");
         }
+        isUpdating = false;
     }
 
     private void updateStatusInfo() {
@@ -432,52 +446,71 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
         // --- Orchestrator Group ---
         Group orchGroup = new Group(composite, SWT.NONE);
         orchGroup.setText("Orchestrator");
-        orchGroup.setLayout(new GridLayout(2, false));
+        orchGroup.setLayout(new GridLayout(3, false));
         orchGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         new Label(orchGroup, SWT.NONE).setText("ID:");
-        orchIdText = new Text(orchGroup, SWT.BORDER | SWT.READ_ONLY);
+        orchIdText = new Text(orchGroup, SWT.BORDER);
         orchIdText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(orchGroup, orchIdText);
 
         new Label(orchGroup, SWT.NONE).setText("Name:");
-        orchNameText = new Text(orchGroup, SWT.BORDER | SWT.READ_ONLY);
+        orchNameText = new Text(orchGroup, SWT.BORDER);
         orchNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(orchGroup, orchNameText);
 
         // --- LLM Group ---
         Group llmGroup = new Group(composite, SWT.NONE);
         llmGroup.setText("LLM Settings");
-        llmGroup.setLayout(new GridLayout(2, false));
+        llmGroup.setLayout(new GridLayout(3, false));
         llmGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         new Label(llmGroup, SWT.NONE).setText("Model:");
-        llmModelText = new Text(llmGroup, SWT.BORDER | SWT.READ_ONLY);
+        llmModelText = new Text(llmGroup, SWT.BORDER);
         llmModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(llmGroup, llmModelText);
 
         new Label(llmGroup, SWT.NONE).setText("Temperature:");
-        llmTempText = new Text(llmGroup, SWT.BORDER | SWT.READ_ONLY);
+        llmTempText = new Text(llmGroup, SWT.BORDER);
         llmTempText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(llmGroup, llmTempText);
 
         // --- Ollama Group ---
         Group ollamaGroup = new Group(composite, SWT.NONE);
         ollamaGroup.setText("Ollama Settings");
-        ollamaGroup.setLayout(new GridLayout(2, false));
+        ollamaGroup.setLayout(new GridLayout(3, false));
         ollamaGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         new Label(ollamaGroup, SWT.NONE).setText("URL:");
-        ollamaUrlText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
+        ollamaUrlText = new Text(ollamaGroup, SWT.BORDER);
         ollamaUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(ollamaGroup, ollamaUrlText);
 
         new Label(ollamaGroup, SWT.NONE).setText("Model:");
-        ollamaModelText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
+        ollamaModelText = new Text(ollamaGroup, SWT.BORDER);
         ollamaModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(ollamaGroup, ollamaModelText);
 
         new Label(ollamaGroup, SWT.NONE).setText("Model Path:");
-        ollamaPathText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
+        ollamaPathText = new Text(ollamaGroup, SWT.BORDER);
         ollamaPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        Button browseOllamaBtn = new Button(ollamaGroup, SWT.PUSH);
+        browseOllamaBtn.setText("...");
+        browseOllamaBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(getSite().getShell(), SWT.OPEN);
+                String path = dialog.open();
+                if (path != null) {
+                    ollamaPathText.setText(path);
+                }
+            }
+        });
 
         new Label(ollamaGroup, SWT.NONE).setText("Version:");
         ollamaVersionText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
         ollamaVersionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        new Label(ollamaGroup, SWT.NONE); // Placeholder
 
         // --- Agents Group ---
         Group agentsGroup = new Group(composite, SWT.NONE);
@@ -507,42 +540,92 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
         // --- Git & Maven Group ---
         Group gitMavenGroup = new Group(composite, SWT.NONE);
         gitMavenGroup.setText("Git & Maven");
-        gitMavenGroup.setLayout(new GridLayout(2, false));
+        gitMavenGroup.setLayout(new GridLayout(3, false));
         gitMavenGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         new Label(gitMavenGroup, SWT.NONE).setText("Git Repo:");
-        gitRepoText = new Text(gitMavenGroup, SWT.BORDER | SWT.READ_ONLY);
+        gitRepoText = new Text(gitMavenGroup, SWT.BORDER);
         gitRepoText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(gitMavenGroup, gitRepoText);
 
         new Label(gitMavenGroup, SWT.NONE).setText("Git Branch:");
-        gitBranchText = new Text(gitMavenGroup, SWT.BORDER | SWT.READ_ONLY);
+        gitBranchText = new Text(gitMavenGroup, SWT.BORDER);
         gitBranchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(gitMavenGroup, gitBranchText);
 
         new Label(gitMavenGroup, SWT.NONE).setText("Maven Goals:");
-        mavenGoalsText = new Text(gitMavenGroup, SWT.BORDER | SWT.READ_ONLY);
+        mavenGoalsText = new Text(gitMavenGroup, SWT.BORDER);
         mavenGoalsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(gitMavenGroup, mavenGoalsText);
 
         new Label(gitMavenGroup, SWT.NONE).setText("Maven Profiles:");
-        mavenProfilesText = new Text(gitMavenGroup, SWT.BORDER | SWT.READ_ONLY);
+        mavenProfilesText = new Text(gitMavenGroup, SWT.BORDER);
         mavenProfilesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(gitMavenGroup, mavenProfilesText);
 
         // --- Others Group ---
         Group othersGroup = new Group(composite, SWT.NONE);
         othersGroup.setText("Additional AI & Tools");
-        othersGroup.setLayout(new GridLayout(2, false));
+        othersGroup.setLayout(new GridLayout(3, false));
         othersGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         new Label(othersGroup, SWT.NONE).setText("AI Chat URL:");
-        aiChatUrlText = new Text(othersGroup, SWT.BORDER | SWT.READ_ONLY);
+        aiChatUrlText = new Text(othersGroup, SWT.BORDER);
         aiChatUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(othersGroup, aiChatUrlText);
 
         new Label(othersGroup, SWT.NONE).setText("Neuron AI URL:");
-        neuronAiUrlText = new Text(othersGroup, SWT.BORDER | SWT.READ_ONLY);
+        neuronAiUrlText = new Text(othersGroup, SWT.BORDER);
         neuronAiUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(othersGroup, neuronAiUrlText);
 
         new Label(othersGroup, SWT.NONE).setText("Compiler Source:");
-        compilerSourceText = new Text(othersGroup, SWT.BORDER | SWT.READ_ONLY);
+        compilerSourceText = new Text(othersGroup, SWT.BORDER);
         compilerSourceText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(othersGroup, compilerSourceText);
+
+        // Initialize decorations
+        ollamaUrlDecorator = new ControlDecoration(ollamaUrlText, SWT.TOP | SWT.LEFT);
+        ollamaUrlDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+        ollamaUrlDecorator.hide();
+
+        ollamaPathDecorator = new ControlDecoration(ollamaPathText, SWT.TOP | SWT.LEFT);
+        ollamaPathDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+        ollamaPathDecorator.hide();
+
+        llmTempDecorator = new ControlDecoration(llmTempText, SWT.TOP | SWT.LEFT);
+        llmTempDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+        llmTempDecorator.hide();
+
+        gitRepoDecorator = new ControlDecoration(gitRepoText, SWT.TOP | SWT.LEFT);
+        gitRepoDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+        gitRepoDecorator.hide();
+
+        // Add ModifyListeners
+        ModifyListener modifyListener = new ModifyListener() {
+            @Override
+            public void modifyText(ModifyEvent e) {
+                if (orchestrator == null || isUpdating) return;
+                updateModelFromFields();
+                validateFields();
+                setDirty(true);
+            }
+        };
+
+        orchIdText.addModifyListener(modifyListener);
+        orchNameText.addModifyListener(modifyListener);
+        llmModelText.addModifyListener(modifyListener);
+        llmTempText.addModifyListener(modifyListener);
+        ollamaUrlText.addModifyListener(modifyListener);
+        ollamaModelText.addModifyListener(modifyListener);
+        ollamaPathText.addModifyListener(modifyListener);
+        gitRepoText.addModifyListener(modifyListener);
+        gitBranchText.addModifyListener(modifyListener);
+        mavenGoalsText.addModifyListener(modifyListener);
+        mavenProfilesText.addModifyListener(modifyListener);
+        aiChatUrlText.addModifyListener(modifyListener);
+        neuronAiUrlText.addModifyListener(modifyListener);
+        compilerSourceText.addModifyListener(modifyListener);
 
         sc.setContent(composite);
         sc.setMinSize(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
@@ -588,6 +671,14 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	 */
 	public void doSave(IProgressMonitor monitor) {
 		getEditor(1).doSave(monitor);
+        if (dirty && orchestrator != null && orchestrator.eResource() != null) {
+            try {
+                orchestrator.eResource().save(java.util.Collections.emptyMap());
+                setDirty(false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 	}
 	/**
 	 * Saves the multi-page editor's document as another file.
@@ -691,6 +782,19 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
         }
         return super.getAdapter(adapter);
     }
+
+    private void setDirty(boolean dirty) {
+        if (this.dirty != dirty) {
+            this.dirty = dirty;
+            firePropertyChange(IEditorPart.PROP_DIRTY);
+        }
+    }
+
+    @Override
+    public boolean isDirty() {
+        return dirty || super.isDirty();
+    }
+
 	/* (non-Javadoc)
 	 * Method declared on IEditorPart.
 	 */
@@ -764,4 +868,105 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		}
 		text.setText(displayText.toString());
 	}
+
+    private void validateFields() {
+        if (ollamaUrlText.getText().isEmpty() || !ollamaUrlText.getText().startsWith("http")) {
+            ollamaUrlDecorator.setDescriptionText("Invalid Ollama URL");
+            ollamaUrlDecorator.show();
+        } else {
+            ollamaUrlDecorator.hide();
+        }
+
+        File f = new File(ollamaPathText.getText());
+        if (!ollamaPathText.getText().isEmpty() && !f.exists()) {
+            ollamaPathDecorator.setDescriptionText("Ollama path does not exist");
+            ollamaPathDecorator.show();
+        } else {
+            ollamaPathDecorator.hide();
+        }
+
+        try {
+            Float.parseFloat(llmTempText.getText());
+            llmTempDecorator.hide();
+        } catch (NumberFormatException e) {
+            llmTempDecorator.setDescriptionText("Temperature must be a number");
+            llmTempDecorator.show();
+        }
+
+        if (gitRepoText.getText().isEmpty() || (!gitRepoText.getText().startsWith("http") && !gitRepoText.getText().startsWith("git@"))) {
+            gitRepoDecorator.setDescriptionText("Invalid Git Repository URL");
+            gitRepoDecorator.show();
+        } else {
+            gitRepoDecorator.hide();
+        }
+    }
+
+    private void updateModelFromFields() {
+        if (orchestrator == null || isUpdating) return;
+        isUpdating = true;
+
+        orchestrator.setId(orchIdText.getText());
+        orchestrator.setName(orchNameText.getText());
+
+        if (orchestrator.getLlm() != null) {
+            orchestrator.getLlm().setModel(llmModelText.getText());
+            try {
+                orchestrator.getLlm().setTemperature(Float.parseFloat(llmTempText.getText()));
+            } catch (NumberFormatException e) {
+                // Ignore invalid input for model update
+            }
+        }
+
+        if (orchestrator.getOllama() != null) {
+            orchestrator.getOllama().setUrl(ollamaUrlText.getText());
+            orchestrator.getOllama().setModel(ollamaModelText.getText());
+            orchestrator.getOllama().setPath(ollamaPathText.getText());
+        }
+
+        if (orchestrator.getGit() != null) {
+            orchestrator.getGit().setRepositoryUrl(gitRepoText.getText());
+            orchestrator.getGit().setBranch(gitBranchText.getText());
+        }
+
+        if (orchestrator.getMaven() != null) {
+            orchestrator.getMaven().getGoals().clear();
+            String goals = mavenGoalsText.getText().replace("[", "").replace("]", "");
+            for (String goal : goals.split("[,\\s]+")) {
+                if (!goal.trim().isEmpty()) orchestrator.getMaven().getGoals().add(goal.trim());
+            }
+
+            orchestrator.getMaven().getProfiles().clear();
+            String profiles = mavenProfilesText.getText().replace("[", "").replace("]", "");
+            for (String profile : profiles.split("[,\\s]+")) {
+                if (!profile.trim().isEmpty()) orchestrator.getMaven().getProfiles().add(profile.trim());
+            }
+        }
+
+        if (orchestrator.getAiChat() != null) {
+            orchestrator.getAiChat().setUrl(aiChatUrlText.getText());
+        }
+
+        if (orchestrator.getNeuronAI() != null) {
+            orchestrator.getNeuronAI().setUrl(neuronAiUrlText.getText());
+        }
+
+        if (orchestrator.getCompiler() != null) {
+            orchestrator.getCompiler().setSourceVersion(compilerSourceText.getText());
+        }
+        isUpdating = false;
+    }
+
+    private void createEditButton(Composite parent, Text textWidget) {
+        Button btn = new Button(parent, SWT.PUSH);
+        btn.setText("...");
+        btn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                // Generic edit action - could be expanded to show a dialog
+                // For now, it just ensures the field is editable which it already is.
+                textWidget.setFocus();
+                textWidget.setSelection(0, textWidget.getText().length());
+            }
+        });
+    }
 }
