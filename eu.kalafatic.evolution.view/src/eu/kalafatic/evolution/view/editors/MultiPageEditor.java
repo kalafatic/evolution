@@ -710,11 +710,15 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 
         if (editorInput instanceof OrchestratorEditorInput) {
             this.orchestrator = ((OrchestratorEditorInput) editorInput).getOrchestrator();
-            setPartName(editorInput.getName());
+            String name = editorInput.getName();
+            setPartName(name != null ? name : "Orchestrator");
         } else if (editorInput instanceof IFileEditorInput) {
             this.orchestrator = loadOrchestratorFromFile(((IFileEditorInput) editorInput).getFile());
             if (this.orchestrator != null) {
-                setPartName(this.orchestrator.getName());
+                String name = this.orchestrator.getName();
+                setPartName(name != null ? name : "Orchestrator");
+            } else {
+                setPartName(editorInput.getName());
             }
         }
 
@@ -765,7 +769,8 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
                 if (selectedOrch != null && selectedOrch != this.orchestrator) {
                     this.orchestrator = selectedOrch;
                     this.ollamaService = null; // Reset service to re-initialize with new config
-                    setPartName(this.orchestrator.getName());
+                    String name = this.orchestrator.getName();
+                    setPartName(name != null ? name : "Orchestrator");
                     Display.getDefault().asyncExec(() -> {
                         updatePropertiesInfo();
                         updateStatusInfo();
