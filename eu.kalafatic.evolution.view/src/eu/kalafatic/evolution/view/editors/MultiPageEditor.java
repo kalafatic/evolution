@@ -31,7 +31,9 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FontDialog;
 import org.eclipse.ui.*;
@@ -110,7 +112,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
     private Text llmModelText;
     private Text llmTempText;
     private Text ollamaUrlText;
-    private Text ollamaModelText;
+    private Combo ollamaModelCombo;
     private Text ollamaPathText;
     private Text ollamaVersionText;
     private Table agentsTable;
@@ -270,8 +272,9 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 
         if (orchestrator.getOllama() != null) {
             ollamaUrlText.setText(orchestrator.getOllama().getUrl() != null ? orchestrator.getOllama().getUrl() : "");
-            ollamaModelText.setText(orchestrator.getOllama().getModel() != null ? orchestrator.getOllama().getModel() : "");
+            ollamaModelCombo.setText(orchestrator.getOllama().getModel() != null ? orchestrator.getOllama().getModel() : "");
             ollamaPathText.setText(orchestrator.getOllama().getPath() != null ? orchestrator.getOllama().getPath() : "");
+            refreshOllamaModels();
 
             new Thread(() -> {
                 String version = "Offline";
@@ -487,9 +490,9 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
         createEditButton(ollamaGroup, ollamaUrlText);
 
         new Label(ollamaGroup, SWT.NONE).setText("Model:");
-        ollamaModelText = new Text(ollamaGroup, SWT.BORDER);
-        ollamaModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        createEditButton(ollamaGroup, ollamaModelText);
+        ollamaModelCombo = new Combo(ollamaGroup, SWT.BORDER);
+        ollamaModelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createEditButton(ollamaGroup, ollamaModelCombo);
 
         new Label(ollamaGroup, SWT.NONE).setText("Model Path:");
         ollamaPathText = new Text(ollamaGroup, SWT.BORDER);
@@ -617,8 +620,9 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
         llmModelText.addModifyListener(modifyListener);
         llmTempText.addModifyListener(modifyListener);
         ollamaUrlText.addModifyListener(modifyListener);
-        ollamaModelText.addModifyListener(modifyListener);
+        ollamaModelCombo.addModifyListener(modifyListener);
         ollamaPathText.addModifyListener(modifyListener);
+        ollamaPathText.addModifyListener(e -> refreshOllamaModels());
         gitRepoText.addModifyListener(modifyListener);
         gitBranchText.addModifyListener(modifyListener);
         mavenGoalsText.addModifyListener(modifyListener);
@@ -919,7 +923,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 
         if (orchestrator.getOllama() != null) {
             orchestrator.getOllama().setUrl(ollamaUrlText.getText());
-            orchestrator.getOllama().setModel(ollamaModelText.getText());
+            orchestrator.getOllama().setModel(ollamaModelCombo.getText());
             orchestrator.getOllama().setPath(ollamaPathText.getText());
         }
 
@@ -956,17 +960,35 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
         isUpdating = false;
     }
 
-    private void createEditButton(Composite parent, Text textWidget) {
+    private void createEditButton(Composite parent, Control control) {
         Button btn = new Button(parent, SWT.PUSH);
         btn.setText("...");
         btn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                // Generic edit action - could be expanded to show a dialog
-                // For now, it just ensures the field is editable which it already is.
-                textWidget.setFocus();
-                textWidget.setSelection(0, textWidget.getText().length());
+                control.setFocus();
+                if (control instanceof Text) {
+                    ((Text) control).setSelection(0, ((Text) control).getText().length());
+                } else if (control instanceof Combo) {
+                    ((Combo) control).setSelection(new org.eclipse.swt.graphics.Point(0, ((Combo) control).getText().length()));
+                }
             }
         });
+    }
+
+    private void refreshOllamaModels() {
+        if (ollamaPathText == null || ollamaModelCombo == null) return;
+        String path = ollamaPathText.getText();
+        if (path == null || path.isEmpty()) return;
+
+        File modelsDir = new File(path);
+        if (modelsDir.exists() && modelsDir.isDirectory()) {
+            String[] models = modelsDir.list((dir, name) -> new File(dir, name).isFile());
+            if (models != null) {
+                String current = ollamaModelCombo.getText();
+                ollamaModelCombo.setItems(models);
+                ollamaModelCombo.setText(current);
+            }
+        }
     }
 }
