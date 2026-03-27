@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -33,7 +35,9 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider {
 
     @Override
     public String getText(Object element) {
-        if (element instanceof EvoProject) {
+        if (element instanceof IResource) {
+            return ((IResource) element).getName();
+        } else if (element instanceof EvoProject) {
             String name = ((EvoProject) element).getName();
             return name != null ? name : "Evo Project";
         } else if (element instanceof Orchestrator) {
@@ -68,6 +72,8 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider {
     public Image getImage(Object element) {
         if (element instanceof IProject) {
             return PlatformUI.getWorkbench().getSharedImages().getImage(IDE.SharedImages.IMG_OBJ_PROJECT);
+        } else if (element instanceof IFolder) {
+            return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FOLDER);
         } else if (element instanceof IFile) {
             return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
         } else if (element instanceof EvoProject) {

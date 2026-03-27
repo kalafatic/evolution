@@ -104,7 +104,8 @@
             contentProvider="eu.kalafatic.evolution.view.provider.OrchestrationNavigatorContentProvider"
             id="eu.kalafatic.evolution.view.orchestrationContent"
             labelProvider="eu.kalafatic.evolution.view.provider.OrchestrationNavigatorLabelProvider"
-            name="Orchestrations">
+            name="Orchestrations"
+            priority="high">
          <triggerPoints>
            
             <or>

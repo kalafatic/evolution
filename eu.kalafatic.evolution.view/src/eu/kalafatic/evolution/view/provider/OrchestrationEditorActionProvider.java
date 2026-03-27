@@ -1,7 +1,9 @@
 package eu.kalafatic.evolution.view.provider;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.action.Action;
@@ -112,7 +114,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                         URI uri = ep.eResource().getURI();
                         if (uri.isPlatformResource()) {
                             String path = uri.toPlatformString(true);
-                            IResource res = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+                            IResource res = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
                             if (res instanceof IFile) {
                                 try {
                                     IDE.openEditor(page, (IFile) res);
@@ -159,14 +161,20 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
 
     @Override
     public void fillActionBars(org.eclipse.ui.IActionBars actionBars) {
-        ISelection selection = getContext().getSelection();
-        if (selection instanceof IStructuredSelection) {
-            final Object firstElement = ((IStructuredSelection) selection).getFirstElement();
-            Action openAction = createOpenAction(firstElement);
-            if (openAction != null) {
-                actionBars.setGlobalActionHandler(ICommonActionConstants.OPEN, openAction);
+        Action openAction = new Action("Open") {
+            @Override
+            public void run() {
+                ISelection selection = getContext().getSelection();
+                if (selection instanceof IStructuredSelection) {
+                    Object firstElement = ((IStructuredSelection) selection).getFirstElement();
+                    Action dynamicOpen = createOpenAction(firstElement);
+                    if (dynamicOpen != null) {
+                        dynamicOpen.run();
+                    }
+                }
             }
-        }
+        };
+        actionBars.setGlobalActionHandler(ICommonActionConstants.OPEN, openAction);
         actionBars.setGlobalActionHandler(ActionFactory.REFRESH.getId(), refreshAction);
         actionBars.setGlobalActionHandler(ActionFactory.DELETE.getId(), deleteAction);
         actionBars.updateActionBars();
