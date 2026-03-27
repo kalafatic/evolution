@@ -9,6 +9,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.ISharedImages;
@@ -155,6 +156,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
         try {
             page.openEditor(new OrchestratorEditorInput(orchestrator), eu.kalafatic.evolution.view.editors.MultiPageEditor.ID);
         } catch (PartInitException e) {
+            MessageDialog.openError(page.getWorkbenchWindow().getShell(), "Error", "Could not open MultiPageEditor: " + e.getMessage());
             e.printStackTrace();
         }
     }

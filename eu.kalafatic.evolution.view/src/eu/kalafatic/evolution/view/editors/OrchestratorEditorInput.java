@@ -29,7 +29,8 @@ public class OrchestratorEditorInput implements IEditorInput {
 
     @Override
     public String getName() {
-        return orchestrator.getName();
+        String name = orchestrator.getName();
+        return name != null ? name : "Unnamed Orchestration";
     }
 
     @Override
@@ -39,7 +40,8 @@ public class OrchestratorEditorInput implements IEditorInput {
 
     @Override
     public String getToolTipText() {
-        return "Orchestration: " + orchestrator.getName();
+        String name = orchestrator.getName();
+        return "Orchestration: " + (name != null ? name : "Unnamed");
     }
 
     @Override
