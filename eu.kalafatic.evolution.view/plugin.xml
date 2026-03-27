@@ -3,7 +3,7 @@
 <plugin>
 
    <extension
-         id="eu.kalafatic.evolution.view.application.Application"
+         id="application"
          point="org.eclipse.core.runtime.applications">
       <application>
          <run
@@ -25,7 +25,7 @@
          point="org.eclipse.core.runtime.products">
       <product
             name="AI Evolution"
-            application="eu.kalafatic.evolution.view.application.Application">
+            application="eu.kalafatic.evolution.view.application">
          <property
                name="windowImages"
                value="icons/eclipse16.png,icons/eclipse32.png,icons/eclipse48.png,icons/eclipse64.png, icons/eclipse128.png,icons/eclipse256.png">
@@ -714,8 +714,7 @@
                name="startupForegroundColor"
                value="FF0000">
          </property>
-         <property
-               name="startupProgressRect"
+         <property               name="startupProgressRect"
                value="212,348,350,2">
          </property>
          <property
