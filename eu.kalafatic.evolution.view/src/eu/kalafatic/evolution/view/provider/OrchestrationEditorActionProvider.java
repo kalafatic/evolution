@@ -9,7 +9,9 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchActionConstants;
+import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
@@ -27,6 +29,7 @@ import eu.kalafatic.evolution.view.editors.OrchestratorEditorInput;
 public class OrchestrationEditorActionProvider extends CommonActionProvider {
 
     private Action refreshAction;
+    private Action deleteAction;
 
     @Override
     public void init(ICommonActionExtensionSite aSite) {
@@ -41,6 +44,34 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                 getActionSite().getStructuredViewer().refresh();
             }
         };
+        refreshAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_SYNCED));
+
+        deleteAction = new Action("Delete") {
+            @Override
+            public void run() {
+                ISelection selection = getContext().getSelection();
+                if (selection instanceof IStructuredSelection) {
+                    for (Object obj : ((IStructuredSelection) selection).toList()) {
+                        if (obj instanceof IResource) {
+                            try {
+                                ((IResource) obj).delete(true, null);
+                            } catch (org.eclipse.core.runtime.CoreException e) {
+                                e.printStackTrace();
+                            }
+                        } else if (obj instanceof EObject) {
+                            EObject eobj = (EObject) obj;
+                            if (eobj.eContainer() != null) {
+                                org.eclipse.emf.edit.command.DeleteCommand.create(
+                                    org.eclipse.emf.edit.domain.AdapterFactoryEditingDomain.getEditingDomainFor(eobj),
+                                    eobj).execute();
+                            }
+                        }
+                    }
+                    getActionSite().getStructuredViewer().refresh();
+                }
+            }
+        };
+        deleteAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_TOOL_DELETE));
     }
 
     @Override
@@ -53,28 +84,21 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                 menu.insertAfter(ICommonMenuConstants.GROUP_OPEN, openAction);
             }
         }
+        menu.appendToGroup(ICommonMenuConstants.GROUP_EDIT, deleteAction);
         menu.appendToGroup(ICommonMenuConstants.GROUP_BUILD, refreshAction);
         menu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
     }
 
     private Action createOpenAction(final Object element) {
-        if (element instanceof Orchestrator) {
-            return new Action("Open Orchestration") {
+        if (element instanceof IFile) {
+            return new Action("Open File") {
                 @Override
                 public void run() {
-                    openOrchestrator((Orchestrator) element);
-                }
-            };
-        } else if (element instanceof Agent || element instanceof Task) {
-            return new Action("Open Parent Orchestration") {
-                @Override
-                public void run() {
-                    EObject current = (EObject) element;
-                    while (current != null && !(current instanceof Orchestrator)) {
-                        current = current.eContainer();
-                    }
-                    if (current instanceof Orchestrator) {
-                        openOrchestrator((Orchestrator) current);
+                    IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+                    try {
+                        IDE.openEditor(page, (IFile) element);
+                    } catch (PartInitException e) {
+                        e.printStackTrace();
                     }
                 }
             };
@@ -91,12 +115,32 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                             IResource res = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().findMember(path);
                             if (res instanceof IFile) {
                                 try {
-                                    org.eclipse.ui.ide.IDE.openEditor(page, (IFile) res);
+                                    IDE.openEditor(page, (IFile) res);
                                 } catch (PartInitException e) {
                                     e.printStackTrace();
                                 }
                             }
                         }
+                    }
+                }
+            };
+        } else if (element instanceof Orchestrator) {
+            return new Action("Open Orchestration") {
+                @Override
+                public void run() {
+                    openOrchestrator((Orchestrator) element);
+                }
+            };
+        } else if (element instanceof Agent || element instanceof Task) {
+            return new Action("Open Parent Orchestration") {
+                @Override
+                public void run() {
+                    EObject current = (EObject) element;
+                    while (current != null && !(current instanceof Orchestrator)) {
+                        current = current.eContainer();
+                    }
+                    if (current instanceof Orchestrator) {
+                        openOrchestrator((Orchestrator) current);
                     }
                 }
             };
@@ -124,6 +168,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
             }
         }
         actionBars.setGlobalActionHandler(ActionFactory.REFRESH.getId(), refreshAction);
+        actionBars.setGlobalActionHandler(ActionFactory.DELETE.getId(), deleteAction);
         actionBars.updateActionBars();
     }
 }
