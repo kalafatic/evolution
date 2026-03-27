@@ -86,8 +86,12 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider {
             return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/LLM.gif");
         } else if (element instanceof Compiler) {
             return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Compiler.gif");
-        } else if (element instanceof Ollama || element instanceof AiChat || element instanceof NeuronAI) {
-            return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_ELEMENT);
+        } else if (element instanceof Ollama) {
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/sample.png");
+        } else if (element instanceof AiChat) {
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/sample.png");
+        } else if (element instanceof NeuronAI) {
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/sample.png");
         }
         return super.getImage(element);
     }

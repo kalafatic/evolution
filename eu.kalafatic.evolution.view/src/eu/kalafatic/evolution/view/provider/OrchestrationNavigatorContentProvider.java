@@ -130,6 +130,16 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
 
     @Override
     public Object getParent(Object element) {
+        if (element instanceof EvoProject) {
+            EvoProject ep = (EvoProject) element;
+            if (ep.eResource() != null) {
+                URI uri = ep.eResource().getURI();
+                if (uri.isPlatformResource()) {
+                    String path = uri.toPlatformString(true);
+                    return org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+                }
+            }
+        }
         if (element instanceof EObject) {
             return ((EObject) element).eContainer();
         } else if (element instanceof IResource) {

@@ -512,7 +512,7 @@
       <editor
             class="eu.kalafatic.evolution.view.editors.MultiPageEditor"
             contributorClass="eu.kalafatic.evolution.view.editors.MultiPageEditorContributor"
-            extensions="xml"
+            extensions="xml,evo"
             icon="icons/eclipse16.png"
             id="eu.kalafatic.evolution.view.editors.MultiPageEditor"
             name="Evo Multi-page Editor">
