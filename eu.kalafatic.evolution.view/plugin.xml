@@ -583,7 +583,7 @@
          point="org.eclipse.ui.commands">
       <command
             id="eu.kalafatic.evolution.view.openEvoTasks"
-            name="Open Evo Tasks">
+            name="Open with Evo Editor">
       </command>
       <command
             id="eu.kalafatic.evolution.view.saveEvoTasks"

@@ -11,7 +11,9 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.ide.IDE;
@@ -38,6 +40,22 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
     public void init(ICommonActionExtensionSite aSite) {
         super.init(aSite);
         makeActions();
+
+        aSite.getStructuredViewer().addSelectionChangedListener(new ISelectionChangedListener() {
+            @Override
+            public void selectionChanged(SelectionChangedEvent event) {
+                ISelection selection = event.getSelection();
+                if (selection instanceof IStructuredSelection) {
+                    Object element = ((IStructuredSelection) selection).getFirstElement();
+                    if (element instanceof IFile || element instanceof EvoProject || element instanceof Orchestrator) {
+                        Action openAction = createOpenAction(element);
+                        if (openAction != null) {
+                            openAction.run();
+                        }
+                    }
+                }
+            }
+        });
     }
 
     private void makeActions() {
@@ -118,12 +136,33 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                             IResource res = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
                             if (res instanceof IFile) {
                                 try {
-                                    IDE.openEditor(page, (IFile) res);
+                                    IDE.openEditor(page, (IFile) res, MultiPageEditor.ID);
                                 } catch (PartInitException e) {
-                                    e.printStackTrace();
+                                    MessageDialog.openError(page.getWorkbenchWindow().getShell(), "Error", "Could not open MultiPageEditor: " + e.getMessage());
                                 }
                             }
                         }
+                    }
+                }
+            };
+        } else if (element instanceof org.eclipse.core.resources.IProject) {
+            return new Action("Open Evolution Project") {
+                @Override
+                public void run() {
+                    try {
+                        org.eclipse.core.resources.IProject project = (org.eclipse.core.resources.IProject) element;
+                        for (IResource res : project.members()) {
+                            if (res instanceof IFile) {
+                                String ext = ((IFile) res).getFileExtension();
+                                if ("evo".equals(ext) || "xml".equals(ext)) {
+                                    IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+                                    IDE.openEditor(page, (IFile) res, MultiPageEditor.ID);
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (org.eclipse.core.runtime.CoreException e) {
+                        e.printStackTrace();
                     }
                 }
             };

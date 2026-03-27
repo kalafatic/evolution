@@ -8,6 +8,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -71,10 +72,20 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider {
     @Override
     public Image getImage(Object element) {
         if (element instanceof IProject) {
+            IProject project = (IProject) element;
+            try {
+                if (project.isOpen() && project.hasNature("eu.kalafatic.evolution.view.evolutionNature")) {
+                    return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_project.png");
+                }
+            } catch (CoreException e) {}
             return PlatformUI.getWorkbench().getSharedImages().getImage(IDE.SharedImages.IMG_OBJ_PROJECT);
         } else if (element instanceof IFolder) {
             return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FOLDER);
         } else if (element instanceof IFile) {
+            String ext = ((IFile) element).getFileExtension();
+            if ("evo".equals(ext) || "xml".equals(ext)) {
+                return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_project.png");
+            }
             return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
         } else if (element instanceof EvoProject) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_project.png");
