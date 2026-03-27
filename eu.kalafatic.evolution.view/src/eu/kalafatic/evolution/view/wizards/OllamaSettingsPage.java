@@ -97,7 +97,7 @@ public class OllamaSettingsPage extends WizardPage {
             }
         });
 
-        String defaultPath = "/usr/bin/ollama";
+        String defaultPath = "/usr/local/bin/ollama";
         String os = System.getProperty("os.name").toLowerCase();
         if (os.contains("win")) {
             String localAppData = System.getenv("LOCALAPPDATA");

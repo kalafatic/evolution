@@ -56,7 +56,7 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
     public Object[] getChildren(Object parentElement) {
         if (parentElement instanceof IWorkspaceRoot) {
             IProject[] projects = ((IWorkspaceRoot) parentElement).getProjects();
-            List<IProject> evolutionProjects = new ArrayList<>();
+           List<IProject> evolutionProjects = new ArrayList<>();
             for (IProject project : projects) {
                 try {
                     if (project.isOpen() && project.hasNature(EvolutionNature.NATURE_ID)) {
