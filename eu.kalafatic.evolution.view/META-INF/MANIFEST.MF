@@ -38,3 +38,5 @@ Export-Package: eu.kalafatic.evolution.view.application,
  eu.kalafatic.evolution.view.provider,
  eu.kalafatic.evolution.view.views,
  eu.kalafatic.evolution.view.wizards
+Bundle-ClassPath: .,
+ lib/

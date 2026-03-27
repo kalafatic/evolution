@@ -25,13 +25,13 @@ public class EvoPerspective implements IPerspectiveFactory {
         // Left column - Navigators (Evo Navigator and Project Explorer) - 20%
         IFolderLayout left = layout.createFolder(EFolder.TOP_LEFT.ID, IPageLayout.LEFT, 0.20f, editorArea);
         left.addView("eu.kalafatic.views.EvoNavigator");
-        left.addView(IPageLayout.ID_PROJECT_EXPLORER);
+        //left.addView(IPageLayout.ID_PROJECT_EXPLORER);
 
         // Bottom Area (relative to Editor Area) - Orchestration Graph, AI Output, and Properties - 30% of total height
         IFolderLayout bottom = layout.createFolder(EFolder.BOTTOM_RIGHT.ID, IPageLayout.BOTTOM, 0.30f, editorArea);
         bottom.addView(OrchestrationZestView.ID);
-        bottom.addView(AIOutputView.ID);
-        bottom.addView(IPageLayout.ID_PROP_SHEET);
+       // bottom.addView(AIOutputView.ID);
+       // bottom.addView(IPageLayout.ID_PROP_SHEET);
         bottom.addView(InternalBrowserView.ID);
 
         // Configure generic workbench features

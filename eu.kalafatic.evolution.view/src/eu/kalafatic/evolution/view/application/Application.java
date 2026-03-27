@@ -17,6 +17,8 @@ import org.eclipse.ui.internal.ide.ChooseWorkspaceDialog;
  * This class controls all aspects of the application's execution
  */
 public class Application implements IApplication {
+	
+	public static final String APPLICATION_ID = "eu.kalafatic.evolution.view.application.Application"; //$NON-NLS-1$
 
 	@Override
 	public Object start(IApplicationContext context) throws Exception {

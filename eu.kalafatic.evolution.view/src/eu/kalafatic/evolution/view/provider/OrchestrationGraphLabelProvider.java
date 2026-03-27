@@ -38,7 +38,7 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
         } else if (element instanceof NeuronAI) {
             return "Neuron AI: " + ((NeuronAI) element).getModel();
         }
-        return super.getText(element);
+        return "";//super.getText(element);
     }
 
     @Override
