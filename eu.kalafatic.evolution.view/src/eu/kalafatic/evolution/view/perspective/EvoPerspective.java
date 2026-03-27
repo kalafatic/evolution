@@ -4,15 +4,14 @@ import org.eclipse.ui.IFolderLayout;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IPerspectiveFactory;
 
-import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.views.AIOutputView;
 import eu.kalafatic.evolution.view.views.InternalBrowserView;
 import eu.kalafatic.evolution.view.views.OrchestrationZestView;
 
 /**
  * Default perspective for the AI Evolution Software platform.
- * Organized with Navigators on the left, AI Output below them,
- * and the main editor area flanked by the Orchestration Graph and Internal Browser.
+ * Organized with Navigator on the left (20%),
+ * and the main editor area + graph on the right.
  */
 public class EvoPerspective implements IPerspectiveFactory {
 
@@ -21,28 +20,20 @@ public class EvoPerspective implements IPerspectiveFactory {
     @Override
     public void createInitialLayout(IPageLayout layout) {
         String editorArea = layout.getEditorArea();
-        layout.setEditorAreaVisible(false);
+        layout.setEditorAreaVisible(true);
 
-        // Left column - Top: Navigators (Project Explorer and Evo Navigator)
-        IFolderLayout topLeft = layout.createFolder(EFolder.TOP_LEFT.ID, IPageLayout.LEFT, 0.35f, IPageLayout.ID_EDITOR_AREA);
-        topLeft.addView("eu.kalafatic.views.EvoNavigator");
-        topLeft.addView(IPageLayout.ID_PROJECT_EXPLORER);        
+        // Left column - Navigators (Evo Navigator and Project Explorer) - 20%
+        IFolderLayout left = layout.createFolder(EFolder.TOP_LEFT.ID, IPageLayout.LEFT, 0.20f, editorArea);
+        left.addView("eu.kalafatic.views.EvoNavigator");
+        left.addView(IPageLayout.ID_PROJECT_EXPLORER);
 
-        // Left column - Bottom: AI Output View
-        IFolderLayout bottomLeft = layout.createFolder(EFolder.BOTTOM_LEFT.ID, IPageLayout.BOTTOM, 0.40f, EFolder.TOP_LEFT.ID);
-        bottomLeft.addView(AIOutputView.ID);
-        bottomLeft.addView(IPageLayout.ID_PROP_SHEET);
+        // Bottom Area (relative to Editor Area) - Orchestration Graph, AI Output, and Properties - 30% of total height
+        IFolderLayout bottom = layout.createFolder(EFolder.BOTTOM_RIGHT.ID, IPageLayout.BOTTOM, 0.30f, editorArea);
+        bottom.addView(OrchestrationZestView.ID);
+        bottom.addView(AIOutputView.ID);
+        bottom.addView(IPageLayout.ID_PROP_SHEET);
+        bottom.addView(InternalBrowserView.ID);
 
-        // Main Area - Top: Orchestration Zest View (Graph)
-    	IFolderLayout center = layout.createFolder(EFolder.CENTER.ID, IPageLayout.TOP, 0.40f, IPageLayout.ID_EDITOR_AREA);
-//    	center.addView(MultiPageEditor.ID);
-    	center.addView(OrchestrationZestView.ID);
-    	center.addView(InternalBrowserView.ID);
-//		bottomRight.addView(AIOutputView.ID);
-		
-//		IFolderLayout topRight = layout.createFolder(EFolder.BOTTOM_RIGHT.ID, IPageLayout.BOTTOM, 0.20f, editorArea);
-//		topRight.addView(AIOutputView.ID);
-		
         // Configure generic workbench features
         addActionSets(layout);
         addViewShortcuts(layout);
