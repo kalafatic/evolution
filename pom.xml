@@ -14,6 +14,7 @@
 	</properties>
 
 	<modules>
+		<module>eu.kalafatic.utils</module>
 		<module>eu.kalafatic.evolution.model</module>
 		<module>eu.kalafatic.evolution.model.edit</module>
 		<module>eu.kalafatic.evolution.model.editor</module>
