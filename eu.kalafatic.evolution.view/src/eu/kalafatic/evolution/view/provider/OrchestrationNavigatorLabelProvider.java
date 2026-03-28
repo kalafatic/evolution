@@ -11,6 +11,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.ISharedImages;
@@ -29,10 +30,67 @@ import eu.kalafatic.evolution.model.orchestration.Compiler;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
+import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 
-public class OrchestrationNavigatorLabelProvider extends LabelProvider {
+public class OrchestrationNavigatorLabelProvider extends LabelProvider implements ITableLabelProvider {
 
     private final Map<String, Image> imageCache = new HashMap<>();
+
+    @Override
+    public String getColumnText(Object element, int columnIndex) {
+        if (columnIndex == 0) {
+            if (element instanceof IResource) {
+                return ((IResource) element).getName();
+            } else if (element instanceof EvoProject) {
+                String name = ((EvoProject) element).getName();
+                return name != null ? name : "Evo Project";
+            } else if (element instanceof Orchestrator) {
+                String name = ((Orchestrator) element).getName();
+                return name != null ? name : "Unnamed Orchestration";
+            } else if (element instanceof Agent) {
+                Agent agent = (Agent) element;
+                return (agent.getId() != null ? agent.getId() : "Agent") + " (" + (agent.getType() != null ? agent.getType() : "unknown") + ")";
+            } else if (element instanceof Task) {
+                Task task = (Task) element;
+                return (task.getName() != null ? task.getName() : (task.getId() != null ? task.getId() : "Task"));
+            } else if (element instanceof Git) {
+                return "Git: " + ((Git) element).getBranch();
+            } else if (element instanceof Maven) {
+                return "Maven";
+            } else if (element instanceof LLM) {
+                return "LLM: " + ((LLM) element).getModel();
+            } else if (element instanceof Compiler) {
+                return "Compiler";
+            } else if (element instanceof Ollama) {
+                return "Ollama: " + ((Ollama) element).getModel();
+            } else if (element instanceof AiChat) {
+                return "AI Chat";
+            } else if (element instanceof NeuronAI) {
+                return "Neuron AI: " + ((NeuronAI) element).getModel();
+            }
+        } else if (columnIndex == 1) {
+            if (element instanceof Task) {
+                Task task = (Task) element;
+                return task.getStatus() != null ? task.getStatus().toString() : "PENDING";
+            } else if (element instanceof Orchestrator) {
+                String id = ((Orchestrator) element).getId();
+                return OrchestrationStatusManager.getInstance().getStatus(id);
+            } else if (element instanceof Agent) {
+                String type = ((Agent) element).getType();
+                return OrchestrationStatusManager.getInstance().getAgentStatus(type);
+            }
+            return "";
+        }
+        return null;
+    }
+
+    @Override
+    public Image getColumnImage(Object element, int columnIndex) {
+        if (columnIndex == 0) {
+            return getImage(element);
+        }
+        return null;
+    }
 
     @Override
     public String getText(Object element) {

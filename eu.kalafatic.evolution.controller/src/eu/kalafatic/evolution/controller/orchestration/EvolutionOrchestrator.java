@@ -29,39 +29,49 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
     @Override
     public String execute(String request, TaskContext context) throws Exception {
-        context.log("Orchestrator: Starting request - " + request);
+        try {
+            context.log("Orchestrator: Starting request - " + request);
 
-        // 1. Planning
-        List<Task> tasks = planner.plan(request, context);
-        context.getOrchestrator().getTasks().clear();
-        context.getOrchestrator().getTasks().addAll(tasks);
+            // 1. Planning
+            OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Planning...");
+            List<Task> tasks = planner.plan(request, context);
+            OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Finished");
+            context.getOrchestrator().getTasks().clear();
+            context.getOrchestrator().getTasks().addAll(tasks);
 
-        // 2. Execution Loop
-        int taskCount = tasks.size();
-        for (int i = 0; i < taskCount; i++) {
-            Task task = tasks.get(i);
-            task.setStatus(TaskStatus.RUNNING);
-            double progress = (double) i / taskCount;
-            updateStatus(context, progress, "Executing: " + task.getName());
+            // 2. Execution Loop
+            int taskCount = tasks.size();
+            for (int i = 0; i < taskCount; i++) {
+                Task task = tasks.get(i);
+                task.setStatus(TaskStatus.RUNNING);
+                double progress = (double) i / taskCount;
+                updateStatus(context, progress, "Executing: " + task.getName());
 
-            boolean success = executeTaskWithRetries(task, context);
+                boolean success = executeTaskWithRetries(task, context);
 
-            if (!success) {
-                task.setStatus(TaskStatus.FAILED);
-                throw new Exception("Task failed after maximum retries: " + task.getName());
+                if (!success) {
+                    task.setStatus(TaskStatus.FAILED);
+                    throw new Exception("Task failed after maximum retries: " + task.getName());
+                }
+
+                task.setStatus(TaskStatus.DONE);
+                context.appendSharedMemory("Task [" + task.getName() + "] completed. Result: " + task.getResponse());
             }
 
-            task.setStatus(TaskStatus.DONE);
-            context.appendSharedMemory("Task [" + task.getName() + "] completed. Result: " + task.getResponse());
+            updateStatus(context, 1.0, "Completed");
+            return "Orchestration successful.";
+        } finally {
+            OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Idle");
+            for (IAgent agent : availableAgents) {
+                OrchestrationStatusManager.getInstance().updateAgentStatus(agent.getType(), "Idle");
+            }
         }
-
-        updateStatus(context, 1.0, "Completed");
-        return "Orchestration successful.";
     }
 
     private boolean executeTaskWithRetries(Task task, TaskContext context) throws Exception {
         IAgent agent = findAgentForTask(task, context);
         String lastFeedback = null;
+        OrchestrationStatusManager.getInstance().updateAgentStatus(agent.getType(), "Executing: " + task.getName());
 
         for (int retry = 1; retry <= MAX_RETRIES; retry++) {
             context.log("Orchestrator: Executing " + task.getName() + " (Attempt " + retry + ")");

@@ -11,6 +11,7 @@ public class OrchestrationStatusManager {
 
     private final Map<String, Double> progressMap = new ConcurrentHashMap<>();
     private final Map<String, String> statusMap = new ConcurrentHashMap<>();
+    private final Map<String, String> agentStatusMap = new ConcurrentHashMap<>();
 
     private OrchestrationStatusManager() {}
 
@@ -25,6 +26,12 @@ public class OrchestrationStatusManager {
         }
     }
 
+    public void updateAgentStatus(String agentId, String status) {
+        if (agentId != null) {
+            agentStatusMap.put(agentId, status);
+        }
+    }
+
     public double getProgress(String id) {
         if (id == null) return 0.0;
         return progressMap.getOrDefault(id, 0.0);
@@ -33,5 +40,10 @@ public class OrchestrationStatusManager {
     public String getStatus(String id) {
         if (id == null) return "Idle";
         return statusMap.getOrDefault(id, "Idle");
+    }
+
+    public String getAgentStatus(String agentId) {
+        if (agentId == null) return "Idle";
+        return agentStatusMap.getOrDefault(agentId, "Idle");
     }
 }
