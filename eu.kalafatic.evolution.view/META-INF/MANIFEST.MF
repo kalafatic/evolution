@@ -30,7 +30,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.gef,
  org.eclipse.equinox.p2.ui;bundle-version="2.8.1000"
 Automatic-Module-Name: eu.kalafatic.evolution.view
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-Activator: eu.kalafatic.evolution.view.application.Application
 Export-Package: eu.kalafatic.evolution.view.application,
  eu.kalafatic.evolution.view.nature,
  eu.kalafatic.evolution.view.perspective,
@@ -39,4 +40,4 @@ Export-Package: eu.kalafatic.evolution.view.application,
  eu.kalafatic.evolution.view.views,
  eu.kalafatic.evolution.view.wizards
 Bundle-ClassPath: .,
- lib/
+ lib/json-20140107.jar

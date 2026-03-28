@@ -21,6 +21,7 @@ import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.fieldassist.ControlDecoration;
 import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.custom.StyledText;
@@ -35,6 +36,7 @@ import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FontDialog;
 import org.eclipse.ui.*;
@@ -42,11 +44,17 @@ import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.part.MultiPageEditorPart;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.provider.OrchestrationGraphContentProvider;
+import eu.kalafatic.evolution.view.provider.OrchestrationGraphLabelProvider;
 import eu.kalafatic.evolution.view.wizards.OllamaSettingsPage.OllamaModel;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.PropertySheetPage;
+import org.eclipse.zest.core.viewers.GraphViewer;
+import org.eclipse.zest.core.widgets.ZestStyles;
+import org.eclipse.zest.layouts.LayoutStyles;
+import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -57,11 +65,16 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.emf.common.notify.Adapter;
+import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.common.notify.impl.AdapterImpl;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.eclipse.gef.editparts.ZoomManager;
+
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
@@ -90,7 +103,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 
 	/** The Constant ID. */
 	public static final String ID = "eu.kalafatic.evolution.view.editors.MultiPageEditor";
-	
+
 	public static final String DEFAULT_OLLAMA_URL = "http://localhost:11434";
 
 	/** The text editor used in page 1. */
@@ -139,19 +152,30 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	private boolean dirty = false;
 	private boolean isUpdating = false;
 
-	
+	private GraphViewer viewer;
+	private Orchestrator currentOrchestrator;
+	private ZoomManager zoomManager;
+	private Browser browser;
+	private Text urlText;
+
 	public class OllamaModel {
-	    private String name;
-	    private long size;
+		private String name;
+		private long size;
 
-	    public OllamaModel(String name, long size) {
-	        this.name = name;
-	        this.size = size;
-	    }
+		public OllamaModel(String name, long size) {
+			this.name = name;
+			this.size = size;
+		}
 
-	    public String getName() { return name; }
-	    public long getSize() { return size; }
+		public String getName() {
+			return name;
+		}
+
+		public long getSize() {
+			return size;
+		}
 	}
+
 	/**
 	 * Creates a multi-page editor example.
 	 */
@@ -281,6 +305,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		if (orchestrator == null || isUpdating)
 			return;
 		isUpdating = true;
+		
 
 		orchIdText.setText(orchestrator.getId() != null ? orchestrator.getId() : "");
 		orchNameText.setText(orchestrator.getName() != null ? orchestrator.getName() : "");
@@ -297,6 +322,10 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 			ollamaPathText
 					.setText(orchestrator.getOllama().getPath() != null ? orchestrator.getOllama().getPath() : "");
 
+			ollamaService = new OllamaService(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel())
+					.setTemperature(orchestrator.getLlm() != null ? orchestrator.getLlm().getTemperature() : 0.7f)
+					.setNumPredict(1024).setTopP(0.9f).setTopK(40).setRepeatPenalty(1.1f);
+			
 			new Thread(() -> {
 				String version = "Offline";
 				if (ollamaService != null && ollamaService.ping()) {
@@ -468,7 +497,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		Group orchGroup = new Group(composite, SWT.NONE);
 		orchGroup.setText("Orchestrator");
 		orchGroup.setLayout(new GridLayout(3, false));
-		 orchGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		orchGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 		createLabel(orchGroup, "ID:");
 
@@ -477,7 +506,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		createEditButton(orchGroup, orchIdText);
 
 		createLabel(orchGroup, "Name:");
-		
+
 		orchNameText = new Text(orchGroup, SWT.BORDER);
 		orchNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		createEditButton(orchGroup, orchNameText);
@@ -513,9 +542,10 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		ollamaModelText = new Text(ollamaGroup, SWT.BORDER);
 		ollamaModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		createEditButton(ollamaGroup, ollamaModelText);
-		
-		new Label(ollamaGroup, SWT.NONE).setText("Select Model:");	
+
+		new Label(ollamaGroup, SWT.NONE).setText("Select Model:");
 		selectModel(ollamaGroup);
+		createLabel(ollamaGroup, "");
 
 		new Label(ollamaGroup, SWT.NONE).setText("Model Path:");
 		ollamaPathText = new Text(ollamaGroup, SWT.BORDER);
@@ -697,6 +727,87 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		createEditorPage();
 		createStatusPage();
 		createPreviewPage();
+		createBrowserPage();
+		createGrapghPage();
+	}
+
+	private Adapter modelAdapter = new AdapterImpl() {
+		@Override
+		public void notifyChanged(Notification notification) {
+			refreshViewer();
+		}
+	};
+
+	private void createGrapghPage() {
+		Composite container = new Composite(getContainer(), SWT.NONE);
+		GridLayout layout = new GridLayout();
+		container.setLayout(layout);
+		layout.numColumns = 1;
+		
+		container.setLayoutData(new GridData(GridData.FILL_BOTH));
+		
+		viewer = new GraphViewer(container, SWT.NONE);
+		
+		// VERY IMPORTANT: make viewer control fill space
+	    Control control = viewer.getControl();
+	    control.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+		viewer.setConnectionStyle(ZestStyles.CONNECTIONS_DIRECTED);
+		viewer.setContentProvider(new OrchestrationGraphContentProvider());
+		viewer.setLabelProvider(new OrchestrationGraphLabelProvider());
+		viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING));
+	
+		// IMPORTANT: You must set the input for the graph to actually render data
+	     viewer.setInput(orchestrator != null ? new Object[] { orchestrator } : new Object[0]);
+		
+		int index = addPage(container);
+		setPageText(index, "Graph");
+	}
+
+	private void updateInput(Orchestrator orchestrator) {
+		if (currentOrchestrator != null) {
+			currentOrchestrator.eAdapters().remove(modelAdapter);
+		}
+		currentOrchestrator = orchestrator;
+		if (currentOrchestrator != null) {
+			currentOrchestrator.eAdapters().add(modelAdapter);
+			viewer.setInput(new Object[] { currentOrchestrator });
+		}
+	}
+
+	public void refreshViewer() {
+		Display.getDefault().asyncExec(() -> {
+			if (viewer != null && !viewer.getControl().isDisposed()) {
+				viewer.refresh();
+				viewer.applyLayout();
+			}
+		});
+	}
+
+	private void createBrowserPage() {		
+		Composite container = new Composite(getContainer(), SWT.NONE);
+		container.setLayout(new GridLayout(2, false));
+		container.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		urlText = new Text(container, SWT.BORDER);
+		urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		urlText.setText("https://ollama.com");
+
+		Button goButton = new Button(container, SWT.PUSH);
+		goButton.setText("Go");
+		goButton.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				browser.setUrl(urlText.getText());
+			}
+		});
+
+		browser = new Browser(container, SWT.NONE);
+		browser.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+		browser.setUrl(urlText.getText());
+		
+		int index = addPage(container);
+		setPageText(index, "Browser");
 	}
 
 	/**
@@ -1045,66 +1156,67 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 			}
 		});
 	}
-	
+
 	private Combo selectModel(Composite parent) {
 		List<OllamaModel> models = loadModels(); // Load models to populate the combo
-		
-		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);	
 
+		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);
+		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		
 		if (models != null) {
-		    for (OllamaModel f : models) {
-		        combo.add(f.getName());
-		    }
+			for (OllamaModel f : models) {
+				combo.add(f.getName());
+			}
 		}
 
 		// selection listener
 		combo.addListener(SWT.Selection, e -> {
-		    int index = combo.getSelectionIndex();
-		    if (index >= 0) {
-		    	OllamaModel selected = models.get(index);
-		        System.out.println("Selected: " + selected.getName());
-		    }
+			int index = combo.getSelectionIndex();
+			if (index >= 0) {
+				OllamaModel selected = models.get(index);
+				ollamaModelText.setText(selected.getName());
+				updatePropertiesInfo() ; // Update to reflect model change
+				System.out.println("Selected: " + selected.getName());
+			}
 		});
 		return combo;
 	}
-	
+
 	public List<OllamaModel> loadModels() {
-	    List<OllamaModel> result = new ArrayList<>();
+		List<OllamaModel> result = new ArrayList<>();
 
-	    try {
-	        URL url = new URL(DEFAULT_OLLAMA_URL + "/api/tags");
-	        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-	        conn.setRequestMethod("GET");
+		try {
+			URL url = new URL(DEFAULT_OLLAMA_URL + "/api/tags");
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
 
-	        BufferedReader reader = new BufferedReader(
-	            new InputStreamReader(conn.getInputStream())
-	        );
+			BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
-	        StringBuilder json = new StringBuilder();
-	        String line;
+			StringBuilder json = new StringBuilder();
+			String line;
 
-	        while ((line = reader.readLine()) != null) {
-	            json.append(line);
-	        }
+			while ((line = reader.readLine()) != null) {
+				json.append(line);
+			}
 
-	        reader.close();
+			reader.close();
 
-	        JSONObject obj = new JSONObject(json.toString());
-	        JSONArray models = obj.getJSONArray("models");
+			JSONObject obj = new JSONObject(json.toString());
+			JSONArray models = obj.getJSONArray("models");
 
-	        for (int i = 0; i < models.length(); i++) {
-	            JSONObject m = models.getJSONObject(i);
+			for (int i = 0; i < models.length(); i++) {
+				JSONObject m = models.getJSONObject(i);
 
-	            String name = m.getString("name");
-	            long size = m.optLong("size", 0);
+				String name = m.getString("name");
+				long size = m.optLong("size", 0);
 
-	            result.add(new OllamaModel(name, size));
-	        }
+				result.add(new OllamaModel(name, size));
+			}
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-	    return result;
+		return result;
 	}
 }

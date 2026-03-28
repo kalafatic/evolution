@@ -20,6 +20,7 @@ public class EvoPerspective implements IPerspectiveFactory {
     @Override
     public void createInitialLayout(IPageLayout layout) {
         String editorArea = layout.getEditorArea();
+        // ❗ Hide editor area completely
         layout.setEditorAreaVisible(true);
 
         // Left column - Navigators (Evo Navigator and Project Explorer) - 20%
@@ -28,11 +29,12 @@ public class EvoPerspective implements IPerspectiveFactory {
         //left.addView(IPageLayout.ID_PROJECT_EXPLORER);
 
         // Bottom Area (relative to Editor Area) - Orchestration Graph, AI Output, and Properties - 30% of total height
-        IFolderLayout bottom = layout.createFolder(EFolder.BOTTOM_RIGHT.ID, IPageLayout.BOTTOM, 0.30f, editorArea);
-        bottom.addView(OrchestrationZestView.ID);
+        //IFolderLayout bottom = layout.createFolder(EFolder.BOTTOM_RIGHT.ID, IPageLayout.BOTTOM, 0.30f, editorArea);
+        //IFolderLayout right = layout.createFolder(EFolder.BOTTOM_RIGHT.ID, IPageLayout.RIGHT, 0.8f, "eu.kalafatic.views.EvoNavigator");
+        //right.addView(OrchestrationZestView.ID);
        // bottom.addView(AIOutputView.ID);
        // bottom.addView(IPageLayout.ID_PROP_SHEET);
-        bottom.addView(InternalBrowserView.ID);
+        //right.addView(InternalBrowserView.ID);
 
         // Configure generic workbench features
         addActionSets(layout);

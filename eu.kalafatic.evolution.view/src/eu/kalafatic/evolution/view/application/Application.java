@@ -18,8 +18,6 @@ import org.eclipse.ui.internal.ide.ChooseWorkspaceDialog;
  */
 public class Application implements IApplication {
 	
-	public static final String APPLICATION_ID = "eu.kalafatic.evolution.view.application.Application"; //$NON-NLS-1$
-
 	@Override
 	public Object start(IApplicationContext context) throws Exception {
 		Display display = PlatformUI.createDisplay();
