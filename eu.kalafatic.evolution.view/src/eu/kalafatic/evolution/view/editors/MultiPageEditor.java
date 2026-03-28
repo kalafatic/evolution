@@ -824,12 +824,15 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		setupZoomSupport();
 		createGraphToolbar(container);
 
+		
 		// IMPORTANT: You must set the input for the graph to actually render data
 	     viewer.setInput(orchestrator != null ? new Object[] { orchestrator } : new Object[0]);
 		
 		int index = addPage(container);
 		setPageText(index, "Graph");
 	}
+	
+	
 
 	private void setupZoomSupport() {
 		IFigure contents = viewer.getGraphControl().getContents();
@@ -970,17 +973,31 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	 * Saves the multi-page editor's document.
 	 */
 	public void doSave(IProgressMonitor monitor) {
-		getEditor(1).doSave(monitor);
-		if (dirty && orchestrator != null && orchestrator.eResource() != null) {
-			try {
-				orchestrator.eResource().save(java.util.Collections.emptyMap());
-				setDirty(false);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
+	    // 1. Safely handle the nested editor
+	    IEditorPart editor = getEditor(1);
+	    if (editor != null) {
+	        editor.doSave(monitor);
+	    } else {
+	        // Log a warning or handle the case where the editor page isn't ready
+	        System.err.println("Warning: Editor at index 1 is null during save.");
+	    }
 
+	    // 2. Safely handle the EMF Resource (Orchestrator)
+	    // Added a check for orchestrator != null to prevent NPE on the eResource() call itself
+	    if (dirty && orchestrator != null) {
+	        org.eclipse.emf.ecore.resource.Resource resource = orchestrator.eResource();
+	        
+	        if (resource != null) {
+	            try {
+	                resource.save(java.util.Collections.emptyMap());
+	                setDirty(false);
+	            } catch (Exception e) {
+	                // Use a proper logger in production
+	                e.printStackTrace();
+	            }
+	        }
+	    }
+	}
 	/**
 	 * Saves the multi-page editor's document as another file. Also updates the text
 	 * for page 0's tab, and updates this multi-page editor's input to correspond to
