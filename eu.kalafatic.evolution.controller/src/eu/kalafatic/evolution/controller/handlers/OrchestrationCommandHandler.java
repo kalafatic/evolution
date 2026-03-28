@@ -15,6 +15,8 @@ import eu.kalafatic.evolution.model.orchestration.*;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.manager.TrainingManager;
 import eu.kalafatic.evolution.controller.engine.NeuronEngine;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -34,8 +36,6 @@ import org.json.JSONArray;
 
 
 public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
-
-    private static final int MAX_RETRIES = 3;
 
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -79,61 +79,11 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
 
         monitor.beginTask("Orchestration: " + orchestrator.getName(), 100);
 
-        // 1. Task Decomposition
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.05, "Decomposing tasks...");
-        monitor.subTask("Planning workflow...");
-        List<Task> tasks = decomposeTasks(orchestrator);
-        orchestrator.getTasks().clear();
-        orchestrator.getTasks().addAll(tasks);
-        monitor.worked(10);
+        TaskContext context = new TaskContext(orchestrator, project.getLocation().toFile());
+        context.appendSharedMemory("Initial Request: " + orchestrator.getAiChat().getPrompt());
 
-        // 2. Execution Loop with Evaluation and Retry
-        String handOffContext = orchestrator.getAiChat().getPrompt();
-        int taskCount = tasks.size();
-        for (int i = 0; i < taskCount; i++) {
-            Task task = tasks.get(i);
-            String taskName = task.getName();
-            double baseProgress = 0.1 + (0.8 * (double) i / taskCount);
-
-            task.setStatus(TaskStatus.RUNNING);
-            Agent agent = findAgentForTask(orchestrator, task);
-
-            boolean taskSuccess = false;
-            String lastFeedback = null;
-
-            for (int retry = 0; retry < MAX_RETRIES; retry++) {
-                String statusMsg = "Executing " + taskName + (retry > 0 ? " (Retry " + retry + ")" : "");
-                OrchestrationStatusManager.getInstance().updateStatus(id, baseProgress, statusMsg);
-                monitor.subTask(statusMsg);
-
-                String response = executeTask(orchestrator, project, agent, task, handOffContext, lastFeedback);
-                task.setResponse(response);
-
-                // 3. Evaluation
-                monitor.subTask("Evaluating: " + taskName);
-                String evaluationResult = evaluateTask(orchestrator, task, handOffContext);
-                JSONObject evalJson = parseEvaluation(evaluationResult);
-
-                if (evalJson.optBoolean("success", false)) {
-                    task.setStatus(TaskStatus.DONE);
-                    task.setFeedback("Success: " + evalJson.optString("comment", "Task completed."));
-                    taskSuccess = true;
-                    break;
-                } else {
-                    lastFeedback = evalJson.optString("feedback", "Task failed validation.");
-                    task.setFeedback("Failure: " + lastFeedback);
-                }
-            }
-
-            if (!taskSuccess) {
-                task.setStatus(TaskStatus.FAILED);
-                throw new Exception("Task failed after " + MAX_RETRIES + " attempts: " + taskName + ". Feedback: " + task.getFeedback());
-            }
-
-            // Hand-off: output of this task becomes context for the next
-            handOffContext += "\n\nPrevious task [" + taskName + "] output:\n" + task.getResponse();
-            monitor.worked(80 / taskCount);
-        }
+        EvolutionOrchestrator core = new EvolutionOrchestrator();
+        core.execute(orchestrator.getAiChat().getPrompt(), context);
 
         OrchestrationStatusManager.getInstance().updateStatus(id, 1.0, "Completed");
         monitor.done();
