@@ -47,6 +47,8 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.provider.OrchestrationGraphContentProvider;
 import eu.kalafatic.evolution.view.provider.OrchestrationGraphLabelProvider;
 import eu.kalafatic.evolution.view.wizards.OllamaSettingsPage.OllamaModel;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
@@ -54,12 +56,23 @@ import org.eclipse.ui.views.properties.PropertySheetPage;
 import org.eclipse.zest.core.viewers.GraphViewer;
 import org.eclipse.zest.core.widgets.ZestStyles;
 import org.eclipse.zest.layouts.LayoutStyles;
-import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 
+import org.eclipse.core.runtime.Path;
+import org.eclipse.draw2d.IFigure;
+import org.eclipse.draw2d.ScalableFigure;
+import org.eclipse.draw2d.Viewport;
+import org.eclipse.gef.editparts.ZoomManager;
+import org.eclipse.gef.ui.actions.ZoomComboContributionItem;
+import org.eclipse.gef.ui.actions.ZoomInAction;
+import org.eclipse.gef.ui.actions.ZoomOutAction;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.ISelection;
@@ -68,12 +81,12 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.impl.AdapterImpl;
+import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.eclipse.gef.editparts.ZoomManager;
 
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.manager.OllamaConfigManager;
@@ -83,6 +96,7 @@ import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Combo;
+import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
@@ -128,6 +142,8 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 
 	private org.eclipse.swt.widgets.Label ollamaStatusLabel;
 	private org.eclipse.swt.widgets.Label modelStatusLabel;
+	private ProgressBar progressBar;
+	private Label statusLabel;
 
 	private ResourceSet resourceSet = new ResourceSetImpl();
 
@@ -158,7 +174,6 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	private boolean isUpdating = false;
 
 	private GraphViewer viewer;
-	private Orchestrator currentOrchestrator;
 	private ZoomManager zoomManager;
 	private Browser browser;
 	private Text urlText;
@@ -214,42 +229,56 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 			if (request.isEmpty())
 				return;
 
-			if (ollamaService == null) {
-				String url = null;
-				String model = null;
-				float temperature = 0.7f;
-				if (orchestrator != null) {
-					if (orchestrator.getOllama() != null) {
-						url = orchestrator.getOllama().getUrl();
-						model = orchestrator.getOllama().getModel();
-					}
-					if (orchestrator.getLlm() != null) {
-						temperature = orchestrator.getLlm().getTemperature();
-					}
-				}
-				ollamaService = new OllamaService(url, model).setTemperature(temperature).setNumPredict(1024)
-						.setTopP(0.9f).setTopK(40).setRepeatPenalty(1.1f);
-			}
-
 			String currentResponse = responseText.getText();
 			responseText.setText(currentResponse + (currentResponse.isEmpty() ? "" : "\n\n") + "You: " + request
-					+ "\n\nOllama: thinking...");
+					+ "\n\nEvolution: Initializing orchestration...");
 			requestText.setText("");
 
 			new Thread(() -> {
 				try {
-					String reply = ollamaService.chat(request);
+					EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
+
+					File projectRoot = null;
+					if (getEditorInput() instanceof IFileEditorInput) {
+						IFile file = ((IFileEditorInput) getEditorInput()).getFile();
+						projectRoot = file.getProject().getLocation().toFile();
+					} else if (orchestrator != null && orchestrator.eResource() != null) {
+						URI uri = orchestrator.eResource().getURI();
+						if (uri.isPlatformResource()) {
+							String path = uri.toPlatformString(true);
+							IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(path));
+							projectRoot = file.getProject().getLocation().toFile();
+						}
+					}
+
+					if (projectRoot == null) {
+						projectRoot = new File(System.getProperty("java.io.tmpdir"));
+					}
+
+					TaskContext context = new TaskContext(orchestrator, projectRoot);
+					context.addLogListener(log -> {
+						Display.getDefault().asyncExec(() -> {
+							if (!responseText.isDisposed()) {
+								responseText.append("\n" + log);
+								responseText.setSelection(responseText.getCharCount());
+							}
+						});
+					});
+
+					String result = evolutionOrchestrator.execute(request, context);
+
 					Display.getDefault().asyncExec(() -> {
-						String updatedResponse = responseText.getText();
-						updatedResponse = updatedResponse.replace("Ollama: thinking...", "Ollama: " + reply);
-						responseText.setText(updatedResponse);
-						responseText.setSelection(responseText.getCharCount());
+						if (!responseText.isDisposed()) {
+							responseText.append("\n\nEvolution: " + result);
+							responseText.setSelection(responseText.getCharCount());
+						}
 					});
 				} catch (Exception e) {
 					Display.getDefault().asyncExec(() -> {
-						String updatedResponse = responseText.getText();
-						updatedResponse = updatedResponse.replace("Ollama: thinking...", "Error: " + e.getMessage());
-						responseText.setText(updatedResponse);
+						if (!responseText.isDisposed()) {
+							responseText.append("\n\nError: " + e.getMessage());
+							responseText.setSelection(responseText.getCharCount());
+						}
 					});
 				}
 			}).start();
@@ -295,6 +324,19 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		modelStatusLabel = new org.eclipse.swt.widgets.Label(statusBar, SWT.NONE);
 		modelStatusLabel.setText("Not Configured");
 		modelStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		Composite progressBox = new Composite(composite, SWT.NONE);
+		progressBox.setLayout(new GridLayout(2, false));
+		progressBox.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		statusLabel = new Label(progressBox, SWT.NONE);
+		statusLabel.setText("Idle");
+		statusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		progressBar = new ProgressBar(progressBox, SWT.HORIZONTAL);
+		progressBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		progressBar.setMinimum(0);
+		progressBar.setMaximum(100);
 
 		updateStatusInfo();
 
@@ -490,6 +532,20 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 			public void run() {
 				if (!statusCanvas.isDisposed()) {
 					statusCanvas.redraw();
+
+					if (orchestrator != null) {
+						String id = orchestrator.getId();
+						double progress = OrchestrationStatusManager.getInstance().getProgress(id);
+						String status = OrchestrationStatusManager.getInstance().getStatus(id);
+
+						if (progressBar != null && !progressBar.isDisposed()) {
+							progressBar.setSelection((int) (progress * 100));
+						}
+						if (statusLabel != null && !statusLabel.isDisposed()) {
+							statusLabel.setText(status);
+						}
+					}
+
 					Display.getDefault().timerExec(1000, this);
 				}
 			}
@@ -735,17 +791,18 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		createLLMSettingsPage();
 		createPreviewPage();
 		createBrowserPage();
-		createGrapghPage();
+		createGraphPage();
 	}
 
-	private Adapter modelAdapter = new AdapterImpl() {
+	private Adapter modelAdapter = new EContentAdapter() {
 		@Override
 		public void notifyChanged(Notification notification) {
+			super.notifyChanged(notification);
 			refreshViewer();
 		}
 	};
 
-	private void createGrapghPage() {
+	private void createGraphPage() {
 		Composite container = new Composite(getContainer(), SWT.NONE);
 		GridLayout layout = new GridLayout();
 		container.setLayout(layout);
@@ -764,6 +821,9 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		viewer.setLabelProvider(new OrchestrationGraphLabelProvider());
 		viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING));
 	
+		setupZoomSupport();
+		createGraphToolbar(container);
+
 		// IMPORTANT: You must set the input for the graph to actually render data
 	     viewer.setInput(orchestrator != null ? new Object[] { orchestrator } : new Object[0]);
 		
@@ -771,14 +831,92 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		setPageText(index, "Graph");
 	}
 
-	private void updateInput(Orchestrator orchestrator) {
-		if (currentOrchestrator != null) {
-			currentOrchestrator.eAdapters().remove(modelAdapter);
+	private void setupZoomSupport() {
+		IFigure contents = viewer.getGraphControl().getContents();
+		Viewport viewport = viewer.getGraphControl().getViewport();
+		zoomManager = new ZoomManager((ScalableFigure) contents, viewport);
+
+		double[] zoomLevels = { 0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0 };
+		zoomManager.setZoomLevels(zoomLevels);
+
+		List<String> zoomContributions = new ArrayList<>();
+		zoomContributions.add(ZoomManager.FIT_ALL);
+		zoomContributions.add(ZoomManager.FIT_HEIGHT);
+		zoomContributions.add(ZoomManager.FIT_WIDTH);
+		zoomManager.setZoomLevelContributions(zoomContributions);
+	}
+
+	private void createGraphToolbar(Composite parent) {
+		Composite toolbarComposite = new Composite(parent, SWT.NONE);
+		toolbarComposite.setLayout(new FillLayout());
+		toolbarComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+
+		ToolBarManager mgr = new ToolBarManager(SWT.FLAT | SWT.RIGHT);
+		mgr.createControl(toolbarComposite);
+
+		mgr.add(new Action("Refresh") {
+			@Override
+			public void run() {
+				refreshViewer();
+			}
+		});
+
+		mgr.add(new Action("Tree Layout") {
+			@Override
+			public void run() {
+				viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true);
+			}
+		});
+
+		mgr.add(new Action("Spring Layout") {
+			@Override
+			public void run() {
+				viewer.setLayoutAlgorithm(new SpringLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true);
+			}
+		});
+
+		mgr.add(new Action("Radial Layout") {
+			@Override
+			public void run() {
+				viewer.setLayoutAlgorithm(new RadialLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true);
+			}
+		});
+
+		mgr.add(new Action("Horizontal Tree") {
+			@Override
+			public void run() {
+				viewer.setLayoutAlgorithm(new HorizontalTreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true);
+			}
+		});
+
+		mgr.add(new Separator());
+
+		if (zoomManager != null) {
+			mgr.add(new ZoomComboContributionItem(getSite().getPage()));
+			mgr.add(new ZoomInAction(zoomManager));
+			mgr.add(new ZoomOutAction(zoomManager));
+
+			mgr.add(new Action("Fit to Page") {
+				@Override
+				public void run() {
+					zoomManager.setZoomAsText(ZoomManager.FIT_ALL);
+				}
+			});
 		}
-		currentOrchestrator = orchestrator;
-		if (currentOrchestrator != null) {
-			currentOrchestrator.eAdapters().add(modelAdapter);
-			viewer.setInput(new Object[] { currentOrchestrator });
+
+		mgr.update(true);
+	}
+
+	private void updateInput(Orchestrator orchestrator) {
+		if (this.orchestrator != null) {
+			this.orchestrator.eAdapters().remove(modelAdapter);
+		}
+		this.orchestrator = orchestrator;
+		if (this.orchestrator != null) {
+			this.orchestrator.eAdapters().add(modelAdapter);
+			if (viewer != null) {
+				viewer.setInput(new Object[] { this.orchestrator });
+			}
 		}
 	}
 

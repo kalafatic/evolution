@@ -2,9 +2,11 @@ package eu.kalafatic.evolution.controller.orchestration;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
@@ -14,8 +16,13 @@ public class TaskContext {
     private final Orchestrator orchestrator;
     private final File projectRoot;
     private final Map<String, String> state = new ConcurrentHashMap<>();
-    private final List<String> logs = new ArrayList<>();
+    private final List<String> logs = Collections.synchronizedList(new ArrayList<>());
     private String sharedMemory = "";
+    private final List<LogListener> listeners = new CopyOnWriteArrayList<>();
+
+    public interface LogListener {
+        void onLog(String message);
+    }
 
     public TaskContext(Orchestrator orchestrator, File projectRoot) {
         this.orchestrator = orchestrator;
@@ -32,6 +39,17 @@ public class TaskContext {
 
     public void log(String message) {
         logs.add(message);
+        notifyListeners(message);
+    }
+
+    public void addLogListener(LogListener listener) {
+        listeners.add(listener);
+    }
+
+    private void notifyListeners(String message) {
+        for (LogListener listener : listeners) {
+            listener.onLog(message);
+        }
     }
 
     public List<String> getLogs() {

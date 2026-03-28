@@ -1,3 +1,3 @@
 package eu.kalafatic.utils.hack;
-import org.eclipse.ui.splash.AbstractSplashHandler;
-public class EclipseSplashHandler extends AbstractSplashHandler {}
+import eu.kalafatic.utils.dialogs.GeminiSplashHandler;
+public class EclipseSplashHandler extends GeminiSplashHandler {}
