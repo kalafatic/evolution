@@ -73,6 +73,18 @@ public class EvoNavigator extends CommonNavigator {
 	public void createPartControl(final Composite parent) {
 		super.createPartControl(parent);
 
+		Tree tree = getCommonViewer().getTree();
+		tree.setHeaderVisible(true);
+		tree.setLinesVisible(true);
+
+		org.eclipse.swt.widgets.TreeColumn column1 = new org.eclipse.swt.widgets.TreeColumn(tree, SWT.LEFT);
+		column1.setText("Element");
+		column1.setWidth(300);
+
+		org.eclipse.swt.widgets.TreeColumn column2 = new org.eclipse.swt.widgets.TreeColumn(tree, SWT.LEFT);
+		column2.setText("Status");
+		column2.setWidth(200);
+
 		makeActions();
 		contributeToActionBars();
 	}
