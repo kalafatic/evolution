@@ -23,4 +23,5 @@ Automatic-Module-Name: eu.kalafatic.evolution.controller
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Export-Package: eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.handlers,
- eu.kalafatic.evolution.controller.manager
+ eu.kalafatic.evolution.controller.manager,
+ eu.kalafatic.evolution.controller.orchestration

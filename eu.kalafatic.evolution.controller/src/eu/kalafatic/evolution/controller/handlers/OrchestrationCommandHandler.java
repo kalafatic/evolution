@@ -15,6 +15,9 @@ import eu.kalafatic.evolution.model.orchestration.*;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.manager.TrainingManager;
 import eu.kalafatic.evolution.controller.engine.NeuronEngine;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.AiService;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -35,7 +38,7 @@ import org.json.JSONArray;
 
 public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
 
-    private static final int MAX_RETRIES = 3;
+    private final AiService aiService = new AiService();
 
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -79,61 +82,11 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
 
         monitor.beginTask("Orchestration: " + orchestrator.getName(), 100);
 
-        // 1. Task Decomposition
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.05, "Decomposing tasks...");
-        monitor.subTask("Planning workflow...");
-        List<Task> tasks = decomposeTasks(orchestrator);
-        orchestrator.getTasks().clear();
-        orchestrator.getTasks().addAll(tasks);
-        monitor.worked(10);
+        TaskContext context = new TaskContext(orchestrator, project.getLocation().toFile());
+        context.appendSharedMemory("Initial Request: " + orchestrator.getAiChat().getPrompt());
 
-        // 2. Execution Loop with Evaluation and Retry
-        String handOffContext = orchestrator.getAiChat().getPrompt();
-        int taskCount = tasks.size();
-        for (int i = 0; i < taskCount; i++) {
-            Task task = tasks.get(i);
-            String taskName = task.getName();
-            double baseProgress = 0.1 + (0.8 * (double) i / taskCount);
-
-            task.setStatus(TaskStatus.RUNNING);
-            Agent agent = findAgentForTask(orchestrator, task);
-
-            boolean taskSuccess = false;
-            String lastFeedback = null;
-
-            for (int retry = 0; retry < MAX_RETRIES; retry++) {
-                String statusMsg = "Executing " + taskName + (retry > 0 ? " (Retry " + retry + ")" : "");
-                OrchestrationStatusManager.getInstance().updateStatus(id, baseProgress, statusMsg);
-                monitor.subTask(statusMsg);
-
-                String response = executeTask(orchestrator, project, agent, task, handOffContext, lastFeedback);
-                task.setResponse(response);
-
-                // 3. Evaluation
-                monitor.subTask("Evaluating: " + taskName);
-                String evaluationResult = evaluateTask(orchestrator, task, handOffContext);
-                JSONObject evalJson = parseEvaluation(evaluationResult);
-
-                if (evalJson.optBoolean("success", false)) {
-                    task.setStatus(TaskStatus.DONE);
-                    task.setFeedback("Success: " + evalJson.optString("comment", "Task completed."));
-                    taskSuccess = true;
-                    break;
-                } else {
-                    lastFeedback = evalJson.optString("feedback", "Task failed validation.");
-                    task.setFeedback("Failure: " + lastFeedback);
-                }
-            }
-
-            if (!taskSuccess) {
-                task.setStatus(TaskStatus.FAILED);
-                throw new Exception("Task failed after " + MAX_RETRIES + " attempts: " + taskName + ". Feedback: " + task.getFeedback());
-            }
-
-            // Hand-off: output of this task becomes context for the next
-            handOffContext += "\n\nPrevious task [" + taskName + "] output:\n" + task.getResponse();
-            monitor.worked(80 / taskCount);
-        }
+        EvolutionOrchestrator core = new EvolutionOrchestrator();
+        core.execute(orchestrator.getAiChat().getPrompt(), context);
 
         OrchestrationStatusManager.getInstance().updateStatus(id, 1.0, "Completed");
         monitor.done();
@@ -380,27 +333,11 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
     }
 
     public String sendRequest(Orchestrator orchestrator, String prompt) throws Exception {
-        return sendRequest(orchestrator, prompt, null);
+        return aiService.sendRequest(orchestrator, prompt);
     }
 
     public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl) throws Exception {
-        float temperature = 0.7f;
-        if (orchestrator.getLlm() != null) {
-            temperature = orchestrator.getLlm().getTemperature();
-        }
-
-        if (orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null && !orchestrator.getOllama().getUrl().isEmpty()) {
-            return sendOllamaRequest(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel(), prompt, proxyUrl, temperature);
-        } else if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
-            return sendAiChatRequest(orchestrator.getAiChat().getUrl(), orchestrator.getAiChat().getToken(), prompt, proxyUrl, temperature);
-        } else if (orchestrator.getNeuronAI() != null) {
-            String url = orchestrator.getNeuronAI().getUrl();
-            if (url == null || url.isEmpty() || url.equalsIgnoreCase("local")) {
-                return new NeuronEngine().runModel(orchestrator.getNeuronAI().getType(), orchestrator.getNeuronAI().getModel(), prompt);
-            }
-            return sendNeuronAIRequest(url, orchestrator.getNeuronAI().getModel(), prompt, proxyUrl);
-        }
-        throw new Exception("No LLM service configured (Ollama, AI Chat or Neuron AI)");
+        return aiService.sendRequest(orchestrator, prompt, proxyUrl);
     }
 
     private String executeCommand(java.io.File workingDir, String... command) throws Exception {
@@ -433,87 +370,9 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return new JSONObject(response.substring(start, end + 1));
     }
 
-    private HttpClient getClient(String proxyUrl) {
-        HttpClient.Builder builder = HttpClient.newBuilder();
-        if (proxyUrl != null && !proxyUrl.isEmpty()) {
-            try {
-                URI proxyUri = URI.create(proxyUrl);
-                builder.proxy(ProxySelector.of(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort())));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return builder.build();
-    }
-
-    private String sendAiChatRequest(String url, String token, String prompt, String proxyUrl, float temperature) throws Exception {
-        HttpClient client = getClient(proxyUrl);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("prompt", prompt);
-        jsonObject.put("temperature", temperature);
-        String json = jsonObject.toString();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Bearer " + token)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return new JSONObject(response.body()).getString("response");
-    }
-
-    private String sendOllamaRequest(String url, String model, String prompt, String proxyUrl, float temperature) throws Exception {
-        HttpClient client = getClient(proxyUrl);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("model", model);
-        jsonObject.put("prompt", prompt);
-        jsonObject.put("stream", false);
-        JSONObject options = new JSONObject();
-        options.put("temperature", temperature);
-        jsonObject.put("options", options);
-        String json = jsonObject.toString();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        JSONObject jsonResponse = new JSONObject(response.body());
-        return jsonResponse.has("response") ? jsonResponse.getString("response") : jsonResponse.getString("solution");
-    }
-
-    private String sendNeuronAIRequest(String url, String model, String prompt, String proxyUrl) throws Exception {
-        HttpClient client = getClient(proxyUrl);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("model", model);
-        jsonObject.put("prompt", prompt);
-        String json = jsonObject.toString();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        JSONObject jsonResponse = new JSONObject(response.body());
-        return jsonResponse.optString("response", jsonResponse.optString("output", "No response from Neuron AI"));
-    }
-
     public String[] getOllamaModels() {
-        try {
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:11434/api/tags"))
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            JSONObject jsonResponse = new JSONObject(response.body());
-            JSONArray models = jsonResponse.getJSONArray("models");
-            List<String> modelNames = new ArrayList<>();
-            for (int i = 0; i < models.length(); i++) {
-                modelNames.add(models.getJSONObject(i).getString("name"));
-            }
-            return modelNames.toArray(new String[0]);
-        } catch (Exception e) {
-            return new String[0];
-        }
+        String baseUrl = (getOrchestrator(null) != null && getOrchestrator(null).getOllama() != null)
+                         ? getOrchestrator(null).getOllama().getUrl() : "http://localhost:11434";
+        return aiService.getOllamaModels(baseUrl);
     }
 }

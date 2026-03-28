@@ -76,6 +76,9 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.gef.editparts.ZoomManager;
 
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
+import eu.kalafatic.evolution.controller.manager.OllamaConfigManager;
+import eu.kalafatic.evolution.controller.manager.OllamaConfigManager.OllamaDefaults;
+
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.widgets.Canvas;
@@ -105,6 +108,8 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	public static final String ID = "eu.kalafatic.evolution.view.editors.MultiPageEditor";
 
 	public static final String DEFAULT_OLLAMA_URL = "http://localhost:11434";
+	public static final String DEFAULT_OLLAMA_DIR = System.getProperty("user.home") + File.separator + "ollama";
+	public static final String DEFAULT_OLLAMA_MODELS_DIR= DEFAULT_OLLAMA_DIR + File.separator + "models";
 
 	/** The text editor used in page 1. */
 	private TextEditor editor;
@@ -196,15 +201,11 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		layout.numColumns = 1;
 
 		// Request Area
-		new org.eclipse.swt.widgets.Label(composite, SWT.NONE).setText("Request:");
+		createLabel(composite, "Request:");
 		requestText = new StyledText(composite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
 		GridData requestGridData = new GridData(GridData.FILL_BOTH);
 		requestGridData.heightHint = 100;
 		requestText.setLayoutData(requestGridData);
-
-		// Loading a local GGUF model file
-//        Model model = Model.load("path/to/model.gguf");
-//        String output = model.generate("Hello world!");
 
 		Button sendButton = new Button(composite, SWT.PUSH);
 		sendButton.setText("Send");
@@ -272,7 +273,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		});
 
 		// Response Area
-		new org.eclipse.swt.widgets.Label(composite, SWT.NONE).setText("Response:");
+		createLabel(composite, "Response:");
 		responseText = new StyledText(composite,
 				SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY | SWT.WRAP);
 		GridData responseGridData = new GridData(GridData.FILL_BOTH);
@@ -285,12 +286,12 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		statusBar.setLayout(new GridLayout(4, false));
 		statusBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		new org.eclipse.swt.widgets.Label(statusBar, SWT.NONE).setText("Ollama Status:");
+		createLabel(statusBar, "Ollama Status:");
 		ollamaStatusLabel = new org.eclipse.swt.widgets.Label(statusBar, SWT.NONE);
 		ollamaStatusLabel.setText("Unknown");
 		ollamaStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		new org.eclipse.swt.widgets.Label(statusBar, SWT.NONE).setText("Model:");
+		createLabel(statusBar, "Model:");
 		modelStatusLabel = new org.eclipse.swt.widgets.Label(statusBar, SWT.NONE);
 		modelStatusLabel.setText("Not Configured");
 		modelStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -429,7 +430,9 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	 * Creates page 2 of the multi-page editor, which allows you to change the font
 	 * used in page 3.
 	 */
-	void createStatusPage() {
+	void createLLMSettingsPage() {
+		OllamaDefaults ollamaDefaults = new OllamaConfigManager().getDefaults();
+		
 		ScrolledComposite sc = new ScrolledComposite(getContainer(), SWT.H_SCROLL | SWT.V_SCROLL);
 		sc.setExpandHorizontal(true);
 		sc.setExpandVertical(true);
@@ -533,23 +536,27 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		ollamaGroup.setLayout(new GridLayout(3, false));
 		ollamaGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		new Label(ollamaGroup, SWT.NONE).setText("URL:");
+		createLabel(ollamaGroup,"URL:");
 		ollamaUrlText = new Text(ollamaGroup, SWT.BORDER);
 		ollamaUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		ollamaUrlText.setText(ollamaDefaults.apiUrl);
 		createEditButton(ollamaGroup, ollamaUrlText);
 
-		new Label(ollamaGroup, SWT.NONE).setText("Model:");
+		createLabel(ollamaGroup, "Model:");
 		ollamaModelText = new Text(ollamaGroup, SWT.BORDER);
 		ollamaModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		createEditButton(ollamaGroup, ollamaModelText);
 
-		new Label(ollamaGroup, SWT.NONE).setText("Select Model:");
+		// Placeholder for alignment
+		createLabel(ollamaGroup, "Select Model:");
 		selectModel(ollamaGroup);
 		createLabel(ollamaGroup, "");
 
-		new Label(ollamaGroup, SWT.NONE).setText("Model Path:");
+		createLabel(ollamaGroup, "Model Path:");
 		ollamaPathText = new Text(ollamaGroup, SWT.BORDER);
 		ollamaPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		ollamaPathText.setText(ollamaDefaults.binPath);
+		
 		Button browseOllamaBtn = new Button(ollamaGroup, SWT.PUSH);
 		browseOllamaBtn.setText("...");
 		browseOllamaBtn.addSelectionListener(new SelectionAdapter() {
@@ -564,7 +571,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 			}
 		});
 
-		new Label(ollamaGroup, SWT.NONE).setText("Version:");
+		createLabel(ollamaGroup, "Version:");
 		ollamaVersionText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
 		ollamaVersionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		new Label(ollamaGroup, SWT.NONE); // Placeholder
@@ -600,22 +607,22 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		gitMavenGroup.setLayout(new GridLayout(3, false));
 		gitMavenGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		new Label(gitMavenGroup, SWT.NONE).setText("Git Repo:");
+		createLabel(gitMavenGroup, "Git Repo:");
 		gitRepoText = new Text(gitMavenGroup, SWT.BORDER);
 		gitRepoText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		createEditButton(gitMavenGroup, gitRepoText);
 
-		new Label(gitMavenGroup, SWT.NONE).setText("Git Branch:");
+		createLabel(gitMavenGroup, "Git Branch:");
 		gitBranchText = new Text(gitMavenGroup, SWT.BORDER);
 		gitBranchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		createEditButton(gitMavenGroup, gitBranchText);
 
-		new Label(gitMavenGroup, SWT.NONE).setText("Maven Goals:");
+		createLabel(gitMavenGroup, "Maven Goals:");
 		mavenGoalsText = new Text(gitMavenGroup, SWT.BORDER);
 		mavenGoalsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		createEditButton(gitMavenGroup, mavenGoalsText);
 
-		new Label(gitMavenGroup, SWT.NONE).setText("Maven Profiles:");
+		createLabel(gitMavenGroup, "Maven Profiles:");
 		mavenProfilesText = new Text(gitMavenGroup, SWT.BORDER);
 		mavenProfilesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		createEditButton(gitMavenGroup, mavenProfilesText);
@@ -626,17 +633,17 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		othersGroup.setLayout(new GridLayout(3, false));
 		othersGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		new Label(othersGroup, SWT.NONE).setText("AI Chat URL:");
+		createLabel(othersGroup, "AI Chat URL:");
 		aiChatUrlText = new Text(othersGroup, SWT.BORDER);
 		aiChatUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		createEditButton(othersGroup, aiChatUrlText);
 
-		new Label(othersGroup, SWT.NONE).setText("Neuron AI URL:");
+		createLabel(othersGroup, "Neuron AI URL:");
 		neuronAiUrlText = new Text(othersGroup, SWT.BORDER);
 		neuronAiUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		createEditButton(othersGroup, neuronAiUrlText);
 
-		new Label(othersGroup, SWT.NONE).setText("Compiler Source:");
+		createLabel(othersGroup, "Compiler Source:");
 		compilerSourceText = new Text(othersGroup, SWT.BORDER);
 		compilerSourceText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		createEditButton(othersGroup, compilerSourceText);
@@ -696,7 +703,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		setPageText(index, "Properties");
 	}
 
-	private void createLabel(Group parent, String text) {
+	private void createLabel(Composite parent, String text) {
 		GridData gd = new GridData();
 		gd.widthHint = 100;
 
@@ -725,7 +732,7 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 	protected void createPages() {
 		createAiChatPage();
 		createEditorPage();
-		createStatusPage();
+		createLLMSettingsPage();
 		createPreviewPage();
 		createBrowserPage();
 		createGrapghPage();
@@ -1135,6 +1142,11 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 		if (orchestrator.getCompiler() != null) {
 			orchestrator.getCompiler().setSourceVersion(compilerSourceText.getText());
 		}
+		
+		ollamaService = new OllamaService(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel())
+				.setTemperature(orchestrator.getLlm() != null ? orchestrator.getLlm().getTemperature() : 0.7f)
+				.setNumPredict(1024).setTopP(0.9f).setTopK(40).setRepeatPenalty(1.1f);
+		
 		isUpdating = false;
 	}
 
@@ -1175,7 +1187,13 @@ public class MultiPageEditor extends MultiPageEditorPart implements IResourceCha
 			if (index >= 0) {
 				OllamaModel selected = models.get(index);
 				ollamaModelText.setText(selected.getName());
+				llmModelText.setText(selected.getName());
+				llmTempText.setText("0.7"); // Reset to default for new model
+				
+				updateModelFromFields(); // Update model with new selection
 				updatePropertiesInfo() ; // Update to reflect model change
+				updateStatusInfo(); // Update to reflect model change
+				
 				System.out.println("Selected: " + selected.getName());
 			}
 		});
