@@ -340,13 +340,33 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__NEURON_AI = 10;
 
 	/**
+	 * @generated NOT
+	 */
+	int ORCHESTRATOR__OFFLINE_MODE = 11;
+
+	/**
+	 * @generated NOT
+	 */
+	int ORCHESTRATOR__MCP_SERVER_URL = 12;
+
+	/**
+	 * @generated NOT
+	 */
+	int ORCHESTRATOR__OPEN_AI_TOKEN = 13;
+
+	/**
+	 * @generated NOT
+	 */
+	int ORCHESTRATOR__OPEN_AI_MODEL = 14;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 11;
+	int ORCHESTRATOR_FEATURE_COUNT = 15;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -1304,6 +1324,26 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getOrchestrator_NeuronAI();
+
+	/**
+	 * @generated NOT
+	 */
+	EAttribute getOrchestrator_OfflineMode();
+
+	/**
+	 * @generated NOT
+	 */
+	EAttribute getOrchestrator_McpServerUrl();
+
+	/**
+	 * @generated NOT
+	 */
+	EAttribute getOrchestrator_OpenAiToken();
+
+	/**
+	 * @generated NOT
+	 */
+	EAttribute getOrchestrator_OpenAiModel();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Git <em>Git</em>}'.
