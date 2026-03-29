@@ -11,7 +11,6 @@ import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
-import eu.kalafatic.evolution.view.project.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.manager.*;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;

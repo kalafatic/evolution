@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,7 +47,8 @@ public class AiService {
     }
 
     private HttpClient getClient(String proxyUrl) {
-        HttpClient.Builder builder = HttpClient.newBuilder();
+        HttpClient.Builder builder = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10));
         if (proxyUrl != null && !proxyUrl.isEmpty()) {
             try {
                 URI proxyUri = URI.create(proxyUrl);
@@ -68,14 +70,24 @@ public class AiService {
                 .uri(URI.create(url))
                 .header("Authorization", "Bearer " + token)
                 .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(60))
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new Exception("AI Chat error: " + response.statusCode() + " - " + response.body());
+        }
         return new JSONObject(response.body()).getString("response");
     }
 
     private String sendOllamaRequest(String url, String model, String prompt, String proxyUrl, float temperature) throws Exception {
         HttpClient client = getClient(proxyUrl);
+
+        String fullUrl = url;
+        if (!fullUrl.contains("/api/")) {
+            fullUrl = fullUrl + (fullUrl.endsWith("/") ? "" : "/") + "api/generate";
+        }
+
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("model", model);
         jsonObject.put("prompt", prompt);
@@ -85,11 +97,15 @@ public class AiService {
         jsonObject.put("options", options);
         String json = jsonObject.toString();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+                .uri(URI.create(fullUrl))
                 .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(60))
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new Exception("Ollama error: " + response.statusCode() + " - " + response.body());
+        }
         JSONObject jsonResponse = new JSONObject(response.body());
         return jsonResponse.has("response") ? jsonResponse.getString("response") : jsonResponse.getString("solution");
     }
@@ -103,9 +119,13 @@ public class AiService {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(60))
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new Exception("Neuron AI error: " + response.statusCode() + " - " + response.body());
+        }
         JSONObject jsonResponse = new JSONObject(response.body());
         return jsonResponse.optString("response", jsonResponse.optString("output", "No response from Neuron AI"));
     }

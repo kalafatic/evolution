@@ -24,6 +24,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.ui.IFileEditorInput;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
+import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -139,12 +140,34 @@ public class AiChatPage extends Composite {
         progressBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         progressBar.setMinimum(0);
         progressBar.setMaximum(100);
+
+        Runnable timer = new Runnable() {
+            public void run() {
+                if (!statusLabel.isDisposed()) {
+                    String id = orchestrator != null ? orchestrator.getId() : null;
+                    if (id != null) {
+                        double progress = OrchestrationStatusManager.getInstance().getProgress(id);
+                        String status = OrchestrationStatusManager.getInstance().getStatus(id);
+                        statusLabel.setText(status);
+                        progressBar.setSelection((int)(progress * 100));
+                    }
+                    Display.getDefault().timerExec(500, this);
+                }
+            }
+        };
+        Display.getDefault().timerExec(500, timer);
+
         updateStatusInfo();
     }
 
     private void sendAction() {
         String request = requestText.getText().trim();
         if (request.isEmpty()) return;
+
+        if (orchestrator != null && (orchestrator.getId() == null || orchestrator.getId().isEmpty())) {
+            orchestrator.setId("chat-" + System.currentTimeMillis());
+        }
+
         String currentResponse = responseText.getText();
         String newText = currentResponse + (currentResponse.isEmpty() ? "" : "\n\n") + "You: " + request + "\n\nEvolution: Initializing orchestration...";
         responseText.setText(newText);

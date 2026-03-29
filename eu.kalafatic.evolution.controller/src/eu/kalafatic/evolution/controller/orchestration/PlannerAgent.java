@@ -35,6 +35,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "Request: " + request;
 
         String response = aiService.sendRequest(context.getOrchestrator(), plannerPrompt);
+        context.log("Planner: Received response from AI: " + (response.length() > 100 ? response.substring(0, 100) + "..." : response));
 
         // Extracting JSON logic
         int start = response.indexOf("[");
@@ -42,7 +43,13 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
         if (start == -1 || end == -1 || end <= start) {
             throw new Exception("LLM failed to return a valid JSON array. Response: " + response);
         }
-        JSONArray jsonArray = new JSONArray(response.substring(start, end + 1));
+
+        JSONArray jsonArray;
+        try {
+            jsonArray = new JSONArray(response.substring(start, end + 1));
+        } catch (org.json.JSONException e) {
+            throw new Exception("Failed to parse LLM response as JSON array: " + e.getMessage() + ". Response: " + response);
+        }
 
         List<Task> tasks = new ArrayList<>();
         OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
