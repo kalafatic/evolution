@@ -6,7 +6,7 @@ import eu.kalafatic.evolution.view.provider.OrchestrationGraphLabelProvider;
 
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.impl.AdapterImpl;
+import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.viewers.ISelection;
@@ -21,7 +21,11 @@ import org.eclipse.zest.core.viewers.GraphViewer;
 import org.eclipse.zest.core.widgets.ZestStyles;
 import org.eclipse.zest.layouts.LayoutAlgorithm;
 import org.eclipse.zest.layouts.LayoutStyles;
-import org.eclipse.zest.layouts.algorithms.*;
+import org.eclipse.zest.layouts.algorithms.GridLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.HorizontalTreeLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.RadialLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.SpringLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.ScalableFigure;
@@ -41,10 +45,15 @@ public class OrchestrationZestView extends ViewPart implements ISelectionListene
     private Orchestrator currentOrchestrator;
     private ZoomManager zoomManager;
 
-    private Adapter modelAdapter = new AdapterImpl() {
+    private Adapter modelAdapter = new EContentAdapter() {
         @Override
         public void notifyChanged(Notification notification) {
-            refreshViewer();
+            super.notifyChanged(notification);
+            Display.getDefault().asyncExec(() -> {
+                if (viewer != null && !viewer.getControl().isDisposed()) {
+                    refreshViewer();
+                }
+            });
         }
     };
 
@@ -80,54 +89,20 @@ public class OrchestrationZestView extends ViewPart implements ISelectionListene
     private void createToolbar() {
         IToolBarManager mgr = getViewSite().getActionBars().getToolBarManager();
 
-        mgr.add(new Action("Refresh") {
-            @Override
-            public void run() {
-                refreshViewer();
-            }
-        });
-
-        mgr.add(new Action("Tree Layout") {
-            @Override
-            public void run() {
-                viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true);
-            }
-        });
-
-        mgr.add(new Action("Spring Layout") {
-            @Override
-            public void run() {
-                viewer.setLayoutAlgorithm(new SpringLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true);
-            }
-        });
-
-        mgr.add(new Action("Radial Layout") {
-            @Override
-            public void run() {
-                viewer.setLayoutAlgorithm(new RadialLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true);
-            }
-        });
-
-        mgr.add(new Action("Horizontal Tree") {
-            @Override
-            public void run() {
-                viewer.setLayoutAlgorithm(new HorizontalTreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true);
-            }
-        });
-
+        mgr.add(new Action("Refresh") { @Override public void run() { refreshViewer(); } });
+        mgr.add(new Separator());
+        mgr.add(new Action("Tree") { @Override public void run() { viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        mgr.add(new Action("Horizontal") { @Override public void run() { viewer.setLayoutAlgorithm(new HorizontalTreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        mgr.add(new Action("Spring") { @Override public void run() { viewer.setLayoutAlgorithm(new SpringLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        mgr.add(new Action("Radial") { @Override public void run() { viewer.setLayoutAlgorithm(new RadialLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        mgr.add(new Action("Grid") { @Override public void run() { viewer.setLayoutAlgorithm(new GridLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
         mgr.add(new Separator());
 
         if (zoomManager != null) {
             mgr.add(new ZoomComboContributionItem(getViewSite().getPage()));
             mgr.add(new ZoomInAction(zoomManager));
             mgr.add(new ZoomOutAction(zoomManager));
-
-            mgr.add(new Action("Fit to Page") {
-                @Override
-                public void run() {
-                    zoomManager.setZoomAsText(ZoomManager.FIT_ALL);
-                }
-            });
+            mgr.add(new Action("Fit") { @Override public void run() { zoomManager.setZoomAsText(ZoomManager.FIT_ALL); } });
         }
     }
 
