@@ -12,11 +12,15 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.*;
 import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.part.MultiPageEditorPart;
+import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.listeners.EditorResourceChangeListener;
 import eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener;
@@ -50,16 +54,25 @@ public class MultiPageEditor extends MultiPageEditorPart {
     protected void createPages() {
         loadModel();
         try {
-            aiChatPage = AiChatPageFactory.createAiChatPage(this, orchestrator);
+            if (orchestrator != null) {
+                aiChatPage = AiChatPageFactory.createAiChatPage(this, orchestrator);
 
-            textEditor = new TextEditor();
-            int index = addPage(textEditor, getEditorInput());
-            setPageText(index, "Editor");
+                textEditor = new TextEditor();
+                int index = addPage(textEditor, getEditorInput());
+                setPageText(index, "Editor");
 
-            propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
-            previewPage = PreviewPageFactory.createPreviewPage(this, orchestrator);
-            browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
-            graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
+                propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
+                previewPage = PreviewPageFactory.createPreviewPage(this, orchestrator);
+                browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
+                graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
+            } else {
+                Composite placeholder = new Composite(getContainer(), SWT.NONE);
+                placeholder.setLayout(new FillLayout());
+                Label label = new Label(placeholder, SWT.CENTER);
+                label.setText("No Orchestrator Loaded. Please ensure the file contains at least one Orchestration.");
+                int index = addPage(placeholder);
+                setPageText(index, "Error");
+            }
         } catch (PartInitException e) {
             ErrorDialog.openError(getSite().getShell(), "Error creating pages", null, e.getStatus());
         }
@@ -77,7 +90,15 @@ public class MultiPageEditor extends MultiPageEditorPart {
             URI uri = URI.createPlatformResourceURI(((IFileEditorInput) input).getFile().getFullPath().toString(), true);
             resource = resourceSet.getResource(uri, true);
             if (resource != null && !resource.getContents().isEmpty()) {
-                orchestrator = (Orchestrator) resource.getContents().get(0);
+                Object root = resource.getContents().get(0);
+                if (root instanceof Orchestrator) {
+                    orchestrator = (Orchestrator) root;
+                } else if (root instanceof EvoProject) {
+                    EvoProject project = (EvoProject) root;
+                    if (!project.getOrchestrations().isEmpty()) {
+                        orchestrator = project.getOrchestrations().get(0);
+                    }
+                }
             }
         } else if (input instanceof OrchestratorEditorInput) {
             orchestrator = ((OrchestratorEditorInput) input).getOrchestrator();
