@@ -2,11 +2,16 @@ package eu.kalafatic.utils.lib;
 import java.util.ArrayList;
 import java.util.List;
 import eu.kalafatic.utils.dialogs.GeminiSplashHandler;
+import eu.kalafatic.utils.interfaces.ISplashUser;
 import org.eclipse.swt.widgets.TrayItem;
+
 public class AppData {
     private static AppData instance = new AppData();
+    private TrayItem trayItem;
+    private List<ISplashUser> splashUsers = new ArrayList<>();
+
     public static AppData getInstance() { return instance; }
-    public Object getSplashHandler() { return null; }
-    public List<Object> getSplashUsersUsers() { return new ArrayList<>(); }
-    public void setTrayItem(TrayItem item) {}
+    public GeminiSplashHandler getSplashHandler() { return null; }
+    public List<ISplashUser> getSplashUsersUsers() { return splashUsers; }
+    public void setTrayItem(TrayItem item) { this.trayItem = item; }
 }
