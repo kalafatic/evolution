@@ -1,9 +1,13 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jface.dialogs.InputDialog;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.KeyAdapter;
@@ -13,6 +17,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -34,6 +39,9 @@ public class AiChatPage extends Composite {
     private Label statusLabel;
     private ProgressBar progressBar;
     private OllamaService ollamaService;
+    private Map<String, String> threads = new HashMap<>();
+    private String currentThread = "Default";
+    private Combo threadCombo;
 
     public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.NONE);
@@ -46,6 +54,43 @@ public class AiChatPage extends Composite {
         GridLayout layout = new GridLayout();
         this.setLayout(layout);
         layout.numColumns = 1;
+
+        Composite toolbar = new Composite(this, SWT.NONE);
+        toolbar.setLayout(new GridLayout(4, false));
+        toolbar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button cleanButton = new Button(toolbar, SWT.PUSH);
+        cleanButton.setText("Clean");
+        cleanButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                responseText.setText("");
+                threads.put(currentThread, "");
+            }
+        });
+
+        Button newThreadButton = new Button(toolbar, SWT.PUSH);
+        newThreadButton.setText("New Thread");
+        newThreadButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                createNewThread();
+            }
+        });
+
+        createLabel(toolbar, "Select Thread:");
+        threadCombo = new Combo(toolbar, SWT.READ_ONLY);
+        threadCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        threadCombo.add(currentThread);
+        threadCombo.select(0);
+        threads.put(currentThread, "");
+        threadCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                switchThread();
+            }
+        });
+
         createLabel(this, "Request:");
         requestText = new StyledText(this, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
@@ -101,7 +146,9 @@ public class AiChatPage extends Composite {
         String request = requestText.getText().trim();
         if (request.isEmpty()) return;
         String currentResponse = responseText.getText();
-        responseText.setText(currentResponse + (currentResponse.isEmpty() ? "" : "\n\n") + "You: " + request + "\n\nEvolution: Initializing orchestration...");
+        String newText = currentResponse + (currentResponse.isEmpty() ? "" : "\n\n") + "You: " + request + "\n\nEvolution: Initializing orchestration...";
+        responseText.setText(newText);
+        threads.put(currentThread, newText);
         requestText.setText("");
         new Thread(() -> {
             try {
@@ -123,6 +170,7 @@ public class AiChatPage extends Composite {
                         if (!responseText.isDisposed()) {
                             responseText.append("\n" + log);
                             responseText.setSelection(responseText.getCharCount());
+                            threads.put(currentThread, responseText.getText());
                         }
                     });
                 });
@@ -131,6 +179,7 @@ public class AiChatPage extends Composite {
                     if (!responseText.isDisposed()) {
                         responseText.append("\n\nEvolution: " + result);
                         responseText.setSelection(responseText.getCharCount());
+                        threads.put(currentThread, responseText.getText());
                     }
                 });
             } catch (Exception e) {
@@ -138,10 +187,32 @@ public class AiChatPage extends Composite {
                     if (!responseText.isDisposed()) {
                         responseText.append("\n\nError: " + e.getMessage());
                         responseText.setSelection(responseText.getCharCount());
+                        threads.put(currentThread, responseText.getText());
                     }
                 });
             }
         }).start();
+    }
+
+    private void createNewThread() {
+        InputDialog dlg = new InputDialog(getShell(), "New Chat Thread", "Enter thread name:", "Thread " + (threads.size() + 1), null);
+        if (dlg.open() == Window.OK) {
+            String name = dlg.getValue();
+            if (name != null && !name.trim().isEmpty() && !threads.containsKey(name)) {
+                threads.put(currentThread, responseText.getText());
+                currentThread = name;
+                threads.put(currentThread, "");
+                threadCombo.add(currentThread);
+                threadCombo.select(threadCombo.getItemCount() - 1);
+                responseText.setText("");
+            }
+        }
+    }
+
+    private void switchThread() {
+        threads.put(currentThread, responseText.getText());
+        currentThread = threadCombo.getText();
+        responseText.setText(threads.getOrDefault(currentThread, ""));
     }
 
     private void createLabel(Composite parent, String text) {
