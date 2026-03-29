@@ -18,6 +18,9 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
 public class PropertiesPage extends ScrolledComposite {
+	
+	OllamaConfigManager.OllamaDefaults defaults = OllamaConfigManager.getDefaults();
+	
     private MultiPageEditor editor;
     private Orchestrator orchestrator;
     private boolean isUpdating = false;

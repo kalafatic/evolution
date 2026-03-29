@@ -67,7 +67,7 @@ public class OllamaConfigManager {
                 return new OllamaDefaults(
                     "/usr/share/ollama/.ollama/models",
                     "/var/log/ollama.log",
-                    "/usr/bin/ollama",
+                    "/usr/local/bin/ollama",
                     defaultHost, defaultPort
                 );
         }

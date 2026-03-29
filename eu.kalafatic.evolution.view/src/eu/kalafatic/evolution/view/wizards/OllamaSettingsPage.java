@@ -48,12 +48,14 @@ import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.manager.OllamaConfigManager;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class OllamaSettingsPage extends WizardPage {
-	public static final String DEFAULT_OLLAMA_URL = "http://localhost:11434";
+	
+	OllamaConfigManager.OllamaDefaults defaults = OllamaConfigManager.getDefaults();
 	
 	private Combo modelCombo;
 	private Text urlText, modelText , pathText;
@@ -89,7 +91,7 @@ public class OllamaSettingsPage extends WizardPage {
 		new Label(container, SWT.NONE).setText("Ollama URL:");
 		urlText = new Text(container, SWT.BORDER);
 		urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		urlText.setText(DEFAULT_OLLAMA_URL);
+		urlText.setText(defaults.apiUrl);
 
 		new Label(container, SWT.NONE).setText("Model Name:");	
 		modelText = new Text(container, SWT.BORDER);
@@ -119,20 +121,8 @@ public class OllamaSettingsPage extends WizardPage {
 			}
 		});
 
-		String defaultPath = "/usr/local/bin/ollama";
-		String os = System.getProperty("os.name").toLowerCase();
-		if (os.contains("win")) {
-			String localAppData = System.getenv("LOCALAPPDATA");
-			if (localAppData != null) {
-				defaultPath = localAppData + "\\Programs\\Ollama\\ollama.exe";
-			} else {
-				defaultPath = "C:\\Users\\" + System.getProperty("user.name")
-						+ "\\AppData\\Local\\Programs\\Ollama\\ollama.exe";
-			}
-		} else if (os.contains("mac")) {
-			defaultPath = "/usr/local/bin/ollama";
-		}
-		pathText.setText(defaultPath);
+		
+		pathText.setText(defaults.binPath);
 
 		pathDecorator = new ControlDecoration(pathText, SWT.TOP | SWT.LEFT);
 		pathDecorator.setImage(
@@ -223,7 +213,8 @@ public class OllamaSettingsPage extends WizardPage {
 		List<OllamaModel> models = loadModels(); // Load models to populate the combo
 		
 		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);	
-
+		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		
 		if (models != null) {
 		    for (OllamaModel f : models) {
 		        combo.add(f.getName());
@@ -235,6 +226,8 @@ public class OllamaSettingsPage extends WizardPage {
 		    int index = combo.getSelectionIndex();
 		    if (index >= 0) {
 		    	OllamaModel selected = models.get(index);
+		    	
+		    	modelText.setText(selected.getName());
 		        System.out.println("Selected: " + selected.getName());
 		    }
 		});
@@ -435,7 +428,8 @@ public class OllamaSettingsPage extends WizardPage {
 	    List<OllamaModel> result = new ArrayList<>();
 
 	    try {
-	        URL url = new URL(DEFAULT_OLLAMA_URL + "/api/tags");
+	    	
+	        URL url = new URL(defaults.apiUrl + "/api/tags");
 	        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 	        conn.setRequestMethod("GET");
 
