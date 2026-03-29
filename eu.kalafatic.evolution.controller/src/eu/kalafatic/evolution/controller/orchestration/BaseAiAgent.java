@@ -40,23 +40,47 @@ public abstract class BaseAiAgent implements IAgent {
         tools.add(tool);
     }
 
-    @Override
-    public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
+    /**
+     * Fetches context from the MCP server if configured.
+     */
+    protected String getMcpContext(TaskContext context) {
         Orchestrator orchestrator = context.getOrchestrator();
-
-        // 1. Fetch MCP context if enabled
-        String mcpContext = "";
         String mcpUrl = orchestrator.getMcpServerUrl();
         if (mcpUrl != null && !mcpUrl.isEmpty()) {
             try {
                 McpClient mcpClient = new McpClient(mcpUrl);
                 mcpClient.initialize();
-                // For now, let's just list resources as a proof of concept
-                mcpContext = "\nMCP Local Context: " + mcpClient.listResources();
+                return "\nMCP Local Context: " + mcpClient.listResources();
             } catch (Exception e) {
                 context.log("MCP Warning: Could not fetch context from " + mcpUrl + ": " + e.getMessage());
             }
         }
+        return "";
+    }
+
+    /**
+     * Sends a request to the LLM via the router, applying scrubbing if necessary.
+     */
+    protected String sendRequest(TaskContext context, String prompt) throws Exception {
+        Orchestrator orchestrator = context.getOrchestrator();
+
+        // Apply Data Scrubbing if online
+        String finalPrompt = prompt;
+        if (!orchestrator.isOfflineMode()) {
+            finalPrompt = DataScrubber.scrub(prompt);
+        }
+
+        float temperature = 0.7f;
+        if (orchestrator.getLlm() != null) {
+            temperature = orchestrator.getLlm().getTemperature();
+        }
+
+        return llmRouter.sendRequest(orchestrator, finalPrompt, temperature, null);
+    }
+
+    @Override
+    public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
+        String mcpContext = getMcpContext(context);
 
         String prompt = "You are acting as a " + type + " Agent.\n" +
                         "Overall Context: " + context.getSharedMemory() + "\n" +
@@ -69,20 +93,9 @@ public abstract class BaseAiAgent implements IAgent {
         prompt += "Current Task: " + taskDescription + "\n" +
                   "Based on the context and the task, provide your response.";
 
-        // 2. Data Scrubbing if online
-        if (!orchestrator.isOfflineMode()) {
-            prompt = DataScrubber.scrub(prompt);
-        }
-
         context.log("Agent [" + id + " (" + type + ")]: Processing task - " + taskDescription);
 
-        // 3. Routing via LlmRouter
-        float temperature = 0.7f;
-        if (orchestrator.getLlm() != null) {
-            temperature = orchestrator.getLlm().getTemperature();
-        }
-
-        String response = llmRouter.sendRequest(orchestrator, prompt, temperature, null);
+        String response = sendRequest(context, prompt);
 
         // Post-process if necessary
         return cleanResponse(response);

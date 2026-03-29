@@ -20,8 +20,12 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
     public List<Task> plan(String request, TaskContext context) throws Exception {
         context.log("Planner: Decomposing request - " + request);
 
+        String mcpContext = getMcpContext(context);
+
         String plannerPrompt = "You are a workflow planner for an agentic system. " +
                 "Decompose the user request into a sequence of atomic, specialized tasks.\n" +
+                "Project Context: " + context.getSharedMemory() + "\n" +
+                mcpContext + "\n" +
                 "If the request is a simple greeting or a general question, just create one 'llm' task to respond.\n" +
                 "Available task types:\n" +
                 "- 'llm': For reasoning, planning, or general text generation.\n" +
@@ -35,7 +39,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"train_nn\"|\"train_llm\"|\"train_agent\" } ]\n\n" +
                 "Request: " + request;
 
-        String response = aiService.sendRequest(context.getOrchestrator(), plannerPrompt);
+        String response = sendRequest(context, plannerPrompt);
         context.log("Planner: Received response from AI: " + (response.length() > 100 ? response.substring(0, 100) + "..." : response));
 
         // Extracting JSON logic
