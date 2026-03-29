@@ -25,6 +25,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
         availableAgents.add(new JavaDevAgent());
         availableAgents.add(new TesterAgent());
         availableAgents.add(new ReviewerAgent());
+        availableAgents.add(new GeneralAgent());
     }
 
     @Override
@@ -41,6 +42,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             // 2. Execution Loop
             int taskCount = tasks.size();
+            String lastResult = "";
             for (int i = 0; i < taskCount; i++) {
                 Task task = tasks.get(i);
                 task.setStatus(TaskStatus.RUNNING);
@@ -55,11 +57,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 }
 
                 task.setStatus(TaskStatus.DONE);
-                context.appendSharedMemory("Task [" + task.getName() + "] completed. Result: " + task.getResponse());
+                lastResult = task.getResponse();
+                context.appendSharedMemory("Task [" + task.getName() + "] completed. Result: " + lastResult);
             }
 
             updateStatus(context, 1.0, "Completed");
-            return "Orchestration successful.";
+            return lastResult != null && !lastResult.isEmpty() ? lastResult : "Orchestration successful.";
         } catch (Exception e) {
             context.log("Orchestrator Error: " + e.getMessage());
             throw e;
@@ -138,11 +141,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
         }
 
         // 2. Map task types to default agents
-        if (type.contains("maven") || type.contains("test")) return availableAgents.stream().filter(a -> a instanceof TesterAgent).findFirst().orElse(availableAgents.get(1));
+        if (type.contains("maven") || type.contains("test")) return availableAgents.stream().filter(a -> a instanceof TesterAgent).findFirst().orElse(availableAgents.get(2));
         if (type.contains("file") || type.contains("java")) return availableAgents.stream().filter(a -> a instanceof JavaDevAgent).findFirst().orElse(availableAgents.get(1));
-        if (type.contains("arch") || type.contains("design")) return availableAgents.stream().filter(a -> a instanceof ArchitectAgent).findFirst().orElse(availableAgents.get(1));
+        if (type.contains("arch") || type.contains("design")) return availableAgents.stream().filter(a -> a instanceof ArchitectAgent).findFirst().orElse(availableAgents.get(0));
 
-        return availableAgents.get(1); // Default to JavaDev
+        // Default to General Agent for reasoning or unknown tasks
+        return availableAgents.stream().filter(a -> a instanceof GeneralAgent).findFirst().orElse(availableAgents.get(availableAgents.size() - 1));
     }
 
     private void updateStatus(TaskContext context, double progress, String message) {
