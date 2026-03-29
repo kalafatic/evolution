@@ -5,6 +5,9 @@ import java.util.List;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.ScalableFigure;
 import org.eclipse.draw2d.Viewport;
+import org.eclipse.emf.common.notify.Adapter;
+import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.gef.editparts.ZoomManager;
 import org.eclipse.gef.ui.actions.ZoomComboContributionItem;
 import org.eclipse.gef.ui.actions.ZoomInAction;
@@ -22,7 +25,11 @@ import org.eclipse.ui.IWorkbenchSite;
 import org.eclipse.zest.core.viewers.GraphViewer;
 import org.eclipse.zest.core.widgets.ZestStyles;
 import org.eclipse.zest.layouts.LayoutStyles;
-import org.eclipse.zest.layouts.algorithms.*;
+import org.eclipse.zest.layouts.algorithms.GridLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.HorizontalTreeLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.RadialLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.SpringLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.provider.OrchestrationGraphContentProvider;
@@ -33,28 +40,48 @@ public class GraphPage extends Composite {
     private Orchestrator orchestrator;
     private GraphViewer viewer;
     private ZoomManager zoomManager;
+    private Adapter modelAdapter = new EContentAdapter() {
+        @Override
+        public void notifyChanged(Notification notification) {
+            super.notifyChanged(notification);
+            Display.getDefault().asyncExec(() -> {
+                if (!isDisposed()) {
+                    refreshViewer();
+                }
+            });
+        }
+    };
 
     public GraphPage(Composite parent, MultiPageEditor editor, IWorkbenchSite site, Orchestrator orchestrator) {
         super(parent, SWT.NONE);
         this.site = site;
-        this.orchestrator = orchestrator;
+        setOrchestrator(orchestrator);
         createControl();
     }
 
     private void createControl() {
         this.setLayout(new GridLayout(1, false));
+
+        // Toolbar on top
+        Composite tbComp = new Composite(this, SWT.NONE);
+        tbComp.setLayout(new FillLayout());
+        tbComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+
         viewer = new GraphViewer(this, SWT.NONE);
         viewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         viewer.setConnectionStyle(ZestStyles.CONNECTIONS_DIRECTED);
         viewer.setContentProvider(new OrchestrationGraphContentProvider());
         viewer.setLabelProvider(new OrchestrationGraphLabelProvider());
         viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING));
+
         setupZoomSupport();
-        createGraphToolbar(this);
+        createGraphToolbar(tbComp);
+
         viewer.setInput(orchestrator != null ? new Object[] { orchestrator } : new Object[0]);
     }
 
     private void setupZoomSupport() {
+        if (viewer.getGraphControl() == null) return;
         IFigure contents = viewer.getGraphControl().getContents();
         Viewport viewport = viewer.getGraphControl().getViewport();
         zoomManager = new ZoomManager((ScalableFigure) contents, viewport);
@@ -67,22 +94,21 @@ public class GraphPage extends Composite {
     }
 
     private void createGraphToolbar(Composite parent) {
-        Composite tbComp = new Composite(parent, SWT.NONE);
-        tbComp.setLayout(new FillLayout());
-        tbComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         ToolBarManager mgr = new ToolBarManager(SWT.FLAT | SWT.RIGHT);
-        mgr.createControl(tbComp);
+        mgr.createControl(parent);
         mgr.add(new Action("Refresh") { @Override public void run() { refreshViewer(); } });
-        mgr.add(new Action("Tree Layout") { @Override public void run() { viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
-        mgr.add(new Action("Spring Layout") { @Override public void run() { viewer.setLayoutAlgorithm(new SpringLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
-        mgr.add(new Action("Radial Layout") { @Override public void run() { viewer.setLayoutAlgorithm(new RadialLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
-        mgr.add(new Action("Horizontal Tree") { @Override public void run() { viewer.setLayoutAlgorithm(new HorizontalTreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        mgr.add(new Separator());
+        mgr.add(new Action("Tree") { @Override public void run() { viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        mgr.add(new Action("Horizontal") { @Override public void run() { viewer.setLayoutAlgorithm(new HorizontalTreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        mgr.add(new Action("Spring") { @Override public void run() { viewer.setLayoutAlgorithm(new SpringLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        mgr.add(new Action("Radial") { @Override public void run() { viewer.setLayoutAlgorithm(new RadialLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        mgr.add(new Action("Grid") { @Override public void run() { viewer.setLayoutAlgorithm(new GridLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
         mgr.add(new Separator());
         if (zoomManager != null) {
             mgr.add(new ZoomComboContributionItem(site.getPage()));
             mgr.add(new ZoomInAction(zoomManager));
             mgr.add(new ZoomOutAction(zoomManager));
-            mgr.add(new Action("Fit to Page") { @Override public void run() { zoomManager.setZoomAsText(ZoomManager.FIT_ALL); } });
+            mgr.add(new Action("Fit") { @Override public void run() { zoomManager.setZoomAsText(ZoomManager.FIT_ALL); } });
         }
         mgr.update(true);
     }
@@ -97,7 +123,23 @@ public class GraphPage extends Composite {
     }
 
     public void setOrchestrator(Orchestrator orchestrator) {
+        if (this.orchestrator != null) {
+            this.orchestrator.eAdapters().remove(modelAdapter);
+        }
         this.orchestrator = orchestrator;
-        if (viewer != null && !viewer.getControl().isDisposed()) viewer.setInput(orchestrator != null ? new Object[] { orchestrator } : new Object[0]);
+        if (this.orchestrator != null) {
+            this.orchestrator.eAdapters().add(modelAdapter);
+        }
+        if (viewer != null && !viewer.getControl().isDisposed()) {
+            viewer.setInput(orchestrator != null ? new Object[] { orchestrator } : new Object[0]);
+        }
+    }
+
+    @Override
+    public void dispose() {
+        if (orchestrator != null) {
+            orchestrator.eAdapters().remove(modelAdapter);
+        }
+        super.dispose();
     }
 }
