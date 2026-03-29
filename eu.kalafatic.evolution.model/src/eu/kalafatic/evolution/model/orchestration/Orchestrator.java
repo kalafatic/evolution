@@ -254,4 +254,44 @@ public interface Orchestrator extends EObject {
 	 */
 	void setNeuronAI(NeuronAI value);
 
+	/**
+	 * @generated NOT
+	 */
+	boolean isOfflineMode();
+
+	/**
+	 * @generated NOT
+	 */
+	void setOfflineMode(boolean value);
+
+	/**
+	 * @generated NOT
+	 */
+	String getMcpServerUrl();
+
+	/**
+	 * @generated NOT
+	 */
+	void setMcpServerUrl(String value);
+
+	/**
+	 * @generated NOT
+	 */
+	String getOpenAiToken();
+
+	/**
+	 * @generated NOT
+	 */
+	void setOpenAiToken(String value);
+
+	/**
+	 * @generated NOT
+	 */
+	String getOpenAiModel();
+
+	/**
+	 * @generated NOT
+	 */
+	void setOpenAiModel(String value);
+
 } // Orchestrator

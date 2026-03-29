@@ -25,6 +25,8 @@ public class PropertiesPage extends ScrolledComposite {
     private boolean isUpdating = false;
     private Canvas statusCanvas;
     private Text orchIdText, orchNameText, llmModelText, llmTempText, ollamaUrlText, ollamaModelText, ollamaPathText, ollamaVersionText;
+    private Button offlineBtn;
+    private Text mcpUrlText, openAiTokenText, openAiModelText;
     private Table agentsTable;
     private Text gitRepoText, gitBranchText, mavenGoalsText, mavenProfilesText, aiChatUrlText, neuronAiUrlText, compilerSourceText;
     private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator, llmTempDecorator, gitRepoDecorator;
@@ -123,6 +125,15 @@ public class PropertiesPage extends ScrolledComposite {
         createLabel(othersGroup, "Neuron AI URL:"); neuronAiUrlText = new Text(othersGroup, SWT.BORDER); neuronAiUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL)); createEditButton(othersGroup, neuronAiUrlText);
         createLabel(othersGroup, "Compiler Source:"); compilerSourceText = new Text(othersGroup, SWT.BORDER); compilerSourceText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL)); createEditButton(othersGroup, compilerSourceText);
 
+        Group mcpOpenAiGroup = new Group(comp, SWT.NONE);
+        mcpOpenAiGroup.setText("MCP & OpenAI (Hybrid Architecture)");
+        mcpOpenAiGroup.setLayout(new GridLayout(3, false));
+        mcpOpenAiGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createLabel(mcpOpenAiGroup, "Offline Mode:"); offlineBtn = new Button(mcpOpenAiGroup, SWT.CHECK); offlineBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
+        createLabel(mcpOpenAiGroup, "MCP Server URL:"); mcpUrlText = new Text(mcpOpenAiGroup, SWT.BORDER); mcpUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL)); createEditButton(mcpOpenAiGroup, mcpUrlText);
+        createLabel(mcpOpenAiGroup, "OpenAI Token:"); openAiTokenText = new Text(mcpOpenAiGroup, SWT.BORDER | SWT.PASSWORD); openAiTokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL)); createEditButton(mcpOpenAiGroup, openAiTokenText);
+        createLabel(mcpOpenAiGroup, "OpenAI Model:"); openAiModelText = new Text(mcpOpenAiGroup, SWT.BORDER); openAiModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL)); createEditButton(mcpOpenAiGroup, openAiModelText);
+
         ollamaUrlDecorator = new ControlDecoration(ollamaUrlText, SWT.TOP | SWT.LEFT);
         ollamaUrlDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
         ollamaUrlDecorator.hide();
@@ -137,8 +148,9 @@ public class PropertiesPage extends ScrolledComposite {
         gitRepoDecorator.hide();
 
         ModifyListener ml = e -> { if (orchestrator != null && !isUpdating) { updateModelFromFields(); validateFields(); editor.setDirty(true); } };
-        Text[] texts = {orchIdText, orchNameText, llmModelText, llmTempText, ollamaUrlText, ollamaModelText, ollamaPathText, gitRepoText, gitBranchText, mavenGoalsText, mavenProfilesText, aiChatUrlText, neuronAiUrlText, compilerSourceText};
+        Text[] texts = {orchIdText, orchNameText, llmModelText, llmTempText, ollamaUrlText, ollamaModelText, ollamaPathText, gitRepoText, gitBranchText, mavenGoalsText, mavenProfilesText, aiChatUrlText, neuronAiUrlText, compilerSourceText, mcpUrlText, openAiTokenText, openAiModelText};
         for(Text t : texts) t.addModifyListener(ml);
+        offlineBtn.addSelectionListener(new SelectionAdapter() { @Override public void widgetSelected(SelectionEvent e) { if (orchestrator != null && !isUpdating) { updateModelFromFields(); editor.setDirty(true); } } });
 
         this.setContent(comp);
         this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
@@ -182,6 +194,12 @@ public class PropertiesPage extends ScrolledComposite {
         if (orchestrator.getAiChat() != null) aiChatUrlText.setText(orchestrator.getAiChat().getUrl() != null ? orchestrator.getAiChat().getUrl() : "");
         if (orchestrator.getNeuronAI() != null) neuronAiUrlText.setText(orchestrator.getNeuronAI().getUrl() != null ? orchestrator.getNeuronAI().getUrl() : "");
         if (orchestrator.getCompiler() != null) compilerSourceText.setText(orchestrator.getCompiler().getSourceVersion() != null ? orchestrator.getCompiler().getSourceVersion() : "");
+
+        offlineBtn.setSelection(orchestrator.isOfflineMode());
+        mcpUrlText.setText(orchestrator.getMcpServerUrl() != null ? orchestrator.getMcpServerUrl() : "");
+        openAiTokenText.setText(orchestrator.getOpenAiToken() != null ? orchestrator.getOpenAiToken() : "");
+        openAiModelText.setText(orchestrator.getOpenAiModel() != null ? orchestrator.getOpenAiModel() : "");
+
         isUpdating = false;
     }
 
@@ -222,6 +240,12 @@ public class PropertiesPage extends ScrolledComposite {
         if (orchestrator.getAiChat() != null) orchestrator.getAiChat().setUrl(aiChatUrlText.getText());
         if (orchestrator.getNeuronAI() != null) orchestrator.getNeuronAI().setUrl(neuronAiUrlText.getText());
         if (orchestrator.getCompiler() != null) orchestrator.getCompiler().setSourceVersion(compilerSourceText.getText());
+
+        orchestrator.setOfflineMode(offlineBtn.getSelection());
+        orchestrator.setMcpServerUrl(mcpUrlText.getText());
+        orchestrator.setOpenAiToken(openAiTokenText.getText());
+        orchestrator.setOpenAiModel(openAiModelText.getText());
+
         ollamaService = new OllamaService(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel());
         isUpdating = false;
     }

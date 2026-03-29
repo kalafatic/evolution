@@ -271,6 +271,26 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(10);
 	}
 
+	@Override
+	public EAttribute getOrchestrator_OfflineMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(11);
+	}
+
+	@Override
+	public EAttribute getOrchestrator_McpServerUrl() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(12);
+	}
+
+	@Override
+	public EAttribute getOrchestrator_OpenAiToken() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(13);
+	}
+
+	@Override
+	public EAttribute getOrchestrator_OpenAiModel() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(14);
+	}
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -931,6 +951,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__OLLAMA);
 		createEReference(orchestratorEClass, ORCHESTRATOR__AI_CHAT);
 		createEReference(orchestratorEClass, ORCHESTRATOR__NEURON_AI);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__OFFLINE_MODE);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__MCP_SERVER_URL);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__OPEN_AI_TOKEN);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__OPEN_AI_MODEL);
 
 		gitEClass = createEClass(GIT);
 		createEAttribute(gitEClass, GIT__REPOSITORY_URL);
@@ -1063,6 +1087,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_Ollama(), this.getOllama(), null, "ollama", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_AiChat(), this.getAiChat(), null, "aiChat", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_NeuronAI(), this.getNeuronAI(), null, "neuronAI", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_OfflineMode(), ecorePackage.getEBoolean(), "offlineMode", "true", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_McpServerUrl(), ecorePackage.getEString(), "mcpServerUrl", "", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_OpenAiToken(), ecorePackage.getEString(), "openAiToken", "", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_OpenAiModel(), ecorePackage.getEString(), "openAiModel", "gpt-4", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(gitEClass, Git.class, "Git", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getGit_RepositoryUrl(), ecorePackage.getEString(), "repositoryUrl", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
