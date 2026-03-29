@@ -7,9 +7,13 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.dialogs.InputDialog;
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -23,6 +27,9 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
@@ -41,14 +48,52 @@ public class AiChatPage extends Composite {
     private ProgressBar progressBar;
     private OllamaService ollamaService;
     private Map<String, String> threads = new HashMap<>();
+    private Map<String, StyleRange[]> threadStyles = new HashMap<>();
     private String currentThread = "Default";
     private Combo threadCombo;
+
+    // Colors and Fonts
+    private Color colorUser;
+    private Color colorEvolution;
+    private Color colorPlanner;
+    private Color colorArchitect;
+    private Color colorJavaDev;
+    private Color colorTester;
+    private Color colorReviewer;
+    private Color colorError;
+    private Font chatFont;
 
     public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.NONE);
         this.editor = editor;
         this.orchestrator = orchestrator;
+        initResources();
         createControl();
+        addDisposeListener(new DisposeListener() {
+            @Override
+            public void widgetDisposed(DisposeEvent e) {
+                if (chatFont != null && !chatFont.isDisposed()) chatFont.dispose();
+            }
+        });
+    }
+
+    private void initResources() {
+        Display display = getDisplay();
+        colorUser = display.getSystemColor(SWT.COLOR_DARK_BLUE);
+        colorEvolution = display.getSystemColor(SWT.COLOR_DARK_MAGENTA);
+        colorPlanner = display.getSystemColor(SWT.COLOR_DARK_CYAN);
+        colorArchitect = display.getSystemColor(SWT.COLOR_DARK_GREEN);
+        colorJavaDev = display.getSystemColor(SWT.COLOR_BLUE);
+        colorTester = display.getSystemColor(SWT.COLOR_DARK_YELLOW);
+        colorReviewer = display.getSystemColor(SWT.COLOR_MAGENTA);
+        colorError = display.getSystemColor(SWT.COLOR_RED);
+
+        Font defaultFont = JFaceResources.getDefaultFont();
+        FontData[] fontData = defaultFont.getFontData();
+        for (FontData fd : fontData) {
+            fd.setHeight(11);
+        }
+        chatFont = new Font(display, fontData);
     }
 
     private void createControl() {
@@ -67,6 +112,7 @@ public class AiChatPage extends Composite {
             public void widgetSelected(SelectionEvent e) {
                 responseText.setText("");
                 threads.put(currentThread, "");
+                threadStyles.put(currentThread, new StyleRange[0]);
             }
         });
 
@@ -119,6 +165,9 @@ public class AiChatPage extends Composite {
         responseGridData.heightHint = 200;
         responseText.setLayoutData(responseGridData);
         responseText.setEditable(false);
+        responseText.setFont(chatFont);
+        responseText.setMargins(10, 10, 10, 10);
+
         Composite statusBar = new Composite(this, SWT.NONE);
         statusBar.setLayout(new GridLayout(4, false));
         statusBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -168,10 +217,14 @@ public class AiChatPage extends Composite {
             orchestrator.setId("chat-" + System.currentTimeMillis());
         }
 
-        String currentResponse = responseText.getText();
-        String newText = currentResponse + (currentResponse.isEmpty() ? "" : "\n\n") + "You: " + request + "\n\nEvolution: Initializing orchestration...";
-        responseText.setText(newText);
-        threads.put(currentThread, newText);
+        if (!responseText.getText().isEmpty()) {
+            responseText.append("\n\n");
+        }
+        appendStyledText("You: " + request, colorUser, SWT.BOLD);
+        appendStyledText("\n\nEvolution: Initializing orchestration...", colorEvolution, SWT.ITALIC);
+
+        threads.put(currentThread, responseText.getText());
+        threadStyles.put(currentThread, responseText.getStyleRanges());
         requestText.setText("");
         new Thread(() -> {
             try {
@@ -191,26 +244,28 @@ public class AiChatPage extends Composite {
                 context.addLogListener(log -> {
                     Display.getDefault().asyncExec(() -> {
                         if (!responseText.isDisposed()) {
-                            responseText.append("\n" + log);
-                            responseText.setSelection(responseText.getCharCount());
+                            processLogEntry(log);
                             threads.put(currentThread, responseText.getText());
+                            threadStyles.put(currentThread, responseText.getStyleRanges());
                         }
                     });
                 });
                 String result = evolutionOrchestrator.execute(request, context);
                 Display.getDefault().asyncExec(() -> {
                     if (!responseText.isDisposed()) {
-                        responseText.append("\n\nEvolution: " + result);
-                        responseText.setSelection(responseText.getCharCount());
+                        responseText.append("\n\n");
+                        appendStyledText("Evolution: " + result, colorEvolution, SWT.BOLD);
                         threads.put(currentThread, responseText.getText());
+                        threadStyles.put(currentThread, responseText.getStyleRanges());
                     }
                 });
             } catch (Exception e) {
                 Display.getDefault().asyncExec(() -> {
                     if (!responseText.isDisposed()) {
-                        responseText.append("\n\nError: " + e.getMessage());
-                        responseText.setSelection(responseText.getCharCount());
+                        responseText.append("\n\n");
+                        appendStyledText("Error: " + e.getMessage(), colorError, SWT.BOLD);
                         threads.put(currentThread, responseText.getText());
+                        threadStyles.put(currentThread, responseText.getStyleRanges());
                     }
                 });
             }
@@ -223,8 +278,10 @@ public class AiChatPage extends Composite {
             String name = dlg.getValue();
             if (name != null && !name.trim().isEmpty() && !threads.containsKey(name)) {
                 threads.put(currentThread, responseText.getText());
+                threadStyles.put(currentThread, responseText.getStyleRanges());
                 currentThread = name;
                 threads.put(currentThread, "");
+                threadStyles.put(currentThread, new StyleRange[0]);
                 threadCombo.add(currentThread);
                 threadCombo.select(threadCombo.getItemCount() - 1);
                 responseText.setText("");
@@ -234,8 +291,11 @@ public class AiChatPage extends Composite {
 
     private void switchThread() {
         threads.put(currentThread, responseText.getText());
+        threadStyles.put(currentThread, responseText.getStyleRanges());
         currentThread = threadCombo.getText();
         responseText.setText(threads.getOrDefault(currentThread, ""));
+        responseText.setStyleRanges(threadStyles.getOrDefault(currentThread, new StyleRange[0]));
+        responseText.setSelection(responseText.getCharCount());
     }
 
     private void createLabel(Composite parent, String text) {
@@ -274,5 +334,47 @@ public class AiChatPage extends Composite {
         this.orchestrator = orchestrator;
         this.ollamaService = null;
         updateStatusInfo();
+    }
+
+    private void appendStyledText(String text, Color color, int style) {
+        if (responseText.isDisposed()) return;
+        int start = responseText.getCharCount();
+        responseText.append(text);
+        int length = text.length();
+        StyleRange range = new StyleRange(start, length, color, null, style);
+        responseText.setStyleRange(range);
+        responseText.setSelection(responseText.getCharCount());
+    }
+
+    private void processLogEntry(String log) {
+        if (log == null || log.isEmpty()) return;
+
+        Color color = null;
+        int style = SWT.NORMAL;
+
+        if (log.startsWith("Orchestrator:")) {
+            color = colorEvolution;
+            style = SWT.ITALIC;
+        } else if (log.contains("Agent [") && log.contains("Planner")) {
+            color = colorPlanner;
+            style = SWT.BOLD;
+        } else if (log.contains("Agent [") && log.contains("Architect")) {
+            color = colorArchitect;
+            style = SWT.BOLD;
+        } else if (log.contains("Agent [") && log.contains("JavaDev")) {
+            color = colorJavaDev;
+            style = SWT.BOLD;
+        } else if (log.contains("Agent [") && log.contains("Tester")) {
+            color = colorTester;
+            style = SWT.BOLD;
+        } else if (log.contains("Agent [") && log.contains("Reviewer")) {
+            color = colorReviewer;
+            style = SWT.BOLD;
+        } else if (log.startsWith("Orchestrator Error:") || log.contains("Exception:")) {
+            color = colorError;
+            style = SWT.BOLD;
+        }
+
+        appendStyledText("\n" + log, color, style);
     }
 }
