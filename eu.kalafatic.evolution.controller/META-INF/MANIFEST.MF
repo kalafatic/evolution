@@ -25,3 +25,5 @@ Export-Package: eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.handlers,
  eu.kalafatic.evolution.controller.manager,
  eu.kalafatic.evolution.controller.orchestration
+Bundle-ClassPath: .,
+ lib/json-20140107.jar

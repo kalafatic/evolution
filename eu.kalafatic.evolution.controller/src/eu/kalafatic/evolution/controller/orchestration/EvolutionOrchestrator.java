@@ -60,6 +60,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             updateStatus(context, 1.0, "Completed");
             return "Orchestration successful.";
+        } catch (Exception e) {
+            context.log("Orchestrator Error: " + e.getMessage());
+            throw e;
         } finally {
             OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Idle");
             for (IAgent agent : availableAgents) {
