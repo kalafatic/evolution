@@ -15,6 +15,7 @@ import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.*;
 import org.eclipse.ui.editors.text.TextEditor;
@@ -182,5 +183,20 @@ public class MultiPageEditor extends MultiPageEditorPart {
     @Override
     public Composite getContainer() {
         return super.getContainer();
+    }
+
+    @Override
+    public int addPage(Control control) {
+        return super.addPage(control);
+    }
+
+    @Override
+    public int addPage(IEditorPart editor, IEditorInput input) throws PartInitException {
+        return super.addPage(editor, input);
+    }
+
+    @Override
+    public void setPageText(int index, String text) {
+        super.setPageText(index, text);
     }
 }
