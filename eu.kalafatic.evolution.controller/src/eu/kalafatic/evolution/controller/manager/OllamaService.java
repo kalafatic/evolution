@@ -1,5 +1,9 @@
 package eu.kalafatic.evolution.controller.manager;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -7,6 +11,9 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Pure Java 21+ Ollama Chat - ZERO external dependencies
@@ -221,6 +228,39 @@ public class OllamaService {
 
     public List<Message> getMessages() {
         return messages;
+    }
+
+    /**
+     * Fetches the list of models from the Ollama API.
+     * @return List of OllamaModel objects.
+     */
+    public List<OllamaModel> loadModels() {
+        List<OllamaModel> result = new ArrayList<>();
+        try {
+            URL url = new URL(this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/tags");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder json = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                json.append(line);
+            }
+            reader.close();
+
+            JSONObject obj = new JSONObject(json.toString());
+            JSONArray models = obj.getJSONArray("models");
+            for (int i = 0; i < models.length(); i++) {
+                JSONObject m = models.getJSONObject(i);
+                String name = m.getString("name");
+                long size = m.optLong("size", 0);
+                result.add(new OllamaModel(name, size));
+            }
+        } catch (Exception e) {
+            // silent fail or log
+        }
+        return result;
     }
 
     // Inner class for messages
