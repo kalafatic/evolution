@@ -22,6 +22,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
 
         String plannerPrompt = "You are a workflow planner for an agentic system. " +
                 "Decompose the user request into a sequence of atomic, specialized tasks.\n" +
+                "If the request is a simple greeting or a general question, just create one 'llm' task to respond.\n" +
                 "Available task types:\n" +
                 "- 'llm': For reasoning, planning, or general text generation.\n" +
                 "- 'file': For writing or creating files (e.g., Java source code, POM, README). Task name should be 'Write <path/to/file>'.\n" +
@@ -40,15 +41,28 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
         // Extracting JSON logic
         int start = response.indexOf("[");
         int end = response.lastIndexOf("]");
-        if (start == -1 || end == -1 || end <= start) {
-            throw new Exception("LLM failed to return a valid JSON array. Response: " + response);
-        }
 
         JSONArray jsonArray;
-        try {
-            jsonArray = new JSONArray(response.substring(start, end + 1));
-        } catch (org.json.JSONException e) {
-            throw new Exception("Failed to parse LLM response as JSON array: " + e.getMessage() + ". Response: " + response);
+        if (start == -1 || end == -1 || end <= start) {
+            context.log("Planner: Warning - AI response is not a JSON array. Using fallback llm task.");
+            jsonArray = new JSONArray();
+            JSONObject fallbackTask = new JSONObject();
+            fallbackTask.put("id", "task0");
+            fallbackTask.put("name", request);
+            fallbackTask.put("taskType", "llm");
+            jsonArray.put(fallbackTask);
+        } else {
+            try {
+                jsonArray = new JSONArray(response.substring(start, end + 1));
+            } catch (org.json.JSONException e) {
+                context.log("Planner: Warning - Failed to parse AI response as JSON array. Using fallback llm task.");
+                jsonArray = new JSONArray();
+                JSONObject fallbackTask = new JSONObject();
+                fallbackTask.put("id", "task0");
+                fallbackTask.put("name", request);
+                fallbackTask.put("taskType", "llm");
+                jsonArray.put(fallbackTask);
+            }
         }
 
         List<Task> tasks = new ArrayList<>();
