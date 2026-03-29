@@ -13,8 +13,11 @@ public class ReviewerAgent extends BaseAiAgent {
 
     @Override
     public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
+        String mcpContext = getMcpContext(context);
+
         String prompt = "You are an AI Critic and Code Reviewer. Evaluate the completion of the following task.\n\n" +
                 "OVERALL CONTEXT: " + context.getSharedMemory() + "\n" +
+                mcpContext + "\n" +
                 "TASK DESCRIPTION: " + taskDescription + "\n\n" +
                 "CRITERIA:\n" +
                 "1. Does the output directly address the goal?\n" +
@@ -23,7 +26,7 @@ public class ReviewerAgent extends BaseAiAgent {
                 "{ \"success\": boolean, \"feedback\": \"Detailed explanation of why it failed and how to fix it\", \"comment\": \"Brief success message\" }";
 
         context.log("Reviewer [" + id + "]: Reviewing task - " + taskDescription);
-        return aiService.sendRequest(context.getOrchestrator(), prompt);
+        return sendRequest(context, prompt);
     }
 
     public JSONObject evaluate(String taskOutput, String taskDescription, TaskContext context) throws Exception {
