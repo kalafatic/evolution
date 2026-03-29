@@ -15,6 +15,8 @@ public abstract class BaseAiAgent implements IAgent {
     protected final String type;
     protected final List<ITool> tools = new ArrayList<>();
     protected final LlmRouter llmRouter = new LlmRouter();
+    
+    protected final AiService aiService = new AiService();
 
     public BaseAiAgent(String id, String type) {
         this.id = id;

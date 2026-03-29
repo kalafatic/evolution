@@ -22,6 +22,8 @@ import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.part.MultiPageEditorPart;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.listeners.EditorResourceChangeListener;
 import eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener;
@@ -86,6 +88,11 @@ public class MultiPageEditor extends MultiPageEditorPart {
     }
 
     private void loadModel() {
+    	// This forces the EMF registry to load your specific implementation
+    	OrchestrationPackage.eINSTANCE.eClass(); 
+    	// Then try the cast/access again
+    	OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
+    	
         IEditorInput input = getEditorInput();
         if (input instanceof IFileEditorInput) {
             URI uri = URI.createPlatformResourceURI(((IFileEditorInput) input).getFile().getFullPath().toString(), true);

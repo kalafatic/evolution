@@ -33,5 +33,4 @@
             contributorClass="eu.kalafatic.evolution.model.orchestration.presentation.OrchestrationActionBarContributor">
       </editor>
    </extension>
-
 </plugin>

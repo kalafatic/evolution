@@ -4,6 +4,8 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
+import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
+import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
 import org.eclipse.emf.common.util.EList;
@@ -20,4 +22,8 @@ public interface AgentValidator {
 	boolean validateId(String value);
 	boolean validateType(String value);
 	boolean validateTasks(EList<Task> value);
+
+	boolean validateExecutionMode(ExecutionMode value);
+
+	boolean validateRules(EList<Rule> value);
 }

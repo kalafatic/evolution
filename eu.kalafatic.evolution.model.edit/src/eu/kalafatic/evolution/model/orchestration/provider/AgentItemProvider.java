@@ -4,6 +4,7 @@ package eu.kalafatic.evolution.model.orchestration.provider;
 
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 
 import java.util.Collection;
@@ -14,6 +15,7 @@ import org.eclipse.emf.common.notify.Notification;
 
 import org.eclipse.emf.common.util.ResourceLocator;
 
+import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.edit.provider.ComposeableAdapterFactory;
 import org.eclipse.emf.edit.provider.IEditingDomainItemProvider;
 import org.eclipse.emf.edit.provider.IItemLabelProvider;
@@ -63,6 +65,7 @@ public class AgentItemProvider
 			addIdPropertyDescriptor(object);
 			addTypePropertyDescriptor(object);
 			addTasksPropertyDescriptor(object);
+			addExecutionModePropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -134,6 +137,58 @@ public class AgentItemProvider
 	}
 
 	/**
+	 * This adds a property descriptor for the Execution Mode feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addExecutionModePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Agent_executionMode_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Agent_executionMode_feature", "_UI_Agent_type"),
+				 OrchestrationPackage.Literals.AGENT__EXECUTION_MODE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This specifies how to implement {@link #getChildren} and is used to deduce an appropriate feature for an
+	 * {@link org.eclipse.emf.edit.command.AddCommand}, {@link org.eclipse.emf.edit.command.RemoveCommand} or
+	 * {@link org.eclipse.emf.edit.command.MoveCommand} in {@link #createCommand}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Collection<? extends EStructuralFeature> getChildrenFeatures(Object object) {
+		if (childrenFeatures == null) {
+			super.getChildrenFeatures(object);
+			childrenFeatures.add(OrchestrationPackage.Literals.AGENT__RULES);
+		}
+		return childrenFeatures;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	protected EStructuralFeature getChildFeature(Object object, Object child) {
+		// Check the type of the specified child object and return the proper feature to use for
+		// adding (see {@link AddCommand}) it as a child.
+
+		return super.getChildFeature(object, child);
+	}
+
+	/**
 	 * This returns Agent.gif.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -173,7 +228,11 @@ public class AgentItemProvider
 		switch (notification.getFeatureID(Agent.class)) {
 			case OrchestrationPackage.AGENT__ID:
 			case OrchestrationPackage.AGENT__TYPE:
+			case OrchestrationPackage.AGENT__EXECUTION_MODE:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
+				return;
+			case OrchestrationPackage.AGENT__RULES:
+				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), true, false));
 				return;
 		}
 		super.notifyChanged(notification);
@@ -189,6 +248,26 @@ public class AgentItemProvider
 	@Override
 	protected void collectNewChildDescriptors(Collection<Object> newChildDescriptors, Object object) {
 		super.collectNewChildDescriptors(newChildDescriptors, object);
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.AGENT__RULES,
+				 OrchestrationFactory.eINSTANCE.createAccessRule()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.AGENT__RULES,
+				 OrchestrationFactory.eINSTANCE.createNetworkRule()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.AGENT__RULES,
+				 OrchestrationFactory.eINSTANCE.createMemoryRule()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.AGENT__RULES,
+				 OrchestrationFactory.eINSTANCE.createSecretRule()));
 	}
 
 	/**

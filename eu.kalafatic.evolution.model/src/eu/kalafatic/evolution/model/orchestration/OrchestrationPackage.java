@@ -39,7 +39,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	String eNS_URI = "http://example.com/orchestration";
+	String eNS_URI = "http://eu.kalafatic.evolution/orchestration";
 
 	/**
 	 * The package namespace name.
@@ -366,7 +366,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 15;
+	int ORCHESTRATOR_FEATURE_COUNT = 11;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -748,7 +748,142 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvoProject()
 	 * @generated
 	 */
-	int EVO_PROJECT = 10;
+	int EVO_PROJECT = 11;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
+	 * @generated
+	 */
+	int TASK_STATUS = 17;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
+	 * @generated
+	 */
+	int COMMAND_STATUS = 18;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
+	 * @generated
+	 */
+	int EXECUTION_MODE = 19;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.RuleImpl <em>Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.RuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getRule()
+	 * @generated
+	 */
+	int RULE = 12;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl <em>Access Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAccessRule()
+	 * @generated
+	 */
+	int ACCESS_RULE = 13;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl <em>Network Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkRule()
+	 * @generated
+	 */
+	int NETWORK_RULE = 14;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl <em>Memory Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMemoryRule()
+	 * @generated
+	 */
+	int MEMORY_RULE = 15;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl <em>Secret Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSecretRule()
+	 * @generated
+	 */
+	int SECRET_RULE = 16;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl <em>Neuron AI</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronAI()
+	 * @generated
+	 */
+	int NEURON_AI = 10;
+
+	/**
+	 * The feature id for the '<em><b>Url</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI__URL = 0;
+
+	/**
+	 * The feature id for the '<em><b>Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI__MODEL = 1;
+
+	/**
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI__TYPE = 2;
+
+	/**
+	 * The number of structural features of the '<em>Neuron AI</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI_FEATURE_COUNT = 3;
+
+	/**
+	 * The number of operations of the '<em>Neuron AI</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI_OPERATION_COUNT = 0;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -787,46 +922,6 @@ public interface OrchestrationPackage extends EPackage {
 	int EVO_PROJECT_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
-	 * @generated
-	 */
-	int TASK_STATUS = 11;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
-	 * @generated
-	 */
-	int COMMAND_STATUS = 12;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
-	 * @generated
-	 */
-	int EXECUTION_MODE = 13;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.RuleImpl <em>Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.RuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getRule()
-	 * @generated
-	 */
-	int RULE = 14;
-
-	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -854,14 +949,13 @@ public interface OrchestrationPackage extends EPackage {
 	int RULE_FEATURE_COUNT = 2;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl <em>Access Rule</em>}' class.
+	 * The number of operations of the '<em>Rule</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAccessRule()
 	 * @generated
+	 * @ordered
 	 */
-	int ACCESS_RULE = 15;
+	int RULE_OPERATION_COUNT = 0;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -909,14 +1003,13 @@ public interface OrchestrationPackage extends EPackage {
 	int ACCESS_RULE_FEATURE_COUNT = RULE_FEATURE_COUNT + 2;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl <em>Network Rule</em>}' class.
+	 * The number of operations of the '<em>Access Rule</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkRule()
 	 * @generated
+	 * @ordered
 	 */
-	int NETWORK_RULE = 16;
+	int ACCESS_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -927,99 +1020,61 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int NETWORK_RULE__NAME = RULE__NAME;
 
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl <em>Memory Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMemoryRule()
-	 * @generated
-	 */
-	int MEMORY_RULE = 17;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl <em>Secret Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSecretRule()
-	 * @generated
-	 */
-	int SECRET_RULE = 18;
-
 	// Note: Shortened for brevity, but I need to be careful with feature IDs.
 	// Actually, I should define them all.
 
 	int NETWORK_RULE__DESCRIPTION = RULE__DESCRIPTION;
+
 	int NETWORK_RULE__ALLOWED_DOMAINS = RULE_FEATURE_COUNT + 0;
+
 	int NETWORK_RULE__ALLOW_ALL = RULE_FEATURE_COUNT + 1;
+
 	int NETWORK_RULE_FEATURE_COUNT = RULE_FEATURE_COUNT + 2;
 
+	/**
+	 * The number of operations of the '<em>Network Rule</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
+
 	int MEMORY_RULE__NAME = RULE__NAME;
+
 	int MEMORY_RULE__DESCRIPTION = RULE__DESCRIPTION;
+
 	int MEMORY_RULE__STORAGE_LIMIT = RULE_FEATURE_COUNT + 0;
+
 	int MEMORY_RULE__RETENTION_PERIOD = RULE_FEATURE_COUNT + 1;
+
 	int MEMORY_RULE_FEATURE_COUNT = RULE_FEATURE_COUNT + 2;
 
+	/**
+	 * The number of operations of the '<em>Memory Rule</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MEMORY_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
+
 	int SECRET_RULE__NAME = RULE__NAME;
+
 	int SECRET_RULE__DESCRIPTION = RULE__DESCRIPTION;
+
 	int SECRET_RULE__ALLOWED_SECRETS = RULE_FEATURE_COUNT + 0;
+
 	int SECRET_RULE_FEATURE_COUNT = RULE_FEATURE_COUNT + 1;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl <em>Neuron AI</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronAI()
-	 * @generated
-	 */
-	int NEURON_AI = 19;
-
-	/**
-	 * The feature id for the '<em><b>Url</b></em>' attribute.
+	 * The number of operations of the '<em>Secret Rule</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int NEURON_AI__URL = 0;
-
-	/**
-	 * The feature id for the '<em><b>Model</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NEURON_AI__MODEL = 1;
-
-	/**
-	 * The feature id for the '<em><b>Type</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NEURON_AI__TYPE = 2;
-
-	/**
-	 * The number of structural features of the '<em>Neuron AI</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NEURON_AI_FEATURE_COUNT = 3;
-
-	/**
-	 * The number of operations of the '<em>Neuron AI</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NEURON_AI_OPERATION_COUNT = 0;
+	int SECRET_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.

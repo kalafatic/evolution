@@ -126,10 +126,14 @@ public class OrchestratorItemProvider
 		if (childrenFeatures == null) {
 			super.getChildrenFeatures(object);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__AGENTS);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__TASKS);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__GIT);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__MAVEN);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__LLM);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__COMPILER);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__OLLAMA);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__AI_CHAT);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__NEURON_AI);
 		}
 		return childrenFeatures;
 	}
@@ -190,10 +194,14 @@ public class OrchestratorItemProvider
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
+			case OrchestrationPackage.ORCHESTRATOR__TASKS:
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 			case OrchestrationPackage.ORCHESTRATOR__MAVEN:
 			case OrchestrationPackage.ORCHESTRATOR__LLM:
 			case OrchestrationPackage.ORCHESTRATOR__COMPILER:
+			case OrchestrationPackage.ORCHESTRATOR__OLLAMA:
+			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
+			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), true, false));
 				return;
 		}
@@ -218,6 +226,11 @@ public class OrchestratorItemProvider
 
 		newChildDescriptors.add
 			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__TASKS,
+				 OrchestrationFactory.eINSTANCE.createTask()));
+
+		newChildDescriptors.add
+			(createChildParameter
 				(OrchestrationPackage.Literals.ORCHESTRATOR__GIT,
 				 OrchestrationFactory.eINSTANCE.createGit()));
 
@@ -235,6 +248,21 @@ public class OrchestratorItemProvider
 			(createChildParameter
 				(OrchestrationPackage.Literals.ORCHESTRATOR__COMPILER,
 				 OrchestrationFactory.eINSTANCE.createCompiler()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__OLLAMA,
+				 OrchestrationFactory.eINSTANCE.createOllama()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__AI_CHAT,
+				 OrchestrationFactory.eINSTANCE.createAiChat()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__NEURON_AI,
+				 OrchestrationFactory.eINSTANCE.createNeuronAI()));
 	}
 
 	/**

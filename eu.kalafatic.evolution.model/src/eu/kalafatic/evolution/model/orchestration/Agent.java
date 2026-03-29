@@ -18,7 +18,8 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Agent#getId <em>Id</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Agent#getType <em>Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Agent#getTasks <em>Tasks</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Agent#getRules <em>Rules</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Agent#getExecutionMode <em>Execution Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Agent#getRules <em>Rules</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAgent()

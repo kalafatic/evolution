@@ -9,7 +9,8 @@ Bundle-Activator: eu.kalafatic.evolution.model.orchestration.presentation.Evolut
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-21
-Export-Package: eu.kalafatic.evolution.model.orchestration.presentation
+Export-Package: eu.kalafatic.evolution.model.orchestration.presentation,
+ orchestration.presentation
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources;visibility:=reexport,
  eu.kalafatic.evolution.model.edit;visibility:=reexport,

@@ -9,7 +9,7 @@
    <extension point="org.eclipse.emf.edit.itemProviderAdapterFactories">
       <!-- @generated evolution -->
       <factory
-            uri="http://example.com/orchestration"
+            uri="http://eu.kalafatic.evolution/orchestration"
             class="eu.kalafatic.evolution.model.orchestration.provider.OrchestrationItemProviderAdapterFactory"
             supportedTypes=
               "org.eclipse.emf.edit.provider.IEditingDomainItemProvider

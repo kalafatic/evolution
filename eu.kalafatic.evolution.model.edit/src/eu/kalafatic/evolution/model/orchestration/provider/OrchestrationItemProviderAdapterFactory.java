@@ -256,6 +256,190 @@ public class OrchestrationItemProviderAdapterFactory extends OrchestrationAdapte
 	}
 
 	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.Ollama} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected OllamaItemProvider ollamaItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.Ollama}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createOllamaAdapter() {
+		if (ollamaItemProvider == null) {
+			ollamaItemProvider = new OllamaItemProvider(this);
+		}
+
+		return ollamaItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.AiChat} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected AiChatItemProvider aiChatItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.AiChat}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createAiChatAdapter() {
+		if (aiChatItemProvider == null) {
+			aiChatItemProvider = new AiChatItemProvider(this);
+		}
+
+		return aiChatItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.NeuronAI} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected NeuronAIItemProvider neuronAIItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.NeuronAI}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createNeuronAIAdapter() {
+		if (neuronAIItemProvider == null) {
+			neuronAIItemProvider = new NeuronAIItemProvider(this);
+		}
+
+		return neuronAIItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.EvoProject} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected EvoProjectItemProvider evoProjectItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.EvoProject}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createEvoProjectAdapter() {
+		if (evoProjectItemProvider == null) {
+			evoProjectItemProvider = new EvoProjectItemProvider(this);
+		}
+
+		return evoProjectItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.AccessRule} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected AccessRuleItemProvider accessRuleItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.AccessRule}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createAccessRuleAdapter() {
+		if (accessRuleItemProvider == null) {
+			accessRuleItemProvider = new AccessRuleItemProvider(this);
+		}
+
+		return accessRuleItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.NetworkRule} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected NetworkRuleItemProvider networkRuleItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.NetworkRule}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createNetworkRuleAdapter() {
+		if (networkRuleItemProvider == null) {
+			networkRuleItemProvider = new NetworkRuleItemProvider(this);
+		}
+
+		return networkRuleItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.MemoryRule} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected MemoryRuleItemProvider memoryRuleItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.MemoryRule}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createMemoryRuleAdapter() {
+		if (memoryRuleItemProvider == null) {
+			memoryRuleItemProvider = new MemoryRuleItemProvider(this);
+		}
+
+		return memoryRuleItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.SecretRule} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected SecretRuleItemProvider secretRuleItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.SecretRule}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createSecretRuleAdapter() {
+		if (secretRuleItemProvider == null) {
+			secretRuleItemProvider = new SecretRuleItemProvider(this);
+		}
+
+		return secretRuleItemProvider;
+	}
+
+	/**
 	 * This returns the root adapter factory that contains this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -368,6 +552,14 @@ public class OrchestrationItemProviderAdapterFactory extends OrchestrationAdapte
 		if (llmItemProvider != null) llmItemProvider.dispose();
 		if (compilerItemProvider != null) compilerItemProvider.dispose();
 		if (commandItemProvider != null) commandItemProvider.dispose();
+		if (ollamaItemProvider != null) ollamaItemProvider.dispose();
+		if (aiChatItemProvider != null) aiChatItemProvider.dispose();
+		if (neuronAIItemProvider != null) neuronAIItemProvider.dispose();
+		if (evoProjectItemProvider != null) evoProjectItemProvider.dispose();
+		if (accessRuleItemProvider != null) accessRuleItemProvider.dispose();
+		if (networkRuleItemProvider != null) networkRuleItemProvider.dispose();
+		if (memoryRuleItemProvider != null) memoryRuleItemProvider.dispose();
+		if (secretRuleItemProvider != null) secretRuleItemProvider.dispose();
 	}
 
 }

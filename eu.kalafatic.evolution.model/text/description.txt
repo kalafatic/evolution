@@ -5,7 +5,7 @@ org.eclipse.emf.examples.generator.validator plug-in to illustrate how EMF's
 code generator can be extended.
 This can be disabled with -vmargs -Dorg.eclipse.emf.examples.generator.validator=false.
 
-Package orchestration <http://example.com/orchestration>
+Package orchestration <http://eu.kalafatic.evolution/orchestration>
 
   Class Task
     Attribute id : EString
@@ -68,6 +68,7 @@ Package orchestration <http://example.com/orchestration>
     Attribute url : EString
     Attribute token : EString
     Attribute prompt : EString
+    Attribute proxyUrl : EString
 
   Class NeuronAI
     Attribute url : EString

@@ -91,6 +91,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/url"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/token"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/prompt"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/proxyUrl"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//NeuronAI">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NeuronAI/url"/>

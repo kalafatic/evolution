@@ -12,6 +12,7 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
+import eu.kalafatic.evolution.model.orchestration.Task;
 import java.util.Collection;
 
 import org.eclipse.emf.common.notify.Notification;
@@ -46,6 +47,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getCompiler <em>Compiler</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getOllama <em>Ollama</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAiChat <em>Ai Chat</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getNeuronAI <em>Neuron AI</em>}</li>
  * </ul>
  *
  * @generated
@@ -109,7 +111,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<eu.kalafatic.evolution.model.orchestration.Task> tasks;
+	protected EList<Task> tasks;
 
 	/**
 	 * The cached value of the '{@link #getGit() <em>Git</em>}' containment reference.
@@ -652,14 +654,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getAiChat();
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				return getNeuronAI();
-			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
-				return isOfflineMode();
-			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
-				return getMcpServerUrl();
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
-				return getOpenAiToken();
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
-				return getOpenAiModel();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -685,7 +679,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__TASKS:
 				getTasks().clear();
-				getTasks().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.Task>)newValue);
+				getTasks().addAll((Collection<? extends Task>)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				setGit((Git)newValue);
@@ -707,18 +701,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				setNeuronAI((NeuronAI)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
-				setOfflineMode((Boolean)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
-				setMcpServerUrl((String)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
-				setOpenAiToken((String)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
-				setOpenAiModel((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -765,18 +747,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				setNeuronAI((NeuronAI)null);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
-				setOfflineMode(true);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
-				setMcpServerUrl("");
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
-				setOpenAiToken("");
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
-				setOpenAiModel("gpt-4");
-				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -811,14 +781,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return aiChat != null;
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				return neuronAI != null;
-			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
-				return offlineMode != true;
-			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
-				return mcpServerUrl != null && !mcpServerUrl.isEmpty();
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
-				return openAiToken != null && !openAiToken.isEmpty();
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
-				return openAiModel != null && !openAiModel.equals("gpt-4");
 		}
 		return super.eIsSet(featureID);
 	}
