@@ -17,7 +17,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.draw2d.Figure;
 import org.eclipse.draw2d.IFigure;
+import org.eclipse.draw2d.Label;
+import org.eclipse.draw2d.ToolbarLayout;
 import org.eclipse.jface.resource.ColorRegistry;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.JFaceResources;
@@ -156,8 +159,28 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
 
 	@Override
 	public IFigure getTooltip(Object entity) {
-		// TODO Auto-generated method stub
+		if (entity instanceof Task) {
+			Task t = (Task) entity;
+			Figure tooltipFigure = new Figure();
+			tooltipFigure.setLayoutManager(new ToolbarLayout());
+
+			tooltipFigure.add(new Label("Status: " + t.getStatus()));
+			if (t.getResponse() != null && !t.getResponse().isEmpty()) {
+				tooltipFigure.add(new Label("Response: " + truncate(t.getResponse(), 200)));
+			}
+			if (t.getFeedback() != null && !t.getFeedback().isEmpty()) {
+				tooltipFigure.add(new Label("Feedback: " + truncate(t.getFeedback(), 200)));
+			}
+			return tooltipFigure;
+		}
 		return null;
+	}
+
+	private String truncate(String text, int maxLength) {
+		if (text == null || text.length() <= maxLength) {
+			return text;
+		}
+		return text.substring(0, maxLength) + "...";
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.view.editors.listeners;
 
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.ISelectionListener;
@@ -18,8 +19,11 @@ public class EditorSelectionListener implements ISelectionListener {
     public void selectionChanged(IWorkbenchPart part, ISelection selection) {
         if (selection instanceof IStructuredSelection) {
             Object firstElement = ((IStructuredSelection) selection).getFirstElement();
-            if (firstElement instanceof Orchestrator) {
-                editor.setOrchestrator((Orchestrator) firstElement);
+            if (firstElement instanceof EObject) {
+                if (firstElement instanceof Orchestrator) {
+                    editor.setOrchestrator((Orchestrator) firstElement);
+                }
+                editor.selectNode(firstElement);
             }
         }
     }

@@ -8,6 +8,7 @@ import org.eclipse.draw2d.Viewport;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.gef.editparts.ZoomManager;
 import org.eclipse.gef.ui.actions.ZoomComboContributionItem;
 import org.eclipse.gef.ui.actions.ZoomInAction;
@@ -132,6 +133,12 @@ public class GraphPage extends Composite {
         }
         if (viewer != null && !viewer.getControl().isDisposed()) {
             viewer.setInput(orchestrator != null ? new Object[] { orchestrator } : new Object[0]);
+        }
+    }
+
+    public void selectNode(Object element) {
+        if (viewer != null && !viewer.getControl().isDisposed()) {
+            viewer.setSelection(new StructuredSelection(element), true);
         }
     }
 
