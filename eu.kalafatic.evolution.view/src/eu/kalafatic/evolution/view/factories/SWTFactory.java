@@ -7,25 +7,47 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 
 public class SWTFactory {
+	
+	public static Group createGroup(Composite parent, String text, int columns) {
+		Group composite = new Group(parent, SWT.NONE);
+		composite.setText(text);
+		composite.setLayout(new GridLayout(columns, false));
+		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return composite;
+	}
 
-	public static void createLabel(Composite parent, String text) {
+	public static Label createLabel(Composite parent, String text) {
 		GridData gd = new GridData();
 		gd.widthHint = 100;
 		Label label = new Label(parent, SWT.NONE);
 		label.setLayoutData(gd);
 		label.setText(text);
+		return label;
+	}
+	
+	
+	public static Button createButton(Composite parent, String text) {
+		GridData gd = new GridData();
+		gd.widthHint = 100;
+		Button btn = new Button(parent, SWT.PUSH);
+		btn.setLayoutData(gd);
+		btn.setText(text);
+		
+		return btn;
 	}
 
-	public static void createEditButton(Composite parent, Text textWidget) {
+	public static Button createEditButton(Composite parent, Text textWidget) {
 		GridData gd = new GridData();
 		gd.widthHint = 100;
 		Button btn = new Button(parent, SWT.PUSH);
@@ -38,6 +60,7 @@ public class SWTFactory {
 				textWidget.setSelection(0, textWidget.getText().length());
 			}
 		});
+		return btn;
 	}
 
 	public static Combo selectModel(Composite parent, OllamaService ollamaService) {

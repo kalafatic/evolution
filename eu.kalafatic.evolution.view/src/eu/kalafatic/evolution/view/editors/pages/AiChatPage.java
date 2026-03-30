@@ -24,6 +24,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -39,6 +40,7 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class AiChatPage extends Composite {
     private MultiPageEditor editor;
@@ -54,7 +56,8 @@ public class AiChatPage extends Composite {
     private Map<String, StyleRange[]> threadStyles = new HashMap<>();
     private String currentThread = "Default";
     private Combo threadCombo;
-    private Combo aiModeCombo;
+    private Combo aiModeCombo;    
+    private Combo aiRemoteeCombo;
 
     // Colors and Fonts
     private Color colorUser;
@@ -106,11 +109,13 @@ public class AiChatPage extends Composite {
         layout.numColumns = 1;
 
         Composite toolbar = new Composite(this, SWT.NONE);
-        toolbar.setLayout(new GridLayout(8, false));
+        toolbar.setLayout(new GridLayout(1, false));
         toolbar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        
+        Group group = SWTFactory.createGroup(toolbar, "Threads", 5);
 
-        Button cleanButton = new Button(toolbar, SWT.PUSH);
-        cleanButton.setText("Clean");
+       
+        Button cleanButton = SWTFactory.createButton(group, "Clean");
         cleanButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -119,17 +124,8 @@ public class AiChatPage extends Composite {
                 threadStyles.put(currentThread, new StyleRange[0]);
             }
         });
-
-        Button newThreadButton = new Button(toolbar, SWT.PUSH);
-        newThreadButton.setText("New Thread");
-        newThreadButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                createNewThread();
-            }
-        });
-
-        Button saveButton = new Button(toolbar, SWT.PUSH);
+        
+        Button saveButton =  SWTFactory.createButton(group, "Save");
         saveButton.setText("Save");
         saveButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -137,9 +133,9 @@ public class AiChatPage extends Composite {
                 saveChatToFile();
             }
         });
-
-        createLabel(toolbar, "Select Thread:");
-        threadCombo = new Combo(toolbar, SWT.READ_ONLY);
+        
+        createLabel(group, "Select Thread:");
+        threadCombo = new Combo(group, SWT.READ_ONLY);
         threadCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         threadCombo.add(currentThread);
         threadCombo.select(0);
@@ -151,8 +147,21 @@ public class AiChatPage extends Composite {
             }
         });
 
-        createLabel(toolbar, "AI Mode:");
-        aiModeCombo = new Combo(toolbar, SWT.READ_ONLY);
+        Button newThreadButton =  SWTFactory.createButton(group, "New Thread");
+        newThreadButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                createNewThread();
+            }
+        });
+       
+
+        
+        
+        final Group groupMode = SWTFactory.createGroup(toolbar, "Mode", 4);
+
+        createLabel(groupMode, "AI Mode:");
+        aiModeCombo = new Combo(groupMode, SWT.READ_ONLY);
         for (AiMode mode : AiMode.values()) {
             aiModeCombo.add(mode.getName());
         }
@@ -165,19 +174,33 @@ public class AiChatPage extends Composite {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (orchestrator != null) {
-                    orchestrator.setAiMode(AiMode.get(aiModeCombo.getSelectionIndex()));
+                	AiMode aiMode = AiMode.get(aiModeCombo.getSelectionIndex());
+                    orchestrator.setAiMode(aiMode);
                     updateStatusInfo();
+                    
+                    if (aiMode.equals(AiMode.HYBRID) || aiMode.equals(AiMode.REMOTE)) {
+                    	
+                    	createLabel(groupMode, "AI Remote:");
+                    	
+                    	aiRemoteeCombo = new Combo(groupMode, SWT.READ_ONLY);
+                        for (AiMode mode : AiMode.values()) {
+                            aiModeCombo.add(mode.getName());
+                        }
+                        groupMode.layout(true, true);
+					}
                 }
             }
         });
+        
 
         createLabel(this, "Request:");
         requestText = new StyledText(this, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
         requestGridData.heightHint = 100;
         requestText.setLayoutData(requestGridData);
-        Button sendButton = new Button(this, SWT.PUSH);
-        sendButton.setText("Send");
+        
+        Button sendButton = SWTFactory.createButton(this, "Send");
+        
         sendButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) { sendAction(); }
         });
