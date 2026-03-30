@@ -39,6 +39,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private PreviewPage previewPage;
     private GraphPage graphPage;
     private BrowserPage browserPage;
+    private AiFlowPage aiFlowPage;
     private Orchestrator orchestrator;
     private boolean isDirty = false;
     private ResourceSet resourceSet;
@@ -67,6 +68,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
                 previewPage = PreviewPageFactory.createPreviewPage(this, orchestrator);
                 browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
+                aiFlowPage = AiFlowPageFactory.createAiFlowPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
             } else {
                 Composite placeholder = new Composite(getContainer(), SWT.NONE);
@@ -172,6 +174,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (previewPage != null) previewPage.setOrchestrator(orchestrator);
         if (graphPage != null) graphPage.setOrchestrator(orchestrator);
         if (browserPage != null) browserPage.setOrchestrator(orchestrator);
+        if (aiFlowPage != null) aiFlowPage.setOrchestrator(orchestrator);
     }
 
     @Override
