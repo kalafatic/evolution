@@ -49,8 +49,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 */
 	public static synchronized OrchestrationFactory init() {
 		try {
-			OrchestrationFactory theOrchestrationFactory = (OrchestrationFactory)EPackage.Registry.INSTANCE.getEFactory(OrchestrationPackage.eNS_URI);
-			if (theOrchestrationFactory != null) {
+			Object factory = EPackage.Registry.INSTANCE.getEFactory(OrchestrationPackage.eNS_URI);
+			if (factory instanceof OrchestrationFactory theOrchestrationFactory) {
 				return theOrchestrationFactory;
 			}
 		}
