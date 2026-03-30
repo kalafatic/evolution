@@ -8,7 +8,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-public class OrchestrationGeneralPage extends WizardPage {
+public class OrchestrationGeneralPage extends AWizardPage {
     private Text nameText;
     private Text idText;
 

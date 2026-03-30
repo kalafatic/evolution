@@ -16,7 +16,7 @@ import org.eclipse.swt.widgets.Text;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
-public class LLMSettingsPage extends WizardPage {
+public class LLMSettingsPage extends AWizardPage {
     private Text modelText, tempText;
     private Button skipCheck;
 

@@ -22,7 +22,7 @@ import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
-public class MavenSettingsPage extends WizardPage {
+public class MavenSettingsPage extends AWizardPage {
     private Text goalsText, profilesText;
     private Button skipCheck;
     private ControlDecoration mavenDecorator;

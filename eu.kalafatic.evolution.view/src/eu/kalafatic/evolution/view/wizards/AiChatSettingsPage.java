@@ -9,7 +9,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-public class AiChatSettingsPage extends WizardPage {
+public class AiChatSettingsPage extends AWizardPage {
     private Text urlText, tokenText, promptText, proxyUrlText;
     private Button skipCheck;
 

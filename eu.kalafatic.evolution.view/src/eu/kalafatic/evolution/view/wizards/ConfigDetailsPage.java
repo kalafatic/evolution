@@ -8,7 +8,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-public class ConfigDetailsPage extends WizardPage {
+public class ConfigDetailsPage extends AWizardPage {
     private Text fileNameText;
 
     public ConfigDetailsPage() {

@@ -53,7 +53,7 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
-public class OllamaSettingsPage extends WizardPage {
+public class OllamaSettingsPage extends AWizardPage {
 	
 	OllamaConfigManager.OllamaDefaults defaults = OllamaConfigManager.getDefaults();
 	

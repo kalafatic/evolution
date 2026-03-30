@@ -9,7 +9,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-public class AgentSettingsPage extends WizardPage {
+public class AgentSettingsPage extends AWizardPage {
     private Text agentsText;
     private Button skipCheck;
 

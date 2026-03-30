@@ -12,7 +12,7 @@ import org.eclipse.swt.widgets.Text;
 
 import eu.kalafatic.evolution.model.orchestration.NeuronType;
 
-public class NeuronAISettingsPage extends WizardPage {
+public class NeuronAISettingsPage extends AWizardPage {
     private Text urlText, modelText;
     private Combo typeCombo;
     private Button skipCheck;
