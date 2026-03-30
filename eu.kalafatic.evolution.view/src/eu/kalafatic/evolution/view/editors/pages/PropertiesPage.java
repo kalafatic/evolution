@@ -46,6 +46,9 @@ public class PropertiesPage extends ScrolledComposite {
 	}
 
 	private void createControl() {
+
+		ollamaService = new OllamaService(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel());
+		
 		Composite comp = new Composite(this, SWT.NONE);
 		comp.setLayout(new GridLayout(1, false));
 		Group statusGroup = new Group(comp, SWT.NONE);
@@ -280,13 +283,13 @@ public class PropertiesPage extends ScrolledComposite {
 		updatePropertiesInfo();
 	}
 
-	private void selectModel(Group ollamaGroup, OllamaService ollamaService2) {
-		SWTFactory.selectModel(ollamaGroup, ollamaService2).addSelectionListener(new SelectionAdapter() {
+	private void selectModel(Group ollamaGroup, OllamaService ollamaService) {
+		SWTFactory.selectModel(ollamaGroup, ollamaService).addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				int idx = ((Combo) e.getSource()).getSelectionIndex();
-				if (idx >= 0 && ollamaService2 != null) {
-					List<eu.kalafatic.evolution.controller.manager.OllamaModel> models = ollamaService2.loadModels();
+				if (idx >= 0 && ollamaService != null) {
+					List<eu.kalafatic.evolution.controller.manager.OllamaModel> models = ollamaService.loadModels();
 					if (idx < models.size()) {
 						llmModelText.setText(models.get(idx).getName());
 						updateModelFromFields();

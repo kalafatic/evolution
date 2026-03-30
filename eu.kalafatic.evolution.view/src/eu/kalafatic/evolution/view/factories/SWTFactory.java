@@ -16,24 +16,39 @@ import org.eclipse.swt.widgets.Text;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 
 public class SWTFactory {
-	
+
 	public static void createLabel(Composite parent, String text) {
-        GridData gd = new GridData(); gd.widthHint = 100;
-        Label label = new Label(parent, SWT.NONE); label.setLayoutData(gd); label.setText(text);
-    }
+		GridData gd = new GridData();
+		gd.widthHint = 100;
+		Label label = new Label(parent, SWT.NONE);
+		label.setLayoutData(gd);
+		label.setText(text);
+	}
 
 	public static void createEditButton(Composite parent, Text textWidget) {
-        GridData gd = new GridData(); gd.widthHint = 100;
-        Button btn = new Button(parent, SWT.PUSH); btn.setLayoutData(gd); btn.setText("Edit");
-        btn.addSelectionListener(new SelectionAdapter() { @Override public void widgetSelected(SelectionEvent e) { textWidget.setFocus(); textWidget.setSelection(0, textWidget.getText().length()); } });
-    }
+		GridData gd = new GridData();
+		gd.widthHint = 100;
+		Button btn = new Button(parent, SWT.PUSH);
+		btn.setLayoutData(gd);
+		btn.setText("Edit");
+		btn.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				textWidget.setFocus();
+				textWidget.setSelection(0, textWidget.getText().length());
+			}
+		});
+	}
 
-    public static Combo selectModel(Composite parent, OllamaService ollamaService) {
-        Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);
-        combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        List<eu.kalafatic.evolution.controller.manager.OllamaModel> models = ollamaService != null ? ollamaService.loadModels() : new ArrayList<>();
-        for (eu.kalafatic.evolution.controller.manager.OllamaModel m : models) combo.add(m.getName());
-        return combo;
-    }
+	public static Combo selectModel(Composite parent, OllamaService ollamaService) {
+		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);
+		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		List<eu.kalafatic.evolution.controller.manager.OllamaModel> models = ollamaService != null
+				? ollamaService.loadModels()
+				: new ArrayList<>();
+		for (eu.kalafatic.evolution.controller.manager.OllamaModel m : models)
+			combo.add(m.getName());
+		return combo;
+	}
 
 }
