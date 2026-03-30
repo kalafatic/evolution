@@ -114,7 +114,7 @@ public class AiFlowPage extends Composite {
     }
 
     private String getHtmlTemplate() {
-        return "<html><head><style>" +
+        return "<!DOCTYPE html><html><head><style>" +
                "body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fafafa; margin: 0; overflow: hidden; }" +
                "#canvas { width: 100vw; height: 100vh; }" +
                ".node { fill: #ffffff; stroke: #cfd8dc; stroke-width: 1px; transition: all 0.3s; }" +
@@ -123,6 +123,8 @@ public class AiFlowPage extends Composite {
                ".task.DONE { fill: #e8f5e9; stroke: #4caf50; }" +
                ".task.RUNNING { fill: #fffde7; stroke: #fbc02d; }" +
                ".task.FAILED { fill: #ffe9e9; stroke: #f44336; }" +
+               ".agent { fill: #e3f2fd; stroke: #2196f3; stroke-width: 2px; }" +
+               ".agent-link { stroke: #2196f3; stroke-width: 1px; stroke-dasharray: 4; }" +
                "text { font-size: 11px; fill: #455a64; pointer-events: none; text-anchor: middle; }" +
                "line { stroke: #b0bec5; stroke-width: 1.5px; marker-end: url(#arrowhead); }" +
                "</style></head><body>" +
@@ -131,43 +133,70 @@ public class AiFlowPage extends Composite {
                "const viewport = document.getElementById('viewport');" +
                "function updateGraph(data) {" +
                "  viewport.innerHTML = '';" +
-               "  if (!data.tasks || data.tasks.length === 0) return;" +
+               "  if (!data) return;" +
                "  const nodes = {};" +
                "  const links = [];" +
                "  // Flow-like layout: sequential" +
-               "  let x = 100, y = 100;" +
-               "  data.tasks.forEach((t, i) => {" +
-               "    nodes[t.id] = { ...t, x: x, y: y };" +
-               "    x += 220;" +
-               "    if (x > 800) { x = 100; y += 120; }" +
-               "    t.next.forEach(nid => links.push({ from: t.id, to: nid }));" +
-               "  });" +
-               "  links.forEach(l => {" +
+               "  let x = 300, y = 50;" +
+               "  if (data.tasks) {" +
+               "    data.tasks.forEach(function(t) {" +
+               "      nodes[t.id] = Object.assign({}, t, { x: x, y: y });" +
+               "      x += 220;" +
+               "      if (x > 800) { x = 300; y += 120; }" +
+               "      if (t.next) { t.next.forEach(function(nid) { links.push({ from: t.id, to: nid }); }); }" +
+               "    });" +
+               "  }" +
+               "  // Agent layout" +
+               "  let ay = 50;" +
+               "  if (data.agents) {" +
+               "    data.agents.forEach(function(a) {" +
+               "      const agentNode = { id: a.id, name: a.id, type: 'agent', x: 50, y: ay };" +
+               "      nodes[a.id] = agentNode;" +
+               "      ay += 100;" +
+               "      if (a.tasks) {" +
+               "        a.tasks.forEach(function(tid) { links.push({ from: a.id, to: tid, type: 'agent-link' }); });" +
+               "      }" +
+               "    });" +
+               "  }" +
+               "  links.forEach(function(l) {" +
                "    const n1 = nodes[l.from];" +
                "    const n2 = nodes[l.to];" +
                "    if (n1 && n2) {" +
                "      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');" +
-               "      line.setAttribute('x1', n1.x + 160);" +
-               "      line.setAttribute('y1', n1.y + 25);" +
+               "      const isAgentLink = l.type === 'agent-link';" +
+               "      line.setAttribute('x1', isAgentLink ? n1.x + 40 : n1.x + 160);" +
+               "      line.setAttribute('y1', isAgentLink ? n1.y + 40 : n1.y + 25);" +
                "      line.setAttribute('x2', n2.x);" +
                "      line.setAttribute('y2', n2.y + 25);" +
+               "      line.className.baseVal = isAgentLink ? 'agent-link' : '';" +
                "      viewport.appendChild(line);" +
                "    }" +
                "  });" +
-               "  Object.values(nodes).forEach(n => {" +
+               "  Object.keys(nodes).forEach(function(key) {" +
+               "    const n = nodes[key];" +
                "    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');" +
-               "    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');" +
-               "    rect.setAttribute('x', n.x);" +
-               "    rect.setAttribute('y', n.y);" +
-               "    rect.setAttribute('width', 160);" +
-               "    rect.setAttribute('height', 50);" +
-               "    rect.setAttribute('rx', 8);" +
-               "    rect.className.baseVal = 'node task ' + n.status;" +
+               "    const isAgent = n.type === 'agent';" +
+               "    if (isAgent) {" +
+               "      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');" +
+               "      circle.setAttribute('cx', n.x + 40);" +
+               "      circle.setAttribute('cy', n.y + 40);" +
+               "      circle.setAttribute('r', 40);" +
+               "      circle.className.baseVal = 'node agent';" +
+               "      g.appendChild(circle);" +
+               "    } else {" +
+               "      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');" +
+               "      rect.setAttribute('x', n.x);" +
+               "      rect.setAttribute('y', n.y);" +
+               "      rect.setAttribute('width', 160);" +
+               "      rect.setAttribute('height', 50);" +
+               "      rect.setAttribute('rx', 8);" +
+               "      rect.className.baseVal = 'node task ' + n.status;" +
+               "      g.appendChild(rect);" +
+               "    }" +
                "    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');" +
-               "    text.setAttribute('x', n.x + 80);" +
-               "    text.setAttribute('y', n.y + 30);" +
+               "    text.setAttribute('x', isAgent ? n.x + 40 : n.x + 80);" +
+               "    text.setAttribute('y', isAgent ? n.y + 45 : n.y + 30);" +
                "    text.textContent = n.name.length > 20 ? n.name.substring(0, 17) + '...' : n.name;" +
-               "    g.appendChild(rect);" +
                "    g.appendChild(text);" +
                "    viewport.appendChild(g);" +
                "  });" +
