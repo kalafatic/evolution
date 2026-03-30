@@ -360,13 +360,18 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__OPEN_AI_MODEL = 14;
 
 	/**
+	 * @generated NOT
+	 */
+	int ORCHESTRATOR__AI_MODE = 15;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 11;
+	int ORCHESTRATOR_FEATURE_COUNT = 16;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -1087,6 +1092,11 @@ public interface OrchestrationPackage extends EPackage {
 	int NEURON_TYPE = 20;
 
 	/**
+	 * @generated NOT
+	 */
+	int AI_MODE = 21;
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Task <em>Task</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1399,6 +1409,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated NOT
 	 */
 	EAttribute getOrchestrator_OpenAiModel();
+
+	/**
+	 * @generated NOT
+	 */
+	EAttribute getOrchestrator_AiMode();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}'.
+	 * @generated NOT
+	 */
+	EEnum getAiMode();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Git <em>Git</em>}'.

@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Map;
 import org.eclipse.core.resources.IFile;
@@ -22,6 +23,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -34,6 +36,7 @@ import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
@@ -51,6 +54,7 @@ public class AiChatPage extends Composite {
     private Map<String, StyleRange[]> threadStyles = new HashMap<>();
     private String currentThread = "Default";
     private Combo threadCombo;
+    private Combo aiModeCombo;
 
     // Colors and Fonts
     private Color colorUser;
@@ -102,7 +106,7 @@ public class AiChatPage extends Composite {
         layout.numColumns = 1;
 
         Composite toolbar = new Composite(this, SWT.NONE);
-        toolbar.setLayout(new GridLayout(4, false));
+        toolbar.setLayout(new GridLayout(8, false));
         toolbar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Button cleanButton = new Button(toolbar, SWT.PUSH);
@@ -125,6 +129,15 @@ public class AiChatPage extends Composite {
             }
         });
 
+        Button saveButton = new Button(toolbar, SWT.PUSH);
+        saveButton.setText("Save");
+        saveButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                saveChatToFile();
+            }
+        });
+
         createLabel(toolbar, "Select Thread:");
         threadCombo = new Combo(toolbar, SWT.READ_ONLY);
         threadCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -135,6 +148,26 @@ public class AiChatPage extends Composite {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 switchThread();
+            }
+        });
+
+        createLabel(toolbar, "AI Mode:");
+        aiModeCombo = new Combo(toolbar, SWT.READ_ONLY);
+        for (AiMode mode : AiMode.values()) {
+            aiModeCombo.add(mode.getName());
+        }
+        if (orchestrator != null) {
+            aiModeCombo.select(orchestrator.getAiMode().getValue());
+        } else {
+            aiModeCombo.select(0);
+        }
+        aiModeCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (orchestrator != null) {
+                    orchestrator.setAiMode(AiMode.get(aiModeCombo.getSelectionIndex()));
+                    updateStatusInfo();
+                }
             }
         });
 
@@ -298,6 +331,20 @@ public class AiChatPage extends Composite {
         responseText.setSelection(responseText.getCharCount());
     }
 
+    private void saveChatToFile() {
+        FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
+        dialog.setFilterExtensions(new String[] { "*.txt", "*.*" });
+        dialog.setFileName(currentThread + ".txt");
+        String path = dialog.open();
+        if (path != null) {
+            try (FileWriter writer = new FileWriter(path)) {
+                writer.write(responseText.getText());
+            } catch (Exception e) {
+                appendStyledText("\nError saving file: " + e.getMessage(), colorError, SWT.BOLD);
+            }
+        }
+    }
+
     private void createLabel(Composite parent, String text) {
         GridData gd = new GridData();
         gd.widthHint = 100;
@@ -333,6 +380,9 @@ public class AiChatPage extends Composite {
     public void setOrchestrator(Orchestrator orchestrator) {
         this.orchestrator = orchestrator;
         this.ollamaService = null;
+        if (orchestrator != null && aiModeCombo != null && !aiModeCombo.isDisposed()) {
+            aiModeCombo.select(orchestrator.getAiMode().getValue());
+        }
         updateStatusInfo();
     }
 

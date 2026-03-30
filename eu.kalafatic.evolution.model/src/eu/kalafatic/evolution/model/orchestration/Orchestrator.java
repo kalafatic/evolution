@@ -295,4 +295,14 @@ public interface Orchestrator extends EObject {
 	 */
 	void setOpenAiModel(String value);
 
+	/**
+	 * @generated NOT
+	 */
+	AiMode getAiMode();
+
+	/**
+	 * @generated NOT
+	 */
+	void setAiMode(AiMode value);
+
 } // Orchestrator

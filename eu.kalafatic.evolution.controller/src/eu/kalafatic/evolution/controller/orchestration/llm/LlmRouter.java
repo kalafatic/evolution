@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.controller.orchestration.llm;
 
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
@@ -21,10 +22,13 @@ public class LlmRouter {
      * @throws Exception If an error occurs
      */
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
-        if (orchestrator.isOfflineMode()) {
-            return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
-        } else {
+        AiMode mode = orchestrator.getAiMode();
+        if (mode == AiMode.REMOTE) {
             return openAiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
+        } else {
+            // Both LOCAL and HYBRID currently use OllamaProvider
+            // HYBRID might involve special logic in OllamaProvider or a custom setup
+            return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
         }
     }
 }

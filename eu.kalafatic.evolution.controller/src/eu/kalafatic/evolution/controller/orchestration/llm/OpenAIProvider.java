@@ -16,7 +16,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
  */
 public class OpenAIProvider implements ILlmProvider {
 
-    private static final String OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+    private static final String DEFAULT_OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
@@ -52,8 +52,16 @@ public class OpenAIProvider implements ILlmProvider {
 
         String json = jsonObject.toString();
 
+        String apiUrl = DEFAULT_OPENAI_URL;
+        if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
+            apiUrl = orchestrator.getAiChat().getUrl();
+            if (!apiUrl.contains("/chat/completions")) {
+                apiUrl = apiUrl + (apiUrl.endsWith("/") ? "" : "/") + "chat/completions";
+            }
+        }
+
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(OPENAI_URL))
+                .uri(URI.create(apiUrl))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + token)
                 .timeout(Duration.ofSeconds(60))
