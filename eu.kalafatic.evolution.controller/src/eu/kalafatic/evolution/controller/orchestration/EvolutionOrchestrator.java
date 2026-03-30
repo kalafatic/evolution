@@ -113,7 +113,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
             FileTool fileTool = new FileTool();
             // JavaDev/Architect will generate content first
             String content = agent.process(taskName, context, lastFeedback);
-            return fileTool.execute("WRITE " + taskName.replaceFirst("(?i)Write ", "").trim() + "\n" + content, context.getProjectRoot(), context);
+            String path = taskName.replaceFirst("(?i)Write ", "").trim();
+            // Sanitize path: remove leading slashes and drive letters (e.g., C:/)
+            path = path.replaceFirst("^([a-zA-Z]:)?(/|\\\\)+", "");
+            // Normalize path: replace backslashes with forward slashes
+            path = path.replace("\\", "/");
+            return fileTool.execute("WRITE " + path + "\n" + content, context.getProjectRoot(), context);
         } else if ("maven".equalsIgnoreCase(taskType)) {
             MavenTool mavenTool = new MavenTool();
             return mavenTool.execute(taskName, context.getProjectRoot(), context);

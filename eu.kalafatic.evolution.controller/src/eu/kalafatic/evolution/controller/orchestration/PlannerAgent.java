@@ -25,7 +25,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "If the request is a simple greeting or a general question, just create one 'llm' task to respond.\n" +
                 "Available task types:\n" +
                 "- 'llm': For reasoning, planning, or general text generation.\n" +
-                "- 'file': For writing or creating files (e.g., Java source code, POM, README). Task name should be 'Write <path/to/file>'.\n" +
+                "- 'file': For writing or creating files (e.g., Java source code, POM, README). Task name should be 'Write <path/to/file>'. File paths MUST be relative to the project root and MUST NOT start with a slash or drive letter.\n" +
                 "- 'git': For version control actions (add, commit, push).\n" +
                 "- 'maven': For building, testing, or packaging the project.\n" +
                 "- 'train_nn': For local project neural network training.\n" +
