@@ -8,6 +8,7 @@ import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
 import eu.kalafatic.evolution.model.orchestration.NetworkRule;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Command;
@@ -163,6 +164,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createExecutionModeFromString(eDataType, initialValue);
 			case OrchestrationPackage.NEURON_TYPE:
 				return createNeuronTypeFromString(eDataType, initialValue);
+			case OrchestrationPackage.AI_MODE:
+				return createAiModeFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -184,6 +187,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertExecutionModeToString(eDataType, instanceValue);
 			case OrchestrationPackage.NEURON_TYPE:
 				return convertNeuronTypeToString(eDataType, instanceValue);
+			case OrchestrationPackage.AI_MODE:
+				return convertAiModeToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -226,6 +231,22 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	public String convertNeuronTypeToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	public AiMode createAiModeFromString(EDataType eDataType, String initialValue) {
+		AiMode result = AiMode.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	public String convertAiModeToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 

@@ -2,6 +2,7 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
@@ -178,6 +179,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	private EEnum taskStatusEEnum = null;
 
 	/**
+	 * @generated NOT
+	 */
+	private EEnum aiModeEEnum = null;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -290,6 +296,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getOrchestrator_OpenAiModel() {
 		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(14);
+	}
+
+	@Override
+	public EAttribute getOrchestrator_AiMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(15);
+	}
+
+	@Override
+	public EEnum getAiMode() {
+		return aiModeEEnum;
 	}
 
 	/**
@@ -980,6 +996,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(ollamaEClass, OLLAMA__MODEL);
 		createEAttribute(ollamaEClass, OLLAMA__PATH);
 
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__OFFLINE_MODE);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__MCP_SERVER_URL);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__OPEN_AI_TOKEN);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__OPEN_AI_MODEL);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__AI_MODE);
+
 		aiChatEClass = createEClass(AI_CHAT);
 		createEAttribute(aiChatEClass, AI_CHAT__URL);
 		createEAttribute(aiChatEClass, AI_CHAT__TOKEN);
@@ -1019,6 +1041,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		commandStatusEEnum = createEEnum(COMMAND_STATUS);
 		executionModeEEnum = createEEnum(EXECUTION_MODE);
 		neuronTypeEEnum = createEEnum(NEURON_TYPE);
+		aiModeEEnum = createEEnum(AI_MODE);
 	}
 
 	/**
@@ -1111,6 +1134,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getOllama_Url(), ecorePackage.getEString(), "url", null, 0, 1, Ollama.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOllama_Model(), ecorePackage.getEString(), "model", null, 0, 1, Ollama.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOllama_Path(), ecorePackage.getEString(), "path", null, 0, 1, Ollama.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_OfflineMode(), ecorePackage.getEBoolean(), "offlineMode", "true", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_McpServerUrl(), ecorePackage.getEString(), "mcpServerUrl", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_OpenAiToken(), ecorePackage.getEString(), "openAiToken", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_OpenAiModel(), ecorePackage.getEString(), "openAiModel", "gpt-4", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_AiMode(), this.getAiMode(), "aiMode", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(aiChatEClass, AiChat.class, "AiChat", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getAiChat_Url(), ecorePackage.getEString(), "url", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1169,6 +1197,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(neuronTypeEEnum, NeuronType.RNN);
 		addEEnumLiteral(neuronTypeEEnum, NeuronType.LSTM);
 		addEEnumLiteral(neuronTypeEEnum, NeuronType.TRANSFORMER);
+
+		initEEnum(aiModeEEnum, AiMode.class, "AiMode");
+		addEEnumLiteral(aiModeEEnum, AiMode.LOCAL);
+		addEEnumLiteral(aiModeEEnum, AiMode.HYBRID);
+		addEEnumLiteral(aiModeEEnum, AiMode.REMOTE);
 
 		// Create resource
 		createResource(eNS_URI);

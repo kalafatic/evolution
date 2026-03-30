@@ -26,6 +26,7 @@ public class PropertiesPage extends ScrolledComposite {
     private Canvas statusCanvas;
     private Text orchIdText, orchNameText, llmModelText, llmTempText, ollamaUrlText, ollamaModelText, ollamaPathText, ollamaVersionText;
     private Button offlineBtn;
+    private Combo aiModeCombo;
     private Text mcpUrlText, openAiTokenText, openAiModelText;
     private Table agentsTable;
     private Text gitRepoText, gitBranchText, mavenGoalsText, mavenProfilesText, aiChatUrlText, neuronAiUrlText, compilerSourceText;
@@ -129,7 +130,15 @@ public class PropertiesPage extends ScrolledComposite {
         mcpOpenAiGroup.setText("MCP & OpenAI (Hybrid Architecture)");
         mcpOpenAiGroup.setLayout(new GridLayout(3, false));
         mcpOpenAiGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        createLabel(mcpOpenAiGroup, "Offline Mode:"); offlineBtn = new Button(mcpOpenAiGroup, SWT.CHECK); offlineBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
+        createLabel(mcpOpenAiGroup, "AI Mode:");
+        aiModeCombo = new Combo(mcpOpenAiGroup, SWT.READ_ONLY);
+        aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
+        for (eu.kalafatic.evolution.model.orchestration.AiMode mode : eu.kalafatic.evolution.model.orchestration.AiMode.values()) {
+            aiModeCombo.add(mode.getName());
+        }
+        aiModeCombo.addSelectionListener(new SelectionAdapter() { @Override public void widgetSelected(SelectionEvent e) { if (orchestrator != null && !isUpdating) { updateModelFromFields(); editor.setDirty(true); } } });
+
+        createLabel(mcpOpenAiGroup, "Offline Mode (Legacy):"); offlineBtn = new Button(mcpOpenAiGroup, SWT.CHECK); offlineBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
         createLabel(mcpOpenAiGroup, "MCP Server URL:"); mcpUrlText = new Text(mcpOpenAiGroup, SWT.BORDER); mcpUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL)); createEditButton(mcpOpenAiGroup, mcpUrlText);
         createLabel(mcpOpenAiGroup, "OpenAI Token:"); openAiTokenText = new Text(mcpOpenAiGroup, SWT.BORDER | SWT.PASSWORD); openAiTokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL)); createEditButton(mcpOpenAiGroup, openAiTokenText);
         createLabel(mcpOpenAiGroup, "OpenAI Model:"); openAiModelText = new Text(mcpOpenAiGroup, SWT.BORDER); openAiModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL)); createEditButton(mcpOpenAiGroup, openAiModelText);
@@ -195,6 +204,7 @@ public class PropertiesPage extends ScrolledComposite {
         if (orchestrator.getNeuronAI() != null) neuronAiUrlText.setText(orchestrator.getNeuronAI().getUrl() != null ? orchestrator.getNeuronAI().getUrl() : "");
         if (orchestrator.getCompiler() != null) compilerSourceText.setText(orchestrator.getCompiler().getSourceVersion() != null ? orchestrator.getCompiler().getSourceVersion() : "");
 
+        aiModeCombo.select(orchestrator.getAiMode().getValue());
         offlineBtn.setSelection(orchestrator.isOfflineMode());
         mcpUrlText.setText(orchestrator.getMcpServerUrl() != null ? orchestrator.getMcpServerUrl() : "");
         openAiTokenText.setText(orchestrator.getOpenAiToken() != null ? orchestrator.getOpenAiToken() : "");
@@ -241,6 +251,7 @@ public class PropertiesPage extends ScrolledComposite {
         if (orchestrator.getNeuronAI() != null) orchestrator.getNeuronAI().setUrl(neuronAiUrlText.getText());
         if (orchestrator.getCompiler() != null) orchestrator.getCompiler().setSourceVersion(compilerSourceText.getText());
 
+        orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get(aiModeCombo.getSelectionIndex()));
         orchestrator.setOfflineMode(offlineBtn.getSelection());
         orchestrator.setMcpServerUrl(mcpUrlText.getText());
         orchestrator.setOpenAiToken(openAiTokenText.getText());

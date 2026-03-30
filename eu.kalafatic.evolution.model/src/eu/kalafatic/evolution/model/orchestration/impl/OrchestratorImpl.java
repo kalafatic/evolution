@@ -2,6 +2,7 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.Git;
@@ -187,6 +188,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected String mcpServerUrl = "";
 	protected String openAiToken = "";
 	protected String openAiModel = "gpt-4";
+	protected AiMode aiMode = AiMode.LOCAL;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -654,6 +656,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getAiChat();
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				return getNeuronAI();
+			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
+				return isOfflineMode();
+			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
+				return getMcpServerUrl();
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
+				return getOpenAiToken();
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
+				return getOpenAiModel();
+			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
+				return getAiMode();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -702,6 +714,21 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				setNeuronAI((NeuronAI)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
+				setOfflineMode((Boolean)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
+				setMcpServerUrl((String)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
+				setOpenAiToken((String)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
+				setOpenAiModel((String)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
+				setAiMode((AiMode)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -747,6 +774,21 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				setNeuronAI((NeuronAI)null);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
+				setOfflineMode(true);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
+				setMcpServerUrl("");
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
+				setOpenAiToken("");
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
+				setOpenAiModel("gpt-4");
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
+				setAiMode(AiMode.LOCAL);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -781,6 +823,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return aiChat != null;
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				return neuronAI != null;
+			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
+				return offlineMode != true;
+			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
+				return mcpServerUrl != null && !mcpServerUrl.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
+				return openAiToken != null && !openAiToken.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
+				return openAiModel != null && !openAiModel.equals("gpt-4");
+			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
+				return aiMode != AiMode.LOCAL;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -853,6 +905,19 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		openAiModel = newOpenAiModel;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL, oldOpenAiModel, openAiModel));
+	}
+
+	@Override
+	public AiMode getAiMode() {
+		return aiMode;
+	}
+
+	@Override
+	public void setAiMode(AiMode newAiMode) {
+		AiMode oldAiMode = aiMode;
+		aiMode = newAiMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_MODE, oldAiMode, aiMode));
 	}
 
 } //OrchestratorImpl
