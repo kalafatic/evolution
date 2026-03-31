@@ -177,6 +177,13 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (aiFlowPage != null) aiFlowPage.setOrchestrator(orchestrator);
     }
 
+    public void reloadModel() {
+        loadModel();
+        if (orchestrator != null) {
+            setOrchestrator(orchestrator);
+        }
+    }
+
     public void selectNode(Object element) {
         if (graphPage != null) {
             graphPage.selectNode(element);
