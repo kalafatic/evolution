@@ -11,6 +11,11 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.bindings.keys.KeyStroke;
+import org.eclipse.jface.fieldassist.ContentProposalAdapter;
+import org.eclipse.jface.fieldassist.IContentProposal;
+import org.eclipse.jface.fieldassist.IContentProposalProvider;
+import org.eclipse.jface.fieldassist.IControlContentAdapter;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
@@ -35,6 +40,7 @@ import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import eu.kalafatic.evolution.controller.manager.NeuronService;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
@@ -246,6 +252,7 @@ public class AiChatPage extends Composite {
 
         createLabel(this, "Request:");
         requestText = new StyledText(this, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        setupContextAssist();
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
         requestGridData.heightHint = 100;
         requestText.setLayoutData(requestGridData);
@@ -351,8 +358,12 @@ public class AiChatPage extends Composite {
         String request = requestText.getText().trim();
         if (request.isEmpty()) return;
 
-        if (orchestrator != null && (orchestrator.getId() == null || orchestrator.getId().isEmpty())) {
-            orchestrator.setId("chat-" + System.currentTimeMillis());
+        if (orchestrator != null) {
+            NeuronService.getInstance().train(orchestrator, request);
+            editor.setDirty(true);
+            if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) {
+                orchestrator.setId("chat-" + System.currentTimeMillis());
+            }
         }
 
         if (!responseText.getText().isEmpty()) {
@@ -520,6 +531,91 @@ public class AiChatPage extends Composite {
         StyleRange range = new StyleRange(start, length, color, null, style);
         responseText.setStyleRange(range);
         responseText.setSelection(responseText.getCharCount());
+    }
+
+    private void setupContextAssist() {
+        IContentProposalProvider proposalProvider = new IContentProposalProvider() {
+            @Override
+            public IContentProposal[] getProposals(String contents, int position) {
+                String prefix = contents.substring(0, position);
+                int lastSpace = prefix.lastIndexOf(' ');
+                if (lastSpace != -1) {
+                    prefix = prefix.substring(lastSpace + 1);
+                }
+
+                String finalPrefix = prefix;
+                String[] proposals = NeuronService.getInstance().getProposals(orchestrator, finalPrefix);
+
+                IContentProposal[] result = new IContentProposal[proposals.length];
+                for (int i = 0; i < proposals.length; i++) {
+                    final String proposal = proposals[i];
+                    result[i] = new IContentProposal() {
+                        @Override
+                        public String getContent() { return proposal; }
+                        @Override
+                        public int getCursorPosition() { return proposal.length(); }
+                        @Override
+                        public String getLabel() { return proposal; }
+                        @Override
+                        public String getDescription() { return null; }
+                    };
+                }
+                return result;
+            }
+        };
+
+        IControlContentAdapter contentAdapter = new IControlContentAdapter() {
+            @Override
+            public void setControlContents(org.eclipse.swt.widgets.Control control, String contents, int cursorPosition) {
+                ((StyledText) control).setText(contents);
+                ((StyledText) control).setSelection(cursorPosition);
+            }
+            @Override
+            public void insertControlContents(org.eclipse.swt.widgets.Control control, String contents, int cursorPosition) {
+                StyledText text = (StyledText) control;
+                String currentText = text.getText();
+                int selectionStart = text.getSelection().x;
+
+                // Find where the word starts
+                int wordStart = selectionStart;
+                while (wordStart > 0 && !Character.isWhitespace(currentText.charAt(wordStart - 1))) {
+                    wordStart--;
+                }
+
+                String newText = currentText.substring(0, wordStart) + contents + currentText.substring(selectionStart);
+                text.setText(newText);
+                text.setSelection(wordStart + cursorPosition);
+            }
+            @Override
+            public String getControlContents(org.eclipse.swt.widgets.Control control) {
+                return ((StyledText) control).getText();
+            }
+            @Override
+            public int getCursorPosition(org.eclipse.swt.widgets.Control control) {
+                return ((StyledText) control).getCaretOffset();
+            }
+            @Override
+            public org.eclipse.swt.graphics.Rectangle getInsertionBounds(org.eclipse.swt.widgets.Control control) {
+                StyledText text = (StyledText) control;
+                return text.getBounds();
+            }
+            @Override
+            public void setCursorPosition(org.eclipse.swt.widgets.Control control, int index) {
+                ((StyledText) control).setSelection(index);
+            }
+        };
+
+        KeyStroke keyStroke = null;
+        try {
+            keyStroke = KeyStroke.getInstance("Ctrl+Space");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        ContentProposalAdapter adapter = new ContentProposalAdapter(requestText, contentAdapter, proposalProvider, keyStroke, null);
+        adapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_REPLACE);
+        adapter.setAutoActivationDelay(200);
+        adapter.setAutoActivationCharacters(new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' });
     }
 
     private void processLogEntry(String log) {

@@ -90,6 +90,26 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 	protected NeuronType type = TYPE_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getTrainingData() <em>Training Data</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTrainingData()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String TRAINING_DATA_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getTrainingData() <em>Training Data</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTrainingData()
+	 * @generated
+	 * @ordered
+	 */
+	protected String trainingData = TRAINING_DATA_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -183,6 +203,29 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 	 * @generated
 	 */
 	@Override
+	public String getTrainingData() {
+		return trainingData;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setTrainingData(String newTrainingData) {
+		String oldTrainingData = trainingData;
+		trainingData = newTrainingData;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NEURON_AI__TRAINING_DATA, oldTrainingData, trainingData));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.NEURON_AI__URL:
@@ -191,6 +234,8 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 				return getModel();
 			case OrchestrationPackage.NEURON_AI__TYPE:
 				return getType();
+			case OrchestrationPackage.NEURON_AI__TRAINING_DATA:
+				return getTrainingData();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -211,6 +256,9 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 				return;
 			case OrchestrationPackage.NEURON_AI__TYPE:
 				setType((NeuronType)newValue);
+				return;
+			case OrchestrationPackage.NEURON_AI__TRAINING_DATA:
+				setTrainingData((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -233,6 +281,9 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 			case OrchestrationPackage.NEURON_AI__TYPE:
 				setType(TYPE_EDEFAULT);
 				return;
+			case OrchestrationPackage.NEURON_AI__TRAINING_DATA:
+				setTrainingData(TRAINING_DATA_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -251,6 +302,8 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 				return MODEL_EDEFAULT == null ? model != null : !MODEL_EDEFAULT.equals(model);
 			case OrchestrationPackage.NEURON_AI__TYPE:
 				return type != TYPE_EDEFAULT;
+			case OrchestrationPackage.NEURON_AI__TRAINING_DATA:
+				return TRAINING_DATA_EDEFAULT == null ? trainingData != null : !TRAINING_DATA_EDEFAULT.equals(trainingData);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -271,6 +324,8 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 		result.append(model);
 		result.append(", type: ");
 		result.append(type);
+		result.append(", trainingData: ");
+		result.append(trainingData);
 		result.append(')');
 		return result.toString();
 	}

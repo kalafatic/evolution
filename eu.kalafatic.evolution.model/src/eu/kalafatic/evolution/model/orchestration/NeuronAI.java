@@ -92,4 +92,26 @@ public interface NeuronAI extends EObject {
 	 */
 	void setType(NeuronType value);
 
+	/**
+	 * Returns the value of the '<em><b>Training Data</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Training Data</em>' attribute.
+	 * @see #setTrainingData(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNeuronAI_TrainingData()
+	 * @model
+	 * @generated
+	 */
+	String getTrainingData();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getTrainingData <em>Training Data</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Training Data</em>' attribute.
+	 * @see #getTrainingData()
+	 * @generated
+	 */
+	void setTrainingData(String value);
+
 } // NeuronAI

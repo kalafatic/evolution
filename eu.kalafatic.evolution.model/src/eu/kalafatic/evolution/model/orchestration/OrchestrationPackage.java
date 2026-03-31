@@ -898,6 +898,15 @@ public interface OrchestrationPackage extends EPackage {
 	int NEURON_AI__TYPE = 2;
 
 	/**
+	 * The feature id for the '<em><b>Training Data</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NEURON_AI__TRAINING_DATA = 3;
+
+	/**
 	 * The number of structural features of the '<em>Neuron AI</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1788,6 +1797,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getNeuronAI_Type();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getTrainingData <em>Training Data</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Training Data</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronAI#getTrainingData()
+	 * @see #getNeuronAI()
+	 * @generated
+	 */
+	EAttribute getNeuronAI_TrainingData();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.EvoProject <em>Evo Project</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2402,6 +2422,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute NEURON_AI__TYPE = eINSTANCE.getNeuronAI_Type();
+
+		/**
+		 * The meta object literal for the '<em><b>Training Data</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NEURON_AI__TRAINING_DATA = eINSTANCE.getNeuronAI_TrainingData();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl <em>Evo Project</em>}' class.
