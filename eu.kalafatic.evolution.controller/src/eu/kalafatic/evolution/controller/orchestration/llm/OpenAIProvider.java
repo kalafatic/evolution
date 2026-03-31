@@ -10,9 +10,11 @@ import java.time.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.providers.AiProviders;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 
 /**
- * OpenAI LLM provider implementation.
+ * OpenAI-compatible LLM provider implementation.
  */
 public class OpenAIProvider implements ILlmProvider {
 
@@ -21,10 +23,15 @@ public class OpenAIProvider implements ILlmProvider {
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
         String token = orchestrator.getOpenAiToken();
-        String model = orchestrator.getOpenAiModel();
+        String remoteModelName = orchestrator.getRemoteModel();
+
+        ProviderConfig config = AiProviders.PROVIDERS.get(remoteModelName != null ? remoteModelName.toLowerCase() : "openai");
+
+        String apiUrl = (config != null) ? config.getUrl() : DEFAULT_OPENAI_URL;
+        String model = (config != null) ? config.getDefaultModel() : orchestrator.getOpenAiModel();
 
         if (token == null || token.isEmpty()) {
-            throw new Exception("OpenAI token is not configured");
+            throw new Exception("OpenAI-compatible token is not configured (use OpenAI Token field)");
         }
 
         HttpClient.Builder builder = HttpClient.newBuilder()
@@ -52,7 +59,6 @@ public class OpenAIProvider implements ILlmProvider {
 
         String json = jsonObject.toString();
 
-        String apiUrl = DEFAULT_OPENAI_URL;
         if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
             apiUrl = orchestrator.getAiChat().getUrl();
             if (!apiUrl.contains("/chat/completions")) {
@@ -70,7 +76,7 @@ public class OpenAIProvider implements ILlmProvider {
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) {
-            throw new Exception("OpenAI error: " + response.statusCode() + " - " + response.body());
+            throw new Exception("Remote AI error (" + (remoteModelName != null ? remoteModelName : "openai") + "): " + response.statusCode() + " - " + response.body());
         }
 
         JSONObject jsonResponse = new JSONObject(response.body());

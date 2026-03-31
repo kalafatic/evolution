@@ -15,7 +15,8 @@ public class AiProviders {
                 "https://api.openai.com/v1/chat/completions",
                 "YOUR_API_KEY",
                 "openai",
-                false
+                false,
+                "gpt-4o"
         ));
 
         PROVIDERS.put("anthropic", new ProviderConfig(
@@ -23,15 +24,17 @@ public class AiProviders {
                 "https://api.anthropic.com/v1/messages",
                 "YOUR_API_KEY",
                 "anthropic",
-                false
+                false,
+                "claude-3-5-sonnet-20240620"
         ));
 
         PROVIDERS.put("gemini", new ProviderConfig(
                 "gemini",
-                "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent",
+                "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent",
                 "YOUR_API_KEY",
                 "google",
-                false
+                false,
+                "gemini-1.5-pro"
         ));
 
         PROVIDERS.put("mistral", new ProviderConfig(
@@ -39,7 +42,8 @@ public class AiProviders {
                 "https://api.mistral.ai/v1/chat/completions",
                 "YOUR_API_KEY",
                 "openai",
-                false
+                false,
+                "mistral-large-latest"
         ));
 
         PROVIDERS.put("cohere", new ProviderConfig(
@@ -47,7 +51,53 @@ public class AiProviders {
                 "https://api.cohere.ai/v1/chat",
                 "YOUR_API_KEY",
                 "cohere",
-                false
+                false,
+                "command-r-plus"
+        ));
+
+        PROVIDERS.put("deepseek", new ProviderConfig(
+                "deepseek",
+                "https://api.deepseek.com/chat/completions",
+                "YOUR_API_KEY",
+                "openai",
+                false,
+                "deepseek-chat"
+        ));
+
+        PROVIDERS.put("groq", new ProviderConfig(
+                "groq",
+                "https://api.groq.com/openai/v1/chat/completions",
+                "YOUR_API_KEY",
+                "openai",
+                false,
+                "llama-3.1-70b-versatile"
+        ));
+
+        PROVIDERS.put("openrouter", new ProviderConfig(
+                "openrouter",
+                "https://openrouter.ai/api/v1/chat/completions",
+                "YOUR_API_KEY",
+                "openai",
+                false,
+                "meta-llama/llama-3.1-405b"
+        ));
+
+        PROVIDERS.put("perplexity", new ProviderConfig(
+                "perplexity",
+                "https://api.perplexity.ai/chat/completions",
+                "YOUR_API_KEY",
+                "openai",
+                false,
+                "llama-3.1-sonar-large-128k-online"
+        ));
+
+        PROVIDERS.put("xai", new ProviderConfig(
+                "xai",
+                "https://api.x.ai/v1/chat/completions",
+                "YOUR_API_KEY",
+                "openai",
+                false,
+                "grok-beta"
         ));
 
         // LOCAL example (important for your architecture)
@@ -56,7 +106,8 @@ public class AiProviders {
                 "http://localhost:11434/api/chat",
                 null,
                 "ollama",
-                true
+                true,
+                "llama3.1"
         ));
     }
 }

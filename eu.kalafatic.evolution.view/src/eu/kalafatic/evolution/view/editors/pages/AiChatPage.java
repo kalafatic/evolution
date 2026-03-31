@@ -201,6 +201,13 @@ public class AiChatPage extends Composite {
         if (orchestrator != null) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
             String remoteModel = orchestrator.getRemoteModel();
+
+            // Set default to deepseek if not configured
+            if (remoteModel == null || remoteModel.isEmpty()) {
+                remoteModel = "deepseek";
+                orchestrator.setRemoteModel(remoteModel);
+            }
+
             if (remoteModel != null) {
                 int index = aiRemoteeCombo.indexOf(remoteModel);
                 if (index >= 0) aiRemoteeCombo.select(index);
