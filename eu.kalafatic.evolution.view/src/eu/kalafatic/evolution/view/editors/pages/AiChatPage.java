@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
@@ -37,6 +39,8 @@ import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.providers.AiProviders;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -69,6 +73,9 @@ public class AiChatPage extends Composite {
     private Color colorReviewer;
     private Color colorError;
     private Font chatFont;
+    
+    
+
 
     public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.NONE);
@@ -183,8 +190,8 @@ public class AiChatPage extends Composite {
                     	createLabel(groupMode, "AI Remote:");
                     	
                     	aiRemoteeCombo = new Combo(groupMode, SWT.READ_ONLY);
-                        for (AiMode mode : AiMode.values()) {
-                            aiModeCombo.add(mode.getName());
+                        for (Entry<String, ProviderConfig> mode : AiProviders.PROVIDERS.entrySet()) {
+                            aiModeCombo.add(mode.getKey());
                         }
                         groupMode.layout(true, true);
 					}
