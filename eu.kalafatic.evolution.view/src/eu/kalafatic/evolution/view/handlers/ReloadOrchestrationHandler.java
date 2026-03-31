@@ -7,12 +7,14 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IViewReference;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.navigator.CommonNavigator;
 
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.provider.ProjectManager;
 import eu.kalafatic.evolution.view.views.OrchestrationZestView;
 import eu.kalafatic.evolution.view.views.TaskTreeView;
@@ -39,6 +41,11 @@ public class ReloadOrchestrationHandler extends AbstractHandler {
                         ((OrchestrationZestView) view).refreshViewer();
                     } else if (view instanceof TaskTreeView) {
                         ((TaskTreeView) view).refresh();
+                    }
+                }
+                for (IEditorReference ref : page.getEditorReferences()) {
+                    if (ref.getEditor(false) instanceof MultiPageEditor) {
+                        ((MultiPageEditor) ref.getEditor(false)).reloadModel();
                     }
                 }
             }

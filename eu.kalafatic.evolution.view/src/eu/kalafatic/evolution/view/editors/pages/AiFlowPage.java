@@ -5,6 +5,8 @@ import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.LocationAdapter;
+import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
 import org.eclipse.swt.browser.ProgressEvent;
 import org.eclipse.swt.layout.FillLayout;
@@ -43,6 +45,19 @@ public class AiFlowPage extends Composite {
             }
         });
 
+        browser.addLocationListener(new LocationAdapter() {
+            @Override
+            public void changing(LocationEvent event) {
+                // Prevent navigation to local file system which happens on some reloads
+                if (event.location.startsWith("file://") || event.location.equals("about:blank")) {
+                    if (!event.location.equals("about:blank")) {
+                        event.doit = false;
+                        browser.setText(getHtmlTemplate());
+                    }
+                }
+            }
+        });
+
         setOrchestrator(orchestrator);
         browser.setText(getHtmlTemplate());
     }
@@ -63,7 +78,13 @@ public class AiFlowPage extends Composite {
         Display.getDefault().asyncExec(() -> {
             if (!browser.isDisposed()) {
                 String json = getModelAsJson();
-                browser.execute("updateGraph(" + json + ");");
+                // If updateGraph is not defined, the template was lost (e.g. after reload)
+                Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
+                if (result instanceof Boolean && (Boolean) result) {
+                    browser.execute("updateGraph(" + json + ");");
+                } else {
+                    browser.setText(getHtmlTemplate());
+                }
             }
         });
     }
