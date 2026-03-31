@@ -23,6 +23,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getSubTasks <em>Sub Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getResponse <em>Response</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getFeedback <em>Feedback</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isApprovalRequired <em>Approval Required</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -188,5 +189,28 @@ public interface Task extends EObject {
 	 * @generated NOT
 	 */
 	void setFeedback(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Approval Required</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Approval Required</em>' attribute.
+	 * @see #setApprovalRequired(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_ApprovalRequired()
+	 * @model default="false"
+	 * @generated
+	 */
+	boolean isApprovalRequired();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#isApprovalRequired <em>Approval Required</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Approval Required</em>' attribute.
+	 * @see #isApprovalRequired()
+	 * @generated
+	 */
+	void setApprovalRequired(boolean value);
 
 } // Task

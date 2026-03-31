@@ -39,6 +39,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getSubTasks <em>Sub Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getResponse <em>Response</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getFeedback <em>Feedback</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isApprovalRequired <em>Approval Required</em>}</li>
  * </ul>
  *
  * @generated
@@ -183,6 +184,49 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @ordered
 	 */
 	protected String feedback = FEEDBACK_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isApprovalRequired() <em>Approval Required</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isApprovalRequired()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean APPROVAL_REQUIRED_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isApprovalRequired() <em>Approval Required</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isApprovalRequired()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean approvalRequired = APPROVAL_REQUIRED_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isApprovalRequired() {
+		return approvalRequired;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setApprovalRequired(boolean newApprovalRequired) {
+		boolean oldApprovalRequired = approvalRequired;
+		approvalRequired = newApprovalRequired;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__APPROVAL_REQUIRED, oldApprovalRequired, approvalRequired));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -405,6 +449,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getResponse();
 			case OrchestrationPackage.TASK__FEEDBACK:
 				return getFeedback();
+			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
+				return isApprovalRequired();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -444,6 +490,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__FEEDBACK:
 				setFeedback((String)newValue);
 				return;
+			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
+				setApprovalRequired((Boolean)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -480,6 +529,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__FEEDBACK:
 				setFeedback(FEEDBACK_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
+				setApprovalRequired(APPROVAL_REQUIRED_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -508,6 +560,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return RESPONSE_EDEFAULT == null ? response != null : !RESPONSE_EDEFAULT.equals(response);
 			case OrchestrationPackage.TASK__FEEDBACK:
 				return FEEDBACK_EDEFAULT == null ? feedback != null : !FEEDBACK_EDEFAULT.equals(feedback);
+			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
+				return approvalRequired != APPROVAL_REQUIRED_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -534,6 +588,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(response);
 		result.append(", feedback: ");
 		result.append(feedback);
+		result.append(", approvalRequired: ");
+		result.append(approvalRequired);
 		result.append(')');
 		return result.toString();
 	}

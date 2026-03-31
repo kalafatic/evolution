@@ -140,13 +140,22 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__FEEDBACK = 7;
 
 	/**
+	 * The feature id for the '<em><b>Approval Required</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__APPROVAL_REQUIRED = 8;
+
+	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 8;
+	int TASK_FEATURE_COUNT = 9;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -1195,6 +1204,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getTask_Feedback();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isApprovalRequired <em>Approval Required</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Approval Required</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#isApprovalRequired()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_ApprovalRequired();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1944,6 +1964,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__FEEDBACK = eINSTANCE.getTask_Feedback();
+
+		/**
+		 * The meta object literal for the '<em><b>Approval Required</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__APPROVAL_REQUIRED = eINSTANCE.getTask_ApprovalRequired();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.
