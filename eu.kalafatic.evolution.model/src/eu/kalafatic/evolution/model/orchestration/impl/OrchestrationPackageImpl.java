@@ -304,6 +304,21 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	}
 
 	@Override
+	public EAttribute getOrchestrator_LocalModel() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(16);
+	}
+
+	@Override
+	public EAttribute getOrchestrator_HybridModel() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(17);
+	}
+
+	@Override
+	public EAttribute getOrchestrator_RemoteModel() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(18);
+	}
+
+	@Override
 	public EEnum getAiMode() {
 		return aiModeEEnum;
 	}
@@ -1001,6 +1016,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__OPEN_AI_TOKEN);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__OPEN_AI_MODEL);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__AI_MODE);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__LOCAL_MODEL);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__HYBRID_MODEL);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__REMOTE_MODEL);
 
 		aiChatEClass = createEClass(AI_CHAT);
 		createEAttribute(aiChatEClass, AI_CHAT__URL);
@@ -1139,6 +1157,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getOrchestrator_OpenAiToken(), ecorePackage.getEString(), "openAiToken", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_OpenAiModel(), ecorePackage.getEString(), "openAiModel", "gpt-4", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_AiMode(), this.getAiMode(), "aiMode", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_LocalModel(), ecorePackage.getEString(), "localModel", "llama3", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_HybridModel(), ecorePackage.getEString(), "hybridModel", "llama3", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_RemoteModel(), ecorePackage.getEString(), "remoteModel", "gpt-4", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(aiChatEClass, AiChat.class, "AiChat", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getAiChat_Url(), ecorePackage.getEString(), "url", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

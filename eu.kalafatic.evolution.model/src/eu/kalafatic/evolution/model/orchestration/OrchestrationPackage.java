@@ -365,13 +365,28 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__AI_MODE = 15;
 
 	/**
+	 * @generated NOT
+	 */
+	int ORCHESTRATOR__LOCAL_MODEL = 16;
+
+	/**
+	 * @generated NOT
+	 */
+	int ORCHESTRATOR__HYBRID_MODEL = 17;
+
+	/**
+	 * @generated NOT
+	 */
+	int ORCHESTRATOR__REMOTE_MODEL = 18;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 16;
+	int ORCHESTRATOR_FEATURE_COUNT = 19;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -1414,6 +1429,21 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated NOT
 	 */
 	EAttribute getOrchestrator_AiMode();
+
+	/**
+	 * @generated NOT
+	 */
+	EAttribute getOrchestrator_LocalModel();
+
+	/**
+	 * @generated NOT
+	 */
+	EAttribute getOrchestrator_HybridModel();
+
+	/**
+	 * @generated NOT
+	 */
+	EAttribute getOrchestrator_RemoteModel();
 
 	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}'.
