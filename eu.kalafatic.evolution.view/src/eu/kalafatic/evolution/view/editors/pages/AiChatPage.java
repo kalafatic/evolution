@@ -176,30 +176,64 @@ public class AiChatPage extends Composite {
         for (AiMode mode : AiMode.values()) {
             aiModeCombo.add(mode.getName());
         }
+
+        Label remoteLabel = new Label(groupMode, SWT.NONE);
+        remoteLabel.setText("AI Remote:");
+        GridData gdRL = new GridData();
+        gdRL.widthHint = 100;
+        remoteLabel.setLayoutData(gdRL);
+
+        aiRemoteeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
+        aiRemoteeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        for (String providerName : AiProviders.PROVIDERS.keySet()) {
+            aiRemoteeCombo.add(providerName);
+        }
+        aiRemoteeCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (orchestrator != null) {
+                    orchestrator.setRemoteModel(aiRemoteeCombo.getText());
+                    editor.setDirty(true);
+                }
+            }
+        });
+
         if (orchestrator != null) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
+            String remoteModel = orchestrator.getRemoteModel();
+
+            // Set default to deepseek if not configured
+            if (remoteModel == null || remoteModel.isEmpty()) {
+                remoteModel = "deepseek";
+                orchestrator.setRemoteModel(remoteModel);
+            }
+
+            if (remoteModel != null) {
+                int index = aiRemoteeCombo.indexOf(remoteModel);
+                if (index >= 0) aiRemoteeCombo.select(index);
+            }
+            boolean remoteVisible = orchestrator.getAiMode() == AiMode.HYBRID || orchestrator.getAiMode() == AiMode.REMOTE;
+            remoteLabel.setVisible(remoteVisible);
+            aiRemoteeCombo.setVisible(remoteVisible);
         } else {
             aiModeCombo.select(0);
+            remoteLabel.setVisible(false);
+            aiRemoteeCombo.setVisible(false);
         }
+
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (orchestrator != null) {
                 	AiMode aiMode = AiMode.get(aiModeCombo.getSelectionIndex());
                     orchestrator.setAiMode(aiMode);
+                    editor.setDirty(true);
                     updateStatusInfo();
                     
-                    if (aiMode.equals(AiMode.HYBRID) || aiMode.equals(AiMode.REMOTE)) {
-                    	
-                    	createLabel(groupMode, "AI Remote:");
-                    	
-                    	aiRemoteeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
-                    	aiRemoteeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-                        for (Entry<String, ProviderConfig> mode : AiProviders.PROVIDERS.entrySet()) {
-                        	aiRemoteeCombo.add(mode.getKey());
-                        }
-                        groupMode.layout(true, true);
-					}
+                    boolean remoteVisible = aiMode == AiMode.HYBRID || aiMode == AiMode.REMOTE;
+                    remoteLabel.setVisible(remoteVisible);
+                    aiRemoteeCombo.setVisible(remoteVisible);
+                    groupMode.layout(true, true);
                 }
             }
         });
