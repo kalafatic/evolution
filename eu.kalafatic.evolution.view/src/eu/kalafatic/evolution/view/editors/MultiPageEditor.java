@@ -36,6 +36,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private TextEditor textEditor;
     private AiChatPage aiChatPage;
     private PropertiesPage propertiesPage;
+    private McpSettingsPage mcpSettingsPage;
     private PreviewPage previewPage;
     private GraphPage graphPage;
     private BrowserPage browserPage;
@@ -66,6 +67,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 setPageText(index, "Editor");
 
                 propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
+                mcpSettingsPage = McpSettingsPageFactory.createMcpSettingsPage(this, orchestrator);
                 previewPage = PreviewPageFactory.createPreviewPage(this, orchestrator);
                 browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
                 aiFlowPage = AiFlowPageFactory.createAiFlowPage(this, orchestrator);
@@ -171,6 +173,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         this.orchestrator = orchestrator;
         if (aiChatPage != null) aiChatPage.setOrchestrator(orchestrator);
         if (propertiesPage != null) propertiesPage.setOrchestrator(orchestrator);
+        if (mcpSettingsPage != null) mcpSettingsPage.setOrchestrator(orchestrator);
         if (previewPage != null) previewPage.setOrchestrator(orchestrator);
         if (graphPage != null) graphPage.setOrchestrator(orchestrator);
         if (browserPage != null) browserPage.setOrchestrator(orchestrator);
@@ -193,7 +196,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     @Override
     protected void pageChange(int newPageIndex) {
         super.pageChange(newPageIndex);
-        if (newPageIndex == 3 && previewPage != null) {
+        if (getControl(newPageIndex) == previewPage && previewPage != null) {
             previewPage.sortWords();
         }
     }
