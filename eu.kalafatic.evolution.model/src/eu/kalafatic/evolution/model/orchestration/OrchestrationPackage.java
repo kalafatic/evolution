@@ -140,13 +140,23 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__FEEDBACK = 7;
 
 	/**
+	 * @generated NOT
+	 */
+	int TASK__APPROVAL_REQUIRED = 8;
+
+	/**
+	 * @generated NOT
+	 */
+	int TASK__LOOP_TO_TASK_ID = 9;
+
+	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 8;
+	int TASK_FEATURE_COUNT = 10;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -1210,6 +1220,16 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getTask_Feedback();
 
 	/**
+	 * @generated NOT
+	 */
+	EAttribute getTask_ApprovalRequired();
+
+	/**
+	 * @generated NOT
+	 */
+	EAttribute getTask_LoopToTaskId();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1974,6 +1994,16 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__FEEDBACK = eINSTANCE.getTask_Feedback();
+
+		/**
+		 * @generated NOT
+		 */
+		EAttribute TASK__APPROVAL_REQUIRED = eINSTANCE.getTask_ApprovalRequired();
+
+		/**
+		 * @generated NOT
+		 */
+		EAttribute TASK__LOOP_TO_TASK_ID = eINSTANCE.getTask_LoopToTaskId();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.

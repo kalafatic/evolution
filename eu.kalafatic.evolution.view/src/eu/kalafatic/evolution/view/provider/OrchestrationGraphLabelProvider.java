@@ -133,6 +133,8 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
                 return getColor("TASK_FAILED", new RGB(255, 150, 150)); // More saturated Red
             } else if (t.getStatus() == TaskStatus.PENDING) {
                 return getColor("TASK_PENDING", new RGB(240, 240, 240)); // Light Gray
+            } else if (t.getStatus() == TaskStatus.WAITING_FOR_APPROVAL) {
+                return getColor("TASK_WAITING_APPROVAL", new RGB(255, 200, 100)); // Orange
             }
         } else if (entity instanceof Orchestrator) {
             return getColor("ORCHESTRATOR_BG", new RGB(180, 180, 255)); // Light Blue

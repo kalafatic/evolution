@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -19,9 +20,15 @@ public class TaskContext {
     private final List<String> logs = Collections.synchronizedList(new ArrayList<>());
     private String sharedMemory = "";
     private final List<LogListener> listeners = new CopyOnWriteArrayList<>();
+    private final List<ApprovalListener> approvalListeners = new CopyOnWriteArrayList<>();
+    private CompletableFuture<Boolean> approvalFuture;
 
     public interface LogListener {
         void onLog(String message);
+    }
+
+    public interface ApprovalListener {
+        void onApprovalRequested(String message);
     }
 
     public TaskContext(Orchestrator orchestrator, File projectRoot) {
@@ -46,9 +53,27 @@ public class TaskContext {
         listeners.add(listener);
     }
 
+    public void addApprovalListener(ApprovalListener listener) {
+        approvalListeners.add(listener);
+    }
+
     private void notifyListeners(String message) {
         for (LogListener listener : listeners) {
             listener.onLog(message);
+        }
+    }
+
+    public CompletableFuture<Boolean> requestApproval(String message) {
+        approvalFuture = new CompletableFuture<>();
+        for (ApprovalListener listener : approvalListeners) {
+            listener.onApprovalRequested(message);
+        }
+        return approvalFuture;
+    }
+
+    public void provideApproval(boolean approved) {
+        if (approvalFuture != null) {
+            approvalFuture.complete(approved);
         }
     }
 

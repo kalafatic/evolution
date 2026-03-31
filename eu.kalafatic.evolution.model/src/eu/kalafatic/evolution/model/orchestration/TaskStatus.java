@@ -36,7 +36,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	RUNNING(0, "RUNNING", "RUNNING"),
+	RUNNING(1, "RUNNING", "RUNNING"),
 
 	/**
 	 * The '<em><b>DONE</b></em>' literal object.
@@ -46,7 +46,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	DONE(0, "DONE", "DONE"),
+	DONE(2, "DONE", "DONE"),
 
 	/**
 	 * The '<em><b>FAILED</b></em>' literal object.
@@ -56,7 +56,17 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	FAILED(0, "FAILED", "FAILED");
+	FAILED(3, "FAILED", "FAILED"),
+
+	/**
+	 * The '<em><b>WAITING_FOR_APPROVAL</b></em>' literal object.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #WAITING_FOR_APPROVAL_VALUE
+	 * @generated
+	 * @ordered
+	 */
+	WAITING_FOR_APPROVAL(4, "WAITING_FOR_APPROVAL", "WAITING_FOR_APPROVAL");
 
 	/**
 	 * The '<em><b>PENDING</b></em>' literal value.
@@ -78,7 +88,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int RUNNING_VALUE = 0;
+	public static final int RUNNING_VALUE = 1;
 
 	/**
 	 * The '<em><b>DONE</b></em>' literal value.
@@ -89,7 +99,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int DONE_VALUE = 0;
+	public static final int DONE_VALUE = 2;
 
 	/**
 	 * The '<em><b>FAILED</b></em>' literal value.
@@ -100,7 +110,18 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int FAILED_VALUE = 0;
+	public static final int FAILED_VALUE = 3;
+
+	/**
+	 * The '<em><b>WAITING_FOR_APPROVAL</b></em>' literal value.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #WAITING_FOR_APPROVAL
+	 * @model
+	 * @generated
+	 * @ordered
+	 */
+	public static final int WAITING_FOR_APPROVAL_VALUE = 4;
 
 	/**
 	 * An array of all the '<em><b>Task Status</b></em>' enumerators.
@@ -114,6 +135,7 @@ public enum TaskStatus implements Enumerator {
 			RUNNING,
 			DONE,
 			FAILED,
+			WAITING_FOR_APPROVAL,
 		};
 
 	/**
@@ -171,6 +193,10 @@ public enum TaskStatus implements Enumerator {
 	public static TaskStatus get(int value) {
 		switch (value) {
 			case PENDING_VALUE: return PENDING;
+			case RUNNING_VALUE: return RUNNING;
+			case DONE_VALUE: return DONE;
+			case FAILED_VALUE: return FAILED;
+			case WAITING_FOR_APPROVAL_VALUE: return WAITING_FOR_APPROVAL;
 		}
 		return null;
 	}
