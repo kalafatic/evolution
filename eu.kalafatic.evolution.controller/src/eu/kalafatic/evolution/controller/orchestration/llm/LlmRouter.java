@@ -10,6 +10,7 @@ public class LlmRouter {
 
     private final ILlmProvider ollamaProvider = new OllamaProvider();
     private final ILlmProvider openAiProvider = new OpenAIProvider();
+    private final ILlmProvider geminiProvider = new GeminiProvider();
 
     /**
      * Routes the request to the appropriate LLM provider.
@@ -25,8 +26,12 @@ public class LlmRouter {
         AiMode mode = orchestrator.getAiMode();
         if (mode == AiMode.REMOTE) {
             // REMOTE, direct chat with selected llm (gemini,deepseek,chatgpt...)
-            // Currently using OpenAIProvider which supports custom URLs (for proxy/compat APIs)
             String model = orchestrator.getRemoteModel();
+            if (model != null && model.toLowerCase().contains("gemini")) {
+                return geminiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
+            }
+
+            // Default to OpenAIProvider which supports custom URLs (for proxy/compat APIs)
             if (model != null && !model.isEmpty()) {
                 orchestrator.setOpenAiModel(model);
             }
