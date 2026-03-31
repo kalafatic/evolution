@@ -16,6 +16,8 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Reference subTasks : Task<<0..*>>
     Attribute response : EString
     Attribute feedback : EString
+    Attribute approvalRequired : EBoolean
+    Attribute loopToTaskId : EString
 
   Class Agent
     Attribute id : EString
@@ -36,6 +38,9 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Reference ollama : Ollama
     Reference aiChat : AiChat
     Reference neuronAI : NeuronAI
+    Attribute remoteModel : EString
+    Attribute aiMode : AiMode<<1..1>>
+    Attribute mcpServerUrl : EString
 
   Class Git
     Attribute repositoryUrl : EString
@@ -74,6 +79,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute url : EString
     Attribute model : EString
     Attribute type : NeuronType
+    Attribute trainingData : EString
 
   Class EvoProject
     Attribute name : EString
@@ -103,6 +109,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Literal RUNNING = 0
     Literal DONE = 0
     Literal FAILED = 0
+    Literal WAITING_FOR_APPROVAL = 0
 
   Enum CommandStatus
     Literal PENDING = 0
@@ -120,3 +127,8 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Literal RNN = 0
     Literal LSTM = 0
     Literal TRANSFORMER = 0
+
+  Enum AiMode
+    Literal LOCAL = 0
+    Literal HYBRID = 1
+    Literal REMOTE = 2

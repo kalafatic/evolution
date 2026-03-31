@@ -22,8 +22,6 @@ public interface AgentValidator {
 	boolean validateId(String value);
 	boolean validateType(String value);
 	boolean validateTasks(EList<Task> value);
-
 	boolean validateExecutionMode(ExecutionMode value);
-
 	boolean validateRules(EList<Rule> value);
 }

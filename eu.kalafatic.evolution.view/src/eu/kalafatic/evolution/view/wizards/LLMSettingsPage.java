@@ -53,7 +53,7 @@ public class LLMSettingsPage extends AWizardPage {
     private String currentThread = "Default";
     private Combo threadCombo;
     private Combo aiModeCombo;    
-    private Combo aiRemoteeCombo;
+    private Combo aiRemoteCombo;
 
     // Colors and Fonts
     private Color colorUser;
@@ -91,16 +91,16 @@ public class LLMSettingsPage extends AWizardPage {
 
         Label remoteLabel = SWTFactory.createLabel(groupMode, "AI Remote:");
   
-        aiRemoteeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
-        aiRemoteeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        aiRemoteCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
+        aiRemoteCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         for (String providerName : AiProviders.PROVIDERS.keySet()) {
-            aiRemoteeCombo.add(providerName);
+            aiRemoteCombo.add(providerName);
         }
-        aiRemoteeCombo.addSelectionListener(new SelectionAdapter() {
+        aiRemoteCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (orchestrator != null) {
-                    orchestrator.setRemoteModel(aiRemoteeCombo.getText());
+                    orchestrator.setRemoteModel(aiRemoteCombo.getText());
                     
                 }
             }
@@ -117,18 +117,19 @@ public class LLMSettingsPage extends AWizardPage {
             }
 
             if (remoteModel != null) {
-                int index = aiRemoteeCombo.indexOf(remoteModel);
-                if (index >= 0) aiRemoteeCombo.select(index);
+                int index = aiRemoteCombo.indexOf(remoteModel);
+                if (index >= 0) aiRemoteCombo.select(index);
             }
             boolean remoteVisible = orchestrator.getAiMode() == AiMode.HYBRID || orchestrator.getAiMode() == AiMode.REMOTE;
             remoteLabel.setVisible(remoteVisible);
-            aiRemoteeCombo.setVisible(remoteVisible);
+            aiRemoteCombo.setVisible(remoteVisible);
         } else {
             aiModeCombo.select(0);
             remoteLabel.setVisible(false);
-            aiRemoteeCombo.setVisible(false);
+            aiRemoteCombo.setVisible(false);
         }
-
+        final Group groupLinks = SWTFactory.createGroup(container, "Setup", 2);
+        
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -138,13 +139,18 @@ public class LLMSettingsPage extends AWizardPage {
                             
                     boolean remoteVisible = aiMode == AiMode.HYBRID || aiMode == AiMode.REMOTE;
                     remoteLabel.setVisible(remoteVisible);
-                    aiRemoteeCombo.setVisible(remoteVisible);
+                    aiRemoteCombo.setVisible(remoteVisible);
+                    
+                    
+                    groupLinks.setVisible(remoteVisible);
+                    
                     groupMode.layout(true, true);
+                    groupLinks.layout(true, true);
                 }
             }
         });
         
-        final Group groupLinks = SWTFactory.createGroup(container, "Setup", 2);
+       
 
         new Label(groupLinks, SWT.NONE).setText("LLM Model:");
         modelText = new Text(groupLinks, SWT.BORDER);

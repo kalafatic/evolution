@@ -116,7 +116,7 @@ public interface Agent extends EObject {
 	 * @return the value of the '<em>Rules</em>' containment reference list.
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAgent_Rules()
 	 * @model containment="true"
-	 * @generated NOT
+	 * @generated
 	 */
 	EList<Rule> getRules();
 

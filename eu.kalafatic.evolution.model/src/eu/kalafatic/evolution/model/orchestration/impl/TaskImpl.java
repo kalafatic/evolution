@@ -39,6 +39,8 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getSubTasks <em>Sub Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getResponse <em>Response</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getFeedback <em>Feedback</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isApprovalRequired <em>Approval Required</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getLoopToTaskId <em>Loop To Task Id</em>}</li>
  * </ul>
  *
  * @generated
@@ -185,14 +187,44 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected String feedback = FEEDBACK_EDEFAULT;
 
 	/**
-	 * @generated NOT
+	 * The default value of the '{@link #isApprovalRequired() <em>Approval Required</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isApprovalRequired()
+	 * @generated
+	 * @ordered
 	 */
-	protected boolean approvalRequired = false;
+	protected static final boolean APPROVAL_REQUIRED_EDEFAULT = true;
 
 	/**
-	 * @generated NOT
+	 * The cached value of the '{@link #isApprovalRequired() <em>Approval Required</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isApprovalRequired()
+	 * @generated
+	 * @ordered
 	 */
-	protected String loopToTaskId = null;
+	protected boolean approvalRequired = APPROVAL_REQUIRED_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getLoopToTaskId() <em>Loop To Task Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getLoopToTaskId()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String LOOP_TO_TASK_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getLoopToTaskId() <em>Loop To Task Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getLoopToTaskId()
+	 * @generated
+	 * @ordered
+	 */
+	protected String loopToTaskId = LOOP_TO_TASK_ID_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -206,57 +238,11 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public String getType() {
-		return type;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public void setType(String newType) {
-		String oldType = type;
-		type = newType;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__TYPE, oldType, type));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.TASK;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public String getFeedback() {
-		return feedback;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public void setFeedback(String newFeedback) {
-		String oldFeedback = feedback;
-		feedback = newFeedback;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__FEEDBACK, oldFeedback, feedback));
 	}
 
 	/**
@@ -303,6 +289,29 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		name = newName;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__NAME, oldName, name));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getType() {
+		return type;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setType(String newType) {
+		String oldType = type;
+		type = newType;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__TYPE, oldType, type));
 	}
 
 	/**
@@ -375,6 +384,75 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		response = newResponse;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__RESPONSE, oldResponse, response));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getFeedback() {
+		return feedback;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setFeedback(String newFeedback) {
+		String oldFeedback = feedback;
+		feedback = newFeedback;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__FEEDBACK, oldFeedback, feedback));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isApprovalRequired() {
+		return approvalRequired;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setApprovalRequired(boolean newApprovalRequired) {
+		boolean oldApprovalRequired = approvalRequired;
+		approvalRequired = newApprovalRequired;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__APPROVAL_REQUIRED, oldApprovalRequired, approvalRequired));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getLoopToTaskId() {
+		return loopToTaskId;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setLoopToTaskId(String newLoopToTaskId) {
+		String oldLoopToTaskId = loopToTaskId;
+		loopToTaskId = newLoopToTaskId;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__LOOP_TO_TASK_ID, oldLoopToTaskId, loopToTaskId));
 	}
 
 	/**
@@ -501,10 +579,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				setFeedback(FEEDBACK_EDEFAULT);
 				return;
 			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
-				setApprovalRequired(false);
+				setApprovalRequired(APPROVAL_REQUIRED_EDEFAULT);
 				return;
 			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
-				setLoopToTaskId(null);
+				setLoopToTaskId(LOOP_TO_TASK_ID_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -535,9 +613,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__FEEDBACK:
 				return FEEDBACK_EDEFAULT == null ? feedback != null : !FEEDBACK_EDEFAULT.equals(feedback);
 			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
-				return approvalRequired != false;
+				return approvalRequired != APPROVAL_REQUIRED_EDEFAULT;
 			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
-				return loopToTaskId != null;
+				return LOOP_TO_TASK_ID_EDEFAULT == null ? loopToTaskId != null : !LOOP_TO_TASK_ID_EDEFAULT.equals(loopToTaskId);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -547,32 +625,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@Override
-	public boolean isApprovalRequired() {
-		return approvalRequired;
-	}
-
-	@Override
-	public void setApprovalRequired(boolean newApprovalRequired) {
-		boolean oldApprovalRequired = approvalRequired;
-		approvalRequired = newApprovalRequired;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__APPROVAL_REQUIRED, oldApprovalRequired, approvalRequired));
-	}
-
-	@Override
-	public String getLoopToTaskId() {
-		return loopToTaskId;
-	}
-
-	@Override
-	public void setLoopToTaskId(String newLoopToTaskId) {
-		String oldLoopToTaskId = loopToTaskId;
-		loopToTaskId = newLoopToTaskId;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__LOOP_TO_TASK_ID, oldLoopToTaskId, loopToTaskId));
-	}
-
 	@Override
 	public String toString() {
 		if (eIsProxy()) return super.toString();

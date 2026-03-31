@@ -200,7 +200,7 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public String getProxyUrl() {
@@ -210,7 +210,7 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public void setProxyUrl(String newProxyUrl) {

@@ -98,7 +98,7 @@ public interface AiChat extends EObject {
 	 * @see #setProxyUrl(String)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAiChat_ProxyUrl()
 	 * @model
-	 * @generated NOT
+	 * @generated
 	 */
 	String getProxyUrl();
 
@@ -108,7 +108,7 @@ public interface AiChat extends EObject {
 	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Proxy Url</em>' attribute.
 	 * @see #getProxyUrl()
-	 * @generated NOT
+	 * @generated
 	 */
 	void setProxyUrl(String value);
 

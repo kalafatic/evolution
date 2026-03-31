@@ -28,4 +28,9 @@ public class ProviderConfig {
     public String getFormat() { return format; }
     public boolean isLocal() { return local; }
     public String getDefaultModel() { return defaultModel; }
+
+	public String getTestEndpoint() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

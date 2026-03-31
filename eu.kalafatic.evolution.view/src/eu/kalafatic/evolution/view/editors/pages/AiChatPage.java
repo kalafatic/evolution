@@ -35,6 +35,7 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.swt.graphics.Color;
@@ -45,6 +46,7 @@ import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -72,7 +74,7 @@ public class AiChatPage extends Composite {
     private String currentThread = "Default";
     private Combo threadCombo;
     private Combo aiModeCombo;    
-    private Combo aiRemoteeCombo;
+    private Combo aiRemoteCombo;
 
     // Colors and Fonts
     private Color colorUser;
@@ -176,7 +178,7 @@ public class AiChatPage extends Composite {
 
         
         
-        final Group groupMode = SWTFactory.createGroup(toolbar, "Mode", 4);
+        final Group groupMode = SWTFactory.createGroup(toolbar, "Mode", 5);
 
         createLabel(groupMode, "AI Mode:");
         aiModeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
@@ -194,16 +196,16 @@ public class AiChatPage extends Composite {
         gdRL.widthHint = 100;
         remoteLabel.setLayoutData(gdRL);
 
-        aiRemoteeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
-        aiRemoteeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        aiRemoteCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
+        aiRemoteCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         for (String providerName : AiProviders.PROVIDERS.keySet()) {
-            aiRemoteeCombo.add(providerName);
+            aiRemoteCombo.add(providerName);
         }
-        aiRemoteeCombo.addSelectionListener(new SelectionAdapter() {
+        aiRemoteCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (orchestrator != null) {
-                    orchestrator.setRemoteModel(aiRemoteeCombo.getText());
+                    orchestrator.setRemoteModel(aiRemoteCombo.getText());
                     editor.setDirty(true);
                 }
             }
@@ -220,16 +222,16 @@ public class AiChatPage extends Composite {
             }
 
             if (remoteModel != null) {
-                int index = aiRemoteeCombo.indexOf(remoteModel);
-                if (index >= 0) aiRemoteeCombo.select(index);
+                int index = aiRemoteCombo.indexOf(remoteModel);
+                if (index >= 0) aiRemoteCombo.select(index);
             }
             boolean remoteVisible = orchestrator.getAiMode() == AiMode.HYBRID || orchestrator.getAiMode() == AiMode.REMOTE;
             remoteLabel.setVisible(remoteVisible);
-            aiRemoteeCombo.setVisible(remoteVisible);
+            aiRemoteCombo.setVisible(remoteVisible);
         } else {
             aiModeCombo.select(0);
             remoteLabel.setVisible(false);
-            aiRemoteeCombo.setVisible(false);
+            aiRemoteCombo.setVisible(false);
         }
 
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
@@ -243,12 +245,42 @@ public class AiChatPage extends Composite {
                     
                     boolean remoteVisible = aiMode == AiMode.HYBRID || aiMode == AiMode.REMOTE;
                     remoteLabel.setVisible(remoteVisible);
-                    aiRemoteeCombo.setVisible(remoteVisible);
+                    aiRemoteCombo.setVisible(remoteVisible);
                     groupMode.layout(true, true);
                 }
             }
         });
-        
+        Button connectionButton = SWTFactory.createButton(groupMode, "Test Connection");
+        connectionButton.addSelectionListener(new SelectionAdapter() {
+            public void widgetSelected(SelectionEvent e) { 
+            	int selectionIndex = aiRemoteCombo.getSelectionIndex();
+            	if (selectionIndex >= 0) {
+					String providerName = aiRemoteCombo.getItem(selectionIndex);
+					ProviderConfig config = AiProviders.PROVIDERS.get(providerName);
+					if (config != null) {
+						
+						testConnection(config.getUrl());
+						
+						
+						McpClient client = new McpClient(config.getTestEndpoint());
+						try {
+							boolean success = client.testConnection();
+							MessageBox messageBox = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+							messageBox.setText("Connection Test");
+							messageBox.setMessage(success ? "Connection successful!" : "Connection failed.");
+							messageBox.open();
+						} catch (Exception ex) {
+							MessageBox messageBox = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
+							messageBox.setText("Connection Test");
+							messageBox.setMessage("Error testing connection: " + ex.getMessage());
+							messageBox.open();
+						}
+					}
+				} else {
+					MessageBox messageBox = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);            	
+            	}
+            }
+        });
 
         createLabel(this, "Request:");
         requestText = new StyledText(this, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
@@ -649,4 +681,38 @@ public class AiChatPage extends Composite {
 
         appendStyledText("\n" + log, color, style);
     }
+    
+    private void testConnection(String url ) {
+       
+        if (url.isEmpty()) {
+            MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
+            mb.setText("Error");
+            mb.setMessage("MCP Server URL cannot be empty.");
+            mb.open();
+            return;
+        }
+
+        new Thread(() -> {
+            try {
+                McpClient client = new McpClient(url);
+                String response = client.initialize();
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed()) return;
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                    mb.setText("Success");
+                    mb.setMessage("Connected to MCP server successfully.\n" + response);
+                    mb.open();
+                });
+            } catch (Exception ex) {
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed()) return;
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
+                    mb.setText("Connection Failed");
+                    mb.setMessage("Error connecting to MCP server: " + ex.getMessage());
+                    mb.open();
+                });
+            }
+        }).start();
+    }
+
 }

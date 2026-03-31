@@ -24,6 +24,7 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl#getUrl <em>Url</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl#getModel <em>Model</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl#getType <em>Type</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl#getTrainingData <em>Training Data</em>}</li>
  * </ul>
  *
  * @generated
@@ -124,29 +125,6 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 	 * @generated
 	 */
 	@Override
-	public NeuronType getType() {
-		return type;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setType(NeuronType newType) {
-		NeuronType oldType = type;
-		type = newType == null ? TYPE_EDEFAULT : newType;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NEURON_AI__TYPE, oldType, type));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.NEURON_AI;
 	}
@@ -195,6 +173,29 @@ public class NeuronAIImpl extends MinimalEObjectImpl.Container implements Neuron
 		model = newModel;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NEURON_AI__MODEL, oldModel, model));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public NeuronType getType() {
+		return type;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setType(NeuronType newType) {
+		NeuronType oldType = type;
+		type = newType == null ? TYPE_EDEFAULT : newType;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NEURON_AI__TYPE, oldType, type));
 	}
 
 	/**

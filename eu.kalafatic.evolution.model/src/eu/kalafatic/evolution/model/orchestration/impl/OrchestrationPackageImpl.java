@@ -2,26 +2,26 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
-import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
-import eu.kalafatic.evolution.model.orchestration.MemoryRule;
-import eu.kalafatic.evolution.model.orchestration.NetworkRule;
-import eu.kalafatic.evolution.model.orchestration.Rule;
-import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
+import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Maven;
+import eu.kalafatic.evolution.model.orchestration.MemoryRule;
+import eu.kalafatic.evolution.model.orchestration.NetworkRule;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.NeuronType;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.Rule;
+import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 
@@ -40,27 +40,6 @@ import org.eclipse.emf.ecore.impl.EPackageImpl;
  * @generated
  */
 public class OrchestrationPackageImpl extends EPackageImpl implements OrchestrationPackage {
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getNeuronAI_TrainingData() {
-		return (EAttribute)neuronAIEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getNeuronAI_Type() {
-		return (EAttribute)neuronAIEClass.getEStructuralFeatures().get(2);
-	}
-
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -73,50 +52,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass evoProjectEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass agentEClass = null;
-
-	private EClass ruleEClass = null;
-	private EClass accessRuleEClass = null;
-	private EClass networkRuleEClass = null;
-	private EClass memoryRuleEClass = null;
-	private EClass secretRuleEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getEvoProject() {
-		return evoProjectEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getEvoProject_Name() {
-		return (EAttribute)evoProjectEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getEvoProject_Orchestrations() {
-		return (EReference)evoProjectEClass.getEStructuralFeatures().get(1);
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -186,12 +122,49 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EEnum taskStatusEEnum = null;
+	private EClass evoProjectEClass = null;
 
 	/**
-	 * @generated NOT
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
 	 */
-	private EEnum aiModeEEnum = null;
+	private EClass ruleEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass accessRuleEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass networkRuleEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass memoryRuleEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass secretRuleEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum taskStatusEEnum = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -215,6 +188,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	private EEnum neuronTypeEEnum = null;
 
 	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum aiModeEEnum = null;
+
+	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
 	 * {@link org.eclipse.emf.ecore.EPackage.Registry EPackage.Registry} by the package
 	 * package URI value.
@@ -227,10 +207,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @see org.eclipse.emf.ecore.EPackage.Registry
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#eNS_URI
 	 * @see #init()
-	 * @generated NOT
+	 * @generated
 	 */
 	private OrchestrationPackageImpl() {
-		super(eNS_URI);
+		super(eNS_URI, OrchestrationFactory.eINSTANCE);
 	}
 	/**
 	 * <!-- begin-user-doc -->
@@ -249,17 +229,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @see #eNS_URI
 	 * @see #createPackageContents()
 	 * @see #initializePackageContents()
-	 * @generated NOT
+	 * @generated
 	 */
-	public static synchronized OrchestrationPackage init() {
+	public static OrchestrationPackage init() {
 		if (isInited) return (OrchestrationPackage)EPackage.Registry.INSTANCE.getEPackage(OrchestrationPackage.eNS_URI);
 
 		// Obtain or create and register package
 		Object registeredOrchestrationPackage = EPackage.Registry.INSTANCE.get(eNS_URI);
 		OrchestrationPackageImpl theOrchestrationPackage = registeredOrchestrationPackage instanceof OrchestrationPackageImpl ? (OrchestrationPackageImpl)registeredOrchestrationPackage : new OrchestrationPackageImpl();
-
-		// Update the registry as soon as it's created to avoid circularity issues
-		EPackage.Registry.INSTANCE.put(OrchestrationPackage.eNS_URI, theOrchestrationPackage);
 
 		isInited = true;
 
@@ -272,130 +249,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		// Mark meta-data to indicate it can't be changed
 		theOrchestrationPackage.freeze();
 
-		// Set the factory instance
-		theOrchestrationPackage.setEFactoryInstance(OrchestrationFactory.eINSTANCE);
-
+		// Update the registry and return the package
+		EPackage.Registry.INSTANCE.put(OrchestrationPackage.eNS_URI, theOrchestrationPackage);
 		return theOrchestrationPackage;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_NeuronAI() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(10);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_OfflineMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(11);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_McpServerUrl() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(12);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_OpenAiToken() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(13);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_OpenAiModel() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(14);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_AiMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(15);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_LocalModel() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(16);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_HybridModel() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(17);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_RemoteModel() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(18);
-	}
-
-	@Override
-	public EEnum getAiMode() {
-		return aiModeEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getAgent_ExecutionMode() {
-		return (EAttribute)agentEClass.getEStructuralFeatures().get(3);
-	}
-
-	@Override
-	public EReference getAgent_Rules() {
-		return (EReference)agentEClass.getEStructuralFeatures().get(4);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getNeuronAI() {
-		return neuronAIEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getNeuronAI_Url() {
-		return (EAttribute)neuronAIEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getNeuronAI_Model() {
-		return (EAttribute)neuronAIEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_Ollama() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(8);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_AiChat() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(9);
 	}
 
 	/**
@@ -406,94 +262,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EClass getTask() {
 		return taskEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getOllama() {
-		return ollamaEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOllama_Url() {
-		return (EAttribute)ollamaEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOllama_Model() {
-		return (EAttribute)ollamaEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOllama_Path() {
-		return (EAttribute)ollamaEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getAiChat() {
-		return aiChatEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getAiChat_Url() {
-		return (EAttribute)aiChatEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getAiChat_Token() {
-		return (EAttribute)aiChatEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getAiChat_Prompt() {
-		return (EAttribute)aiChatEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * @generated
-	 */
-	@Override
-	public EAttribute getAiChat_ProxyUrl() {
-		return (EAttribute)aiChatEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -519,7 +287,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getTask_Type() {
@@ -569,18 +337,28 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getTask_Feedback() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(7);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public EAttribute getTask_ApprovalRequired() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(8);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public EAttribute getTask_LoopToTaskId() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(9);
@@ -632,6 +410,26 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getAgent_ExecutionMode() {
+		return (EAttribute)agentEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getAgent_Rules() {
+		return (EReference)agentEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getOrchestrator() {
 		return orchestratorEClass;
 	}
@@ -669,7 +467,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EReference getOrchestrator_Tasks() {
@@ -714,6 +512,66 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EReference getOrchestrator_Compiler() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(7);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_Ollama() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(8);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_AiChat() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(9);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_NeuronAI() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(10);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_AiMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(12);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_McpServerUrl() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(13);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_RemoteModel() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(11);
 	}
 
 	/**
@@ -892,6 +750,316 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EClass getOllama() {
+		return ollamaEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOllama_Url() {
+		return (EAttribute)ollamaEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOllama_Model() {
+		return (EAttribute)ollamaEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOllama_Path() {
+		return (EAttribute)ollamaEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getAiChat() {
+		return aiChatEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAiChat_Url() {
+		return (EAttribute)aiChatEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAiChat_Token() {
+		return (EAttribute)aiChatEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAiChat_Prompt() {
+		return (EAttribute)aiChatEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAiChat_ProxyUrl() {
+		return (EAttribute)aiChatEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getNeuronAI() {
+		return neuronAIEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNeuronAI_Url() {
+		return (EAttribute)neuronAIEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNeuronAI_Model() {
+		return (EAttribute)neuronAIEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNeuronAI_Type() {
+		return (EAttribute)neuronAIEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNeuronAI_TrainingData() {
+		return (EAttribute)neuronAIEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getEvoProject() {
+		return evoProjectEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEvoProject_Name() {
+		return (EAttribute)evoProjectEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getEvoProject_Orchestrations() {
+		return (EReference)evoProjectEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getRule() {
+		return ruleEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getRule_Name() {
+		return (EAttribute)ruleEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getRule_Description() {
+		return (EAttribute)ruleEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getAccessRule() {
+		return accessRuleEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAccessRule_AllowedPaths() {
+		return (EAttribute)accessRuleEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAccessRule_DeniedPaths() {
+		return (EAttribute)accessRuleEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getNetworkRule() {
+		return networkRuleEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkRule_AllowedDomains() {
+		return (EAttribute)networkRuleEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkRule_AllowAll() {
+		return (EAttribute)networkRuleEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getMemoryRule() {
+		return memoryRuleEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getMemoryRule_StorageLimit() {
+		return (EAttribute)memoryRuleEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getMemoryRule_RetentionPeriod() {
+		return (EAttribute)memoryRuleEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getSecretRule() {
+		return secretRuleEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSecretRule_AllowedSecrets() {
+		return (EAttribute)secretRuleEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EEnum getTaskStatus() {
 		return taskStatusEEnum;
 	}
@@ -926,24 +1094,15 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		return neuronTypeEEnum;
 	}
 
-	@Override public EClass getRule() { return ruleEClass; }
-	@Override public EAttribute getRule_Name() { return (EAttribute)ruleEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getRule_Description() { return (EAttribute)ruleEClass.getEStructuralFeatures().get(1); }
-
-	@Override public EClass getAccessRule() { return accessRuleEClass; }
-	@Override public EAttribute getAccessRule_AllowedPaths() { return (EAttribute)accessRuleEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getAccessRule_DeniedPaths() { return (EAttribute)accessRuleEClass.getEStructuralFeatures().get(1); }
-
-	@Override public EClass getNetworkRule() { return networkRuleEClass; }
-	@Override public EAttribute getNetworkRule_AllowedDomains() { return (EAttribute)networkRuleEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getNetworkRule_AllowAll() { return (EAttribute)networkRuleEClass.getEStructuralFeatures().get(1); }
-
-	@Override public EClass getMemoryRule() { return memoryRuleEClass; }
-	@Override public EAttribute getMemoryRule_StorageLimit() { return (EAttribute)memoryRuleEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getMemoryRule_RetentionPeriod() { return (EAttribute)memoryRuleEClass.getEStructuralFeatures().get(1); }
-
-	@Override public EClass getSecretRule() { return secretRuleEClass; }
-	@Override public EAttribute getSecretRule_AllowedSecrets() { return (EAttribute)secretRuleEClass.getEStructuralFeatures().get(0); }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getAiMode() {
+		return aiModeEEnum;
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -983,6 +1142,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(taskEClass, TASK__SUB_TASKS);
 		createEAttribute(taskEClass, TASK__RESPONSE);
 		createEAttribute(taskEClass, TASK__FEEDBACK);
+		createEAttribute(taskEClass, TASK__APPROVAL_REQUIRED);
+		createEAttribute(taskEClass, TASK__LOOP_TO_TASK_ID);
 
 		agentEClass = createEClass(AGENT);
 		createEAttribute(agentEClass, AGENT__ID);
@@ -1003,6 +1164,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__OLLAMA);
 		createEReference(orchestratorEClass, ORCHESTRATOR__AI_CHAT);
 		createEReference(orchestratorEClass, ORCHESTRATOR__NEURON_AI);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__REMOTE_MODEL);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__AI_MODE);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__MCP_SERVER_URL);
 
 		gitEClass = createEClass(GIT);
 		createEAttribute(gitEClass, GIT__REPOSITORY_URL);
@@ -1030,15 +1194,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(ollamaEClass, OLLAMA__URL);
 		createEAttribute(ollamaEClass, OLLAMA__MODEL);
 		createEAttribute(ollamaEClass, OLLAMA__PATH);
-
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__OFFLINE_MODE);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__MCP_SERVER_URL);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__OPEN_AI_TOKEN);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__OPEN_AI_MODEL);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__AI_MODE);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__LOCAL_MODEL);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__HYBRID_MODEL);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__REMOTE_MODEL);
 
 		aiChatEClass = createEClass(AI_CHAT);
 		createEAttribute(aiChatEClass, AI_CHAT__URL);
@@ -1126,7 +1281,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getTask_SubTasks(), this.getTask(), null, "subTasks", null, 0, -1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_Response(), ecorePackage.getEString(), "response", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_Feedback(), ecorePackage.getEString(), "feedback", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getTask_ApprovalRequired(), ecorePackage.getEBoolean(), "approvalRequired", "false", 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_ApprovalRequired(), ecorePackage.getEBoolean(), "approvalRequired", "true", 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_LoopToTaskId(), ecorePackage.getEString(), "loopToTaskId", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(agentEClass, Agent.class, "Agent", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -1148,6 +1303,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_Ollama(), this.getOllama(), null, "ollama", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_AiChat(), this.getAiChat(), null, "aiChat", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_NeuronAI(), this.getNeuronAI(), null, "neuronAI", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_RemoteModel(), ecorePackage.getEString(), "remoteModel", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_AiMode(), this.getAiMode(), "aiMode", null, 1, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_McpServerUrl(), ecorePackage.getEString(), "mcpServerUrl", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(gitEClass, Git.class, "Git", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getGit_RepositoryUrl(), ecorePackage.getEString(), "repositoryUrl", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1175,14 +1333,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getOllama_Url(), ecorePackage.getEString(), "url", null, 0, 1, Ollama.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOllama_Model(), ecorePackage.getEString(), "model", null, 0, 1, Ollama.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOllama_Path(), ecorePackage.getEString(), "path", null, 0, 1, Ollama.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_OfflineMode(), ecorePackage.getEBoolean(), "offlineMode", "true", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_McpServerUrl(), ecorePackage.getEString(), "mcpServerUrl", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_OpenAiToken(), ecorePackage.getEString(), "openAiToken", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_OpenAiModel(), ecorePackage.getEString(), "openAiModel", "gpt-4", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_AiMode(), this.getAiMode(), "aiMode", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_LocalModel(), ecorePackage.getEString(), "localModel", "llama3", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_HybridModel(), ecorePackage.getEString(), "hybridModel", "llama3", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_RemoteModel(), ecorePackage.getEString(), "remoteModel", "gpt-4", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(aiChatEClass, AiChat.class, "AiChat", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getAiChat_Url(), ecorePackage.getEString(), "url", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

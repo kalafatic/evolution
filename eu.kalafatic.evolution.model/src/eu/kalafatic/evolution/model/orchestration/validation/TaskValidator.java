@@ -21,11 +21,13 @@ public interface TaskValidator {
 	boolean validateId(String value);
 	boolean validateName(String value);
 	boolean validateType(String value);
-
 	boolean validateStatus(TaskStatus value);
 	boolean validateNext(EList<Task> value);
 	boolean validateSubTasks(EList<Task> value);
 	boolean validateResponse(String value);
-
 	boolean validateFeedback(String value);
+
+	boolean validateApprovalRequired(boolean value);
+
+	boolean validateLoopToTaskId(String value);
 }

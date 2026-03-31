@@ -10,151 +10,109 @@ import org.eclipse.emf.common.util.Enumerator;
 
 /**
  * <!-- begin-user-doc -->
- * A representation of the literals of the enumeration '<em><b>Task Status</b></em>',
+ * A representation of the literals of the enumeration '<em><b>AI Mode</b></em>',
  * and utility methods for working with them.
  * <!-- end-user-doc -->
- * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTaskStatus()
- * @model
+ * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAIMode()
+ * @model instanceClass="eu.kalafatic.evolution.model.orchestration.AIMode"
  * @generated
  */
-public enum TaskStatus implements Enumerator {
+public enum AIMode implements Enumerator {
 	/**
-	 * The '<em><b>PENDING</b></em>' literal object.
+	 * The '<em><b>LOCAL</b></em>' literal object.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #PENDING_VALUE
+	 * @see #LOCAL_VALUE
 	 * @generated
 	 * @ordered
 	 */
-	PENDING(0, "PENDING", "PENDING"),
+	LOCAL(0, "LOCAL", "Local"),
 
 	/**
-	 * The '<em><b>RUNNING</b></em>' literal object.
+	 * The '<em><b>HYBRID</b></em>' literal object.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #RUNNING_VALUE
+	 * @see #HYBRID_VALUE
 	 * @generated
 	 * @ordered
 	 */
-	RUNNING(0, "RUNNING", "RUNNING"),
+	HYBRID(1, "HYBRID", "Hybrid"),
 
 	/**
-	 * The '<em><b>DONE</b></em>' literal object.
+	 * The '<em><b>REMOTE</b></em>' literal object.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #DONE_VALUE
+	 * @see #REMOTE_VALUE
 	 * @generated
 	 * @ordered
 	 */
-	DONE(0, "DONE", "DONE"),
+	REMOTE(2, "REMOTE", "Remote");
 
 	/**
-	 * The '<em><b>FAILED</b></em>' literal object.
+	 * The '<em><b>LOCAL</b></em>' literal value.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #FAILED_VALUE
+	 * @see #LOCAL
+	 * @model literal="Local"
 	 * @generated
 	 * @ordered
 	 */
-	FAILED(0, "FAILED", "FAILED"), /**
-	 * The '<em><b>WAITING FOR APPROVAL</b></em>' literal object.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #WAITING_FOR_APPROVAL_VALUE
-	 * @generated
-	 * @ordered
-	 */
-	WAITING_FOR_APPROVAL(0, "WAITING_FOR_APPROVAL", "WAITING_FOR_APPROVAL");
+	public static final int LOCAL_VALUE = 0;
 
 	/**
-	 * The '<em><b>PENDING</b></em>' literal value.
+	 * The '<em><b>HYBRID</b></em>' literal value.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #PENDING
-	 * @model
+	 * @see #HYBRID
+	 * @model literal="Hybrid"
 	 * @generated
 	 * @ordered
 	 */
-	public static final int PENDING_VALUE = 0;
+	public static final int HYBRID_VALUE = 1;
 
 	/**
-	 * The '<em><b>RUNNING</b></em>' literal value.
+	 * The '<em><b>REMOTE</b></em>' literal value.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #RUNNING
-	 * @model
+	 * @see #REMOTE
+	 * @model literal="Remote"
 	 * @generated
 	 * @ordered
 	 */
-	public static final int RUNNING_VALUE = 0;
+	public static final int REMOTE_VALUE = 2;
 
 	/**
-	 * The '<em><b>DONE</b></em>' literal value.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #DONE
-	 * @model
-	 * @generated
-	 * @ordered
-	 */
-	public static final int DONE_VALUE = 0;
-
-	/**
-	 * The '<em><b>FAILED</b></em>' literal value.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #FAILED
-	 * @model
-	 * @generated
-	 * @ordered
-	 */
-	public static final int FAILED_VALUE = 0;
-
-	/**
-	 * The '<em><b>WAITING FOR APPROVAL</b></em>' literal value.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #WAITING_FOR_APPROVAL
-	 * @model
-	 * @generated
-	 * @ordered
-	 */
-	public static final int WAITING_FOR_APPROVAL_VALUE = 0;
-
-	/**
-	 * An array of all the '<em><b>Task Status</b></em>' enumerators.
+	 * An array of all the '<em><b>AI Mode</b></em>' enumerators.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private static final TaskStatus[] VALUES_ARRAY =
-		new TaskStatus[] {
-			PENDING,
-			RUNNING,
-			DONE,
-			FAILED,
-			WAITING_FOR_APPROVAL,
+	private static final AIMode[] VALUES_ARRAY =
+		new AIMode[] {
+			LOCAL,
+			HYBRID,
+			REMOTE,
 		};
 
 	/**
-	 * A public read-only list of all the '<em><b>Task Status</b></em>' enumerators.
+	 * A public read-only list of all the '<em><b>AI Mode</b></em>' enumerators.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public static final List<TaskStatus> VALUES = Collections.unmodifiableList(Arrays.asList(VALUES_ARRAY));
+	public static final List<AIMode> VALUES = Collections.unmodifiableList(Arrays.asList(VALUES_ARRAY));
 
 	/**
-	 * Returns the '<em><b>Task Status</b></em>' literal with the specified literal value.
+	 * Returns the '<em><b>AI Mode</b></em>' literal with the specified literal value.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param literal the literal.
 	 * @return the matching enumerator or <code>null</code>.
 	 * @generated
 	 */
-	public static TaskStatus get(String literal) {
+	public static AIMode get(String literal) {
 		for (int i = 0; i < VALUES_ARRAY.length; ++i) {
-			TaskStatus result = VALUES_ARRAY[i];
+			AIMode result = VALUES_ARRAY[i];
 			if (result.toString().equals(literal)) {
 				return result;
 			}
@@ -163,16 +121,16 @@ public enum TaskStatus implements Enumerator {
 	}
 
 	/**
-	 * Returns the '<em><b>Task Status</b></em>' literal with the specified name.
+	 * Returns the '<em><b>AI Mode</b></em>' literal with the specified name.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param name the name.
 	 * @return the matching enumerator or <code>null</code>.
 	 * @generated
 	 */
-	public static TaskStatus getByName(String name) {
+	public static AIMode getByName(String name) {
 		for (int i = 0; i < VALUES_ARRAY.length; ++i) {
-			TaskStatus result = VALUES_ARRAY[i];
+			AIMode result = VALUES_ARRAY[i];
 			if (result.getName().equals(name)) {
 				return result;
 			}
@@ -181,16 +139,18 @@ public enum TaskStatus implements Enumerator {
 	}
 
 	/**
-	 * Returns the '<em><b>Task Status</b></em>' literal with the specified integer value.
+	 * Returns the '<em><b>AI Mode</b></em>' literal with the specified integer value.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the integer value.
 	 * @return the matching enumerator or <code>null</code>.
 	 * @generated
 	 */
-	public static TaskStatus get(int value) {
+	public static AIMode get(int value) {
 		switch (value) {
-			case PENDING_VALUE: return PENDING;
+			case LOCAL_VALUE: return LOCAL;
+			case HYBRID_VALUE: return HYBRID;
+			case REMOTE_VALUE: return REMOTE;
 		}
 		return null;
 	}
@@ -222,7 +182,7 @@ public enum TaskStatus implements Enumerator {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private TaskStatus(int value, String name, String literal) {
+	private AIMode(int value, String name, String literal) {
 		this.value = value;
 		this.name = name;
 		this.literal = literal;
@@ -269,4 +229,4 @@ public enum TaskStatus implements Enumerator {
 		return literal;
 	}
 	
-} //TaskStatus
+} //AIMode

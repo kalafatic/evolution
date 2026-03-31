@@ -129,9 +129,40 @@ public interface OrchestrationFactory extends EFactory {
 	 */
 	EvoProject createEvoProject();
 
+	/**
+	 * Returns a new object of class '<em>Access Rule</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Access Rule</em>'.
+	 * @generated
+	 */
 	AccessRule createAccessRule();
+
+	/**
+	 * Returns a new object of class '<em>Network Rule</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Network Rule</em>'.
+	 * @generated
+	 */
 	NetworkRule createNetworkRule();
+
+	/**
+	 * Returns a new object of class '<em>Memory Rule</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Memory Rule</em>'.
+	 * @generated
+	 */
 	MemoryRule createMemoryRule();
+
+	/**
+	 * Returns a new object of class '<em>Secret Rule</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Secret Rule</em>'.
+	 * @generated
+	 */
 	SecretRule createSecretRule();
 
 	/**

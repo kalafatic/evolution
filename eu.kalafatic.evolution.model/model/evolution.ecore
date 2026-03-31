@@ -7,6 +7,7 @@
     <eLiterals name="RUNNING"/>
     <eLiterals name="DONE"/>
     <eLiterals name="FAILED"/>
+    <eLiterals name="WAITING_FOR_APPROVAL"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Task">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -18,6 +19,9 @@
         eType="#//Task" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="response" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="feedback" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="approvalRequired" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="loopToTaskId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Agent">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -47,6 +51,10 @@
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="neuronAI" eType="#//NeuronAI"
         containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="remoteModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="aiMode" lowerBound="1"
+        eType="#//AiMode"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="mcpServerUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Git">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="repositoryUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -134,5 +142,10 @@
   <eClassifiers xsi:type="ecore:EClass" name="SecretRule" eSuperTypes="#//Rule">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="allowedSecrets" upperBound="-1"
         eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="AiMode">
+    <eLiterals name="LOCAL" literal="Local"/>
+    <eLiterals name="HYBRID" value="1" literal="Hybrid"/>
+    <eLiterals name="REMOTE" value="2" literal="Remote"/>
   </eClassifiers>
 </ecore:EPackage>

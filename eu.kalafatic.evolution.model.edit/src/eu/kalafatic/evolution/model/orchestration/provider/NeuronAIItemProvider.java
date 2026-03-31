@@ -63,6 +63,7 @@ public class NeuronAIItemProvider
 			addUrlPropertyDescriptor(object);
 			addModelPropertyDescriptor(object);
 			addTypePropertyDescriptor(object);
+			addTrainingDataPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -134,6 +135,28 @@ public class NeuronAIItemProvider
 	}
 
 	/**
+	 * This adds a property descriptor for the Training Data feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addTrainingDataPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_NeuronAI_trainingData_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_NeuronAI_trainingData_feature", "_UI_NeuronAI_type"),
+				 OrchestrationPackage.Literals.NEURON_AI__TRAINING_DATA,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
 	 * This returns NeuronAI.gif.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -174,6 +197,7 @@ public class NeuronAIItemProvider
 			case OrchestrationPackage.NEURON_AI__URL:
 			case OrchestrationPackage.NEURON_AI__MODEL:
 			case OrchestrationPackage.NEURON_AI__TYPE:
+			case OrchestrationPackage.NEURON_AI__TRAINING_DATA:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 		}

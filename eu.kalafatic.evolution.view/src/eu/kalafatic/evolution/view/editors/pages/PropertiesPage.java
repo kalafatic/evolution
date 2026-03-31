@@ -13,6 +13,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
 import eu.kalafatic.evolution.controller.manager.*;
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
@@ -382,13 +383,9 @@ public class PropertiesPage extends ScrolledComposite {
 					: "");
 
 		aiModeCombo.select(orchestrator.getAiMode().getValue());
-		localModelText.setText(orchestrator.getLocalModel() != null ? orchestrator.getLocalModel() : "");
-		hybridModelText.setText(orchestrator.getHybridModel() != null ? orchestrator.getHybridModel() : "");
-		remoteModelText.setText(orchestrator.getRemoteModel() != null ? orchestrator.getRemoteModel() : "");
-		offlineBtn.setSelection(orchestrator.isOfflineMode());
+		
+
 		mcpUrlText.setText(orchestrator.getMcpServerUrl() != null ? orchestrator.getMcpServerUrl() : "");
-		openAiTokenText.setText(orchestrator.getOpenAiToken() != null ? orchestrator.getOpenAiToken() : "");
-		openAiModelText.setText(orchestrator.getOpenAiModel() != null ? orchestrator.getOpenAiModel() : "");
 
 		isUpdating = false;
 	}
@@ -461,14 +458,9 @@ public class PropertiesPage extends ScrolledComposite {
 		if (orchestrator.getCompiler() != null)
 			orchestrator.getCompiler().setSourceVersion(compilerSourceText.getText());
 
-		orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get(aiModeCombo.getSelectionIndex()));
-		orchestrator.setLocalModel(localModelText.getText());
-		orchestrator.setHybridModel(hybridModelText.getText());
-		orchestrator.setRemoteModel(remoteModelText.getText());
-		orchestrator.setOfflineMode(offlineBtn.getSelection());
+		orchestrator.setAiMode(AiMode.get(aiModeCombo.getSelectionIndex()));	
 		orchestrator.setMcpServerUrl(mcpUrlText.getText());
-		orchestrator.setOpenAiToken(openAiTokenText.getText());
-		orchestrator.setOpenAiModel(openAiModelText.getText());
+	
 
 		ollamaService = new OllamaService(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel());
 		isUpdating = false;

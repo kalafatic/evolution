@@ -70,8 +70,6 @@ public class TaskItemProvider
 			addNextPropertyDescriptor(object);
 			addResponsePropertyDescriptor(object);
 			addFeedbackPropertyDescriptor(object);
-			addApprovalRequiredPropertyDescriptor(object);
-			addLoopToTaskIdPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -342,8 +340,6 @@ public class TaskItemProvider
 			case OrchestrationPackage.TASK__STATUS:
 			case OrchestrationPackage.TASK__RESPONSE:
 			case OrchestrationPackage.TASK__FEEDBACK:
-			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
-			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 			case OrchestrationPackage.TASK__SUB_TASKS:

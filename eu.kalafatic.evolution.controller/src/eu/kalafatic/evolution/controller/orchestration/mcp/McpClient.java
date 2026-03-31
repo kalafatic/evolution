@@ -99,4 +99,9 @@ public class McpClient {
 
         return rpcResponse.getJSONObject("result");
     }
+
+	public boolean testConnection() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

@@ -26,7 +26,7 @@ public enum AiMode implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	LOCAL(0, "LOCAL", "LOCAL"),
+	LOCAL(0, "LOCAL", "Local"),
 
 	/**
 	 * The '<em><b>HYBRID</b></em>' literal object.
@@ -36,7 +36,7 @@ public enum AiMode implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	HYBRID(1, "HYBRID", "HYBRID"),
+	HYBRID(1, "HYBRID", "Hybrid"),
 
 	/**
 	 * The '<em><b>REMOTE</b></em>' literal object.
@@ -46,14 +46,14 @@ public enum AiMode implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	REMOTE(2, "REMOTE", "REMOTE");
+	REMOTE(2, "REMOTE", "Remote");
 
 	/**
 	 * The '<em><b>LOCAL</b></em>' literal value.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #LOCAL
-	 * @model
+	 * @model literal="Local"
 	 * @generated
 	 * @ordered
 	 */
@@ -64,7 +64,7 @@ public enum AiMode implements Enumerator {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #HYBRID
-	 * @model
+	 * @model literal="Hybrid"
 	 * @generated
 	 * @ordered
 	 */
@@ -75,7 +75,7 @@ public enum AiMode implements Enumerator {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #REMOTE
-	 * @model
+	 * @model literal="Remote"
 	 * @generated
 	 * @ordered
 	 */
@@ -228,5 +228,5 @@ public enum AiMode implements Enumerator {
 	public String toString() {
 		return literal;
 	}
-
+	
 } //AiMode

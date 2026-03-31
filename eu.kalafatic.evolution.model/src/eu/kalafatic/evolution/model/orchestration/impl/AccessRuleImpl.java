@@ -1,29 +1,77 @@
+/**
+ */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 
 import java.util.Collection;
+
 import org.eclipse.emf.common.util.EList;
+
 import org.eclipse.emf.ecore.EClass;
+
 import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
 
 /**
- * @generated NOT
+ * <!-- begin-user-doc -->
+ * An implementation of the model object '<em><b>Access Rule</b></em>'.
+ * <!-- end-user-doc -->
+ * <p>
+ * The following features are implemented:
+ * </p>
+ * <ul>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl#getAllowedPaths <em>Allowed Paths</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl#getDeniedPaths <em>Denied Paths</em>}</li>
+ * </ul>
+ *
+ * @generated
  */
 public class AccessRuleImpl extends RuleImpl implements AccessRule {
+	/**
+	 * The cached value of the '{@link #getAllowedPaths() <em>Allowed Paths</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAllowedPaths()
+	 * @generated
+	 * @ordered
+	 */
 	protected EList<String> allowedPaths;
+
+	/**
+	 * The cached value of the '{@link #getDeniedPaths() <em>Denied Paths</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDeniedPaths()
+	 * @generated
+	 * @ordered
+	 */
 	protected EList<String> deniedPaths;
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	protected AccessRuleImpl() {
 		super();
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.ACCESS_RULE;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public EList<String> getAllowedPaths() {
 		if (allowedPaths == null) {
@@ -32,6 +80,11 @@ public class AccessRuleImpl extends RuleImpl implements AccessRule {
 		return allowedPaths;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public EList<String> getDeniedPaths() {
 		if (deniedPaths == null) {
@@ -40,6 +93,11 @@ public class AccessRuleImpl extends RuleImpl implements AccessRule {
 		return deniedPaths;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
@@ -51,6 +109,11 @@ public class AccessRuleImpl extends RuleImpl implements AccessRule {
 		return super.eGet(featureID, resolve, coreType);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
@@ -67,6 +130,11 @@ public class AccessRuleImpl extends RuleImpl implements AccessRule {
 		super.eSet(featureID, newValue);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
@@ -80,6 +148,11 @@ public class AccessRuleImpl extends RuleImpl implements AccessRule {
 		super.eUnset(featureID);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
@@ -91,4 +164,22 @@ public class AccessRuleImpl extends RuleImpl implements AccessRule {
 		return super.eIsSet(featureID);
 	}
 
-} // AccessRuleImpl
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (allowedPaths: ");
+		result.append(allowedPaths);
+		result.append(", deniedPaths: ");
+		result.append(deniedPaths);
+		result.append(')');
+		return result.toString();
+	}
+
+} //AccessRuleImpl

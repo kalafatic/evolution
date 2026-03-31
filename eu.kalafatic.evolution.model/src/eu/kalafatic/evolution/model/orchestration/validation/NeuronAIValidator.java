@@ -18,4 +18,5 @@ public interface NeuronAIValidator {
 	boolean validateUrl(String value);
 	boolean validateModel(String value);
 	boolean validateType(NeuronType value);
+	boolean validateTrainingData(String value);
 }

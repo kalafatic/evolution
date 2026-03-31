@@ -160,6 +160,9 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
             URI fileURI = URI.createFileURI(filePath);
             Resource resource = resSet.createResource(fileURI);
+            
+         // This is the missing piece!          
+            resource.save(Collections.emptyMap());
 
             OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
 

@@ -2,9 +2,9 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
@@ -12,8 +12,8 @@ import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-
 import eu.kalafatic.evolution.model.orchestration.Task;
+
 import java.util.Collection;
 
 import org.eclipse.emf.common.notify.Notification;
@@ -49,6 +49,9 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getOllama <em>Ollama</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAiChat <em>Ai Chat</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getNeuronAI <em>Neuron AI</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getRemoteModel <em>Remote Model</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAiMode <em>Ai Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMcpServerUrl <em>Mcp Server Url</em>}</li>
  * </ul>
  *
  * @generated
@@ -184,14 +187,65 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 */
 	protected NeuronAI neuronAI;
 
-	protected boolean offlineMode = true;
-	protected String mcpServerUrl = "";
-	protected String openAiToken = "";
-	protected String openAiModel = "gpt-4";
-	protected AiMode aiMode = AiMode.LOCAL;
-	protected String localModel = "llama3";
-	protected String hybridModel = "llama3";
-	protected String remoteModel = "gpt-4";
+	/**
+	 * The default value of the '{@link #getRemoteModel() <em>Remote Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRemoteModel()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String REMOTE_MODEL_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getRemoteModel() <em>Remote Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRemoteModel()
+	 * @generated
+	 * @ordered
+	 */
+	protected String remoteModel = REMOTE_MODEL_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getAiMode() <em>Ai Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAiMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final AiMode AI_MODE_EDEFAULT = AiMode.LOCAL;
+
+	/**
+	 * The cached value of the '{@link #getAiMode() <em>Ai Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAiMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected AiMode aiMode = AI_MODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getMcpServerUrl() <em>Mcp Server Url</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMcpServerUrl()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String MCP_SERVER_URL_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getMcpServerUrl() <em>Mcp Server Url</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMcpServerUrl()
+	 * @generated
+	 * @ordered
+	 */
+	protected String mcpServerUrl = MCP_SERVER_URL_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -200,154 +254,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 */
 	protected OrchestratorImpl() {
 		super();
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public EList<eu.kalafatic.evolution.model.orchestration.Task> getTasks() {
-		if (tasks == null) {
-			tasks = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.Task>(eu.kalafatic.evolution.model.orchestration.Task.class, this, OrchestrationPackage.ORCHESTRATOR__TASKS);
-		}
-		return tasks;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public Ollama getOllama() {
-		return ollama;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetOllama(Ollama newOllama, NotificationChain msgs) {
-		Ollama oldOllama = ollama;
-		ollama = newOllama;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OLLAMA, oldOllama, newOllama);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setOllama(Ollama newOllama) {
-		if (newOllama != ollama) {
-			NotificationChain msgs = null;
-			if (ollama != null)
-				msgs = ((InternalEObject)ollama).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__OLLAMA, null, msgs);
-			if (newOllama != null)
-				msgs = ((InternalEObject)newOllama).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__OLLAMA, null, msgs);
-			msgs = basicSetOllama(newOllama, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OLLAMA, newOllama, newOllama));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public AiChat getAiChat() {
-		return aiChat;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetAiChat(AiChat newAiChat, NotificationChain msgs) {
-		AiChat oldAiChat = aiChat;
-		aiChat = newAiChat;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_CHAT, oldAiChat, newAiChat);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setAiChat(AiChat newAiChat) {
-		if (newAiChat != aiChat) {
-			NotificationChain msgs = null;
-			if (aiChat != null)
-				msgs = ((InternalEObject)aiChat).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__AI_CHAT, null, msgs);
-			if (newAiChat != null)
-				msgs = ((InternalEObject)newAiChat).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__AI_CHAT, null, msgs);
-			msgs = basicSetAiChat(newAiChat, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_CHAT, newAiChat, newAiChat));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public NeuronAI getNeuronAI() {
-		return neuronAI;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetNeuronAI(NeuronAI newNeuronAI, NotificationChain msgs) {
-		NeuronAI oldNeuronAI = neuronAI;
-		neuronAI = newNeuronAI;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__NEURON_AI, oldNeuronAI, newNeuronAI);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setNeuronAI(NeuronAI newNeuronAI) {
-		if (newNeuronAI != neuronAI) {
-			NotificationChain msgs = null;
-			if (neuronAI != null)
-				msgs = ((InternalEObject)neuronAI).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__NEURON_AI, null, msgs);
-			if (newNeuronAI != null)
-				msgs = ((InternalEObject)newNeuronAI).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__NEURON_AI, null, msgs);
-			msgs = basicSetNeuronAI(newNeuronAI, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__NEURON_AI, newNeuronAI, newNeuronAI));
 	}
 
 	/**
@@ -417,6 +323,19 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			agents = new EObjectContainmentEList<Agent>(Agent.class, this, OrchestrationPackage.ORCHESTRATOR__AGENTS);
 		}
 		return agents;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<Task> getTasks() {
+		if (tasks == null) {
+			tasks = new EObjectContainmentEList<Task>(Task.class, this, OrchestrationPackage.ORCHESTRATOR__TASKS);
+		}
+		return tasks;
 	}
 
 	/**
@@ -605,6 +524,210 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
+	public Ollama getOllama() {
+		return ollama;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetOllama(Ollama newOllama, NotificationChain msgs) {
+		Ollama oldOllama = ollama;
+		ollama = newOllama;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OLLAMA, oldOllama, newOllama);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setOllama(Ollama newOllama) {
+		if (newOllama != ollama) {
+			NotificationChain msgs = null;
+			if (ollama != null)
+				msgs = ((InternalEObject)ollama).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__OLLAMA, null, msgs);
+			if (newOllama != null)
+				msgs = ((InternalEObject)newOllama).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__OLLAMA, null, msgs);
+			msgs = basicSetOllama(newOllama, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OLLAMA, newOllama, newOllama));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public AiChat getAiChat() {
+		return aiChat;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetAiChat(AiChat newAiChat, NotificationChain msgs) {
+		AiChat oldAiChat = aiChat;
+		aiChat = newAiChat;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_CHAT, oldAiChat, newAiChat);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAiChat(AiChat newAiChat) {
+		if (newAiChat != aiChat) {
+			NotificationChain msgs = null;
+			if (aiChat != null)
+				msgs = ((InternalEObject)aiChat).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__AI_CHAT, null, msgs);
+			if (newAiChat != null)
+				msgs = ((InternalEObject)newAiChat).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__AI_CHAT, null, msgs);
+			msgs = basicSetAiChat(newAiChat, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_CHAT, newAiChat, newAiChat));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public NeuronAI getNeuronAI() {
+		return neuronAI;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetNeuronAI(NeuronAI newNeuronAI, NotificationChain msgs) {
+		NeuronAI oldNeuronAI = neuronAI;
+		neuronAI = newNeuronAI;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__NEURON_AI, oldNeuronAI, newNeuronAI);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setNeuronAI(NeuronAI newNeuronAI) {
+		if (newNeuronAI != neuronAI) {
+			NotificationChain msgs = null;
+			if (neuronAI != null)
+				msgs = ((InternalEObject)neuronAI).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__NEURON_AI, null, msgs);
+			if (newNeuronAI != null)
+				msgs = ((InternalEObject)newNeuronAI).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__NEURON_AI, null, msgs);
+			msgs = basicSetNeuronAI(newNeuronAI, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__NEURON_AI, newNeuronAI, newNeuronAI));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getRemoteModel() {
+		return remoteModel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRemoteModel(String newRemoteModel) {
+		String oldRemoteModel = remoteModel;
+		remoteModel = newRemoteModel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL, oldRemoteModel, remoteModel));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public AiMode getAiMode() {
+		return aiMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAiMode(AiMode newAiMode) {
+		AiMode oldAiMode = aiMode;
+		aiMode = newAiMode == null ? AI_MODE_EDEFAULT : newAiMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_MODE, oldAiMode, aiMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getMcpServerUrl() {
+		return mcpServerUrl;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setMcpServerUrl(String newMcpServerUrl) {
+		String oldMcpServerUrl = mcpServerUrl;
+		mcpServerUrl = newMcpServerUrl;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL, oldMcpServerUrl, mcpServerUrl));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
@@ -659,22 +782,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getAiChat();
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				return getNeuronAI();
-			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
-				return isOfflineMode();
-			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
-				return getMcpServerUrl();
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
-				return getOpenAiToken();
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
-				return getOpenAiModel();
-			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
-				return getAiMode();
-			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
-				return getLocalModel();
-			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
-				return getHybridModel();
 			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
 				return getRemoteModel();
+			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
+				return getAiMode();
+			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
+				return getMcpServerUrl();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -723,29 +836,14 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				setNeuronAI((NeuronAI)newValue);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
-				setOfflineMode((Boolean)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
-				setMcpServerUrl((String)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
-				setOpenAiToken((String)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
-				setOpenAiModel((String)newValue);
+			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
+				setRemoteModel((String)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
 				setAiMode((AiMode)newValue);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
-				setLocalModel((String)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
-				setHybridModel((String)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
-				setRemoteModel((String)newValue);
+			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
+				setMcpServerUrl((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -792,29 +890,14 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				setNeuronAI((NeuronAI)null);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
-				setOfflineMode(true);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
-				setMcpServerUrl("");
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
-				setOpenAiToken("");
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
-				setOpenAiModel("gpt-4");
+			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
+				setRemoteModel(REMOTE_MODEL_EDEFAULT);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
-				setAiMode(AiMode.LOCAL);
+				setAiMode(AI_MODE_EDEFAULT);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
-				setLocalModel("llama3");
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
-				setHybridModel("llama3");
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
-				setRemoteModel("gpt-4");
+			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
+				setMcpServerUrl(MCP_SERVER_URL_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -850,22 +933,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return aiChat != null;
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				return neuronAI != null;
-			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
-				return offlineMode != true;
-			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
-				return mcpServerUrl != null && !mcpServerUrl.isEmpty();
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
-				return openAiToken != null && !openAiToken.isEmpty();
-			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
-				return openAiModel != null && !openAiModel.equals("gpt-4");
-			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
-				return aiMode != AiMode.LOCAL;
-			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
-				return localModel != null && !localModel.equals("llama3");
-			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
-				return hybridModel != null && !hybridModel.equals("llama3");
 			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
-				return remoteModel != null && !remoteModel.equals("gpt-4");
+				return REMOTE_MODEL_EDEFAULT == null ? remoteModel != null : !REMOTE_MODEL_EDEFAULT.equals(remoteModel);
+			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
+				return aiMode != AI_MODE_EDEFAULT;
+			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
+				return MCP_SERVER_URL_EDEFAULT == null ? mcpServerUrl != null : !MCP_SERVER_URL_EDEFAULT.equals(mcpServerUrl);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -884,112 +957,14 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		result.append(id);
 		result.append(", name: ");
 		result.append(name);
+		result.append(", remoteModel: ");
+		result.append(remoteModel);
+		result.append(", aiMode: ");
+		result.append(aiMode);
+		result.append(", mcpServerUrl: ");
+		result.append(mcpServerUrl);
 		result.append(')');
 		return result.toString();
-	}
-
-	@Override
-	public boolean isOfflineMode() {
-		return offlineMode;
-	}
-
-	@Override
-	public void setOfflineMode(boolean newOfflineMode) {
-		boolean oldOfflineMode = offlineMode;
-		offlineMode = newOfflineMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE, oldOfflineMode, offlineMode));
-	}
-
-	@Override
-	public String getMcpServerUrl() {
-		return mcpServerUrl;
-	}
-
-	@Override
-	public void setMcpServerUrl(String newMcpServerUrl) {
-		String oldMcpServerUrl = mcpServerUrl;
-		mcpServerUrl = newMcpServerUrl;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL, oldMcpServerUrl, mcpServerUrl));
-	}
-
-	@Override
-	public String getOpenAiToken() {
-		return openAiToken;
-	}
-
-	@Override
-	public void setOpenAiToken(String newOpenAiToken) {
-		String oldOpenAiToken = openAiToken;
-		openAiToken = newOpenAiToken;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN, oldOpenAiToken, openAiToken));
-	}
-
-	@Override
-	public String getOpenAiModel() {
-		return openAiModel;
-	}
-
-	@Override
-	public void setOpenAiModel(String newOpenAiModel) {
-		String oldOpenAiModel = openAiModel;
-		openAiModel = newOpenAiModel;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL, oldOpenAiModel, openAiModel));
-	}
-
-	@Override
-	public AiMode getAiMode() {
-		return aiMode;
-	}
-
-	@Override
-	public void setAiMode(AiMode newAiMode) {
-		AiMode oldAiMode = aiMode;
-		aiMode = newAiMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_MODE, oldAiMode, aiMode));
-	}
-
-	@Override
-	public String getLocalModel() {
-		return localModel;
-	}
-
-	@Override
-	public void setLocalModel(String newLocalModel) {
-		String oldLocalModel = localModel;
-		localModel = newLocalModel;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL, oldLocalModel, localModel));
-	}
-
-	@Override
-	public String getHybridModel() {
-		return hybridModel;
-	}
-
-	@Override
-	public void setHybridModel(String newHybridModel) {
-		String oldHybridModel = hybridModel;
-		hybridModel = newHybridModel;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL, oldHybridModel, hybridModel));
-	}
-
-	@Override
-	public String getRemoteModel() {
-		return remoteModel;
-	}
-
-	@Override
-	public void setRemoteModel(String newRemoteModel) {
-		String oldRemoteModel = remoteModel;
-		remoteModel = newRemoteModel;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL, oldRemoteModel, remoteModel));
 	}
 
 } //OrchestratorImpl

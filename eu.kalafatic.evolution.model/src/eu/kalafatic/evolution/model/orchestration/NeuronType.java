@@ -270,5 +270,5 @@ public enum NeuronType implements Enumerator {
 	public String toString() {
 		return literal;
 	}
-
+	
 } //NeuronType

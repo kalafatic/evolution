@@ -26,6 +26,9 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOllama <em>Ollama</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiChat <em>Ai Chat</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getNeuronAI <em>Neuron AI</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getRemoteModel <em>Remote Model</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiMode <em>Ai Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMcpServerUrl <em>Mcp Server Url</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator()
@@ -97,7 +100,7 @@ public interface Orchestrator extends EObject {
 	 * @return the value of the '<em>Tasks</em>' containment reference list.
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_Tasks()
 	 * @model containment="true"
-	 * @generated NOT
+	 * @generated
 	 */
 	EList<Task> getTasks();
 
@@ -256,82 +259,71 @@ public interface Orchestrator extends EObject {
 	void setNeuronAI(NeuronAI value);
 
 	/**
-	 * @generated NOT
-	 */
-	boolean isOfflineMode();
-
-	/**
-	 * @generated NOT
-	 */
-	void setOfflineMode(boolean value);
-
-	/**
-	 * @generated NOT
-	 */
-	String getMcpServerUrl();
-
-	/**
-	 * @generated NOT
-	 */
-	void setMcpServerUrl(String value);
-
-	/**
-	 * @generated NOT
-	 */
-	String getOpenAiToken();
-
-	/**
-	 * @generated NOT
-	 */
-	void setOpenAiToken(String value);
-
-	/**
-	 * @generated NOT
-	 */
-	String getOpenAiModel();
-
-	/**
-	 * @generated NOT
-	 */
-	void setOpenAiModel(String value);
-
-	/**
-	 * @generated NOT
+	 * Returns the value of the '<em><b>Ai Mode</b></em>' attribute.
+	 * The literals are from the enumeration {@link eu.kalafatic.evolution.model.orchestration.AiMode}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Ai Mode</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
+	 * @see #setAiMode(AiMode)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_AiMode()
+	 * @model required="true"
+	 * @generated
 	 */
 	AiMode getAiMode();
 
 	/**
-	 * @generated NOT
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiMode <em>Ai Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Ai Mode</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
+	 * @see #getAiMode()
+	 * @generated
 	 */
 	void setAiMode(AiMode value);
 
 	/**
-	 * @generated NOT
+	 * Returns the value of the '<em><b>Mcp Server Url</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Mcp Server Url</em>' attribute.
+	 * @see #setMcpServerUrl(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_McpServerUrl()
+	 * @model
+	 * @generated
 	 */
-	String getLocalModel();
+	String getMcpServerUrl();
 
 	/**
-	 * @generated NOT
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMcpServerUrl <em>Mcp Server Url</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Mcp Server Url</em>' attribute.
+	 * @see #getMcpServerUrl()
+	 * @generated
 	 */
-	void setLocalModel(String value);
+	void setMcpServerUrl(String value);
 
 	/**
-	 * @generated NOT
-	 */
-	String getHybridModel();
-
-	/**
-	 * @generated NOT
-	 */
-	void setHybridModel(String value);
-
-	/**
-	 * @generated NOT
+	 * Returns the value of the '<em><b>Remote Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Remote Model</em>' attribute.
+	 * @see #setRemoteModel(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_RemoteModel()
+	 * @model
+	 * @generated
 	 */
 	String getRemoteModel();
 
 	/**
-	 * @generated NOT
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getRemoteModel <em>Remote Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Remote Model</em>' attribute.
+	 * @see #getRemoteModel()
+	 * @generated
 	 */
 	void setRemoteModel(String value);
 

@@ -17,6 +17,5 @@ public interface AiChatValidator {
 	boolean validateUrl(String value);
 	boolean validateToken(String value);
 	boolean validatePrompt(String value);
-
 	boolean validateProxyUrl(String value);
 }

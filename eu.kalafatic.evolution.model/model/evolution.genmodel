@@ -12,6 +12,7 @@
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/RUNNING"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/DONE"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/FAILED"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/WAITING_FOR_APPROVAL"/>
     </genEnums>
     <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//CommandStatus">
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//CommandStatus/PENDING"/>
@@ -30,6 +31,11 @@
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//NeuronType/LSTM"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//NeuronType/TRANSFORMER"/>
     </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//AiMode">
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/LOCAL"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/HYBRID"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/REMOTE"/>
+    </genEnums>
     <genClasses ecoreClass="evolution.ecore#//Task">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/id"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/name"/>
@@ -39,6 +45,8 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Task/subTasks"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/response"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/feedback"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/approvalRequired"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/loopToTaskId"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Agent">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Agent/id"/>
@@ -59,6 +67,9 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/ollama"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/aiChat"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/neuronAI"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/remoteModel"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/aiMode"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/mcpServerUrl"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Git">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Git/repositoryUrl"/>
@@ -97,6 +108,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NeuronAI/url"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NeuronAI/model"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NeuronAI/type"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NeuronAI/trainingData"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//EvoProject">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvoProject/name"/>

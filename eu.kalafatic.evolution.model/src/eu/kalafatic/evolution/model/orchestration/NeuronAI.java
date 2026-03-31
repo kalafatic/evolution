@@ -16,6 +16,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getUrl <em>Url</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getModel <em>Model</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getType <em>Type</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.NeuronAI#getTrainingData <em>Training Data</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNeuronAI()
