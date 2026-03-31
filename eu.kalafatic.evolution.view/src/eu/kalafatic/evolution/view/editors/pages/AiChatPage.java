@@ -168,7 +168,11 @@ public class AiChatPage extends Composite {
         final Group groupMode = SWTFactory.createGroup(toolbar, "Mode", 4);
 
         createLabel(groupMode, "AI Mode:");
-        aiModeCombo = new Combo(groupMode, SWT.READ_ONLY);
+        aiModeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
+        GridData gd = new GridData();
+		gd.widthHint = 100;
+        aiModeCombo.setLayoutData(gd);
+        
         for (AiMode mode : AiMode.values()) {
             aiModeCombo.add(mode.getName());
         }
@@ -189,9 +193,10 @@ public class AiChatPage extends Composite {
                     	
                     	createLabel(groupMode, "AI Remote:");
                     	
-                    	aiRemoteeCombo = new Combo(groupMode, SWT.READ_ONLY);
+                    	aiRemoteeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
+                    	aiRemoteeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
                         for (Entry<String, ProviderConfig> mode : AiProviders.PROVIDERS.entrySet()) {
-                            aiModeCombo.add(mode.getKey());
+                        	aiRemoteeCombo.add(mode.getKey());
                         }
                         groupMode.layout(true, true);
 					}
