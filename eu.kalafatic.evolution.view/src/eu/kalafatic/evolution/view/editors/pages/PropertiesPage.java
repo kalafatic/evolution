@@ -29,6 +29,7 @@ public class PropertiesPage extends ScrolledComposite {
 			ollamaVersionText;
 	private Button offlineBtn;
 	private Combo aiModeCombo;
+	private Text localModelText, hybridModelText, remoteModelText;
 	private Text mcpUrlText, openAiTokenText, openAiModelText;
 	private Table agentsTable;
 	private Text gitRepoText, gitBranchText, mavenGoalsText, mavenProfilesText, aiChatUrlText, neuronAiUrlText,
@@ -239,6 +240,23 @@ public class PropertiesPage extends ScrolledComposite {
 		openAiModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		SWTFactory.createEditButton(mcpOpenAiGroup, openAiModelText);
 
+		Group aiModelGroup = new Group(comp, SWT.NONE);
+		aiModelGroup.setText("AI Chat Models (per Mode)");
+		aiModelGroup.setLayout(new GridLayout(3, false));
+		aiModelGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		SWTFactory.createLabel(aiModelGroup, "Local Model:");
+		localModelText = new Text(aiModelGroup, SWT.BORDER);
+		localModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		SWTFactory.createEditButton(aiModelGroup, localModelText);
+		SWTFactory.createLabel(aiModelGroup, "Hybrid Model:");
+		hybridModelText = new Text(aiModelGroup, SWT.BORDER);
+		hybridModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		SWTFactory.createEditButton(aiModelGroup, hybridModelText);
+		SWTFactory.createLabel(aiModelGroup, "Remote Model:");
+		remoteModelText = new Text(aiModelGroup, SWT.BORDER);
+		remoteModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		SWTFactory.createEditButton(aiModelGroup, remoteModelText);
+
 		ollamaUrlDecorator = new ControlDecoration(ollamaUrlText, SWT.TOP | SWT.LEFT);
 		ollamaUrlDecorator.setImage(
 				FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
@@ -265,7 +283,8 @@ public class PropertiesPage extends ScrolledComposite {
 		};
 		Text[] texts = { orchIdText, orchNameText, llmModelText, llmTempText, ollamaUrlText, ollamaModelText,
 				ollamaPathText, gitRepoText, gitBranchText, mavenGoalsText, mavenProfilesText, aiChatUrlText,
-				neuronAiUrlText, compilerSourceText, mcpUrlText, openAiTokenText, openAiModelText };
+				neuronAiUrlText, compilerSourceText, mcpUrlText, openAiTokenText, openAiModelText, localModelText,
+				hybridModelText, remoteModelText };
 		for (Text t : texts)
 			t.addModifyListener(ml);
 		offlineBtn.addSelectionListener(new SelectionAdapter() {
@@ -363,6 +382,9 @@ public class PropertiesPage extends ScrolledComposite {
 					: "");
 
 		aiModeCombo.select(orchestrator.getAiMode().getValue());
+		localModelText.setText(orchestrator.getLocalModel() != null ? orchestrator.getLocalModel() : "");
+		hybridModelText.setText(orchestrator.getHybridModel() != null ? orchestrator.getHybridModel() : "");
+		remoteModelText.setText(orchestrator.getRemoteModel() != null ? orchestrator.getRemoteModel() : "");
 		offlineBtn.setSelection(orchestrator.isOfflineMode());
 		mcpUrlText.setText(orchestrator.getMcpServerUrl() != null ? orchestrator.getMcpServerUrl() : "");
 		openAiTokenText.setText(orchestrator.getOpenAiToken() != null ? orchestrator.getOpenAiToken() : "");
@@ -440,6 +462,9 @@ public class PropertiesPage extends ScrolledComposite {
 			orchestrator.getCompiler().setSourceVersion(compilerSourceText.getText());
 
 		orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get(aiModeCombo.getSelectionIndex()));
+		orchestrator.setLocalModel(localModelText.getText());
+		orchestrator.setHybridModel(hybridModelText.getText());
+		orchestrator.setRemoteModel(remoteModelText.getText());
 		orchestrator.setOfflineMode(offlineBtn.getSelection());
 		orchestrator.setMcpServerUrl(mcpUrlText.getText());
 		orchestrator.setOpenAiToken(openAiTokenText.getText());

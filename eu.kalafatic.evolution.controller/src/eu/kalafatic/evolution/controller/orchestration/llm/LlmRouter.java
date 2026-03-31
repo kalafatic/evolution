@@ -24,10 +24,26 @@ public class LlmRouter {
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
         AiMode mode = orchestrator.getAiMode();
         if (mode == AiMode.REMOTE) {
+            // REMOTE, direct chat with selected llm (gemini,deepseek,chatgpt...)
+            // Currently using OpenAIProvider which supports custom URLs (for proxy/compat APIs)
+            String model = orchestrator.getRemoteModel();
+            if (model != null && !model.isEmpty()) {
+                orchestrator.setOpenAiModel(model);
+            }
             return openAiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
+        } else if (mode == AiMode.HYBRID) {
+            // HYBRID, ollama+selected local model which connects to remote like translattor or proxy
+            String model = orchestrator.getHybridModel();
+            if (model != null && !model.isEmpty()) {
+                orchestrator.getOllama().setModel(model);
+            }
+            return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
         } else {
-            // Both LOCAL and HYBRID currently use OllamaProvider
-            // HYBRID might involve special logic in OllamaProvider or a custom setup
+            // LOCAL, ollama+selected local model
+            String model = orchestrator.getLocalModel();
+            if (model != null && !model.isEmpty()) {
+                orchestrator.getOllama().setModel(model);
+            }
             return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
         }
     }

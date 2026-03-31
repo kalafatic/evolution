@@ -189,6 +189,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected String openAiToken = "";
 	protected String openAiModel = "gpt-4";
 	protected AiMode aiMode = AiMode.LOCAL;
+	protected String localModel = "llama3";
+	protected String hybridModel = "llama3";
+	protected String remoteModel = "gpt-4";
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -666,6 +669,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getOpenAiModel();
 			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
 				return getAiMode();
+			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
+				return getLocalModel();
+			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
+				return getHybridModel();
+			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
+				return getRemoteModel();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -729,6 +738,15 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
 				setAiMode((AiMode)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
+				setLocalModel((String)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
+				setHybridModel((String)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
+				setRemoteModel((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -789,6 +807,15 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
 				setAiMode(AiMode.LOCAL);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
+				setLocalModel("llama3");
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
+				setHybridModel("llama3");
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
+				setRemoteModel("gpt-4");
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -833,6 +860,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return openAiModel != null && !openAiModel.equals("gpt-4");
 			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
 				return aiMode != AiMode.LOCAL;
+			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
+				return localModel != null && !localModel.equals("llama3");
+			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
+				return hybridModel != null && !hybridModel.equals("llama3");
+			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
+				return remoteModel != null && !remoteModel.equals("gpt-4");
 		}
 		return super.eIsSet(featureID);
 	}
@@ -918,6 +951,45 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		aiMode = newAiMode;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AI_MODE, oldAiMode, aiMode));
+	}
+
+	@Override
+	public String getLocalModel() {
+		return localModel;
+	}
+
+	@Override
+	public void setLocalModel(String newLocalModel) {
+		String oldLocalModel = localModel;
+		localModel = newLocalModel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL, oldLocalModel, localModel));
+	}
+
+	@Override
+	public String getHybridModel() {
+		return hybridModel;
+	}
+
+	@Override
+	public void setHybridModel(String newHybridModel) {
+		String oldHybridModel = hybridModel;
+		hybridModel = newHybridModel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL, oldHybridModel, hybridModel));
+	}
+
+	@Override
+	public String getRemoteModel() {
+		return remoteModel;
+	}
+
+	@Override
+	public void setRemoteModel(String newRemoteModel) {
+		String oldRemoteModel = remoteModel;
+		remoteModel = newRemoteModel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL, oldRemoteModel, remoteModel));
 	}
 
 } //OrchestratorImpl
