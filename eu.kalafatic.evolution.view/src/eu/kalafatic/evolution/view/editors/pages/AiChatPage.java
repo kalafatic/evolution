@@ -55,6 +55,11 @@ public class AiChatPage extends Composite {
     private Label modelStatusLabel;
     private Label statusLabel;
     private ProgressBar progressBar;
+    private Composite approvalComposite;
+    private Label approvalLabel;
+    private Button approveButton;
+    private Button rejectButton;
+    private TaskContext currentContext;
     private OllamaService ollamaService;
     private Map<String, String> threads = new HashMap<>();
     private Map<String, StyleRange[]> threadStyles = new HashMap<>();
@@ -258,6 +263,37 @@ public class AiChatPage extends Composite {
         progressBar.setMinimum(0);
         progressBar.setMaximum(100);
 
+        approvalComposite = new Composite(this, SWT.NONE);
+        approvalComposite.setLayout(new GridLayout(3, false));
+        approvalComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        approvalComposite.setVisible(false);
+        ((GridData)approvalComposite.getLayoutData()).exclude = true;
+
+        approvalLabel = new Label(approvalComposite, SWT.NONE);
+        approvalLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        approveButton = SWTFactory.createButton(approvalComposite, "Approve");
+        approveButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (currentContext != null) {
+                    currentContext.provideApproval(true);
+                    hideApprovalUI();
+                }
+            }
+        });
+
+        rejectButton = SWTFactory.createButton(approvalComposite, "Reject");
+        rejectButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (currentContext != null) {
+                    currentContext.provideApproval(false);
+                    hideApprovalUI();
+                }
+            }
+        });
+
         Runnable timer = new Runnable() {
             public void run() {
                 if (!statusLabel.isDisposed()) {
@@ -309,6 +345,12 @@ public class AiChatPage extends Composite {
                 }
                 if (projectRoot == null) projectRoot = new File(System.getProperty("java.io.tmpdir"));
                 TaskContext context = new TaskContext(orchestrator, projectRoot);
+                this.currentContext = context;
+                context.addApprovalListener(message -> {
+                    Display.getDefault().asyncExec(() -> {
+                        showApprovalUI(message);
+                    });
+                });
                 context.addLogListener(log -> {
                     Display.getDefault().asyncExec(() -> {
                         if (!responseText.isDisposed()) {
@@ -419,6 +461,21 @@ public class AiChatPage extends Composite {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
         }
         updateStatusInfo();
+    }
+
+    private void showApprovalUI(String message) {
+        if (approvalComposite.isDisposed()) return;
+        approvalLabel.setText(message);
+        approvalComposite.setVisible(true);
+        ((GridData)approvalComposite.getLayoutData()).exclude = false;
+        this.layout(true, true);
+    }
+
+    private void hideApprovalUI() {
+        if (approvalComposite.isDisposed()) return;
+        approvalComposite.setVisible(false);
+        ((GridData)approvalComposite.getLayoutData()).exclude = true;
+        this.layout(true, true);
     }
 
     private void appendStyledText(String text, Color color, int style) {

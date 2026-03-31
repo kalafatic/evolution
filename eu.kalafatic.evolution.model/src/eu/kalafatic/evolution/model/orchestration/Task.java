@@ -189,4 +189,24 @@ public interface Task extends EObject {
 	 */
 	void setFeedback(String value);
 
+	/**
+	 * @generated NOT
+	 */
+	boolean isApprovalRequired();
+
+	/**
+	 * @generated NOT
+	 */
+	void setApprovalRequired(boolean value);
+
+	/**
+	 * @generated NOT
+	 */
+	String getLoopToTaskId();
+
+	/**
+	 * @generated NOT
+	 */
+	void setLoopToTaskId(String value);
+
 } // Task

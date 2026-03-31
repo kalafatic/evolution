@@ -70,6 +70,8 @@ public class TaskItemProvider
 			addNextPropertyDescriptor(object);
 			addResponsePropertyDescriptor(object);
 			addFeedbackPropertyDescriptor(object);
+			addApprovalRequiredPropertyDescriptor(object);
+			addLoopToTaskIdPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -88,6 +90,44 @@ public class TaskItemProvider
 				 getString("_UI_Task_id_feature"),
 				 getString("_UI_PropertyDescriptor_description", "_UI_Task_id_feature", "_UI_Task_type"),
 				 OrchestrationPackage.Literals.TASK__ID,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	protected void addApprovalRequiredPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 "Approval Required",
+				 "Whether this task requires manual user approval before execution",
+				 OrchestrationPackage.Literals.TASK__APPROVAL_REQUIRED,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	protected void addLoopToTaskIdPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 "Loop To Task ID",
+				 "ID of the task to jump back to after completion of this task",
+				 OrchestrationPackage.Literals.TASK__LOOP_TO_TASK_ID,
 				 true,
 				 false,
 				 false,
@@ -302,6 +342,8 @@ public class TaskItemProvider
 			case OrchestrationPackage.TASK__STATUS:
 			case OrchestrationPackage.TASK__RESPONSE:
 			case OrchestrationPackage.TASK__FEEDBACK:
+			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
+			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 			case OrchestrationPackage.TASK__SUB_TASKS:

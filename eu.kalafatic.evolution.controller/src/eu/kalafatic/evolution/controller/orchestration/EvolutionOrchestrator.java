@@ -45,6 +45,19 @@ public class EvolutionOrchestrator implements IOrchestrator {
             String lastResult = "";
             for (int i = 0; i < taskCount; i++) {
                 Task task = tasks.get(i);
+
+                // Check for User Approval
+                if (task.isApprovalRequired() || "approval".equalsIgnoreCase(task.getType())) {
+                    task.setStatus(TaskStatus.WAITING_FOR_APPROVAL);
+                    context.log("Orchestrator: Waiting for user approval for task: " + task.getName());
+                    Boolean approved = context.requestApproval("Approve task: " + task.getName() + "?").get();
+                    if (approved == null || !approved) {
+                        task.setStatus(TaskStatus.FAILED);
+                        task.setFeedback("Rejected by user.");
+                        throw new Exception("Task rejected by user: " + task.getName());
+                    }
+                }
+
                 task.setStatus(TaskStatus.RUNNING);
                 double progress = (double) i / taskCount;
                 updateStatus(context, progress, "Executing: " + task.getName());
@@ -59,6 +72,28 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 task.setStatus(TaskStatus.DONE);
                 lastResult = task.getResponse();
                 context.appendSharedMemory("Task [" + task.getName() + "] completed. Result: " + lastResult);
+
+                // Handle Looping logic
+                String loopToId = task.getLoopToTaskId();
+                if (loopToId != null && !loopToId.isEmpty() && !"none".equalsIgnoreCase(loopToId)) {
+                    // Decide if we should loop. For now, if the agent or a specific 'loop' task type suggests it.
+                    // If it's a 'loop' task, we check its response or feedback to see if it should continue.
+                    // Simplified: if task type is 'loop' and response contains 'CONTINUE', or if it's just any task with a loopToId
+                    // and we haven't exceeded some internal loop limit (safety).
+
+                    int loopTargetIndex = -1;
+                    for (int j = 0; j < tasks.size(); j++) {
+                        if (loopToId.equals(tasks.get(j).getId())) {
+                            loopTargetIndex = j;
+                            break;
+                        }
+                    }
+
+                    if (loopTargetIndex != -1) {
+                        context.log("Orchestrator: Looping back to task ID: " + loopToId);
+                        i = loopTargetIndex - 1; // -1 because the for loop will increment i
+                    }
+                }
             }
 
             updateStatus(context, 1.0, "Completed");

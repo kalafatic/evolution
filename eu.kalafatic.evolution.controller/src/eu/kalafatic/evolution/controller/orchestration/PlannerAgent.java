@@ -28,11 +28,15 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "- 'file': For writing or creating files (e.g., Java source code, POM, README). Task name should be 'Write <path/to/file>'. File paths MUST be relative to the project root and MUST NOT start with a slash or drive letter.\n" +
                 "- 'git': For version control actions (add, commit, push).\n" +
                 "- 'maven': For building, testing, or packaging the project.\n" +
+                "- 'approval': A specialized task that pauses the workflow and waits for the user to click 'Approve' or 'Reject'. Use this for critical steps like code application or final delivery.\n" +
                 "- 'train_nn': For local project neural network training.\n" +
                 "- 'train_llm': For local project LLM fine-tuning.\n" +
                 "- 'train_agent': For local project agent behavior training.\n\n" +
+                "Looping and Iteration:\n" +
+                "- Any task can have a 'loopToTaskId' property. If present and not 'none', the orchestrator will jump back to the task with that ID after the current task completes.\n" +
+                "- Use loops for iterative processes like: programmer-analyze -> improve -> implement -> test -> (loop to analyze if tests fail).\n\n" +
                 "Output MUST be a valid JSON array of objects. Schema:\n" +
-                "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"train_nn\"|\"train_llm\"|\"train_agent\" } ]\n\n" +
+                "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"approval\"|\"train_nn\"|\"train_llm\"|\"train_agent\", \"approvalRequired\": boolean, \"loopToTaskId\": \"id_to_jump_to\"|\"none\" } ]\n\n" +
                 "Request: " + request;
 
         String response = aiService.sendRequest(context.getOrchestrator(), plannerPrompt);
@@ -73,6 +77,8 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
             task.setId(obj.optString("id", "task" + i));
             task.setName(obj.optString("name", "Task " + i));
             task.setType(obj.optString("taskType", "llm"));
+            task.setApprovalRequired(obj.optBoolean("approvalRequired", false));
+            task.setLoopToTaskId(obj.optString("loopToTaskId", "none"));
             tasks.add(task);
         }
         context.log("Planner: Generated " + tasks.size() + " tasks.");

@@ -566,6 +566,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(7);
 	}
 
+	@Override
+	public EAttribute getTask_ApprovalRequired() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(8);
+	}
+
+	@Override
+	public EAttribute getTask_LoopToTaskId() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(9);
+	}
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1105,6 +1115,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getTask_SubTasks(), this.getTask(), null, "subTasks", null, 0, -1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_Response(), ecorePackage.getEString(), "response", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_Feedback(), ecorePackage.getEString(), "feedback", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_ApprovalRequired(), ecorePackage.getEBoolean(), "approvalRequired", "false", 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_LoopToTaskId(), ecorePackage.getEString(), "loopToTaskId", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(agentEClass, Agent.class, "Agent", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getAgent_Id(), ecorePackage.getEString(), "id", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1201,6 +1213,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.RUNNING);
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.DONE);
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.FAILED);
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.WAITING_FOR_APPROVAL);
 
 		initEEnum(commandStatusEEnum, CommandStatus.class, "CommandStatus");
 		addEEnumLiteral(commandStatusEEnum, CommandStatus.PENDING);

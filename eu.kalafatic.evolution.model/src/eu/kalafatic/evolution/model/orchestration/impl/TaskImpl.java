@@ -185,6 +185,16 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected String feedback = FEEDBACK_EDEFAULT;
 
 	/**
+	 * @generated NOT
+	 */
+	protected boolean approvalRequired = false;
+
+	/**
+	 * @generated NOT
+	 */
+	protected String loopToTaskId = null;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -405,6 +415,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getResponse();
 			case OrchestrationPackage.TASK__FEEDBACK:
 				return getFeedback();
+			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
+				return isApprovalRequired();
+			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
+				return getLoopToTaskId();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -444,6 +458,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__FEEDBACK:
 				setFeedback((String)newValue);
 				return;
+			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
+				setApprovalRequired((Boolean)newValue);
+				return;
+			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
+				setLoopToTaskId((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -480,6 +500,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__FEEDBACK:
 				setFeedback(FEEDBACK_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
+				setApprovalRequired(false);
+				return;
+			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
+				setLoopToTaskId(null);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -508,6 +534,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return RESPONSE_EDEFAULT == null ? response != null : !RESPONSE_EDEFAULT.equals(response);
 			case OrchestrationPackage.TASK__FEEDBACK:
 				return FEEDBACK_EDEFAULT == null ? feedback != null : !FEEDBACK_EDEFAULT.equals(feedback);
+			case OrchestrationPackage.TASK__APPROVAL_REQUIRED:
+				return approvalRequired != false;
+			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
+				return loopToTaskId != null;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -517,6 +547,32 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
+	public boolean isApprovalRequired() {
+		return approvalRequired;
+	}
+
+	@Override
+	public void setApprovalRequired(boolean newApprovalRequired) {
+		boolean oldApprovalRequired = approvalRequired;
+		approvalRequired = newApprovalRequired;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__APPROVAL_REQUIRED, oldApprovalRequired, approvalRequired));
+	}
+
+	@Override
+	public String getLoopToTaskId() {
+		return loopToTaskId;
+	}
+
+	@Override
+	public void setLoopToTaskId(String newLoopToTaskId) {
+		String oldLoopToTaskId = loopToTaskId;
+		loopToTaskId = newLoopToTaskId;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__LOOP_TO_TASK_ID, oldLoopToTaskId, loopToTaskId));
+	}
+
 	@Override
 	public String toString() {
 		if (eIsProxy()) return super.toString();
@@ -534,6 +590,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(response);
 		result.append(", feedback: ");
 		result.append(feedback);
+		result.append(", approvalRequired: ");
+		result.append(approvalRequired);
+		result.append(", loopToTaskId: ");
+		result.append(loopToTaskId);
 		result.append(')');
 		return result.toString();
 	}
