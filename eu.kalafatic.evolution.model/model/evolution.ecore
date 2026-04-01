@@ -4,10 +4,10 @@
     nsPrefix="orchestration">
   <eClassifiers xsi:type="ecore:EEnum" name="TaskStatus">
     <eLiterals name="PENDING"/>
-    <eLiterals name="RUNNING"/>
-    <eLiterals name="DONE"/>
-    <eLiterals name="FAILED"/>
-    <eLiterals name="WAITING_FOR_APPROVAL"/>
+    <eLiterals name="RUNNING" value="1"/>
+    <eLiterals name="DONE" value="2"/>
+    <eLiterals name="FAILED" value="3"/>
+    <eLiterals name="WAITING_FOR_APPROVAL" value="4"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Task">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -22,6 +22,9 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="approvalRequired" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="loopToTaskId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="priority" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="resultSummary" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Agent">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -61,6 +64,8 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="hybridModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="offlineMode" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="selfDevSession" eType="#//SelfDevSession"
+        containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Git">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="repositoryUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -84,20 +89,20 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EEnum" name="CommandStatus">
     <eLiterals name="PENDING"/>
-    <eLiterals name="RUNNING"/>
-    <eLiterals name="COMPLETED"/>
-    <eLiterals name="FAILED"/>
+    <eLiterals name="RUNNING" value="1"/>
+    <eLiterals name="COMPLETED" value="2"/>
+    <eLiterals name="FAILED" value="3"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EEnum" name="ExecutionMode">
     <eLiterals name="SERIAL"/>
-    <eLiterals name="PARALLEL"/>
+    <eLiterals name="PARALLEL" value="1"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EEnum" name="NeuronType">
     <eLiterals name="MLP"/>
-    <eLiterals name="CNN"/>
-    <eLiterals name="RNN"/>
-    <eLiterals name="LSTM"/>
-    <eLiterals name="TRANSFORMER"/>
+    <eLiterals name="CNN" value="1"/>
+    <eLiterals name="RNN" value="2"/>
+    <eLiterals name="LSTM" value="3"/>
+    <eLiterals name="TRANSFORMER" value="4"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Command">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -153,5 +158,47 @@
     <eLiterals name="LOCAL" literal="Local"/>
     <eLiterals name="HYBRID" value="1" literal="Hybrid"/>
     <eLiterals name="REMOTE" value="2" literal="Remote"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="SelfDevStatus">
+    <eLiterals name="RUNNING"/>
+    <eLiterals name="STOPPED" value="1"/>
+    <eLiterals name="FAILED" value="2"/>
+    <eLiterals name="COMPLETED" value="3"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="IterationStatus">
+    <eLiterals name="PENDING"/>
+    <eLiterals name="RUNNING" value="1"/>
+    <eLiterals name="DONE" value="2"/>
+    <eLiterals name="FAILED" value="3"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="SelfDevDecision">
+    <eLiterals name="CONTINUE"/>
+    <eLiterals name="ROLLBACK" value="1"/>
+    <eLiterals name="STOP" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SelfDevSession">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="startTime" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="maxIterations" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//SelfDevStatus"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="iterations" upperBound="-1"
+        eType="#//Iteration" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Iteration">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="branchName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1" eType="#//Task"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="evaluationResult" eType="#//EvaluationResult"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//IterationStatus"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="EvaluationResult">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="success" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="testPassRate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDouble"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="coverageChange" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDouble"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="errors" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="decision" eType="#//SelfDevDecision"/>
   </eClassifiers>
 </ecore:EPackage>

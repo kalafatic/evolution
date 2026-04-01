@@ -36,6 +36,23 @@
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/HYBRID"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/REMOTE"/>
     </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//SelfDevStatus">
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevStatus/RUNNING"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevStatus/STOPPED"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevStatus/FAILED"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevStatus/COMPLETED"/>
+    </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//IterationStatus">
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//IterationStatus/PENDING"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//IterationStatus/RUNNING"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//IterationStatus/DONE"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//IterationStatus/FAILED"/>
+    </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//SelfDevDecision">
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevDecision/CONTINUE"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevDecision/ROLLBACK"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevDecision/STOP"/>
+    </genEnums>
     <genClasses ecoreClass="evolution.ecore#//Task">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/id"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/name"/>
@@ -47,6 +64,8 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/feedback"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/approvalRequired"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/loopToTaskId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/priority"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/resultSummary"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Agent">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Agent/id"/>
@@ -70,6 +89,12 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/remoteModel"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/aiMode"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/mcpServerUrl"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/openAiToken"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/openAiModel"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/localModel"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/hybridModel"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/offlineMode"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/selfDevSession"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Git">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Git/repositoryUrl"/>
@@ -132,6 +157,27 @@
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//SecretRule">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SecretRule/allowedSecrets"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//SelfDevSession">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SelfDevSession/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SelfDevSession/startTime"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SelfDevSession/maxIterations"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SelfDevSession/status"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//SelfDevSession/iterations"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//Iteration">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/branchName"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Iteration/tasks"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Iteration/evaluationResult"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/status"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//EvaluationResult">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/success"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/testPassRate"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/coverageChange"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/errors"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/decision"/>
     </genClasses>
   </genPackages>
 </genmodel:GenModel>

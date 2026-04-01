@@ -12,6 +12,7 @@ import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
 import java.util.Collection;
@@ -346,6 +347,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected boolean offlineMode = OFFLINE_MODE_EDEFAULT;
+
+	/**
+	 * The cached value of the '{@link #getSelfDevSession() <em>Self Dev Session</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSelfDevSession()
+	 * @generated
+	 * @ordered
+	 */
+	protected SelfDevSession selfDevSession;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -943,6 +954,51 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
+	public SelfDevSession getSelfDevSession() {
+		return selfDevSession;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetSelfDevSession(SelfDevSession newSelfDevSession, NotificationChain msgs) {
+		SelfDevSession oldSelfDevSession = selfDevSession;
+		selfDevSession = newSelfDevSession;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION, oldSelfDevSession, newSelfDevSession);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSelfDevSession(SelfDevSession newSelfDevSession) {
+		if (newSelfDevSession != selfDevSession) {
+			NotificationChain msgs = null;
+			if (selfDevSession != null)
+				msgs = ((InternalEObject)selfDevSession).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION, null, msgs);
+			if (newSelfDevSession != null)
+				msgs = ((InternalEObject)newSelfDevSession).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION, null, msgs);
+			msgs = basicSetSelfDevSession(newSelfDevSession, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION, newSelfDevSession, newSelfDevSession));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
@@ -963,6 +1019,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return basicSetAiChat(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
 				return basicSetNeuronAI(null, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
+				return basicSetSelfDevSession(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1013,6 +1071,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getHybridModel();
 			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
 				return isOfflineMode();
+			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
+				return getSelfDevSession();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1085,6 +1145,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
 				setOfflineMode((Boolean)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
+				setSelfDevSession((SelfDevSession)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1154,6 +1217,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
 				setOfflineMode(OFFLINE_MODE_EDEFAULT);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
+				setSelfDevSession((SelfDevSession)null);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1204,6 +1270,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return HYBRID_MODEL_EDEFAULT == null ? hybridModel != null : !HYBRID_MODEL_EDEFAULT.equals(hybridModel);
 			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
 				return offlineMode != OFFLINE_MODE_EDEFAULT;
+			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
+				return selfDevSession != null;
 		}
 		return super.eIsSet(featureID);
 	}

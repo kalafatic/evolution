@@ -236,4 +236,70 @@ public interface Task extends EObject {
 	 */
 	void setLoopToTaskId(String value);
 
+	/**
+	 * Returns the value of the '<em><b>Priority</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Priority</em>' attribute.
+	 * @see #setPriority(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Priority()
+	 * @model
+	 * @generated
+	 */
+	int getPriority();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getPriority <em>Priority</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Priority</em>' attribute.
+	 * @see #getPriority()
+	 * @generated
+	 */
+	void setPriority(int value);
+
+	/**
+	 * Returns the value of the '<em><b>Result Summary</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Result Summary</em>' attribute.
+	 * @see #setResultSummary(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_ResultSummary()
+	 * @model
+	 * @generated
+	 */
+	String getResultSummary();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getResultSummary <em>Result Summary</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Result Summary</em>' attribute.
+	 * @see #getResultSummary()
+	 * @generated
+	 */
+	void setResultSummary(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Description</em>' attribute.
+	 * @see #setDescription(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Description()
+	 * @model
+	 * @generated
+	 */
+	String getDescription();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getDescription <em>Description</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Description</em>' attribute.
+	 * @see #getDescription()
+	 * @generated
+	 */
+	void setDescription(String value);
+
 } // Task
