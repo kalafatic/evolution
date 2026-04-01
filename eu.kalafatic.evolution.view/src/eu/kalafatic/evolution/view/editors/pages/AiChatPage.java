@@ -292,19 +292,24 @@ public class AiChatPage extends Composite {
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                AiMode aiMode = AiMode.get(aiModeCombo.getSelectionIndex());
-                boolean remoteVisible = aiMode == AiMode.HYBRID || aiMode == AiMode.REMOTE;
-                aiRemoteLabel.setVisible(remoteVisible);
-                aiRemoteCombo.setVisible(remoteVisible);
-                remoteTokenLabel.setVisible(remoteVisible);
-                remoteTokenText.setVisible(remoteVisible);
-                remoteUrlLabel.setVisible(remoteVisible);
-                remoteUrlText.setVisible(remoteVisible);
-                groupMode.layout(true, true);
-                toolbar.layout(true, true);
-                toolbar.getParent().layout(true, true);
+                syncModelWithUI();
             }
         });
+
+        aiRemoteCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                String provider = aiRemoteCombo.getText();
+                ProviderConfig config = AiProviders.PROVIDERS.get(provider);
+                if (config != null) {
+                    remoteUrlText.setText(config.getEndpointUrl() != null ? config.getEndpointUrl() : "");
+                    syncModelWithUI();
+                }
+            }
+        });
+
+        remoteTokenText.addModifyListener(e -> syncModelWithUI());
+        remoteUrlText.addModifyListener(e -> syncModelWithUI());
         Button connectionButton = SWTFactory.createButton(groupMode, "Test Connection", 120);
         connectionButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) { 
@@ -442,6 +447,46 @@ public class AiChatPage extends Composite {
                 modeIndicatorLabel.setBackground(colorRemote);
                 break;
         }
+
+        boolean remoteVisible = mode == AiMode.HYBRID || mode == AiMode.REMOTE;
+        if (aiRemoteLabel != null && !aiRemoteLabel.isDisposed()) {
+            aiRemoteLabel.setVisible(remoteVisible);
+            aiRemoteCombo.setVisible(remoteVisible);
+            remoteTokenLabel.setVisible(remoteVisible);
+            remoteTokenText.setVisible(remoteVisible);
+            remoteUrlLabel.setVisible(remoteVisible);
+            remoteUrlText.setVisible(remoteVisible);
+
+            Composite toolbar = aiRemoteLabel.getParent().getParent();
+            aiRemoteLabel.getParent().layout(true, true);
+            toolbar.layout(true, true);
+            toolbar.getParent().layout(true, true);
+        }
+    }
+
+    private void syncModelWithUI() {
+        if (orchestrator == null) return;
+
+        AiMode aiMode = AiMode.get(aiModeCombo.getSelectionIndex());
+        orchestrator.setAiMode(aiMode);
+
+        String remoteModel = aiRemoteCombo.getText();
+        orchestrator.setRemoteModel(remoteModel);
+
+        ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel);
+        if (config != null) {
+            orchestrator.setOpenAiModel(config.getDefaultModel());
+        }
+
+        orchestrator.setOpenAiToken(remoteTokenText.getText());
+
+        if (orchestrator.getAiChat() == null) {
+            orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        }
+        orchestrator.getAiChat().setUrl(remoteUrlText.getText());
+
+        editor.setDirty(true);
+        updateModeDisplay();
     }
 
     private void sendAction() {

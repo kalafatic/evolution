@@ -196,7 +196,12 @@ public class MultiPageEditor extends MultiPageEditorPart {
     @Override
     protected void pageChange(int newPageIndex) {
         super.pageChange(newPageIndex);
-        if (getControl(newPageIndex) == previewPage && previewPage != null) {
+        Control control = getControl(newPageIndex);
+        if (control == aiChatPage && aiChatPage != null) {
+            aiChatPage.setOrchestrator(orchestrator);
+        } else if (control == propertiesPage && propertiesPage != null) {
+            propertiesPage.updatePropertiesInfo();
+        } else if (control == previewPage && previewPage != null) {
             previewPage.sortWords();
         }
     }

@@ -29,8 +29,7 @@ public class ProviderConfig {
     public boolean isLocal() { return local; }
     public String getDefaultModel() { return defaultModel; }
 
-	public String getTestEndpoint() {
-		// TODO Auto-generated method stub
-		return null;
+	public String getEndpointUrl() {
+        return url;
 	}
 }
