@@ -30,7 +30,7 @@ public class AiProviders {
 
         PROVIDERS.put("gemini", new ProviderConfig(
                 "gemini",
-                "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent",
+                "https://generativelanguage.googleapis.com/v1/models/%s:generateContent",
                 "YOUR_API_KEY",
                 "google",
                 false,

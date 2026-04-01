@@ -10,6 +10,8 @@ import java.time.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.providers.AiProviders;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 
 /**
  * Gemini LLM provider implementation.
@@ -21,10 +23,15 @@ public class GeminiProvider implements ILlmProvider {
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
         String token = orchestrator.getOpenAiToken(); // Using OpenAiToken as general API key
-        String model = orchestrator.getRemoteModel();
+        String remoteModelName = orchestrator.getRemoteModel();
+
+        ProviderConfig config = AiProviders.PROVIDERS.get(remoteModelName != null ? remoteModelName.toLowerCase() : "gemini");
+
+        String apiUrl = (config != null) ? config.getUrl() : DEFAULT_GEMINI_URL_TEMPLATE;
+        String model = (config != null) ? config.getDefaultModel() : remoteModelName;
 
         if (model == null || model.isEmpty() || model.equalsIgnoreCase("gemini")) {
-            model = "gemini-pro";
+            model = "gemini-1.5-pro";
         }
 
         if (token == null || token.isEmpty()) {
@@ -71,7 +78,10 @@ public class GeminiProvider implements ILlmProvider {
 
         String json = jsonObject.toString();
 
-        String apiUrl = String.format(DEFAULT_GEMINI_URL_TEMPLATE, model) + "?key=" + token;
+        if (apiUrl.contains("%s")) {
+            apiUrl = String.format(apiUrl, model);
+        }
+        apiUrl = apiUrl + (apiUrl.contains("?") ? "&" : "?") + "key=" + token;
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))

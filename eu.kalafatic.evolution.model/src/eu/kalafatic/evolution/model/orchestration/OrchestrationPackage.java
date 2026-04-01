@@ -385,13 +385,58 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__MCP_SERVER_URL = 13;
 
 	/**
+	 * The feature id for the '<em><b>Open Ai Token</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__OPEN_AI_TOKEN = 14;
+
+	/**
+	 * The feature id for the '<em><b>Open Ai Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__OPEN_AI_MODEL = 15;
+
+	/**
+	 * The feature id for the '<em><b>Local Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__LOCAL_MODEL = 16;
+
+	/**
+	 * The feature id for the '<em><b>Hybrid Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__HYBRID_MODEL = 17;
+
+	/**
+	 * The feature id for the '<em><b>Offline Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__OFFLINE_MODE = 18;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 14;
+	int ORCHESTRATOR_FEATURE_COUNT = 19;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -2138,6 +2183,61 @@ public interface OrchestrationPackage extends EPackage {
 	EEnum getAiMode();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiToken <em>Open Ai Token</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Open Ai Token</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiToken()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_OpenAiToken();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiModel <em>Open Ai Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Open Ai Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiModel()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_OpenAiModel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getLocalModel <em>Local Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Local Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getLocalModel()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_LocalModel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getHybridModel <em>Hybrid Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Hybrid Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getHybridModel()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_HybridModel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isOfflineMode <em>Offline Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Offline Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isOfflineMode()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_OfflineMode();
+
+	/**
 	 * Returns the factory that creates the instances of the model.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2413,6 +2513,46 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute ORCHESTRATOR__MCP_SERVER_URL = eINSTANCE.getOrchestrator_McpServerUrl();
+
+		/**
+		 * The meta object literal for the '<em><b>Open Ai Token</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__OPEN_AI_TOKEN = eINSTANCE.getOrchestrator_OpenAiToken();
+
+		/**
+		 * The meta object literal for the '<em><b>Open Ai Model</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__OPEN_AI_MODEL = eINSTANCE.getOrchestrator_OpenAiModel();
+
+		/**
+		 * The meta object literal for the '<em><b>Local Model</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__LOCAL_MODEL = eINSTANCE.getOrchestrator_LocalModel();
+
+		/**
+		 * The meta object literal for the '<em><b>Hybrid Model</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__HYBRID_MODEL = eINSTANCE.getOrchestrator_HybridModel();
+
+		/**
+		 * The meta object literal for the '<em><b>Offline Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__OFFLINE_MODE = eINSTANCE.getOrchestrator_OfflineMode();
 
 		/**
 		 * The meta object literal for the '<em><b>Remote Model</b></em>' attribute feature.

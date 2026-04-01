@@ -327,4 +327,115 @@ public interface Orchestrator extends EObject {
 	 */
 	void setRemoteModel(String value);
 
+	/**
+	 * Returns the value of the '<em><b>Open Ai Token</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Open Ai Token</em>' attribute.
+	 * @see #setOpenAiToken(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_OpenAiToken()
+	 * @model
+	 * @generated
+	 */
+	String getOpenAiToken();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiToken <em>Open Ai Token</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Open Ai Token</em>' attribute.
+	 * @see #getOpenAiToken()
+	 * @generated
+	 */
+	void setOpenAiToken(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Open Ai Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Open Ai Model</em>' attribute.
+	 * @see #setOpenAiModel(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_OpenAiModel()
+	 * @model
+	 * @generated
+	 */
+	String getOpenAiModel();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiModel <em>Open Ai Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Open Ai Model</em>' attribute.
+	 * @see #getOpenAiModel()
+	 * @generated
+	 */
+	void setOpenAiModel(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Local Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Local Model</em>' attribute.
+	 * @see #setLocalModel(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_LocalModel()
+	 * @model
+	 * @generated
+	 */
+	String getLocalModel();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getLocalModel <em>Local Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Local Model</em>' attribute.
+	 * @see #getLocalModel()
+	 * @generated
+	 */
+	void setLocalModel(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Hybrid Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Hybrid Model</em>' attribute.
+	 * @see #setHybridModel(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_HybridModel()
+	 * @model
+	 * @generated
+	 */
+	String getHybridModel();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getHybridModel <em>Hybrid Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Hybrid Model</em>' attribute.
+	 * @see #getHybridModel()
+	 * @generated
+	 */
+	void setHybridModel(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Offline Mode</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Offline Mode</em>' attribute.
+	 * @see #setOfflineMode(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_OfflineMode()
+	 * @model default="false"
+	 * @generated
+	 */
+	boolean isOfflineMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isOfflineMode <em>Offline Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Offline Mode</em>' attribute.
+	 * @see #isOfflineMode()
+	 * @generated
+	 */
+	void setOfflineMode(boolean value);
+
 } // Orchestrator
