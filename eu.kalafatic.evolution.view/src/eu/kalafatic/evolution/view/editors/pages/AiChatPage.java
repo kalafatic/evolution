@@ -287,18 +287,18 @@ public class AiChatPage extends Composite {
                 }
             }
         });
-        Button connectionButton = SWTFactory.createButton(groupMode, "Test Connection");
+        Button connectionButton = SWTFactory.createButton(groupMode, "Test Connection", 120);
         connectionButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) { 
 		if (orchestrator != null && (orchestrator.getAiMode() == AiMode.REMOTE || orchestrator.getAiMode() == AiMode.HYBRID)) {
-			testAiConnection();
+			testAiConnectionRemote();
 		} else {
 			int selectionIndex = aiRemoteCombo.getSelectionIndex();
 			if (selectionIndex >= 0) {
 					String providerName = aiRemoteCombo.getItem(selectionIndex);
 					ProviderConfig config = AiProviders.PROVIDERS.get(providerName);
 					if (config != null) {
-						testMcpConnection(config.getUrl());
+						testAiConnection(config.getUrl());
 					}
 				} else {
 					MessageBox messageBox = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);
@@ -767,7 +767,7 @@ public class AiChatPage extends Composite {
         adapter.setAutoActivationCharacters(new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' });
     }
 
-    private void testAiConnection() {
+    private void testAiConnectionRemote() {
         if (orchestrator == null) return;
 
         new Thread(() -> {
@@ -775,6 +775,7 @@ public class AiChatPage extends Composite {
                 LlmRouter router = new LlmRouter();
                 float temp = 0.7f;
                 if (orchestrator.getLlm() != null) temp = orchestrator.getLlm().getTemperature();
+                                
                 String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
 
                 String response = router.testConnection(orchestrator, temp, proxyUrl);
@@ -830,7 +831,7 @@ public class AiChatPage extends Composite {
         appendStyledText("\n" + log, color, style);
     }
     
-    private void testMcpConnection(String url ) {
+    private void testAiConnection(String url ) {
        
         if (url == null || url.isEmpty()) {
             MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);

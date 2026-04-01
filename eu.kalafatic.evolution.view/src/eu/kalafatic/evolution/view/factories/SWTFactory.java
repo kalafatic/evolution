@@ -29,7 +29,7 @@ public class SWTFactory {
 
 	public static Label createLabel(Composite parent, String text) {
 		GridData gd = new GridData();
-		gd.widthHint = 100;
+		gd.widthHint = 120;
 		Label label = new Label(parent, SWT.NONE);
 		label.setLayoutData(gd);
 		label.setText(text);
@@ -37,13 +37,16 @@ public class SWTFactory {
 	}
 	
 	
-	public static Button createButton(Composite parent, String text) {
+	public static Button createButton(Composite parent, String text) {		
+		return createButton( parent,  text, 100) ;
+	}
+	
+	public static Button createButton(Composite parent, String text, int widthHint) {
 		GridData gd = new GridData();
-		gd.widthHint = 100;
+		gd.widthHint = widthHint;
 		Button btn = new Button(parent, SWT.PUSH);
 		btn.setLayoutData(gd);
-		btn.setText(text);
-		
+		btn.setText(text);		
 		return btn;
 	}
 
