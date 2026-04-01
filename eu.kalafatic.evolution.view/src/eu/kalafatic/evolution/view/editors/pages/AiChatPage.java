@@ -290,23 +290,14 @@ public class AiChatPage extends Composite {
         Button connectionButton = SWTFactory.createButton(groupMode, "Test Connection", 120);
         connectionButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) { 
-		if (orchestrator != null && (orchestrator.getAiMode() == AiMode.REMOTE || orchestrator.getAiMode() == AiMode.HYBRID)) {
-			testAiConnectionRemote();
-		} else {
-			int selectionIndex = aiRemoteCombo.getSelectionIndex();
-			if (selectionIndex >= 0) {
-					String providerName = aiRemoteCombo.getItem(selectionIndex);
-					ProviderConfig config = AiProviders.PROVIDERS.get(providerName);
-					if (config != null) {
-						testAiConnection(config.getUrl());
-					}
-				} else {
-					MessageBox messageBox = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);
-					messageBox.setText("Warning");
-					messageBox.setMessage("Please select a remote provider or switch to Remote AI mode.");
-					messageBox.open();
-			}
-            	}
+                if (orchestrator != null) {
+                    testAiConnectionRemote();
+                } else {
+                    MessageBox messageBox = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);
+                    messageBox.setText("Warning");
+                    messageBox.setMessage("Orchestrator not loaded.");
+                    messageBox.open();
+                }
             }
         });
 
@@ -440,6 +431,12 @@ public class AiChatPage extends Composite {
         if (request.isEmpty()) return;
 
         if (orchestrator != null) {
+            if (orchestrator.getAiChat() == null) {
+                orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+            }
+            if (orchestrator.getLlm() == null) {
+                orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
+            }
             NeuronService.getInstance().train(orchestrator, request);
             editor.setDirty(true);
             if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) {
@@ -533,6 +530,12 @@ public class AiChatPage extends Composite {
         final String finalRequest = request;
 
         if (orchestrator != null) {
+            if (orchestrator.getAiChat() == null) {
+                orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+            }
+            if (orchestrator.getLlm() == null) {
+                orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
+            }
             if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) {
                 orchestrator.setId("selfdev-" + System.currentTimeMillis());
             }
@@ -772,6 +775,17 @@ public class AiChatPage extends Composite {
 
         new Thread(() -> {
             try {
+                if (orchestrator.getAiChat() == null) {
+                    Display.getDefault().syncExec(() -> {
+                        orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+                    });
+                }
+                if (orchestrator.getLlm() == null) {
+                    Display.getDefault().syncExec(() -> {
+                        orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
+                    });
+                }
+
                 LlmRouter router = new LlmRouter();
                 float temp = 0.7f;
                 if (orchestrator.getLlm() != null) temp = orchestrator.getLlm().getTemperature();
@@ -831,37 +845,5 @@ public class AiChatPage extends Composite {
         appendStyledText("\n" + log, color, style);
     }
     
-    private void testAiConnection(String url ) {
-       
-        if (url == null || url.isEmpty()) {
-            MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
-            mb.setText("Error");
-            mb.setMessage("MCP Server URL cannot be empty.");
-            mb.open();
-            return;
-        }
-
-        new Thread(() -> {
-            try {
-                McpClient client = new McpClient(url);
-                String response = client.initialize();
-                Display.getDefault().asyncExec(() -> {
-                    if (isDisposed()) return;
-                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-                    mb.setText("Success");
-                    mb.setMessage("Connected to MCP server successfully.\n" + response);
-                    mb.open();
-                });
-            } catch (Exception ex) {
-                Display.getDefault().asyncExec(() -> {
-                    if (isDisposed()) return;
-                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
-                    mb.setText("Connection Failed");
-                    mb.setMessage("Error connecting to MCP server: " + ex.getMessage());
-                    mb.open();
-                });
-            }
-        }).start();
-    }
 
 }

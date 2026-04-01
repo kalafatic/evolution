@@ -17,6 +17,7 @@ import eu.kalafatic.evolution.controller.manager.*;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
@@ -471,38 +472,55 @@ public class PropertiesPage extends ScrolledComposite {
 		isUpdating = true;
 		orchestrator.setId(orchIdText.getText());
 		orchestrator.setName(orchNameText.getText());
-		if (orchestrator.getLlm() != null) {
-			orchestrator.getLlm().setModel(llmModelText.getText());
-			try {
-				orchestrator.getLlm().setTemperature(Float.parseFloat(llmTempText.getText()));
-			} catch (NumberFormatException e) {
-			}
+
+		if (orchestrator.getLlm() == null) {
+			orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
 		}
-		if (orchestrator.getOllama() != null) {
-			orchestrator.getOllama().setUrl(ollamaUrlText.getText());
-			orchestrator.getOllama().setModel(ollamaModelText.getText());
-			orchestrator.getOllama().setPath(ollamaPathText.getText());
+		orchestrator.getLlm().setModel(llmModelText.getText());
+		try {
+			orchestrator.getLlm().setTemperature(Float.parseFloat(llmTempText.getText()));
+		} catch (NumberFormatException e) {
 		}
-		if (orchestrator.getGit() != null) {
-			orchestrator.getGit().setRepositoryUrl(gitRepoText.getText());
-			orchestrator.getGit().setBranch(gitBranchText.getText());
+
+		if (orchestrator.getOllama() == null) {
+			orchestrator.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
 		}
-		if (orchestrator.getMaven() != null) {
-			orchestrator.getMaven().getGoals().clear();
-			for (String goal : mavenGoalsText.getText().replace("[", "").replace("]", "").split("[,\\s]+"))
-				if (!goal.trim().isEmpty())
-					orchestrator.getMaven().getGoals().add(goal.trim());
-			orchestrator.getMaven().getProfiles().clear();
-			for (String prof : mavenProfilesText.getText().replace("[", "").replace("]", "").split("[,\\s]+"))
-				if (!prof.trim().isEmpty())
-					orchestrator.getMaven().getProfiles().add(prof.trim());
+		orchestrator.getOllama().setUrl(ollamaUrlText.getText());
+		orchestrator.getOllama().setModel(ollamaModelText.getText());
+		orchestrator.getOllama().setPath(ollamaPathText.getText());
+
+		if (orchestrator.getGit() == null) {
+			orchestrator.setGit(OrchestrationFactory.eINSTANCE.createGit());
 		}
-		if (orchestrator.getAiChat() != null)
-			orchestrator.getAiChat().setUrl(aiChatUrlText.getText());
-		if (orchestrator.getNeuronAI() != null)
-			orchestrator.getNeuronAI().setUrl(neuronAiUrlText.getText());
-		if (orchestrator.getCompiler() != null)
-			orchestrator.getCompiler().setSourceVersion(compilerSourceText.getText());
+		orchestrator.getGit().setRepositoryUrl(gitRepoText.getText());
+		orchestrator.getGit().setBranch(gitBranchText.getText());
+
+		if (orchestrator.getMaven() == null) {
+			orchestrator.setMaven(OrchestrationFactory.eINSTANCE.createMaven());
+		}
+		orchestrator.getMaven().getGoals().clear();
+		for (String goal : mavenGoalsText.getText().replace("[", "").replace("]", "").split("[,\\s]+"))
+			if (!goal.trim().isEmpty())
+				orchestrator.getMaven().getGoals().add(goal.trim());
+		orchestrator.getMaven().getProfiles().clear();
+		for (String prof : mavenProfilesText.getText().replace("[", "").replace("]", "").split("[,\\s]+"))
+			if (!prof.trim().isEmpty())
+				orchestrator.getMaven().getProfiles().add(prof.trim());
+
+		if (orchestrator.getAiChat() == null) {
+			orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+		}
+		orchestrator.getAiChat().setUrl(aiChatUrlText.getText());
+
+		if (orchestrator.getNeuronAI() == null) {
+			orchestrator.setNeuronAI(OrchestrationFactory.eINSTANCE.createNeuronAI());
+		}
+		orchestrator.getNeuronAI().setUrl(neuronAiUrlText.getText());
+
+		if (orchestrator.getCompiler() == null) {
+			orchestrator.setCompiler(OrchestrationFactory.eINSTANCE.createCompiler());
+		}
+		orchestrator.getCompiler().setSourceVersion(compilerSourceText.getText());
 
 		orchestrator.setAiMode(AiMode.get(aiModeCombo.getSelectionIndex()));	
 		orchestrator.setMcpServerUrl(mcpUrlText.getText());
