@@ -37,6 +37,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.ProgressBar;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
@@ -80,6 +81,11 @@ public class AiChatPage extends Composite {
     private Combo threadCombo;
     private Combo aiModeCombo;    
     private Combo aiRemoteCombo;
+    private Label aiRemoteLabel;
+    private Text remoteTokenText;
+    private Text remoteUrlText;
+    private Label remoteTokenLabel;
+    private Label remoteUrlLabel;
 
     // Colors and Fonts
     private Color colorUser;
@@ -214,38 +220,39 @@ public class AiChatPage extends Composite {
 
         
         
-        final Group groupMode = SWTFactory.createGroup(toolbar, "Mode", 5);
+        final Group groupMode = SWTFactory.createGroup(toolbar, "Mode", 2);
 
         createLabel(groupMode, "AI Mode:");
         aiModeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
-        GridData gd = new GridData();
-		gd.widthHint = 100;
-        aiModeCombo.setLayoutData(gd);
+        aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         
         for (AiMode mode : AiMode.values()) {
             aiModeCombo.add(mode.getName());
         }
 
-        Label remoteLabel = new Label(groupMode, SWT.NONE);
-        remoteLabel.setText("AI Remote:");
-        GridData gdRL = new GridData();
-        gdRL.widthHint = 100;
-        remoteLabel.setLayoutData(gdRL);
+        aiRemoteLabel = new Label(groupMode, SWT.NONE);
+        aiRemoteLabel.setText("AI Remote:");
+        aiRemoteLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING));
 
         aiRemoteCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
         aiRemoteCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         for (String providerName : AiProviders.PROVIDERS.keySet()) {
             aiRemoteCombo.add(providerName);
         }
-        aiRemoteCombo.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (orchestrator != null) {
-                    orchestrator.setRemoteModel(aiRemoteCombo.getText());
-                    editor.setDirty(true);
-                }
-            }
-        });
+
+        remoteTokenLabel = new Label(groupMode, SWT.NONE);
+        remoteTokenLabel.setText("Token:");
+        remoteTokenLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING));
+
+        remoteTokenText = new Text(groupMode, SWT.BORDER | SWT.PASSWORD);
+        remoteTokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        remoteUrlLabel = new Label(groupMode, SWT.NONE);
+        remoteUrlLabel.setText("API URL:");
+        remoteUrlLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING));
+
+        remoteUrlText = new Text(groupMode, SWT.BORDER);
+        remoteUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         if (orchestrator != null) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
@@ -254,37 +261,48 @@ public class AiChatPage extends Composite {
             // Set default to deepseek if not configured
             if (remoteModel == null || remoteModel.isEmpty()) {
                 remoteModel = "deepseek";
-                orchestrator.setRemoteModel(remoteModel);
             }
 
             if (remoteModel != null) {
                 int index = aiRemoteCombo.indexOf(remoteModel);
                 if (index >= 0) aiRemoteCombo.select(index);
             }
-            boolean remoteVisible = orchestrator.getAiMode() == AiMode.HYBRID || orchestrator.getAiMode() == AiMode.REMOTE;
-            remoteLabel.setVisible(remoteVisible);
+
+            remoteTokenText.setText(orchestrator.getOpenAiToken() != null ? orchestrator.getOpenAiToken() : "");
+            remoteUrlText.setText((orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null) ? orchestrator.getAiChat().getUrl() : "");
+
+            AiMode mode = orchestrator.getAiMode();
+            boolean remoteVisible = mode == AiMode.HYBRID || mode == AiMode.REMOTE;
+            aiRemoteLabel.setVisible(remoteVisible);
             aiRemoteCombo.setVisible(remoteVisible);
+            remoteTokenLabel.setVisible(remoteVisible);
+            remoteTokenText.setVisible(remoteVisible);
+            remoteUrlLabel.setVisible(remoteVisible);
+            remoteUrlText.setVisible(remoteVisible);
         } else {
             aiModeCombo.select(0);
-            remoteLabel.setVisible(false);
+            aiRemoteLabel.setVisible(false);
             aiRemoteCombo.setVisible(false);
+            remoteTokenLabel.setVisible(false);
+            remoteTokenText.setVisible(false);
+            remoteUrlLabel.setVisible(false);
+            remoteUrlText.setVisible(false);
         }
 
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (orchestrator != null) {
-                	AiMode aiMode = AiMode.get(aiModeCombo.getSelectionIndex());
-                    orchestrator.setAiMode(aiMode);
-                    editor.setDirty(true);
-                    updateStatusInfo();
-                    
-                    boolean remoteVisible = aiMode == AiMode.HYBRID || aiMode == AiMode.REMOTE;
-                    remoteLabel.setVisible(remoteVisible);
-                    aiRemoteCombo.setVisible(remoteVisible);
-                    updateModeDisplay();
-                    groupMode.layout(true, true);
-                }
+                AiMode aiMode = AiMode.get(aiModeCombo.getSelectionIndex());
+                boolean remoteVisible = aiMode == AiMode.HYBRID || aiMode == AiMode.REMOTE;
+                aiRemoteLabel.setVisible(remoteVisible);
+                aiRemoteCombo.setVisible(remoteVisible);
+                remoteTokenLabel.setVisible(remoteVisible);
+                remoteTokenText.setVisible(remoteVisible);
+                remoteUrlLabel.setVisible(remoteVisible);
+                remoteUrlText.setVisible(remoteVisible);
+                groupMode.layout(true, true);
+                toolbar.layout(true, true);
+                toolbar.getParent().layout(true, true);
             }
         });
         Button connectionButton = SWTFactory.createButton(groupMode, "Test Connection", 120);
@@ -655,6 +673,24 @@ public class AiChatPage extends Composite {
         this.ollamaService = null;
         if (orchestrator != null && aiModeCombo != null && !aiModeCombo.isDisposed()) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
+
+            String remoteModel = orchestrator.getRemoteModel();
+            if (remoteModel != null) {
+                int index = aiRemoteCombo.indexOf(remoteModel);
+                if (index >= 0) aiRemoteCombo.select(index);
+            }
+
+            remoteTokenText.setText(orchestrator.getOpenAiToken() != null ? orchestrator.getOpenAiToken() : "");
+            remoteUrlText.setText((orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null) ? orchestrator.getAiChat().getUrl() : "");
+
+            AiMode mode = orchestrator.getAiMode();
+            boolean remoteVisible = mode == AiMode.HYBRID || mode == AiMode.REMOTE;
+            aiRemoteLabel.setVisible(remoteVisible);
+            aiRemoteCombo.setVisible(remoteVisible);
+            remoteTokenLabel.setVisible(remoteVisible);
+            remoteTokenText.setVisible(remoteVisible);
+            remoteUrlLabel.setVisible(remoteVisible);
+            remoteUrlText.setVisible(remoteVisible);
         }
         updateStatusInfo();
         updateModeDisplay();
@@ -773,17 +809,30 @@ public class AiChatPage extends Composite {
     private void testAiConnectionRemote() {
         if (orchestrator == null) return;
 
+        // Get values from UI first
+        final int modeIndex = aiModeCombo.getSelectionIndex();
+        final String remoteModel = aiRemoteCombo.getText();
+        final String token = remoteTokenText.getText();
+        final String apiUrl = remoteUrlText.getText();
+
         new Thread(() -> {
             try {
-                if (orchestrator.getAiChat() == null) {
-                    Display.getDefault().syncExec(() -> {
-                        orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
-                    });
-                }
-                if (orchestrator.getLlm() == null) {
-                    Display.getDefault().syncExec(() -> {
-                        orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
-                    });
+                // Create a temporary orchestrator for testing to avoid side effects
+                Orchestrator tempOrch = OrchestrationFactory.eINSTANCE.createOrchestrator();
+                tempOrch.setAiMode(AiMode.get(modeIndex));
+                tempOrch.setRemoteModel(remoteModel);
+                tempOrch.setOpenAiToken(token);
+                tempOrch.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+                tempOrch.getAiChat().setUrl(apiUrl);
+                tempOrch.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
+
+                // Inherit hybrid/local models if needed by testConnection
+                tempOrch.setHybridModel(orchestrator.getHybridModel());
+                tempOrch.setLocalModel(orchestrator.getLocalModel());
+                if (orchestrator.getOllama() != null) {
+                    tempOrch.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
+                    tempOrch.getOllama().setUrl(orchestrator.getOllama().getUrl());
+                    tempOrch.getOllama().setModel(orchestrator.getOllama().getModel());
                 }
 
                 LlmRouter router = new LlmRouter();
@@ -792,13 +841,30 @@ public class AiChatPage extends Composite {
                                 
                 String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
 
-                String response = router.testConnection(orchestrator, temp, proxyUrl);
+                String response = router.testConnection(tempOrch, temp, proxyUrl);
 
                 Display.getDefault().asyncExec(() -> {
                     if (isDisposed()) return;
+
+                    // On success, sync to real model
+                    orchestrator.setAiMode(AiMode.get(modeIndex));
+                    orchestrator.setRemoteModel(remoteModel);
+                    orchestrator.setOpenAiToken(token);
+                    if (orchestrator.getAiChat() == null) {
+                        orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+                    }
+                    orchestrator.getAiChat().setUrl(apiUrl);
+                    if (orchestrator.getLlm() == null) {
+                        orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
+                    }
+
+                    editor.setDirty(true);
+                    updateModeDisplay();
+                    updateStatusInfo();
+
                     MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
                     mb.setText("AI Connection Success");
-                    mb.setMessage("Connected to AI provider successfully.\nResponse: " + response);
+                    mb.setMessage("Connected to AI provider successfully and settings saved.\nResponse: " + response);
                     mb.open();
                 });
             } catch (Exception ex) {
@@ -806,7 +872,7 @@ public class AiChatPage extends Composite {
                     if (isDisposed()) return;
                     MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
                     mb.setText("AI Connection Failed");
-                    mb.setMessage("Error connecting to AI provider: " + ex.getMessage());
+                    mb.setMessage("Error connecting to AI provider (settings NOT saved): " + ex.getMessage());
                     mb.open();
                 });
             }

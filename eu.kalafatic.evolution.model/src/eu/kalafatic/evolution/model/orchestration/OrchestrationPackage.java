@@ -2913,6 +2913,22 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute TASK__DESCRIPTION = eINSTANCE.getTask_Description();
 
 		/**
+		 * The meta object literal for the '<em><b>Priority</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__PRIORITY = eINSTANCE.getTask_Priority();
+
+		/**
+		 * The meta object literal for the '<em><b>Result Summary</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__RESULT_SUMMARY = eINSTANCE.getTask_ResultSummary();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
