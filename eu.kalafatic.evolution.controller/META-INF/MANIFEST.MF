@@ -27,6 +27,7 @@ Export-Package: eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.orchestration,
  eu.kalafatic.evolution.controller.orchestration.llm,
  eu.kalafatic.evolution.controller.orchestration.mcp,
+ eu.kalafatic.evolution.controller.orchestration.selfdev,
  eu.kalafatic.evolution.controller.orchestration.util,
  eu.kalafatic.evolution.controller.providers,
  org.json
