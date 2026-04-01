@@ -34,7 +34,8 @@ public class PropertiesPage extends ScrolledComposite {
 			ollamaVersionText;
 	private Button offlineBtn;
 	private Combo aiModeCombo;
-	private Text localModelText, hybridModelText, remoteModelText;
+	private Combo remoteModelCombo;
+	private Text localModelText, hybridModelText;
 	private Text mcpUrlText, openAiTokenText, openAiModelText;
 	private Table agentsTable;
 	private Text gitRepoText, gitBranchText, mavenGoalsText, mavenProfilesText, aiChatUrlText, neuronAiUrlText,
@@ -239,7 +240,6 @@ public class PropertiesPage extends ScrolledComposite {
 			public void widgetSelected(SelectionEvent e) {
 				if (orchestrator != null && !isUpdating) {
 					updateModelFromFields();
-					updateModeDisplay();
 					editor.setDirty(true);
 				}
 			}
@@ -274,9 +274,26 @@ public class PropertiesPage extends ScrolledComposite {
 		hybridModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		SWTFactory.createEditButton(aiModelGroup, hybridModelText);
 		SWTFactory.createLabel(aiModelGroup, "Remote Model:");
-		remoteModelText = new Text(aiModelGroup, SWT.BORDER);
-		remoteModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		SWTFactory.createEditButton(aiModelGroup, remoteModelText);
+		remoteModelCombo = new Combo(aiModelGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
+		remoteModelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
+		for (String providerName : AiProviders.PROVIDERS.keySet()) {
+			remoteModelCombo.add(providerName);
+		}
+		remoteModelCombo.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (orchestrator != null && !isUpdating) {
+					String provider = remoteModelCombo.getText();
+					ProviderConfig config = AiProviders.PROVIDERS.get(provider);
+					if (config != null) {
+						String url = config.getEndpointUrl();
+						aiChatUrlText.setText(url != null ? url : "");
+					}
+					updateModelFromFields();
+					editor.setDirty(true);
+				}
+			}
+		});
 
 		ollamaUrlDecorator = new ControlDecoration(ollamaUrlText, SWT.TOP | SWT.LEFT);
 		ollamaUrlDecorator.setImage(
@@ -305,7 +322,7 @@ public class PropertiesPage extends ScrolledComposite {
 		Text[] texts = { orchIdText, orchNameText, llmModelText, llmTempText, ollamaUrlText, ollamaModelText,
 				ollamaPathText, gitRepoText, gitBranchText, mavenGoalsText, mavenProfilesText, aiChatUrlText,
 				neuronAiUrlText, compilerSourceText, mcpUrlText, openAiTokenText, openAiModelText, localModelText,
-				hybridModelText, remoteModelText };
+				hybridModelText };
 		for (Text t : texts)
 			t.addModifyListener(ml);
 		offlineBtn.addSelectionListener(new SelectionAdapter() {
@@ -431,7 +448,11 @@ public class PropertiesPage extends ScrolledComposite {
 		openAiModelText.setText(orchestrator.getOpenAiModel() != null ? orchestrator.getOpenAiModel() : "");
 		localModelText.setText(orchestrator.getLocalModel() != null ? orchestrator.getLocalModel() : "");
 		hybridModelText.setText(orchestrator.getHybridModel() != null ? orchestrator.getHybridModel() : "");
-		remoteModelText.setText(orchestrator.getRemoteModel() != null ? orchestrator.getRemoteModel() : "");
+		if (orchestrator.getRemoteModel() != null) {
+			int index = remoteModelCombo.indexOf(orchestrator.getRemoteModel());
+			if (index >= 0)
+				remoteModelCombo.select(index);
+		}
 		offlineBtn.setSelection(orchestrator.isOfflineMode());
 
 		isUpdating = false;
@@ -528,11 +549,12 @@ public class PropertiesPage extends ScrolledComposite {
 		orchestrator.setOpenAiModel(openAiModelText.getText());
 		orchestrator.setLocalModel(localModelText.getText());
 		orchestrator.setHybridModel(hybridModelText.getText());
-		orchestrator.setRemoteModel(remoteModelText.getText());
+		orchestrator.setRemoteModel(remoteModelCombo.getText());
 		orchestrator.setOfflineMode(offlineBtn.getSelection());
 
 		ollamaService = new OllamaService(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel());
 		isUpdating = false;
+		updateModeDisplay();
 	}
 
 	public void setOrchestrator(Orchestrator orchestrator) {
