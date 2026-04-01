@@ -60,4 +60,40 @@ public class LlmRouter {
             return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
         }
     }
+
+    /**
+     * Tests the connection to the appropriate LLM provider.
+     *
+     * @param orchestrator The orchestrator model
+     * @param temperature The temperature setting
+     * @param proxyUrl Optional proxy URL
+     * @return The LLM response
+     * @throws Exception If an error occurs
+     */
+    public String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl) throws Exception {
+        AiMode mode = orchestrator.getAiMode();
+        if (mode == AiMode.REMOTE) {
+            String remoteModel = orchestrator.getRemoteModel();
+
+            // Default to deepseek if none selected
+            if (remoteModel == null || remoteModel.isEmpty()) {
+                remoteModel = "deepseek";
+                orchestrator.setRemoteModel(remoteModel);
+            }
+
+            ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
+
+            if (config != null && "google".equals(config.getFormat())) {
+                return geminiProvider.testConnection(orchestrator, temperature, proxyUrl);
+            }
+
+            // Default to common calling (OpenAI format)
+            return openAiProvider.testConnection(orchestrator, temperature, proxyUrl);
+
+        } else if (mode == AiMode.HYBRID) {
+            return ollamaProvider.testConnection(orchestrator, temperature, proxyUrl);
+        } else {
+            return ollamaProvider.testConnection(orchestrator, temperature, proxyUrl);
+        }
+    }
 }

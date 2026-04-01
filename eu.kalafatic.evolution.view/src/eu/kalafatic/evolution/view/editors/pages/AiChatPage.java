@@ -253,31 +253,22 @@ public class AiChatPage extends Composite {
         Button connectionButton = SWTFactory.createButton(groupMode, "Test Connection");
         connectionButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) { 
-            	int selectionIndex = aiRemoteCombo.getSelectionIndex();
-            	if (selectionIndex >= 0) {
+		if (orchestrator != null && (orchestrator.getAiMode() == AiMode.REMOTE || orchestrator.getAiMode() == AiMode.HYBRID)) {
+			testAiConnection();
+		} else {
+			int selectionIndex = aiRemoteCombo.getSelectionIndex();
+			if (selectionIndex >= 0) {
 					String providerName = aiRemoteCombo.getItem(selectionIndex);
 					ProviderConfig config = AiProviders.PROVIDERS.get(providerName);
 					if (config != null) {
-						
-						testConnection(config.getUrl());
-						
-						
-						McpClient client = new McpClient(config.getTestEndpoint());
-						try {
-							boolean success = client.testConnection();
-							MessageBox messageBox = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-							messageBox.setText("Connection Test");
-							messageBox.setMessage(success ? "Connection successful!" : "Connection failed.");
-							messageBox.open();
-						} catch (Exception ex) {
-							MessageBox messageBox = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
-							messageBox.setText("Connection Test");
-							messageBox.setMessage("Error testing connection: " + ex.getMessage());
-							messageBox.open();
-						}
+						testMcpConnection(config.getUrl());
 					}
 				} else {
-					MessageBox messageBox = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);            	
+					MessageBox messageBox = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);
+					messageBox.setText("Warning");
+					messageBox.setMessage("Please select a remote provider or switch to Remote AI mode.");
+					messageBox.open();
+			}
             	}
             }
         });
@@ -650,6 +641,37 @@ public class AiChatPage extends Composite {
         adapter.setAutoActivationCharacters(new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' });
     }
 
+    private void testAiConnection() {
+        if (orchestrator == null) return;
+
+        new Thread(() -> {
+            try {
+                LlmRouter router = new LlmRouter();
+                float temp = 0.7f;
+                if (orchestrator.getLlm() != null) temp = orchestrator.getLlm().getTemperature();
+                String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
+
+                String response = router.testConnection(orchestrator, temp, proxyUrl);
+
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed()) return;
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                    mb.setText("AI Connection Success");
+                    mb.setMessage("Connected to AI provider successfully.\nResponse: " + response);
+                    mb.open();
+                });
+            } catch (Exception ex) {
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed()) return;
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
+                    mb.setText("AI Connection Failed");
+                    mb.setMessage("Error connecting to AI provider: " + ex.getMessage());
+                    mb.open();
+                });
+            }
+        }).start();
+    }
+
     private void processLogEntry(String log) {
         if (log == null || log.isEmpty()) return;
 
@@ -682,9 +704,9 @@ public class AiChatPage extends Composite {
         appendStyledText("\n" + log, color, style);
     }
     
-    private void testConnection(String url ) {
+    private void testMcpConnection(String url ) {
        
-        if (url.isEmpty()) {
+        if (url == null || url.isEmpty()) {
             MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
             mb.setText("Error");
             mb.setMessage("MCP Server URL cannot be empty.");

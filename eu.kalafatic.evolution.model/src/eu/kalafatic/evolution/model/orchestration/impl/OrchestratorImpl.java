@@ -248,6 +248,106 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected String mcpServerUrl = MCP_SERVER_URL_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getOpenAiToken() <em>Open Ai Token</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getOpenAiToken()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String OPEN_AI_TOKEN_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getOpenAiToken() <em>Open Ai Token</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getOpenAiToken()
+	 * @generated
+	 * @ordered
+	 */
+	protected String openAiToken = OPEN_AI_TOKEN_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getOpenAiModel() <em>Open Ai Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getOpenAiModel()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String OPEN_AI_MODEL_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getOpenAiModel() <em>Open Ai Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getOpenAiModel()
+	 * @generated
+	 * @ordered
+	 */
+	protected String openAiModel = OPEN_AI_MODEL_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getLocalModel() <em>Local Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getLocalModel()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String LOCAL_MODEL_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getLocalModel() <em>Local Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getLocalModel()
+	 * @generated
+	 * @ordered
+	 */
+	protected String localModel = LOCAL_MODEL_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getHybridModel() <em>Hybrid Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getHybridModel()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String HYBRID_MODEL_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getHybridModel() <em>Hybrid Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getHybridModel()
+	 * @generated
+	 * @ordered
+	 */
+	protected String hybridModel = HYBRID_MODEL_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isOfflineMode() <em>Offline Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isOfflineMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean OFFLINE_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isOfflineMode() <em>Offline Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isOfflineMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean offlineMode = OFFLINE_MODE_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -728,6 +828,121 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
+	public String getOpenAiToken() {
+		return openAiToken;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setOpenAiToken(String newOpenAiToken) {
+		String oldOpenAiToken = openAiToken;
+		openAiToken = newOpenAiToken;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN, oldOpenAiToken, openAiToken));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getOpenAiModel() {
+		return openAiModel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setOpenAiModel(String newOpenAiModel) {
+		String oldOpenAiModel = openAiModel;
+		openAiModel = newOpenAiModel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL, oldOpenAiModel, openAiModel));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getLocalModel() {
+		return localModel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setLocalModel(String newLocalModel) {
+		String oldLocalModel = localModel;
+		localModel = newLocalModel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL, oldLocalModel, localModel));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getHybridModel() {
+		return hybridModel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setHybridModel(String newHybridModel) {
+		String oldHybridModel = hybridModel;
+		hybridModel = newHybridModel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL, oldHybridModel, hybridModel));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isOfflineMode() {
+		return offlineMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setOfflineMode(boolean newOfflineMode) {
+		boolean oldOfflineMode = offlineMode;
+		offlineMode = newOfflineMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE, oldOfflineMode, offlineMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
@@ -788,6 +1003,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getAiMode();
 			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
 				return getMcpServerUrl();
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
+				return getOpenAiToken();
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
+				return getOpenAiModel();
+			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
+				return getLocalModel();
+			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
+				return getHybridModel();
+			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
+				return isOfflineMode();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -845,6 +1070,21 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
 				setMcpServerUrl((String)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
+				setOpenAiToken((String)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
+				setOpenAiModel((String)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
+				setLocalModel((String)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
+				setHybridModel((String)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
+				setOfflineMode((Boolean)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -899,6 +1139,21 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
 				setMcpServerUrl(MCP_SERVER_URL_EDEFAULT);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
+				setOpenAiToken(OPEN_AI_TOKEN_EDEFAULT);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
+				setOpenAiModel(OPEN_AI_MODEL_EDEFAULT);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
+				setLocalModel(LOCAL_MODEL_EDEFAULT);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
+				setHybridModel(HYBRID_MODEL_EDEFAULT);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
+				setOfflineMode(OFFLINE_MODE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -939,6 +1194,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return aiMode != AI_MODE_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
 				return MCP_SERVER_URL_EDEFAULT == null ? mcpServerUrl != null : !MCP_SERVER_URL_EDEFAULT.equals(mcpServerUrl);
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
+				return OPEN_AI_TOKEN_EDEFAULT == null ? openAiToken != null : !OPEN_AI_TOKEN_EDEFAULT.equals(openAiToken);
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
+				return OPEN_AI_MODEL_EDEFAULT == null ? openAiModel != null : !OPEN_AI_MODEL_EDEFAULT.equals(openAiModel);
+			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
+				return LOCAL_MODEL_EDEFAULT == null ? localModel != null : !LOCAL_MODEL_EDEFAULT.equals(localModel);
+			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
+				return HYBRID_MODEL_EDEFAULT == null ? hybridModel != null : !HYBRID_MODEL_EDEFAULT.equals(hybridModel);
+			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
+				return offlineMode != OFFLINE_MODE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -963,6 +1228,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		result.append(aiMode);
 		result.append(", mcpServerUrl: ");
 		result.append(mcpServerUrl);
+		result.append(", openAiToken: ");
+		result.append(openAiToken);
+		result.append(", openAiModel: ");
+		result.append(openAiModel);
+		result.append(", localModel: ");
+		result.append(localModel);
+		result.append(", hybridModel: ");
+		result.append(hybridModel);
+		result.append(", offlineMode: ");
+		result.append(offlineMode);
 		result.append(')');
 		return result.toString();
 	}

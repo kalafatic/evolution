@@ -17,4 +17,17 @@ public interface ILlmProvider {
      * @throws Exception If an error occurs
      */
     String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception;
+
+    /**
+     * Tests the connection to the LLM.
+     *
+     * @param orchestrator The orchestrator model
+     * @param temperature The temperature setting
+     * @param proxyUrl Optional proxy URL
+     * @return The LLM response or "Success"
+     * @throws Exception If an error occurs
+     */
+    default String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl) throws Exception {
+        return sendRequest(orchestrator, "Ping", temperature, proxyUrl);
+    }
 }
