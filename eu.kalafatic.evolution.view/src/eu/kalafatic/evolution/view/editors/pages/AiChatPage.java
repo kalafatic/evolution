@@ -47,6 +47,9 @@ import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevSupervisor;
+import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -172,6 +175,15 @@ public class AiChatPage extends Composite {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 createNewThread();
+            }
+        });
+
+        Button selfDevButton = SWTFactory.createButton(group, "🚀 Self-Dev");
+        selfDevButton.setToolTipText("Start an autonomous self-development session to improve the codebase.");
+        selfDevButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                startSelfDevAction();
             }
         });
        
@@ -401,17 +413,7 @@ public class AiChatPage extends Composite {
         new Thread(() -> {
             try {
                 EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
-                File projectRoot = null;
-                if (editor.getEditorInput() instanceof IFileEditorInput) {
-                    projectRoot = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject().getLocation().toFile();
-                } else if (orchestrator != null && orchestrator.eResource() != null) {
-                    org.eclipse.emf.common.util.URI uri = orchestrator.eResource().getURI();
-                    if (uri.isPlatformResource()) {
-                        String path = uri.toPlatformString(true);
-                        projectRoot = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(path)).getProject().getLocation().toFile();
-                    }
-                }
-                if (projectRoot == null) projectRoot = new File(System.getProperty("java.io.tmpdir"));
+                File projectRoot = getProjectRoot();
                 TaskContext context = new TaskContext(orchestrator, projectRoot);
                 this.currentContext = context;
                 context.addApprovalListener(message -> {
@@ -474,6 +476,83 @@ public class AiChatPage extends Composite {
         responseText.setText(threads.getOrDefault(currentThread, ""));
         responseText.setStyleRanges(threadStyles.getOrDefault(currentThread, new StyleRange[0]));
         responseText.setSelection(responseText.getCharCount());
+    }
+
+    private void startSelfDevAction() {
+        String request = requestText.getText().trim();
+        if (request.isEmpty()) {
+            request = "Analyze the project and suggest improvements.";
+        }
+
+        final String finalRequest = request;
+
+        if (orchestrator != null) {
+            if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) {
+                orchestrator.setId("selfdev-" + System.currentTimeMillis());
+            }
+        }
+
+        if (!responseText.getText().isEmpty()) {
+            responseText.append("\n\n");
+        }
+        appendStyledText("User [SELF-DEV]: " + finalRequest, colorUser, SWT.BOLD);
+        appendStyledText("\n\nEvolution: Initializing Self-Development Supervisor loop...", colorEvolution, SWT.ITALIC | SWT.BOLD);
+
+        requestText.setText("");
+
+        new Thread(() -> {
+            try {
+                File projectRoot = getProjectRoot();
+                TaskContext context = new TaskContext(orchestrator, projectRoot);
+                this.currentContext = context;
+
+                context.addLogListener(log -> {
+                    Display.getDefault().asyncExec(() -> {
+                        if (!responseText.isDisposed()) {
+                            processLogEntry(log);
+                        }
+                    });
+                });
+
+                SelfDevSession session = OrchestrationFactory.eINSTANCE.createSelfDevSession();
+                session.setId("session-" + System.currentTimeMillis());
+                session.setMaxIterations(5);
+                orchestrator.setSelfDevSession(session);
+
+                SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context);
+                supervisor.startSession();
+
+                Display.getDefault().asyncExec(() -> {
+                    if (!responseText.isDisposed()) {
+                        responseText.append("\n\n");
+                        appendStyledText("Evolution: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
+                        editor.setDirty(true);
+                    }
+                });
+            } catch (Exception e) {
+                Display.getDefault().asyncExec(() -> {
+                    if (!responseText.isDisposed()) {
+                        responseText.append("\n\n");
+                        appendStyledText("Supervisor Error: " + e.getMessage(), colorError, SWT.BOLD);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private File getProjectRoot() {
+        File projectRoot = null;
+        if (editor.getEditorInput() instanceof IFileEditorInput) {
+            projectRoot = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject().getLocation().toFile();
+        } else if (orchestrator != null && orchestrator.eResource() != null) {
+            org.eclipse.emf.common.util.URI uri = orchestrator.eResource().getURI();
+            if (uri.isPlatformResource()) {
+                String path = uri.toPlatformString(true);
+                projectRoot = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(path)).getProject().getLocation().toFile();
+            }
+        }
+        if (projectRoot == null) projectRoot = new File(System.getProperty("java.io.tmpdir"));
+        return projectRoot;
     }
 
     private void saveChatToFile() {
