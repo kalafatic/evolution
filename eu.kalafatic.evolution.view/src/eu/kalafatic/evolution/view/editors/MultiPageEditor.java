@@ -41,6 +41,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private GraphPage graphPage;
     private BrowserPage browserPage;
     private AiFlowPage aiFlowPage;
+    private ApprovalPage approvalPage;
     private Orchestrator orchestrator;
     private boolean isDirty = false;
     private ResourceSet resourceSet;
@@ -71,6 +72,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 previewPage = PreviewPageFactory.createPreviewPage(this, orchestrator);
                 browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
                 aiFlowPage = AiFlowPageFactory.createAiFlowPage(this, orchestrator);
+                approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
             } else {
                 Composite placeholder = new Composite(getContainer(), SWT.NONE);
@@ -178,6 +180,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (graphPage != null) graphPage.setOrchestrator(orchestrator);
         if (browserPage != null) browserPage.setOrchestrator(orchestrator);
         if (aiFlowPage != null) aiFlowPage.setOrchestrator(orchestrator);
+        if (approvalPage != null) approvalPage.setOrchestrator(orchestrator);
     }
 
     public void reloadModel() {
