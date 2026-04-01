@@ -18,6 +18,7 @@ import org.eclipse.jface.fieldassist.IContentProposalProvider;
 import org.eclipse.jface.fieldassist.IControlContentAdapter;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.DisposeEvent;
@@ -59,7 +60,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class AiChatPage extends Composite {
+public class AiChatPage extends ScrolledComposite {
     private MultiPageEditor editor;
     private Orchestrator orchestrator;
     private StyledText requestText;
@@ -86,6 +87,7 @@ public class AiChatPage extends Composite {
     private Text remoteUrlText;
     private Label remoteTokenLabel;
     private Label remoteUrlLabel;
+    private Composite content;
 
     // Colors and Fonts
     private Color colorUser;
@@ -107,8 +109,10 @@ public class AiChatPage extends Composite {
 
 
     public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-        super(parent, SWT.NONE);
+        super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
         this.editor = editor;
+        this.setExpandHorizontal(true);
+        this.setExpandVertical(true);
         this.orchestrator = orchestrator;
         initResources();
         createControl();
@@ -152,23 +156,18 @@ public class AiChatPage extends Composite {
     }
 
     private void createControl() {
-        GridLayout layout = new GridLayout();
-        this.setLayout(layout);
-        layout.numColumns = 1;
+        content = new Composite(this, SWT.NONE);
+        content.setLayout(new GridLayout(1, false));
+        this.setContent(content);
 
-        modeIndicatorLabel = new Label(this, SWT.CENTER);
+        modeIndicatorLabel = new Label(content, SWT.CENTER);
         modeIndicatorLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         modeIndicatorLabel.setFont(bannerFont);
         modeIndicatorLabel.setText("INITIALIZING...");
 
-        Composite toolbar = new Composite(this, SWT.NONE);
-        toolbar.setLayout(new GridLayout(1, false));
-        toolbar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        
-        Group group = SWTFactory.createGroup(toolbar, "Threads", 5);
+        Group chatMgmtGroup = SWTFactory.createGroup(content, "Chat Management", 5);
 
-       
-        Button cleanButton = SWTFactory.createButton(group, "Clean");
+        Button cleanButton = SWTFactory.createButton(chatMgmtGroup, "Clean");
         cleanButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -178,7 +177,7 @@ public class AiChatPage extends Composite {
             }
         });
         
-        Button saveButton =  SWTFactory.createButton(group, "Save");
+        Button saveButton =  SWTFactory.createButton(chatMgmtGroup, "Save");
         saveButton.setText("Save");
         saveButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -187,8 +186,8 @@ public class AiChatPage extends Composite {
             }
         });
         
-        createLabel(group, "Select Thread:");
-        threadCombo = new Combo(group, SWT.READ_ONLY);
+        createLabel(chatMgmtGroup, "Select Thread:");
+        threadCombo = new Combo(chatMgmtGroup, SWT.READ_ONLY);
         threadCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         threadCombo.add(currentThread);
         threadCombo.select(0);
@@ -200,7 +199,7 @@ public class AiChatPage extends Composite {
             }
         });
 
-        Button newThreadButton =  SWTFactory.createButton(group, "New Thread");
+        Button newThreadButton =  SWTFactory.createButton(chatMgmtGroup, "New Thread");
         newThreadButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -208,7 +207,7 @@ public class AiChatPage extends Composite {
             }
         });
 
-        Button selfDevButton = SWTFactory.createButton(group, "🚀 Self-Dev");
+        Button selfDevButton = SWTFactory.createButton(chatMgmtGroup, "🚀 Self-Dev");
         selfDevButton.setToolTipText("Start an autonomous self-development session to improve the codebase.");
         selfDevButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -219,8 +218,7 @@ public class AiChatPage extends Composite {
        
 
         
-        
-        final Group groupMode = SWTFactory.createGroup(toolbar, "Mode", 2);
+        final Group groupMode = SWTFactory.createGroup(content, "AI Settings", 2);
 
         createLabel(groupMode, "AI Mode:");
         aiModeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
@@ -324,14 +322,14 @@ public class AiChatPage extends Composite {
             }
         });
 
-        createLabel(this, "Request:");
-        requestText = new StyledText(this, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        Group inputGroup = SWTFactory.createGroup(content, "Message Input", 1);
+        requestText = new StyledText(inputGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         setupContextAssist();
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
         requestGridData.heightHint = 100;
         requestText.setLayoutData(requestGridData);
         
-        Button sendButton = SWTFactory.createButton(this, "Send");
+        Button sendButton = SWTFactory.createButton(inputGroup, "Send");
         
         sendButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) { sendAction(); }
@@ -347,38 +345,35 @@ public class AiChatPage extends Composite {
                 }
             }
         });
-        createLabel(this, "Response:");
-        responseText = new StyledText(this, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY | SWT.WRAP);
+
+        Group historyGroup = SWTFactory.createGroup(content, "Conversation History", 1);
+        responseText = new StyledText(historyGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY | SWT.WRAP);
         GridData responseGridData = new GridData(GridData.FILL_BOTH);
-        responseGridData.heightHint = 200;
+        responseGridData.heightHint = 250;
         responseText.setLayoutData(responseGridData);
         responseText.setEditable(false);
         responseText.setFont(chatFont);
         responseText.setMargins(10, 10, 10, 10);
 
-        Composite statusBar = new Composite(this, SWT.NONE);
-        statusBar.setLayout(new GridLayout(4, false));
-        statusBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        createLabel(statusBar, "Ollama Status:");
-        ollamaStatusLabel = new Label(statusBar, SWT.NONE);
+        Group systemStatusGroup = SWTFactory.createGroup(content, "System Status", 4);
+        createLabel(systemStatusGroup, "Ollama Status:");
+        ollamaStatusLabel = new Label(systemStatusGroup, SWT.NONE);
         ollamaStatusLabel.setText("Unknown");
         ollamaStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        createLabel(statusBar, "Model:");
-        modelStatusLabel = new Label(statusBar, SWT.NONE);
+        createLabel(systemStatusGroup, "Model:");
+        modelStatusLabel = new Label(systemStatusGroup, SWT.NONE);
         modelStatusLabel.setText("Not Configured");
         modelStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        Composite progressBox = new Composite(this, SWT.NONE);
-        progressBox.setLayout(new GridLayout(2, false));
-        progressBox.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        statusLabel = new Label(progressBox, SWT.NONE);
+
+        statusLabel = new Label(systemStatusGroup, SWT.NONE);
         statusLabel.setText("Idle");
-        statusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        progressBar = new ProgressBar(progressBox, SWT.HORIZONTAL);
-        progressBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        statusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
+        progressBar = new ProgressBar(systemStatusGroup, SWT.HORIZONTAL);
+        progressBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
         progressBar.setMinimum(0);
         progressBar.setMaximum(100);
 
-        approvalComposite = new Composite(this, SWT.NONE);
+        approvalComposite = new Composite(content, SWT.NONE);
         approvalComposite.setLayout(new GridLayout(3, false));
         approvalComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         approvalComposite.setVisible(false);
@@ -427,6 +422,13 @@ public class AiChatPage extends Composite {
 
         updateStatusInfo();
         updateModeDisplay();
+        updateScrolledContent();
+    }
+
+    private void updateScrolledContent() {
+        if (content == null || content.isDisposed()) return;
+        content.layout(true, true);
+        this.setMinSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT));
     }
 
     private void updateModeDisplay() {
@@ -457,10 +459,7 @@ public class AiChatPage extends Composite {
             remoteUrlLabel.setVisible(remoteVisible);
             remoteUrlText.setVisible(remoteVisible);
 
-            Composite toolbar = aiRemoteLabel.getParent().getParent();
-            aiRemoteLabel.getParent().layout(true, true);
-            toolbar.layout(true, true);
-            toolbar.getParent().layout(true, true);
+            updateScrolledContent();
         }
     }
 
@@ -746,14 +745,14 @@ public class AiChatPage extends Composite {
         approvalLabel.setText(message);
         approvalComposite.setVisible(true);
         ((GridData)approvalComposite.getLayoutData()).exclude = false;
-        this.layout(true, true);
+        updateScrolledContent();
     }
 
     private void hideApprovalUI() {
         if (approvalComposite.isDisposed()) return;
         approvalComposite.setVisible(false);
         ((GridData)approvalComposite.getLayoutData()).exclude = true;
-        this.layout(true, true);
+        updateScrolledContent();
     }
 
     private void appendStyledText(String text, Color color, int style) {
