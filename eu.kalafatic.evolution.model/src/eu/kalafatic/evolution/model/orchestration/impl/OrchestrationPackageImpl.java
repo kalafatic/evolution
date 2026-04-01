@@ -8,9 +8,13 @@ import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
+import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
 import eu.kalafatic.evolution.model.orchestration.Git;
+import eu.kalafatic.evolution.model.orchestration.Iteration;
+import eu.kalafatic.evolution.model.orchestration.IterationStatus;
+import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
 import eu.kalafatic.evolution.model.orchestration.NetworkRule;
@@ -22,6 +26,9 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
+import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
+import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
+import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 
@@ -164,6 +171,27 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass selfDevSessionEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass iterationEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass evaluationResultEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EEnum taskStatusEEnum = null;
 
 	/**
@@ -193,6 +221,27 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EEnum aiModeEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum selfDevStatusEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum iterationStatusEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum selfDevDecisionEEnum = null;
 
 	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
@@ -362,6 +411,36 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getTask_LoopToTaskId() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(9);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTask_Priority() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(10);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTask_ResultSummary() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(11);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTask_Description() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(12);
 	}
 
 	/**
@@ -612,6 +691,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getOrchestrator_OfflineMode() {
 		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(18);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_SelfDevSession() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(19);
 	}
 
 	/**
@@ -1110,6 +1199,186 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EClass getSelfDevSession() {
+		return selfDevSessionEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSelfDevSession_Id() {
+		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSelfDevSession_StartTime() {
+		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSelfDevSession_MaxIterations() {
+		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSelfDevSession_Status() {
+		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getSelfDevSession_Iterations() {
+		return (EReference)selfDevSessionEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getIteration() {
+		return iterationEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getIteration_Id() {
+		return (EAttribute)iterationEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getIteration_BranchName() {
+		return (EAttribute)iterationEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getIteration_Tasks() {
+		return (EReference)iterationEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getIteration_EvaluationResult() {
+		return (EReference)iterationEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getIteration_Status() {
+		return (EAttribute)iterationEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getEvaluationResult() {
+		return evaluationResultEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEvaluationResult_Success() {
+		return (EAttribute)evaluationResultEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEvaluationResult_TestPassRate() {
+		return (EAttribute)evaluationResultEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEvaluationResult_CoverageChange() {
+		return (EAttribute)evaluationResultEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEvaluationResult_Errors() {
+		return (EAttribute)evaluationResultEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEvaluationResult_Decision() {
+		return (EAttribute)evaluationResultEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EEnum getTaskStatus() {
 		return taskStatusEEnum;
 	}
@@ -1160,6 +1429,36 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EEnum getSelfDevStatus() {
+		return selfDevStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getIterationStatus() {
+		return iterationStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getSelfDevDecision() {
+		return selfDevDecisionEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public OrchestrationFactory getOrchestrationFactory() {
 		return (OrchestrationFactory)getEFactoryInstance();
 	}
@@ -1194,6 +1493,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(taskEClass, TASK__FEEDBACK);
 		createEAttribute(taskEClass, TASK__APPROVAL_REQUIRED);
 		createEAttribute(taskEClass, TASK__LOOP_TO_TASK_ID);
+		createEAttribute(taskEClass, TASK__PRIORITY);
+		createEAttribute(taskEClass, TASK__RESULT_SUMMARY);
+		createEAttribute(taskEClass, TASK__DESCRIPTION);
 
 		agentEClass = createEClass(AGENT);
 		createEAttribute(agentEClass, AGENT__ID);
@@ -1222,6 +1524,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__LOCAL_MODEL);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__HYBRID_MODEL);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__OFFLINE_MODE);
+		createEReference(orchestratorEClass, ORCHESTRATOR__SELF_DEV_SESSION);
 
 		gitEClass = createEClass(GIT);
 		createEAttribute(gitEClass, GIT__REPOSITORY_URL);
@@ -1285,12 +1588,36 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		secretRuleEClass = createEClass(SECRET_RULE);
 		createEAttribute(secretRuleEClass, SECRET_RULE__ALLOWED_SECRETS);
 
+		selfDevSessionEClass = createEClass(SELF_DEV_SESSION);
+		createEAttribute(selfDevSessionEClass, SELF_DEV_SESSION__ID);
+		createEAttribute(selfDevSessionEClass, SELF_DEV_SESSION__START_TIME);
+		createEAttribute(selfDevSessionEClass, SELF_DEV_SESSION__MAX_ITERATIONS);
+		createEAttribute(selfDevSessionEClass, SELF_DEV_SESSION__STATUS);
+		createEReference(selfDevSessionEClass, SELF_DEV_SESSION__ITERATIONS);
+
+		iterationEClass = createEClass(ITERATION);
+		createEAttribute(iterationEClass, ITERATION__ID);
+		createEAttribute(iterationEClass, ITERATION__BRANCH_NAME);
+		createEReference(iterationEClass, ITERATION__TASKS);
+		createEReference(iterationEClass, ITERATION__EVALUATION_RESULT);
+		createEAttribute(iterationEClass, ITERATION__STATUS);
+
+		evaluationResultEClass = createEClass(EVALUATION_RESULT);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__SUCCESS);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__TEST_PASS_RATE);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__COVERAGE_CHANGE);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__ERRORS);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__DECISION);
+
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
 		commandStatusEEnum = createEEnum(COMMAND_STATUS);
 		executionModeEEnum = createEEnum(EXECUTION_MODE);
 		neuronTypeEEnum = createEEnum(NEURON_TYPE);
 		aiModeEEnum = createEEnum(AI_MODE);
+		selfDevStatusEEnum = createEEnum(SELF_DEV_STATUS);
+		iterationStatusEEnum = createEEnum(ITERATION_STATUS);
+		selfDevDecisionEEnum = createEEnum(SELF_DEV_DECISION);
 	}
 
 	/**
@@ -1338,6 +1665,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getTask_Feedback(), ecorePackage.getEString(), "feedback", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_ApprovalRequired(), ecorePackage.getEBoolean(), "approvalRequired", "true", 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_LoopToTaskId(), ecorePackage.getEString(), "loopToTaskId", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_Priority(), ecorePackage.getEInt(), "priority", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_ResultSummary(), ecorePackage.getEString(), "resultSummary", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_Description(), ecorePackage.getEString(), "description", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(agentEClass, Agent.class, "Agent", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getAgent_Id(), ecorePackage.getEString(), "id", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1366,6 +1696,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getOrchestrator_LocalModel(), ecorePackage.getEString(), "localModel", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_HybridModel(), ecorePackage.getEString(), "hybridModel", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_OfflineMode(), ecorePackage.getEBoolean(), "offlineMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_SelfDevSession(), this.getSelfDevSession(), null, "selfDevSession", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(gitEClass, Git.class, "Git", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getGit_RepositoryUrl(), ecorePackage.getEString(), "repositoryUrl", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1429,6 +1760,27 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEClass(secretRuleEClass, SecretRule.class, "SecretRule", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getSecretRule_AllowedSecrets(), ecorePackage.getEString(), "allowedSecrets", null, 0, -1, SecretRule.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
+		initEClass(selfDevSessionEClass, SelfDevSession.class, "SelfDevSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getSelfDevSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, SelfDevSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSelfDevSession_StartTime(), ecorePackage.getELong(), "startTime", null, 0, 1, SelfDevSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSelfDevSession_MaxIterations(), ecorePackage.getEInt(), "maxIterations", null, 0, 1, SelfDevSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSelfDevSession_Status(), this.getSelfDevStatus(), "status", null, 0, 1, SelfDevSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getSelfDevSession_Iterations(), this.getIteration(), null, "iterations", null, 0, -1, SelfDevSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(iterationEClass, Iteration.class, "Iteration", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getIteration_Id(), ecorePackage.getEString(), "id", null, 0, 1, Iteration.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getIteration_BranchName(), ecorePackage.getEString(), "branchName", null, 0, 1, Iteration.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getIteration_Tasks(), this.getTask(), null, "tasks", null, 0, -1, Iteration.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getIteration_EvaluationResult(), this.getEvaluationResult(), null, "evaluationResult", null, 0, 1, Iteration.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getIteration_Status(), this.getIterationStatus(), "status", null, 0, 1, Iteration.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(evaluationResultEClass, EvaluationResult.class, "EvaluationResult", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getEvaluationResult_Success(), ecorePackage.getEBoolean(), "success", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEvaluationResult_TestPassRate(), ecorePackage.getEDouble(), "testPassRate", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEvaluationResult_CoverageChange(), ecorePackage.getEDouble(), "coverageChange", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEvaluationResult_Errors(), ecorePackage.getEString(), "errors", null, 0, -1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEvaluationResult_Decision(), this.getSelfDevDecision(), "decision", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
 		// Initialize enums and add enum literals
 		initEEnum(taskStatusEEnum, TaskStatus.class, "TaskStatus");
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.PENDING);
@@ -1458,6 +1810,23 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(aiModeEEnum, AiMode.LOCAL);
 		addEEnumLiteral(aiModeEEnum, AiMode.HYBRID);
 		addEEnumLiteral(aiModeEEnum, AiMode.REMOTE);
+
+		initEEnum(selfDevStatusEEnum, SelfDevStatus.class, "SelfDevStatus");
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.RUNNING);
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.STOPPED);
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.FAILED);
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.COMPLETED);
+
+		initEEnum(iterationStatusEEnum, IterationStatus.class, "IterationStatus");
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.PENDING);
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.RUNNING);
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.DONE);
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.FAILED);
+
+		initEEnum(selfDevDecisionEEnum, SelfDevDecision.class, "SelfDevDecision");
+		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.CONTINUE);
+		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.ROLLBACK);
+		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.STOP);
 
 		// Create resource
 		createResource(eNS_URI);

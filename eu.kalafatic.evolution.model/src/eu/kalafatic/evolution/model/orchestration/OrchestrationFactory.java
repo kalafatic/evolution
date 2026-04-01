@@ -166,6 +166,33 @@ public interface OrchestrationFactory extends EFactory {
 	SecretRule createSecretRule();
 
 	/**
+	 * Returns a new object of class '<em>Self Dev Session</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Self Dev Session</em>'.
+	 * @generated
+	 */
+	SelfDevSession createSelfDevSession();
+
+	/**
+	 * Returns a new object of class '<em>Iteration</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Iteration</em>'.
+	 * @generated
+	 */
+	Iteration createIteration();
+
+	/**
+	 * Returns a new object of class '<em>Evaluation Result</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Evaluation Result</em>'.
+	 * @generated
+	 */
+	EvaluationResult createEvaluationResult();
+
+	/**
 	 * Returns the package supported by this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

@@ -70,6 +70,11 @@ public class TaskItemProvider
 			addNextPropertyDescriptor(object);
 			addResponsePropertyDescriptor(object);
 			addFeedbackPropertyDescriptor(object);
+			addApprovalRequiredPropertyDescriptor(object);
+			addLoopToTaskIdPropertyDescriptor(object);
+			addPriorityPropertyDescriptor(object);
+			addResultSummaryPropertyDescriptor(object);
+			addDescriptionPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -88,6 +93,63 @@ public class TaskItemProvider
 				 getString("_UI_Task_id_feature"),
 				 getString("_UI_PropertyDescriptor_description", "_UI_Task_id_feature", "_UI_Task_type"),
 				 OrchestrationPackage.Literals.TASK__ID,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	protected void addPriorityPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 "Priority",
+				 "Task priority",
+				 OrchestrationPackage.Literals.TASK__PRIORITY,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.INTEGRAL_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	protected void addResultSummaryPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 "Result Summary",
+				 "Summary of the task execution result",
+				 OrchestrationPackage.Literals.TASK__RESULT_SUMMARY,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	protected void addDescriptionPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 "Description",
+				 "Detailed task description",
+				 OrchestrationPackage.Literals.TASK__DESCRIPTION,
 				 true,
 				 false,
 				 false,

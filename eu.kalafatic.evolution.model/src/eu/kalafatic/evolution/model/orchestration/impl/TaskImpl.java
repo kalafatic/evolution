@@ -227,6 +227,66 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected String loopToTaskId = LOOP_TO_TASK_ID_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getPriority() <em>Priority</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPriority()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int PRIORITY_EDEFAULT = 0;
+
+	/**
+	 * The cached value of the '{@link #getPriority() <em>Priority</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPriority()
+	 * @generated
+	 * @ordered
+	 */
+	protected int priority = PRIORITY_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getResultSummary() <em>Result Summary</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getResultSummary()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String RESULT_SUMMARY_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getResultSummary() <em>Result Summary</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getResultSummary()
+	 * @generated
+	 * @ordered
+	 */
+	protected String resultSummary = RESULT_SUMMARY_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getDescription() <em>Description</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDescription()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String DESCRIPTION_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getDescription() <em>Description</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDescription()
+	 * @generated
+	 * @ordered
+	 */
+	protected String description = DESCRIPTION_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -461,6 +521,75 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @generated
 	 */
 	@Override
+	public int getPriority() {
+		return priority;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPriority(int newPriority) {
+		int oldPriority = priority;
+		priority = newPriority;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__PRIORITY, oldPriority, priority));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getResultSummary() {
+		return resultSummary;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setResultSummary(String newResultSummary) {
+		String oldResultSummary = resultSummary;
+		resultSummary = newResultSummary;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__RESULT_SUMMARY, oldResultSummary, resultSummary));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getDescription() {
+		return description;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setDescription(String newDescription) {
+		String oldDescription = description;
+		description = newDescription;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__DESCRIPTION, oldDescription, description));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.TASK__SUB_TASKS:
@@ -497,6 +626,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return isApprovalRequired();
 			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
 				return getLoopToTaskId();
+			case OrchestrationPackage.TASK__PRIORITY:
+				return getPriority();
+			case OrchestrationPackage.TASK__RESULT_SUMMARY:
+				return getResultSummary();
+			case OrchestrationPackage.TASK__DESCRIPTION:
+				return getDescription();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -542,6 +677,15 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
 				setLoopToTaskId((String)newValue);
 				return;
+			case OrchestrationPackage.TASK__PRIORITY:
+				setPriority((Integer)newValue);
+				return;
+			case OrchestrationPackage.TASK__RESULT_SUMMARY:
+				setResultSummary((String)newValue);
+				return;
+			case OrchestrationPackage.TASK__DESCRIPTION:
+				setDescription((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -584,6 +728,15 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
 				setLoopToTaskId(LOOP_TO_TASK_ID_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__PRIORITY:
+				setPriority(PRIORITY_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__RESULT_SUMMARY:
+				setResultSummary(RESULT_SUMMARY_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__DESCRIPTION:
+				setDescription(DESCRIPTION_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -616,6 +769,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return approvalRequired != APPROVAL_REQUIRED_EDEFAULT;
 			case OrchestrationPackage.TASK__LOOP_TO_TASK_ID:
 				return LOOP_TO_TASK_ID_EDEFAULT == null ? loopToTaskId != null : !LOOP_TO_TASK_ID_EDEFAULT.equals(loopToTaskId);
+			case OrchestrationPackage.TASK__PRIORITY:
+				return priority != PRIORITY_EDEFAULT;
+			case OrchestrationPackage.TASK__RESULT_SUMMARY:
+				return RESULT_SUMMARY_EDEFAULT == null ? resultSummary != null : !RESULT_SUMMARY_EDEFAULT.equals(resultSummary);
+			case OrchestrationPackage.TASK__DESCRIPTION:
+				return DESCRIPTION_EDEFAULT == null ? description != null : !DESCRIPTION_EDEFAULT.equals(description);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -646,6 +805,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(approvalRequired);
 		result.append(", loopToTaskId: ");
 		result.append(loopToTaskId);
+		result.append(", priority: ");
+		result.append(priority);
+		result.append(", resultSummary: ");
+		result.append(resultSummary);
+		result.append(", description: ");
+		result.append(description);
 		result.append(')');
 		return result.toString();
 	}

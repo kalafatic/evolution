@@ -438,4 +438,26 @@ public interface Orchestrator extends EObject {
 	 */
 	void setOfflineMode(boolean value);
 
+	/**
+	 * Returns the value of the '<em><b>Self Dev Session</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Self Dev Session</em>' containment reference.
+	 * @see #setSelfDevSession(SelfDevSession)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_SelfDevSession()
+	 * @model containment="true"
+	 * @generated
+	 */
+	SelfDevSession getSelfDevSession();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession <em>Self Dev Session</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Self Dev Session</em>' containment reference.
+	 * @see #getSelfDevSession()
+	 * @generated
+	 */
+	void setSelfDevSession(SelfDevSession value);
+
 } // Orchestrator

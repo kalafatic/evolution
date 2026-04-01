@@ -8,9 +8,12 @@ import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
+import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
 import eu.kalafatic.evolution.model.orchestration.Git;
+import eu.kalafatic.evolution.model.orchestration.Iteration;
+import eu.kalafatic.evolution.model.orchestration.IterationStatus;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
@@ -22,6 +25,9 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
+import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
+import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
+import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 
@@ -94,6 +100,9 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.NETWORK_RULE: return createNetworkRule();
 			case OrchestrationPackage.MEMORY_RULE: return createMemoryRule();
 			case OrchestrationPackage.SECRET_RULE: return createSecretRule();
+			case OrchestrationPackage.SELF_DEV_SESSION: return createSelfDevSession();
+			case OrchestrationPackage.ITERATION: return createIteration();
+			case OrchestrationPackage.EVALUATION_RESULT: return createEvaluationResult();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -117,6 +126,12 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createNeuronTypeFromString(eDataType, initialValue);
 			case OrchestrationPackage.AI_MODE:
 				return createAiModeFromString(eDataType, initialValue);
+			case OrchestrationPackage.SELF_DEV_STATUS:
+				return createSelfDevStatusFromString(eDataType, initialValue);
+			case OrchestrationPackage.ITERATION_STATUS:
+				return createIterationStatusFromString(eDataType, initialValue);
+			case OrchestrationPackage.SELF_DEV_DECISION:
+				return createSelfDevDecisionFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -140,9 +155,48 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertNeuronTypeToString(eDataType, instanceValue);
 			case OrchestrationPackage.AI_MODE:
 				return convertAiModeToString(eDataType, instanceValue);
+			case OrchestrationPackage.SELF_DEV_STATUS:
+				return convertSelfDevStatusToString(eDataType, instanceValue);
+			case OrchestrationPackage.ITERATION_STATUS:
+				return convertIterationStatusToString(eDataType, instanceValue);
+			case OrchestrationPackage.SELF_DEV_DECISION:
+				return convertSelfDevDecisionToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public SelfDevSession createSelfDevSession() {
+		SelfDevSessionImpl selfDevSession = new SelfDevSessionImpl();
+		return selfDevSession;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Iteration createIteration() {
+		IterationImpl iteration = new IterationImpl();
+		return iteration;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EvaluationResult createEvaluationResult() {
+		EvaluationResultImpl evaluationResult = new EvaluationResultImpl();
+		return evaluationResult;
 	}
 
 	/**
@@ -418,6 +472,66 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	public String convertAiModeToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public SelfDevStatus createSelfDevStatusFromString(EDataType eDataType, String initialValue) {
+		SelfDevStatus result = SelfDevStatus.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertSelfDevStatusToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public IterationStatus createIterationStatusFromString(EDataType eDataType, String initialValue) {
+		IterationStatus result = IterationStatus.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertIterationStatusToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public SelfDevDecision createSelfDevDecisionFromString(EDataType eDataType, String initialValue) {
+		SelfDevDecision result = SelfDevDecision.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertSelfDevDecisionToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 
