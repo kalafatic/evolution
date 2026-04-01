@@ -30,6 +30,10 @@ public class GeminiProvider implements ILlmProvider {
         String apiUrl = (config != null) ? config.getUrl() : DEFAULT_GEMINI_URL_TEMPLATE;
         String model = (config != null) ? config.getDefaultModel() : remoteModelName;
 
+        if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
+            apiUrl = orchestrator.getAiChat().getUrl();
+        }
+
         if (model == null || model.isEmpty() || model.equalsIgnoreCase("gemini")) {
             model = "gemini-1.5-pro";
         }
