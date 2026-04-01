@@ -46,6 +46,7 @@ import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
@@ -61,6 +62,7 @@ public class AiChatPage extends Composite {
     private StyledText responseText;
     private Label ollamaStatusLabel;
     private Label modelStatusLabel;
+    private Label modeIndicatorLabel;
     private Label statusLabel;
     private ProgressBar progressBar;
     private Composite approvalComposite;
@@ -85,7 +87,12 @@ public class AiChatPage extends Composite {
     private Color colorTester;
     private Color colorReviewer;
     private Color colorError;
+    private Color colorWhite;
+    private Color colorLocal;
+    private Color colorHybrid;
+    private Color colorRemote;
     private Font chatFont;
+    private Font bannerFont;
     
     
 
@@ -100,6 +107,7 @@ public class AiChatPage extends Composite {
             @Override
             public void widgetDisposed(DisposeEvent e) {
                 if (chatFont != null && !chatFont.isDisposed()) chatFont.dispose();
+                if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
             }
         });
     }
@@ -114,6 +122,10 @@ public class AiChatPage extends Composite {
         colorTester = display.getSystemColor(SWT.COLOR_DARK_YELLOW);
         colorReviewer = display.getSystemColor(SWT.COLOR_MAGENTA);
         colorError = display.getSystemColor(SWT.COLOR_RED);
+        colorWhite = display.getSystemColor(SWT.COLOR_WHITE);
+        colorLocal = display.getSystemColor(SWT.COLOR_DARK_GREEN);
+        colorHybrid = display.getSystemColor(SWT.COLOR_DARK_BLUE);
+        colorRemote = display.getSystemColor(SWT.COLOR_DARK_MAGENTA);
 
         Font defaultFont = JFaceResources.getDefaultFont();
         FontData[] fontData = defaultFont.getFontData();
@@ -121,12 +133,24 @@ public class AiChatPage extends Composite {
             fd.setHeight(11);
         }
         chatFont = new Font(display, fontData);
+
+        Font bannerDefault = JFaceResources.getBannerFont();
+        FontData[] bannerData = bannerDefault.getFontData();
+        for (FontData fd : bannerData) {
+            fd.setStyle(SWT.BOLD);
+        }
+        bannerFont = new Font(display, bannerData);
     }
 
     private void createControl() {
         GridLayout layout = new GridLayout();
         this.setLayout(layout);
         layout.numColumns = 1;
+
+        modeIndicatorLabel = new Label(this, SWT.CENTER);
+        modeIndicatorLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        modeIndicatorLabel.setFont(bannerFont);
+        modeIndicatorLabel.setText("INITIALIZING...");
 
         Composite toolbar = new Composite(this, SWT.NONE);
         toolbar.setLayout(new GridLayout(1, false));
@@ -246,6 +270,7 @@ public class AiChatPage extends Composite {
                     boolean remoteVisible = aiMode == AiMode.HYBRID || aiMode == AiMode.REMOTE;
                     remoteLabel.setVisible(remoteVisible);
                     aiRemoteCombo.setVisible(remoteVisible);
+                    updateModeDisplay();
                     groupMode.layout(true, true);
                 }
             }
@@ -375,6 +400,27 @@ public class AiChatPage extends Composite {
         Display.getDefault().timerExec(500, timer);
 
         updateStatusInfo();
+        updateModeDisplay();
+    }
+
+    private void updateModeDisplay() {
+        if (orchestrator == null || modeIndicatorLabel == null || modeIndicatorLabel.isDisposed()) return;
+
+        AiMode mode = orchestrator.getAiMode();
+        modeIndicatorLabel.setText(mode.getName().toUpperCase() + " MODE ACTIVE");
+        modeIndicatorLabel.setForeground(colorWhite);
+
+        switch (mode) {
+            case LOCAL:
+                modeIndicatorLabel.setBackground(colorLocal);
+                break;
+            case HYBRID:
+                modeIndicatorLabel.setBackground(colorHybrid);
+                break;
+            case REMOTE:
+                modeIndicatorLabel.setBackground(colorRemote);
+                break;
+        }
     }
 
     private void sendAction() {
@@ -529,6 +575,7 @@ public class AiChatPage extends Composite {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
         }
         updateStatusInfo();
+        updateModeDisplay();
     }
 
     private void showApprovalUI(String message) {
