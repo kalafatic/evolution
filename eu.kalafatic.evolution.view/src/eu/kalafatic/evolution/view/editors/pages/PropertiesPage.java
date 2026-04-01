@@ -26,6 +26,7 @@ public class PropertiesPage extends ScrolledComposite {
 	private Orchestrator orchestrator;
 	private boolean isUpdating = false;
 	private Canvas statusCanvas;
+	private Label modeIndicatorLabel;
 	private Text orchIdText, orchNameText, llmModelText, llmTempText, ollamaUrlText, ollamaModelText, ollamaPathText,
 			ollamaVersionText;
 	private Button offlineBtn;
@@ -53,6 +54,21 @@ public class PropertiesPage extends ScrolledComposite {
 		
 		Composite comp = new Composite(this, SWT.NONE);
 		comp.setLayout(new GridLayout(1, false));
+
+		modeIndicatorLabel = new Label(comp, SWT.CENTER);
+		modeIndicatorLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		modeIndicatorLabel.setText("AI MODE INDICATOR");
+
+		Font bannerDefault = org.eclipse.jface.resource.JFaceResources.getBannerFont();
+		FontData[] bannerData = bannerDefault.getFontData();
+		for (FontData fd : bannerData) {
+			fd.setStyle(SWT.BOLD);
+		}
+		final Font bannerFont = new Font(getDisplay(), bannerData);
+		modeIndicatorLabel.setFont(bannerFont);
+		modeIndicatorLabel.addDisposeListener(e -> {
+			if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
+		});
 		Group statusGroup = new Group(comp, SWT.NONE);
 		statusGroup.setText("Orchestration Status");
 		statusGroup.setLayout(new GridLayout(1, false));
@@ -220,6 +236,7 @@ public class PropertiesPage extends ScrolledComposite {
 			public void widgetSelected(SelectionEvent e) {
 				if (orchestrator != null && !isUpdating) {
 					updateModelFromFields();
+					updateModeDisplay();
 					editor.setDirty(true);
 				}
 			}
@@ -301,6 +318,27 @@ public class PropertiesPage extends ScrolledComposite {
 		this.setContent(comp);
 		this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 		updatePropertiesInfo();
+		updateModeDisplay();
+	}
+
+	private void updateModeDisplay() {
+		if (orchestrator == null || modeIndicatorLabel == null || modeIndicatorLabel.isDisposed()) return;
+
+		AiMode mode = orchestrator.getAiMode();
+		modeIndicatorLabel.setText(mode.getName().toUpperCase() + " MODE ACTIVE");
+		modeIndicatorLabel.setForeground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
+		switch (mode) {
+			case LOCAL:
+				modeIndicatorLabel.setBackground(getDisplay().getSystemColor(SWT.COLOR_DARK_GREEN));
+				break;
+			case HYBRID:
+				modeIndicatorLabel.setBackground(getDisplay().getSystemColor(SWT.COLOR_DARK_BLUE));
+				break;
+			case REMOTE:
+				modeIndicatorLabel.setBackground(getDisplay().getSystemColor(SWT.COLOR_DARK_MAGENTA));
+				break;
+		}
 	}
 
 	private void selectModel(Group ollamaGroup, OllamaService ollamaService) {
@@ -386,6 +424,12 @@ public class PropertiesPage extends ScrolledComposite {
 		
 
 		mcpUrlText.setText(orchestrator.getMcpServerUrl() != null ? orchestrator.getMcpServerUrl() : "");
+		openAiTokenText.setText(orchestrator.getOpenAiToken() != null ? orchestrator.getOpenAiToken() : "");
+		openAiModelText.setText(orchestrator.getOpenAiModel() != null ? orchestrator.getOpenAiModel() : "");
+		localModelText.setText(orchestrator.getLocalModel() != null ? orchestrator.getLocalModel() : "");
+		hybridModelText.setText(orchestrator.getHybridModel() != null ? orchestrator.getHybridModel() : "");
+		remoteModelText.setText(orchestrator.getRemoteModel() != null ? orchestrator.getRemoteModel() : "");
+		offlineBtn.setSelection(orchestrator.isOfflineMode());
 
 		isUpdating = false;
 	}
@@ -460,7 +504,12 @@ public class PropertiesPage extends ScrolledComposite {
 
 		orchestrator.setAiMode(AiMode.get(aiModeCombo.getSelectionIndex()));	
 		orchestrator.setMcpServerUrl(mcpUrlText.getText());
-	
+		orchestrator.setOpenAiToken(openAiTokenText.getText());
+		orchestrator.setOpenAiModel(openAiModelText.getText());
+		orchestrator.setLocalModel(localModelText.getText());
+		orchestrator.setHybridModel(hybridModelText.getText());
+		orchestrator.setRemoteModel(remoteModelText.getText());
+		orchestrator.setOfflineMode(offlineBtn.getSelection());
 
 		ollamaService = new OllamaService(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel());
 		isUpdating = false;
@@ -469,5 +518,6 @@ public class PropertiesPage extends ScrolledComposite {
 	public void setOrchestrator(Orchestrator orchestrator) {
 		this.orchestrator = orchestrator;
 		updatePropertiesInfo();
+		updateModeDisplay();
 	}
 }
