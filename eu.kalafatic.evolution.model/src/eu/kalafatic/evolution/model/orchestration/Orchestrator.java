@@ -29,6 +29,8 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getRemoteModel <em>Remote Model</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiMode <em>Ai Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMcpServerUrl <em>Mcp Server Url</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase <em>Database</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig <em>File Config</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator()
@@ -459,5 +461,49 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	void setSelfDevSession(SelfDevSession value);
+
+	/**
+	 * Returns the value of the '<em><b>Database</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Database</em>' containment reference.
+	 * @see #setDatabase(Database)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_Database()
+	 * @model containment="true"
+	 * @generated
+	 */
+	Database getDatabase();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase <em>Database</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Database</em>' containment reference.
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	void setDatabase(Database value);
+
+	/**
+	 * Returns the value of the '<em><b>File Config</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>File Config</em>' containment reference.
+	 * @see #setFileConfig(FileConfig)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_FileConfig()
+	 * @model containment="true"
+	 * @generated
+	 */
+	FileConfig getFileConfig();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig <em>File Config</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>File Config</em>' containment reference.
+	 * @see #getFileConfig()
+	 * @generated
+	 */
+	void setFileConfig(FileConfig value);
 
 } // Orchestrator

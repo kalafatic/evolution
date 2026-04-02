@@ -193,6 +193,24 @@ public interface OrchestrationFactory extends EFactory {
 	EvaluationResult createEvaluationResult();
 
 	/**
+	 * Returns a new object of class '<em>Database</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Database</em>'.
+	 * @generated
+	 */
+	Database createDatabase();
+
+	/**
+	 * Returns a new object of class '<em>File Config</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>File Config</em>'.
+	 * @generated
+	 */
+	FileConfig createFileConfig();
+
+	/**
 	 * Returns the package supported by this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
