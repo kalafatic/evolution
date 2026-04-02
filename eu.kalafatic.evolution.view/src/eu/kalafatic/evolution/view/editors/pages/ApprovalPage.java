@@ -16,7 +16,7 @@ import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
 import org.eclipse.swt.browser.ProgressEvent;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -37,7 +37,7 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class ApprovalPage extends Composite {
+public class ApprovalPage extends ScrolledComposite {
 	private MultiPageEditor editor;
 	private Orchestrator orchestrator;
 	private Browser browser;
@@ -47,6 +47,9 @@ public class ApprovalPage extends Composite {
 	private Label iterationsLabel;
 	private Label branchLabel;
 	private TableViewer tableViewer;
+	private Composite content;
+	private int browserWidth = 1000;
+	private int browserHeight = 800;
 
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override
@@ -57,18 +60,22 @@ public class ApprovalPage extends Composite {
 	};
 
 	public ApprovalPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-		super(parent, SWT.NONE);
+		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		this.editor = editor;
 		this.orchestrator = orchestrator;
+		this.setExpandHorizontal(true);
+		this.setExpandVertical(true);
 		createControl();
 		setOrchestrator(orchestrator);
 	}
 
 	private void createControl() {
-		this.setLayout(new GridLayout(1, false));
+		content = new Composite(this, SWT.NONE);
+		content.setLayout(new GridLayout(1, false));
+		this.setContent(content);
 
 		// Summary Group
-		Group summaryGroup = SWTFactory.createGroup(this, "Approval Summary", 2);
+		Group summaryGroup = SWTFactory.createGroup(content, "Approval Summary", 2);
 		SWTFactory.createLabel(summaryGroup, "Session ID:");
 		sessionIdLabel = new Label(summaryGroup, SWT.NONE);
 		sessionIdLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -86,7 +93,7 @@ public class ApprovalPage extends Composite {
 		branchLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 		// Task Management Group
-		Group taskGroup = SWTFactory.createGroup(this, "Proposed Tasks", 1);
+		Group taskGroup = SWTFactory.createGroup(content, "Proposed Tasks", 1);
 		taskGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		((GridData)taskGroup.getLayoutData()).heightHint = 180;
 
@@ -132,7 +139,7 @@ public class ApprovalPage extends Composite {
 		});
 
 		// Visualization Area
-		Group vizGroup = SWTFactory.createGroup(this, "AI Network & Process Flow", 1);
+		Group vizGroup = SWTFactory.createGroup(content, "AI Network & Process Flow", 1);
 		vizGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
 		vizGroup.setLayout(new GridLayout(1, false));
 
@@ -140,25 +147,34 @@ public class ApprovalPage extends Composite {
 		toolbarManager.add(new Action("Zoom In") {
 			@Override
 			public void run() {
-				browser.execute("applyZoom(1.2);");
+				browserWidth = (int)(browserWidth * 1.2);
+				browserHeight = (int)(browserHeight * 1.2);
+				updateScrolledContent();
 			}
 		});
 		toolbarManager.add(new Action("Zoom Out") {
 			@Override
 			public void run() {
-				browser.execute("applyZoom(0.8);");
+				browserWidth = (int)(browserWidth * 0.8);
+				browserHeight = (int)(browserHeight * 0.8);
+				updateScrolledContent();
 			}
 		});
 		toolbarManager.add(new Action("Reset Zoom") {
 			@Override
 			public void run() {
-				browser.execute("resetZoom();");
+				browserWidth = 1000;
+				browserHeight = 800;
+				updateScrolledContent();
 			}
 		});
 		toolbarManager.createControl(vizGroup);
 
 		browser = new Browser(vizGroup, SWT.NONE);
-		browser.setLayoutData(new GridData(GridData.FILL_BOTH));
+		GridData browserGD = new GridData(SWT.LEFT, SWT.TOP, false, false);
+		browserGD.widthHint = browserWidth;
+		browserGD.heightHint = browserHeight;
+		browser.setLayoutData(browserGD);
 		browser.addProgressListener(new ProgressAdapter() {
 			@Override
 			public void completed(ProgressEvent event) {
@@ -180,7 +196,7 @@ public class ApprovalPage extends Composite {
 		browser.setText(getHtmlTemplate());
 
 		// Actions Area
-		Group actionsGroup = SWTFactory.createGroup(this, "Review Actions", 2);
+		Group actionsGroup = SWTFactory.createGroup(content, "Review Actions", 2);
 		Button approveBtn = SWTFactory.createButton(actionsGroup, "Approve & Apply", 150);
 		approveBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
 			@Override
@@ -196,6 +212,19 @@ public class ApprovalPage extends Composite {
 				handleReject();
 			}
 		});
+
+		updateScrolledContent();
+	}
+
+	private void updateScrolledContent() {
+		if (content == null || content.isDisposed()) return;
+		if (browser != null && !browser.isDisposed()) {
+			GridData gd = (GridData) browser.getLayoutData();
+			gd.widthHint = browserWidth;
+			gd.heightHint = browserHeight;
+		}
+		content.layout(true, true);
+		this.setMinSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
 	public void setOrchestrator(Orchestrator orchestrator) {
@@ -398,8 +427,8 @@ public class ApprovalPage extends Composite {
 
 	private String getHtmlTemplate() {
 		return "<!DOCTYPE html><html><head><style>"
-				+ "body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; overflow: hidden; }"
-				+ "#canvas { width: 100vw; height: 100vh; }"
+				+ "body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; padding: 0; overflow: hidden; }"
+				+ "#canvas { width: 100%; height: 100%; min-width: 1000px; min-height: 800px; }"
 				+ ".node { fill: #fff; stroke: #cbd5e1; stroke-width: 1px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }"
 				+ ".node:hover { stroke: #94a3b8; stroke-width: 2px; transform: translateY(-2px); }"
 				+ ".task.DONE { fill: #f0fdf4; stroke: #22c55e; }"
@@ -415,15 +444,6 @@ public class ApprovalPage extends Composite {
 				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs><marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker></defs><g id='viewport'></g></svg>"
 				+ "<script>"
 				+ "const viewport = document.getElementById('viewport');"
-				+ "let currentZoom = 1.0;"
-				+ "function applyZoom(factor) {"
-				+ "  currentZoom *= factor;"
-				+ "  viewport.setAttribute('transform', 'scale(' + currentZoom + ')');"
-				+ "}"
-				+ "function resetZoom() {"
-				+ "  currentZoom = 1.0;"
-				+ "  viewport.removeAttribute('transform');"
-				+ "}"
 				+ "function updateGraph(data) {"
 				+ "  viewport.innerHTML = '';"
 				+ "  if (!data) return;"
