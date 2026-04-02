@@ -130,4 +130,26 @@ public interface Iteration extends EObject {
 	 */
 	void setStatus(IterationStatus value);
 
+	/**
+	 * Returns the value of the '<em><b>Phase</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Phase</em>' attribute.
+	 * @see #setPhase(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration_Phase()
+	 * @model
+	 * @generated
+	 */
+	String getPhase();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getPhase <em>Phase</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Phase</em>' attribute.
+	 * @see #getPhase()
+	 * @generated
+	 */
+	void setPhase(String value);
+
 } // Iteration

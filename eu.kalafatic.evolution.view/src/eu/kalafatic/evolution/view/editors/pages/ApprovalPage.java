@@ -376,9 +376,18 @@ public class ApprovalPage extends Composite {
 		root.put("tasks", tasksArr);
 
 		if (orchestrator.getSelfDevSession() != null) {
+			SelfDevSession session = orchestrator.getSelfDevSession();
 			JSONObject sessionObj = new JSONObject();
-			sessionObj.put("id", orchestrator.getSelfDevSession().getId());
-			sessionObj.put("status", orchestrator.getSelfDevSession().getStatus().toString());
+			sessionObj.put("id", session.getId());
+			sessionObj.put("status", session.getStatus().toString());
+
+			if (!session.getIterations().isEmpty()) {
+				Iteration last = session.getIterations().get(session.getIterations().size() - 1);
+				sessionObj.put("phase", last.getPhase() != null ? last.getPhase() : "IDLE");
+			} else {
+				sessionObj.put("phase", "IDLE");
+			}
+
 			root.put("session", sessionObj);
 		}
 
@@ -410,9 +419,20 @@ public class ApprovalPage extends Composite {
 				+ "text { font-size: 11px; fill: #334155; font-weight: 500; text-anchor: middle; pointer-events: none; }"
 				+ "line { stroke: #94a3b8; stroke-width: 1.5px; marker-end: url(#arrowhead); }"
 				+ ".session-info { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 12px; }"
+				+ ".loop-node { fill: #f1f5f9; stroke: #cbd5e1; stroke-width: 1px; transition: all 0.5s ease; }"
+				+ ".loop-node.active { fill: #3b82f6; stroke: #2563eb; stroke-width: 2px; }"
+				+ ".loop-text { font-size: 10px; fill: #64748b; font-weight: 600; }"
+				+ ".loop-text.active { fill: #ffffff; }"
+				+ ".loop-link { stroke: #cbd5e1; stroke-width: 2px; fill: none; marker-end: url(#loop-arrow); }"
+				+ ".loop-link.active { stroke: #3b82f6; }"
 				+ "</style></head><body>"
 				+ "<div class='session-info' id='info'>AI Network Structure</div>"
-				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs><marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker></defs><g id='viewport'></g></svg>"
+				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs>"
+				+ "<marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker>"
+				+ "<marker id='loop-arrow' markerWidth='6' markerHeight='4' refX='6' refY='2' orient='auto'><polygon points='0 0, 6 2, 0 4' fill='#cbd5e1'/></marker>"
+				+ "</defs>"
+				+ "<g id='loop-diagram' transform='translate(150, 450)'></g>"
+				+ "<g id='viewport'></g></svg>"
 				+ "<script>"
 				+ "const viewport = document.getElementById('viewport');"
 				+ "let currentZoom = 1.0;"
@@ -472,7 +492,45 @@ public class ApprovalPage extends Composite {
 				+ "    g.appendChild(txt);"
 				+ "    viewport.appendChild(g);"
 				+ "  });"
-				+ "  if (data.session) document.getElementById('info').textContent = 'Session: ' + data.session.id + ' (' + data.session.status + ')';"
+				+ "  if (data.session) {"
+				+ "    document.getElementById('info').textContent = 'Session: ' + data.session.id + ' (' + data.session.status + ')';"
+				+ "    updateLoopDiagram(data.session.phase);"
+				+ "  }"
+				+ "}"
+				+ "function updateLoopDiagram(activePhase) {"
+				+ "  const loopContainer = document.getElementById('loop-diagram');"
+				+ "  loopContainer.innerHTML = '';"
+				+ "  const phases = ['OBSERVE', 'ANALYZE', 'PLAN', 'VALIDATE', 'EXECUTE', 'TEST', 'EVALUATE', 'LEARN'];"
+				+ "  const radius = 100;"
+				+ "  const centerX = 0, centerY = 0;"
+				+ "  phases.forEach((p, i) => {"
+				+ "    const angle = (i / phases.length) * 2 * Math.PI - Math.PI / 2;"
+				+ "    const x = centerX + radius * Math.cos(angle);"
+				+ "    const y = centerY + radius * Math.sin(angle);"
+				+ "    const isActive = p === activePhase;"
+				+ "    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');"
+				+ "    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');"
+				+ "    circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', 25);"
+				+ "    circle.className.baseVal = 'loop-node' + (isActive ? ' active' : '');"
+				+ "    g.appendChild(circle);"
+				+ "    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');"
+				+ "    text.setAttribute('x', x); text.setAttribute('y', y + 4);"
+				+ "    text.className.baseVal = 'loop-text' + (isActive ? ' active' : '');"
+				+ "    text.textContent = p.substring(0, 3);"
+				+ "    g.appendChild(text);"
+				+ "    loopContainer.appendChild(g);"
+				+ "    if (i < phases.length) {"
+				+ "      const nextAngle = ((i + 1) / phases.length) * 2 * Math.PI - Math.PI / 2;"
+				+ "      const x1 = centerX + (radius) * Math.cos(angle + 0.25);"
+				+ "      const y1 = centerY + (radius) * Math.sin(angle + 0.25);"
+				+ "      const x2 = centerX + (radius) * Math.cos(nextAngle - 0.25);"
+				+ "      const y2 = centerY + (radius) * Math.sin(nextAngle - 0.25);"
+				+ "      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');"
+				+ "      path.setAttribute('d', `M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`);"
+				+ "      path.className.baseVal = 'loop-link';"
+				+ "      loopContainer.appendChild(path);"
+				+ "    }"
+				+ "  });"
 				+ "}"
 				+ "</script></body></html>";
 	}
