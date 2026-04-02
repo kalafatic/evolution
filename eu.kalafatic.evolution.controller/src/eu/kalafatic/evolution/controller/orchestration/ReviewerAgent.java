@@ -23,7 +23,7 @@ public class ReviewerAgent extends BaseAiAgent {
                 "{ \"success\": boolean, \"feedback\": \"Detailed explanation of why it failed and how to fix it\", \"comment\": \"Brief success message\" }";
 
         context.log("Reviewer [" + id + "]: Reviewing task - " + taskDescription);
-        return aiService.sendRequest(context.getOrchestrator(), prompt);
+        return aiService.sendRequest(context.getOrchestrator(), prompt, context);
     }
 
     public JSONObject evaluate(String taskOutput, String taskDescription, TaskContext context) throws Exception {

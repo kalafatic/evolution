@@ -85,7 +85,7 @@ public abstract class BaseAiAgent implements IAgent {
         }
 
         String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
-        String response = llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl);
+        String response = llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
 
         // Post-process if necessary
         return cleanResponse(response);

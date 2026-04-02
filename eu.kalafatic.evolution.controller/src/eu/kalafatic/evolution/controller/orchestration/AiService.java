@@ -12,17 +12,21 @@ public class AiService {
     private final LlmRouter llmRouter = new LlmRouter();
 
     public String sendRequest(Orchestrator orchestrator, String prompt) throws Exception {
-        return sendRequest(orchestrator, prompt, null);
+        return sendRequest(orchestrator, prompt, null, null);
     }
 
-    public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl) throws Exception {
+    public String sendRequest(Orchestrator orchestrator, String prompt, TaskContext context) throws Exception {
+        return sendRequest(orchestrator, prompt, null, context);
+    }
+
+    public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl, TaskContext context) throws Exception {
         float temperature = 0.7f;
         if (orchestrator.getLlm() != null) {
             temperature = orchestrator.getLlm().getTemperature();
         }
 
         // Unified routing via LlmRouter
-        return llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl);
+        return llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
     // Keep getOllamaModels for UI/Compatibility if needed, but it should ideally be moved too.

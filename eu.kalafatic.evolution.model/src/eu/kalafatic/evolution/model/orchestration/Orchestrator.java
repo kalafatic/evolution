@@ -505,5 +505,25 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	void setFileConfig(FileConfig value);
+	 * Returns the value of the '<em><b>Shared Memory</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Shared Memory</em>' attribute.
+	 * @see #setSharedMemory(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_SharedMemory()
+	 * @model
+	 * @generated
+	 */
+	String getSharedMemory();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory <em>Shared Memory</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Shared Memory</em>' attribute.
+	 * @see #getSharedMemory()
+	 * @generated
+	 */
+	void setSharedMemory(String value);
 
 } // Orchestrator

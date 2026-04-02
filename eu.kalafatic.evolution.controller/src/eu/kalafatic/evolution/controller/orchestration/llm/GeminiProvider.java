@@ -10,6 +10,7 @@ import java.time.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 
@@ -21,7 +22,7 @@ public class GeminiProvider implements ILlmProvider {
     private static final String DEFAULT_GEMINI_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1/models/%s:generateContent";
 
     @Override
-    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
+    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String token = orchestrator.getOpenAiToken(); // Using OpenAiToken as general API key
         String remoteModelName = orchestrator.getRemoteModel();
 
@@ -38,8 +39,17 @@ public class GeminiProvider implements ILlmProvider {
             model = "gemini-1.5-pro";
         }
 
-        if (token == null || token.isEmpty()) {
-            throw new Exception("API Token is not configured (use OpenAI Token field)");
+        if (token == null || token.isEmpty() || "YOUR_API_KEY".equals(token)) {
+            if (context != null) {
+                try {
+                    token = context.requestToken(remoteModelName != null ? remoteModelName : "Gemini").get();
+                    orchestrator.setOpenAiToken(token);
+                } catch (Exception e) {
+                    throw new Exception("Failed to obtain token: " + e.getMessage());
+                }
+            } else {
+                throw new Exception("API Token is not configured (use OpenAI Token field)");
+            }
         }
 
         HttpClient.Builder builder = HttpClient.newBuilder()

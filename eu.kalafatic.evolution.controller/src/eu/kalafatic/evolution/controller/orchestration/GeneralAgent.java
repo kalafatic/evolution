@@ -23,6 +23,6 @@ public class GeneralAgent extends BaseAiAgent {
                 "Respond to the task appropriately based on the context. If it is a greeting, respond politely. If it is a general question, provide a helpful answer.";
 
         context.log("GeneralAgent [" + id + "]: Processing task - " + taskDescription);
-        return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt));
+        return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt, context));
     }
 }

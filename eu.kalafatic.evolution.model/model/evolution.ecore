@@ -70,6 +70,7 @@
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="fileConfig" eType="#//FileConfig"
         containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sharedMemory" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Git">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="repositoryUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
