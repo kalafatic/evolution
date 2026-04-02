@@ -30,6 +30,10 @@ public class ExampleMain {
         System.out.println("Working Directory: " + tempDir.getAbsolutePath());
 
         TaskContext context = new TaskContext(orchestrator, tempDir);
+        context.addApprovalListener(message -> {
+            System.out.println("Mock Approval Requested: " + message);
+            context.provideApproval(true);
+        });
 
         // 3. Execute Orchestration
         EvolutionOrchestrator engine = new EvolutionOrchestrator();

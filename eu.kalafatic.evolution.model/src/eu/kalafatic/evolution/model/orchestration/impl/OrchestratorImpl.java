@@ -1320,6 +1320,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
 				setFileConfig((FileConfig)newValue);
+				return;
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory((String)newValue);
 				return;
@@ -1400,6 +1401,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
 				setFileConfig((FileConfig)null);
+				return;
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory(SHARED_MEMORY_EDEFAULT);
 				return;

@@ -3,6 +3,11 @@ package eu.kalafatic.evolution.view.editors.pages;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
+import org.eclipse.jface.viewers.ArrayContentProvider;
+import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.LocationAdapter;
@@ -18,6 +23,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.Table;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -39,6 +45,7 @@ public class ApprovalPage extends Composite {
 	private Label iterationsLabel;
 	private Label branchLabel;
 	private Label iterationRationaleLabel;
+	private TableViewer tableViewer;
 
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override
@@ -82,6 +89,51 @@ public class ApprovalPage extends Composite {
 		GridData rationaleData = new GridData(GridData.FILL_HORIZONTAL);
 		rationaleData.widthHint = 400;
 		iterationRationaleLabel.setLayoutData(rationaleData);
+		// Task Management Group
+		Group taskGroup = SWTFactory.createGroup(this, "Proposed Tasks", 1);
+		taskGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		((GridData)taskGroup.getLayoutData()).heightHint = 180;
+
+		Composite taskTableComposite = new Composite(taskGroup, SWT.NONE);
+		taskTableComposite.setLayout(new GridLayout(2, false));
+		taskTableComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		tableViewer = new TableViewer(taskTableComposite, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
+		Table table = tableViewer.getTable();
+		table.setHeaderVisible(true);
+		table.setLinesVisible(true);
+		table.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		createColumns();
+		tableViewer.setContentProvider(ArrayContentProvider.getInstance());
+
+		Composite taskActions = new Composite(taskTableComposite, SWT.NONE);
+		taskActions.setLayout(new GridLayout(1, false));
+		taskActions.setLayoutData(new GridData(SWT.BEGINNING, SWT.FILL, false, false));
+
+		Button upBtn = SWTFactory.createButton(taskActions, "Move Up", 80);
+		upBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+			@Override
+			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+				handleMoveTask(-1);
+			}
+		});
+
+		Button downBtn = SWTFactory.createButton(taskActions, "Move Down", 80);
+		downBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+			@Override
+			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+				handleMoveTask(1);
+			}
+		});
+
+		Button deleteBtn = SWTFactory.createButton(taskActions, "Delete", 80);
+		deleteBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+			@Override
+			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+				handleDeleteTask();
+			}
+		});
 
 		// Visualization Area
 		Group vizGroup = SWTFactory.createGroup(this, "AI Network & Process Flow", 1);
@@ -139,10 +191,89 @@ public class ApprovalPage extends Composite {
 		refreshUI();
 	}
 
+	private void createColumns() {
+		TableViewerColumn colName = new TableViewerColumn(tableViewer, SWT.NONE);
+		colName.getColumn().setText("Task Name (Click to edit)");
+		colName.getColumn().setWidth(300);
+		colName.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				return ((Task)element).getName();
+			}
+		});
+		colName.setEditingSupport(new org.eclipse.jface.viewers.EditingSupport(tableViewer) {
+			@Override
+			protected void setValue(Object element, Object value) {
+				((Task)element).setName(String.valueOf(value));
+				editor.setDirty(true);
+				tableViewer.update(element, null);
+			}
+			@Override
+			protected Object getValue(Object element) {
+				return ((Task)element).getName();
+			}
+			@Override
+			protected org.eclipse.jface.viewers.CellEditor getCellEditor(Object element) {
+				return new org.eclipse.jface.viewers.TextCellEditor(tableViewer.getTable());
+			}
+			@Override
+			protected boolean canEdit(Object element) {
+				return true;
+			}
+		});
+
+		TableViewerColumn colType = new TableViewerColumn(tableViewer, SWT.NONE);
+		colType.getColumn().setText("Type");
+		colType.getColumn().setWidth(100);
+		colType.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				return ((Task)element).getType();
+			}
+		});
+
+		TableViewerColumn colStatus = new TableViewerColumn(tableViewer, SWT.NONE);
+		colStatus.getColumn().setText("Status");
+		colStatus.getColumn().setWidth(100);
+		colStatus.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				return ((Task)element).getStatus().toString();
+			}
+		});
+	}
+
+	private void handleMoveTask(int direction) {
+		IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
+		if (selection.isEmpty()) return;
+		Task task = (Task) selection.getFirstElement();
+		int index = orchestrator.getTasks().indexOf(task);
+		int newIndex = index + direction;
+		if (newIndex >= 0 && newIndex < orchestrator.getTasks().size()) {
+			orchestrator.getTasks().move(newIndex, index);
+			editor.setDirty(true);
+			tableViewer.refresh();
+		}
+	}
+
+	private void handleDeleteTask() {
+		IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
+		if (selection.isEmpty()) return;
+		Task task = (Task) selection.getFirstElement();
+		orchestrator.getTasks().remove(task);
+		editor.setDirty(true);
+		tableViewer.refresh();
+	}
+
 	private void refreshUI() {
 		if (isDisposed()) return;
 		Display.getDefault().asyncExec(() -> {
 			if (isDisposed()) return;
+
+			if (orchestrator != null) {
+				tableViewer.setInput(orchestrator.getTasks());
+			}
+
 			if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
 				SelfDevSession session = orchestrator.getSelfDevSession();
 				sessionIdLabel.setText(session.getId() != null ? session.getId() : "N/A");
@@ -179,17 +310,33 @@ public class ApprovalPage extends Composite {
 	}
 
 	private void handleApprove() {
-		MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-		mb.setText("Approval Confirmed");
-		mb.setMessage("Approval confirmed and changes applied to the system.");
-		mb.open();
+		if (editor.getCurrentContext() != null) {
+			editor.getCurrentContext().provideApproval(true);
+			MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+			mb.setText("Approval Confirmed");
+			mb.setMessage("Approval confirmed and orchestration will continue.");
+			mb.open();
+		} else {
+			MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+			mb.setText("Approval Confirmed");
+			mb.setMessage("Approval confirmed and changes applied to the system.");
+			mb.open();
+		}
 	}
 
 	private void handleReject() {
-		MessageBox mb = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);
-		mb.setText("Changes Requested");
-		mb.setMessage("Changes rejected. Feedback sent to the autonomous agent for refinement.");
-		mb.open();
+		if (editor.getCurrentContext() != null) {
+			editor.getCurrentContext().provideApproval(false);
+			MessageBox mb = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);
+			mb.setText("Changes Requested");
+			mb.setMessage("Changes rejected. Orchestration aborted.");
+			mb.open();
+		} else {
+			MessageBox mb = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);
+			mb.setText("Changes Requested");
+			mb.setMessage("Changes rejected. Feedback sent to the autonomous agent for refinement.");
+			mb.open();
+		}
 	}
 
 	private String getModelAsJson() {
