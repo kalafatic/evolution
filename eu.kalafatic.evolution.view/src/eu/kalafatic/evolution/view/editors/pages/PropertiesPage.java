@@ -38,9 +38,9 @@ public class PropertiesPage extends ScrolledComposite {
 	private Text localModelText, hybridModelText;
 	private Text mcpUrlText, openAiTokenText, openAiModelText;
 	private Table agentsTable;
-	private Text gitRepoText, gitBranchText, mavenGoalsText, mavenProfilesText, aiChatUrlText, neuronAiUrlText,
+	private Text aiChatUrlText, neuronAiUrlText,
 			compilerSourceText;
-	private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator, llmTempDecorator, gitRepoDecorator;
+	private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator, llmTempDecorator;
 	private OllamaService ollamaService;
 
 	public PropertiesPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
@@ -186,27 +186,6 @@ public class PropertiesPage extends ScrolledComposite {
 			col.setWidth(widths[i]);
 		}
 
-		Group gitMavenGroup = new Group(comp, SWT.NONE);
-		gitMavenGroup.setText("Git & Maven");
-		gitMavenGroup.setLayout(new GridLayout(3, false));
-		gitMavenGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		SWTFactory.createLabel(gitMavenGroup, "Git Repo:");
-		gitRepoText = new Text(gitMavenGroup, SWT.BORDER);
-		gitRepoText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		SWTFactory.createEditButton(gitMavenGroup, gitRepoText);
-		SWTFactory.createLabel(gitMavenGroup, "Git Branch:");
-		gitBranchText = new Text(gitMavenGroup, SWT.BORDER);
-		gitBranchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		SWTFactory.createEditButton(gitMavenGroup, gitBranchText);
-		SWTFactory.createLabel(gitMavenGroup, "Maven Goals:");
-		mavenGoalsText = new Text(gitMavenGroup, SWT.BORDER);
-		mavenGoalsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		SWTFactory.createEditButton(gitMavenGroup, mavenGoalsText);
-		SWTFactory.createLabel(gitMavenGroup, "Maven Profiles:");
-		mavenProfilesText = new Text(gitMavenGroup, SWT.BORDER);
-		mavenProfilesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		SWTFactory.createEditButton(gitMavenGroup, mavenProfilesText);
-
 		Group othersGroup = new Group(comp, SWT.NONE);
 		othersGroup.setText("Additional AI & Tools");
 		othersGroup.setLayout(new GridLayout(3, false));
@@ -307,10 +286,6 @@ public class PropertiesPage extends ScrolledComposite {
 		llmTempDecorator.setImage(
 				FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
 		llmTempDecorator.hide();
-		gitRepoDecorator = new ControlDecoration(gitRepoText, SWT.TOP | SWT.LEFT);
-		gitRepoDecorator.setImage(
-				FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
-		gitRepoDecorator.hide();
 
 		ModifyListener ml = e -> {
 			if (orchestrator != null && !isUpdating) {
@@ -320,7 +295,7 @@ public class PropertiesPage extends ScrolledComposite {
 			}
 		};
 		Text[] texts = { orchIdText, orchNameText, llmModelText, llmTempText, ollamaUrlText, ollamaModelText,
-				ollamaPathText, gitRepoText, gitBranchText, mavenGoalsText, mavenProfilesText, aiChatUrlText,
+				ollamaPathText, aiChatUrlText,
 				neuronAiUrlText, compilerSourceText, mcpUrlText, openAiTokenText, openAiModelText, localModelText,
 				hybridModelText };
 		for (Text t : texts)
@@ -421,15 +396,6 @@ public class PropertiesPage extends ScrolledComposite {
 			item.setText(1, a.getType() != null ? a.getType() : "");
 			item.setText(2, a.getExecutionMode() != null ? a.getExecutionMode().name() : "");
 		}
-		if (orchestrator.getGit() != null) {
-			gitRepoText.setText(
-					orchestrator.getGit().getRepositoryUrl() != null ? orchestrator.getGit().getRepositoryUrl() : "");
-			gitBranchText.setText(orchestrator.getGit().getBranch() != null ? orchestrator.getGit().getBranch() : "");
-		}
-		if (orchestrator.getMaven() != null) {
-			mavenGoalsText.setText(orchestrator.getMaven().getGoals().toString());
-			mavenProfilesText.setText(orchestrator.getMaven().getProfiles().toString());
-		}
 		if (orchestrator.getAiChat() != null)
 			aiChatUrlText.setText(orchestrator.getAiChat().getUrl() != null ? orchestrator.getAiChat().getUrl() : "");
 		if (orchestrator.getNeuronAI() != null)
@@ -478,13 +444,6 @@ public class PropertiesPage extends ScrolledComposite {
 			llmTempDecorator.setDescriptionText("Temperature must be a number");
 			llmTempDecorator.show();
 		}
-		boolean gitValid = !gitRepoText.getText().isEmpty()
-				&& (gitRepoText.getText().startsWith("http") || gitRepoText.getText().startsWith("git@"));
-		if (!gitValid) {
-			gitRepoDecorator.setDescriptionText("Invalid Git Repository URL");
-			gitRepoDecorator.show();
-		} else
-			gitRepoDecorator.hide();
 	}
 
 	private void updateModelFromFields() {
@@ -509,24 +468,6 @@ public class PropertiesPage extends ScrolledComposite {
 		orchestrator.getOllama().setUrl(ollamaUrlText.getText());
 		orchestrator.getOllama().setModel(ollamaModelText.getText());
 		orchestrator.getOllama().setPath(ollamaPathText.getText());
-
-		if (orchestrator.getGit() == null) {
-			orchestrator.setGit(OrchestrationFactory.eINSTANCE.createGit());
-		}
-		orchestrator.getGit().setRepositoryUrl(gitRepoText.getText());
-		orchestrator.getGit().setBranch(gitBranchText.getText());
-
-		if (orchestrator.getMaven() == null) {
-			orchestrator.setMaven(OrchestrationFactory.eINSTANCE.createMaven());
-		}
-		orchestrator.getMaven().getGoals().clear();
-		for (String goal : mavenGoalsText.getText().replace("[", "").replace("]", "").split("[,\\s]+"))
-			if (!goal.trim().isEmpty())
-				orchestrator.getMaven().getGoals().add(goal.trim());
-		orchestrator.getMaven().getProfiles().clear();
-		for (String prof : mavenProfilesText.getText().replace("[", "").replace("]", "").split("[,\\s]+"))
-			if (!prof.trim().isEmpty())
-				orchestrator.getMaven().getProfiles().add(prof.trim());
 
 		if (orchestrator.getAiChat() == null) {
 			orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());

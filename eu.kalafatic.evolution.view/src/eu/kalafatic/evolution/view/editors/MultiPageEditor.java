@@ -42,6 +42,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private BrowserPage browserPage;
     private AiFlowPage aiFlowPage;
     private ApprovalPage approvalPage;
+    private ToolsPage toolsPage;
     private Orchestrator orchestrator;
     private boolean isDirty = false;
     private ResourceSet resourceSet;
@@ -73,6 +74,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
                 aiFlowPage = AiFlowPageFactory.createAiFlowPage(this, orchestrator);
                 approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
+                toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
             } else {
                 Composite placeholder = new Composite(getContainer(), SWT.NONE);
@@ -181,6 +183,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (browserPage != null) browserPage.setOrchestrator(orchestrator);
         if (aiFlowPage != null) aiFlowPage.setOrchestrator(orchestrator);
         if (approvalPage != null) approvalPage.setOrchestrator(orchestrator);
+        if (toolsPage != null) toolsPage.setOrchestrator(orchestrator);
     }
 
     public void reloadModel() {
@@ -204,6 +207,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
             aiChatPage.setOrchestrator(orchestrator);
         } else if (control == propertiesPage && propertiesPage != null) {
             propertiesPage.updatePropertiesInfo();
+        } else if (control == toolsPage && toolsPage != null) {
+            toolsPage.updateUIFromModel();
         } else if (control == previewPage && previewPage != null) {
             previewPage.sortWords();
         }

@@ -8,9 +8,11 @@ import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
+import eu.kalafatic.evolution.model.orchestration.Database;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
+import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.IterationStatus;
@@ -103,9 +105,33 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.SELF_DEV_SESSION: return createSelfDevSession();
 			case OrchestrationPackage.ITERATION: return createIteration();
 			case OrchestrationPackage.EVALUATION_RESULT: return createEvaluationResult();
+			case OrchestrationPackage.DATABASE: return createDatabase();
+			case OrchestrationPackage.FILE_CONFIG: return createFileConfig();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Database createDatabase() {
+		DatabaseImpl database = new DatabaseImpl();
+		return database;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public FileConfig createFileConfig() {
+		FileConfigImpl fileConfig = new FileConfigImpl();
+		return fileConfig;
 	}
 
 	/**

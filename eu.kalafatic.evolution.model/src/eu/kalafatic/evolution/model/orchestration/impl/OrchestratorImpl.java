@@ -5,6 +5,8 @@ package eu.kalafatic.evolution.model.orchestration.impl;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
+import eu.kalafatic.evolution.model.orchestration.Database;
+import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
@@ -53,6 +55,8 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getRemoteModel <em>Remote Model</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAiMode <em>Ai Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMcpServerUrl <em>Mcp Server Url</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getDatabase <em>Database</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getFileConfig <em>File Config</em>}</li>
  * </ul>
  *
  * @generated
@@ -359,6 +363,114 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected SelfDevSession selfDevSession;
 
 	/**
+	 * The cached value of the '{@link #getDatabase() <em>Database</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDatabase()
+	 * @generated
+	 * @ordered
+	 */
+	protected Database database;
+
+	/**
+	 * The cached value of the '{@link #getFileConfig() <em>File Config</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getFileConfig()
+	 * @generated
+	 * @ordered
+	 */
+	protected FileConfig fileConfig;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Database getDatabase() {
+		return database;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetDatabase(Database newDatabase, NotificationChain msgs) {
+		Database oldDatabase = database;
+		database = newDatabase;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__DATABASE, oldDatabase, newDatabase);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setDatabase(Database newDatabase) {
+		if (newDatabase != database) {
+			NotificationChain msgs = null;
+			if (database != null)
+				msgs = ((InternalEObject)database).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__DATABASE, null, msgs);
+			if (newDatabase != null)
+				msgs = ((InternalEObject)newDatabase).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__DATABASE, null, msgs);
+			msgs = basicSetDatabase(newDatabase, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__DATABASE, newDatabase, newDatabase));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public FileConfig getFileConfig() {
+		return fileConfig;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetFileConfig(FileConfig newFileConfig, NotificationChain msgs) {
+		FileConfig oldFileConfig = fileConfig;
+		fileConfig = newFileConfig;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, oldFileConfig, newFileConfig);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setFileConfig(FileConfig newFileConfig) {
+		if (newFileConfig != fileConfig) {
+			NotificationChain msgs = null;
+			if (fileConfig != null)
+				msgs = ((InternalEObject)fileConfig).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, null, msgs);
+			if (newFileConfig != null)
+				msgs = ((InternalEObject)newFileConfig).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, null, msgs);
+			msgs = basicSetFileConfig(newFileConfig, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, newFileConfig, newFileConfig));
+	}
 	 * The default value of the '{@link #getSharedMemory() <em>Shared Memory</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1064,6 +1176,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return basicSetNeuronAI(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
 				return basicSetSelfDevSession(null, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__DATABASE:
+				return basicSetDatabase(null, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
+				return basicSetFileConfig(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1116,6 +1232,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return isOfflineMode();
 			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
 				return getSelfDevSession();
+			case OrchestrationPackage.ORCHESTRATOR__DATABASE:
+				return getDatabase();
+			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
+				return getFileConfig();
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				return getSharedMemory();
 		}
@@ -1193,6 +1313,11 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
 				setSelfDevSession((SelfDevSession)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__DATABASE:
+				setDatabase((Database)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
+				setFileConfig((FileConfig)newValue);
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory((String)newValue);
 				return;
@@ -1268,6 +1393,11 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
 				setSelfDevSession((SelfDevSession)null);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__DATABASE:
+				setDatabase((Database)null);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
+				setFileConfig((FileConfig)null);
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory(SHARED_MEMORY_EDEFAULT);
 				return;
@@ -1323,6 +1453,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return offlineMode != OFFLINE_MODE_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
 				return selfDevSession != null;
+			case OrchestrationPackage.ORCHESTRATOR__DATABASE:
+				return database != null;
+			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
+				return fileConfig != null;
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				return SHARED_MEMORY_EDEFAULT == null ? sharedMemory != null : !SHARED_MEMORY_EDEFAULT.equals(sharedMemory);
 		}

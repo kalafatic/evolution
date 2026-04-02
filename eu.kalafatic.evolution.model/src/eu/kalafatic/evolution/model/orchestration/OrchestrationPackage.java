@@ -466,13 +466,24 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__SELF_DEV_SESSION = 19;
 
 	/**
+	 * The feature id for the '<em><b>Database</b></em>' containment reference.
 	 * The feature id for the '<em><b>Shared Memory</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__SHARED_MEMORY = 20;
+	int ORCHESTRATOR__DATABASE = 20;
+
+	/**
+	 * The feature id for the '<em><b>File Config</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__FILE_CONFIG = 21;
+	int ORCHESTRATOR__SHARED_MEMORY = 22;
 
 	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
@@ -481,7 +492,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 21;
+	int ORCHESTRATOR_FEATURE_COUNT = 23;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -1561,6 +1572,107 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	int SELF_DEV_DECISION = 27;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl <em>Database</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDatabase()
+	 * @generated
+	 */
+	int DATABASE = 20;
+
+	/**
+	 * The feature id for the '<em><b>Url</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATABASE__URL = 0;
+
+	/**
+	 * The feature id for the '<em><b>Username</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATABASE__USERNAME = 1;
+
+	/**
+	 * The feature id for the '<em><b>Password</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATABASE__PASSWORD = 2;
+
+	/**
+	 * The feature id for the '<em><b>Driver</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATABASE__DRIVER = 3;
+
+	/**
+	 * The number of structural features of the '<em>Database</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATABASE_FEATURE_COUNT = 4;
+
+	/**
+	 * The number of operations of the '<em>Database</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATABASE_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl <em>File Config</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileConfig()
+	 * @generated
+	 */
+	int FILE_CONFIG = 21;
+
+	/**
+	 * The feature id for the '<em><b>Local Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int FILE_CONFIG__LOCAL_PATH = 0;
+
+	/**
+	 * The number of structural features of the '<em>File Config</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int FILE_CONFIG_FEATURE_COUNT = 1;
+
+	/**
+	 * The number of operations of the '<em>File Config</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int FILE_CONFIG_OPERATION_COUNT = 0;
 
 
 	/**
@@ -2735,6 +2847,103 @@ public interface OrchestrationPackage extends EPackage {
 	EEnum getSelfDevDecision();
 
 	/**
+	 * Returns the meta object for the reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase <em>Database</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Database</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_Database();
+
+	/**
+	 * Returns the meta object for the reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig <em>File Config</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>File Config</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_FileConfig();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Database <em>Database</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Database</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database
+	 * @generated
+	 */
+	EClass getDatabase();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getUrl <em>Url</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Url</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getUrl()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_Url();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getUsername <em>Username</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Username</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getUsername()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_Username();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getPassword <em>Password</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Password</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getPassword()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_Password();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getDriver <em>Driver</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Driver</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getDriver()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_Driver();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.FileConfig <em>File Config</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>File Config</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig
+	 * @generated
+	 */
+	EClass getFileConfig();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.FileConfig#getLocalPath <em>Local Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Local Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig#getLocalPath()
+	 * @see #getFileConfig()
+	 * @generated
+	 */
+	EAttribute getFileConfig_LocalPath();
+
+	/**
 	 * Returns the meta object for the reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession <em>Self Dev Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3801,6 +4010,82 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EEnum SELF_DEV_DECISION = eINSTANCE.getSelfDevDecision();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl <em>Database</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDatabase()
+		 * @generated
+		 */
+		EClass DATABASE = eINSTANCE.getDatabase();
+
+		/**
+		 * The meta object literal for the '<em><b>Url</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__URL = eINSTANCE.getDatabase_Url();
+
+		/**
+		 * The meta object literal for the '<em><b>Username</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__USERNAME = eINSTANCE.getDatabase_Username();
+
+		/**
+		 * The meta object literal for the '<em><b>Password</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__PASSWORD = eINSTANCE.getDatabase_Password();
+
+		/**
+		 * The meta object literal for the '<em><b>Driver</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__DRIVER = eINSTANCE.getDatabase_Driver();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl <em>File Config</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileConfig()
+		 * @generated
+		 */
+		EClass FILE_CONFIG = eINSTANCE.getFileConfig();
+
+		/**
+		 * The meta object literal for the '<em><b>Local Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FILE_CONFIG__LOCAL_PATH = eINSTANCE.getFileConfig_LocalPath();
+
+		/**
+		 * The meta object literal for the '<em><b>Database</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__DATABASE = eINSTANCE.getOrchestrator_Database();
+
+		/**
+		 * The meta object literal for the '<em><b>File Config</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__FILE_CONFIG = eINSTANCE.getOrchestrator_FileConfig();
 
 		/**
 		 * The meta object literal for the '<em><b>Self Dev Session</b></em>' containment reference feature.
