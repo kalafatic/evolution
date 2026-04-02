@@ -35,7 +35,9 @@ public class IterationManager {
             gitManager.createBranch(iteration.getBranchName());
 
             // 2. Plan Tasks
-            List<Task> tasks = planner.generateTasks(context);
+            TaskPlanner.PlanningResult planningResult = planner.generateTasks(context);
+            List<Task> tasks = planningResult.tasks;
+            iteration.setRationale(planningResult.rationale);
             if (tasks.isEmpty()) {
                 context.log("[ITERATION] No tasks generated. Skipping.");
                 iteration.setStatus(IterationStatus.DONE);

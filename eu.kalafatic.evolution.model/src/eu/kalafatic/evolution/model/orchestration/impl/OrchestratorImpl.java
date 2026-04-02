@@ -471,6 +471,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		else if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, newFileConfig, newFileConfig));
 	}
+
+	/**
 	 * The default value of the '{@link #getSharedMemory() <em>Shared Memory</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

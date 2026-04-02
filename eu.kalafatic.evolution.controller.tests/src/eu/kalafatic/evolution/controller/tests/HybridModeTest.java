@@ -63,7 +63,7 @@ public class HybridModeTest {
             "Large Model Output" // 2nd call: remote execution
         });
 
-        String result = router.sendRequest(orchestrator, "Initial User Request", 0.7f, null);
+        String result = router.sendRequest(orchestrator, "Initial User Request", 0.7f, null, null);
 
         // Assert the final result is the simplified one from the 3rd step (Ollama)
         assertEquals("Final Simplified Response", result);
@@ -98,10 +98,15 @@ public class HybridModeTest {
         }
 
         @Override
-        public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
+        public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, eu.kalafatic.evolution.controller.orchestration.TaskContext context) throws Exception {
             int current = callCount.getAndIncrement();
             receivedPrompts[current] = prompt;
             return (current < responseSequence.length) ? responseSequence[current] : "Default Response";
+        }
+
+        @Override
+        public String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl, eu.kalafatic.evolution.controller.orchestration.TaskContext context) throws Exception {
+            return "OK";
         }
 
         public int getCallCount() { return callCount.get(); }
