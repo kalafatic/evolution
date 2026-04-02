@@ -25,12 +25,13 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
-public class AiFlowPage extends ScrolledComposite {
+public class AiFlowPage extends Composite {
 	private Browser browser;
 	private Orchestrator orchestrator;
 	private MultiPageEditor editor;
 	private boolean isLoaded = false;
-	private Composite content;
+	private ScrolledComposite vizScrolled;
+	private Composite browserContainer;
 	private int browserWidth = 1000;
 	private int browserHeight = 800;
 
@@ -43,14 +44,9 @@ public class AiFlowPage extends ScrolledComposite {
 	};
 
 	public AiFlowPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
+		super(parent, SWT.NONE);
 		this.editor = editor;
-		this.setExpandHorizontal(true);
-		this.setExpandVertical(true);
-
-		content = new Composite(this, SWT.NONE);
-		content.setLayout(new GridLayout(1, false));
-		this.setContent(content);
+		this.setLayout(new GridLayout(1, false));
 
 		ToolBarManager toolbarManager = new ToolBarManager(SWT.FLAT | SWT.RIGHT);
 		toolbarManager.add(new Action("Zoom In") {
@@ -77,9 +73,18 @@ public class AiFlowPage extends ScrolledComposite {
 				updateScrolledContent();
 			}
 		});
-		toolbarManager.createControl(content);
+		toolbarManager.createControl(this);
 
-		this.browser = new Browser(content, SWT.NONE);
+		vizScrolled = new ScrolledComposite(this, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+		vizScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+		vizScrolled.setExpandHorizontal(true);
+		vizScrolled.setExpandVertical(true);
+
+		browserContainer = new Composite(vizScrolled, SWT.NONE);
+		browserContainer.setLayout(new GridLayout(1, false));
+		vizScrolled.setContent(browserContainer);
+
+		this.browser = new Browser(browserContainer, SWT.NONE);
 		GridData browserGD = new GridData(SWT.LEFT, SWT.TOP, false, false);
 		browserGD.widthHint = browserWidth;
 		browserGD.heightHint = browserHeight;
@@ -112,14 +117,14 @@ public class AiFlowPage extends ScrolledComposite {
 	}
 
 	private void updateScrolledContent() {
-		if (content == null || content.isDisposed()) return;
+		if (vizScrolled == null || vizScrolled.isDisposed()) return;
 		if (browser != null && !browser.isDisposed()) {
 			GridData gd = (GridData) browser.getLayoutData();
 			gd.widthHint = browserWidth;
 			gd.heightHint = browserHeight;
 		}
-		content.layout(true, true);
-		this.setMinSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+		browserContainer.layout(true, true);
+		vizScrolled.setMinSize(browserContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
 	public void setOrchestrator(Orchestrator orchestrator) {

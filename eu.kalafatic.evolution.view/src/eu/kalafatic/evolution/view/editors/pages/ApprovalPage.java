@@ -37,7 +37,7 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class ApprovalPage extends ScrolledComposite {
+public class ApprovalPage extends Composite {
 	private MultiPageEditor editor;
 	private Orchestrator orchestrator;
 	private Browser browser;
@@ -47,7 +47,8 @@ public class ApprovalPage extends ScrolledComposite {
 	private Label iterationsLabel;
 	private Label branchLabel;
 	private TableViewer tableViewer;
-	private Composite content;
+	private ScrolledComposite vizScrolled;
+	private Composite browserContainer;
 	private int browserWidth = 1000;
 	private int browserHeight = 800;
 
@@ -60,22 +61,18 @@ public class ApprovalPage extends ScrolledComposite {
 	};
 
 	public ApprovalPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
+		super(parent, SWT.NONE);
 		this.editor = editor;
 		this.orchestrator = orchestrator;
-		this.setExpandHorizontal(true);
-		this.setExpandVertical(true);
 		createControl();
 		setOrchestrator(orchestrator);
 	}
 
 	private void createControl() {
-		content = new Composite(this, SWT.NONE);
-		content.setLayout(new GridLayout(1, false));
-		this.setContent(content);
+		this.setLayout(new GridLayout(1, false));
 
 		// Summary Group
-		Group summaryGroup = SWTFactory.createGroup(content, "Approval Summary", 2);
+		Group summaryGroup = SWTFactory.createGroup(this, "Approval Summary", 2);
 		SWTFactory.createLabel(summaryGroup, "Session ID:");
 		sessionIdLabel = new Label(summaryGroup, SWT.NONE);
 		sessionIdLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -93,7 +90,7 @@ public class ApprovalPage extends ScrolledComposite {
 		branchLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 		// Task Management Group
-		Group taskGroup = SWTFactory.createGroup(content, "Proposed Tasks", 1);
+		Group taskGroup = SWTFactory.createGroup(this, "Proposed Tasks", 1);
 		taskGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		((GridData)taskGroup.getLayoutData()).heightHint = 180;
 
@@ -139,7 +136,7 @@ public class ApprovalPage extends ScrolledComposite {
 		});
 
 		// Visualization Area
-		Group vizGroup = SWTFactory.createGroup(content, "AI Network & Process Flow", 1);
+		Group vizGroup = SWTFactory.createGroup(this, "AI Network & Process Flow", 1);
 		vizGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
 		vizGroup.setLayout(new GridLayout(1, false));
 
@@ -170,11 +167,21 @@ public class ApprovalPage extends ScrolledComposite {
 		});
 		toolbarManager.createControl(vizGroup);
 
-		browser = new Browser(vizGroup, SWT.NONE);
+		vizScrolled = new ScrolledComposite(vizGroup, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+		vizScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+		vizScrolled.setExpandHorizontal(true);
+		vizScrolled.setExpandVertical(true);
+
+		browserContainer = new Composite(vizScrolled, SWT.NONE);
+		browserContainer.setLayout(new GridLayout(1, false));
+		vizScrolled.setContent(browserContainer);
+
+		browser = new Browser(browserContainer, SWT.NONE);
 		GridData browserGD = new GridData(SWT.LEFT, SWT.TOP, false, false);
 		browserGD.widthHint = browserWidth;
 		browserGD.heightHint = browserHeight;
 		browser.setLayoutData(browserGD);
+
 		browser.addProgressListener(new ProgressAdapter() {
 			@Override
 			public void completed(ProgressEvent event) {
@@ -196,7 +203,7 @@ public class ApprovalPage extends ScrolledComposite {
 		browser.setText(getHtmlTemplate());
 
 		// Actions Area
-		Group actionsGroup = SWTFactory.createGroup(content, "Review Actions", 2);
+		Group actionsGroup = SWTFactory.createGroup(this, "Review Actions", 2);
 		Button approveBtn = SWTFactory.createButton(actionsGroup, "Approve & Apply", 150);
 		approveBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
 			@Override
@@ -217,14 +224,14 @@ public class ApprovalPage extends ScrolledComposite {
 	}
 
 	private void updateScrolledContent() {
-		if (content == null || content.isDisposed()) return;
+		if (vizScrolled == null || vizScrolled.isDisposed()) return;
 		if (browser != null && !browser.isDisposed()) {
 			GridData gd = (GridData) browser.getLayoutData();
 			gd.widthHint = browserWidth;
 			gd.heightHint = browserHeight;
 		}
-		content.layout(true, true);
-		this.setMinSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+		browserContainer.layout(true, true);
+		vizScrolled.setMinSize(browserContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
 	public void setOrchestrator(Orchestrator orchestrator) {
