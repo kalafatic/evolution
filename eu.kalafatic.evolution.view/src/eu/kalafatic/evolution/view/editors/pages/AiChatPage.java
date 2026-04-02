@@ -521,9 +521,13 @@ public class AiChatPage extends ScrolledComposite {
                 File projectRoot = getProjectRoot();
                 TaskContext context = new TaskContext(orchestrator, projectRoot);
                 this.currentContext = context;
+                Display.getDefault().asyncExec(() -> editor.setCurrentContext(context));
                 context.addApprovalListener(message -> {
                     Display.getDefault().asyncExec(() -> {
                         showApprovalUI(message);
+                        if (TaskContext.PLAN_APPROVAL_MESSAGE.equals(message)) {
+                            editor.showApprovalPage();
+                        }
                     });
                 });
                 context.addTokenRequestListener((provider, future) -> {

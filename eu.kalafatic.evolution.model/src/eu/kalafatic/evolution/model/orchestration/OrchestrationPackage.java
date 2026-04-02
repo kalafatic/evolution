@@ -2944,10 +2944,10 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getFileConfig_LocalPath();
 
 	/**
-	 * Returns the meta object for the reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession <em>Self Dev Session</em>}'.
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession <em>Self Dev Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the reference '<em>Self Dev Session</em>'.
+	 * @return the meta object for the containment reference '<em>Self Dev Session</em>'.
 	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession()
 	 * @see #getOrchestrator()
 	 * @generated

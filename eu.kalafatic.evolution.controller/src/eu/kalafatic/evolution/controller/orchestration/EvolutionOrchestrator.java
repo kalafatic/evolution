@@ -35,10 +35,22 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             // 1. Planning
             OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Planning...");
-            List<Task> tasks = planner.plan(request, context);
+            List<Task> originalPlannedTasks = planner.plan(request, context);
             OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Finished");
             context.getOrchestrator().getTasks().clear();
-            context.getOrchestrator().getTasks().addAll(tasks);
+            context.getOrchestrator().getTasks().addAll(originalPlannedTasks);
+
+            // Pause for Plan Approval
+            context.log("Orchestrator: Plan generated. Waiting for user review and approval...");
+            Boolean planApproved = context.requestApproval(TaskContext.PLAN_APPROVAL_MESSAGE).get();
+            if (planApproved == null || !planApproved) {
+                context.log("Orchestrator: Plan rejected by user.");
+                throw new Exception("Orchestration plan rejected by user.");
+            }
+            context.log("Orchestrator: Plan approved. Starting execution...");
+
+            // Reload tasks from model in case the user modified them during approval
+            List<Task> tasks = new ArrayList<>(context.getOrchestrator().getTasks());
 
             // 2. Execution Loop
             int taskCount = tasks.size();
