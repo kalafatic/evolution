@@ -12,6 +12,7 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
@@ -181,6 +182,19 @@ public class ApprovalPage extends Composite {
 		browserGD.widthHint = browserWidth;
 		browserGD.heightHint = browserHeight;
 		browser.setLayoutData(browserGD);
+
+		new BrowserFunction(browser, "javaZoom") {
+			@Override
+			public Object function(Object[] arguments) {
+				if (arguments.length > 0 && arguments[0] instanceof Number) {
+					double factor = ((Number) arguments[0]).doubleValue();
+					browserWidth = (int) (browserWidth * factor);
+					browserHeight = (int) (browserHeight * factor);
+					updateScrolledContent();
+				}
+				return null;
+			}
+		};
 
 		browser.addProgressListener(new ProgressAdapter() {
 			@Override
@@ -471,6 +485,13 @@ public class ApprovalPage extends Composite {
 				+ "<g id='viewport'></g></svg>"
 				+ "<script>"
 				+ "const viewport = document.getElementById('viewport');"
+				+ "window.addEventListener('wheel', (e) => {"
+				+ "  if (e.ctrlKey) {"
+				+ "    e.preventDefault();"
+				+ "    const factor = e.deltaY < 0 ? 1.1 : 0.9;"
+				+ "    if (typeof javaZoom === 'function') javaZoom(factor);"
+				+ "  }"
+				+ "}, { passive: false });"
 				+ "function updateGraph(data) {"
 				+ "  viewport.innerHTML = '';"
 				+ "  if (!data) return;"

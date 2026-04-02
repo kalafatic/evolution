@@ -7,6 +7,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
@@ -89,6 +90,19 @@ public class AiFlowPage extends Composite {
 		browserGD.widthHint = browserWidth;
 		browserGD.heightHint = browserHeight;
 		browser.setLayoutData(browserGD);
+
+		new BrowserFunction(browser, "javaZoom") {
+			@Override
+			public Object function(Object[] arguments) {
+				if (arguments.length > 0 && arguments[0] instanceof Number) {
+					double factor = ((Number) arguments[0]).doubleValue();
+					browserWidth = (int) (browserWidth * factor);
+					browserHeight = (int) (browserHeight * factor);
+					updateScrolledContent();
+				}
+				return null;
+			}
+		};
 
 		browser.addProgressListener(new ProgressAdapter() {
 			@Override
@@ -218,6 +232,13 @@ public class AiFlowPage extends Composite {
 				+ "</style></head><body>"
 				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs><marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#b0bec5'/></marker></defs><g id='viewport'></g></svg>"
 				+ "<script>" + "const viewport = document.getElementById('viewport');"
+				+ "window.addEventListener('wheel', (e) => {"
+				+ "  if (e.ctrlKey) {"
+				+ "    e.preventDefault();"
+				+ "    const factor = e.deltaY < 0 ? 1.1 : 0.9;"
+				+ "    if (typeof javaZoom === 'function') javaZoom(factor);"
+				+ "  }"
+				+ "}, { passive: false });"
 				+ "function updateGraph(data) {"
 				+ "  viewport.innerHTML = '';" + "  if (!data) return;" + "  const nodes = {};" + "  const links = [];"
 				+ "  // Flow-like layout: sequential" + "  let x = 300, y = 50;" + "  if (data.tasks) {"
