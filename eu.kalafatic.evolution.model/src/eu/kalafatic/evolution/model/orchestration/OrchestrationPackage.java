@@ -1402,13 +1402,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ITERATION__STATUS = 4;
 
 	/**
+	 * The feature id for the '<em><b>Phase</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__PHASE = 5;
+
+	/**
 	 * The number of structural features of the '<em>Iteration</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ITERATION_FEATURE_COUNT = 5;
+	int ITERATION_FEATURE_COUNT = 6;
 
 	/**
 	 * The number of operations of the '<em>Iteration</em>' class.
@@ -2752,6 +2761,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getIteration_Status();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getPhase <em>Phase</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Phase</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getPhase()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_Phase();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult <em>Evaluation Result</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3930,6 +3950,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute ITERATION__STATUS = eINSTANCE.getIteration_Status();
+
+		/**
+		 * The meta object literal for the '<em><b>Phase</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__PHASE = eINSTANCE.getIteration_Phase();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl <em>Evaluation Result</em>}' class.

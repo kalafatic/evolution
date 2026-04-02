@@ -123,6 +123,49 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 	protected IterationStatus status = STATUS_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getPhase() <em>Phase</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPhase()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String PHASE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getPhase() <em>Phase</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPhase()
+	 * @generated
+	 * @ordered
+	 */
+	protected String phase = PHASE_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getPhase() {
+		return phase;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPhase(String newPhase) {
+		String oldPhase = phase;
+		phase = newPhase;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__PHASE, oldPhase, phase));
+	}
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -302,6 +345,8 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 				return getEvaluationResult();
 			case OrchestrationPackage.ITERATION__STATUS:
 				return getStatus();
+			case OrchestrationPackage.ITERATION__PHASE:
+				return getPhase();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -331,6 +376,9 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 			case OrchestrationPackage.ITERATION__STATUS:
 				setStatus((IterationStatus)newValue);
 				return;
+			case OrchestrationPackage.ITERATION__PHASE:
+				setPhase((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -358,6 +406,9 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 			case OrchestrationPackage.ITERATION__STATUS:
 				setStatus(STATUS_EDEFAULT);
 				return;
+			case OrchestrationPackage.ITERATION__PHASE:
+				setPhase(PHASE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -380,6 +431,8 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 				return evaluationResult != null;
 			case OrchestrationPackage.ITERATION__STATUS:
 				return status != STATUS_EDEFAULT;
+			case OrchestrationPackage.ITERATION__PHASE:
+				return PHASE_EDEFAULT == null ? phase != null : !PHASE_EDEFAULT.equals(phase);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -400,6 +453,8 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 		result.append(branchName);
 		result.append(", status: ");
 		result.append(status);
+		result.append(", phase: ");
+		result.append(phase);
 		result.append(')');
 		return result.toString();
 	}

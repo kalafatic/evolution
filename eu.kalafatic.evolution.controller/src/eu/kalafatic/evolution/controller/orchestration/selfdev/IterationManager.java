@@ -29,12 +29,15 @@ public class IterationManager {
     public EvaluationResult run() throws Exception {
         context.log("[ITERATION] Starting iteration: " + iteration.getId());
         iteration.setStatus(IterationStatus.RUNNING);
+        iteration.setPhase("OBSERVE");
 
         try {
             // 1. Create Git Branch
+            iteration.setPhase("ANALYZE");
             gitManager.createBranch(iteration.getBranchName());
 
             // 2. Plan Tasks
+            iteration.setPhase("PLAN");
             List<Task> tasks = planner.generateTasks(context);
             if (tasks.isEmpty()) {
                 context.log("[ITERATION] No tasks generated. Skipping.");
@@ -47,6 +50,11 @@ public class IterationManager {
             iteration.getTasks().addAll(tasks);
 
             // 3. Execute Tasks
+            iteration.setPhase("VALIDATE");
+            // In a real scenario, VALIDATE might involve checking the plan.
+            // For now, we move directly to EXECUTE.
+
+            iteration.setPhase("EXECUTE");
             boolean executionSuccess = executor.executeTasks(tasks);
             if (!executionSuccess) {
                 context.log("[ITERATION] Execution failed. Rolling back.");
@@ -59,10 +67,15 @@ public class IterationManager {
             }
 
             // 4. Evaluate
+            iteration.setPhase("TEST");
+            // TEST and EVALUATE are handled by the evaluator
+
+            iteration.setPhase("EVALUATE");
             EvaluationResult result = evaluator.evaluate();
             iteration.setEvaluationResult(result);
 
             // 5. Decision
+            iteration.setPhase("LEARN");
             if (result.getDecision() == SelfDevDecision.CONTINUE) {
                 context.log("[ITERATION] Evaluation successful. Committing.");
                 gitManager.commit("Self-Development Iteration " + iteration.getId() + " success.");
