@@ -1581,7 +1581,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDatabase()
 	 * @generated
 	 */
-	int DATABASE = 20;
+	int DATABASE = 28;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -1645,7 +1645,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileConfig()
 	 * @generated
 	 */
-	int FILE_CONFIG = 21;
+	int FILE_CONFIG = 29;
 
 	/**
 	 * The feature id for the '<em><b>Local Path</b></em>' attribute.
