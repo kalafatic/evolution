@@ -270,10 +270,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @see org.eclipse.emf.ecore.EPackage.Registry
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#eNS_URI
 	 * @see #init()
-	 * @generated
+	 * @generated NOT
 	 */
 	private OrchestrationPackageImpl() {
-		super(eNS_URI, OrchestrationFactory.eINSTANCE);
+		super(eNS_URI, new OrchestrationFactoryImpl());
 	}
 	/**
 	 * <!-- begin-user-doc -->
@@ -1726,6 +1726,15 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__ERRORS);
 		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__DECISION);
 
+		databaseEClass = createEClass(DATABASE);
+		createEAttribute(databaseEClass, DATABASE__URL);
+		createEAttribute(databaseEClass, DATABASE__USERNAME);
+		createEAttribute(databaseEClass, DATABASE__PASSWORD);
+		createEAttribute(databaseEClass, DATABASE__DRIVER);
+
+		fileConfigEClass = createEClass(FILE_CONFIG);
+		createEAttribute(fileConfigEClass, FILE_CONFIG__LOCAL_PATH);
+
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
 		commandStatusEEnum = createEEnum(COMMAND_STATUS);
@@ -1814,6 +1823,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getOrchestrator_HybridModel(), ecorePackage.getEString(), "hybridModel", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_OfflineMode(), ecorePackage.getEBoolean(), "offlineMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_SelfDevSession(), this.getSelfDevSession(), null, "selfDevSession", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_Database(), this.getDatabase(), null, "database", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_FileConfig(), this.getFileConfig(), null, "fileConfig", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_SharedMemory(), ecorePackage.getEString(), "sharedMemory", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(gitEClass, Git.class, "Git", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -1898,6 +1909,15 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getEvaluationResult_CoverageChange(), ecorePackage.getEDouble(), "coverageChange", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getEvaluationResult_Errors(), ecorePackage.getEString(), "errors", null, 0, -1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getEvaluationResult_Decision(), this.getSelfDevDecision(), "decision", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(databaseEClass, eu.kalafatic.evolution.model.orchestration.Database.class, "Database", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getDatabase_Url(), ecorePackage.getEString(), "url", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Database.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDatabase_Username(), ecorePackage.getEString(), "username", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Database.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDatabase_Password(), ecorePackage.getEString(), "password", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Database.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDatabase_Driver(), ecorePackage.getEString(), "driver", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Database.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(fileConfigEClass, eu.kalafatic.evolution.model.orchestration.FileConfig.class, "FileConfig", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getFileConfig_LocalPath(), ecorePackage.getEString(), "localPath", null, 0, 1, eu.kalafatic.evolution.model.orchestration.FileConfig.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Initialize enums and add enum literals
 		initEEnum(taskStatusEEnum, TaskStatus.class, "TaskStatus");
