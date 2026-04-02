@@ -23,6 +23,6 @@ public class TesterAgent extends BaseAiAgent {
                 "Generate JUnit tests, or run Maven tests and analyze the output.";
 
         context.log("Tester [" + id + "]: Analyzing testing task - " + taskDescription);
-        return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt));
+        return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt, context));
     }
 }

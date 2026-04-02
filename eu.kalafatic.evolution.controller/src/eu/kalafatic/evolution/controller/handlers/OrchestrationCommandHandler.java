@@ -83,6 +83,18 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         monitor.beginTask("Orchestration: " + orchestrator.getName(), 100);
 
         TaskContext context = new TaskContext(orchestrator, project.getLocation().toFile());
+        context.addTokenRequestListener((provider, future) -> {
+            Display.getDefault().asyncExec(() -> {
+                org.eclipse.jface.dialogs.InputDialog dlg = new org.eclipse.jface.dialogs.InputDialog(null, "API Token Required", "Please enter the API token for " + provider + ":", "", null);
+                if (dlg.open() == org.eclipse.jface.window.Window.OK) {
+                    String token = dlg.getValue();
+                    orchestrator.setOpenAiToken(token);
+                    future.complete(token);
+                } else {
+                    future.completeExceptionally(new Exception("Token request cancelled by user."));
+                }
+            });
+        });
         context.appendSharedMemory("Initial Request: " + orchestrator.getAiChat().getPrompt());
 
         EvolutionOrchestrator core = new EvolutionOrchestrator();
@@ -92,7 +104,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         monitor.done();
     }
 
-    private List<Task> decomposeTasks(Orchestrator orchestrator) throws Exception {
+    private List<Task> decomposeTasks(Orchestrator orchestrator, TaskContext context) throws Exception {
         String plannerPrompt = "You are a workflow planner for an agentic system. " +
                 "Decompose the user request into a sequence of atomic, specialized tasks.\n" +
                 "Available task types:\n" +
@@ -107,7 +119,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"train_nn\"|\"train_llm\"|\"train_agent\" } ]\n\n" +
                 "Request: " + orchestrator.getAiChat().getPrompt();
 
-        String response = sendRequest(orchestrator, plannerPrompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
+        String response = sendRequest(orchestrator, plannerPrompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null, context);
         JSONArray jsonArray = extractJsonArray(response);
 
         List<Task> tasks = new ArrayList<>();
@@ -123,7 +135,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return tasks;
     }
 
-    private String evaluateTask(Orchestrator orchestrator, Task task, String context) throws Exception {
+    private String evaluateTask(Orchestrator orchestrator, Task task, String context, TaskContext taskContext) throws Exception {
         String evalPrompt = "You are an AI Critic. Evaluate if the following task was successfully completed.\n\n" +
                 "TASK GOAL: " + task.getName() + "\n" +
                 "AGENT OUTPUT: " + task.getResponse() + "\n" +
@@ -134,7 +146,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
                 "Output MUST be a valid JSON object. Schema:\n" +
                 "{ \"success\": boolean, \"feedback\": \"Detailed explanation of why it failed and how to fix it\", \"comment\": \"Brief success message\" }";
 
-        return sendRequest(orchestrator, evalPrompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
+        return sendRequest(orchestrator, evalPrompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null, taskContext);
     }
 
     private JSONObject parseEvaluation(String response) {
@@ -185,7 +197,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
 //        
 //        
 //    }
-    private String executeTask(Orchestrator orchestrator, IProject project, Agent agent, Task task, String context, String lastFeedback) throws Exception {
+    private String executeTask(Orchestrator orchestrator, IProject project, Agent agent, Task task, String context, String lastFeedback, TaskContext taskContext) throws Exception {
         String taskType = task.getType();
 
         if ("git".equalsIgnoreCase(taskType)) {
@@ -193,7 +205,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         } else if ("maven".equalsIgnoreCase(taskType)) {
             return executeMavenTool(project, orchestrator);
         } else if ("file".equalsIgnoreCase(taskType)) {
-            return executeFileTool(orchestrator, project, agent, task, context, lastFeedback);
+            return executeFileTool(orchestrator, project, agent, task, context, lastFeedback, taskContext);
         } else if (taskType.startsWith("train_")) {
             return executeTrainingTool(orchestrator, agent, task);
         } else {
@@ -207,7 +219,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
             prompt += "Your task: " + task.getName() + "\n" +
                     "Provide your response below:";
 
-            return sendRequest(orchestrator, prompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
+            return sendRequest(orchestrator, prompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null, taskContext);
         }
     }
 
@@ -286,7 +298,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return "Unsupported training type: " + taskType;
     }
 
-    private String executeFileTool(Orchestrator orchestrator, IProject project, Agent agent, Task task, String context, String lastFeedback) throws Exception {
+    private String executeFileTool(Orchestrator orchestrator, IProject project, Agent agent, Task task, String context, String lastFeedback, TaskContext taskContext) throws Exception {
         String taskName = task.getName();
         String agentType = (agent != null) ? agent.getType() : "programmer";
         String prompt = "You are acting as a " + agentType + ".\n" +
@@ -297,7 +309,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         prompt += "Your task: " + taskName + "\n" +
                 "Provide ONLY the content of the file. Do not include any explanation or markdown code blocks unless they are part of the file content.";
 
-        String content = sendRequest(orchestrator, prompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
+        String content = sendRequest(orchestrator, prompt, (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null, taskContext);
 
         // Clean up markdown if AI ignored "ONLY" instruction
         if (content.trim().startsWith("```")) {
@@ -336,8 +348,8 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return aiService.sendRequest(orchestrator, prompt);
     }
 
-    public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl) throws Exception {
-        return aiService.sendRequest(orchestrator, prompt, proxyUrl);
+    public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl, TaskContext context) throws Exception {
+        return aiService.sendRequest(orchestrator, prompt, proxyUrl, context);
     }
 
     private String executeCommand(java.io.File workingDir, String... command) throws Exception {

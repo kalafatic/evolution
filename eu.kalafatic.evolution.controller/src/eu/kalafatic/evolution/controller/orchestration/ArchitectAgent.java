@@ -23,6 +23,6 @@ public class ArchitectAgent extends BaseAiAgent {
                 "Provide a detailed architecture design or file structure. If you need to create a project structure, output file paths and descriptions.";
 
         context.log("Architect [" + id + "]: Processing architecture task - " + taskDescription);
-        return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt));
+        return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt, context));
     }
 }

@@ -39,7 +39,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"approval\"|\"train_nn\"|\"train_llm\"|\"train_agent\", \"approvalRequired\": boolean, \"loopToTaskId\": \"id_to_jump_to\"|\"none\" } ]\n\n" +
                 "Request: " + request;
 
-        String response = aiService.sendRequest(context.getOrchestrator(), plannerPrompt);
+        String response = aiService.sendRequest(context.getOrchestrator(), plannerPrompt, context);
         context.log("Planner: Received response from AI: " + (response.length() > 100 ? response.substring(0, 100) + "..." : response));
 
         // Extracting JSON logic
