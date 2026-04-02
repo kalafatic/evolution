@@ -8,9 +8,11 @@ import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
+import eu.kalafatic.evolution.model.orchestration.Database;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
+import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.IterationStatus;
@@ -833,6 +835,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getGit_TestStatus() {
+		return (EAttribute)gitEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getMaven() {
 		return mavenEClass;
 	}
@@ -883,6 +895,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getDatabase_TestStatus() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EAttribute getMaven_Goals() {
 		return (EAttribute)mavenEClass.getEStructuralFeatures().get(0);
 	}
@@ -895,6 +917,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getMaven_Profiles() {
 		return (EAttribute)mavenEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getMaven_TestStatus() {
+		return (EAttribute)mavenEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -1175,6 +1207,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getFileConfig_LocalPath() {
 		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getFileConfig_TestStatus() {
+		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(1);
 	}
 
 	/**
@@ -1658,10 +1700,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(gitEClass, GIT__BRANCH);
 		createEAttribute(gitEClass, GIT__USERNAME);
 		createEAttribute(gitEClass, GIT__LOCAL_PATH);
+		createEAttribute(gitEClass, GIT__TEST_STATUS);
 
 		mavenEClass = createEClass(MAVEN);
 		createEAttribute(mavenEClass, MAVEN__GOALS);
 		createEAttribute(mavenEClass, MAVEN__PROFILES);
+		createEAttribute(mavenEClass, MAVEN__TEST_STATUS);
 
 		llmEClass = createEClass(LLM);
 		createEAttribute(llmEClass, LLM__MODEL);
@@ -1742,19 +1786,61 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(databaseEClass, DATABASE__USERNAME);
 		createEAttribute(databaseEClass, DATABASE__PASSWORD);
 		createEAttribute(databaseEClass, DATABASE__DRIVER);
+		createEAttribute(databaseEClass, DATABASE__TEST_STATUS);
 
 		fileConfigEClass = createEClass(FILE_CONFIG);
 		createEAttribute(fileConfigEClass, FILE_CONFIG__LOCAL_PATH);
+		createEAttribute(fileConfigEClass, FILE_CONFIG__TEST_STATUS);
 
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
-		commandStatusEEnum = createEEnum(COMMAND_STATUS);
-		executionModeEEnum = createEEnum(EXECUTION_MODE);
-		neuronTypeEEnum = createEEnum(NEURON_TYPE);
-		aiModeEEnum = createEEnum(AI_MODE);
-		selfDevStatusEEnum = createEEnum(SELF_DEV_STATUS);
-		iterationStatusEEnum = createEEnum(ITERATION_STATUS);
-		selfDevDecisionEEnum = createEEnum(SELF_DEV_DECISION);
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.PENDING);
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.RUNNING);
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.DONE);
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.FAILED);
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.WAITING_FOR_APPROVAL);
+
+		initEEnum(commandStatusEEnum, CommandStatus.class, "CommandStatus");
+		addEEnumLiteral(commandStatusEEnum, CommandStatus.PENDING);
+		addEEnumLiteral(commandStatusEEnum, CommandStatus.RUNNING);
+		addEEnumLiteral(commandStatusEEnum, CommandStatus.COMPLETED);
+		addEEnumLiteral(commandStatusEEnum, CommandStatus.FAILED);
+
+		initEEnum(executionModeEEnum, ExecutionMode.class, "ExecutionMode");
+		addEEnumLiteral(executionModeEEnum, ExecutionMode.SERIAL);
+		addEEnumLiteral(executionModeEEnum, ExecutionMode.PARALLEL);
+
+		initEEnum(neuronTypeEEnum, NeuronType.class, "NeuronType");
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.MLP);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.CNN);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.RNN);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.LSTM);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.TRANSFORMER);
+
+		initEEnum(aiModeEEnum, AiMode.class, "AiMode");
+		addEEnumLiteral(aiModeEEnum, AiMode.LOCAL);
+		addEEnumLiteral(aiModeEEnum, AiMode.HYBRID);
+		addEEnumLiteral(aiModeEEnum, AiMode.REMOTE);
+
+		initEEnum(selfDevStatusEEnum, SelfDevStatus.class, "SelfDevStatus");
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.RUNNING);
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.STOPPED);
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.FAILED);
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.COMPLETED);
+
+		initEEnum(iterationStatusEEnum, IterationStatus.class, "IterationStatus");
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.PENDING);
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.RUNNING);
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.DONE);
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.FAILED);
+
+		initEEnum(selfDevDecisionEEnum, SelfDevDecision.class, "SelfDevDecision");
+		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.CONTINUE);
+		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.ROLLBACK);
+		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.STOP);
+
+		// Create resource
+		createResource(eNS_URI);
 	}
 
 	/**
@@ -1843,10 +1929,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getGit_Branch(), ecorePackage.getEString(), "branch", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getGit_Username(), ecorePackage.getEString(), "username", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getGit_LocalPath(), ecorePackage.getEString(), "localPath", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGit_TestStatus(), ecorePackage.getEString(), "testStatus", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(mavenEClass, Maven.class, "Maven", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getMaven_Goals(), ecorePackage.getEString(), "goals", null, 0, -1, Maven.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getMaven_Profiles(), ecorePackage.getEString(), "profiles", null, 0, -1, Maven.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getMaven_TestStatus(), ecorePackage.getEString(), "testStatus", null, 0, 1, Maven.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(llmEClass, eu.kalafatic.evolution.model.orchestration.LLM.class, "LLM", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getLLM_Model(), ecorePackage.getEString(), "model", null, 0, 1, eu.kalafatic.evolution.model.orchestration.LLM.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1927,9 +2015,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getDatabase_Username(), ecorePackage.getEString(), "username", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Database.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDatabase_Password(), ecorePackage.getEString(), "password", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Database.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDatabase_Driver(), ecorePackage.getEString(), "driver", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Database.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDatabase_TestStatus(), ecorePackage.getEString(), "testStatus", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Database.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(fileConfigEClass, eu.kalafatic.evolution.model.orchestration.FileConfig.class, "FileConfig", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getFileConfig_LocalPath(), ecorePackage.getEString(), "localPath", null, 0, 1, eu.kalafatic.evolution.model.orchestration.FileConfig.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getFileConfig_TestStatus(), ecorePackage.getEString(), "testStatus", null, 0, 1, eu.kalafatic.evolution.model.orchestration.FileConfig.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Initialize enums and add enum literals
 		initEEnum(taskStatusEEnum, TaskStatus.class, "TaskStatus");

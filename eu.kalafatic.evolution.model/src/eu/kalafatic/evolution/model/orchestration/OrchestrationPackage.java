@@ -550,13 +550,22 @@ public interface OrchestrationPackage extends EPackage {
 	int GIT__LOCAL_PATH = 3;
 
 	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GIT__TEST_STATUS = 4;
+
+	/**
 	 * The number of structural features of the '<em>Git</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int GIT_FEATURE_COUNT = 4;
+	int GIT_FEATURE_COUNT = 5;
 
 	/**
 	 * The number of operations of the '<em>Git</em>' class.
@@ -596,13 +605,22 @@ public interface OrchestrationPackage extends EPackage {
 	int MAVEN__PROFILES = 1;
 
 	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MAVEN__TEST_STATUS = 2;
+
+	/**
 	 * The number of structural features of the '<em>Maven</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int MAVEN_FEATURE_COUNT = 2;
+	int MAVEN_FEATURE_COUNT = 3;
 
 	/**
 	 * The number of operations of the '<em>Maven</em>' class.
@@ -1629,13 +1647,22 @@ public interface OrchestrationPackage extends EPackage {
 	int DATABASE__DRIVER = 3;
 
 	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATABASE__TEST_STATUS = 4;
+
+	/**
 	 * The number of structural features of the '<em>Database</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int DATABASE_FEATURE_COUNT = 4;
+	int DATABASE_FEATURE_COUNT = 5;
 
 	/**
 	 * The number of operations of the '<em>Database</em>' class.
@@ -1666,13 +1693,22 @@ public interface OrchestrationPackage extends EPackage {
 	int FILE_CONFIG__LOCAL_PATH = 0;
 
 	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int FILE_CONFIG__TEST_STATUS = 1;
+
+	/**
 	 * The number of structural features of the '<em>File Config</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int FILE_CONFIG_FEATURE_COUNT = 1;
+	int FILE_CONFIG_FEATURE_COUNT = 2;
 
 	/**
 	 * The number of operations of the '<em>File Config</em>' class.
@@ -2121,6 +2157,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getGit_LocalPath();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Git#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Git#getTestStatus()
+	 * @see #getGit()
+	 * @generated
+	 */
+	EAttribute getGit_TestStatus();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Maven <em>Maven</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2151,6 +2198,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getMaven_Profiles();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Maven#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Maven#getTestStatus()
+	 * @see #getMaven()
+	 * @generated
+	 */
+	EAttribute getMaven_TestStatus();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.LLM <em>LLM</em>}'.
@@ -2943,6 +3001,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getDatabase_Driver();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getTestStatus()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_TestStatus();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.FileConfig <em>File Config</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2962,6 +3031,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getFileConfig_LocalPath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.FileConfig#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig#getTestStatus()
+	 * @see #getFileConfig()
+	 * @generated
+	 */
+	EAttribute getFileConfig_TestStatus();
 
 	/**
 	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession <em>Self Dev Session</em>}'.
@@ -3432,6 +3512,14 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute GIT__LOCAL_PATH = eINSTANCE.getGit_LocalPath();
 
 		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GIT__TEST_STATUS = eINSTANCE.getGit_TestStatus();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MavenImpl <em>Maven</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -3456,6 +3544,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute MAVEN__PROFILES = eINSTANCE.getMaven_Profiles();
+
+		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute MAVEN__TEST_STATUS = eINSTANCE.getMaven_TestStatus();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.LLMImpl <em>LLM</em>}' class.
@@ -4082,6 +4178,14 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute DATABASE__DRIVER = eINSTANCE.getDatabase_Driver();
 
 		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__TEST_STATUS = eINSTANCE.getDatabase_TestStatus();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl <em>File Config</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4098,6 +4202,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute FILE_CONFIG__LOCAL_PATH = eINSTANCE.getFileConfig_LocalPath();
+
+		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FILE_CONFIG__TEST_STATUS = eINSTANCE.getFileConfig_TestStatus();
 
 		/**
 		 * The meta object literal for the '<em><b>Database</b></em>' containment reference feature.

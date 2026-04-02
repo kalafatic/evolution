@@ -15,8 +15,6 @@ import org.eclipse.swt.widgets.Text;
 
 import eu.kalafatic.evolution.controller.orchestration.DatabaseTool;
 import eu.kalafatic.evolution.controller.orchestration.FileTool;
-import eu.kalafatic.evolution.controller.orchestration.GitTool;
-import eu.kalafatic.evolution.controller.orchestration.MavenTool;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -37,6 +35,7 @@ public class ToolsPage extends ScrolledComposite {
     private Text dbUrlText, dbUsernameText, dbPasswordText, dbDriverText;
 
     private Group gitGroup, mavenGroup, fileGroup, dbGroup;
+    private Color successColor;
 
     public ToolsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -55,6 +54,8 @@ public class ToolsPage extends ScrolledComposite {
         createMavenGroup(comp);
         createFileGroup(comp);
         createDatabaseGroup(comp);
+
+        successColor = new Color(getDisplay(), 200, 240, 200); // Light cool green
 
         ModifyListener ml = e -> {
             if (orchestrator != null && !isUpdating) {
@@ -180,15 +181,18 @@ public class ToolsPage extends ScrolledComposite {
             gitRepoText.setText(orchestrator.getGit().getRepositoryUrl() != null ? orchestrator.getGit().getRepositoryUrl() : "");
             gitBranchText.setText(orchestrator.getGit().getBranch() != null ? orchestrator.getGit().getBranch() : "");
             gitLocalPathText.setText(orchestrator.getGit().getLocalPath() != null ? orchestrator.getGit().getLocalPath() : "");
+            updateGroupStatus(gitGroup, orchestrator.getGit().getTestStatus());
         }
 
         if (orchestrator.getMaven() != null) {
             mavenGoalsText.setText(orchestrator.getMaven().getGoals().toString());
             mavenProfilesText.setText(orchestrator.getMaven().getProfiles().toString());
+            updateGroupStatus(mavenGroup, orchestrator.getMaven().getTestStatus());
         }
 
         if (orchestrator.getFileConfig() != null) {
             fileLocalPathText.setText(orchestrator.getFileConfig().getLocalPath() != null ? orchestrator.getFileConfig().getLocalPath() : "");
+            updateGroupStatus(fileGroup, orchestrator.getFileConfig().getTestStatus());
         }
 
         if (orchestrator.getDatabase() != null) {
@@ -196,9 +200,20 @@ public class ToolsPage extends ScrolledComposite {
             dbDriverText.setText(orchestrator.getDatabase().getDriver() != null ? orchestrator.getDatabase().getDriver() : "");
             dbUsernameText.setText(orchestrator.getDatabase().getUsername() != null ? orchestrator.getDatabase().getUsername() : "");
             dbPasswordText.setText(orchestrator.getDatabase().getPassword() != null ? orchestrator.getDatabase().getPassword() : "");
+            updateGroupStatus(dbGroup, orchestrator.getDatabase().getTestStatus());
         }
 
         isUpdating = false;
+    }
+
+    private void updateGroupStatus(Group group, String status) {
+        if ("SUCCESS".equals(status)) {
+            group.setBackground(successColor);
+        } else if ("FAILED".equals(status)) {
+            group.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
+        } else {
+            group.setBackground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
+        }
     }
 
     private void updateModelFromFields() {
@@ -246,12 +261,25 @@ public class ToolsPage extends ScrolledComposite {
         updateUIFromModel();
     }
 
+    @Override
+    public void dispose() {
+        if (successColor != null && !successColor.isDisposed()) {
+            successColor.dispose();
+        }
+        super.dispose();
+    }
+
     private void resetBackgrounds() {
         Color defaultColor = getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
         gitGroup.setBackground(defaultColor);
         mavenGroup.setBackground(defaultColor);
         fileGroup.setBackground(defaultColor);
         dbGroup.setBackground(defaultColor);
+
+        if (orchestrator.getGit() != null) orchestrator.getGit().setTestStatus(null);
+        if (orchestrator.getMaven() != null) orchestrator.getMaven().setTestStatus(null);
+        if (orchestrator.getFileConfig() != null) orchestrator.getFileConfig().setTestStatus(null);
+        if (orchestrator.getDatabase() != null) orchestrator.getDatabase().setTestStatus(null);
     }
 
     private void testGit() {
@@ -262,9 +290,11 @@ public class ToolsPage extends ScrolledComposite {
             eu.kalafatic.evolution.controller.orchestration.ShellTool shell = new eu.kalafatic.evolution.controller.orchestration.ShellTool();
             String result = shell.execute("git --version", workingDir, context);
             MessageDialog.openInformation(getShell(), "Git Test", "Git is available:\n" + result);
-            gitGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_GREEN));
+            orchestrator.getGit().setTestStatus("SUCCESS");
+            gitGroup.setBackground(successColor);
         } catch (Exception e) {
             MessageDialog.openError(getShell(), "Git Test Failed", e.getMessage());
+            orchestrator.getGit().setTestStatus("FAILED");
             gitGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
         }
     }
@@ -276,9 +306,11 @@ public class ToolsPage extends ScrolledComposite {
             eu.kalafatic.evolution.controller.orchestration.ShellTool shell = new eu.kalafatic.evolution.controller.orchestration.ShellTool();
             String result = shell.execute(System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd -version" : "mvn -version", workingDir, context);
             MessageDialog.openInformation(getShell(), "Maven Test", "Maven is available:\n" + result);
-            mavenGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_GREEN));
+            orchestrator.getMaven().setTestStatus("SUCCESS");
+            mavenGroup.setBackground(successColor);
         } catch (Exception e) {
             MessageDialog.openError(getShell(), "Maven Test Failed", e.getMessage());
+            orchestrator.getMaven().setTestStatus("FAILED");
             mavenGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
         }
     }
@@ -295,9 +327,11 @@ public class ToolsPage extends ScrolledComposite {
             if (!"Test Content".equals(content)) throw new Exception("File content mismatch");
             tool.execute("DELETE " + testDir, workingDir, context);
             MessageDialog.openInformation(getShell(), "File Test", "File operations successful (Create, Write, Read, Delete).");
-            fileGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_GREEN));
+            orchestrator.getFileConfig().setTestStatus("SUCCESS");
+            fileGroup.setBackground(successColor);
         } catch (Exception e) {
             MessageDialog.openError(getShell(), "File Test Failed", e.getMessage());
+            orchestrator.getFileConfig().setTestStatus("FAILED");
             fileGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
         }
     }
@@ -309,9 +343,11 @@ public class ToolsPage extends ScrolledComposite {
             TaskContext context = new TaskContext(orchestrator, workingDir);
             String result = tool.execute("TEST_CONNECTION", workingDir, context);
             MessageDialog.openInformation(getShell(), "Database Test", result);
-            dbGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_GREEN));
+            orchestrator.getDatabase().setTestStatus("SUCCESS");
+            dbGroup.setBackground(successColor);
         } catch (Exception e) {
             MessageDialog.openError(getShell(), "Database Test Failed", e.getMessage());
+            orchestrator.getDatabase().setTestStatus("FAILED");
             dbGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
         }
     }
