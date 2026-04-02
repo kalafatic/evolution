@@ -1329,13 +1329,22 @@ public interface OrchestrationPackage extends EPackage {
 	int SELF_DEV_SESSION__ITERATIONS = 4;
 
 	/**
+	 * The feature id for the '<em><b>Rationale</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SELF_DEV_SESSION__RATIONALE = 5;
+
+	/**
 	 * The number of structural features of the '<em>Self Dev Session</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int SELF_DEV_SESSION_FEATURE_COUNT = 5;
+	int SELF_DEV_SESSION_FEATURE_COUNT = 6;
 
 	/**
 	 * The number of operations of the '<em>Self Dev Session</em>' class.
@@ -1402,13 +1411,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ITERATION__STATUS = 4;
 
 	/**
+	 * The feature id for the '<em><b>Rationale</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__RATIONALE = 5;
+
+	/**
 	 * The number of structural features of the '<em>Iteration</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ITERATION_FEATURE_COUNT = 5;
+	int ITERATION_FEATURE_COUNT = 6;
 
 	/**
 	 * The number of operations of the '<em>Iteration</em>' class.
@@ -2676,6 +2694,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getSelfDevSession_Status();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getRationale <em>Rationale</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rationale</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevSession#getRationale()
+	 * @see #getSelfDevSession()
+	 * @generated
+	 */
+	EAttribute getSelfDevSession_Rationale();
+
+	/**
 	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getIterations <em>Iterations</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2750,6 +2779,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getIteration_Status();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRationale <em>Rationale</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rationale</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getRationale()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_Rationale();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult <em>Evaluation Result</em>}'.
@@ -3882,6 +3922,14 @@ public interface OrchestrationPackage extends EPackage {
 		EReference SELF_DEV_SESSION__ITERATIONS = eINSTANCE.getSelfDevSession_Iterations();
 
 		/**
+		 * The meta object literal for the '<em><b>Rationale</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SELF_DEV_SESSION__RATIONALE = eINSTANCE.getSelfDevSession_Rationale();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl <em>Iteration</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -3930,6 +3978,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute ITERATION__STATUS = eINSTANCE.getIteration_Status();
+
+		/**
+		 * The meta object literal for the '<em><b>Rationale</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__RATIONALE = eINSTANCE.getIteration_Rationale();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl <em>Evaluation Result</em>}' class.

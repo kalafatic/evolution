@@ -37,6 +37,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getTasks <em>Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getEvaluationResult <em>Evaluation Result</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getStatus <em>Status</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getRationale <em>Rationale</em>}</li>
  * </ul>
  *
  * @generated
@@ -121,6 +122,49 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 	 * @ordered
 	 */
 	protected IterationStatus status = STATUS_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRationale()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String RATIONALE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRationale()
+	 * @generated
+	 * @ordered
+	 */
+	protected String rationale = RATIONALE_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getRationale() {
+		return rationale;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRationale(String newRationale) {
+		String oldRationale = rationale;
+		rationale = newRationale;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__RATIONALE, oldRationale, rationale));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -302,6 +346,8 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 				return getEvaluationResult();
 			case OrchestrationPackage.ITERATION__STATUS:
 				return getStatus();
+			case OrchestrationPackage.ITERATION__RATIONALE:
+				return getRationale();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -331,6 +377,9 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 			case OrchestrationPackage.ITERATION__STATUS:
 				setStatus((IterationStatus)newValue);
 				return;
+			case OrchestrationPackage.ITERATION__RATIONALE:
+				setRationale((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -358,6 +407,9 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 			case OrchestrationPackage.ITERATION__STATUS:
 				setStatus(STATUS_EDEFAULT);
 				return;
+			case OrchestrationPackage.ITERATION__RATIONALE:
+				setRationale(RATIONALE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -380,6 +432,8 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 				return evaluationResult != null;
 			case OrchestrationPackage.ITERATION__STATUS:
 				return status != STATUS_EDEFAULT;
+			case OrchestrationPackage.ITERATION__RATIONALE:
+				return RATIONALE_EDEFAULT == null ? rationale != null : !RATIONALE_EDEFAULT.equals(rationale);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -400,6 +454,8 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 		result.append(branchName);
 		result.append(", status: ");
 		result.append(status);
+		result.append(", rationale: ");
+		result.append(rationale);
 		result.append(')');
 		return result.toString();
 	}

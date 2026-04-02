@@ -104,6 +104,11 @@ public class HybridModeTest {
             return (current < responseSequence.length) ? responseSequence[current] : "Default Response";
         }
 
+        @Override
+        public String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl, eu.kalafatic.evolution.controller.orchestration.TaskContext context) throws Exception {
+            return "OK";
+        }
+
         public int getCallCount() { return callCount.get(); }
         public String[] getReceivedPrompts() { return receivedPrompts; }
     }

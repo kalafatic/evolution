@@ -44,6 +44,7 @@ public class ApprovalPage extends Composite {
 	private Label statusLabel;
 	private Label iterationsLabel;
 	private Label branchLabel;
+	private Label iterationRationaleLabel;
 	private TableViewer tableViewer;
 
 	private Adapter modelAdapter = new EContentAdapter() {
@@ -83,6 +84,11 @@ public class ApprovalPage extends Composite {
 		branchLabel = new Label(summaryGroup, SWT.NONE);
 		branchLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
+		SWTFactory.createLabel(summaryGroup, "Rationale:");
+		iterationRationaleLabel = new Label(summaryGroup, SWT.WRAP);
+		GridData rationaleData = new GridData(GridData.FILL_HORIZONTAL);
+		rationaleData.widthHint = 400;
+		iterationRationaleLabel.setLayoutData(rationaleData);
 		// Task Management Group
 		Group taskGroup = SWTFactory.createGroup(this, "Proposed Tasks", 1);
 		taskGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -277,8 +283,10 @@ public class ApprovalPage extends Composite {
 				if (!session.getIterations().isEmpty()) {
 					Iteration last = session.getIterations().get(session.getIterations().size() - 1);
 					branchLabel.setText(last.getBranchName() != null ? last.getBranchName() : "N/A");
+					iterationRationaleLabel.setText(last.getRationale() != null ? last.getRationale() : "No rationale provided.");
 				} else {
 					branchLabel.setText("N/A");
+					iterationRationaleLabel.setText("N/A");
 				}
 			} else {
 				sessionIdLabel.setText("No active session");
@@ -353,6 +361,13 @@ public class ApprovalPage extends Composite {
 			JSONObject sessionObj = new JSONObject();
 			sessionObj.put("id", orchestrator.getSelfDevSession().getId());
 			sessionObj.put("status", orchestrator.getSelfDevSession().getStatus().toString());
+
+			SelfDevSession session = orchestrator.getSelfDevSession();
+			if (!session.getIterations().isEmpty()) {
+				Iteration last = session.getIterations().get(session.getIterations().size() - 1);
+				sessionObj.put("lastRationale", last.getRationale());
+			}
+
 			root.put("session", sessionObj);
 		}
 
@@ -383,7 +398,8 @@ public class ApprovalPage extends Composite {
 				+ ".agent-link { stroke: #3b82f6; stroke-width: 1px; stroke-dasharray: 4; }"
 				+ "text { font-size: 11px; fill: #334155; font-weight: 500; text-anchor: middle; pointer-events: none; }"
 				+ "line { stroke: #94a3b8; stroke-width: 1.5px; marker-end: url(#arrowhead); }"
-				+ ".session-info { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 12px; }"
+				+ ".session-info { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 12px; max-width: 300px; }"
+				+ ".rationale-box { margin-top: 8px; padding-top: 8px; border-top: 1px solid #cbd5e1; font-style: italic; color: #64748b; }"
 				+ "</style></head><body>"
 				+ "<div class='session-info' id='info'>AI Network Structure</div>"
 				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs><marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker></defs><g id='viewport'></g></svg>"
@@ -437,7 +453,13 @@ public class ApprovalPage extends Composite {
 				+ "    g.appendChild(txt);"
 				+ "    viewport.appendChild(g);"
 				+ "  });"
-				+ "  if (data.session) document.getElementById('info').textContent = 'Session: ' + data.session.id + ' (' + data.session.status + ')';"
+				+ "  if (data.session) {"
+				+ "    let content = '<b>Session:</b> ' + data.session.id + ' (' + data.session.status + ')';"
+				+ "    if (data.session.lastRationale) {"
+				+ "      content += '<div class=\"rationale-box\"><b>Rationale:</b> ' + data.session.lastRationale + '</div>';"
+				+ "    }"
+				+ "    document.getElementById('info').innerHTML = content;"
+				+ "  }"
 				+ "}"
 				+ "</script></body></html>";
 	}
