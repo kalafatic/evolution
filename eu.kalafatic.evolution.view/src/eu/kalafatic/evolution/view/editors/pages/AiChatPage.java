@@ -933,10 +933,10 @@ public class AiChatPage extends ScrolledComposite {
                     Display.getDefault().asyncExec(() -> {
                         InputDialog dlg = new InputDialog(getShell(), "API Token Required", "Please enter the API token for " + provider + ":", "", null);
                         if (dlg.open() == Window.OK) {
-                            String token = dlg.getValue();
-                            remoteTokenText.setText(token);
+                            String newToken = dlg.getValue();
+                            remoteTokenText.setText(newToken);
                             syncModelWithUI();
-                            future.complete(token);
+                            future.complete(newToken);
                         } else {
                             future.completeExceptionally(new Exception("Token request cancelled by user."));
                         }

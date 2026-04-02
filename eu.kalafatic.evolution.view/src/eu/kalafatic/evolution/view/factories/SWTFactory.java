@@ -65,10 +65,18 @@ public class SWTFactory {
 		});
 		return btn;
 	}
+	
+	public static Combo createCombo(Composite parent) {
+		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);		
+		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+		//gd.widthHint = 200;
+		combo.setLayoutData(gd);
+		return combo;
+	}
 
 	public static Combo selectModel(Composite parent, OllamaService ollamaService) {
-		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);
-		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Combo combo = createCombo(parent);
+		
 		List<eu.kalafatic.evolution.controller.manager.OllamaModel> models = ollamaService != null
 				? ollamaService.loadModels()
 				: new ArrayList<>();
