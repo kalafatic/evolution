@@ -21,6 +21,7 @@ public class TaskContext {
     private String sharedMemory = "";
     private final List<LogListener> listeners = new CopyOnWriteArrayList<>();
     private final List<ApprovalListener> approvalListeners = new CopyOnWriteArrayList<>();
+    private final List<TokenRequestListener> tokenRequestListeners = new CopyOnWriteArrayList<>();
     private CompletableFuture<Boolean> approvalFuture;
 
     public interface LogListener {
@@ -29,6 +30,10 @@ public class TaskContext {
 
     public interface ApprovalListener {
         void onApprovalRequested(String message);
+    }
+
+    public interface TokenRequestListener {
+        void onTokenRequested(String providerName, CompletableFuture<String> tokenFuture);
     }
 
     public TaskContext(Orchestrator orchestrator, File projectRoot) {
@@ -57,6 +62,10 @@ public class TaskContext {
         approvalListeners.add(listener);
     }
 
+    public void addTokenRequestListener(TokenRequestListener listener) {
+        tokenRequestListeners.add(listener);
+    }
+
     private void notifyListeners(String message) {
         for (LogListener listener : listeners) {
             listener.onLog(message);
@@ -75,6 +84,18 @@ public class TaskContext {
         if (approvalFuture != null) {
             approvalFuture.complete(approved);
         }
+    }
+
+    public CompletableFuture<String> requestToken(String providerName) {
+        CompletableFuture<String> tokenFuture = new CompletableFuture<>();
+        if (tokenRequestListeners.isEmpty()) {
+            tokenFuture.completeExceptionally(new Exception("No token request listeners registered."));
+        } else {
+            for (TokenRequestListener listener : tokenRequestListeners) {
+                listener.onTokenRequested(providerName, tokenFuture);
+            }
+        }
+        return tokenFuture;
     }
 
     public List<String> getLogs() {

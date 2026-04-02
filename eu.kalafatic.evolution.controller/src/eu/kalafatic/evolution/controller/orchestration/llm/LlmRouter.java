@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration.llm;
 
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 
@@ -22,23 +23,24 @@ public class LlmRouter {
      * @param prompt The prompt string
      * @param temperature The temperature setting
      * @param proxyUrl Optional proxy URL
+     * @param context The task context
      * @return The LLM response
      * @throws Exception If an error occurs
      */
-    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
+    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         AiMode mode = orchestrator.getAiMode();
         if (mode == AiMode.REMOTE) {
-            return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl);
+            return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
         } else if (mode == AiMode.HYBRID) {
             // HYBRID: 3-step process
             // 1. Optimize prompt using local model
-            String optimizedPrompt = optimizePromptLocally(orchestrator, prompt, temperature, proxyUrl);
+            String optimizedPrompt = optimizePromptLocally(orchestrator, prompt, temperature, proxyUrl, context);
 
             // 2. Execute using remote model
-            String remoteResponse = sendRemoteRequest(orchestrator, optimizedPrompt, temperature, proxyUrl);
+            String remoteResponse = sendRemoteRequest(orchestrator, optimizedPrompt, temperature, proxyUrl, context);
 
             // 3. Simplify response using local model
-            return simplifyResponseLocally(orchestrator, remoteResponse, temperature, proxyUrl);
+            return simplifyResponseLocally(orchestrator, remoteResponse, temperature, proxyUrl, context);
         } else {
             // LOCAL, ollama+selected local model
             String model = orchestrator.getLocalModel();
@@ -48,11 +50,11 @@ public class LlmRouter {
                 }
                 orchestrator.getOllama().setModel(model);
             }
-            return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
+            return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
         }
     }
 
-    private String sendRemoteRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
+    private String sendRemoteRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String remoteModel = orchestrator.getRemoteModel();
 
         // Default to deepseek if none selected
@@ -64,14 +66,14 @@ public class LlmRouter {
         ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
 
         if (config != null && "google".equals(config.getFormat())) {
-            return geminiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
+            return geminiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
         }
 
         // Default to common calling (OpenAI format)
-        return openAiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl);
+        return openAiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
-    private String optimizePromptLocally(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
+    private String optimizePromptLocally(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String hybridModel = orchestrator.getHybridModel();
         if (hybridModel != null && !hybridModel.isEmpty()) {
             if (orchestrator.getOllama() == null) {
@@ -85,17 +87,17 @@ public class LlmRouter {
                 "Provide ONLY the optimized request text.\n\n" +
                 "Request: " + prompt;
 
-        return ollamaProvider.sendRequest(orchestrator, optimizationPrompt, temperature, proxyUrl);
+        return ollamaProvider.sendRequest(orchestrator, optimizationPrompt, temperature, proxyUrl, context);
     }
 
-    private String simplifyResponseLocally(Orchestrator orchestrator, String remoteResponse, float temperature, String proxyUrl) throws Exception {
+    private String simplifyResponseLocally(Orchestrator orchestrator, String remoteResponse, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String simplificationPrompt = "The following is a response from a 'big' AI model. " +
                 "Analyze it and simplify it for a human user. " +
                 "Focus on the most important information and make it easy to understand. " +
                 "Provide ONLY the simplified response text.\n\n" +
                 "Response: " + remoteResponse;
 
-        return ollamaProvider.sendRequest(orchestrator, simplificationPrompt, temperature, proxyUrl);
+        return ollamaProvider.sendRequest(orchestrator, simplificationPrompt, temperature, proxyUrl, context);
     }
 
     /**
@@ -104,10 +106,11 @@ public class LlmRouter {
      * @param orchestrator The orchestrator model
      * @param temperature The temperature setting
      * @param proxyUrl Optional proxy URL
+     * @param context The task context
      * @return The LLM response
      * @throws Exception If an error occurs
      */
-    public String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl) throws Exception {
+    public String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl, TaskContext context) throws Exception {
         AiMode mode = orchestrator.getAiMode();
         if (mode == AiMode.REMOTE || mode == AiMode.HYBRID) {
             // For HYBRID, test remote connection as it's the most critical part
@@ -122,14 +125,14 @@ public class LlmRouter {
             ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
 
             if (config != null && "google".equals(config.getFormat())) {
-                return geminiProvider.testConnection(orchestrator, temperature, proxyUrl);
+                return geminiProvider.testConnection(orchestrator, temperature, proxyUrl, context);
             }
 
             // Default to common calling (OpenAI format)
-            return openAiProvider.testConnection(orchestrator, temperature, proxyUrl);
+            return openAiProvider.testConnection(orchestrator, temperature, proxyUrl, context);
 
         } else {
-            return ollamaProvider.testConnection(orchestrator, temperature, proxyUrl);
+            return ollamaProvider.testConnection(orchestrator, temperature, proxyUrl, context);
         }
     }
 }

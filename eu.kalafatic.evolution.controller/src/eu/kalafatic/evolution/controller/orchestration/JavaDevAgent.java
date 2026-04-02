@@ -25,6 +25,6 @@ public class JavaDevAgent extends BaseAiAgent {
                 "Generate Java source code or Maven POM content as requested. Provide ONLY the code content for files.";
 
         context.log("JavaDev [" + id + "]: Generating Java code for - " + taskDescription);
-        return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt));
+        return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt, context));
     }
 }

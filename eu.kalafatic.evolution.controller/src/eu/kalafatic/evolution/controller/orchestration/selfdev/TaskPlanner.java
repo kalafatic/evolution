@@ -25,7 +25,7 @@ public class TaskPlanner extends BaseAiAgent {
                 "Output MUST be a valid JSON array of objects. Schema:\n" +
                 "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\", \"priority\": integer } ]\n";
 
-        String response = aiService.sendRequest(context.getOrchestrator(), prompt);
+        String response = aiService.sendRequest(context.getOrchestrator(), prompt, context);
         context.log("[PLANNER] AI response received.");
 
         int start = response.indexOf("[");

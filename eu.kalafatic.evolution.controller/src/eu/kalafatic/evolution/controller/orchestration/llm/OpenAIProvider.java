@@ -10,6 +10,7 @@ import java.time.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 
@@ -21,7 +22,7 @@ public class OpenAIProvider implements ILlmProvider {
     private static final String DEFAULT_OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
     @Override
-    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
+    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String token = orchestrator.getOpenAiToken();
         String remoteModelName = orchestrator.getRemoteModel();
 
@@ -30,8 +31,17 @@ public class OpenAIProvider implements ILlmProvider {
         String apiUrl = (config != null) ? config.getUrl() : DEFAULT_OPENAI_URL;
         String model = (config != null) ? config.getDefaultModel() : orchestrator.getOpenAiModel();
 
-        if (token == null || token.isEmpty()) {
-            throw new Exception("OpenAI-compatible token is not configured (use OpenAI Token field)");
+        if (token == null || token.isEmpty() || "YOUR_API_KEY".equals(token)) {
+            if (context != null) {
+                try {
+                    token = context.requestToken(remoteModelName != null ? remoteModelName : "OpenAI").get();
+                    orchestrator.setOpenAiToken(token);
+                } catch (Exception e) {
+                    throw new Exception("Failed to obtain token: " + e.getMessage());
+                }
+            } else {
+                throw new Exception("OpenAI-compatible token is not configured (use OpenAI Token field)");
+            }
         }
 
         HttpClient.Builder builder = HttpClient.newBuilder()

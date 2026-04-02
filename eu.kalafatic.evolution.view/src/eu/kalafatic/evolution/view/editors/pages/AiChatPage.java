@@ -526,12 +526,38 @@ public class AiChatPage extends ScrolledComposite {
                         showApprovalUI(message);
                     });
                 });
+                context.addTokenRequestListener((provider, future) -> {
+                    Display.getDefault().asyncExec(() -> {
+                        InputDialog dlg = new InputDialog(getShell(), "API Token Required", "Please enter the API token for " + provider + ":", "", null);
+                        if (dlg.open() == Window.OK) {
+                            String token = dlg.getValue();
+                            remoteTokenText.setText(token);
+                            syncModelWithUI();
+                            future.complete(token);
+                        } else {
+                            future.completeExceptionally(new Exception("Token request cancelled by user."));
+                        }
+                    });
+                });
                 context.addLogListener(log -> {
                     Display.getDefault().asyncExec(() -> {
                         if (!responseText.isDisposed()) {
                             processLogEntry(log);
                             threads.put(currentThread, responseText.getText());
                             threadStyles.put(currentThread, responseText.getStyleRanges());
+                        }
+                    });
+                });
+                context.addTokenRequestListener((provider, future) -> {
+                    Display.getDefault().asyncExec(() -> {
+                        InputDialog dlg = new InputDialog(getShell(), "API Token Required", "Please enter the API token for " + provider + ":", "", null);
+                        if (dlg.open() == Window.OK) {
+                            String token = dlg.getValue();
+                            remoteTokenText.setText(token);
+                            syncModelWithUI();
+                            future.complete(token);
+                        } else {
+                            future.completeExceptionally(new Exception("Token request cancelled by user."));
                         }
                     });
                 });
@@ -621,6 +647,19 @@ public class AiChatPage extends ScrolledComposite {
                     Display.getDefault().asyncExec(() -> {
                         if (!responseText.isDisposed()) {
                             processLogEntry(log);
+                        }
+                    });
+                });
+                context.addTokenRequestListener((provider, future) -> {
+                    Display.getDefault().asyncExec(() -> {
+                        InputDialog dlg = new InputDialog(getShell(), "API Token Required", "Please enter the API token for " + provider + ":", "", null);
+                        if (dlg.open() == Window.OK) {
+                            String token = dlg.getValue();
+                            remoteTokenText.setText(token);
+                            syncModelWithUI();
+                            future.complete(token);
+                        } else {
+                            future.completeExceptionally(new Exception("Token request cancelled by user."));
                         }
                     });
                 });
@@ -885,7 +924,21 @@ public class AiChatPage extends ScrolledComposite {
                                 
                 String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
 
-                String response = router.testConnection(tempOrch, temp, proxyUrl);
+                TaskContext context = new TaskContext(tempOrch, null);
+                context.addTokenRequestListener((provider, future) -> {
+                    Display.getDefault().asyncExec(() -> {
+                        InputDialog dlg = new InputDialog(getShell(), "API Token Required", "Please enter the API token for " + provider + ":", "", null);
+                        if (dlg.open() == Window.OK) {
+                            String token = dlg.getValue();
+                            remoteTokenText.setText(token);
+                            syncModelWithUI();
+                            future.complete(token);
+                        } else {
+                            future.completeExceptionally(new Exception("Token request cancelled by user."));
+                        }
+                    });
+                });
+                String response = router.testConnection(tempOrch, temp, proxyUrl, context);
 
                 Display.getDefault().asyncExec(() -> {
                     if (isDisposed()) return;

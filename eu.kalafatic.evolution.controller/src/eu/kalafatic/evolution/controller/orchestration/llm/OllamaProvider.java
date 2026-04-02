@@ -9,6 +9,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
  * Ollama LLM provider implementation.
@@ -16,7 +17,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 public class OllamaProvider implements ILlmProvider {
 
     @Override
-    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl) throws Exception {
+    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         if (orchestrator.getOllama() == null || orchestrator.getOllama().getUrl() == null || orchestrator.getOllama().getUrl().isEmpty()) {
             throw new Exception("Ollama is not configured");
         }
