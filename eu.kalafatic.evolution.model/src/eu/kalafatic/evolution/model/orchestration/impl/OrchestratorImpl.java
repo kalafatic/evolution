@@ -359,6 +359,26 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected SelfDevSession selfDevSession;
 
 	/**
+	 * The default value of the '{@link #getSharedMemory() <em>Shared Memory</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSharedMemory()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String SHARED_MEMORY_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getSharedMemory() <em>Shared Memory</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSharedMemory()
+	 * @generated
+	 * @ordered
+	 */
+	protected String sharedMemory = SHARED_MEMORY_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -999,6 +1019,29 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
+	public String getSharedMemory() {
+		return sharedMemory;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSharedMemory(String newSharedMemory) {
+		String oldSharedMemory = sharedMemory;
+		sharedMemory = newSharedMemory;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY, oldSharedMemory, sharedMemory));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
@@ -1073,6 +1116,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return isOfflineMode();
 			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
 				return getSelfDevSession();
+			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
+				return getSharedMemory();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1148,6 +1193,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
 				setSelfDevSession((SelfDevSession)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
+				setSharedMemory((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1220,6 +1268,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
 				setSelfDevSession((SelfDevSession)null);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
+				setSharedMemory(SHARED_MEMORY_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1272,6 +1323,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return offlineMode != OFFLINE_MODE_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
 				return selfDevSession != null;
+			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
+				return SHARED_MEMORY_EDEFAULT == null ? sharedMemory != null : !SHARED_MEMORY_EDEFAULT.equals(sharedMemory);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1306,6 +1359,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		result.append(hybridModel);
 		result.append(", offlineMode: ");
 		result.append(offlineMode);
+		result.append(", sharedMemory: ");
+		result.append(sharedMemory);
 		result.append(')');
 		return result.toString();
 	}

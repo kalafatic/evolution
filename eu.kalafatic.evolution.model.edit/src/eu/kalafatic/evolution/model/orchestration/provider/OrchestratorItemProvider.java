@@ -65,6 +65,7 @@ public class OrchestratorItemProvider
 
 			addIdPropertyDescriptor(object);
 			addNamePropertyDescriptor(object);
+			addSharedMemoryPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -83,6 +84,28 @@ public class OrchestratorItemProvider
 				 getString("_UI_Orchestrator_id_feature"),
 				 getString("_UI_PropertyDescriptor_description", "_UI_Orchestrator_id_feature", "_UI_Orchestrator_type"),
 				 OrchestrationPackage.Literals.ORCHESTRATOR__ID,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Shared Memory feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addSharedMemoryPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Orchestrator_sharedMemory_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Orchestrator_sharedMemory_feature", "_UI_Orchestrator_type"),
+				 OrchestrationPackage.Literals.ORCHESTRATOR__SHARED_MEMORY,
 				 true,
 				 false,
 				 false,
@@ -191,6 +214,7 @@ public class OrchestratorItemProvider
 		switch (notification.getFeatureID(Orchestrator.class)) {
 			case OrchestrationPackage.ORCHESTRATOR__ID:
 			case OrchestrationPackage.ORCHESTRATOR__NAME:
+			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:

@@ -66,6 +66,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/loopToTaskId"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/priority"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/resultSummary"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/description"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Agent">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Agent/id"/>
@@ -95,6 +96,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/hybridModel"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/offlineMode"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/selfDevSession"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/sharedMemory"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Git">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Git/repositoryUrl"/>

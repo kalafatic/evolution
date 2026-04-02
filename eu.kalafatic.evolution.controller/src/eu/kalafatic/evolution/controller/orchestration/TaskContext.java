@@ -18,7 +18,6 @@ public class TaskContext {
     private final File projectRoot;
     private final Map<String, String> state = new ConcurrentHashMap<>();
     private final List<String> logs = Collections.synchronizedList(new ArrayList<>());
-    private String sharedMemory = "";
     private final List<LogListener> listeners = new CopyOnWriteArrayList<>();
     private final List<ApprovalListener> approvalListeners = new CopyOnWriteArrayList<>();
     private CompletableFuture<Boolean> approvalFuture;
@@ -90,10 +89,16 @@ public class TaskContext {
     }
 
     public String getSharedMemory() {
-        return sharedMemory;
+        String mem = orchestrator.getSharedMemory();
+        return mem != null ? mem : "";
     }
 
     public void appendSharedMemory(String content) {
-        this.sharedMemory += "\n" + content;
+        String current = getSharedMemory();
+        if (current.isEmpty()) {
+            orchestrator.setSharedMemory(content);
+        } else {
+            orchestrator.setSharedMemory(current + "\n" + content);
+        }
     }
 }
