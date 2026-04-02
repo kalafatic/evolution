@@ -505,6 +505,8 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	void setFileConfig(FileConfig value);
+
+	/**
 	 * Returns the value of the '<em><b>Shared Memory</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

@@ -22,6 +22,7 @@ import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.part.MultiPageEditorPart;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -44,6 +45,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private ApprovalPage approvalPage;
     private ToolsPage toolsPage;
     private Orchestrator orchestrator;
+    private TaskContext currentContext;
     private boolean isDirty = false;
     private ResourceSet resourceSet;
     private Resource resource;
@@ -190,6 +192,25 @@ public class MultiPageEditor extends MultiPageEditorPart {
         loadModel();
         if (orchestrator != null) {
             setOrchestrator(orchestrator);
+        }
+    }
+
+    public void setCurrentContext(TaskContext context) {
+        this.currentContext = context;
+    }
+
+    public TaskContext getCurrentContext() {
+        return currentContext;
+    }
+
+    public void showApprovalPage() {
+        int pageCount = getPageCount();
+        for (int i = 0; i < pageCount; i++) {
+            Control control = getControl(i);
+            if (control == approvalPage) {
+                setActivePage(i);
+                break;
+            }
         }
     }
 

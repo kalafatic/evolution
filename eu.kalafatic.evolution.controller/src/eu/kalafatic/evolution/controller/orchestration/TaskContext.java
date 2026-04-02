@@ -14,6 +14,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
  * Shared context for an orchestration task, including project info, state, and logs.
  */
 public class TaskContext {
+    public static final String PLAN_APPROVAL_MESSAGE = "Plan review required. Please verify and modify the task list in the Approval tab.";
     private final Orchestrator orchestrator;
     private final File projectRoot;
     private final Map<String, String> state = new ConcurrentHashMap<>();

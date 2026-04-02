@@ -136,6 +136,20 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass databaseEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass fileConfigEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass ruleEClass = null;
 
 	/**
@@ -311,6 +325,26 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EClass getTask() {
 		return taskEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getDatabase() {
+		return databaseEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getFileConfig() {
+		return fileConfigEClass;
 	}
 
 	/**
@@ -709,8 +743,28 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EReference getOrchestrator_Database() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(20);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_FileConfig() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(21);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EAttribute getOrchestrator_SharedMemory() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(20);
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(22);
 	}
 
 	/**
@@ -781,6 +835,46 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EClass getMaven() {
 		return mavenEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Url() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Username() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Password() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Driver() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -1071,6 +1165,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EClass getRule() {
 		return ruleEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getFileConfig_LocalPath() {
+		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(0);
 	}
 
 	/**
@@ -1535,6 +1639,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__HYBRID_MODEL);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__OFFLINE_MODE);
 		createEReference(orchestratorEClass, ORCHESTRATOR__SELF_DEV_SESSION);
+		createEReference(orchestratorEClass, ORCHESTRATOR__DATABASE);
+		createEReference(orchestratorEClass, ORCHESTRATOR__FILE_CONFIG);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__SHARED_MEMORY);
 
 		gitEClass = createEClass(GIT);

@@ -471,6 +471,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		else if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, newFileConfig, newFileConfig));
 	}
+
+	/**
 	 * The default value of the '{@link #getSharedMemory() <em>Shared Memory</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1318,6 +1320,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
 				setFileConfig((FileConfig)newValue);
+				return;
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory((String)newValue);
 				return;
@@ -1398,6 +1401,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
 				setFileConfig((FileConfig)null);
+				return;
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory(SHARED_MEMORY_EDEFAULT);
 				return;
