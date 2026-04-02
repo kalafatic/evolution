@@ -466,13 +466,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__SELF_DEV_SESSION = 19;
 
 	/**
+	 * The feature id for the '<em><b>Shared Memory</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__SHARED_MEMORY = 20;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 20;
+	int ORCHESTRATOR_FEATURE_COUNT = 21;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -2737,6 +2746,17 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_SelfDevSession();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory <em>Shared Memory</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Shared Memory</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_SharedMemory();
+
+	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiToken <em>Open Ai Token</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3789,6 +3809,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EReference ORCHESTRATOR__SELF_DEV_SESSION = eINSTANCE.getOrchestrator_SelfDevSession();
+
+		/**
+		 * The meta object literal for the '<em><b>Shared Memory</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__SHARED_MEMORY = eINSTANCE.getOrchestrator_SharedMemory();
 
 	}
 
