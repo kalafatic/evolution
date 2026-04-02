@@ -29,6 +29,7 @@ The Evolution Project is an agentic, AI-driven development environment integrate
 - **MultiPageEditor**: The main editor for `.evo` or `.xml` orchestration files, featuring tabs for `AiChatPage`, `GraphPage`, `PropertiesPage`, `AiFlowPage`, and `ApprovalPage`.
 - **AiChatPage**: The primary interaction interface for real-time AI communication and manual orchestration triggering.
 - **GraphPage**: Provides Zest-based visualization of the orchestration graph.
+- **ApprovalPage**: Centralized hub for reviewing AI-proposed changes, featuring an SVG-based process flow visualization and interactive decision buttons.
 
 ---
 
@@ -64,14 +65,44 @@ The Evolution Project is an agentic, AI-driven development environment integrate
 
 ---
 
-## 4. Identified Architectural Flaws & Missing Steps
+## 4. Autonomous Self-Development (Deep Dive)
 
-### 4.1 Identified Flaws
+### 4.1 Current Implementation Lifecycle
+The self-development system operates as a higher-order orchestration loop managed by the `SelfDevSupervisor`.
+
+1.  **Session Initiation**: Triggered via `AiChatPage`. The supervisor creates a `SelfDevSession` with a set number of maximum iterations (default 5).
+2.  **Iteration Cycle (`IterationManager`)**:
+    - **Branching**: A dedicated Git branch (`selfdev/<session-id>/<iteration-id>`) is created for each iteration.
+    - **Planning (`TaskPlanner`)**: A specialized agent analyzes the codebase and generates 1-5 atomic tasks (e.g., "Improve Javadoc in core bundles" or "Refactor redundant exception handling").
+    - **Execution (`TaskExecutor`)**: Tasks are delegated back to the `EvolutionOrchestrator`, which uses the full agent suite (`Architect`, `JavaDev`, etc.) to implement the changes.
+    - **Evaluation (`Evaluator`)**: A automated `maven clean install` is triggered. Success is defined by a `BUILD SUCCESS` status and a test pass rate of 100%.
+    - **Decision**:
+        - **Success**: Changes are committed to the iteration branch.
+        - **Failure**: The supervisor triggers a `Git rollback` to the state before the iteration began.
+3.  **Persistence**: The `RestartManager` ensures that if the system needs to restart (e.g., after a core model update), the session state is preserved and can resume automatically.
+
+### 4.2 Identified Architectural Flaws
 - **Loop Safety**: The `EvolutionOrchestrator` looping logic lacks an explicit hard-limit counter within the code, relying on agent-driven termination which could lead to infinite execution if the agent fails to converge.
 - **State Volatility**: The `EvolutionOrchestrator` clears existing tasks (`context.getOrchestrator().getTasks().clear()`) at the start of every new request. This prevents multi-turn manual refinement of a single orchestration plan.
 - **Thread Safety**: UI updates for progress and status in `AiChatPage` use `Display.asyncExec` but lack robust `isDisposed()` checks in some long-running timer blocks, potentially causing widget disposal errors during editor closure.
+- **Fragile Parsing**: The `Evaluator` and `ReviewerAgent` rely on string-matching/substring logic for JSON extraction and Maven output parsing, which is prone to failure if AI output includes unexpected conversational text or Maven output format changes.
 
-### 4.2 Missing Steps / Improvements
-- **Context Persistence**: Missing a mechanism to persist `TaskContext.sharedMemory` between different editor sessions; memory is currently transient and exists only during active execution.
-- **Tooling Verification**: The `FileTool` and `MavenTool` lack a "Dry Run" mode to preview changes before application, placing high reliance on the `ReviewerAgent`.
-- **Offline Resilience**: `HYBRID` mode fails completely if the remote provider is unreachable, even if the local model could handle the request in a degraded "local-only" fallback state.
+### 4.3 Strategic Improvements: User Control & Feedback
+To move from "Black Box" automation to "Co-pilot" autonomy, the following architectural enhancements are suggested:
+
+1.  **Interactive Planning**:
+    - **Current**: `TaskPlanner` generates and immediately commits tasks for execution.
+    - **Proposed**: Pause after `Planning` to allow the user to modify, re-order, or delete proposed tasks in the `ApprovalPage` before execution begins.
+2.  **Visual Git Diff Integration**:
+    - **Current**: Users see logs of file writes.
+    - **Proposed**: Embed a side-by-side Git diff viewer in the `ApprovalPage`. Users should be able to see exactly what code was modified before approving the transition from an iteration branch to the main branch.
+3.  **Step-by-Step Execution Mode**:
+    - **Current**: Iterations run to completion (success or failure).
+    - **Proposed**: A "Manual Step" toggle in `SelfDevSettings`. When active, the supervisor pauses after *every* task completion within an iteration, updating the `ApprovalPage` with the task result and requiring a manual "Continue" click.
+4.  **Reactive Re-planning Feedback**:
+    - **Current**: If a task fails, the entire iteration is rolled back.
+    - **Proposed**: Implement a `CorrectionLoop`. If a task fails during execution, trigger a `RepairAgent` to analyze the error log and propose a fix for *just that task*, rather than discarding the entire iteration's progress.
+5.  **Telemetry & Transparency**:
+    - Add a "Rationale" field to the `SelfDevSession` model. Each iteration should include a section where the AI explains *why* it chose specific improvements, visible in a dedicated tooltip or info panel in the `ApprovalPage`.
+6.  **Degraded Offline Fallback**:
+    - Enhance `LlmRouter` to support `DegradedMode`. If a remote provider is unreachable during a `HYBRID` iteration, the system should offer to proceed using only the local `Ollama` model (if capability permits) instead of hard-failing the iteration.
