@@ -3,6 +3,8 @@ package eu.kalafatic.evolution.view.editors.pages;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -132,9 +134,31 @@ public class ApprovalPage extends Composite {
 		// Visualization Area
 		Group vizGroup = SWTFactory.createGroup(this, "AI Network & Process Flow", 1);
 		vizGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
-		vizGroup.setLayout(new FillLayout());
+		vizGroup.setLayout(new GridLayout(1, false));
+
+		ToolBarManager toolbarManager = new ToolBarManager(SWT.FLAT | SWT.RIGHT);
+		toolbarManager.add(new Action("Zoom In") {
+			@Override
+			public void run() {
+				browser.execute("applyZoom(1.2);");
+			}
+		});
+		toolbarManager.add(new Action("Zoom Out") {
+			@Override
+			public void run() {
+				browser.execute("applyZoom(0.8);");
+			}
+		});
+		toolbarManager.add(new Action("Reset Zoom") {
+			@Override
+			public void run() {
+				browser.execute("resetZoom();");
+			}
+		});
+		toolbarManager.createControl(vizGroup);
 
 		browser = new Browser(vizGroup, SWT.NONE);
+		browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 		browser.addProgressListener(new ProgressAdapter() {
 			@Override
 			public void completed(ProgressEvent event) {
@@ -308,11 +332,13 @@ public class ApprovalPage extends Composite {
 			mb.setText("Approval Confirmed");
 			mb.setMessage("Approval confirmed and orchestration will continue.");
 			mb.open();
+			editor.showAiChatPage();
 		} else {
 			MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
 			mb.setText("Approval Confirmed");
 			mb.setMessage("Approval confirmed and changes applied to the system.");
 			mb.open();
+			editor.showAiChatPage();
 		}
 	}
 
@@ -389,6 +415,15 @@ public class ApprovalPage extends Composite {
 				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs><marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker></defs><g id='viewport'></g></svg>"
 				+ "<script>"
 				+ "const viewport = document.getElementById('viewport');"
+				+ "let currentZoom = 1.0;"
+				+ "function applyZoom(factor) {"
+				+ "  currentZoom *= factor;"
+				+ "  viewport.setAttribute('transform', 'scale(' + currentZoom + ')');"
+				+ "}"
+				+ "function resetZoom() {"
+				+ "  currentZoom = 1.0;"
+				+ "  viewport.removeAttribute('transform');"
+				+ "}"
 				+ "function updateGraph(data) {"
 				+ "  viewport.innerHTML = '';"
 				+ "  if (!data) return;"
