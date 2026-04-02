@@ -3,13 +3,16 @@ package eu.kalafatic.evolution.view.editors.pages;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
 import org.eclipse.swt.browser.ProgressEvent;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.json.JSONArray;
@@ -23,6 +26,7 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 public class AiFlowPage extends Composite {
 	private Browser browser;
 	private Orchestrator orchestrator;
+	private MultiPageEditor editor;
 	private boolean isLoaded = false;
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override
@@ -34,8 +38,32 @@ public class AiFlowPage extends Composite {
 
 	public AiFlowPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, SWT.NONE);
-		this.setLayout(new FillLayout());
+		this.editor = editor;
+		this.setLayout(new GridLayout(1, false));
+
+		ToolBarManager toolbarManager = new ToolBarManager(SWT.FLAT | SWT.RIGHT);
+		toolbarManager.add(new Action("Zoom In") {
+			@Override
+			public void run() {
+				browser.execute("applyZoom(1.2);");
+			}
+		});
+		toolbarManager.add(new Action("Zoom Out") {
+			@Override
+			public void run() {
+				browser.execute("applyZoom(0.8);");
+			}
+		});
+		toolbarManager.add(new Action("Reset Zoom") {
+			@Override
+			public void run() {
+				browser.execute("resetZoom();");
+			}
+		});
+		toolbarManager.createControl(this);
+
 		this.browser = new Browser(this, SWT.NONE);
+		browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 		browser.addProgressListener(new ProgressAdapter() {
 			@Override
@@ -152,7 +180,17 @@ public class AiFlowPage extends Composite {
 				+ "line { stroke: #b0bec5; stroke-width: 1.5px; marker-end: url(#arrowhead); }"
 				+ "</style></head><body>"
 				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs><marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#b0bec5'/></marker></defs><g id='viewport'></g></svg>"
-				+ "<script>" + "const viewport = document.getElementById('viewport');" + "function updateGraph(data) {"
+				+ "<script>" + "const viewport = document.getElementById('viewport');"
+				+ "let currentZoom = 1.0;"
+				+ "function applyZoom(factor) {"
+				+ "  currentZoom *= factor;"
+				+ "  viewport.setAttribute('transform', 'scale(' + currentZoom + ')');"
+				+ "}"
+				+ "function resetZoom() {"
+				+ "  currentZoom = 1.0;"
+				+ "  viewport.removeAttribute('transform');"
+				+ "}"
+				+ "function updateGraph(data) {"
 				+ "  viewport.innerHTML = '';" + "  if (!data) return;" + "  const nodes = {};" + "  const links = [];"
 				+ "  // Flow-like layout: sequential" + "  let x = 300, y = 50;" + "  if (data.tasks) {"
 				+ "    data.tasks.forEach(function(t) {" + "      nodes[t.id] = Object.assign({}, t, { x: x, y: y });"

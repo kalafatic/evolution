@@ -214,6 +214,17 @@ public class MultiPageEditor extends MultiPageEditorPart {
         }
     }
 
+    public void showAiChatPage() {
+        int pageCount = getPageCount();
+        for (int i = 0; i < pageCount; i++) {
+            Control control = getControl(i);
+            if (control == aiChatPage) {
+                setActivePage(i);
+                break;
+            }
+        }
+    }
+
     public void selectNode(Object element) {
         if (graphPage != null) {
             graphPage.selectNode(element);
