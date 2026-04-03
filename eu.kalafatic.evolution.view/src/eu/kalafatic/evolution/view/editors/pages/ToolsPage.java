@@ -17,7 +17,6 @@ import org.eclipse.swt.widgets.Text;
 import eu.kalafatic.evolution.controller.orchestration.DatabaseTool;
 import eu.kalafatic.evolution.controller.orchestration.FileTool;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -63,14 +62,9 @@ public class ToolsPage extends ScrolledComposite {
         createFileGroup(sashForm);
         createDatabaseGroup(sashForm);
         createEclipseGroup(sashForm);
+        createCompilerGroup(sashForm);
 
-        sashForm.setWeights(new int[] { 15, 15, 15, 25, 30 });
-        createGitGroup(comp);
-        createMavenGroup(comp);
-        createFileGroup(comp);
-        createDatabaseGroup(comp);
-        createEclipseGroup(comp);
-        createCompilerGroup(comp);
+        sashForm.setWeights(new int[] { 15, 12, 10, 20, 18, 25 });
 
         successColor = new Color(getDisplay(), 200, 240, 200); // Light cool green
 
@@ -96,23 +90,21 @@ public class ToolsPage extends ScrolledComposite {
 
     private void createGitGroup(Composite parent) {
         gitGroup = SWTFactory.createMaximizableGroup(parent, "Git Tool Settings", 3);
-        Group group = gitGroup;
-        SWTFactory.createLabel(group, "Repository URL:");
-        gitRepoText = new Text(group, SWT.BORDER);
-        gitRepoText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, gitRepoText);
+        SWTFactory.createLabel(gitGroup, "Repository URL:");
+        gitRepoText = SWTFactory.createText(gitGroup);
+        SWTFactory.createEditButton(gitGroup, gitRepoText);
 
-        SWTFactory.createLabel(group, "Branch:");
-        gitBranchText = new Text(group, SWT.BORDER);
-        gitBranchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, gitBranchText);
+        SWTFactory.createLabel(gitGroup, "Branch:");
+        gitBranchText = SWTFactory.createText(gitGroup);
+        SWTFactory.createEditButton(gitGroup, gitBranchText);
 
-        SWTFactory.createLabel(group, "Local Path:");
-        gitLocalPathText = new Text(group, SWT.BORDER);
-        gitLocalPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, gitLocalPathText);
+        SWTFactory.createLabel(gitGroup, "Local Path:");
+        gitLocalPathText = SWTFactory.createText(gitGroup);
+        SWTFactory.createEditButton(gitGroup, gitLocalPathText);
 
-        Button testBtn = SWTFactory.createButton(group, "Test Git");
+        SWTFactory.createLabel(gitGroup, "");
+        SWTFactory.createLabel(gitGroup, "");
+        Button testBtn = SWTFactory.createButton(gitGroup, "Test Git");
         testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -123,18 +115,17 @@ public class ToolsPage extends ScrolledComposite {
 
     private void createMavenGroup(Composite parent) {
         mavenGroup = SWTFactory.createMaximizableGroup(parent, "Maven Tool Settings", 3);
-        Group group = mavenGroup;
-        SWTFactory.createLabel(group, "Goals:");
-        mavenGoalsText = new Text(group, SWT.BORDER);
-        mavenGoalsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, mavenGoalsText);
+        SWTFactory.createLabel(mavenGroup, "Goals:");
+        mavenGoalsText = SWTFactory.createText(mavenGroup);
+        SWTFactory.createEditButton(mavenGroup, mavenGoalsText);
 
-        SWTFactory.createLabel(group, "Profiles:");
-        mavenProfilesText = new Text(group, SWT.BORDER);
-        mavenProfilesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, mavenProfilesText);
+        SWTFactory.createLabel(mavenGroup, "Profiles:");
+        mavenProfilesText = SWTFactory.createText(mavenGroup);
+        SWTFactory.createEditButton(mavenGroup, mavenProfilesText);
 
-        Button testBtn = SWTFactory.createButton(group, "Test Maven");
+        SWTFactory.createLabel(mavenGroup, "");
+        SWTFactory.createLabel(mavenGroup, "");
+        Button testBtn = SWTFactory.createButton(mavenGroup, "Test Maven");
         testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -145,13 +136,13 @@ public class ToolsPage extends ScrolledComposite {
 
     private void createFileGroup(Composite parent) {
         fileGroup = SWTFactory.createMaximizableGroup(parent, "File Tool Settings", 3);
-        Group group = fileGroup;
-        SWTFactory.createLabel(group, "Project Root:");
-        fileLocalPathText = new Text(group, SWT.BORDER);
-        fileLocalPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, fileLocalPathText);
+        SWTFactory.createLabel(fileGroup, "Project Root:");
+        fileLocalPathText = SWTFactory.createText(fileGroup);
+        SWTFactory.createEditButton(fileGroup, fileLocalPathText);
 
-        Button testBtn = SWTFactory.createButton(group, "Test File");
+        SWTFactory.createLabel(fileGroup, "");
+        SWTFactory.createLabel(fileGroup, "");
+        Button testBtn = SWTFactory.createButton(fileGroup, "Test File");
         testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -162,28 +153,25 @@ public class ToolsPage extends ScrolledComposite {
 
     private void createDatabaseGroup(Composite parent) {
         dbGroup = SWTFactory.createMaximizableGroup(parent, "Database Tool Settings", 3);
-        Group group = dbGroup;
-        SWTFactory.createLabel(group, "JDBC URL:");
-        dbUrlText = new Text(group, SWT.BORDER);
-        dbUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, dbUrlText);
+        SWTFactory.createLabel(dbGroup, "JDBC URL:");
+        dbUrlText = SWTFactory.createText(dbGroup);
+        SWTFactory.createEditButton(dbGroup, dbUrlText);
 
-        SWTFactory.createLabel(group, "Driver Class:");
-        dbDriverText = new Text(group, SWT.BORDER);
-        dbDriverText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, dbDriverText);
+        SWTFactory.createLabel(dbGroup, "Driver Class:");
+        dbDriverText = SWTFactory.createText(dbGroup);
+        SWTFactory.createEditButton(dbGroup, dbDriverText);
 
-        SWTFactory.createLabel(group, "Username:");
-        dbUsernameText = new Text(group, SWT.BORDER);
-        dbUsernameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, dbUsernameText);
+        SWTFactory.createLabel(dbGroup, "Username:");
+        dbUsernameText = SWTFactory.createText(dbGroup);
+        SWTFactory.createEditButton(dbGroup, dbUsernameText);
 
-        SWTFactory.createLabel(group, "Password:");
-        dbPasswordText = new Text(group, SWT.BORDER | SWT.PASSWORD);
-        dbPasswordText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, dbPasswordText);
+        SWTFactory.createLabel(dbGroup, "Password:");
+        dbPasswordText = SWTFactory.createPasswordText(dbGroup);
+        SWTFactory.createEditButton(dbGroup, dbPasswordText);
 
-        Button testBtn = SWTFactory.createButton(group, "Test DB");
+        SWTFactory.createLabel(dbGroup, "");
+        SWTFactory.createLabel(dbGroup, "");
+        Button testBtn = SWTFactory.createButton(dbGroup, "Test DB");
         testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -194,24 +182,22 @@ public class ToolsPage extends ScrolledComposite {
 
     private void createEclipseGroup(Composite parent) {
         eclipseGroup = SWTFactory.createMaximizableGroup(parent, "Eclipse Development Settings", 3);
-        Group group = eclipseGroup;
 
-        SWTFactory.createLabel(group, "Workspace Path:");
-        eclipseWorkspaceText = new Text(group, SWT.BORDER);
-        eclipseWorkspaceText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, eclipseWorkspaceText);
+        SWTFactory.createLabel(eclipseGroup, "Workspace Path:");
+        eclipseWorkspaceText = SWTFactory.createText(eclipseGroup);
+        SWTFactory.createEditButton(eclipseGroup, eclipseWorkspaceText);
 
-        SWTFactory.createLabel(group, "Eclipse Installation:");
-        eclipseInstallationText = new Text(group, SWT.BORDER);
-        eclipseInstallationText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, eclipseInstallationText);
+        SWTFactory.createLabel(eclipseGroup, "Eclipse Installation:");
+        eclipseInstallationText = SWTFactory.createText(eclipseGroup);
+        SWTFactory.createEditButton(eclipseGroup, eclipseInstallationText);
 
-        SWTFactory.createLabel(group, "Target Platform:");
-        eclipseTargetPlatformText = new Text(group, SWT.BORDER);
-        eclipseTargetPlatformText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, eclipseTargetPlatformText);
+        SWTFactory.createLabel(eclipseGroup, "Target Platform:");
+        eclipseTargetPlatformText = SWTFactory.createText(eclipseGroup);
+        SWTFactory.createEditButton(eclipseGroup, eclipseTargetPlatformText);
 
-        Button testBtn = SWTFactory.createButton(group, "Test Eclipse");
+        SWTFactory.createLabel(eclipseGroup, "");
+        SWTFactory.createLabel(eclipseGroup, "");
+        Button testBtn = SWTFactory.createButton(eclipseGroup, "Test Eclipse");
         testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -221,40 +207,35 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createCompilerGroup(Composite parent) {
-        compilerGroup = SWTFactory.createGroup(parent, "Compiler & Language Settings", 3);
-        Group group = compilerGroup;
+        compilerGroup = SWTFactory.createMaximizableGroup(parent, "Compiler & Language Settings", 3);
 
-        SWTFactory.createLabel(group, "Java Source Version:");
-        sourceVersionText = new Text(group, SWT.BORDER);
-        sourceVersionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, sourceVersionText);
+        SWTFactory.createLabel(compilerGroup, "Java Source Version:");
+        sourceVersionText = SWTFactory.createText(compilerGroup);
+        SWTFactory.createEditButton(compilerGroup, sourceVersionText);
 
-        SWTFactory.createLabel(group, "Java Target Version:");
-        targetVersionText = new Text(group, SWT.BORDER);
-        targetVersionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, targetVersionText);
+        SWTFactory.createLabel(compilerGroup, "Java Target Version:");
+        targetVersionText = SWTFactory.createText(compilerGroup);
+        SWTFactory.createEditButton(compilerGroup, targetVersionText);
 
-        SWTFactory.createLabel(group, "C Path (gcc):");
-        cPathText = new Text(group, SWT.BORDER);
-        cPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, cPathText);
+        SWTFactory.createLabel(compilerGroup, "C Path (gcc):");
+        cPathText = SWTFactory.createText(compilerGroup);
+        SWTFactory.createEditButton(compilerGroup, cPathText);
 
-        SWTFactory.createLabel(group, "C++ Path (g++):");
-        cppPathText = new Text(group, SWT.BORDER);
-        cppPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, cppPathText);
+        SWTFactory.createLabel(compilerGroup, "C++ Path (g++):");
+        cppPathText = SWTFactory.createText(compilerGroup);
+        SWTFactory.createEditButton(compilerGroup, cppPathText);
 
-        SWTFactory.createLabel(group, "Make Path:");
-        makePathText = new Text(group, SWT.BORDER);
-        makePathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, makePathText);
+        SWTFactory.createLabel(compilerGroup, "Make Path:");
+        makePathText = SWTFactory.createText(compilerGroup);
+        SWTFactory.createEditButton(compilerGroup, makePathText);
 
-        SWTFactory.createLabel(group, "CMake Path:");
-        cmakePathText = new Text(group, SWT.BORDER);
-        cmakePathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, cmakePathText);
+        SWTFactory.createLabel(compilerGroup, "CMake Path:");
+        cmakePathText = SWTFactory.createText(compilerGroup);
+        SWTFactory.createEditButton(compilerGroup, cmakePathText);
 
-        Button testBtn = SWTFactory.createButton(group, "Test Compilers");
+        SWTFactory.createLabel(compilerGroup, "");
+        SWTFactory.createLabel(compilerGroup, "");
+        Button testBtn = SWTFactory.createButton(compilerGroup, "Test Compilers");
         testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -414,7 +395,6 @@ public class ToolsPage extends ScrolledComposite {
         try {
             File workingDir = getWorkingDir();
             TaskContext context = new TaskContext(orchestrator, workingDir);
-            // GitTool execute handles specific commands, let's use a shell check for version as a basic test
             eu.kalafatic.evolution.controller.orchestration.ShellTool shell = new eu.kalafatic.evolution.controller.orchestration.ShellTool();
             String result = shell.execute("git --version", workingDir, context);
             MessageDialog.openInformation(getShell(), "Git Test", "Git is available:\n" + result);
@@ -516,7 +496,6 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private File getWorkingDir() {
-        // Use a temp directory or project root if available
         String path = fileLocalPathText.getText();
         if (path != null && !path.isEmpty()) {
             File f = new File(path);
