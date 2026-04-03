@@ -486,13 +486,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__SHARED_MEMORY = 22;
 
 	/**
+	 * The feature id for the '<em><b>Eclipse</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__ECLIPSE = 23;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 23;
+	int ORCHESTRATOR_FEATURE_COUNT = 24;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -1763,6 +1772,70 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int FILE_CONFIG_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl <em>Eclipse</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEclipse()
+	 * @generated
+	 */
+	int ECLIPSE = 30;
+
+	/**
+	 * The feature id for the '<em><b>Workspace</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE__WORKSPACE = 0;
+
+	/**
+	 * The feature id for the '<em><b>Installation</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE__INSTALLATION = 1;
+
+	/**
+	 * The feature id for the '<em><b>Target Platform</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE__TARGET_PLATFORM = 2;
+
+	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE__TEST_STATUS = 3;
+
+	/**
+	 * The number of structural features of the '<em>Eclipse</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE_FEATURE_COUNT = 4;
+
+	/**
+	 * The number of operations of the '<em>Eclipse</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE_OPERATION_COUNT = 0;
 
 
 	/**
@@ -3047,6 +3120,17 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_FileConfig();
 
 	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse <em>Eclipse</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Eclipse</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_Eclipse();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Database <em>Database</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3142,6 +3226,60 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getFileConfig_TestStatus();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Eclipse <em>Eclipse</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Eclipse</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse
+	 * @generated
+	 */
+	EClass getEclipse();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getWorkspace <em>Workspace</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Workspace</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getWorkspace()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_Workspace();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getInstallation <em>Installation</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Installation</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getInstallation()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_Installation();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getTargetPlatform <em>Target Platform</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Target Platform</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getTargetPlatform()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_TargetPlatform();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getTestStatus()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_TestStatus();
 
 	/**
 	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession <em>Self Dev Session</em>}'.
@@ -4368,6 +4506,14 @@ public interface OrchestrationPackage extends EPackage {
 		EReference ORCHESTRATOR__FILE_CONFIG = eINSTANCE.getOrchestrator_FileConfig();
 
 		/**
+		 * The meta object literal for the '<em><b>Eclipse</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__ECLIPSE = eINSTANCE.getOrchestrator_Eclipse();
+
+		/**
 		 * The meta object literal for the '<em><b>Self Dev Session</b></em>' containment reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4382,6 +4528,48 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute ORCHESTRATOR__SHARED_MEMORY = eINSTANCE.getOrchestrator_SharedMemory();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl <em>Eclipse</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEclipse()
+		 * @generated
+		 */
+		EClass ECLIPSE = eINSTANCE.getEclipse();
+
+		/**
+		 * The meta object literal for the '<em><b>Workspace</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__WORKSPACE = eINSTANCE.getEclipse_Workspace();
+
+		/**
+		 * The meta object literal for the '<em><b>Installation</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__INSTALLATION = eINSTANCE.getEclipse_Installation();
+
+		/**
+		 * The meta object literal for the '<em><b>Target Platform</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__TARGET_PLATFORM = eINSTANCE.getEclipse_TargetPlatform();
+
+		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__TEST_STATUS = eINSTANCE.getEclipse_TestStatus();
 
 	}
 
