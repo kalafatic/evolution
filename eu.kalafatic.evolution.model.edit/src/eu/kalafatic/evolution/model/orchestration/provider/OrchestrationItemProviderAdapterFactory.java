@@ -566,6 +566,52 @@ public class OrchestrationItemProviderAdapterFactory extends OrchestrationAdapte
 	}
 
 	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.Database} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected DatabaseItemProvider databaseItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.Database}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createDatabaseAdapter() {
+		if (databaseItemProvider == null) {
+			databaseItemProvider = new DatabaseItemProvider(this);
+		}
+
+		return databaseItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.FileConfig} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected FileConfigItemProvider fileConfigItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.FileConfig}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createFileConfigAdapter() {
+		if (fileConfigItemProvider == null) {
+			fileConfigItemProvider = new FileConfigItemProvider(this);
+		}
+
+		return fileConfigItemProvider;
+	}
+
+	/**
 	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.Iteration} instances.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -586,6 +632,29 @@ public class OrchestrationItemProviderAdapterFactory extends OrchestrationAdapte
 		}
 
 		return iterationItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.Eclipse} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected EclipseItemProvider eclipseItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.Eclipse}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createEclipseAdapter() {
+		if (eclipseItemProvider == null) {
+			eclipseItemProvider = new EclipseItemProvider(this);
+		}
+
+		return eclipseItemProvider;
 	}
 
 	/**

@@ -67,6 +67,8 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/priority"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/resultSummary"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/description"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/rating"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/likes"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Agent">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Agent/id"/>
@@ -96,17 +98,22 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/hybridModel"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/offlineMode"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/selfDevSession"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/database"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/fileConfig"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/sharedMemory"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/eclipse"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Git">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Git/repositoryUrl"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Git/branch"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Git/username"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Git/localPath"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Git/testStatus"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Maven">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Maven/goals"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Maven/profiles"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Maven/testStatus"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//LLM">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//LLM/model"/>
@@ -115,6 +122,11 @@
     <genClasses ecoreClass="evolution.ecore#//Compiler">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Compiler/sourceVersion"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Compiler/targetVersion"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Compiler/cPath"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Compiler/cppPath"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Compiler/makePath"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Compiler/cmakePath"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Compiler/testStatus"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Command">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Command/name"/>
@@ -166,6 +178,18 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SelfDevSession/maxIterations"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SelfDevSession/status"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//SelfDevSession/iterations"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SelfDevSession/rationale"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//Database">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Database/url"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Database/username"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Database/password"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Database/driver"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Database/testStatus"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//FileConfig">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//FileConfig/localPath"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//FileConfig/testStatus"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Iteration">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/id"/>
@@ -173,6 +197,16 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Iteration/tasks"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Iteration/evaluationResult"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/status"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/phase"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/comments"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/rating"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/rationale"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//Eclipse">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Eclipse/workspace"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Eclipse/installation"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Eclipse/targetPlatform"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Eclipse/testStatus"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//EvaluationResult">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/success"/>
@@ -180,6 +214,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/coverageChange"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/errors"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/decision"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/userSatisfaction"/>
     </genClasses>
   </genPackages>
 </genmodel:GenModel>

@@ -2,26 +2,22 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
-import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.model.orchestration.TaskStatus;
-
 import java.util.Collection;
 
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
-
 import org.eclipse.emf.common.util.EList;
-
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
-
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.EObjectResolvingEList;
 import org.eclipse.emf.ecore.util.InternalEList;
+
+import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 
 /**
  * <!-- begin-user-doc -->
@@ -41,6 +37,11 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getFeedback <em>Feedback</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isApprovalRequired <em>Approval Required</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getLoopToTaskId <em>Loop To Task Id</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getPriority <em>Priority</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getResultSummary <em>Result Summary</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getDescription <em>Description</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getRating <em>Rating</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isLikes <em>Likes</em>}</li>
  * </ul>
  *
  * @generated
@@ -325,95 +326,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @ordered
 	 */
 	protected boolean likes = LIKES_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getRationale()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final String RATIONALE_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getRationale()
-	 * @generated
-	 * @ordered
-	 */
-	protected String rationale = RATIONALE_EDEFAULT;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getRationale() {
-		return rationale;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setRationale(String newRationale) {
-		String oldRationale = rationale;
-		rationale = newRationale;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__RATIONALE, oldRationale, rationale));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public int getRating() {
-		return rating;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setRating(int newRating) {
-		int oldRating = rating;
-		rating = newRating;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__RATING, oldRating, rating));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isLikes() {
-		return likes;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setLikes(boolean newLikes) {
-		boolean oldLikes = likes;
-		likes = newLikes;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__LIKES, oldLikes, likes));
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -719,6 +631,52 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @generated
 	 */
 	@Override
+	public int getRating() {
+		return rating;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRating(int newRating) {
+		int oldRating = rating;
+		rating = newRating;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__RATING, oldRating, rating));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isLikes() {
+		return likes;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setLikes(boolean newLikes) {
+		boolean oldLikes = likes;
+		likes = newLikes;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__LIKES, oldLikes, likes));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.TASK__SUB_TASKS:
@@ -765,8 +723,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getRating();
 			case OrchestrationPackage.TASK__LIKES:
 				return isLikes();
-			case OrchestrationPackage.TASK__RATIONALE:
-				return getRationale();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -827,9 +783,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__LIKES:
 				setLikes((Boolean)newValue);
 				return;
-			case OrchestrationPackage.TASK__RATIONALE:
-				setRationale((String)newValue);
-				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -887,9 +840,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__LIKES:
 				setLikes(LIKES_EDEFAULT);
 				return;
-			case OrchestrationPackage.TASK__RATIONALE:
-				setRationale(RATIONALE_EDEFAULT);
-				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -932,8 +882,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return rating != RATING_EDEFAULT;
 			case OrchestrationPackage.TASK__LIKES:
 				return likes != LIKES_EDEFAULT;
-			case OrchestrationPackage.TASK__RATIONALE:
-				return RATIONALE_EDEFAULT == null ? rationale != null : !RATIONALE_EDEFAULT.equals(rationale);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -974,8 +922,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(rating);
 		result.append(", likes: ");
 		result.append(likes);
-		result.append(", rationale: ");
-		result.append(rationale);
 		result.append(')');
 		return result.toString();
 	}

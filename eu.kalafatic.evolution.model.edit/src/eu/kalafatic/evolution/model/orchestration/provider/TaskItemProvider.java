@@ -76,8 +76,6 @@ public class TaskItemProvider
 			addResultSummaryPropertyDescriptor(object);
 			addDescriptionPropertyDescriptor(object);
 			addRatingPropertyDescriptor(object);
-			addLikesPropertyDescriptor(object);
-			addRationalePropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -468,8 +466,6 @@ public class TaskItemProvider
 			case OrchestrationPackage.TASK__RESULT_SUMMARY:
 			case OrchestrationPackage.TASK__DESCRIPTION:
 			case OrchestrationPackage.TASK__RATING:
-			case OrchestrationPackage.TASK__LIKES:
-			case OrchestrationPackage.TASK__RATIONALE:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 			case OrchestrationPackage.TASK__SUB_TASKS:

@@ -25,6 +25,11 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getFeedback <em>Feedback</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isApprovalRequired <em>Approval Required</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getLoopToTaskId <em>Loop To Task Id</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getPriority <em>Priority</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getResultSummary <em>Result Summary</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getDescription <em>Description</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getRating <em>Rating</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isLikes <em>Likes</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -345,27 +350,5 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setLikes(boolean value);
-
-	/**
-	 * Returns the value of the '<em><b>Rationale</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Rationale</em>' attribute.
-	 * @see #setRationale(String)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Rationale()
-	 * @model
-	 * @generated
-	 */
-	String getRationale();
-
-	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getRationale <em>Rationale</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Rationale</em>' attribute.
-	 * @see #getRationale()
-	 * @generated
-	 */
-	void setRationale(String value);
 
 } // Task

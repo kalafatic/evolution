@@ -36,7 +36,7 @@ public enum ExecutionMode implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	PARALLEL(0, "PARALLEL", "PARALLEL");
+	PARALLEL(1, "PARALLEL", "PARALLEL");
 
 	/**
 	 * The '<em><b>SERIAL</b></em>' literal value.
@@ -58,7 +58,7 @@ public enum ExecutionMode implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int PARALLEL_VALUE = 0;
+	public static final int PARALLEL_VALUE = 1;
 
 	/**
 	 * An array of all the '<em><b>Execution Mode</b></em>' enumerators.
@@ -127,6 +127,7 @@ public enum ExecutionMode implements Enumerator {
 	public static ExecutionMode get(int value) {
 		switch (value) {
 			case SERIAL_VALUE: return SERIAL;
+			case PARALLEL_VALUE: return PARALLEL;
 		}
 		return null;
 	}

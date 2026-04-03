@@ -20,6 +20,10 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getTasks <em>Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getEvaluationResult <em>Evaluation Result</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getStatus <em>Status</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getPhase <em>Phase</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getComments <em>Comments</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRating <em>Rating</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRationale <em>Rationale</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration()
@@ -153,50 +157,6 @@ public interface Iteration extends EObject {
 	void setPhase(String value);
 
 	/**
-	 * Returns the value of the '<em><b>Rating</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Rating</em>' attribute.
-	 * @see #setRating(int)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration_Rating()
-	 * @model
-	 * @generated
-	 */
-	int getRating();
-
-	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRating <em>Rating</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Rating</em>' attribute.
-	 * @see #getRating()
-	 * @generated
-	 */
-	void setRating(int value);
-
-	/**
-	 * Returns the value of the '<em><b>Likes</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Likes</em>' attribute.
-	 * @see #setLikes(boolean)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration_Likes()
-	 * @model
-	 * @generated
-	 */
-	boolean isLikes();
-
-	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Iteration#isLikes <em>Likes</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Likes</em>' attribute.
-	 * @see #isLikes()
-	 * @generated
-	 */
-	void setLikes(boolean value);
-
-	/**
 	 * Returns the value of the '<em><b>Comments</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -217,6 +177,28 @@ public interface Iteration extends EObject {
 	 * @generated
 	 */
 	void setComments(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Rating</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Rating</em>' attribute.
+	 * @see #setRating(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration_Rating()
+	 * @model
+	 * @generated
+	 */
+	int getRating();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRating <em>Rating</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Rating</em>' attribute.
+	 * @see #getRating()
+	 * @generated
+	 */
+	void setRating(int value);
 
 	/**
 	 * Returns the value of the '<em><b>Rationale</b></em>' attribute.

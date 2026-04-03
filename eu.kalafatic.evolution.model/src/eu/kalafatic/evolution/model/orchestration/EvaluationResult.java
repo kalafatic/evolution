@@ -20,6 +20,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getCoverageChange <em>Coverage Change</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getErrors <em>Errors</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getDecision <em>Decision</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getUserSatisfaction <em>User Satisfaction</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getEvaluationResult()
@@ -135,12 +136,12 @@ public interface EvaluationResult extends EObject {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>User Satisfaction</em>' attribute.
-	 * @see #setUserSatisfaction(double)
+	 * @see #setUserSatisfaction(int)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getEvaluationResult_UserSatisfaction()
 	 * @model
 	 * @generated
 	 */
-	double getUserSatisfaction();
+	int getUserSatisfaction();
 
 	/**
 	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getUserSatisfaction <em>User Satisfaction</em>}' attribute.
@@ -150,6 +151,6 @@ public interface EvaluationResult extends EObject {
 	 * @see #getUserSatisfaction()
 	 * @generated
 	 */
-	void setUserSatisfaction(double value);
+	void setUserSatisfaction(int value);
 
 } // EvaluationResult

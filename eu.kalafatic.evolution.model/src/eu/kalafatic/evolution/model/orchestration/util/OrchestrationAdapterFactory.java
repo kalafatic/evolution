@@ -7,7 +7,10 @@ import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Command;
+import eu.kalafatic.evolution.model.orchestration.Database;
+import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
+import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.LLM;
@@ -159,8 +162,20 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 				return createSelfDevSessionAdapter();
 			}
 			@Override
+			public Adapter caseDatabase(Database object) {
+				return createDatabaseAdapter();
+			}
+			@Override
+			public Adapter caseFileConfig(FileConfig object) {
+				return createFileConfigAdapter();
+			}
+			@Override
 			public Adapter caseIteration(Iteration object) {
 				return createIterationAdapter();
+			}
+			@Override
+			public Adapter caseEclipse(Eclipse object) {
+				return createEclipseAdapter();
 			}
 			@Override
 			public Adapter caseEvaluationResult(EvaluationResult object) {
@@ -439,6 +454,34 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.Database <em>Database</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database
+	 * @generated
+	 */
+	public Adapter createDatabaseAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.FileConfig <em>File Config</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig
+	 * @generated
+	 */
+	public Adapter createFileConfigAdapter() {
+		return null;
+	}
+
+	/**
 	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.Iteration <em>Iteration</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -449,6 +492,20 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createIterationAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.Eclipse <em>Eclipse</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse
+	 * @generated
+	 */
+	public Adapter createEclipseAdapter() {
 		return null;
 	}
 

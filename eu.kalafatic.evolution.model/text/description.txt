@@ -18,6 +18,11 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute feedback : EString
     Attribute approvalRequired : EBoolean
     Attribute loopToTaskId : EString
+    Attribute priority : EInt
+    Attribute resultSummary : EString
+    Attribute description : EString
+    Attribute rating : EInt
+    Attribute likes : EBoolean
 
   Class Agent
     Attribute id : EString
@@ -41,16 +46,28 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute remoteModel : EString
     Attribute aiMode : AiMode<<1..1>>
     Attribute mcpServerUrl : EString
+    Attribute openAiToken : EString
+    Attribute openAiModel : EString
+    Attribute localModel : EString
+    Attribute hybridModel : EString
+    Attribute offlineMode : EBoolean
+    Reference selfDevSession : SelfDevSession
+    Reference database : Database
+    Reference fileConfig : FileConfig
+    Attribute sharedMemory : EString
+    Reference eclipse : Eclipse
 
   Class Git
     Attribute repositoryUrl : EString
     Attribute branch : EString
     Attribute username : EString
     Attribute localPath : EString
+    Attribute testStatus : EString
 
   Class Maven
     Attribute goals : EString<<0..*>>
     Attribute profiles : EString<<0..*>>
+    Attribute testStatus : EString
 
   Class LLM
     Attribute model : EString
@@ -59,6 +76,11 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
   Class Compiler
     Attribute sourceVersion : EString
     Attribute targetVersion : EString
+    Attribute cPath : EString
+    Attribute cppPath : EString
+    Attribute makePath : EString
+    Attribute cmakePath : EString
+    Attribute testStatus : EString
 
   Class Command
     Attribute name : EString
@@ -104,31 +126,92 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
   Class SecretRule -> Rule
     Attribute allowedSecrets : EString<<0..*>>
 
+  Class SelfDevSession
+    Attribute id : EString
+    Attribute startTime : ELong
+    Attribute maxIterations : EInt
+    Attribute status : SelfDevStatus
+    Reference iterations : Iteration<<0..*>>
+    Attribute rationale : EString
+
+  Class Database
+    Attribute url : EString
+    Attribute username : EString
+    Attribute password : EString
+    Attribute driver : EString
+    Attribute testStatus : EString
+
+  Class FileConfig
+    Attribute localPath : EString
+    Attribute testStatus : EString
+
+  Class Iteration
+    Attribute id : EString
+    Attribute branchName : EString
+    Reference tasks : Task<<0..*>>
+    Reference evaluationResult : EvaluationResult
+    Attribute status : IterationStatus
+    Attribute phase : EString
+    Attribute comments : EString
+    Attribute rating : EInt
+    Attribute rationale : EString
+
+  Class Eclipse
+    Attribute workspace : EString
+    Attribute installation : EString
+    Attribute targetPlatform : EString
+    Attribute testStatus : EString
+
+  Class EvaluationResult
+    Attribute success : EBoolean
+    Attribute testPassRate : EDouble
+    Attribute coverageChange : EDouble
+    Attribute errors : EString<<0..*>>
+    Attribute decision : SelfDevDecision
+    Attribute userSatisfaction : EInt
+
   Enum TaskStatus
     Literal PENDING = 0
-    Literal RUNNING = 0
-    Literal DONE = 0
-    Literal FAILED = 0
-    Literal WAITING_FOR_APPROVAL = 0
+    Literal RUNNING = 1
+    Literal DONE = 2
+    Literal FAILED = 3
+    Literal WAITING_FOR_APPROVAL = 4
 
   Enum CommandStatus
     Literal PENDING = 0
-    Literal RUNNING = 0
-    Literal COMPLETED = 0
-    Literal FAILED = 0
+    Literal RUNNING = 1
+    Literal COMPLETED = 2
+    Literal FAILED = 3
 
   Enum ExecutionMode
     Literal SERIAL = 0
-    Literal PARALLEL = 0
+    Literal PARALLEL = 1
 
   Enum NeuronType
     Literal MLP = 0
-    Literal CNN = 0
-    Literal RNN = 0
-    Literal LSTM = 0
-    Literal TRANSFORMER = 0
+    Literal CNN = 1
+    Literal RNN = 2
+    Literal LSTM = 3
+    Literal TRANSFORMER = 4
 
   Enum AiMode
     Literal LOCAL = 0
     Literal HYBRID = 1
     Literal REMOTE = 2
+
+  Enum SelfDevStatus
+    Literal RUNNING = 0
+    Literal STOPPED = 1
+    Literal FAILED = 2
+    Literal COMPLETED = 3
+
+  Enum IterationStatus
+    Literal PENDING = 0
+    Literal RUNNING = 1
+    Literal DONE = 2
+    Literal FAILED = 3
+
+  Enum SelfDevDecision
+    Literal CONTINUE = 0
+    Literal ROLLBACK = 1
+    Literal STOP = 2

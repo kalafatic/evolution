@@ -15,6 +15,11 @@ import org.eclipse.emf.ecore.EObject;
  * <ul>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Compiler#getSourceVersion <em>Source Version</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Compiler#getTargetVersion <em>Target Version</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Compiler#getCPath <em>CPath</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Compiler#getCppPath <em>Cpp Path</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Compiler#getMakePath <em>Make Path</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Compiler#getCmakePath <em>Cmake Path</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Compiler#getTestStatus <em>Test Status</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getCompiler()

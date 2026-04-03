@@ -17,6 +17,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getBranch <em>Branch</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getUsername <em>Username</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getLocalPath <em>Local Path</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getTestStatus <em>Test Status</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getGit()

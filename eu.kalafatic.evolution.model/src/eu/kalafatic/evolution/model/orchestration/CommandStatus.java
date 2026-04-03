@@ -36,7 +36,7 @@ public enum CommandStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	RUNNING(0, "RUNNING", "RUNNING"),
+	RUNNING(1, "RUNNING", "RUNNING"),
 
 	/**
 	 * The '<em><b>COMPLETED</b></em>' literal object.
@@ -46,7 +46,7 @@ public enum CommandStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	COMPLETED(0, "COMPLETED", "COMPLETED"),
+	COMPLETED(2, "COMPLETED", "COMPLETED"),
 
 	/**
 	 * The '<em><b>FAILED</b></em>' literal object.
@@ -56,7 +56,7 @@ public enum CommandStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	FAILED(0, "FAILED", "FAILED");
+	FAILED(3, "FAILED", "FAILED");
 
 	/**
 	 * The '<em><b>PENDING</b></em>' literal value.
@@ -78,7 +78,7 @@ public enum CommandStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int RUNNING_VALUE = 0;
+	public static final int RUNNING_VALUE = 1;
 
 	/**
 	 * The '<em><b>COMPLETED</b></em>' literal value.
@@ -89,7 +89,7 @@ public enum CommandStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int COMPLETED_VALUE = 0;
+	public static final int COMPLETED_VALUE = 2;
 
 	/**
 	 * The '<em><b>FAILED</b></em>' literal value.
@@ -100,7 +100,7 @@ public enum CommandStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int FAILED_VALUE = 0;
+	public static final int FAILED_VALUE = 3;
 
 	/**
 	 * An array of all the '<em><b>Command Status</b></em>' enumerators.
@@ -171,6 +171,9 @@ public enum CommandStatus implements Enumerator {
 	public static CommandStatus get(int value) {
 		switch (value) {
 			case PENDING_VALUE: return PENDING;
+			case RUNNING_VALUE: return RUNNING;
+			case COMPLETED_VALUE: return COMPLETED;
+			case FAILED_VALUE: return FAILED;
 		}
 		return null;
 	}

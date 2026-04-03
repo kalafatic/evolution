@@ -17,6 +17,7 @@ import org.eclipse.emf.ecore.EObject;
  * <ul>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Maven#getGoals <em>Goals</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Maven#getProfiles <em>Profiles</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Maven#getTestStatus <em>Test Status</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getMaven()

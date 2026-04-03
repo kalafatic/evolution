@@ -17,6 +17,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Database#getUsername <em>Username</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Database#getPassword <em>Password</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Database#getDriver <em>Driver</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Database#getTestStatus <em>Test Status</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getDatabase()

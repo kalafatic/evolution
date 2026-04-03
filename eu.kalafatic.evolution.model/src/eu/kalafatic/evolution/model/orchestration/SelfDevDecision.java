@@ -71,10 +71,7 @@ public enum SelfDevDecision implements Enumerator {
 	public static final int ROLLBACK_VALUE = 1;
 
 	/**
-	 * <p>
-	 * If the meaning of '<em><b>STOP</b></em>' literal object isn't clear,
-	 * there really should be more of a description here...
-	 * </p>
+	 * The '<em><b>STOP</b></em>' literal value.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #STOP

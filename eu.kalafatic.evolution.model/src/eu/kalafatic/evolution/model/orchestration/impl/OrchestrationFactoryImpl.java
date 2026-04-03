@@ -2,14 +2,21 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EDataType;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.impl.EFactoryImpl;
+import org.eclipse.emf.ecore.plugin.EcorePlugin;
+
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
-import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
 import eu.kalafatic.evolution.model.orchestration.Database;
+import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
@@ -33,15 +40,6 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
-
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EDataType;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EPackage;
-
-import org.eclipse.emf.ecore.impl.EFactoryImpl;
-
-import org.eclipse.emf.ecore.plugin.EcorePlugin;
 
 /**
  * <!-- begin-user-doc -->
@@ -115,11 +113,11 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.MEMORY_RULE: return createMemoryRule();
 			case OrchestrationPackage.SECRET_RULE: return createSecretRule();
 			case OrchestrationPackage.SELF_DEV_SESSION: return createSelfDevSession();
-			case OrchestrationPackage.ITERATION: return createIteration();
-			case OrchestrationPackage.EVALUATION_RESULT: return createEvaluationResult();
 			case OrchestrationPackage.DATABASE: return createDatabase();
 			case OrchestrationPackage.FILE_CONFIG: return createFileConfig();
+			case OrchestrationPackage.ITERATION: return createIteration();
 			case OrchestrationPackage.ECLIPSE: return createEclipse();
+			case OrchestrationPackage.EVALUATION_RESULT: return createEvaluationResult();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}

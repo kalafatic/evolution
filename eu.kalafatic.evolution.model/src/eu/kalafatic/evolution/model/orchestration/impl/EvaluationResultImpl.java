@@ -2,22 +2,18 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
-import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
-
 import java.util.Collection;
 
 import org.eclipse.emf.common.notify.Notification;
-
 import org.eclipse.emf.common.util.EList;
-
 import org.eclipse.emf.ecore.EClass;
-
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-
 import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
+
+import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 
 /**
  * <!-- begin-user-doc -->
@@ -32,6 +28,7 @@ import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getCoverageChange <em>Coverage Change</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getErrors <em>Errors</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getDecision <em>Decision</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getUserSatisfaction <em>User Satisfaction</em>}</li>
  * </ul>
  *
  * @generated
@@ -135,7 +132,7 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 	 * @generated
 	 * @ordered
 	 */
-	protected static final double USER_SATISFACTION_EDEFAULT = 0.0;
+	protected static final int USER_SATISFACTION_EDEFAULT = 0;
 
 	/**
 	 * The cached value of the '{@link #getUserSatisfaction() <em>User Satisfaction</em>}' attribute.
@@ -145,30 +142,7 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 	 * @generated
 	 * @ordered
 	 */
-	protected double userSatisfaction = USER_SATISFACTION_EDEFAULT;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public double getUserSatisfaction() {
-		return userSatisfaction;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setUserSatisfaction(double newUserSatisfaction) {
-		double oldUserSatisfaction = userSatisfaction;
-		userSatisfaction = newUserSatisfaction;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION, oldUserSatisfaction, userSatisfaction));
-	}
+	protected int userSatisfaction = USER_SATISFACTION_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -300,6 +274,29 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 	 * @generated
 	 */
 	@Override
+	public int getUserSatisfaction() {
+		return userSatisfaction;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setUserSatisfaction(int newUserSatisfaction) {
+		int oldUserSatisfaction = userSatisfaction;
+		userSatisfaction = newUserSatisfaction;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION, oldUserSatisfaction, userSatisfaction));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.EVALUATION_RESULT__SUCCESS:
@@ -344,7 +341,7 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 				setDecision((SelfDevDecision)newValue);
 				return;
 			case OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION:
-				setUserSatisfaction((Double)newValue);
+				setUserSatisfaction((Integer)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);

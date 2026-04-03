@@ -2,27 +2,23 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
+import java.util.Collection;
+
+import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.common.notify.NotificationChain;
+import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.InternalEObject;
+import org.eclipse.emf.ecore.impl.ENotificationImpl;
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.InternalEList;
+
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.IterationStatus;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Task;
-
-import java.util.Collection;
-
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.NotificationChain;
-
-import org.eclipse.emf.common.util.EList;
-
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.InternalEObject;
-
-import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-
-import org.eclipse.emf.ecore.util.EObjectContainmentEList;
-import org.eclipse.emf.ecore.util.InternalEList;
 
 /**
  * <!-- begin-user-doc -->
@@ -37,6 +33,10 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getTasks <em>Tasks</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getEvaluationResult <em>Evaluation Result</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getStatus <em>Status</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getPhase <em>Phase</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getComments <em>Comments</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getRating <em>Rating</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getRationale <em>Rationale</em>}</li>
  * </ul>
  *
  * @generated
@@ -143,46 +143,6 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 	protected String phase = PHASE_EDEFAULT;
 
 	/**
-	 * The default value of the '{@link #getRating() <em>Rating</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getRating()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final int RATING_EDEFAULT = 0;
-
-	/**
-	 * The cached value of the '{@link #getRating() <em>Rating</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getRating()
-	 * @generated
-	 * @ordered
-	 */
-	protected int rating = RATING_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #isLikes() <em>Likes</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isLikes()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final boolean LIKES_EDEFAULT = false;
-
-	/**
-	 * The cached value of the '{@link #isLikes() <em>Likes</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isLikes()
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean likes = LIKES_EDEFAULT;
-
-	/**
 	 * The default value of the '{@link #getComments() <em>Comments</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -203,6 +163,26 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 	protected String comments = COMMENTS_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getRating() <em>Rating</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRating()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int RATING_EDEFAULT = 0;
+
+	/**
+	 * The cached value of the '{@link #getRating() <em>Rating</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRating()
+	 * @generated
+	 * @ordered
+	 */
+	protected int rating = RATING_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -221,121 +201,6 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 	 * @ordered
 	 */
 	protected String rationale = RATIONALE_EDEFAULT;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public int getRating() {
-		return rating;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setRating(int newRating) {
-		int oldRating = rating;
-		rating = newRating;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__RATING, oldRating, rating));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isLikes() {
-		return likes;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setLikes(boolean newLikes) {
-		boolean oldLikes = likes;
-		likes = newLikes;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__LIKES, oldLikes, likes));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getComments() {
-		return comments;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setComments(String newComments) {
-		String oldComments = comments;
-		comments = newComments;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__COMMENTS, oldComments, comments));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getRationale() {
-		return rationale;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setRationale(String newRationale) {
-		String oldRationale = rationale;
-		rationale = newRationale;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__RATIONALE, oldRationale, rationale));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getPhase() {
-		return phase;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setPhase(String newPhase) {
-		String oldPhase = phase;
-		phase = newPhase;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__PHASE, oldPhase, phase));
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -489,6 +354,98 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 	 * @generated
 	 */
 	@Override
+	public String getPhase() {
+		return phase;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPhase(String newPhase) {
+		String oldPhase = phase;
+		phase = newPhase;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__PHASE, oldPhase, phase));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getComments() {
+		return comments;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setComments(String newComments) {
+		String oldComments = comments;
+		comments = newComments;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__COMMENTS, oldComments, comments));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getRating() {
+		return rating;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRating(int newRating) {
+		int oldRating = rating;
+		rating = newRating;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__RATING, oldRating, rating));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getRationale() {
+		return rationale;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRationale(String newRationale) {
+		String oldRationale = rationale;
+		rationale = newRationale;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__RATIONALE, oldRationale, rationale));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.ITERATION__TASKS:
@@ -519,12 +476,10 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 				return getStatus();
 			case OrchestrationPackage.ITERATION__PHASE:
 				return getPhase();
-			case OrchestrationPackage.ITERATION__RATING:
-				return getRating();
-			case OrchestrationPackage.ITERATION__LIKES:
-				return isLikes();
 			case OrchestrationPackage.ITERATION__COMMENTS:
 				return getComments();
+			case OrchestrationPackage.ITERATION__RATING:
+				return getRating();
 			case OrchestrationPackage.ITERATION__RATIONALE:
 				return getRationale();
 		}
@@ -559,14 +514,11 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 			case OrchestrationPackage.ITERATION__PHASE:
 				setPhase((String)newValue);
 				return;
-			case OrchestrationPackage.ITERATION__RATING:
-				setRating((Integer)newValue);
-				return;
-			case OrchestrationPackage.ITERATION__LIKES:
-				setLikes((Boolean)newValue);
-				return;
 			case OrchestrationPackage.ITERATION__COMMENTS:
 				setComments((String)newValue);
+				return;
+			case OrchestrationPackage.ITERATION__RATING:
+				setRating((Integer)newValue);
 				return;
 			case OrchestrationPackage.ITERATION__RATIONALE:
 				setRationale((String)newValue);
@@ -601,14 +553,11 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 			case OrchestrationPackage.ITERATION__PHASE:
 				setPhase(PHASE_EDEFAULT);
 				return;
-			case OrchestrationPackage.ITERATION__RATING:
-				setRating(RATING_EDEFAULT);
-				return;
-			case OrchestrationPackage.ITERATION__LIKES:
-				setLikes(LIKES_EDEFAULT);
-				return;
 			case OrchestrationPackage.ITERATION__COMMENTS:
 				setComments(COMMENTS_EDEFAULT);
+				return;
+			case OrchestrationPackage.ITERATION__RATING:
+				setRating(RATING_EDEFAULT);
 				return;
 			case OrchestrationPackage.ITERATION__RATIONALE:
 				setRationale(RATIONALE_EDEFAULT);
@@ -637,12 +586,10 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 				return status != STATUS_EDEFAULT;
 			case OrchestrationPackage.ITERATION__PHASE:
 				return PHASE_EDEFAULT == null ? phase != null : !PHASE_EDEFAULT.equals(phase);
-			case OrchestrationPackage.ITERATION__RATING:
-				return rating != RATING_EDEFAULT;
-			case OrchestrationPackage.ITERATION__LIKES:
-				return likes != LIKES_EDEFAULT;
 			case OrchestrationPackage.ITERATION__COMMENTS:
 				return COMMENTS_EDEFAULT == null ? comments != null : !COMMENTS_EDEFAULT.equals(comments);
+			case OrchestrationPackage.ITERATION__RATING:
+				return rating != RATING_EDEFAULT;
 			case OrchestrationPackage.ITERATION__RATIONALE:
 				return RATIONALE_EDEFAULT == null ? rationale != null : !RATIONALE_EDEFAULT.equals(rationale);
 		}
@@ -667,12 +614,10 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 		result.append(status);
 		result.append(", phase: ");
 		result.append(phase);
-		result.append(", rating: ");
-		result.append(rating);
-		result.append(", likes: ");
-		result.append(likes);
 		result.append(", comments: ");
 		result.append(comments);
+		result.append(", rating: ");
+		result.append(rating);
 		result.append(", rationale: ");
 		result.append(rationale);
 		result.append(')');

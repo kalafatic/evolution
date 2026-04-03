@@ -16,4 +16,14 @@ public interface CompilerValidator {
 
 	boolean validateSourceVersion(String value);
 	boolean validateTargetVersion(String value);
+
+	boolean validateCPath(String value);
+
+	boolean validateCppPath(String value);
+
+	boolean validateMakePath(String value);
+
+	boolean validateCmakePath(String value);
+
+	boolean validateTestStatus(String value);
 }

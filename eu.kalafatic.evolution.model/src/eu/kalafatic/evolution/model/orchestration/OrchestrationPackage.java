@@ -203,22 +203,13 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__LIKES = 14;
 
 	/**
-	 * The feature id for the '<em><b>Rationale</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int TASK__RATIONALE = 15;
-
-	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 16;
+	int TASK_FEATURE_COUNT = 15;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -494,7 +485,6 @@ public interface OrchestrationPackage extends EPackage {
 
 	/**
 	 * The feature id for the '<em><b>Database</b></em>' containment reference.
-	 * The feature id for the '<em><b>Shared Memory</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -1462,115 +1452,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIteration()
 	 * @generated
 	 */
-	int ITERATION = 18;
-
-	/**
-	 * The feature id for the '<em><b>Id</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION__ID = 0;
-
-	/**
-	 * The feature id for the '<em><b>Branch Name</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION__BRANCH_NAME = 1;
-
-	/**
-	 * The feature id for the '<em><b>Tasks</b></em>' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION__TASKS = 2;
-
-	/**
-	 * The feature id for the '<em><b>Evaluation Result</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION__EVALUATION_RESULT = 3;
-
-	/**
-	 * The feature id for the '<em><b>Status</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION__STATUS = 4;
-
-	/**
-	 * The feature id for the '<em><b>Phase</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION__PHASE = 5;
-
-	/**
-	 * The feature id for the '<em><b>Rating</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION__RATING = 6;
-
-	/**
-	 * The feature id for the '<em><b>Likes</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION__LIKES = 7;
-
-	/**
-	 * The feature id for the '<em><b>Comments</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION__COMMENTS = 8;
-
-	/**
-	 * The feature id for the '<em><b>Rationale</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION__RATIONALE = 9;
-
-	/**
-	 * The number of structural features of the '<em>Iteration</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION_FEATURE_COUNT = 10;
-
-	/**
-	 * The number of operations of the '<em>Iteration</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ITERATION_OPERATION_COUNT = 0;
+	int ITERATION = 20;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl <em>Evaluation Result</em>}' class.
@@ -1580,79 +1462,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvaluationResult()
 	 * @generated
 	 */
-	int EVALUATION_RESULT = 19;
-
-	/**
-	 * The feature id for the '<em><b>Success</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int EVALUATION_RESULT__SUCCESS = 0;
-
-	/**
-	 * The feature id for the '<em><b>Test Pass Rate</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int EVALUATION_RESULT__TEST_PASS_RATE = 1;
-
-	/**
-	 * The feature id for the '<em><b>Coverage Change</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int EVALUATION_RESULT__COVERAGE_CHANGE = 2;
-
-	/**
-	 * The feature id for the '<em><b>Errors</b></em>' attribute list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int EVALUATION_RESULT__ERRORS = 3;
-
-	/**
-	 * The feature id for the '<em><b>Decision</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int EVALUATION_RESULT__DECISION = 4;
-
-	/**
-	 * The feature id for the '<em><b>User Satisfaction</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int EVALUATION_RESULT__USER_SATISFACTION = 5;
-
-	/**
-	 * The number of structural features of the '<em>Evaluation Result</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int EVALUATION_RESULT_FEATURE_COUNT = 6;
-
-	/**
-	 * The number of operations of the '<em>Evaluation Result</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int EVALUATION_RESULT_OPERATION_COUNT = 0;
+	int EVALUATION_RESULT = 22;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
@@ -1662,7 +1472,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
 	 * @generated
 	 */
-	int TASK_STATUS = 20;
+	int TASK_STATUS = 23;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
@@ -1672,7 +1482,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
 	 * @generated
 	 */
-	int COMMAND_STATUS = 21;
+	int COMMAND_STATUS = 24;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
@@ -1682,7 +1492,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
 	 * @generated
 	 */
-	int EXECUTION_MODE = 22;
+	int EXECUTION_MODE = 25;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
@@ -1692,7 +1502,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
 	 * @generated
 	 */
-	int NEURON_TYPE = 23;
+	int NEURON_TYPE = 26;
 
 
 	/**
@@ -1703,7 +1513,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
 	 * @generated
 	 */
-	int AI_MODE = 24;
+	int AI_MODE = 27;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
@@ -1713,7 +1523,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
 	 * @generated
 	 */
-	int SELF_DEV_STATUS = 25;
+	int SELF_DEV_STATUS = 28;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
@@ -1723,7 +1533,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
 	 * @generated
 	 */
-	int ITERATION_STATUS = 26;
+	int ITERATION_STATUS = 29;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
@@ -1733,7 +1543,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
 	 * @generated
 	 */
-	int SELF_DEV_DECISION = 27;
+	int SELF_DEV_DECISION = 30;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl <em>Database</em>}' class.
@@ -1743,7 +1553,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDatabase()
 	 * @generated
 	 */
-	int DATABASE = 28;
+	int DATABASE = 18;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -1816,7 +1626,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileConfig()
 	 * @generated
 	 */
-	int FILE_CONFIG = 29;
+	int FILE_CONFIG = 19;
 
 	/**
 	 * The feature id for the '<em><b>Local Path</b></em>' attribute.
@@ -1855,6 +1665,105 @@ public interface OrchestrationPackage extends EPackage {
 	int FILE_CONFIG_OPERATION_COUNT = 0;
 
 	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__ID = 0;
+
+	/**
+	 * The feature id for the '<em><b>Branch Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__BRANCH_NAME = 1;
+
+	/**
+	 * The feature id for the '<em><b>Tasks</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__TASKS = 2;
+
+	/**
+	 * The feature id for the '<em><b>Evaluation Result</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__EVALUATION_RESULT = 3;
+
+	/**
+	 * The feature id for the '<em><b>Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__STATUS = 4;
+
+	/**
+	 * The feature id for the '<em><b>Phase</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__PHASE = 5;
+
+	/**
+	 * The feature id for the '<em><b>Comments</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__COMMENTS = 6;
+
+	/**
+	 * The feature id for the '<em><b>Rating</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__RATING = 7;
+
+	/**
+	 * The feature id for the '<em><b>Rationale</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__RATIONALE = 8;
+
+	/**
+	 * The number of structural features of the '<em>Iteration</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION_FEATURE_COUNT = 9;
+
+	/**
+	 * The number of operations of the '<em>Iteration</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION_OPERATION_COUNT = 0;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl <em>Eclipse</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1862,7 +1771,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEclipse()
 	 * @generated
 	 */
-	int ECLIPSE = 30;
+	int ECLIPSE = 21;
 
 	/**
 	 * The feature id for the '<em><b>Workspace</b></em>' attribute.
@@ -1917,6 +1826,78 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int ECLIPSE_OPERATION_COUNT = 0;
+
+	/**
+	 * The feature id for the '<em><b>Success</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT__SUCCESS = 0;
+
+	/**
+	 * The feature id for the '<em><b>Test Pass Rate</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT__TEST_PASS_RATE = 1;
+
+	/**
+	 * The feature id for the '<em><b>Coverage Change</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT__COVERAGE_CHANGE = 2;
+
+	/**
+	 * The feature id for the '<em><b>Errors</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT__ERRORS = 3;
+
+	/**
+	 * The feature id for the '<em><b>Decision</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT__DECISION = 4;
+
+	/**
+	 * The feature id for the '<em><b>User Satisfaction</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT__USER_SATISFACTION = 5;
+
+	/**
+	 * The number of structural features of the '<em>Evaluation Result</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT_FEATURE_COUNT = 6;
+
+	/**
+	 * The number of operations of the '<em>Evaluation Result</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT_OPERATION_COUNT = 0;
 
 
 	/**
@@ -2093,17 +2074,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getTask_Likes();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getRationale <em>Rationale</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Rationale</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Task#getRationale()
-	 * @see #getTask()
-	 * @generated
-	 */
-	EAttribute getTask_Rationale();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
@@ -3041,6 +3011,17 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getSelfDevSession_Iterations();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getRationale <em>Rationale</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rationale</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevSession#getRationale()
+	 * @see #getSelfDevSession()
+	 * @generated
+	 */
+	EAttribute getSelfDevSession_Rationale();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Iteration <em>Iteration</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3117,28 +3098,6 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getIteration_Phase();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRating <em>Rating</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Rating</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getRating()
-	 * @see #getIteration()
-	 * @generated
-	 */
-	EAttribute getIteration_Rating();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#isLikes <em>Likes</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Likes</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#isLikes()
-	 * @see #getIteration()
-	 * @generated
-	 */
-	EAttribute getIteration_Likes();
-
-	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getComments <em>Comments</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3148,6 +3107,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getIteration_Comments();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRating <em>Rating</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rating</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getRating()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_Rating();
 
 	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRationale <em>Rationale</em>}'.
@@ -3267,10 +3237,10 @@ public interface OrchestrationPackage extends EPackage {
 	EEnum getSelfDevDecision();
 
 	/**
-	 * Returns the meta object for the reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase <em>Database</em>}'.
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase <em>Database</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the reference '<em>Database</em>'.
+	 * @return the meta object for the containment reference '<em>Database</em>'.
 	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase()
 	 * @see #getOrchestrator()
 	 * @generated
@@ -3278,10 +3248,10 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_Database();
 
 	/**
-	 * Returns the meta object for the reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig <em>File Config</em>}'.
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig <em>File Config</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the reference '<em>File Config</em>'.
+	 * @return the meta object for the containment reference '<em>File Config</em>'.
 	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig()
 	 * @see #getOrchestrator()
 	 * @generated
@@ -3460,17 +3430,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getOrchestrator_SelfDevSession();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getRationale <em>Rationale</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Rationale</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevSession#getRationale()
-	 * @see #getSelfDevSession()
-	 * @generated
-	 */
-	EAttribute getSelfDevSession_Rationale();
 
 	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory <em>Shared Memory</em>}'.
@@ -3658,6 +3617,22 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__DESCRIPTION = eINSTANCE.getTask_Description();
+
+		/**
+		 * The meta object literal for the '<em><b>Rating</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__RATING = eINSTANCE.getTask_Rating();
+
+		/**
+		 * The meta object literal for the '<em><b>Likes</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__LIKES = eINSTANCE.getTask_Likes();
 
 		/**
 		 * The meta object literal for the '<em><b>Priority</b></em>' attribute feature.
@@ -4260,30 +4235,6 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute RULE__DESCRIPTION = eINSTANCE.getRule_Description();
 
 		/**
-		 * The meta object literal for the '<em><b>Rating</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TASK__RATING = eINSTANCE.getTask_Rating();
-
-		/**
-		 * The meta object literal for the '<em><b>Likes</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TASK__LIKES = eINSTANCE.getTask_Likes();
-
-		/**
-		 * The meta object literal for the '<em><b>Rationale</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TASK__RATIONALE = eINSTANCE.getTask_Rationale();
-
-		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl <em>Access Rule</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4546,28 +4497,20 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute ITERATION__PHASE = eINSTANCE.getIteration_Phase();
 
 		/**
-		 * The meta object literal for the '<em><b>Rating</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ITERATION__RATING = eINSTANCE.getIteration_Rating();
-
-		/**
-		 * The meta object literal for the '<em><b>Likes</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ITERATION__LIKES = eINSTANCE.getIteration_Likes();
-
-		/**
 		 * The meta object literal for the '<em><b>Comments</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
 		EAttribute ITERATION__COMMENTS = eINSTANCE.getIteration_Comments();
+
+		/**
+		 * The meta object literal for the '<em><b>Rating</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__RATING = eINSTANCE.getIteration_Rating();
 
 		/**
 		 * The meta object literal for the '<em><b>Rationale</b></em>' attribute feature.

@@ -2,27 +2,22 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import eu.kalafatic.evolution.model.orchestration.Iteration;
-import eu.kalafatic.evolution.model.orchestration.IterationStatus;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
-import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
-import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
-
 import java.util.Collection;
 
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
-
 import org.eclipse.emf.common.util.EList;
-
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
-
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.InternalEList;
+
+import eu.kalafatic.evolution.model.orchestration.Iteration;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
+import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 
 /**
  * <!-- begin-user-doc -->
@@ -37,6 +32,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl#getMaxIterations <em>Max Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl#getStatus <em>Status</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl#getIterations <em>Iterations</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl#getRationale <em>Rationale</em>}</li>
  * </ul>
  *
  * @generated
@@ -151,29 +147,6 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected String rationale = RATIONALE_EDEFAULT;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getRationale() {
-		return rationale;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setRationale(String newRationale) {
-		String oldRationale = rationale;
-		rationale = newRationale;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SELF_DEV_SESSION__RATIONALE, oldRationale, rationale));
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -297,6 +270,29 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 			iterations = new EObjectContainmentEList<Iteration>(Iteration.class, this, OrchestrationPackage.SELF_DEV_SESSION__ITERATIONS);
 		}
 		return iterations;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getRationale() {
+		return rationale;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRationale(String newRationale) {
+		String oldRationale = rationale;
+		rationale = newRationale;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SELF_DEV_SESSION__RATIONALE, oldRationale, rationale));
 	}
 
 	/**

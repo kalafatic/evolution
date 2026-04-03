@@ -65,14 +65,15 @@ public class OrchestratorItemProvider
 
 			addIdPropertyDescriptor(object);
 			addNamePropertyDescriptor(object);
-			addSharedMemoryPropertyDescriptor(object);
 			addRemoteModelPropertyDescriptor(object);
 			addAiModePropertyDescriptor(object);
 			addMcpServerUrlPropertyDescriptor(object);
+			addOpenAiTokenPropertyDescriptor(object);
 			addOpenAiModelPropertyDescriptor(object);
 			addLocalModelPropertyDescriptor(object);
 			addHybridModelPropertyDescriptor(object);
 			addOfflineModePropertyDescriptor(object);
+			addSharedMemoryPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -100,13 +101,25 @@ public class OrchestratorItemProvider
 	}
 
 	/**
-	 * This adds a property descriptor for the Shared Memory feature.
+	 * This adds a property descriptor for the Remote Model feature.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	protected void addRemoteModelPropertyDescriptor(Object object) {
-		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "Remote Model", "Remote Model", OrchestrationPackage.Literals.ORCHESTRATOR__REMOTE_MODEL, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Orchestrator_remoteModel_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Orchestrator_remoteModel_feature", "_UI_Orchestrator_type"),
+				 OrchestrationPackage.Literals.ORCHESTRATOR__REMOTE_MODEL,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
 	}
 	protected void addAiModePropertyDescriptor(Object object) {
 		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "AI Mode", "AI Mode", OrchestrationPackage.Literals.ORCHESTRATOR__AI_MODE, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
@@ -114,6 +127,28 @@ public class OrchestratorItemProvider
 	protected void addMcpServerUrlPropertyDescriptor(Object object) {
 		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "MCP Server URL", "MCP Server URL", OrchestrationPackage.Literals.ORCHESTRATOR__MCP_SERVER_URL, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
 	}
+	/**
+	 * This adds a property descriptor for the Open Ai Token feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addOpenAiTokenPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Orchestrator_openAiToken_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Orchestrator_openAiToken_feature", "_UI_Orchestrator_type"),
+				 OrchestrationPackage.Literals.ORCHESTRATOR__OPEN_AI_TOKEN,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
 	protected void addOpenAiModelPropertyDescriptor(Object object) {
 		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "OpenAI Model", "OpenAI Model", OrchestrationPackage.Literals.ORCHESTRATOR__OPEN_AI_MODEL, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
 	}
@@ -185,6 +220,10 @@ public class OrchestratorItemProvider
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__OLLAMA);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__AI_CHAT);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__NEURON_AI);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__SELF_DEV_SESSION);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__DATABASE);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__FILE_CONFIG);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__ECLIPSE);
 		}
 		return childrenFeatures;
 	}
@@ -242,6 +281,14 @@ public class OrchestratorItemProvider
 		switch (notification.getFeatureID(Orchestrator.class)) {
 			case OrchestrationPackage.ORCHESTRATOR__ID:
 			case OrchestrationPackage.ORCHESTRATOR__NAME:
+			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
+			case OrchestrationPackage.ORCHESTRATOR__AI_MODE:
+			case OrchestrationPackage.ORCHESTRATOR__MCP_SERVER_URL:
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_TOKEN:
+			case OrchestrationPackage.ORCHESTRATOR__OPEN_AI_MODEL:
+			case OrchestrationPackage.ORCHESTRATOR__LOCAL_MODEL:
+			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
+			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
@@ -254,6 +301,10 @@ public class OrchestratorItemProvider
 			case OrchestrationPackage.ORCHESTRATOR__OLLAMA:
 			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
+			case OrchestrationPackage.ORCHESTRATOR__SELF_DEV_SESSION:
+			case OrchestrationPackage.ORCHESTRATOR__DATABASE:
+			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
+			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), true, false));
 				return;
 		}
@@ -315,6 +366,26 @@ public class OrchestratorItemProvider
 			(createChildParameter
 				(OrchestrationPackage.Literals.ORCHESTRATOR__NEURON_AI,
 				 OrchestrationFactory.eINSTANCE.createNeuronAI()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__SELF_DEV_SESSION,
+				 OrchestrationFactory.eINSTANCE.createSelfDevSession()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__DATABASE,
+				 OrchestrationFactory.eINSTANCE.createDatabase()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__FILE_CONFIG,
+				 OrchestrationFactory.eINSTANCE.createFileConfig()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__ECLIPSE,
+				 OrchestrationFactory.eINSTANCE.createEclipse()));
 	}
 
 	/**

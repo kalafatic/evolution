@@ -61,6 +61,11 @@ public class CompilerItemProvider
 
 			addSourceVersionPropertyDescriptor(object);
 			addTargetVersionPropertyDescriptor(object);
+			addCPathPropertyDescriptor(object);
+			addCppPathPropertyDescriptor(object);
+			addMakePathPropertyDescriptor(object);
+			addCmakePathPropertyDescriptor(object);
+			addTestStatusPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -110,6 +115,116 @@ public class CompilerItemProvider
 	}
 
 	/**
+	 * This adds a property descriptor for the CPath feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addCPathPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Compiler_cPath_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Compiler_cPath_feature", "_UI_Compiler_type"),
+				 OrchestrationPackage.Literals.COMPILER__CPATH,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Cpp Path feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addCppPathPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Compiler_cppPath_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Compiler_cppPath_feature", "_UI_Compiler_type"),
+				 OrchestrationPackage.Literals.COMPILER__CPP_PATH,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Make Path feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addMakePathPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Compiler_makePath_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Compiler_makePath_feature", "_UI_Compiler_type"),
+				 OrchestrationPackage.Literals.COMPILER__MAKE_PATH,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Cmake Path feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addCmakePathPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Compiler_cmakePath_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Compiler_cmakePath_feature", "_UI_Compiler_type"),
+				 OrchestrationPackage.Literals.COMPILER__CMAKE_PATH,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Test Status feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addTestStatusPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Compiler_testStatus_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Compiler_testStatus_feature", "_UI_Compiler_type"),
+				 OrchestrationPackage.Literals.COMPILER__TEST_STATUS,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
 	 * This returns Compiler.gif.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -149,6 +264,11 @@ public class CompilerItemProvider
 		switch (notification.getFeatureID(eu.kalafatic.evolution.model.orchestration.Compiler.class)) {
 			case OrchestrationPackage.COMPILER__SOURCE_VERSION:
 			case OrchestrationPackage.COMPILER__TARGET_VERSION:
+			case OrchestrationPackage.COMPILER__CPATH:
+			case OrchestrationPackage.COMPILER__CPP_PATH:
+			case OrchestrationPackage.COMPILER__MAKE_PATH:
+			case OrchestrationPackage.COMPILER__CMAKE_PATH:
+			case OrchestrationPackage.COMPILER__TEST_STATUS:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 		}

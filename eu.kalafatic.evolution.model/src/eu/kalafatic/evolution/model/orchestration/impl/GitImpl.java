@@ -2,15 +2,13 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import eu.kalafatic.evolution.model.orchestration.Git;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
-
 import org.eclipse.emf.common.notify.Notification;
-
 import org.eclipse.emf.ecore.EClass;
-
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import eu.kalafatic.evolution.model.orchestration.Git;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 
 /**
  * <!-- begin-user-doc -->
@@ -135,29 +133,6 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@Override
-	public String getTestStatus() {
-		return testStatus;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setTestStatus(String newTestStatus) {
-		String oldTestStatus = testStatus;
-		testStatus = newTestStatus;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GIT__TEST_STATUS, oldTestStatus, testStatus));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	protected GitImpl() {
 		super();
 	}
@@ -262,6 +237,29 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 		localPath = newLocalPath;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GIT__LOCAL_PATH, oldLocalPath, localPath));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getTestStatus() {
+		return testStatus;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setTestStatus(String newTestStatus) {
+		String oldTestStatus = testStatus;
+		testStatus = newTestStatus;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GIT__TEST_STATUS, oldTestStatus, testStatus));
 	}
 
 	/**

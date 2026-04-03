@@ -36,7 +36,7 @@ public enum NeuronType implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	CNN(0, "CNN", "CNN"),
+	CNN(1, "CNN", "CNN"),
 
 	/**
 	 * The '<em><b>RNN</b></em>' literal object.
@@ -46,7 +46,7 @@ public enum NeuronType implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	RNN(0, "RNN", "RNN"),
+	RNN(2, "RNN", "RNN"),
 
 	/**
 	 * The '<em><b>LSTM</b></em>' literal object.
@@ -56,7 +56,7 @@ public enum NeuronType implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	LSTM(0, "LSTM", "LSTM"),
+	LSTM(3, "LSTM", "LSTM"),
 
 	/**
 	 * The '<em><b>TRANSFORMER</b></em>' literal object.
@@ -66,7 +66,7 @@ public enum NeuronType implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	TRANSFORMER(0, "TRANSFORMER", "TRANSFORMER");
+	TRANSFORMER(4, "TRANSFORMER", "TRANSFORMER");
 
 	/**
 	 * The '<em><b>MLP</b></em>' literal value.
@@ -88,7 +88,7 @@ public enum NeuronType implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int CNN_VALUE = 0;
+	public static final int CNN_VALUE = 1;
 
 	/**
 	 * The '<em><b>RNN</b></em>' literal value.
@@ -99,7 +99,7 @@ public enum NeuronType implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int RNN_VALUE = 0;
+	public static final int RNN_VALUE = 2;
 
 	/**
 	 * The '<em><b>LSTM</b></em>' literal value.
@@ -110,7 +110,7 @@ public enum NeuronType implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int LSTM_VALUE = 0;
+	public static final int LSTM_VALUE = 3;
 
 	/**
 	 * The '<em><b>TRANSFORMER</b></em>' literal value.
@@ -121,7 +121,7 @@ public enum NeuronType implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int TRANSFORMER_VALUE = 0;
+	public static final int TRANSFORMER_VALUE = 4;
 
 	/**
 	 * An array of all the '<em><b>Neuron Type</b></em>' enumerators.
@@ -193,6 +193,10 @@ public enum NeuronType implements Enumerator {
 	public static NeuronType get(int value) {
 		switch (value) {
 			case MLP_VALUE: return MLP;
+			case CNN_VALUE: return CNN;
+			case RNN_VALUE: return RNN;
+			case LSTM_VALUE: return LSTM;
+			case TRANSFORMER_VALUE: return TRANSFORMER;
 		}
 		return null;
 	}

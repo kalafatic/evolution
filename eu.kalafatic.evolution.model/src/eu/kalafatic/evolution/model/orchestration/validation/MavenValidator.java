@@ -17,4 +17,6 @@ public interface MavenValidator {
 
 	boolean validateGoals(EList<String> value);
 	boolean validateProfiles(EList<String> value);
+
+	boolean validateTestStatus(String value);
 }

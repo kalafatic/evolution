@@ -30,4 +30,14 @@ public interface TaskValidator {
 	boolean validateApprovalRequired(boolean value);
 
 	boolean validateLoopToTaskId(String value);
+
+	boolean validatePriority(int value);
+
+	boolean validateResultSummary(String value);
+
+	boolean validateDescription(String value);
+
+	boolean validateRating(int value);
+
+	boolean validateLikes(boolean value);
 }
