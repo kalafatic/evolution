@@ -1,31 +1,30 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 /**
- * Specialized agent for Java development tasks.
+ * Specialized agent for C and C++ development tasks.
  */
-public class JavaDevAgent extends BaseAiAgent {
-    public JavaDevAgent() {
-        super("JavaDev", "JavaDev");
+public class CppDevAgent extends BaseAiAgent {
+    public CppDevAgent() {
+        super("CppDev", "CppDev");
         addTool(new FileTool());
-        addTool(new MavenTool());
+        addTool(new CppTool());
         addTool(new GitTool());
         addTool(new ShellTool());
-        addTool(new EclipseTool());
     }
 
     @Override
     public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
-        String prompt = "You are acting as a Senior Java Developer Agent.\n" +
+        String prompt = "You are acting as a Senior C/C++ Developer Agent.\n" +
                 "Project Context: " + context.getSharedMemory() + "\n";
 
         if (lastFeedback != null && !lastFeedback.isEmpty()) {
             prompt += "PREVIOUS ATTEMPT FAILED. Feedback: " + lastFeedback + "\nPlease correct your approach.\n";
         }
 
-        prompt += "Current Java Task: " + taskDescription + "\n" +
-                "Generate Java source code or Maven POM content as requested. Provide ONLY the code content for files.";
+        prompt += "Current C/C++ Task: " + taskDescription + "\n" +
+                "Generate C/C++ source code, headers, Makefiles or CMakeLists.txt content as requested. Provide ONLY the code content for files.";
 
-        context.log("JavaDev [" + id + "]: Generating Java code for - " + taskDescription);
+        context.log("CppDev [" + id + "]: Generating C/C++ code for - " + taskDescription);
         return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt, context));
     }
 }

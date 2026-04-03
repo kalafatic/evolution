@@ -75,6 +75,9 @@ public class TaskItemProvider
 			addPriorityPropertyDescriptor(object);
 			addResultSummaryPropertyDescriptor(object);
 			addDescriptionPropertyDescriptor(object);
+			addRatingPropertyDescriptor(object);
+			addLikesPropertyDescriptor(object);
+			addRationalePropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -97,6 +100,63 @@ public class TaskItemProvider
 				 false,
 				 false,
 				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	protected void addRationalePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 "Rationale",
+				 "AI rationale for this task",
+				 OrchestrationPackage.Literals.TASK__RATIONALE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	protected void addRatingPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 "Rating",
+				 "User rating for this task",
+				 OrchestrationPackage.Literals.TASK__RATING,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.INTEGRAL_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	protected void addLikesPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 "Likes",
+				 "Whether user liked this task result",
+				 OrchestrationPackage.Literals.TASK__LIKES,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE,
 				 null,
 				 null));
 	}
@@ -407,6 +467,9 @@ public class TaskItemProvider
 			case OrchestrationPackage.TASK__PRIORITY:
 			case OrchestrationPackage.TASK__RESULT_SUMMARY:
 			case OrchestrationPackage.TASK__DESCRIPTION:
+			case OrchestrationPackage.TASK__RATING:
+			case OrchestrationPackage.TASK__LIKES:
+			case OrchestrationPackage.TASK__RATIONALE:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 			case OrchestrationPackage.TASK__SUB_TASKS:

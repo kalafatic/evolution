@@ -130,4 +130,26 @@ public interface EvaluationResult extends EObject {
 	 */
 	void setDecision(SelfDevDecision value);
 
+	/**
+	 * Returns the value of the '<em><b>User Satisfaction</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>User Satisfaction</em>' attribute.
+	 * @see #setUserSatisfaction(double)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getEvaluationResult_UserSatisfaction()
+	 * @model
+	 * @generated
+	 */
+	double getUserSatisfaction();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getUserSatisfaction <em>User Satisfaction</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>User Satisfaction</em>' attribute.
+	 * @see #getUserSatisfaction()
+	 * @generated
+	 */
+	void setUserSatisfaction(double value);
+
 } // EvaluationResult

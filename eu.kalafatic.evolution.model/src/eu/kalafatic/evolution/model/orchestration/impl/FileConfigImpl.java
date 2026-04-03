@@ -21,6 +21,7 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  * </p>
  * <ul>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl#getLocalPath <em>Local Path</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl#getTestStatus <em>Test Status</em>}</li>
  * </ul>
  *
  * @generated
@@ -45,6 +46,26 @@ public class FileConfigImpl extends MinimalEObjectImpl.Container implements File
 	 * @ordered
 	 */
 	protected String localPath = LOCAL_PATH_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getTestStatus() <em>Test Status</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTestStatus()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String TEST_STATUS_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getTestStatus() <em>Test Status</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTestStatus()
+	 * @generated
+	 * @ordered
+	 */
+	protected String testStatus = TEST_STATUS_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -94,10 +115,35 @@ public class FileConfigImpl extends MinimalEObjectImpl.Container implements File
 	 * @generated
 	 */
 	@Override
+	public String getTestStatus() {
+		return testStatus;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setTestStatus(String newTestStatus) {
+		String oldTestStatus = testStatus;
+		testStatus = newTestStatus;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FILE_CONFIG__TEST_STATUS, oldTestStatus, testStatus));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.FILE_CONFIG__LOCAL_PATH:
 				return getLocalPath();
+			case OrchestrationPackage.FILE_CONFIG__TEST_STATUS:
+				return getTestStatus();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -112,6 +158,9 @@ public class FileConfigImpl extends MinimalEObjectImpl.Container implements File
 		switch (featureID) {
 			case OrchestrationPackage.FILE_CONFIG__LOCAL_PATH:
 				setLocalPath((String)newValue);
+				return;
+			case OrchestrationPackage.FILE_CONFIG__TEST_STATUS:
+				setTestStatus((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -128,6 +177,9 @@ public class FileConfigImpl extends MinimalEObjectImpl.Container implements File
 			case OrchestrationPackage.FILE_CONFIG__LOCAL_PATH:
 				setLocalPath(LOCAL_PATH_EDEFAULT);
 				return;
+			case OrchestrationPackage.FILE_CONFIG__TEST_STATUS:
+				setTestStatus(TEST_STATUS_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -142,6 +194,8 @@ public class FileConfigImpl extends MinimalEObjectImpl.Container implements File
 		switch (featureID) {
 			case OrchestrationPackage.FILE_CONFIG__LOCAL_PATH:
 				return LOCAL_PATH_EDEFAULT == null ? localPath != null : !LOCAL_PATH_EDEFAULT.equals(localPath);
+			case OrchestrationPackage.FILE_CONFIG__TEST_STATUS:
+				return TEST_STATUS_EDEFAULT == null ? testStatus != null : !TEST_STATUS_EDEFAULT.equals(testStatus);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -158,6 +212,8 @@ public class FileConfigImpl extends MinimalEObjectImpl.Container implements File
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (localPath: ");
 		result.append(localPath);
+		result.append(", testStatus: ");
+		result.append(testStatus);
 		result.append(')');
 		return result.toString();
 	}

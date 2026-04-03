@@ -12,11 +12,12 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
 import org.eclipse.swt.browser.ProgressEvent;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -46,7 +47,14 @@ public class ApprovalPage extends Composite {
 	private Label statusLabel;
 	private Label iterationsLabel;
 	private Label branchLabel;
+	private Label rationaleLabel;
+	private org.eclipse.swt.widgets.Scale ratingScale;
+	private org.eclipse.swt.widgets.Text commentsText;
 	private TableViewer tableViewer;
+	private ScrolledComposite vizScrolled;
+	private Composite browserContainer;
+	private int browserWidth = 1000;
+	private int browserHeight = 800;
 
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override
@@ -84,6 +92,46 @@ public class ApprovalPage extends Composite {
 		SWTFactory.createLabel(summaryGroup, "Git Branch:");
 		branchLabel = new Label(summaryGroup, SWT.NONE);
 		branchLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		SWTFactory.createLabel(summaryGroup, "AI Rationale:");
+		rationaleLabel = new Label(summaryGroup, SWT.WRAP);
+		GridData rationaleGD = new GridData(GridData.FILL_HORIZONTAL);
+		rationaleGD.heightHint = 40;
+		rationaleLabel.setLayoutData(rationaleGD);
+
+		// Feedback Group
+		Group feedbackGroup = SWTFactory.createGroup(this, "User Feedback & Satisfaction", 2);
+		feedbackGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		SWTFactory.createLabel(feedbackGroup, "Rating (1-5):");
+		ratingScale = new org.eclipse.swt.widgets.Scale(feedbackGroup, SWT.HORIZONTAL);
+		ratingScale.setMinimum(1);
+		ratingScale.setMaximum(5);
+		ratingScale.setIncrement(1);
+		ratingScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		ratingScale.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+			@Override
+			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+				if (orchestrator != null && orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
+					Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
+					last.setRating(ratingScale.getSelection());
+					editor.setDirty(true);
+				}
+			}
+		});
+
+		SWTFactory.createLabel(feedbackGroup, "Comments:");
+		commentsText = new org.eclipse.swt.widgets.Text(feedbackGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
+		GridData commentsGD = new GridData(GridData.FILL_HORIZONTAL);
+		commentsGD.heightHint = 60;
+		commentsText.setLayoutData(commentsGD);
+		commentsText.addModifyListener(e -> {
+			if (orchestrator != null && orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
+				Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
+				last.setComments(commentsText.getText());
+				editor.setDirty(true);
+			}
+		});
 
 		// Task Management Group
 		Group taskGroup = SWTFactory.createGroup(this, "Proposed Tasks", 1);
@@ -140,25 +188,57 @@ public class ApprovalPage extends Composite {
 		toolbarManager.add(new Action("Zoom In") {
 			@Override
 			public void run() {
-				browser.execute("applyZoom(1.2);");
+				browserWidth = (int)(browserWidth * 1.2);
+				browserHeight = (int)(browserHeight * 1.2);
+				updateScrolledContent();
 			}
 		});
 		toolbarManager.add(new Action("Zoom Out") {
 			@Override
 			public void run() {
-				browser.execute("applyZoom(0.8);");
+				browserWidth = (int)(browserWidth * 0.8);
+				browserHeight = (int)(browserHeight * 0.8);
+				updateScrolledContent();
 			}
 		});
 		toolbarManager.add(new Action("Reset Zoom") {
 			@Override
 			public void run() {
-				browser.execute("resetZoom();");
+				browserWidth = 1000;
+				browserHeight = 800;
+				updateScrolledContent();
 			}
 		});
 		toolbarManager.createControl(vizGroup);
 
-		browser = new Browser(vizGroup, SWT.NONE);
-		browser.setLayoutData(new GridData(GridData.FILL_BOTH));
+		vizScrolled = new ScrolledComposite(vizGroup, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+		vizScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+		vizScrolled.setExpandHorizontal(true);
+		vizScrolled.setExpandVertical(true);
+
+		browserContainer = new Composite(vizScrolled, SWT.NONE);
+		browserContainer.setLayout(new GridLayout(1, false));
+		vizScrolled.setContent(browserContainer);
+
+		browser = new Browser(browserContainer, SWT.NONE);
+		GridData browserGD = new GridData(SWT.LEFT, SWT.TOP, false, false);
+		browserGD.widthHint = browserWidth;
+		browserGD.heightHint = browserHeight;
+		browser.setLayoutData(browserGD);
+
+		new BrowserFunction(browser, "javaZoom") {
+			@Override
+			public Object function(Object[] arguments) {
+				if (arguments.length > 0 && arguments[0] instanceof Number) {
+					double factor = ((Number) arguments[0]).doubleValue();
+					browserWidth = (int) (browserWidth * factor);
+					browserHeight = (int) (browserHeight * factor);
+					updateScrolledContent();
+				}
+				return null;
+			}
+		};
+
 		browser.addProgressListener(new ProgressAdapter() {
 			@Override
 			public void completed(ProgressEvent event) {
@@ -196,6 +276,19 @@ public class ApprovalPage extends Composite {
 				handleReject();
 			}
 		});
+
+		updateScrolledContent();
+	}
+
+	private void updateScrolledContent() {
+		if (vizScrolled == null || vizScrolled.isDisposed()) return;
+		if (browser != null && !browser.isDisposed()) {
+			GridData gd = (GridData) browser.getLayoutData();
+			gd.widthHint = browserWidth;
+			gd.heightHint = browserHeight;
+		}
+		browserContainer.layout(true, true);
+		vizScrolled.setMinSize(browserContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
 	public void setOrchestrator(Orchestrator orchestrator) {
@@ -301,8 +394,12 @@ public class ApprovalPage extends Composite {
 				if (!session.getIterations().isEmpty()) {
 					Iteration last = session.getIterations().get(session.getIterations().size() - 1);
 					branchLabel.setText(last.getBranchName() != null ? last.getBranchName() : "N/A");
+					rationaleLabel.setText(last.getRationale() != null ? last.getRationale() : (session.getRationale() != null ? session.getRationale() : "No rationale provided."));
+					ratingScale.setSelection(last.getRating() > 0 ? last.getRating() : 3);
+					commentsText.setText(last.getComments() != null ? last.getComments() : "");
 				} else {
 					branchLabel.setText("N/A");
+					rationaleLabel.setText("N/A");
 				}
 			} else {
 				sessionIdLabel.setText("No active session");
@@ -404,6 +501,8 @@ public class ApprovalPage extends Composite {
 		obj.put("id", task.getId());
 		obj.put("name", task.getName());
 		obj.put("status", task.getStatus().toString());
+		obj.put("rating", task.getRating());
+		obj.put("likes", task.isLikes());
 		JSONArray nextIds = new JSONArray();
 		for (Task n : task.getNext()) nextIds.put(n.getId());
 		obj.put("next", nextIds);
@@ -412,8 +511,8 @@ public class ApprovalPage extends Composite {
 
 	private String getHtmlTemplate() {
 		return "<!DOCTYPE html><html><head><style>"
-				+ "body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; overflow: hidden; }"
-				+ "#canvas { width: 100vw; height: 100vh; }"
+				+ "body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; padding: 0; overflow: hidden; }"
+				+ "#canvas { width: 100%; height: 100%; min-width: 1000px; min-height: 800px; }"
 				+ ".node { fill: #fff; stroke: #cbd5e1; stroke-width: 1px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }"
 				+ ".node:hover { stroke: #94a3b8; stroke-width: 2px; transform: translateY(-2px); }"
 				+ ".task.DONE { fill: #f0fdf4; stroke: #22c55e; }"

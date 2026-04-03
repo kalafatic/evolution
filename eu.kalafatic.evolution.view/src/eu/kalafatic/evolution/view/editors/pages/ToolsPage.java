@@ -1,18 +1,29 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Text;
 
+import eu.kalafatic.evolution.controller.orchestration.DatabaseTool;
+import eu.kalafatic.evolution.controller.orchestration.FileTool;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
+
+import java.io.File;
 
 public class ToolsPage extends ScrolledComposite {
 
@@ -24,6 +35,12 @@ public class ToolsPage extends ScrolledComposite {
     private Text mavenGoalsText, mavenProfilesText;
     private Text fileLocalPathText;
     private Text dbUrlText, dbUsernameText, dbPasswordText, dbDriverText;
+    private Text sourceVersionText, targetVersionText, cPathText, cppPathText, makePathText, cmakePathText;
+    private Text eclipseWorkspaceText, eclipseInstallationText, eclipseTargetPlatformText;
+
+    private SashForm sashForm;
+    private Group gitGroup, mavenGroup, fileGroup, dbGroup, compilerGroup, eclipseGroup;
+    private Color successColor;
 
     public ToolsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -38,10 +55,19 @@ public class ToolsPage extends ScrolledComposite {
         Composite comp = new Composite(this, SWT.NONE);
         comp.setLayout(new GridLayout(1, false));
 
-        createGitGroup(comp);
-        createMavenGroup(comp);
-        createFileGroup(comp);
-        createDatabaseGroup(comp);
+        sashForm = new SashForm(comp, SWT.VERTICAL);
+        sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        createGitGroup(sashForm);
+        createMavenGroup(sashForm);
+        createFileGroup(sashForm);
+        createDatabaseGroup(sashForm);
+        createEclipseGroup(sashForm);
+        createCompilerGroup(sashForm);
+
+        sashForm.setWeights(new int[] { 15, 12, 10, 20, 20, 23 });
+
+        successColor = new Color(getDisplay(), 200, 240, 200); // Light cool green
 
         ModifyListener ml = e -> {
             if (orchestrator != null && !isUpdating) {
@@ -51,7 +77,9 @@ public class ToolsPage extends ScrolledComposite {
         };
 
         Text[] texts = { gitRepoText, gitBranchText, gitLocalPathText, mavenGoalsText, mavenProfilesText,
-                         fileLocalPathText, dbUrlText, dbUsernameText, dbPasswordText, dbDriverText };
+                         fileLocalPathText, dbUrlText, dbUsernameText, dbPasswordText, dbDriverText,
+                         sourceVersionText, targetVersionText, cPathText, cppPathText, makePathText, cmakePathText,
+                         eclipseWorkspaceText, eclipseInstallationText, eclipseTargetPlatformText };
         for (Text t : texts) {
             t.addModifyListener(ml);
         }
@@ -62,65 +90,160 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createGitGroup(Composite parent) {
-        Group group = SWTFactory.createGroup(parent, "Git Tool Settings", 3);
+        gitGroup = SWTFactory.createMaximizableGroup(parent, "Git Tool Settings", 3);
+        Group group = gitGroup;
         SWTFactory.createLabel(group, "Repository URL:");
-        gitRepoText = new Text(group, SWT.BORDER);
-        gitRepoText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        gitRepoText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, gitRepoText);
 
         SWTFactory.createLabel(group, "Branch:");
-        gitBranchText = new Text(group, SWT.BORDER);
-        gitBranchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        gitBranchText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, gitBranchText);
 
         SWTFactory.createLabel(group, "Local Path:");
-        gitLocalPathText = new Text(group, SWT.BORDER);
-        gitLocalPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        gitLocalPathText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, gitLocalPathText);
+
+        SWTFactory.createLabel(group, "");
+        Button testBtn = SWTFactory.createButton(group, "Test Git");
+        testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                testGit();
+            }
+        });
     }
 
     private void createMavenGroup(Composite parent) {
-        Group group = SWTFactory.createGroup(parent, "Maven Tool Settings", 3);
+        mavenGroup = SWTFactory.createMaximizableGroup(parent, "Maven Tool Settings", 3);
+        Group group = mavenGroup;
         SWTFactory.createLabel(group, "Goals:");
-        mavenGoalsText = new Text(group, SWT.BORDER);
-        mavenGoalsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        mavenGoalsText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, mavenGoalsText);
 
         SWTFactory.createLabel(group, "Profiles:");
-        mavenProfilesText = new Text(group, SWT.BORDER);
-        mavenProfilesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        mavenProfilesText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, mavenProfilesText);
+
+        SWTFactory.createLabel(group, "");
+        Button testBtn = SWTFactory.createButton(group, "Test Maven");
+        testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                testMaven();
+            }
+        });
     }
 
     private void createFileGroup(Composite parent) {
-        Group group = SWTFactory.createGroup(parent, "File Tool Settings", 3);
+        fileGroup = SWTFactory.createMaximizableGroup(parent, "File Tool Settings", 3);
+        Group group = fileGroup;
         SWTFactory.createLabel(group, "Project Root:");
-        fileLocalPathText = new Text(group, SWT.BORDER);
+        fileLocalPathText = SWTFactory.createText(group);
         fileLocalPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         SWTFactory.createEditButton(group, fileLocalPathText);
+
+        SWTFactory.createLabel(group, "");
+        Button testBtn = SWTFactory.createButton(group, "Test File");
+        testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                testFile();
+            }
+        });
     }
 
     private void createDatabaseGroup(Composite parent) {
-        Group group = SWTFactory.createGroup(parent, "Database Tool Settings", 3);
+        dbGroup = SWTFactory.createMaximizableGroup(parent, "Database Tool Settings", 3);
+        Group group = dbGroup;
         SWTFactory.createLabel(group, "JDBC URL:");
-        dbUrlText = new Text(group, SWT.BORDER);
-        dbUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        dbUrlText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, dbUrlText);
 
         SWTFactory.createLabel(group, "Driver Class:");
-        dbDriverText = new Text(group, SWT.BORDER);
-        dbDriverText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        dbDriverText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, dbDriverText);
 
         SWTFactory.createLabel(group, "Username:");
-        dbUsernameText = new Text(group, SWT.BORDER);
-        dbUsernameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        dbUsernameText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, dbUsernameText);
 
         SWTFactory.createLabel(group, "Password:");
-        dbPasswordText = new Text(group, SWT.BORDER | SWT.PASSWORD);
-        dbPasswordText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        dbPasswordText = SWTFactory.createPasswordText(group);
         SWTFactory.createEditButton(group, dbPasswordText);
+
+        SWTFactory.createLabel(group, "");
+        Button testBtn = SWTFactory.createButton(group, "Test DB");
+        testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                testDatabase();
+            }
+        });
+    }
+
+    private void createEclipseGroup(Composite parent) {
+        eclipseGroup = SWTFactory.createMaximizableGroup(parent, "Eclipse Development Settings", 3);
+        Group group = eclipseGroup;
+
+        SWTFactory.createLabel(group, "Workspace Path:");
+        eclipseWorkspaceText = SWTFactory.createText(group);
+        SWTFactory.createEditButton(group, eclipseWorkspaceText);
+
+        SWTFactory.createLabel(group, "Eclipse Installation:");
+        eclipseInstallationText = SWTFactory.createText(group);
+        SWTFactory.createEditButton(group, eclipseInstallationText);
+
+        SWTFactory.createLabel(group, "Target Platform:");
+        eclipseTargetPlatformText = SWTFactory.createText(group);
+        SWTFactory.createEditButton(group, eclipseTargetPlatformText);
+
+        SWTFactory.createLabel(group, "");
+        Button testBtn = SWTFactory.createButton(group, "Test Eclipse");
+        testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                testEclipse();
+            }
+        });
+    }
+
+    private void createCompilerGroup(Composite parent) {
+        compilerGroup = SWTFactory.createMaximizableGroup(parent, "Compiler & Language Settings", 3);
+        Group group = compilerGroup;
+
+        SWTFactory.createLabel(group, "Java Source Version:");
+        sourceVersionText = SWTFactory.createText(group);
+        SWTFactory.createEditButton(group, sourceVersionText);
+
+        SWTFactory.createLabel(group, "Java Target Version:");
+        targetVersionText = SWTFactory.createText(group);
+        SWTFactory.createEditButton(group, targetVersionText);
+
+        SWTFactory.createLabel(group, "C Path (gcc):");
+        cPathText = SWTFactory.createText(group);
+        SWTFactory.createEditButton(group, cPathText);
+
+        SWTFactory.createLabel(group, "C++ Path (g++):");
+        cppPathText = SWTFactory.createText(group);
+        SWTFactory.createEditButton(group, cppPathText);
+
+        SWTFactory.createLabel(group, "Make Path:");
+        makePathText = SWTFactory.createText(group);
+        SWTFactory.createEditButton(group, makePathText);
+
+        SWTFactory.createLabel(group, "CMake Path:");
+        cmakePathText = SWTFactory.createText(group);
+        SWTFactory.createEditButton(group, cmakePathText);
+
+        SWTFactory.createLabel(group, "");
+        Button testBtn = SWTFactory.createButton(group, "Test Compilers");
+        testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                testCompiler();
+            }
+        });
     }
 
     public void updateUIFromModel() {
@@ -131,15 +254,18 @@ public class ToolsPage extends ScrolledComposite {
             gitRepoText.setText(orchestrator.getGit().getRepositoryUrl() != null ? orchestrator.getGit().getRepositoryUrl() : "");
             gitBranchText.setText(orchestrator.getGit().getBranch() != null ? orchestrator.getGit().getBranch() : "");
             gitLocalPathText.setText(orchestrator.getGit().getLocalPath() != null ? orchestrator.getGit().getLocalPath() : "");
+            updateGroupStatus(gitGroup, orchestrator.getGit().getTestStatus());
         }
 
         if (orchestrator.getMaven() != null) {
             mavenGoalsText.setText(orchestrator.getMaven().getGoals().toString());
             mavenProfilesText.setText(orchestrator.getMaven().getProfiles().toString());
+            updateGroupStatus(mavenGroup, orchestrator.getMaven().getTestStatus());
         }
 
         if (orchestrator.getFileConfig() != null) {
             fileLocalPathText.setText(orchestrator.getFileConfig().getLocalPath() != null ? orchestrator.getFileConfig().getLocalPath() : "");
+            updateGroupStatus(fileGroup, orchestrator.getFileConfig().getTestStatus());
         }
 
         if (orchestrator.getDatabase() != null) {
@@ -147,12 +273,41 @@ public class ToolsPage extends ScrolledComposite {
             dbDriverText.setText(orchestrator.getDatabase().getDriver() != null ? orchestrator.getDatabase().getDriver() : "");
             dbUsernameText.setText(orchestrator.getDatabase().getUsername() != null ? orchestrator.getDatabase().getUsername() : "");
             dbPasswordText.setText(orchestrator.getDatabase().getPassword() != null ? orchestrator.getDatabase().getPassword() : "");
+            updateGroupStatus(dbGroup, orchestrator.getDatabase().getTestStatus());
+        }
+
+        if (orchestrator.getCompiler() != null) {
+            sourceVersionText.setText(orchestrator.getCompiler().getSourceVersion() != null ? orchestrator.getCompiler().getSourceVersion() : "");
+            targetVersionText.setText(orchestrator.getCompiler().getTargetVersion() != null ? orchestrator.getCompiler().getTargetVersion() : "");
+            cPathText.setText(orchestrator.getCompiler().getCPath() != null ? orchestrator.getCompiler().getCPath() : "");
+            cppPathText.setText(orchestrator.getCompiler().getCppPath() != null ? orchestrator.getCompiler().getCppPath() : "");
+            makePathText.setText(orchestrator.getCompiler().getMakePath() != null ? orchestrator.getCompiler().getMakePath() : "");
+            cmakePathText.setText(orchestrator.getCompiler().getCmakePath() != null ? orchestrator.getCompiler().getCmakePath() : "");
+            updateGroupStatus(compilerGroup, orchestrator.getCompiler().getTestStatus());
+        }
+
+        if (orchestrator.getEclipse() != null) {
+            eclipseWorkspaceText.setText(orchestrator.getEclipse().getWorkspace() != null ? orchestrator.getEclipse().getWorkspace() : "");
+            eclipseInstallationText.setText(orchestrator.getEclipse().getInstallation() != null ? orchestrator.getEclipse().getInstallation() : "");
+            eclipseTargetPlatformText.setText(orchestrator.getEclipse().getTargetPlatform() != null ? orchestrator.getEclipse().getTargetPlatform() : "");
+            updateGroupStatus(eclipseGroup, orchestrator.getEclipse().getTestStatus());
         }
 
         isUpdating = false;
     }
 
+    private void updateGroupStatus(Group group, String status) {
+        if ("SUCCESS".equals(status)) {
+            group.setBackground(successColor);
+        } else if ("FAILED".equals(status)) {
+            group.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
+        } else {
+            group.setBackground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
+        }
+    }
+
     private void updateModelFromFields() {
+        resetBackgrounds();
         if (orchestrator == null || isUpdating) return;
         isUpdating = true;
 
@@ -188,11 +343,168 @@ public class ToolsPage extends ScrolledComposite {
         orchestrator.getDatabase().setUsername(dbUsernameText.getText());
         orchestrator.getDatabase().setPassword(dbPasswordText.getText());
 
+        if (orchestrator.getCompiler() == null) {
+            orchestrator.setCompiler(OrchestrationFactory.eINSTANCE.createCompiler());
+        }
+        orchestrator.getCompiler().setSourceVersion(sourceVersionText.getText());
+        orchestrator.getCompiler().setTargetVersion(targetVersionText.getText());
+        orchestrator.getCompiler().setCPath(cPathText.getText());
+        orchestrator.getCompiler().setCppPath(cppPathText.getText());
+        orchestrator.getCompiler().setMakePath(makePathText.getText());
+        orchestrator.getCompiler().setCmakePath(cmakePathText.getText());
+
+        if (orchestrator.getEclipse() == null) {
+            orchestrator.setEclipse(OrchestrationFactory.eINSTANCE.createEclipse());
+        }
+        orchestrator.getEclipse().setWorkspace(eclipseWorkspaceText.getText());
+        orchestrator.getEclipse().setInstallation(eclipseInstallationText.getText());
+        orchestrator.getEclipse().setTargetPlatform(eclipseTargetPlatformText.getText());
+
         isUpdating = false;
     }
 
     public void setOrchestrator(Orchestrator orchestrator) {
         this.orchestrator = orchestrator;
         updateUIFromModel();
+    }
+
+    @Override
+    public void dispose() {
+        if (successColor != null && !successColor.isDisposed()) {
+            successColor.dispose();
+        }
+        super.dispose();
+    }
+
+    private void resetBackgrounds() {
+        Color defaultColor = getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
+        gitGroup.setBackground(defaultColor);
+        mavenGroup.setBackground(defaultColor);
+        fileGroup.setBackground(defaultColor);
+        dbGroup.setBackground(defaultColor);
+        compilerGroup.setBackground(defaultColor);
+        eclipseGroup.setBackground(defaultColor);
+
+        if (orchestrator.getGit() != null) orchestrator.getGit().setTestStatus(null);
+        if (orchestrator.getMaven() != null) orchestrator.getMaven().setTestStatus(null);
+        if (orchestrator.getFileConfig() != null) orchestrator.getFileConfig().setTestStatus(null);
+        if (orchestrator.getDatabase() != null) orchestrator.getDatabase().setTestStatus(null);
+        if (orchestrator.getCompiler() != null) orchestrator.getCompiler().setTestStatus(null);
+        if (orchestrator.getEclipse() != null) orchestrator.getEclipse().setTestStatus(null);
+    }
+
+    private void testGit() {
+        try {
+            File workingDir = getWorkingDir();
+            TaskContext context = new TaskContext(orchestrator, workingDir);
+            // GitTool execute handles specific commands, let's use a shell check for version as a basic test
+            eu.kalafatic.evolution.controller.orchestration.ShellTool shell = new eu.kalafatic.evolution.controller.orchestration.ShellTool();
+            String result = shell.execute("git --version", workingDir, context);
+            MessageDialog.openInformation(getShell(), "Git Test", "Git is available:\n" + result);
+            orchestrator.getGit().setTestStatus("SUCCESS");
+            gitGroup.setBackground(successColor);
+        } catch (Exception e) {
+            MessageDialog.openError(getShell(), "Git Test Failed", e.getMessage());
+            orchestrator.getGit().setTestStatus("FAILED");
+            gitGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
+        }
+    }
+
+    private void testMaven() {
+        try {
+            File workingDir = getWorkingDir();
+            TaskContext context = new TaskContext(orchestrator, workingDir);
+            eu.kalafatic.evolution.controller.orchestration.ShellTool shell = new eu.kalafatic.evolution.controller.orchestration.ShellTool();
+            String result = shell.execute(System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd -version" : "mvn -version", workingDir, context);
+            MessageDialog.openInformation(getShell(), "Maven Test", "Maven is available:\n" + result);
+            orchestrator.getMaven().setTestStatus("SUCCESS");
+            mavenGroup.setBackground(successColor);
+        } catch (Exception e) {
+            MessageDialog.openError(getShell(), "Maven Test Failed", e.getMessage());
+            orchestrator.getMaven().setTestStatus("FAILED");
+            mavenGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
+        }
+    }
+
+    private void testFile() {
+        try {
+            FileTool tool = new FileTool();
+            File workingDir = getWorkingDir();
+            TaskContext context = new TaskContext(orchestrator, workingDir);
+            String testDir = "test_tool_dir_" + System.currentTimeMillis();
+            tool.execute("MKDIR " + testDir, workingDir, context);
+            tool.execute("WRITE " + testDir + "/test.txt\nTest Content", workingDir, context);
+            String content = tool.execute("READ " + testDir + "/test.txt", workingDir, context);
+            if (!"Test Content".equals(content)) throw new Exception("File content mismatch");
+            tool.execute("DELETE " + testDir, workingDir, context);
+            MessageDialog.openInformation(getShell(), "File Test", "File operations successful (Create, Write, Read, Delete).");
+            orchestrator.getFileConfig().setTestStatus("SUCCESS");
+            fileGroup.setBackground(successColor);
+        } catch (Exception e) {
+            MessageDialog.openError(getShell(), "File Test Failed", e.getMessage());
+            orchestrator.getFileConfig().setTestStatus("FAILED");
+            fileGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
+        }
+    }
+
+    private void testDatabase() {
+        try {
+            DatabaseTool tool = new DatabaseTool();
+            File workingDir = getWorkingDir();
+            TaskContext context = new TaskContext(orchestrator, workingDir);
+            String result = tool.execute("TEST_CONNECTION", workingDir, context);
+            MessageDialog.openInformation(getShell(), "Database Test", result);
+            orchestrator.getDatabase().setTestStatus("SUCCESS");
+            dbGroup.setBackground(successColor);
+        } catch (Exception e) {
+            MessageDialog.openError(getShell(), "Database Test Failed", e.getMessage());
+            orchestrator.getDatabase().setTestStatus("FAILED");
+            dbGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
+        }
+    }
+
+    private void testEclipse() {
+        if (orchestrator.getEclipse() == null) {
+            updateModelFromFields();
+        }
+        try {
+            eu.kalafatic.evolution.controller.orchestration.EclipseTool tool = new eu.kalafatic.evolution.controller.orchestration.EclipseTool();
+            File workingDir = getWorkingDir();
+            TaskContext context = new TaskContext(orchestrator, workingDir);
+            String result = tool.execute("TEST_CONNECTION", workingDir, context);
+            MessageDialog.openInformation(getShell(), "Eclipse Tool Test", result);
+            orchestrator.getEclipse().setTestStatus("SUCCESS");
+            eclipseGroup.setBackground(successColor);
+        } catch (Exception e) {
+            MessageDialog.openError(getShell(), "Eclipse Tool Test Failed", e.getMessage());
+            orchestrator.getEclipse().setTestStatus("FAILED");
+            eclipseGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
+        }
+    }
+
+    private void testCompiler() {
+        try {
+            eu.kalafatic.evolution.controller.orchestration.CppTool tool = new eu.kalafatic.evolution.controller.orchestration.CppTool();
+            File workingDir = getWorkingDir();
+            TaskContext context = new TaskContext(orchestrator, workingDir);
+            String result = tool.execute("TEST_CONNECTION", workingDir, context);
+            MessageDialog.openInformation(getShell(), "Compiler Test", result);
+            orchestrator.getCompiler().setTestStatus("SUCCESS");
+            compilerGroup.setBackground(successColor);
+        } catch (Exception e) {
+            MessageDialog.openError(getShell(), "Compiler Test Failed", e.getMessage());
+            orchestrator.getCompiler().setTestStatus("FAILED");
+            compilerGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
+        }
+    }
+
+    private File getWorkingDir() {
+        // Use a temp directory or project root if available
+        String path = fileLocalPathText.getText();
+        if (path != null && !path.isEmpty()) {
+            File f = new File(path);
+            if (f.exists()) return f;
+        }
+        return new File(System.getProperty("java.io.tmpdir"));
     }
 }

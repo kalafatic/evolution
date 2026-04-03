@@ -76,6 +76,15 @@ public class IterationManager {
 
             // 5. Decision
             iteration.setPhase("LEARN");
+
+            // Pause for user feedback if interactive mode is supported via TaskContext
+            try {
+                context.log("[ITERATION] Iteration " + iteration.getId() + " completed. Requesting user feedback/rating.");
+                context.requestApproval("Iteration " + iteration.getId() + " completed. Please rate and provide feedback in the 'Approval' or 'Ai Chat' page.").get();
+            } catch (Exception e) {
+                context.log("[ITERATION] User feedback skipped or timed out: " + e.getMessage());
+            }
+
             if (result.getDecision() == SelfDevDecision.CONTINUE) {
                 context.log("[ITERATION] Evaluation successful. Committing.");
                 gitManager.commit("Self-Development Iteration " + iteration.getId() + " success.");

@@ -287,6 +287,135 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected String description = DESCRIPTION_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getRating() <em>Rating</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRating()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int RATING_EDEFAULT = 0;
+
+	/**
+	 * The cached value of the '{@link #getRating() <em>Rating</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRating()
+	 * @generated
+	 * @ordered
+	 */
+	protected int rating = RATING_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isLikes() <em>Likes</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isLikes()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean LIKES_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isLikes() <em>Likes</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isLikes()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean likes = LIKES_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRationale()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String RATIONALE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRationale()
+	 * @generated
+	 * @ordered
+	 */
+	protected String rationale = RATIONALE_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getRationale() {
+		return rationale;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRationale(String newRationale) {
+		String oldRationale = rationale;
+		rationale = newRationale;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__RATIONALE, oldRationale, rationale));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getRating() {
+		return rating;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRating(int newRating) {
+		int oldRating = rating;
+		rating = newRating;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__RATING, oldRating, rating));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isLikes() {
+		return likes;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setLikes(boolean newLikes) {
+		boolean oldLikes = likes;
+		likes = newLikes;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__LIKES, oldLikes, likes));
+	}
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -632,6 +761,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getResultSummary();
 			case OrchestrationPackage.TASK__DESCRIPTION:
 				return getDescription();
+			case OrchestrationPackage.TASK__RATING:
+				return getRating();
+			case OrchestrationPackage.TASK__LIKES:
+				return isLikes();
+			case OrchestrationPackage.TASK__RATIONALE:
+				return getRationale();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -686,6 +821,15 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__DESCRIPTION:
 				setDescription((String)newValue);
 				return;
+			case OrchestrationPackage.TASK__RATING:
+				setRating((Integer)newValue);
+				return;
+			case OrchestrationPackage.TASK__LIKES:
+				setLikes((Boolean)newValue);
+				return;
+			case OrchestrationPackage.TASK__RATIONALE:
+				setRationale((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -737,6 +881,15 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__DESCRIPTION:
 				setDescription(DESCRIPTION_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__RATING:
+				setRating(RATING_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__LIKES:
+				setLikes(LIKES_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__RATIONALE:
+				setRationale(RATIONALE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -775,6 +928,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return RESULT_SUMMARY_EDEFAULT == null ? resultSummary != null : !RESULT_SUMMARY_EDEFAULT.equals(resultSummary);
 			case OrchestrationPackage.TASK__DESCRIPTION:
 				return DESCRIPTION_EDEFAULT == null ? description != null : !DESCRIPTION_EDEFAULT.equals(description);
+			case OrchestrationPackage.TASK__RATING:
+				return rating != RATING_EDEFAULT;
+			case OrchestrationPackage.TASK__LIKES:
+				return likes != LIKES_EDEFAULT;
+			case OrchestrationPackage.TASK__RATIONALE:
+				return RATIONALE_EDEFAULT == null ? rationale != null : !RATIONALE_EDEFAULT.equals(rationale);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -811,6 +970,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(resultSummary);
 		result.append(", description: ");
 		result.append(description);
+		result.append(", rating: ");
+		result.append(rating);
+		result.append(", likes: ");
+		result.append(likes);
+		result.append(", rationale: ");
+		result.append(rationale);
 		result.append(')');
 		return result.toString();
 	}

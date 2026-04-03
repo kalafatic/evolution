@@ -185,13 +185,40 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__DESCRIPTION = 12;
 
 	/**
+	 * The feature id for the '<em><b>Rating</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__RATING = 13;
+
+	/**
+	 * The feature id for the '<em><b>Likes</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__LIKES = 14;
+
+	/**
+	 * The feature id for the '<em><b>Rationale</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__RATIONALE = 15;
+
+	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 13;
+	int TASK_FEATURE_COUNT = 16;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -486,13 +513,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__SHARED_MEMORY = 22;
 
 	/**
+	 * The feature id for the '<em><b>Eclipse</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__ECLIPSE = 23;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 23;
+	int ORCHESTRATOR_FEATURE_COUNT = 24;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -550,13 +586,22 @@ public interface OrchestrationPackage extends EPackage {
 	int GIT__LOCAL_PATH = 3;
 
 	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GIT__TEST_STATUS = 4;
+
+	/**
 	 * The number of structural features of the '<em>Git</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int GIT_FEATURE_COUNT = 4;
+	int GIT_FEATURE_COUNT = 5;
 
 	/**
 	 * The number of operations of the '<em>Git</em>' class.
@@ -596,13 +641,22 @@ public interface OrchestrationPackage extends EPackage {
 	int MAVEN__PROFILES = 1;
 
 	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int MAVEN__TEST_STATUS = 2;
+
+	/**
 	 * The number of structural features of the '<em>Maven</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int MAVEN_FEATURE_COUNT = 2;
+	int MAVEN_FEATURE_COUNT = 3;
 
 	/**
 	 * The number of operations of the '<em>Maven</em>' class.
@@ -688,13 +742,58 @@ public interface OrchestrationPackage extends EPackage {
 	int COMPILER__TARGET_VERSION = 1;
 
 	/**
+	 * The feature id for the '<em><b>CPath</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMPILER__CPATH = 2;
+
+	/**
+	 * The feature id for the '<em><b>Cpp Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMPILER__CPP_PATH = 3;
+
+	/**
+	 * The feature id for the '<em><b>Make Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMPILER__MAKE_PATH = 4;
+
+	/**
+	 * The feature id for the '<em><b>Cmake Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMPILER__CMAKE_PATH = 5;
+
+	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMPILER__TEST_STATUS = 6;
+
+	/**
 	 * The number of structural features of the '<em>Compiler</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int COMPILER_FEATURE_COUNT = 2;
+	int COMPILER_FEATURE_COUNT = 7;
 
 	/**
 	 * The number of operations of the '<em>Compiler</em>' class.
@@ -1329,13 +1428,22 @@ public interface OrchestrationPackage extends EPackage {
 	int SELF_DEV_SESSION__ITERATIONS = 4;
 
 	/**
+	 * The feature id for the '<em><b>Rationale</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SELF_DEV_SESSION__RATIONALE = 5;
+
+	/**
 	 * The number of structural features of the '<em>Self Dev Session</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int SELF_DEV_SESSION_FEATURE_COUNT = 5;
+	int SELF_DEV_SESSION_FEATURE_COUNT = 6;
 
 	/**
 	 * The number of operations of the '<em>Self Dev Session</em>' class.
@@ -1411,13 +1519,49 @@ public interface OrchestrationPackage extends EPackage {
 	int ITERATION__PHASE = 5;
 
 	/**
+	 * The feature id for the '<em><b>Rating</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__RATING = 6;
+
+	/**
+	 * The feature id for the '<em><b>Likes</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__LIKES = 7;
+
+	/**
+	 * The feature id for the '<em><b>Comments</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__COMMENTS = 8;
+
+	/**
+	 * The feature id for the '<em><b>Rationale</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__RATIONALE = 9;
+
+	/**
 	 * The number of structural features of the '<em>Iteration</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ITERATION_FEATURE_COUNT = 6;
+	int ITERATION_FEATURE_COUNT = 10;
 
 	/**
 	 * The number of operations of the '<em>Iteration</em>' class.
@@ -1484,13 +1628,22 @@ public interface OrchestrationPackage extends EPackage {
 	int EVALUATION_RESULT__DECISION = 4;
 
 	/**
+	 * The feature id for the '<em><b>User Satisfaction</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT__USER_SATISFACTION = 5;
+
+	/**
 	 * The number of structural features of the '<em>Evaluation Result</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int EVALUATION_RESULT_FEATURE_COUNT = 5;
+	int EVALUATION_RESULT_FEATURE_COUNT = 6;
 
 	/**
 	 * The number of operations of the '<em>Evaluation Result</em>' class.
@@ -1629,13 +1782,22 @@ public interface OrchestrationPackage extends EPackage {
 	int DATABASE__DRIVER = 3;
 
 	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATABASE__TEST_STATUS = 4;
+
+	/**
 	 * The number of structural features of the '<em>Database</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int DATABASE_FEATURE_COUNT = 4;
+	int DATABASE_FEATURE_COUNT = 5;
 
 	/**
 	 * The number of operations of the '<em>Database</em>' class.
@@ -1666,13 +1828,22 @@ public interface OrchestrationPackage extends EPackage {
 	int FILE_CONFIG__LOCAL_PATH = 0;
 
 	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int FILE_CONFIG__TEST_STATUS = 1;
+
+	/**
 	 * The number of structural features of the '<em>File Config</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int FILE_CONFIG_FEATURE_COUNT = 1;
+	int FILE_CONFIG_FEATURE_COUNT = 2;
 
 	/**
 	 * The number of operations of the '<em>File Config</em>' class.
@@ -1682,6 +1853,70 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int FILE_CONFIG_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl <em>Eclipse</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEclipse()
+	 * @generated
+	 */
+	int ECLIPSE = 30;
+
+	/**
+	 * The feature id for the '<em><b>Workspace</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE__WORKSPACE = 0;
+
+	/**
+	 * The feature id for the '<em><b>Installation</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE__INSTALLATION = 1;
+
+	/**
+	 * The feature id for the '<em><b>Target Platform</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE__TARGET_PLATFORM = 2;
+
+	/**
+	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE__TEST_STATUS = 3;
+
+	/**
+	 * The number of structural features of the '<em>Eclipse</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE_FEATURE_COUNT = 4;
+
+	/**
+	 * The number of operations of the '<em>Eclipse</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ECLIPSE_OPERATION_COUNT = 0;
 
 
 	/**
@@ -1836,6 +2071,39 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getTask_Description();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getRating <em>Rating</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rating</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getRating()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_Rating();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isLikes <em>Likes</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Likes</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#isLikes()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_Likes();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getRationale <em>Rationale</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rationale</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getRationale()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_Rationale();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
@@ -2121,6 +2389,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getGit_LocalPath();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Git#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Git#getTestStatus()
+	 * @see #getGit()
+	 * @generated
+	 */
+	EAttribute getGit_TestStatus();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Maven <em>Maven</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2151,6 +2430,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getMaven_Profiles();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Maven#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Maven#getTestStatus()
+	 * @see #getMaven()
+	 * @generated
+	 */
+	EAttribute getMaven_TestStatus();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.LLM <em>LLM</em>}'.
@@ -2215,6 +2505,61 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getCompiler_TargetVersion();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Compiler#getCPath <em>CPath</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>CPath</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Compiler#getCPath()
+	 * @see #getCompiler()
+	 * @generated
+	 */
+	EAttribute getCompiler_CPath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Compiler#getCppPath <em>Cpp Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Cpp Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Compiler#getCppPath()
+	 * @see #getCompiler()
+	 * @generated
+	 */
+	EAttribute getCompiler_CppPath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Compiler#getMakePath <em>Make Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Make Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Compiler#getMakePath()
+	 * @see #getCompiler()
+	 * @generated
+	 */
+	EAttribute getCompiler_MakePath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Compiler#getCmakePath <em>Cmake Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Cmake Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Compiler#getCmakePath()
+	 * @see #getCompiler()
+	 * @generated
+	 */
+	EAttribute getCompiler_CmakePath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Compiler#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Compiler#getTestStatus()
+	 * @see #getCompiler()
+	 * @generated
+	 */
+	EAttribute getCompiler_TestStatus();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Command <em>Command</em>}'.
@@ -2772,6 +3117,50 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getIteration_Phase();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRating <em>Rating</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rating</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getRating()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_Rating();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#isLikes <em>Likes</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Likes</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#isLikes()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_Likes();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getComments <em>Comments</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Comments</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getComments()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_Comments();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRationale <em>Rationale</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rationale</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getRationale()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_Rationale();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult <em>Evaluation Result</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2837,6 +3226,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getEvaluationResult_Decision();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getUserSatisfaction <em>User Satisfaction</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>User Satisfaction</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.EvaluationResult#getUserSatisfaction()
+	 * @see #getEvaluationResult()
+	 * @generated
+	 */
+	EAttribute getEvaluationResult_UserSatisfaction();
+
+	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2887,6 +3287,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getOrchestrator_FileConfig();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse <em>Eclipse</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Eclipse</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_Eclipse();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Database <em>Database</em>}'.
@@ -2943,6 +3354,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getDatabase_Driver();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getTestStatus()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_TestStatus();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.FileConfig <em>File Config</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2964,6 +3386,71 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getFileConfig_LocalPath();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.FileConfig#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig#getTestStatus()
+	 * @see #getFileConfig()
+	 * @generated
+	 */
+	EAttribute getFileConfig_TestStatus();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Eclipse <em>Eclipse</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Eclipse</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse
+	 * @generated
+	 */
+	EClass getEclipse();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getWorkspace <em>Workspace</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Workspace</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getWorkspace()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_Workspace();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getInstallation <em>Installation</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Installation</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getInstallation()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_Installation();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getTargetPlatform <em>Target Platform</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Target Platform</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getTargetPlatform()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_TargetPlatform();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getTestStatus()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_TestStatus();
+
+	/**
 	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession <em>Self Dev Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2973,6 +3460,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getOrchestrator_SelfDevSession();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getRationale <em>Rationale</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rationale</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevSession#getRationale()
+	 * @see #getSelfDevSession()
+	 * @generated
+	 */
+	EAttribute getSelfDevSession_Rationale();
 
 	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory <em>Shared Memory</em>}'.
@@ -3432,6 +3930,14 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute GIT__LOCAL_PATH = eINSTANCE.getGit_LocalPath();
 
 		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GIT__TEST_STATUS = eINSTANCE.getGit_TestStatus();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MavenImpl <em>Maven</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -3456,6 +3962,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute MAVEN__PROFILES = eINSTANCE.getMaven_Profiles();
+
+		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute MAVEN__TEST_STATUS = eINSTANCE.getMaven_TestStatus();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.LLMImpl <em>LLM</em>}' class.
@@ -3508,6 +4022,46 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute COMPILER__TARGET_VERSION = eINSTANCE.getCompiler_TargetVersion();
+
+		/**
+		 * The meta object literal for the '<em><b>CPath</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMPILER__CPATH = eINSTANCE.getCompiler_CPath();
+
+		/**
+		 * The meta object literal for the '<em><b>Cpp Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMPILER__CPP_PATH = eINSTANCE.getCompiler_CppPath();
+
+		/**
+		 * The meta object literal for the '<em><b>Make Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMPILER__MAKE_PATH = eINSTANCE.getCompiler_MakePath();
+
+		/**
+		 * The meta object literal for the '<em><b>Cmake Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMPILER__CMAKE_PATH = eINSTANCE.getCompiler_CmakePath();
+
+		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMPILER__TEST_STATUS = eINSTANCE.getCompiler_TestStatus();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommandImpl <em>Command</em>}' class.
@@ -3706,6 +4260,30 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute RULE__DESCRIPTION = eINSTANCE.getRule_Description();
 
 		/**
+		 * The meta object literal for the '<em><b>Rating</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__RATING = eINSTANCE.getTask_Rating();
+
+		/**
+		 * The meta object literal for the '<em><b>Likes</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__LIKES = eINSTANCE.getTask_Likes();
+
+		/**
+		 * The meta object literal for the '<em><b>Rationale</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__RATIONALE = eINSTANCE.getTask_Rationale();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl <em>Access Rule</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -3902,6 +4480,14 @@ public interface OrchestrationPackage extends EPackage {
 		EReference SELF_DEV_SESSION__ITERATIONS = eINSTANCE.getSelfDevSession_Iterations();
 
 		/**
+		 * The meta object literal for the '<em><b>Rationale</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SELF_DEV_SESSION__RATIONALE = eINSTANCE.getSelfDevSession_Rationale();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl <em>Iteration</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -3960,6 +4546,38 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute ITERATION__PHASE = eINSTANCE.getIteration_Phase();
 
 		/**
+		 * The meta object literal for the '<em><b>Rating</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__RATING = eINSTANCE.getIteration_Rating();
+
+		/**
+		 * The meta object literal for the '<em><b>Likes</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__LIKES = eINSTANCE.getIteration_Likes();
+
+		/**
+		 * The meta object literal for the '<em><b>Comments</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__COMMENTS = eINSTANCE.getIteration_Comments();
+
+		/**
+		 * The meta object literal for the '<em><b>Rationale</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__RATIONALE = eINSTANCE.getIteration_Rationale();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl <em>Evaluation Result</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4008,6 +4626,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute EVALUATION_RESULT__DECISION = eINSTANCE.getEvaluationResult_Decision();
+
+		/**
+		 * The meta object literal for the '<em><b>User Satisfaction</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute EVALUATION_RESULT__USER_SATISFACTION = eINSTANCE.getEvaluationResult_UserSatisfaction();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
@@ -4082,6 +4708,14 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute DATABASE__DRIVER = eINSTANCE.getDatabase_Driver();
 
 		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__TEST_STATUS = eINSTANCE.getDatabase_TestStatus();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl <em>File Config</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4100,6 +4734,14 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute FILE_CONFIG__LOCAL_PATH = eINSTANCE.getFileConfig_LocalPath();
 
 		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FILE_CONFIG__TEST_STATUS = eINSTANCE.getFileConfig_TestStatus();
+
+		/**
 		 * The meta object literal for the '<em><b>Database</b></em>' containment reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4116,6 +4758,14 @@ public interface OrchestrationPackage extends EPackage {
 		EReference ORCHESTRATOR__FILE_CONFIG = eINSTANCE.getOrchestrator_FileConfig();
 
 		/**
+		 * The meta object literal for the '<em><b>Eclipse</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__ECLIPSE = eINSTANCE.getOrchestrator_Eclipse();
+
+		/**
 		 * The meta object literal for the '<em><b>Self Dev Session</b></em>' containment reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4130,6 +4780,48 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute ORCHESTRATOR__SHARED_MEMORY = eINSTANCE.getOrchestrator_SharedMemory();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl <em>Eclipse</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEclipse()
+		 * @generated
+		 */
+		EClass ECLIPSE = eINSTANCE.getEclipse();
+
+		/**
+		 * The meta object literal for the '<em><b>Workspace</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__WORKSPACE = eINSTANCE.getEclipse_Workspace();
+
+		/**
+		 * The meta object literal for the '<em><b>Installation</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__INSTALLATION = eINSTANCE.getEclipse_Installation();
+
+		/**
+		 * The meta object literal for the '<em><b>Target Platform</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__TARGET_PLATFORM = eINSTANCE.getEclipse_TargetPlatform();
+
+		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__TEST_STATUS = eINSTANCE.getEclipse_TestStatus();
 
 	}
 

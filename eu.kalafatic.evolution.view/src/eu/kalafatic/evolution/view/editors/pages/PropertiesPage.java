@@ -6,6 +6,7 @@ import java.util.List;
 import org.eclipse.jface.fieldassist.ControlDecoration;
 import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Font;
@@ -40,6 +41,7 @@ public class PropertiesPage extends ScrolledComposite {
 	private Text localModelText, hybridModelText;
 	private Text mcpUrlText, openAiTokenText, openAiModelText;
 	private Table agentsTable;
+	private SashForm sashForm;
 	private Text aiChatUrlText, neuronAiUrlText,
 			compilerSourceText;
 	private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator, llmTempDecorator;
@@ -112,52 +114,38 @@ public class PropertiesPage extends ScrolledComposite {
 		};
 		Display.getDefault().timerExec(1000, timer);
 
-		Group orchGroup = new Group(comp, SWT.NONE);
-		orchGroup.setText("Orchestrator");
-		orchGroup.setLayout(new GridLayout(3, false));
-		orchGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		sashForm = new SashForm(comp, SWT.VERTICAL);
+		sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		Group orchGroup = SWTFactory.createMaximizableGroup(sashForm, "Orchestrator", 3);
 		SWTFactory.createLabel(orchGroup, "ID:");
-		orchIdText = new Text(orchGroup, SWT.BORDER);
-		orchIdText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		orchIdText = SWTFactory.createText(orchGroup);
 		SWTFactory.createEditButton(orchGroup, orchIdText);
 		SWTFactory.createLabel(orchGroup, "Name:");
-		orchNameText = new Text(orchGroup, SWT.BORDER);
-		orchNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		orchNameText = SWTFactory.createText(orchGroup);
 		SWTFactory.createEditButton(orchGroup, orchNameText);
 
-		Group llmGroup = new Group(comp, SWT.NONE);
-		llmGroup.setText("LLM Settings");
-		llmGroup.setLayout(new GridLayout(3, false));
-		llmGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Group llmGroup = SWTFactory.createMaximizableGroup(sashForm, "LLM Settings", 3);
 		SWTFactory.createLabel(llmGroup, "Model:");
-		llmModelText = new Text(llmGroup, SWT.BORDER);
-		llmModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		llmModelText = SWTFactory.createText(llmGroup);
 		SWTFactory.createEditButton(llmGroup, llmModelText);
 		SWTFactory.createLabel(llmGroup, "Temperature:");
-		llmTempText = new Text(llmGroup, SWT.BORDER);
-		llmTempText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		llmTempText = SWTFactory.createText(llmGroup);
 		SWTFactory.createEditButton(llmGroup, llmTempText);
 
-		Group ollamaGroup = new Group(comp, SWT.NONE);
-		ollamaGroup.setText("Ollama Settings");
-		ollamaGroup.setLayout(new GridLayout(3, false));
-		ollamaGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Group ollamaGroup = SWTFactory.createMaximizableGroup(sashForm, "Ollama Settings", 3);
 		SWTFactory.createLabel(ollamaGroup, "URL:");
-		ollamaUrlText = new Text(ollamaGroup, SWT.BORDER);
-		ollamaUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		ollamaUrlText = SWTFactory.createText(ollamaGroup);
 		SWTFactory.createEditButton(ollamaGroup, ollamaUrlText);
 		SWTFactory.createLabel(ollamaGroup, "Model:");
-		ollamaModelText = new Text(ollamaGroup, SWT.BORDER);
-		ollamaModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		ollamaModelText = SWTFactory.createText(ollamaGroup);
 		SWTFactory.createEditButton(ollamaGroup, ollamaModelText);
 		SWTFactory.createLabel(ollamaGroup, "Select Model:");
 		selectModel(ollamaGroup, ollamaService);
 		SWTFactory.createLabel(ollamaGroup, "");
 		SWTFactory.createLabel(ollamaGroup, "Model Path:");
-		ollamaPathText = new Text(ollamaGroup, SWT.BORDER);
-		ollamaPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		Button browseOllamaBtn = new Button(ollamaGroup, SWT.PUSH);
-		browseOllamaBtn.setText("...");
+		ollamaPathText = SWTFactory.createText(ollamaGroup);
+		Button browseOllamaBtn = SWTFactory.createButton(ollamaGroup, "...");
 		browseOllamaBtn.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -167,15 +155,11 @@ public class PropertiesPage extends ScrolledComposite {
 			}
 		});
 		SWTFactory.createLabel(ollamaGroup, "Version:");
-		ollamaVersionText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
-		ollamaVersionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		ollamaVersionText = SWTFactory.createText(ollamaGroup);
+		ollamaVersionText.setEditable(false);
 		SWTFactory.createLabel(ollamaGroup, "");
 
-		Group agentsGroup = new Group(comp, SWT.NONE);
-		agentsGroup.setText("Agents");
-		agentsGroup.setLayout(new GridLayout(1, false));
-		agentsGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
-		((GridData) agentsGroup.getLayoutData()).heightHint = 150;
+		Group agentsGroup = SWTFactory.createMaximizableGroup(sashForm, "Agents", 1);
 		agentsTable = new Table(agentsGroup, SWT.BORDER | SWT.FULL_SELECTION);
 		agentsTable.setHeaderVisible(true);
 		agentsTable.setLinesVisible(true);
@@ -188,29 +172,20 @@ public class PropertiesPage extends ScrolledComposite {
 			col.setWidth(widths[i]);
 		}
 
-		Group othersGroup = new Group(comp, SWT.NONE);
-		othersGroup.setText("Additional AI & Tools");
-		othersGroup.setLayout(new GridLayout(3, false));
-		othersGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Group othersGroup = SWTFactory.createMaximizableGroup(sashForm, "Additional AI & Tools", 3);
 		SWTFactory.createLabel(othersGroup, "AI Chat URL:");
-		aiChatUrlText = new Text(othersGroup, SWT.BORDER);
-		aiChatUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		aiChatUrlText = SWTFactory.createText(othersGroup);
 		SWTFactory.createEditButton(othersGroup, aiChatUrlText);
 		SWTFactory.createLabel(othersGroup, "Neuron AI URL:");
-		neuronAiUrlText = new Text(othersGroup, SWT.BORDER);
-		neuronAiUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		neuronAiUrlText = SWTFactory.createText(othersGroup);
 		SWTFactory.createEditButton(othersGroup, neuronAiUrlText);
 		SWTFactory.createLabel(othersGroup, "Compiler Source:");
-		compilerSourceText = new Text(othersGroup, SWT.BORDER);
-		compilerSourceText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		compilerSourceText = SWTFactory.createText(othersGroup);
 		SWTFactory.createEditButton(othersGroup, compilerSourceText);
 
-		Group mcpOpenAiGroup = new Group(comp, SWT.NONE);
-		mcpOpenAiGroup.setText("MCP & OpenAI (Hybrid Architecture)");
-		mcpOpenAiGroup.setLayout(new GridLayout(3, false));
-		mcpOpenAiGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Group mcpOpenAiGroup = SWTFactory.createMaximizableGroup(sashForm, "MCP & OpenAI (Hybrid Architecture)", 3);
 		SWTFactory.createLabel(mcpOpenAiGroup, "AI Mode:");
-		aiModeCombo = new Combo(mcpOpenAiGroup, SWT.READ_ONLY);
+		aiModeCombo = SWTFactory.createCombo(mcpOpenAiGroup);
 		aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
 		for (eu.kalafatic.evolution.model.orchestration.AiMode mode : eu.kalafatic.evolution.model.orchestration.AiMode
 				.values()) {
@@ -230,32 +205,24 @@ public class PropertiesPage extends ScrolledComposite {
 		offlineBtn = new Button(mcpOpenAiGroup, SWT.CHECK);
 		offlineBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
 		SWTFactory.createLabel(mcpOpenAiGroup, "MCP Server URL:");
-		mcpUrlText = new Text(mcpOpenAiGroup, SWT.BORDER);
-		mcpUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		mcpUrlText = SWTFactory.createText(mcpOpenAiGroup);
 		SWTFactory.createEditButton(mcpOpenAiGroup, mcpUrlText);
 		SWTFactory.createLabel(mcpOpenAiGroup, "OpenAI Token:");
-		openAiTokenText = new Text(mcpOpenAiGroup, SWT.BORDER | SWT.PASSWORD);
-		openAiTokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		openAiTokenText = SWTFactory.createPasswordText(mcpOpenAiGroup);
 		SWTFactory.createEditButton(mcpOpenAiGroup, openAiTokenText);
 		SWTFactory.createLabel(mcpOpenAiGroup, "OpenAI Model:");
-		openAiModelText = new Text(mcpOpenAiGroup, SWT.BORDER);
-		openAiModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		openAiModelText = SWTFactory.createText(mcpOpenAiGroup);
 		SWTFactory.createEditButton(mcpOpenAiGroup, openAiModelText);
 
-		Group aiModelGroup = new Group(comp, SWT.NONE);
-		aiModelGroup.setText("AI Chat Models (per Mode)");
-		aiModelGroup.setLayout(new GridLayout(3, false));
-		aiModelGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Group aiModelGroup = SWTFactory.createMaximizableGroup(sashForm, "AI Chat Models (per Mode)", 3);
 		SWTFactory.createLabel(aiModelGroup, "Local Model:");
-		localModelText = new Text(aiModelGroup, SWT.BORDER);
-		localModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		localModelText = SWTFactory.createText(aiModelGroup);
 		SWTFactory.createEditButton(aiModelGroup, localModelText);
 		SWTFactory.createLabel(aiModelGroup, "Hybrid Model:");
-		hybridModelText = new Text(aiModelGroup, SWT.BORDER);
-		hybridModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		hybridModelText = SWTFactory.createText(aiModelGroup);
 		SWTFactory.createEditButton(aiModelGroup, hybridModelText);
 		SWTFactory.createLabel(aiModelGroup, "Remote Model:");
-		remoteModelCombo = new Combo(aiModelGroup, SWT.DROP_DOWN | SWT.READ_ONLY);
+		remoteModelCombo = SWTFactory.createCombo(aiModelGroup);
 		remoteModelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
 		for (String providerName : AiProviders.PROVIDERS.keySet()) {
 			remoteModelCombo.add(providerName);
@@ -275,6 +242,8 @@ public class PropertiesPage extends ScrolledComposite {
 				}
 			}
 		});
+
+		sashForm.setWeights(new int[] { 10, 10, 18, 14, 13, 18, 17 });
 
 		ollamaUrlDecorator = new ControlDecoration(ollamaUrlText, SWT.TOP | SWT.LEFT);
 		ollamaUrlDecorator.setImage(
@@ -353,17 +322,6 @@ public class PropertiesPage extends ScrolledComposite {
 				}
 			}
 		});
-
-//		combo.addSelectionListener(new SelectionAdapter() {
-//            @Override public void widgetSelected(SelectionEvent e) {
-//                int idx = combo.getSelectionIndex();
-//                if (idx >= 0) {
-//                    eu.kalafatic.evolution.controller.manager.OllamaModel m = models.get(idx);
-//                    ollamaModelText.setText(m.getName()); llmModelText.setText(m.getName()); llmTempText.setText("0.7");
-//                    updateModelFromFields(); updatePropertiesInfo();
-//                }
-//            }
-//        });
 	}
 
 	public void updatePropertiesInfo() {
@@ -479,7 +437,7 @@ public class PropertiesPage extends ScrolledComposite {
 		if (orchestrator.getNeuronAI() == null) {
 			orchestrator.setNeuronAI(OrchestrationFactory.eINSTANCE.createNeuronAI());
 		}
-		orchestrator.getNeuronAI().setUrl(neuronAiUrlText.getText());
+		neuronAiUrlText.setText(orchestrator.getNeuronAI().getUrl() != null ? orchestrator.getNeuronAI().getUrl() : "");
 
 		if (orchestrator.getCompiler() == null) {
 			orchestrator.setCompiler(OrchestrationFactory.eINSTANCE.createCompiler());

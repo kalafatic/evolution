@@ -7,10 +7,13 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
 import org.eclipse.swt.browser.ProgressEvent;
+import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -30,6 +33,11 @@ public class AiFlowPage extends Composite {
 	private Orchestrator orchestrator;
 	private MultiPageEditor editor;
 	private boolean isLoaded = false;
+	private ScrolledComposite vizScrolled;
+	private Composite browserContainer;
+	private int browserWidth = 1000;
+	private int browserHeight = 800;
+
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override
 		public void notifyChanged(Notification notification) {
@@ -47,25 +55,56 @@ public class AiFlowPage extends Composite {
 		toolbarManager.add(new Action("Zoom In") {
 			@Override
 			public void run() {
-				browser.execute("applyZoom(1.2);");
+				browserWidth = (int)(browserWidth * 1.2);
+				browserHeight = (int)(browserHeight * 1.2);
+				updateScrolledContent();
 			}
 		});
 		toolbarManager.add(new Action("Zoom Out") {
 			@Override
 			public void run() {
-				browser.execute("applyZoom(0.8);");
+				browserWidth = (int)(browserWidth * 0.8);
+				browserHeight = (int)(browserHeight * 0.8);
+				updateScrolledContent();
 			}
 		});
 		toolbarManager.add(new Action("Reset Zoom") {
 			@Override
 			public void run() {
-				browser.execute("resetZoom();");
+				browserWidth = 1000;
+				browserHeight = 800;
+				updateScrolledContent();
 			}
 		});
 		toolbarManager.createControl(this);
 
-		this.browser = new Browser(this, SWT.NONE);
-		browser.setLayoutData(new GridData(GridData.FILL_BOTH));
+		vizScrolled = new ScrolledComposite(this, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+		vizScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
+		vizScrolled.setExpandHorizontal(true);
+		vizScrolled.setExpandVertical(true);
+
+		browserContainer = new Composite(vizScrolled, SWT.NONE);
+		browserContainer.setLayout(new GridLayout(1, false));
+		vizScrolled.setContent(browserContainer);
+
+		this.browser = new Browser(browserContainer, SWT.NONE);
+		GridData browserGD = new GridData(SWT.LEFT, SWT.TOP, false, false);
+		browserGD.widthHint = browserWidth;
+		browserGD.heightHint = browserHeight;
+		browser.setLayoutData(browserGD);
+
+		new BrowserFunction(browser, "javaZoom") {
+			@Override
+			public Object function(Object[] arguments) {
+				if (arguments.length > 0 && arguments[0] instanceof Number) {
+					double factor = ((Number) arguments[0]).doubleValue();
+					browserWidth = (int) (browserWidth * factor);
+					browserHeight = (int) (browserHeight * factor);
+					updateScrolledContent();
+				}
+				return null;
+			}
+		};
 
 		browser.addProgressListener(new ProgressAdapter() {
 			@Override
@@ -90,6 +129,18 @@ public class AiFlowPage extends Composite {
 
 		setOrchestrator(orchestrator);
 		browser.setText(getHtmlTemplate());
+		updateScrolledContent();
+	}
+
+	private void updateScrolledContent() {
+		if (vizScrolled == null || vizScrolled.isDisposed()) return;
+		if (browser != null && !browser.isDisposed()) {
+			GridData gd = (GridData) browser.getLayoutData();
+			gd.widthHint = browserWidth;
+			gd.heightHint = browserHeight;
+		}
+		browserContainer.layout(true, true);
+		vizScrolled.setMinSize(browserContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
 	public void setOrchestrator(Orchestrator orchestrator) {
