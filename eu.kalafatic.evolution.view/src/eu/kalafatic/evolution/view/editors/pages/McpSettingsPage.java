@@ -43,8 +43,7 @@ public class McpSettingsPage extends ScrolledComposite {
         Group configGroup = SWTFactory.createMaximizableGroup(sashForm, "MCP Configuration", 3);
 
         SWTFactory.createLabel(configGroup, "Server URL:");
-        mcpUrlText = new Text(configGroup, SWT.BORDER);
-        mcpUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        mcpUrlText = SWTFactory.createText(configGroup);
         mcpUrlText.addModifyListener(e -> {
             if (orchestrator != null && !isUpdating) {
                 orchestrator.setMcpServerUrl(mcpUrlText.getText());
@@ -52,8 +51,7 @@ public class McpSettingsPage extends ScrolledComposite {
             }
         });
 
-        Button testBtn = new Button(configGroup, SWT.PUSH);
-        testBtn.setText("Test Connection");
+        Button testBtn = SWTFactory.createButton(configGroup, "Test Connection");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -76,8 +74,7 @@ public class McpSettingsPage extends ScrolledComposite {
             col.setWidth(widths[i]);
         }
 
-        Button refreshBtn = new Button(resourcesGroup, SWT.PUSH);
-        refreshBtn.setText("Refresh Resources");
+        Button refreshBtn = SWTFactory.createButton(resourcesGroup, "Refresh Resources", 150);
         refreshBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

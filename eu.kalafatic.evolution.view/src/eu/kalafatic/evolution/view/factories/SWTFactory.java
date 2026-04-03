@@ -23,6 +23,9 @@ import eu.kalafatic.evolution.controller.manager.OllamaService;
 
 public class SWTFactory {
 
+	public static final int LABEL_WIDTH = 130;
+	public static final int BUTTON_WIDTH = 100;
+
 	public static Group createGroup(Composite parent, String text, int columns) {
 		Group composite = new Group(parent, SWT.NONE);
 		composite.setText(text);
@@ -33,16 +36,15 @@ public class SWTFactory {
 
 	public static Label createLabel(Composite parent, String text) {
 		GridData gd = new GridData();
-		gd.widthHint = 120;
+		gd.widthHint = LABEL_WIDTH;
 		Label label = new Label(parent, SWT.NONE);
 		label.setLayoutData(gd);
 		label.setText(text);
 		return label;
 	}
 	
-	
 	public static Button createButton(Composite parent, String text) {		
-		return createButton( parent,  text, 100) ;
+		return createButton(parent, text, BUTTON_WIDTH);
 	}
 	
 	public static Button createButton(Composite parent, String text, int widthHint) {
@@ -56,7 +58,7 @@ public class SWTFactory {
 
 	public static Button createEditButton(Composite parent, Text textWidget) {
 		GridData gd = new GridData();
-		gd.widthHint = 100;
+		gd.widthHint = BUTTON_WIDTH;
 		Button btn = new Button(parent, SWT.PUSH);
 		btn.setLayoutData(gd);
 		btn.setText("Edit");
@@ -70,10 +72,27 @@ public class SWTFactory {
 		return btn;
 	}
 	
+	public static Text createText(Composite parent) {
+		Text text = new Text(parent, SWT.BORDER);
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
+	}
+
+	public static Text createPasswordText(Composite parent) {
+		Text text = new Text(parent, SWT.BORDER | SWT.PASSWORD);
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
+	}
+
+	public static Text createMultiLineText(Composite parent) {
+		Text text = new Text(parent, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
+		text.setLayoutData(new GridData(GridData.FILL_BOTH));
+		return text;
+	}
+
 	public static Combo createCombo(Composite parent) {
 		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);		
 		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-		//gd.widthHint = 200;
 		combo.setLayoutData(gd);
 		return combo;
 	}
