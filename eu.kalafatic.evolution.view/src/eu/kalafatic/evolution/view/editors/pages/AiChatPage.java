@@ -168,7 +168,7 @@ public class AiChatPage extends ScrolledComposite {
         modeIndicatorLabel.setText("INITIALIZING...");
 
         sashForm = new SashForm(content, SWT.VERTICAL);
-        sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
+        GridData sashGD = new GridData(GridData.FILL_BOTH); sashGD.heightHint = 1000; sashForm.setLayoutData(sashGD);
 
         Group chatMgmtGroup = SWTFactory.createMaximizableGroup(sashForm, "Chat Management", 5);
 

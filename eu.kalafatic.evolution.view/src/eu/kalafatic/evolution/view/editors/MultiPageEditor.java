@@ -13,6 +13,9 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.ControlAdapter;
+import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -249,6 +252,26 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void gotoMarker(IMarker marker) {
         setActivePage(1);
         IDE.gotoMarker(textEditor, marker);
+    }
+
+    @Override
+    public void createPartControl(Composite parent) {
+        ScrolledComposite scrolled = new ScrolledComposite(parent, SWT.H_SCROLL | SWT.V_SCROLL);
+        scrolled.setExpandHorizontal(true);
+        scrolled.setExpandVertical(true);
+
+        Composite container = new Composite(scrolled, SWT.NONE);
+        container.setLayout(new FillLayout());
+        scrolled.setContent(container);
+
+        super.createPartControl(container);
+
+        container.addControlListener(new ControlAdapter() {
+            @Override
+            public void controlResized(ControlEvent e) {
+                scrolled.setMinSize(container.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+            }
+        });
     }
 
     @Override

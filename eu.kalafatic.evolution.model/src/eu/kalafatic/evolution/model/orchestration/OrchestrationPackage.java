@@ -706,58 +706,13 @@ public interface OrchestrationPackage extends EPackage {
 	int COMPILER__TARGET_VERSION = 1;
 
 	/**
-	 * The feature id for the '<em><b>CPath</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int COMPILER__CPATH = 2;
-
-	/**
-	 * The feature id for the '<em><b>Cpp Path</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int COMPILER__CPP_PATH = 3;
-
-	/**
-	 * The feature id for the '<em><b>Make Path</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int COMPILER__MAKE_PATH = 4;
-
-	/**
-	 * The feature id for the '<em><b>Cmake Path</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int COMPILER__CMAKE_PATH = 5;
-
-	/**
-	 * The feature id for the '<em><b>Test Status</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int COMPILER__TEST_STATUS = 6;
-
-	/**
 	 * The number of structural features of the '<em>Compiler</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int COMPILER_FEATURE_COUNT = 7;
+	int COMPILER_FEATURE_COUNT = 2;
 
 	/**
 	 * The number of operations of the '<em>Compiler</em>' class.
@@ -2320,61 +2275,6 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getCompiler_TargetVersion();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Compiler#getCPath <em>CPath</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>CPath</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Compiler#getCPath()
-	 * @see #getCompiler()
-	 * @generated
-	 */
-	EAttribute getCompiler_CPath();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Compiler#getCppPath <em>Cpp Path</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Cpp Path</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Compiler#getCppPath()
-	 * @see #getCompiler()
-	 * @generated
-	 */
-	EAttribute getCompiler_CppPath();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Compiler#getMakePath <em>Make Path</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Make Path</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Compiler#getMakePath()
-	 * @see #getCompiler()
-	 * @generated
-	 */
-	EAttribute getCompiler_MakePath();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Compiler#getCmakePath <em>Cmake Path</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Cmake Path</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Compiler#getCmakePath()
-	 * @see #getCompiler()
-	 * @generated
-	 */
-	EAttribute getCompiler_CmakePath();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Compiler#getTestStatus <em>Test Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Test Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Compiler#getTestStatus()
-	 * @see #getCompiler()
-	 * @generated
-	 */
-	EAttribute getCompiler_TestStatus();
-
-	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Command <em>Command</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3704,46 +3604,6 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute COMPILER__TARGET_VERSION = eINSTANCE.getCompiler_TargetVersion();
-
-		/**
-		 * The meta object literal for the '<em><b>CPath</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute COMPILER__CPATH = eINSTANCE.getCompiler_CPath();
-
-		/**
-		 * The meta object literal for the '<em><b>Cpp Path</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute COMPILER__CPP_PATH = eINSTANCE.getCompiler_CppPath();
-
-		/**
-		 * The meta object literal for the '<em><b>Make Path</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute COMPILER__MAKE_PATH = eINSTANCE.getCompiler_MakePath();
-
-		/**
-		 * The meta object literal for the '<em><b>Cmake Path</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute COMPILER__CMAKE_PATH = eINSTANCE.getCompiler_CmakePath();
-
-		/**
-		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute COMPILER__TEST_STATUS = eINSTANCE.getCompiler_TestStatus();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommandImpl <em>Command</em>}' class.

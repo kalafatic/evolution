@@ -115,7 +115,7 @@ public class PropertiesPage extends ScrolledComposite {
 		Display.getDefault().timerExec(1000, timer);
 
 		sashForm = new SashForm(comp, SWT.VERTICAL);
-		sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
+		GridData sashGD = new GridData(GridData.FILL_BOTH); sashGD.heightHint = 1200; sashForm.setLayoutData(sashGD);
 
 		Group orchGroup = SWTFactory.createMaximizableGroup(sashForm, "Orchestrator", 3);
 		SWTFactory.createLabel(orchGroup, "ID:");
