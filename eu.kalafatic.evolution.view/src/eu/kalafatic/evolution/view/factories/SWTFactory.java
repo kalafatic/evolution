@@ -40,28 +40,8 @@ public class SWTFactory {
 		return label;
 	}
 	
-	public static Text createText(Composite parent) {
-		Text text = new Text(parent, SWT.BORDER);
-		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		return text;
-	}
-
-	public static Text createPasswordText(Composite parent) {
-		Text text = new Text(parent, SWT.BORDER | SWT.PASSWORD);
-		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		return text;
-	}
-
-	public static Text createMultiLineText(Composite parent, int heightHint) {
-		Text text = new Text(parent, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
-		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-		gd.heightHint = heightHint;
-		text.setLayoutData(gd);
-		return text;
-	}
-
 	public static Button createButton(Composite parent, String text) {		
-		return createButton( parent,  text, BUTTON_WIDTH) ;
+		return createButton(parent, text, BUTTON_WIDTH);
 	}
 	
 	public static Button createButton(Composite parent, String text, int widthHint) {
@@ -70,13 +50,6 @@ public class SWTFactory {
 		Button btn = new Button(parent, SWT.PUSH);
 		btn.setLayoutData(gd);
 		btn.setText(text);		
-		return btn;
-	}
-
-	public static Button createCheckButton(Composite parent, String text) {
-		Button btn = new Button(parent, SWT.CHECK);
-		btn.setText(text);
-		btn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		return btn;
 	}
 
@@ -96,6 +69,24 @@ public class SWTFactory {
 		return btn;
 	}
 	
+	public static Text createText(Composite parent) {
+		Text text = new Text(parent, SWT.BORDER);
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
+	}
+
+	public static Text createPasswordText(Composite parent) {
+		Text text = new Text(parent, SWT.BORDER | SWT.PASSWORD);
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
+	}
+
+	public static Text createMultiLineText(Composite parent) {
+		Text text = new Text(parent, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
+		text.setLayoutData(new GridData(GridData.FILL_BOTH));
+		return text;
+	}
+
 	public static Combo createCombo(Composite parent) {
 		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);		
 		GridData gd = new GridData(GridData.FILL_HORIZONTAL);

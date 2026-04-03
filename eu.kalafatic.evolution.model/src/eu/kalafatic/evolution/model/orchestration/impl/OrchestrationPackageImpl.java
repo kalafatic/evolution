@@ -345,14 +345,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getTask_Likes() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(14);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public EReference getOrchestrator_Eclipse() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(23);
 	}
@@ -375,14 +367,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getSelfDevSession_Rationale() {
 		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(5);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public EClass getEclipse() {
 		return eclipseEClass;
 	}

@@ -155,8 +155,8 @@ public class PropertiesPage extends ScrolledComposite {
 			}
 		});
 		SWTFactory.createLabel(ollamaGroup, "Version:");
-		ollamaVersionText = new Text(ollamaGroup, SWT.BORDER | SWT.READ_ONLY);
-		ollamaVersionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		ollamaVersionText = SWTFactory.createText(ollamaGroup);
+		ollamaVersionText.setEditable(false);
 		SWTFactory.createLabel(ollamaGroup, "");
 
 		Group agentsGroup = SWTFactory.createMaximizableGroup(sashForm, "Agents", 1);
@@ -186,7 +186,7 @@ public class PropertiesPage extends ScrolledComposite {
 		Group mcpOpenAiGroup = SWTFactory.createMaximizableGroup(sashForm, "MCP & OpenAI (Hybrid Architecture)", 3);
 		SWTFactory.createLabel(mcpOpenAiGroup, "AI Mode:");
 		aiModeCombo = SWTFactory.createCombo(mcpOpenAiGroup);
-		SWTFactory.createLabel(mcpOpenAiGroup, "");
+		aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
 		for (eu.kalafatic.evolution.model.orchestration.AiMode mode : eu.kalafatic.evolution.model.orchestration.AiMode
 				.values()) {
 			aiModeCombo.add(mode.getName());
@@ -201,9 +201,9 @@ public class PropertiesPage extends ScrolledComposite {
 			}
 		});
 
-		SWTFactory.createLabel(mcpOpenAiGroup, "Offline Mode:");
-		offlineBtn = SWTFactory.createCheckButton(mcpOpenAiGroup, "(Legacy)");
-		SWTFactory.createLabel(mcpOpenAiGroup, "");
+		SWTFactory.createLabel(mcpOpenAiGroup, "Offline Mode (Legacy):");
+		offlineBtn = new Button(mcpOpenAiGroup, SWT.CHECK);
+		offlineBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
 		SWTFactory.createLabel(mcpOpenAiGroup, "MCP Server URL:");
 		mcpUrlText = SWTFactory.createText(mcpOpenAiGroup);
 		SWTFactory.createEditButton(mcpOpenAiGroup, mcpUrlText);
@@ -223,7 +223,7 @@ public class PropertiesPage extends ScrolledComposite {
 		SWTFactory.createEditButton(aiModelGroup, hybridModelText);
 		SWTFactory.createLabel(aiModelGroup, "Remote Model:");
 		remoteModelCombo = SWTFactory.createCombo(aiModelGroup);
-		SWTFactory.createLabel(aiModelGroup, "");
+		remoteModelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
 		for (String providerName : AiProviders.PROVIDERS.keySet()) {
 			remoteModelCombo.add(providerName);
 		}
@@ -243,7 +243,7 @@ public class PropertiesPage extends ScrolledComposite {
 			}
 		});
 
-		sashForm.setWeights(new int[] { 10, 10, 20, 20, 10, 15, 15 });
+		sashForm.setWeights(new int[] { 10, 10, 18, 14, 13, 18, 17 });
 
 		ollamaUrlDecorator = new ControlDecoration(ollamaUrlText, SWT.TOP | SWT.LEFT);
 		ollamaUrlDecorator.setImage(
@@ -437,7 +437,7 @@ public class PropertiesPage extends ScrolledComposite {
 		if (orchestrator.getNeuronAI() == null) {
 			orchestrator.setNeuronAI(OrchestrationFactory.eINSTANCE.createNeuronAI());
 		}
-		orchestrator.getNeuronAI().setUrl(neuronAiUrlText.getText());
+		neuronAiUrlText.setText(orchestrator.getNeuronAI().getUrl() != null ? orchestrator.getNeuronAI().getUrl() : "");
 
 		if (orchestrator.getCompiler() == null) {
 			orchestrator.setCompiler(OrchestrationFactory.eINSTANCE.createCompiler());

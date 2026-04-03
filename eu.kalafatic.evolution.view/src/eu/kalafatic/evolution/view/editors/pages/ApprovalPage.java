@@ -121,7 +121,10 @@ public class ApprovalPage extends Composite {
 		});
 
 		SWTFactory.createLabel(feedbackGroup, "Comments:");
-		commentsText = SWTFactory.createMultiLineText(feedbackGroup, 60);
+		commentsText = new org.eclipse.swt.widgets.Text(feedbackGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
+		GridData commentsGD = new GridData(GridData.FILL_HORIZONTAL);
+		commentsGD.heightHint = 60;
+		commentsText.setLayoutData(commentsGD);
 		commentsText.addModifyListener(e -> {
 			if (orchestrator != null && orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
 				Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
@@ -133,7 +136,7 @@ public class ApprovalPage extends Composite {
 		// Task Management Group
 		Group taskGroup = SWTFactory.createGroup(this, "Proposed Tasks", 1);
 		taskGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		((GridData)taskGroup.getLayoutData()).heightHint = 200;
+		((GridData)taskGroup.getLayoutData()).heightHint = 180;
 
 		Composite taskTableComposite = new Composite(taskGroup, SWT.NONE);
 		taskTableComposite.setLayout(new GridLayout(2, false));
@@ -152,7 +155,7 @@ public class ApprovalPage extends Composite {
 		taskActions.setLayout(new GridLayout(1, false));
 		taskActions.setLayoutData(new GridData(SWT.BEGINNING, SWT.FILL, false, false));
 
-		Button upBtn = SWTFactory.createButton(taskActions, "Move Up");
+		Button upBtn = SWTFactory.createButton(taskActions, "Move Up", 80);
 		upBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
 			@Override
 			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -160,7 +163,7 @@ public class ApprovalPage extends Composite {
 			}
 		});
 
-		Button downBtn = SWTFactory.createButton(taskActions, "Move Down");
+		Button downBtn = SWTFactory.createButton(taskActions, "Move Down", 80);
 		downBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
 			@Override
 			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -168,7 +171,7 @@ public class ApprovalPage extends Composite {
 			}
 		});
 
-		Button deleteBtn = SWTFactory.createButton(taskActions, "Delete");
+		Button deleteBtn = SWTFactory.createButton(taskActions, "Delete", 80);
 		deleteBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
 			@Override
 			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -257,12 +260,8 @@ public class ApprovalPage extends Composite {
 		browser.setText(getHtmlTemplate());
 
 		// Actions Area
-		Group actionsGroup = SWTFactory.createGroup(this, "Review Actions", 1);
-		Composite actionsComp = new Composite(actionsGroup, SWT.NONE);
-		actionsComp.setLayout(new GridLayout(2, false));
-		actionsComp.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
-
-		Button approveBtn = SWTFactory.createButton(actionsComp, "Approve & Apply", 150);
+		Group actionsGroup = SWTFactory.createGroup(this, "Review Actions", 2);
+		Button approveBtn = SWTFactory.createButton(actionsGroup, "Approve & Apply", 150);
 		approveBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
 			@Override
 			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -270,7 +269,7 @@ public class ApprovalPage extends Composite {
 			}
 		});
 
-		Button rejectBtn = SWTFactory.createButton(actionsComp, "Reject & Request Changes", 200);
+		Button rejectBtn = SWTFactory.createButton(actionsGroup, "Reject & Request Changes", 200);
 		rejectBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
 			@Override
 			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {

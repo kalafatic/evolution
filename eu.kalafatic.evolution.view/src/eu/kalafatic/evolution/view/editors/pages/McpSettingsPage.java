@@ -75,8 +75,6 @@ public class McpSettingsPage extends ScrolledComposite {
         }
 
         Button refreshBtn = SWTFactory.createButton(resourcesGroup, "Refresh Resources", 150);
-        GridData refreshGD = new GridData(SWT.RIGHT, SWT.CENTER, false, false);
-        refreshBtn.setLayoutData(refreshGD);
         refreshBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -84,7 +82,7 @@ public class McpSettingsPage extends ScrolledComposite {
             }
         });
 
-        sashForm.setWeights(new int[] { 25, 75 });
+        sashForm.setWeights(new int[] { 30, 70 });
 
         this.setContent(comp);
         this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
