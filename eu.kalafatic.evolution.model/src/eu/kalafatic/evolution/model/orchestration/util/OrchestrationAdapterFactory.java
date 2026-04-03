@@ -5,9 +5,11 @@ package eu.kalafatic.evolution.model.orchestration.util;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Git;
+import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
@@ -18,6 +20,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
+import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
 import org.eclipse.emf.common.notify.Adapter;
@@ -150,6 +153,18 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 			@Override
 			public Adapter caseSecretRule(SecretRule object) {
 				return createSecretRuleAdapter();
+			}
+			@Override
+			public Adapter caseSelfDevSession(SelfDevSession object) {
+				return createSelfDevSessionAdapter();
+			}
+			@Override
+			public Adapter caseIteration(Iteration object) {
+				return createIterationAdapter();
+			}
+			@Override
+			public Adapter caseEvaluationResult(EvaluationResult object) {
+				return createEvaluationResultAdapter();
 			}
 			@Override
 			public Adapter defaultCase(EObject object) {
@@ -406,6 +421,48 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createSecretRuleAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession <em>Self Dev Session</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevSession
+	 * @generated
+	 */
+	public Adapter createSelfDevSessionAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.Iteration <em>Iteration</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration
+	 * @generated
+	 */
+	public Adapter createIterationAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult <em>Evaluation Result</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.EvaluationResult
+	 * @generated
+	 */
+	public Adapter createEvaluationResultAdapter() {
 		return null;
 	}
 

@@ -143,6 +143,178 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 	protected String phase = PHASE_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getRating() <em>Rating</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRating()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int RATING_EDEFAULT = 0;
+
+	/**
+	 * The cached value of the '{@link #getRating() <em>Rating</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRating()
+	 * @generated
+	 * @ordered
+	 */
+	protected int rating = RATING_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isLikes() <em>Likes</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isLikes()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean LIKES_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isLikes() <em>Likes</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isLikes()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean likes = LIKES_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getComments() <em>Comments</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getComments()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String COMMENTS_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getComments() <em>Comments</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getComments()
+	 * @generated
+	 * @ordered
+	 */
+	protected String comments = COMMENTS_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRationale()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String RATIONALE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRationale()
+	 * @generated
+	 * @ordered
+	 */
+	protected String rationale = RATIONALE_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getRating() {
+		return rating;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRating(int newRating) {
+		int oldRating = rating;
+		rating = newRating;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__RATING, oldRating, rating));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isLikes() {
+		return likes;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setLikes(boolean newLikes) {
+		boolean oldLikes = likes;
+		likes = newLikes;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__LIKES, oldLikes, likes));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getComments() {
+		return comments;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setComments(String newComments) {
+		String oldComments = comments;
+		comments = newComments;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__COMMENTS, oldComments, comments));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getRationale() {
+		return rationale;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRationale(String newRationale) {
+		String oldRationale = rationale;
+		rationale = newRationale;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ITERATION__RATIONALE, oldRationale, rationale));
+	}
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -347,6 +519,14 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 				return getStatus();
 			case OrchestrationPackage.ITERATION__PHASE:
 				return getPhase();
+			case OrchestrationPackage.ITERATION__RATING:
+				return getRating();
+			case OrchestrationPackage.ITERATION__LIKES:
+				return isLikes();
+			case OrchestrationPackage.ITERATION__COMMENTS:
+				return getComments();
+			case OrchestrationPackage.ITERATION__RATIONALE:
+				return getRationale();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -379,6 +559,18 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 			case OrchestrationPackage.ITERATION__PHASE:
 				setPhase((String)newValue);
 				return;
+			case OrchestrationPackage.ITERATION__RATING:
+				setRating((Integer)newValue);
+				return;
+			case OrchestrationPackage.ITERATION__LIKES:
+				setLikes((Boolean)newValue);
+				return;
+			case OrchestrationPackage.ITERATION__COMMENTS:
+				setComments((String)newValue);
+				return;
+			case OrchestrationPackage.ITERATION__RATIONALE:
+				setRationale((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -409,6 +601,18 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 			case OrchestrationPackage.ITERATION__PHASE:
 				setPhase(PHASE_EDEFAULT);
 				return;
+			case OrchestrationPackage.ITERATION__RATING:
+				setRating(RATING_EDEFAULT);
+				return;
+			case OrchestrationPackage.ITERATION__LIKES:
+				setLikes(LIKES_EDEFAULT);
+				return;
+			case OrchestrationPackage.ITERATION__COMMENTS:
+				setComments(COMMENTS_EDEFAULT);
+				return;
+			case OrchestrationPackage.ITERATION__RATIONALE:
+				setRationale(RATIONALE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -433,6 +637,14 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 				return status != STATUS_EDEFAULT;
 			case OrchestrationPackage.ITERATION__PHASE:
 				return PHASE_EDEFAULT == null ? phase != null : !PHASE_EDEFAULT.equals(phase);
+			case OrchestrationPackage.ITERATION__RATING:
+				return rating != RATING_EDEFAULT;
+			case OrchestrationPackage.ITERATION__LIKES:
+				return likes != LIKES_EDEFAULT;
+			case OrchestrationPackage.ITERATION__COMMENTS:
+				return COMMENTS_EDEFAULT == null ? comments != null : !COMMENTS_EDEFAULT.equals(comments);
+			case OrchestrationPackage.ITERATION__RATIONALE:
+				return RATIONALE_EDEFAULT == null ? rationale != null : !RATIONALE_EDEFAULT.equals(rationale);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -455,6 +667,14 @@ public class IterationImpl extends MinimalEObjectImpl.Container implements Itera
 		result.append(status);
 		result.append(", phase: ");
 		result.append(phase);
+		result.append(", rating: ");
+		result.append(rating);
+		result.append(", likes: ");
+		result.append(likes);
+		result.append(", comments: ");
+		result.append(comments);
+		result.append(", rationale: ");
+		result.append(rationale);
 		result.append(')');
 		return result.toString();
 	}
