@@ -31,7 +31,16 @@ public class NeuronService {
      * Trains the "neuron" on the given text.
      */
     public void train(Orchestrator orchestrator, String text) {
+        train(orchestrator, text, 3); // Default average rating
+    }
+
+    /**
+     * Trains the "neuron" on the given text with a specific rating/weight.
+     * Higher rated items persist longer or have higher priority.
+     */
+    public void train(Orchestrator orchestrator, String text, int rating) {
         if (orchestrator == null || text == null || text.trim().isEmpty()) return;
+        if (rating < 1) return; // Ignore negative or zero feedback
 
         NeuronAI neuronAI = orchestrator.getNeuronAI();
         if (neuronAI == null) {
@@ -40,6 +49,11 @@ public class NeuronService {
         }
 
         Set<String> memory = loadMemory(neuronAI);
+
+        // If highly rated, we ensure these tokens are added even if memory is full
+        // or we could implement a more complex weighting system.
+        // For now, we only train on items with rating >= 3.
+        if (rating < 3) return;
 
         // Simple tokenization: split by non-alphanumeric characters
         String[] tokens = text.toLowerCase().split("[^a-zA-Z0-9\\-]+");

@@ -47,6 +47,9 @@ public class ApprovalPage extends Composite {
 	private Label statusLabel;
 	private Label iterationsLabel;
 	private Label branchLabel;
+	private Label rationaleLabel;
+	private org.eclipse.swt.widgets.Scale ratingScale;
+	private org.eclipse.swt.widgets.Text commentsText;
 	private TableViewer tableViewer;
 	private ScrolledComposite vizScrolled;
 	private Composite browserContainer;
@@ -89,6 +92,46 @@ public class ApprovalPage extends Composite {
 		SWTFactory.createLabel(summaryGroup, "Git Branch:");
 		branchLabel = new Label(summaryGroup, SWT.NONE);
 		branchLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		SWTFactory.createLabel(summaryGroup, "AI Rationale:");
+		rationaleLabel = new Label(summaryGroup, SWT.WRAP);
+		GridData rationaleGD = new GridData(GridData.FILL_HORIZONTAL);
+		rationaleGD.heightHint = 40;
+		rationaleLabel.setLayoutData(rationaleGD);
+
+		// Feedback Group
+		Group feedbackGroup = SWTFactory.createGroup(this, "User Feedback & Satisfaction", 2);
+		feedbackGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		SWTFactory.createLabel(feedbackGroup, "Rating (1-5):");
+		ratingScale = new org.eclipse.swt.widgets.Scale(feedbackGroup, SWT.HORIZONTAL);
+		ratingScale.setMinimum(1);
+		ratingScale.setMaximum(5);
+		ratingScale.setIncrement(1);
+		ratingScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		ratingScale.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+			@Override
+			public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+				if (orchestrator != null && orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
+					Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
+					last.setRating(ratingScale.getSelection());
+					editor.setDirty(true);
+				}
+			}
+		});
+
+		SWTFactory.createLabel(feedbackGroup, "Comments:");
+		commentsText = new org.eclipse.swt.widgets.Text(feedbackGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
+		GridData commentsGD = new GridData(GridData.FILL_HORIZONTAL);
+		commentsGD.heightHint = 60;
+		commentsText.setLayoutData(commentsGD);
+		commentsText.addModifyListener(e -> {
+			if (orchestrator != null && orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
+				Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
+				last.setComments(commentsText.getText());
+				editor.setDirty(true);
+			}
+		});
 
 		// Task Management Group
 		Group taskGroup = SWTFactory.createGroup(this, "Proposed Tasks", 1);
@@ -351,8 +394,12 @@ public class ApprovalPage extends Composite {
 				if (!session.getIterations().isEmpty()) {
 					Iteration last = session.getIterations().get(session.getIterations().size() - 1);
 					branchLabel.setText(last.getBranchName() != null ? last.getBranchName() : "N/A");
+					rationaleLabel.setText(last.getRationale() != null ? last.getRationale() : (session.getRationale() != null ? session.getRationale() : "No rationale provided."));
+					ratingScale.setSelection(last.getRating() > 0 ? last.getRating() : 3);
+					commentsText.setText(last.getComments() != null ? last.getComments() : "");
 				} else {
 					branchLabel.setText("N/A");
+					rationaleLabel.setText("N/A");
 				}
 			} else {
 				sessionIdLabel.setText("No active session");
@@ -449,6 +496,8 @@ public class ApprovalPage extends Composite {
 		obj.put("id", task.getId());
 		obj.put("name", task.getName());
 		obj.put("status", task.getStatus().toString());
+		obj.put("rating", task.getRating());
+		obj.put("likes", task.isLikes());
 		JSONArray nextIds = new JSONArray();
 		for (Task n : task.getNext()) nextIds.put(n.getId());
 		obj.put("next", nextIds);

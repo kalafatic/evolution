@@ -66,6 +66,13 @@ public class OrchestratorItemProvider
 			addIdPropertyDescriptor(object);
 			addNamePropertyDescriptor(object);
 			addSharedMemoryPropertyDescriptor(object);
+			addRemoteModelPropertyDescriptor(object);
+			addAiModePropertyDescriptor(object);
+			addMcpServerUrlPropertyDescriptor(object);
+			addOpenAiModelPropertyDescriptor(object);
+			addLocalModelPropertyDescriptor(object);
+			addHybridModelPropertyDescriptor(object);
+			addOfflineModePropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -98,6 +105,27 @@ public class OrchestratorItemProvider
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	protected void addRemoteModelPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "Remote Model", "Remote Model", OrchestrationPackage.Literals.ORCHESTRATOR__REMOTE_MODEL, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
+	}
+	protected void addAiModePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "AI Mode", "AI Mode", OrchestrationPackage.Literals.ORCHESTRATOR__AI_MODE, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
+	}
+	protected void addMcpServerUrlPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "MCP Server URL", "MCP Server URL", OrchestrationPackage.Literals.ORCHESTRATOR__MCP_SERVER_URL, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
+	}
+	protected void addOpenAiModelPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "OpenAI Model", "OpenAI Model", OrchestrationPackage.Literals.ORCHESTRATOR__OPEN_AI_MODEL, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
+	}
+	protected void addLocalModelPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "Local Model", "Local Model", OrchestrationPackage.Literals.ORCHESTRATOR__LOCAL_MODEL, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
+	}
+	protected void addHybridModelPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "Hybrid Model", "Hybrid Model", OrchestrationPackage.Literals.ORCHESTRATOR__HYBRID_MODEL, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
+	}
+	protected void addOfflineModePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "Offline Mode", "Offline Mode", OrchestrationPackage.Literals.ORCHESTRATOR__OFFLINE_MODE, true, false, false, ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE, null, null));
+	}
 	protected void addSharedMemoryPropertyDescriptor(Object object) {
 		itemPropertyDescriptors.add
 			(createItemPropertyDescriptor

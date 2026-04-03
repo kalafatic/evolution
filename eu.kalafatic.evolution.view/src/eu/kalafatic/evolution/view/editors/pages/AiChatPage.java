@@ -71,6 +71,9 @@ public class AiChatPage extends ScrolledComposite {
     private Label modeIndicatorLabel;
     private Label statusLabel;
     private ProgressBar progressBar;
+    private Composite satisfactionComposite;
+    private org.eclipse.swt.widgets.Scale satisfactionScale;
+    private org.eclipse.swt.widgets.Text satisfactionCommentsText;
     private Composite approvalComposite;
     private Label approvalLabel;
     private Button approveButton;
@@ -380,6 +383,60 @@ public class AiChatPage extends ScrolledComposite {
 
         sashForm.setWeights(new int[] { 10, 15, 20, 45, 10 });
 
+        satisfactionComposite = new Composite(content, SWT.NONE);
+        satisfactionComposite.setLayout(new GridLayout(2, false));
+        satisfactionComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        satisfactionComposite.setVisible(false);
+        ((GridData)satisfactionComposite.getLayoutData()).exclude = true;
+
+        Label satLabel = new Label(satisfactionComposite, SWT.NONE);
+        satLabel.setText("Rate Session (1-5):");
+        satisfactionScale = new org.eclipse.swt.widgets.Scale(satisfactionComposite, SWT.HORIZONTAL);
+        satisfactionScale.setMinimum(1);
+        satisfactionScale.setMaximum(5);
+        satisfactionScale.setSelection(3);
+        satisfactionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Label commentLabel = new Label(satisfactionComposite, SWT.NONE);
+        commentLabel.setText("Session Feedback:");
+        satisfactionCommentsText = new org.eclipse.swt.widgets.Text(satisfactionComposite, SWT.BORDER | SWT.SINGLE);
+        satisfactionCommentsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button submitSatButton = SWTFactory.createButton(satisfactionComposite, "Submit Feedback", 150);
+        GridData submitSatGD = new GridData();
+        submitSatGD.horizontalSpan = 2;
+        submitSatButton.setLayoutData(submitSatGD);
+        submitSatButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
+                    if (orchestrator.getSelfDevSession().getIterations().isEmpty()) {
+                        // Create iteration if none exists to store result
+                        eu.kalafatic.evolution.model.orchestration.Iteration iter = OrchestrationFactory.eINSTANCE.createIteration();
+                        orchestrator.getSelfDevSession().getIterations().add(iter);
+                    }
+                    eu.kalafatic.evolution.model.orchestration.Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
+                    if (last.getEvaluationResult() == null) {
+                        last.setEvaluationResult(OrchestrationFactory.eINSTANCE.createEvaluationResult());
+                    }
+                    last.getEvaluationResult().setUserSatisfaction(satisfactionScale.getSelection());
+                    last.setComments(satisfactionCommentsText.getText());
+
+                    // Train neuron AI with feedback weight
+                    NeuronService.getInstance().train(orchestrator, satisfactionCommentsText.getText(), satisfactionScale.getSelection());
+
+                    editor.setDirty(true);
+                    satisfactionComposite.setVisible(false);
+                    ((GridData)satisfactionComposite.getLayoutData()).exclude = true;
+                    updateScrolledContent();
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                    mb.setText("Thank You");
+                    mb.setMessage("Your feedback has been recorded and will be used to improve the AI.");
+                    mb.open();
+                }
+            }
+        });
+
         approvalComposite = new Composite(content, SWT.NONE);
         approvalComposite.setLayout(new GridLayout(3, false));
         approvalComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -579,6 +636,11 @@ public class AiChatPage extends ScrolledComposite {
                         appendStyledText("Evolution: " + result, colorEvolution, SWT.BOLD);
                         threads.put(currentThread, responseText.getText());
                         threadStyles.put(currentThread, responseText.getStyleRanges());
+
+                        // Show satisfaction UI
+                        satisfactionComposite.setVisible(true);
+                        ((GridData)satisfactionComposite.getLayoutData()).exclude = false;
+                        updateScrolledContent();
                     }
                 });
             } catch (Exception e) {
@@ -688,6 +750,11 @@ public class AiChatPage extends ScrolledComposite {
                         responseText.append("\n\n");
                         appendStyledText("Evolution: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
                         editor.setDirty(true);
+
+                        // Show satisfaction UI
+                        satisfactionComposite.setVisible(true);
+                        ((GridData)satisfactionComposite.getLayoutData()).exclude = false;
+                        updateScrolledContent();
                     }
                 });
             } catch (Exception e) {
