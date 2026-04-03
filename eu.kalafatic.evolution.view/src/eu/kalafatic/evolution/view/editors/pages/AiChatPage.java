@@ -18,7 +18,6 @@ import org.eclipse.jface.fieldassist.IContentProposalProvider;
 import org.eclipse.jface.fieldassist.IControlContentAdapter;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
@@ -71,9 +70,6 @@ public class AiChatPage extends ScrolledComposite {
     private Label modeIndicatorLabel;
     private Label statusLabel;
     private ProgressBar progressBar;
-    private Composite satisfactionComposite;
-    private org.eclipse.swt.widgets.Scale satisfactionScale;
-    private org.eclipse.swt.widgets.Text satisfactionCommentsText;
     private Composite approvalComposite;
     private Label approvalLabel;
     private Button approveButton;
@@ -92,7 +88,6 @@ public class AiChatPage extends ScrolledComposite {
     private Label remoteTokenLabel;
     private Label remoteUrlLabel;
     private Composite content;
-    private SashForm sashForm;
 
     // Colors and Fonts
     private Color colorUser;
@@ -170,10 +165,7 @@ public class AiChatPage extends ScrolledComposite {
         modeIndicatorLabel.setFont(bannerFont);
         modeIndicatorLabel.setText("INITIALIZING...");
 
-        sashForm = new SashForm(content, SWT.VERTICAL);
-        sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-        Group chatMgmtGroup = SWTFactory.createMaximizableGroup(sashForm, "Chat Management", 5);
+        Group chatMgmtGroup = SWTFactory.createGroup(content, "Chat Management", 5);
 
         Button cleanButton = SWTFactory.createButton(chatMgmtGroup, "Clean");
         cleanButton.addSelectionListener(new SelectionAdapter() {
@@ -186,6 +178,7 @@ public class AiChatPage extends ScrolledComposite {
         });
 
         Button saveButton =  SWTFactory.createButton(chatMgmtGroup, "Save");
+        saveButton.setText("Save");
         saveButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -193,8 +186,9 @@ public class AiChatPage extends ScrolledComposite {
             }
         });
 
-        SWTFactory.createLabel(chatMgmtGroup, "Select Thread:");
-        threadCombo = SWTFactory.createCombo(chatMgmtGroup);
+        createLabel(chatMgmtGroup, "Select Thread:");
+        threadCombo = new Combo(chatMgmtGroup, SWT.READ_ONLY);
+        threadCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         threadCombo.add(currentThread);
         threadCombo.select(0);
         threads.put(currentThread, "");
@@ -224,30 +218,39 @@ public class AiChatPage extends ScrolledComposite {
        
 
         
-        final Group groupMode = SWTFactory.createMaximizableGroup(sashForm, "AI Settings", 3);
+        final Group groupMode = SWTFactory.createGroup(content, "AI Settings", 2);
 
-        SWTFactory.createLabel(groupMode, "AI Mode:");
-        aiModeCombo = SWTFactory.createCombo(groupMode);
-        aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
+        createLabel(groupMode, "AI Mode:");
+        aiModeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
+        aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         for (AiMode mode : AiMode.values()) {
             aiModeCombo.add(mode.getName());
         }
 
-        aiRemoteLabel = SWTFactory.createLabel(groupMode, "AI Remote:");
-        aiRemoteCombo = SWTFactory.createCombo(groupMode);
-        aiRemoteCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
+        aiRemoteLabel = new Label(groupMode, SWT.NONE);
+        aiRemoteLabel.setText("AI Remote:");
+        aiRemoteLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING));
+
+        aiRemoteCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
+        aiRemoteCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         for (String providerName : AiProviders.PROVIDERS.keySet()) {
             aiRemoteCombo.add(providerName);
         }
 
-        remoteTokenLabel = SWTFactory.createLabel(groupMode, "Token:");
-        remoteTokenText = SWTFactory.createPasswordText(groupMode);
-        SWTFactory.createEditButton(groupMode, remoteTokenText);
+        remoteTokenLabel = new Label(groupMode, SWT.NONE);
+        remoteTokenLabel.setText("Token:");
+        remoteTokenLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING));
 
-        remoteUrlLabel = SWTFactory.createLabel(groupMode, "API URL:");
-        remoteUrlText = SWTFactory.createText(groupMode);
-        SWTFactory.createEditButton(groupMode, remoteUrlText);
+        remoteTokenText = new Text(groupMode, SWT.BORDER | SWT.PASSWORD);
+        remoteTokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        remoteUrlLabel = new Label(groupMode, SWT.NONE);
+        remoteUrlLabel.setText("API URL:");
+        remoteUrlLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING));
+
+        remoteUrlText = new Text(groupMode, SWT.BORDER);
+        remoteUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         if (orchestrator != null) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
@@ -305,8 +308,6 @@ public class AiChatPage extends ScrolledComposite {
 
         remoteTokenText.addModifyListener(e -> syncModelWithUI());
         remoteUrlText.addModifyListener(e -> syncModelWithUI());
-
-        SWTFactory.createLabel(groupMode, "");
         Button connectionButton = SWTFactory.createButton(groupMode, "Test Connection", 120);
         connectionButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) { 
@@ -321,7 +322,7 @@ public class AiChatPage extends ScrolledComposite {
             }
         });
 
-        Group inputGroup = SWTFactory.createMaximizableGroup(sashForm, "Message Input", 1);
+        Group inputGroup = SWTFactory.createGroup(content, "Message Input", 1);
         requestText = new StyledText(inputGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         setupContextAssist();
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
@@ -345,7 +346,7 @@ public class AiChatPage extends ScrolledComposite {
             }
         });
 
-        Group historyGroup = SWTFactory.createMaximizableGroup(sashForm, "Conversation History", 1);
+        Group historyGroup = SWTFactory.createGroup(content, "Conversation History", 1);
         responseText = new StyledText(historyGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY | SWT.WRAP);
         GridData responseGridData = new GridData(GridData.FILL_BOTH);
         responseGridData.heightHint = 250;
@@ -354,12 +355,12 @@ public class AiChatPage extends ScrolledComposite {
         responseText.setFont(chatFont);
         responseText.setMargins(10, 10, 10, 10);
 
-        Group systemStatusGroup = SWTFactory.createMaximizableGroup(sashForm, "System Status", 4);
-        SWTFactory.createLabel(systemStatusGroup, "Ollama Status:");
+        Group systemStatusGroup = SWTFactory.createGroup(content, "System Status", 4);
+        createLabel(systemStatusGroup, "Ollama Status:");
         ollamaStatusLabel = new Label(systemStatusGroup, SWT.NONE);
         ollamaStatusLabel.setText("Unknown");
         ollamaStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createLabel(systemStatusGroup, "Model:");
+        createLabel(systemStatusGroup, "Model:");
         modelStatusLabel = new Label(systemStatusGroup, SWT.NONE);
         modelStatusLabel.setText("Not Configured");
         modelStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -371,62 +372,6 @@ public class AiChatPage extends ScrolledComposite {
         progressBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
         progressBar.setMinimum(0);
         progressBar.setMaximum(100);
-
-        sashForm.setWeights(new int[] { 10, 15, 20, 45, 10 });
-
-        satisfactionComposite = new Composite(content, SWT.NONE);
-        satisfactionComposite.setLayout(new GridLayout(2, false));
-        satisfactionComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        satisfactionComposite.setVisible(false);
-        ((GridData)satisfactionComposite.getLayoutData()).exclude = true;
-
-        Label satLabel = new Label(satisfactionComposite, SWT.NONE);
-        satLabel.setText("Rate Session (1-5):");
-        satisfactionScale = new org.eclipse.swt.widgets.Scale(satisfactionComposite, SWT.HORIZONTAL);
-        satisfactionScale.setMinimum(1);
-        satisfactionScale.setMaximum(5);
-        satisfactionScale.setSelection(3);
-        satisfactionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        Label commentLabel = new Label(satisfactionComposite, SWT.NONE);
-        commentLabel.setText("Session Feedback:");
-        satisfactionCommentsText = new org.eclipse.swt.widgets.Text(satisfactionComposite, SWT.BORDER | SWT.SINGLE);
-        satisfactionCommentsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        Button submitSatButton = SWTFactory.createButton(satisfactionComposite, "Submit Feedback", 150);
-        GridData submitSatGD = new GridData();
-        submitSatGD.horizontalSpan = 2;
-        submitSatButton.setLayoutData(submitSatGD);
-        submitSatButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
-                    if (orchestrator.getSelfDevSession().getIterations().isEmpty()) {
-                        // Create iteration if none exists to store result
-                        eu.kalafatic.evolution.model.orchestration.Iteration iter = OrchestrationFactory.eINSTANCE.createIteration();
-                        orchestrator.getSelfDevSession().getIterations().add(iter);
-                    }
-                    eu.kalafatic.evolution.model.orchestration.Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
-                    if (last.getEvaluationResult() == null) {
-                        last.setEvaluationResult(OrchestrationFactory.eINSTANCE.createEvaluationResult());
-                    }
-                    last.getEvaluationResult().setUserSatisfaction(satisfactionScale.getSelection());
-                    last.setComments(satisfactionCommentsText.getText());
-
-                    // Train neuron AI with feedback weight
-                    NeuronService.getInstance().train(orchestrator, satisfactionCommentsText.getText(), satisfactionScale.getSelection());
-
-                    editor.setDirty(true);
-                    satisfactionComposite.setVisible(false);
-                    ((GridData)satisfactionComposite.getLayoutData()).exclude = true;
-                    updateScrolledContent();
-                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-                    mb.setText("Thank You");
-                    mb.setMessage("Your feedback has been recorded and will be used to improve the AI.");
-                    mb.open();
-                }
-            }
-        });
 
         approvalComposite = new Composite(content, SWT.NONE);
         approvalComposite.setLayout(new GridLayout(3, false));
@@ -627,11 +572,6 @@ public class AiChatPage extends ScrolledComposite {
                         appendStyledText("Evolution: " + result, colorEvolution, SWT.BOLD);
                         threads.put(currentThread, responseText.getText());
                         threadStyles.put(currentThread, responseText.getStyleRanges());
-
-                        // Show satisfaction UI
-                        satisfactionComposite.setVisible(true);
-                        ((GridData)satisfactionComposite.getLayoutData()).exclude = false;
-                        updateScrolledContent();
                     }
                 });
             } catch (Exception e) {
@@ -741,11 +681,6 @@ public class AiChatPage extends ScrolledComposite {
                         responseText.append("\n\n");
                         appendStyledText("Evolution: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
                         editor.setDirty(true);
-
-                        // Show satisfaction UI
-                        satisfactionComposite.setVisible(true);
-                        ((GridData)satisfactionComposite.getLayoutData()).exclude = false;
-                        updateScrolledContent();
                     }
                 });
             } catch (Exception e) {
@@ -786,6 +721,14 @@ public class AiChatPage extends ScrolledComposite {
                 appendStyledText("\nError saving file: " + e.getMessage(), colorError, SWT.BOLD);
             }
         }
+    }
+
+    private void createLabel(Composite parent, String text) {
+        GridData gd = new GridData();
+        gd.widthHint = 100;
+        Label label = new Label(parent, SWT.NONE);
+        label.setLayoutData(gd);
+        label.setText(text);
     }
 
     public void updateStatusInfo() {

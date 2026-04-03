@@ -128,49 +128,6 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 	protected SelfDevDecision decision = DECISION_EDEFAULT;
 
 	/**
-	 * The default value of the '{@link #getUserSatisfaction() <em>User Satisfaction</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getUserSatisfaction()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final double USER_SATISFACTION_EDEFAULT = 0.0;
-
-	/**
-	 * The cached value of the '{@link #getUserSatisfaction() <em>User Satisfaction</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getUserSatisfaction()
-	 * @generated
-	 * @ordered
-	 */
-	protected double userSatisfaction = USER_SATISFACTION_EDEFAULT;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public double getUserSatisfaction() {
-		return userSatisfaction;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setUserSatisfaction(double newUserSatisfaction) {
-		double oldUserSatisfaction = userSatisfaction;
-		userSatisfaction = newUserSatisfaction;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION, oldUserSatisfaction, userSatisfaction));
-	}
-
-	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -312,8 +269,6 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 				return getErrors();
 			case OrchestrationPackage.EVALUATION_RESULT__DECISION:
 				return getDecision();
-			case OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION:
-				return getUserSatisfaction();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -343,9 +298,6 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 			case OrchestrationPackage.EVALUATION_RESULT__DECISION:
 				setDecision((SelfDevDecision)newValue);
 				return;
-			case OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION:
-				setUserSatisfaction((Double)newValue);
-				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -373,9 +325,6 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 			case OrchestrationPackage.EVALUATION_RESULT__DECISION:
 				setDecision(DECISION_EDEFAULT);
 				return;
-			case OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION:
-				setUserSatisfaction(USER_SATISFACTION_EDEFAULT);
-				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -398,8 +347,6 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 				return errors != null && !errors.isEmpty();
 			case OrchestrationPackage.EVALUATION_RESULT__DECISION:
 				return decision != DECISION_EDEFAULT;
-			case OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION:
-				return userSatisfaction != USER_SATISFACTION_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -424,8 +371,6 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 		result.append(errors);
 		result.append(", decision: ");
 		result.append(decision);
-		result.append(", userSatisfaction: ");
-		result.append(userSatisfaction);
 		result.append(')');
 		return result.toString();
 	}

@@ -6,7 +6,6 @@ import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Database;
-import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
@@ -56,16 +55,8 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getRemoteModel <em>Remote Model</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAiMode <em>Ai Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMcpServerUrl <em>Mcp Server Url</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getOpenAiToken <em>Open Ai Token</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getOpenAiModel <em>Open Ai Model</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getLocalModel <em>Local Model</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getHybridModel <em>Hybrid Model</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#isOfflineMode <em>Offline Mode</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getSelfDevSession <em>Self Dev Session</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getDatabase <em>Database</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getFileConfig <em>File Config</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getSharedMemory <em>Shared Memory</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getEclipse <em>Eclipse</em>}</li>
  * </ul>
  *
  * @generated
@@ -392,14 +383,94 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected FileConfig fileConfig;
 
 	/**
-	 * The cached value of the '{@link #getEclipse() <em>Eclipse</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getEclipse()
 	 * @generated
-	 * @ordered
 	 */
-	protected Eclipse eclipse;
+	@Override
+	public Database getDatabase() {
+		return database;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetDatabase(Database newDatabase, NotificationChain msgs) {
+		Database oldDatabase = database;
+		database = newDatabase;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__DATABASE, oldDatabase, newDatabase);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setDatabase(Database newDatabase) {
+		if (newDatabase != database) {
+			NotificationChain msgs = null;
+			if (database != null)
+				msgs = ((InternalEObject)database).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__DATABASE, null, msgs);
+			if (newDatabase != null)
+				msgs = ((InternalEObject)newDatabase).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__DATABASE, null, msgs);
+			msgs = basicSetDatabase(newDatabase, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__DATABASE, newDatabase, newDatabase));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public FileConfig getFileConfig() {
+		return fileConfig;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetFileConfig(FileConfig newFileConfig, NotificationChain msgs) {
+		FileConfig oldFileConfig = fileConfig;
+		fileConfig = newFileConfig;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, oldFileConfig, newFileConfig);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setFileConfig(FileConfig newFileConfig) {
+		if (newFileConfig != fileConfig) {
+			NotificationChain msgs = null;
+			if (fileConfig != null)
+				msgs = ((InternalEObject)fileConfig).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, null, msgs);
+			if (newFileConfig != null)
+				msgs = ((InternalEObject)newFileConfig).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, null, msgs);
+			msgs = basicSetFileConfig(newFileConfig, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, newFileConfig, newFileConfig));
+	}
 
 	/**
 	 * The default value of the '{@link #getSharedMemory() <em>Shared Memory</em>}' attribute.
@@ -1062,96 +1133,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public Database getDatabase() {
-		return database;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetDatabase(Database newDatabase, NotificationChain msgs) {
-		Database oldDatabase = database;
-		database = newDatabase;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__DATABASE, oldDatabase, newDatabase);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setDatabase(Database newDatabase) {
-		if (newDatabase != database) {
-			NotificationChain msgs = null;
-			if (database != null)
-				msgs = ((InternalEObject)database).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__DATABASE, null, msgs);
-			if (newDatabase != null)
-				msgs = ((InternalEObject)newDatabase).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__DATABASE, null, msgs);
-			msgs = basicSetDatabase(newDatabase, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__DATABASE, newDatabase, newDatabase));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public FileConfig getFileConfig() {
-		return fileConfig;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetFileConfig(FileConfig newFileConfig, NotificationChain msgs) {
-		FileConfig oldFileConfig = fileConfig;
-		fileConfig = newFileConfig;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, oldFileConfig, newFileConfig);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setFileConfig(FileConfig newFileConfig) {
-		if (newFileConfig != fileConfig) {
-			NotificationChain msgs = null;
-			if (fileConfig != null)
-				msgs = ((InternalEObject)fileConfig).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, null, msgs);
-			if (newFileConfig != null)
-				msgs = ((InternalEObject)newFileConfig).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, null, msgs);
-			msgs = basicSetFileConfig(newFileConfig, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG, newFileConfig, newFileConfig));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public String getSharedMemory() {
 		return sharedMemory;
 	}
@@ -1167,51 +1148,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		sharedMemory = newSharedMemory;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY, oldSharedMemory, sharedMemory));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public Eclipse getEclipse() {
-		return eclipse;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetEclipse(Eclipse newEclipse, NotificationChain msgs) {
-		Eclipse oldEclipse = eclipse;
-		eclipse = newEclipse;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ECLIPSE, oldEclipse, newEclipse);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setEclipse(Eclipse newEclipse) {
-		if (newEclipse != eclipse) {
-			NotificationChain msgs = null;
-			if (eclipse != null)
-				msgs = ((InternalEObject)eclipse).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__ECLIPSE, null, msgs);
-			if (newEclipse != null)
-				msgs = ((InternalEObject)newEclipse).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__ECLIPSE, null, msgs);
-			msgs = basicSetEclipse(newEclipse, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ECLIPSE, newEclipse, newEclipse));
 	}
 
 	/**
@@ -1246,8 +1182,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return basicSetDatabase(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
 				return basicSetFileConfig(null, msgs);
-			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
-				return basicSetEclipse(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1306,8 +1240,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getFileConfig();
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				return getSharedMemory();
-			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
-				return getEclipse();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1392,9 +1324,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory((String)newValue);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
-				setEclipse((Eclipse)newValue);
-				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1476,9 +1405,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory(SHARED_MEMORY_EDEFAULT);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
-				setEclipse((Eclipse)null);
-				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1537,8 +1463,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return fileConfig != null;
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				return SHARED_MEMORY_EDEFAULT == null ? sharedMemory != null : !SHARED_MEMORY_EDEFAULT.equals(sharedMemory);
-			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
-				return eclipse != null;
 		}
 		return super.eIsSet(featureID);
 	}

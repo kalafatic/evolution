@@ -542,75 +542,6 @@ public class OrchestrationItemProviderAdapterFactory extends OrchestrationAdapte
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	/**
-	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.SelfDevSession} instances.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	protected SelfDevSessionItemProvider selfDevSessionItemProvider;
-
-	/**
-	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.SelfDevSession}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public Adapter createSelfDevSessionAdapter() {
-		if (selfDevSessionItemProvider == null) {
-			selfDevSessionItemProvider = new SelfDevSessionItemProvider(this);
-		}
-
-		return selfDevSessionItemProvider;
-	}
-
-	/**
-	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.Iteration} instances.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	protected IterationItemProvider iterationItemProvider;
-
-	/**
-	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.Iteration}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public Adapter createIterationAdapter() {
-		if (iterationItemProvider == null) {
-			iterationItemProvider = new IterationItemProvider(this);
-		}
-
-		return iterationItemProvider;
-	}
-
-	/**
-	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.EvaluationResult} instances.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	protected EvaluationResultItemProvider evaluationResultItemProvider;
-
-	/**
-	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.EvaluationResult}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public Adapter createEvaluationResultAdapter() {
-		if (evaluationResultItemProvider == null) {
-			evaluationResultItemProvider = new EvaluationResultItemProvider(this);
-		}
-
-		return evaluationResultItemProvider;
-	}
-
 	@Override
 	public void dispose() {
 		if (taskItemProvider != null) taskItemProvider.dispose();
@@ -629,9 +560,6 @@ public class OrchestrationItemProviderAdapterFactory extends OrchestrationAdapte
 		if (networkRuleItemProvider != null) networkRuleItemProvider.dispose();
 		if (memoryRuleItemProvider != null) memoryRuleItemProvider.dispose();
 		if (secretRuleItemProvider != null) secretRuleItemProvider.dispose();
-		if (selfDevSessionItemProvider != null) selfDevSessionItemProvider.dispose();
-		if (iterationItemProvider != null) iterationItemProvider.dispose();
-		if (evaluationResultItemProvider != null) evaluationResultItemProvider.dispose();
 	}
 
 }

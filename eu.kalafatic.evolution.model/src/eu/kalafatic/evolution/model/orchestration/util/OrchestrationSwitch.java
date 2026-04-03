@@ -5,11 +5,9 @@ package eu.kalafatic.evolution.model.orchestration.util;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
-import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Git;
-import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
@@ -20,7 +18,6 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
-import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
 import org.eclipse.emf.ecore.EObject;
@@ -188,24 +185,6 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 				SecretRule secretRule = (SecretRule)theEObject;
 				T result = caseSecretRule(secretRule);
 				if (result == null) result = caseRule(secretRule);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case OrchestrationPackage.SELF_DEV_SESSION: {
-				SelfDevSession selfDevSession = (SelfDevSession)theEObject;
-				T result = caseSelfDevSession(selfDevSession);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case OrchestrationPackage.ITERATION: {
-				Iteration iteration = (Iteration)theEObject;
-				T result = caseIteration(iteration);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case OrchestrationPackage.EVALUATION_RESULT: {
-				EvaluationResult evaluationResult = (EvaluationResult)theEObject;
-				T result = caseEvaluationResult(evaluationResult);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -450,51 +429,6 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseMemoryRule(MemoryRule object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Self Dev Session</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Self Dev Session</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseSelfDevSession(SelfDevSession object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Iteration</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Iteration</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseIteration(Iteration object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Evaluation Result</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Evaluation Result</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseEvaluationResult(EvaluationResult object) {
 		return null;
 	}
 
