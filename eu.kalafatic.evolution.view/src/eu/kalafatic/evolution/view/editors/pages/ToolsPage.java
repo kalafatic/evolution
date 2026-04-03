@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -35,6 +36,7 @@ public class ToolsPage extends ScrolledComposite {
     private Text dbUrlText, dbUsernameText, dbPasswordText, dbDriverText;
 
     private Group gitGroup, mavenGroup, fileGroup, dbGroup;
+    private SashForm sashForm;
     private Color successColor;
 
     public ToolsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
@@ -50,10 +52,15 @@ public class ToolsPage extends ScrolledComposite {
         Composite comp = new Composite(this, SWT.NONE);
         comp.setLayout(new GridLayout(1, false));
 
-        createGitGroup(comp);
-        createMavenGroup(comp);
-        createFileGroup(comp);
-        createDatabaseGroup(comp);
+        sashForm = new SashForm(comp, SWT.VERTICAL);
+        sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        createGitGroup(sashForm);
+        createMavenGroup(sashForm);
+        createFileGroup(sashForm);
+        createDatabaseGroup(sashForm);
+
+        sashForm.setWeights(new int[] { 25, 20, 15, 40 });
 
         successColor = new Color(getDisplay(), 200, 240, 200); // Light cool green
 
@@ -76,7 +83,7 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createGitGroup(Composite parent) {
-        gitGroup = SWTFactory.createGroup(parent, "Git Tool Settings", 3);
+        gitGroup = SWTFactory.createMaximizableGroup(parent, "Git Tool Settings", 3);
         Group group = gitGroup;
         SWTFactory.createLabel(group, "Repository URL:");
         gitRepoText = new Text(group, SWT.BORDER);
@@ -103,7 +110,7 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createMavenGroup(Composite parent) {
-        mavenGroup = SWTFactory.createGroup(parent, "Maven Tool Settings", 3);
+        mavenGroup = SWTFactory.createMaximizableGroup(parent, "Maven Tool Settings", 3);
         Group group = mavenGroup;
         SWTFactory.createLabel(group, "Goals:");
         mavenGoalsText = new Text(group, SWT.BORDER);
@@ -125,7 +132,7 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createFileGroup(Composite parent) {
-        fileGroup = SWTFactory.createGroup(parent, "File Tool Settings", 3);
+        fileGroup = SWTFactory.createMaximizableGroup(parent, "File Tool Settings", 3);
         Group group = fileGroup;
         SWTFactory.createLabel(group, "Project Root:");
         fileLocalPathText = new Text(group, SWT.BORDER);
@@ -142,7 +149,7 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createDatabaseGroup(Composite parent) {
-        dbGroup = SWTFactory.createGroup(parent, "Database Tool Settings", 3);
+        dbGroup = SWTFactory.createMaximizableGroup(parent, "Database Tool Settings", 3);
         Group group = dbGroup;
         SWTFactory.createLabel(group, "JDBC URL:");
         dbUrlText = new Text(group, SWT.BORDER);

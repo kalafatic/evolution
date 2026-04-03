@@ -14,11 +14,12 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.custom.SashForm;
 
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 
 public class SWTFactory {
-	
+
 	public static Group createGroup(Composite parent, String text, int columns) {
 		Group composite = new Group(parent, SWT.NONE);
 		composite.setText(text);
@@ -83,6 +84,55 @@ public class SWTFactory {
 		for (eu.kalafatic.evolution.controller.manager.OllamaModel m : models)
 			combo.add(m.getName());
 		return combo;
+	}
+
+	public static Group createMaximizableGroup(Composite parent, String text, int columns) {
+		if (!(parent instanceof SashForm)) {
+			return createGroup(parent, text, columns);
+		}
+		SashForm sashForm = (SashForm) parent;
+		Composite container = new Composite(sashForm, SWT.NONE);
+		container.setLayout(new GridLayout(1, false));
+
+		Composite header = new Composite(container, SWT.NONE);
+		GridLayout headerLayout = new GridLayout(2, false);
+		headerLayout.marginHeight = 0;
+		headerLayout.marginWidth = 0;
+		header.setLayout(headerLayout);
+		header.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		Label label = new Label(header, SWT.NONE);
+		label.setText(text);
+		label.setFont(org.eclipse.jface.resource.JFaceResources.getFontRegistry().getBold(org.eclipse.jface.resource.JFaceResources.DEFAULT_FONT));
+		label.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		Button maxBtn = new Button(header, SWT.PUSH);
+		maxBtn.setText("Maximize");
+
+		Group group = new Group(container, SWT.NONE);
+		group.setLayout(new GridLayout(columns, false));
+		group.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		maxBtn.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (sashForm.getMaximizedControl() == container) {
+					sashForm.setMaximizedControl(null);
+					int[] weights = (int[]) sashForm.getData("lastWeights");
+					if (weights != null) {
+						sashForm.setWeights(weights);
+					}
+					maxBtn.setText("Maximize");
+				} else {
+					sashForm.setData("lastWeights", sashForm.getWeights());
+					sashForm.setMaximizedControl(container);
+					maxBtn.setText("Restore");
+				}
+				sashForm.layout(true);
+			}
+		});
+
+		return group;
 	}
 
 }
