@@ -31,7 +31,6 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMcpServerUrl <em>Mcp Server Url</em>}</li>
 	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase <em>Database</em>}</li>
 	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig <em>File Config</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse <em>Eclipse</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator()
@@ -506,28 +505,6 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	void setFileConfig(FileConfig value);
-
-	/**
-	 * Returns the value of the '<em><b>Eclipse</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Eclipse</em>' containment reference.
-	 * @see #setEclipse(Eclipse)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_Eclipse()
-	 * @model containment="true"
-	 * @generated
-	 */
-	Eclipse getEclipse();
-
-	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse <em>Eclipse</em>}' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Eclipse</em>' containment reference.
-	 * @see #getEclipse()
-	 * @generated
-	 */
-	void setEclipse(Eclipse value);
 
 	/**
 	 * Returns the value of the '<em><b>Shared Memory</b></em>' attribute.

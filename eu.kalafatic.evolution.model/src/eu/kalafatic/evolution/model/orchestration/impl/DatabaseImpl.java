@@ -24,7 +24,6 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl#getUsername <em>Username</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl#getPassword <em>Password</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl#getDriver <em>Driver</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl#getTestStatus <em>Test Status</em>}</li>
  * </ul>
  *
  * @generated
@@ -109,26 +108,6 @@ public class DatabaseImpl extends MinimalEObjectImpl.Container implements Databa
 	 * @ordered
 	 */
 	protected String driver = DRIVER_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #getTestStatus() <em>Test Status</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getTestStatus()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final String TEST_STATUS_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getTestStatus() <em>Test Status</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getTestStatus()
-	 * @generated
-	 * @ordered
-	 */
-	protected String testStatus = TEST_STATUS_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -247,29 +226,6 @@ public class DatabaseImpl extends MinimalEObjectImpl.Container implements Databa
 	 * @generated
 	 */
 	@Override
-	public String getTestStatus() {
-		return testStatus;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setTestStatus(String newTestStatus) {
-		String oldTestStatus = testStatus;
-		testStatus = newTestStatus;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.DATABASE__TEST_STATUS, oldTestStatus, testStatus));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.DATABASE__URL:
@@ -280,8 +236,6 @@ public class DatabaseImpl extends MinimalEObjectImpl.Container implements Databa
 				return getPassword();
 			case OrchestrationPackage.DATABASE__DRIVER:
 				return getDriver();
-			case OrchestrationPackage.DATABASE__TEST_STATUS:
-				return getTestStatus();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -305,9 +259,6 @@ public class DatabaseImpl extends MinimalEObjectImpl.Container implements Databa
 				return;
 			case OrchestrationPackage.DATABASE__DRIVER:
 				setDriver((String)newValue);
-				return;
-			case OrchestrationPackage.DATABASE__TEST_STATUS:
-				setTestStatus((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -333,9 +284,6 @@ public class DatabaseImpl extends MinimalEObjectImpl.Container implements Databa
 			case OrchestrationPackage.DATABASE__DRIVER:
 				setDriver(DRIVER_EDEFAULT);
 				return;
-			case OrchestrationPackage.DATABASE__TEST_STATUS:
-				setTestStatus(TEST_STATUS_EDEFAULT);
-				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -356,8 +304,6 @@ public class DatabaseImpl extends MinimalEObjectImpl.Container implements Databa
 				return PASSWORD_EDEFAULT == null ? password != null : !PASSWORD_EDEFAULT.equals(password);
 			case OrchestrationPackage.DATABASE__DRIVER:
 				return DRIVER_EDEFAULT == null ? driver != null : !DRIVER_EDEFAULT.equals(driver);
-			case OrchestrationPackage.DATABASE__TEST_STATUS:
-				return TEST_STATUS_EDEFAULT == null ? testStatus != null : !TEST_STATUS_EDEFAULT.equals(testStatus);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -380,8 +326,6 @@ public class DatabaseImpl extends MinimalEObjectImpl.Container implements Databa
 		result.append(password);
 		result.append(", driver: ");
 		result.append(driver);
-		result.append(", testStatus: ");
-		result.append(testStatus);
 		result.append(')');
 		return result.toString();
 	}

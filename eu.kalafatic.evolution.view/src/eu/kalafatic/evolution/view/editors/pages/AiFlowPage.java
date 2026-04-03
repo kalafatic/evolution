@@ -7,13 +7,10 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
-import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
 import org.eclipse.swt.browser.ProgressEvent;
-import org.eclipse.swt.custom.ScrolledComposite;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -33,11 +30,7 @@ public class AiFlowPage extends Composite {
 	private Orchestrator orchestrator;
 	private MultiPageEditor editor;
 	private boolean isLoaded = false;
-	private ScrolledComposite vizScrolled;
-	private Composite browserContainer;
-	private int browserWidth = 1000;
-	private int browserHeight = 800;
-
+	private boolean pendingRefresh = false;
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override
 		public void notifyChanged(Notification notification) {
@@ -55,56 +48,25 @@ public class AiFlowPage extends Composite {
 		toolbarManager.add(new Action("Zoom In") {
 			@Override
 			public void run() {
-				browserWidth = (int)(browserWidth * 1.2);
-				browserHeight = (int)(browserHeight * 1.2);
-				updateScrolledContent();
+				browser.execute("applyZoom(1.2);");
 			}
 		});
 		toolbarManager.add(new Action("Zoom Out") {
 			@Override
 			public void run() {
-				browserWidth = (int)(browserWidth * 0.8);
-				browserHeight = (int)(browserHeight * 0.8);
-				updateScrolledContent();
+				browser.execute("applyZoom(0.8);");
 			}
 		});
 		toolbarManager.add(new Action("Reset Zoom") {
 			@Override
 			public void run() {
-				browserWidth = 1000;
-				browserHeight = 800;
-				updateScrolledContent();
+				browser.execute("resetZoom();");
 			}
 		});
 		toolbarManager.createControl(this);
 
-		vizScrolled = new ScrolledComposite(this, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
-		vizScrolled.setLayoutData(new GridData(GridData.FILL_BOTH));
-		vizScrolled.setExpandHorizontal(true);
-		vizScrolled.setExpandVertical(true);
-
-		browserContainer = new Composite(vizScrolled, SWT.NONE);
-		browserContainer.setLayout(new GridLayout(1, false));
-		vizScrolled.setContent(browserContainer);
-
-		this.browser = new Browser(browserContainer, SWT.NONE);
-		GridData browserGD = new GridData(SWT.LEFT, SWT.TOP, false, false);
-		browserGD.widthHint = browserWidth;
-		browserGD.heightHint = browserHeight;
-		browser.setLayoutData(browserGD);
-
-		new BrowserFunction(browser, "javaZoom") {
-			@Override
-			public Object function(Object[] arguments) {
-				if (arguments.length > 0 && arguments[0] instanceof Number) {
-					double factor = ((Number) arguments[0]).doubleValue();
-					browserWidth = (int) (browserWidth * factor);
-					browserHeight = (int) (browserHeight * factor);
-					updateScrolledContent();
-				}
-				return null;
-			}
-		};
+		this.browser = new Browser(this, SWT.NONE);
+		browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 		browser.addProgressListener(new ProgressAdapter() {
 			@Override
@@ -118,29 +80,14 @@ public class AiFlowPage extends Composite {
 			@Override
 			public void changing(LocationEvent event) {
 				// Prevent navigation to local file system which happens on some reloads
-				if (event.location.startsWith("file://") || event.location.equals("about:blank")) {
-					if (!event.location.equals("about:blank")) {
-						event.doit = false;
-						browser.setText(getHtmlTemplate());
-					}
+				if (event.location.startsWith("file://")) {
+					event.doit = false;
 				}
 			}
 		});
 
 		setOrchestrator(orchestrator);
 		browser.setText(getHtmlTemplate());
-		updateScrolledContent();
-	}
-
-	private void updateScrolledContent() {
-		if (vizScrolled == null || vizScrolled.isDisposed()) return;
-		if (browser != null && !browser.isDisposed()) {
-			GridData gd = (GridData) browser.getLayoutData();
-			gd.widthHint = browserWidth;
-			gd.heightHint = browserHeight;
-		}
-		browserContainer.layout(true, true);
-		vizScrolled.setMinSize(browserContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
 	public void setOrchestrator(Orchestrator orchestrator) {
@@ -155,24 +102,37 @@ public class AiFlowPage extends Composite {
 	}
 
 	private void refreshBrowser() {
-		if (browser == null || browser.isDisposed())
+		if (browser == null || browser.isDisposed() || pendingRefresh)
 			return;
-		Display.getDefault().asyncExec(() -> {
-			if (browser == null || browser.isDisposed()) return;
+
+		pendingRefresh = true;
+		Display.getDefault().timerExec(100, () -> {
+			if (browser == null || browser.isDisposed()) {
+				pendingRefresh = false;
+				return;
+			}
 
 			if (!isLoaded) {
 				browser.setText(getHtmlTemplate());
+				pendingRefresh = false;
 				return;
 			}
 
 			String json = getModelAsJson();
 			// If updateGraph is not defined, the template was lost (e.g. after reload)
-			Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
-			if (result instanceof Boolean && (Boolean) result) {
-				browser.execute("updateGraph(" + json + ");");
-			} else {
+			try {
+				Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
+				if (result instanceof Boolean && (Boolean) result) {
+					browser.execute("updateGraph(" + json + ");");
+				} else {
+					isLoaded = false;
+					browser.setText(getHtmlTemplate());
+				}
+			} catch (Exception e) {
 				isLoaded = false;
 				browser.setText(getHtmlTemplate());
+			} finally {
+				pendingRefresh = false;
 			}
 		});
 	}

@@ -47,7 +47,6 @@ public class TaskPlanner extends BaseAiAgent {
             task.setName(obj.optString("name", "Unnamed Improvement Task"));
             task.setType(obj.optString("taskType", "llm"));
             task.setPriority(obj.optInt("priority", 1));
-            task.setRationale(obj.optString("rationale", "No rationale provided by planner."));
             tasks.add(task);
         }
 

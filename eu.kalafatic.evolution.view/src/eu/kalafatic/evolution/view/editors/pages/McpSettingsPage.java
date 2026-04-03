@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -22,7 +21,6 @@ public class McpSettingsPage extends ScrolledComposite {
     private Text mcpUrlText;
     private Table resourcesTable;
     private boolean isUpdating = false;
-    private SashForm sashForm;
 
     public McpSettingsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -37,13 +35,14 @@ public class McpSettingsPage extends ScrolledComposite {
         Composite comp = new Composite(this, SWT.NONE);
         comp.setLayout(new GridLayout(1, false));
 
-        sashForm = new SashForm(comp, SWT.VERTICAL);
-        sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-        Group configGroup = SWTFactory.createMaximizableGroup(sashForm, "MCP Configuration", 3);
+        Group configGroup = new Group(comp, SWT.NONE);
+        configGroup.setText("MCP Configuration");
+        configGroup.setLayout(new GridLayout(3, false));
+        configGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         SWTFactory.createLabel(configGroup, "Server URL:");
-        mcpUrlText = SWTFactory.createText(configGroup);
+        mcpUrlText = new Text(configGroup, SWT.BORDER);
+        mcpUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         mcpUrlText.addModifyListener(e -> {
             if (orchestrator != null && !isUpdating) {
                 orchestrator.setMcpServerUrl(mcpUrlText.getText());
@@ -51,7 +50,8 @@ public class McpSettingsPage extends ScrolledComposite {
             }
         });
 
-        Button testBtn = SWTFactory.createButton(configGroup, "Test Connection");
+        Button testBtn = new Button(configGroup, SWT.PUSH);
+        testBtn.setText("Test Connection");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -59,7 +59,10 @@ public class McpSettingsPage extends ScrolledComposite {
             }
         });
 
-        Group resourcesGroup = SWTFactory.createMaximizableGroup(sashForm, "Available Resources", 1);
+        Group resourcesGroup = new Group(comp, SWT.NONE);
+        resourcesGroup.setText("Available Resources");
+        resourcesGroup.setLayout(new GridLayout(1, false));
+        resourcesGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         resourcesTable = new Table(resourcesGroup, SWT.BORDER | SWT.FULL_SELECTION);
         resourcesTable.setHeaderVisible(true);
@@ -74,15 +77,14 @@ public class McpSettingsPage extends ScrolledComposite {
             col.setWidth(widths[i]);
         }
 
-        Button refreshBtn = SWTFactory.createButton(resourcesGroup, "Refresh Resources", 150);
+        Button refreshBtn = new Button(resourcesGroup, SWT.PUSH);
+        refreshBtn.setText("Refresh Resources");
         refreshBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 refreshResources();
             }
         });
-
-        sashForm.setWeights(new int[] { 30, 70 });
 
         this.setContent(comp);
         this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));

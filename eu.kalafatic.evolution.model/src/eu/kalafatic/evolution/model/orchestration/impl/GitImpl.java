@@ -24,7 +24,6 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl#getBranch <em>Branch</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl#getUsername <em>Username</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl#getLocalPath <em>Local Path</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl#getTestStatus <em>Test Status</em>}</li>
  * </ul>
  *
  * @generated
@@ -109,49 +108,6 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 	 * @ordered
 	 */
 	protected String localPath = LOCAL_PATH_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #getTestStatus() <em>Test Status</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getTestStatus()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final String TEST_STATUS_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getTestStatus() <em>Test Status</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getTestStatus()
-	 * @generated
-	 * @ordered
-	 */
-	protected String testStatus = TEST_STATUS_EDEFAULT;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getTestStatus() {
-		return testStatus;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setTestStatus(String newTestStatus) {
-		String oldTestStatus = testStatus;
-		testStatus = newTestStatus;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GIT__TEST_STATUS, oldTestStatus, testStatus));
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -280,8 +236,6 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 				return getUsername();
 			case OrchestrationPackage.GIT__LOCAL_PATH:
 				return getLocalPath();
-			case OrchestrationPackage.GIT__TEST_STATUS:
-				return getTestStatus();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -305,9 +259,6 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 				return;
 			case OrchestrationPackage.GIT__LOCAL_PATH:
 				setLocalPath((String)newValue);
-				return;
-			case OrchestrationPackage.GIT__TEST_STATUS:
-				setTestStatus((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -333,9 +284,6 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 			case OrchestrationPackage.GIT__LOCAL_PATH:
 				setLocalPath(LOCAL_PATH_EDEFAULT);
 				return;
-			case OrchestrationPackage.GIT__TEST_STATUS:
-				setTestStatus(TEST_STATUS_EDEFAULT);
-				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -356,8 +304,6 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 				return USERNAME_EDEFAULT == null ? username != null : !USERNAME_EDEFAULT.equals(username);
 			case OrchestrationPackage.GIT__LOCAL_PATH:
 				return LOCAL_PATH_EDEFAULT == null ? localPath != null : !LOCAL_PATH_EDEFAULT.equals(localPath);
-			case OrchestrationPackage.GIT__TEST_STATUS:
-				return TEST_STATUS_EDEFAULT == null ? testStatus != null : !TEST_STATUS_EDEFAULT.equals(testStatus);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -380,8 +326,6 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 		result.append(username);
 		result.append(", localPath: ");
 		result.append(localPath);
-		result.append(", testStatus: ");
-		result.append(testStatus);
 		result.append(')');
 		return result.toString();
 	}

@@ -3,7 +3,6 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
-import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -70,17 +69,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	}
 
 	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public Eclipse createEclipse() {
-		EclipseImpl eclipse = new EclipseImpl();
-		return eclipse;
-	}
-
-	/**
 	 * Creates an instance of the factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -119,7 +107,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.EVALUATION_RESULT: return createEvaluationResult();
 			case OrchestrationPackage.DATABASE: return createDatabase();
 			case OrchestrationPackage.FILE_CONFIG: return createFileConfig();
-			case OrchestrationPackage.ECLIPSE: return createEclipse();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}

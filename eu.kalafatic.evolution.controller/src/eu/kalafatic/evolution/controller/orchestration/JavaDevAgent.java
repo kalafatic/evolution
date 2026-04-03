@@ -10,7 +10,6 @@ public class JavaDevAgent extends BaseAiAgent {
         addTool(new MavenTool());
         addTool(new GitTool());
         addTool(new ShellTool());
-        addTool(new EclipseTool());
     }
 
     @Override

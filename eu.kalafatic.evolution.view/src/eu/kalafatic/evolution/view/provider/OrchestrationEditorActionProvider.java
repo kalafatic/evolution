@@ -36,8 +36,6 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
 
     private Action refreshAction;
     private Action deleteAction;
-    private Action rateTaskAction;
-    private Action startSelfDevAction;
 
     @Override
     public void init(ICommonActionExtensionSite aSite) {
@@ -96,52 +94,6 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
             }
         };
         deleteAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_TOOL_DELETE));
-
-        rateTaskAction = new Action("Rate Task...") {
-            @Override
-            public void run() {
-                ISelection selection = getContext().getSelection();
-                if (selection instanceof IStructuredSelection) {
-                    Object element = ((IStructuredSelection) selection).getFirstElement();
-                    if (element instanceof Task) {
-                        Task task = (Task) element;
-                        org.eclipse.jface.dialogs.InputDialog dialog = new org.eclipse.jface.dialogs.InputDialog(
-                            PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
-                            "Rate Task", "Enter rating (1-5):", String.valueOf(task.getRating()),
-                            new org.eclipse.jface.dialogs.IInputValidator() {
-                                @Override
-                                public String isValid(String newText) {
-                                    try {
-                                        int val = Integer.parseInt(newText);
-                                        if (val < 1 || val > 5) return "Rating must be between 1 and 5";
-                                    } catch (NumberFormatException e) { return "Must be a number"; }
-                                    return null;
-                                }
-                            });
-                        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
-                            task.setRating(Integer.parseInt(dialog.getValue()));
-                            MessageDialog.openInformation(null, "Success", "Task rated successfully.");
-                        }
-                    }
-                }
-            }
-        };
-
-        startSelfDevAction = new Action("Start Self-Dev Session") {
-            @Override
-            public void run() {
-                ISelection selection = getContext().getSelection();
-                if (selection instanceof IStructuredSelection) {
-                    Object element = ((IStructuredSelection) selection).getFirstElement();
-                    if (element instanceof Orchestrator) {
-                        Orchestrator orchestrator = (Orchestrator) element;
-                        openOrchestrator(orchestrator);
-                        // In a real RCP app, we would trigger the specific command or find the editor
-                        MessageDialog.openInformation(null, "Self-Dev", "Switch to 'Ai Chat' tab in the opened editor and click '🚀 Self-Dev' to start.");
-                    }
-                }
-            }
-        };
     }
 
     @Override
@@ -152,12 +104,6 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
             Action openAction = createOpenAction(firstElement);
             if (openAction != null) {
                 menu.insertAfter(ICommonMenuConstants.GROUP_OPEN, openAction);
-            }
-            if (firstElement instanceof Task) {
-                menu.appendToGroup(ICommonMenuConstants.GROUP_EDIT, rateTaskAction);
-            }
-            if (firstElement instanceof Orchestrator) {
-                menu.appendToGroup(ICommonMenuConstants.GROUP_OPEN, startSelfDevAction);
             }
         }
         menu.appendToGroup(ICommonMenuConstants.GROUP_EDIT, deleteAction);
