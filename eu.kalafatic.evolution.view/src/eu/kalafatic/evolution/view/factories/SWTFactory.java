@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -106,8 +109,22 @@ public class SWTFactory {
 		label.setFont(org.eclipse.jface.resource.JFaceResources.getFontRegistry().getBold(org.eclipse.jface.resource.JFaceResources.DEFAULT_FONT));
 		label.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		Button maxBtn = new Button(header, SWT.PUSH);
-		maxBtn.setText("Maximize");
+		Button maxBtn = new Button(header, SWT.PUSH | SWT.FLAT);
+		GridData maxGd = new GridData();
+		maxGd.widthHint = 20;
+		maxGd.heightHint = 20;
+		maxBtn.setLayoutData(maxGd);
+		maxBtn.setText("\u25FB");
+		maxBtn.setToolTipText("Maximize");
+		Color orange = new Color(header.getDisplay(), 255, 140, 0);
+		maxBtn.setBackground(orange);
+		maxBtn.setForeground(header.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+		maxBtn.addDisposeListener(new DisposeListener() {
+			@Override
+			public void widgetDisposed(DisposeEvent e) {
+				if (orange != null && !orange.isDisposed()) orange.dispose();
+			}
+		});
 
 		Group group = new Group(container, SWT.NONE);
 		group.setLayout(new GridLayout(columns, false));
@@ -122,11 +139,13 @@ public class SWTFactory {
 					if (weights != null) {
 						sashForm.setWeights(weights);
 					}
-					maxBtn.setText("Maximize");
+					maxBtn.setText("\u25FB");
+					maxBtn.setToolTipText("Maximize");
 				} else {
 					sashForm.setData("lastWeights", sashForm.getWeights());
 					sashForm.setMaximizedControl(container);
-					maxBtn.setText("Restore");
+					maxBtn.setText("\u25F2");
+					maxBtn.setToolTipText("Restore");
 				}
 				sashForm.layout(true);
 			}
