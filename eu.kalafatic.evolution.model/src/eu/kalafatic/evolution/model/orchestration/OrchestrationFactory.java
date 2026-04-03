@@ -211,6 +211,15 @@ public interface OrchestrationFactory extends EFactory {
 	FileConfig createFileConfig();
 
 	/**
+	 * Returns a new object of class '<em>Eclipse</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Eclipse</em>'.
+	 * @generated
+	 */
+	Eclipse createEclipse();
+
+	/**
 	 * Returns the package supported by this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
