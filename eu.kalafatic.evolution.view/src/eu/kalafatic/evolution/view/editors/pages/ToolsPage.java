@@ -33,8 +33,9 @@ public class ToolsPage extends ScrolledComposite {
     private Text mavenGoalsText, mavenProfilesText;
     private Text fileLocalPathText;
     private Text dbUrlText, dbUsernameText, dbPasswordText, dbDriverText;
+    private Text sourceVersionText, targetVersionText, cPathText, cppPathText, makePathText, cmakePathText;
 
-    private Group gitGroup, mavenGroup, fileGroup, dbGroup;
+    private Group gitGroup, mavenGroup, fileGroup, dbGroup, compilerGroup;
     private Color successColor;
 
     public ToolsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
@@ -54,6 +55,7 @@ public class ToolsPage extends ScrolledComposite {
         createMavenGroup(comp);
         createFileGroup(comp);
         createDatabaseGroup(comp);
+        createCompilerGroup(comp);
 
         successColor = new Color(getDisplay(), 200, 240, 200); // Light cool green
 
@@ -65,7 +67,8 @@ public class ToolsPage extends ScrolledComposite {
         };
 
         Text[] texts = { gitRepoText, gitBranchText, gitLocalPathText, mavenGoalsText, mavenProfilesText,
-                         fileLocalPathText, dbUrlText, dbUsernameText, dbPasswordText, dbDriverText };
+                         fileLocalPathText, dbUrlText, dbUsernameText, dbPasswordText, dbDriverText,
+                         sourceVersionText, targetVersionText, cPathText, cppPathText, makePathText, cmakePathText };
         for (Text t : texts) {
             t.addModifyListener(ml);
         }
@@ -173,6 +176,49 @@ public class ToolsPage extends ScrolledComposite {
         });
     }
 
+    private void createCompilerGroup(Composite parent) {
+        compilerGroup = SWTFactory.createGroup(parent, "Compiler & Language Settings", 3);
+        Group group = compilerGroup;
+
+        SWTFactory.createLabel(group, "Java Source Version:");
+        sourceVersionText = new Text(group, SWT.BORDER);
+        sourceVersionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        SWTFactory.createEditButton(group, sourceVersionText);
+
+        SWTFactory.createLabel(group, "Java Target Version:");
+        targetVersionText = new Text(group, SWT.BORDER);
+        targetVersionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        SWTFactory.createEditButton(group, targetVersionText);
+
+        SWTFactory.createLabel(group, "C Path (gcc):");
+        cPathText = new Text(group, SWT.BORDER);
+        cPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        SWTFactory.createEditButton(group, cPathText);
+
+        SWTFactory.createLabel(group, "C++ Path (g++):");
+        cppPathText = new Text(group, SWT.BORDER);
+        cppPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        SWTFactory.createEditButton(group, cppPathText);
+
+        SWTFactory.createLabel(group, "Make Path:");
+        makePathText = new Text(group, SWT.BORDER);
+        makePathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        SWTFactory.createEditButton(group, makePathText);
+
+        SWTFactory.createLabel(group, "CMake Path:");
+        cmakePathText = new Text(group, SWT.BORDER);
+        cmakePathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        SWTFactory.createEditButton(group, cmakePathText);
+
+        Button testBtn = SWTFactory.createButton(group, "Test Compilers");
+        testBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                testCompiler();
+            }
+        });
+    }
+
     public void updateUIFromModel() {
         if (orchestrator == null || isUpdating) return;
         isUpdating = true;
@@ -201,6 +247,16 @@ public class ToolsPage extends ScrolledComposite {
             dbUsernameText.setText(orchestrator.getDatabase().getUsername() != null ? orchestrator.getDatabase().getUsername() : "");
             dbPasswordText.setText(orchestrator.getDatabase().getPassword() != null ? orchestrator.getDatabase().getPassword() : "");
             updateGroupStatus(dbGroup, orchestrator.getDatabase().getTestStatus());
+        }
+
+        if (orchestrator.getCompiler() != null) {
+            sourceVersionText.setText(orchestrator.getCompiler().getSourceVersion() != null ? orchestrator.getCompiler().getSourceVersion() : "");
+            targetVersionText.setText(orchestrator.getCompiler().getTargetVersion() != null ? orchestrator.getCompiler().getTargetVersion() : "");
+            cPathText.setText(orchestrator.getCompiler().getCPath() != null ? orchestrator.getCompiler().getCPath() : "");
+            cppPathText.setText(orchestrator.getCompiler().getCppPath() != null ? orchestrator.getCompiler().getCppPath() : "");
+            makePathText.setText(orchestrator.getCompiler().getMakePath() != null ? orchestrator.getCompiler().getMakePath() : "");
+            cmakePathText.setText(orchestrator.getCompiler().getCmakePath() != null ? orchestrator.getCompiler().getCmakePath() : "");
+            updateGroupStatus(compilerGroup, orchestrator.getCompiler().getTestStatus());
         }
 
         isUpdating = false;
@@ -253,6 +309,16 @@ public class ToolsPage extends ScrolledComposite {
         orchestrator.getDatabase().setUsername(dbUsernameText.getText());
         orchestrator.getDatabase().setPassword(dbPasswordText.getText());
 
+        if (orchestrator.getCompiler() == null) {
+            orchestrator.setCompiler(OrchestrationFactory.eINSTANCE.createCompiler());
+        }
+        orchestrator.getCompiler().setSourceVersion(sourceVersionText.getText());
+        orchestrator.getCompiler().setTargetVersion(targetVersionText.getText());
+        orchestrator.getCompiler().setCPath(cPathText.getText());
+        orchestrator.getCompiler().setCppPath(cppPathText.getText());
+        orchestrator.getCompiler().setMakePath(makePathText.getText());
+        orchestrator.getCompiler().setCmakePath(cmakePathText.getText());
+
         isUpdating = false;
     }
 
@@ -275,11 +341,13 @@ public class ToolsPage extends ScrolledComposite {
         mavenGroup.setBackground(defaultColor);
         fileGroup.setBackground(defaultColor);
         dbGroup.setBackground(defaultColor);
+        compilerGroup.setBackground(defaultColor);
 
         if (orchestrator.getGit() != null) orchestrator.getGit().setTestStatus(null);
         if (orchestrator.getMaven() != null) orchestrator.getMaven().setTestStatus(null);
         if (orchestrator.getFileConfig() != null) orchestrator.getFileConfig().setTestStatus(null);
         if (orchestrator.getDatabase() != null) orchestrator.getDatabase().setTestStatus(null);
+        if (orchestrator.getCompiler() != null) orchestrator.getCompiler().setTestStatus(null);
     }
 
     private void testGit() {
@@ -349,6 +417,22 @@ public class ToolsPage extends ScrolledComposite {
             MessageDialog.openError(getShell(), "Database Test Failed", e.getMessage());
             orchestrator.getDatabase().setTestStatus("FAILED");
             dbGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
+        }
+    }
+
+    private void testCompiler() {
+        try {
+            eu.kalafatic.evolution.controller.orchestration.CppTool tool = new eu.kalafatic.evolution.controller.orchestration.CppTool();
+            File workingDir = getWorkingDir();
+            TaskContext context = new TaskContext(orchestrator, workingDir);
+            String result = tool.execute("TEST_CONNECTION", workingDir, context);
+            MessageDialog.openInformation(getShell(), "Compiler Test", result);
+            orchestrator.getCompiler().setTestStatus("SUCCESS");
+            compilerGroup.setBackground(successColor);
+        } catch (Exception e) {
+            MessageDialog.openError(getShell(), "Compiler Test Failed", e.getMessage());
+            orchestrator.getCompiler().setTestStatus("FAILED");
+            compilerGroup.setBackground(getDisplay().getSystemColor(SWT.COLOR_RED));
         }
     }
 
