@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -21,6 +22,7 @@ public class McpSettingsPage extends ScrolledComposite {
     private Text mcpUrlText;
     private Table resourcesTable;
     private boolean isUpdating = false;
+    private SashForm sashForm;
 
     public McpSettingsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -35,10 +37,10 @@ public class McpSettingsPage extends ScrolledComposite {
         Composite comp = new Composite(this, SWT.NONE);
         comp.setLayout(new GridLayout(1, false));
 
-        Group configGroup = new Group(comp, SWT.NONE);
-        configGroup.setText("MCP Configuration");
-        configGroup.setLayout(new GridLayout(3, false));
-        configGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        sashForm = new SashForm(comp, SWT.VERTICAL);
+        sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        Group configGroup = SWTFactory.createMaximizableGroup(sashForm, "MCP Configuration", 3);
 
         SWTFactory.createLabel(configGroup, "Server URL:");
         mcpUrlText = new Text(configGroup, SWT.BORDER);
@@ -59,10 +61,7 @@ public class McpSettingsPage extends ScrolledComposite {
             }
         });
 
-        Group resourcesGroup = new Group(comp, SWT.NONE);
-        resourcesGroup.setText("Available Resources");
-        resourcesGroup.setLayout(new GridLayout(1, false));
-        resourcesGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
+        Group resourcesGroup = SWTFactory.createMaximizableGroup(sashForm, "Available Resources", 1);
 
         resourcesTable = new Table(resourcesGroup, SWT.BORDER | SWT.FULL_SELECTION);
         resourcesTable.setHeaderVisible(true);
@@ -85,6 +84,8 @@ public class McpSettingsPage extends ScrolledComposite {
                 refreshResources();
             }
         });
+
+        sashForm.setWeights(new int[] { 30, 70 });
 
         this.setContent(comp);
         this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));

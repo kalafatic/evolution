@@ -6,6 +6,7 @@ import java.util.List;
 import org.eclipse.jface.fieldassist.ControlDecoration;
 import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Font;
@@ -40,6 +41,7 @@ public class PropertiesPage extends ScrolledComposite {
 	private Text localModelText, hybridModelText;
 	private Text mcpUrlText, openAiTokenText, openAiModelText;
 	private Table agentsTable;
+	private SashForm sashForm;
 	private Text aiChatUrlText, neuronAiUrlText,
 			compilerSourceText;
 	private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator, llmTempDecorator;
@@ -112,10 +114,10 @@ public class PropertiesPage extends ScrolledComposite {
 		};
 		Display.getDefault().timerExec(1000, timer);
 
-		Group orchGroup = new Group(comp, SWT.NONE);
-		orchGroup.setText("Orchestrator");
-		orchGroup.setLayout(new GridLayout(3, false));
-		orchGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		sashForm = new SashForm(comp, SWT.VERTICAL);
+		sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		Group orchGroup = SWTFactory.createMaximizableGroup(sashForm, "Orchestrator", 3);
 		SWTFactory.createLabel(orchGroup, "ID:");
 		orchIdText = new Text(orchGroup, SWT.BORDER);
 		orchIdText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -125,10 +127,7 @@ public class PropertiesPage extends ScrolledComposite {
 		orchNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		SWTFactory.createEditButton(orchGroup, orchNameText);
 
-		Group llmGroup = new Group(comp, SWT.NONE);
-		llmGroup.setText("LLM Settings");
-		llmGroup.setLayout(new GridLayout(3, false));
-		llmGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Group llmGroup = SWTFactory.createMaximizableGroup(sashForm, "LLM Settings", 3);
 		SWTFactory.createLabel(llmGroup, "Model:");
 		llmModelText = new Text(llmGroup, SWT.BORDER);
 		llmModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -138,10 +137,7 @@ public class PropertiesPage extends ScrolledComposite {
 		llmTempText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		SWTFactory.createEditButton(llmGroup, llmTempText);
 
-		Group ollamaGroup = new Group(comp, SWT.NONE);
-		ollamaGroup.setText("Ollama Settings");
-		ollamaGroup.setLayout(new GridLayout(3, false));
-		ollamaGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Group ollamaGroup = SWTFactory.createMaximizableGroup(sashForm, "Ollama Settings", 3);
 		SWTFactory.createLabel(ollamaGroup, "URL:");
 		ollamaUrlText = new Text(ollamaGroup, SWT.BORDER);
 		ollamaUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -171,11 +167,7 @@ public class PropertiesPage extends ScrolledComposite {
 		ollamaVersionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		SWTFactory.createLabel(ollamaGroup, "");
 
-		Group agentsGroup = new Group(comp, SWT.NONE);
-		agentsGroup.setText("Agents");
-		agentsGroup.setLayout(new GridLayout(1, false));
-		agentsGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
-		((GridData) agentsGroup.getLayoutData()).heightHint = 150;
+		Group agentsGroup = SWTFactory.createMaximizableGroup(sashForm, "Agents", 1);
 		agentsTable = new Table(agentsGroup, SWT.BORDER | SWT.FULL_SELECTION);
 		agentsTable.setHeaderVisible(true);
 		agentsTable.setLinesVisible(true);
@@ -188,10 +180,7 @@ public class PropertiesPage extends ScrolledComposite {
 			col.setWidth(widths[i]);
 		}
 
-		Group othersGroup = new Group(comp, SWT.NONE);
-		othersGroup.setText("Additional AI & Tools");
-		othersGroup.setLayout(new GridLayout(3, false));
-		othersGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Group othersGroup = SWTFactory.createMaximizableGroup(sashForm, "Additional AI & Tools", 3);
 		SWTFactory.createLabel(othersGroup, "AI Chat URL:");
 		aiChatUrlText = new Text(othersGroup, SWT.BORDER);
 		aiChatUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -205,10 +194,7 @@ public class PropertiesPage extends ScrolledComposite {
 		compilerSourceText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		SWTFactory.createEditButton(othersGroup, compilerSourceText);
 
-		Group mcpOpenAiGroup = new Group(comp, SWT.NONE);
-		mcpOpenAiGroup.setText("MCP & OpenAI (Hybrid Architecture)");
-		mcpOpenAiGroup.setLayout(new GridLayout(3, false));
-		mcpOpenAiGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Group mcpOpenAiGroup = SWTFactory.createMaximizableGroup(sashForm, "MCP & OpenAI (Hybrid Architecture)", 3);
 		SWTFactory.createLabel(mcpOpenAiGroup, "AI Mode:");
 		aiModeCombo = new Combo(mcpOpenAiGroup, SWT.READ_ONLY);
 		aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
@@ -242,10 +228,7 @@ public class PropertiesPage extends ScrolledComposite {
 		openAiModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		SWTFactory.createEditButton(mcpOpenAiGroup, openAiModelText);
 
-		Group aiModelGroup = new Group(comp, SWT.NONE);
-		aiModelGroup.setText("AI Chat Models (per Mode)");
-		aiModelGroup.setLayout(new GridLayout(3, false));
-		aiModelGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		Group aiModelGroup = SWTFactory.createMaximizableGroup(sashForm, "AI Chat Models (per Mode)", 3);
 		SWTFactory.createLabel(aiModelGroup, "Local Model:");
 		localModelText = new Text(aiModelGroup, SWT.BORDER);
 		localModelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -275,6 +258,8 @@ public class PropertiesPage extends ScrolledComposite {
 				}
 			}
 		});
+
+		sashForm.setWeights(new int[] { 10, 10, 20, 20, 10, 15, 15 });
 
 		ollamaUrlDecorator = new ControlDecoration(ollamaUrlText, SWT.TOP | SWT.LEFT);
 		ollamaUrlDecorator.setImage(
