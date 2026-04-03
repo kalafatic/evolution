@@ -155,20 +155,24 @@ public class AiFlowPage extends Composite {
 	}
 
 	private void refreshBrowser() {
-		if (browser == null || browser.isDisposed() || !isLoaded)
+		if (browser == null || browser.isDisposed())
 			return;
 		Display.getDefault().asyncExec(() -> {
-			if (!browser.isDisposed()) {
-				String json = getModelAsJson();
-				// If updateGraph is not defined, the template was lost (e.g. after reload)
-				Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
-				if (result instanceof Boolean && (Boolean) result) {
-					browser.execute("updateGraph(" + json + ");");
-				} else {
-					if (browser != null && !browser.isDisposed()) {
-						browser.setText(getHtmlTemplate());
-					}
-				}
+			if (browser == null || browser.isDisposed()) return;
+
+			if (!isLoaded) {
+				browser.setText(getHtmlTemplate());
+				return;
+			}
+
+			String json = getModelAsJson();
+			// If updateGraph is not defined, the template was lost (e.g. after reload)
+			Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
+			if (result instanceof Boolean && (Boolean) result) {
+				browser.execute("updateGraph(" + json + ");");
+			} else {
+				isLoaded = false;
+				browser.setText(getHtmlTemplate());
 			}
 		});
 	}
@@ -235,16 +239,17 @@ public class AiFlowPage extends Composite {
 
 	private String getHtmlTemplate() {
 		return "<!DOCTYPE html><html><head><style>"
-				+ "body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fafafa; margin: 0; padding: 0; overflow: hidden; }"
-				+ "#canvas { width: 100%; height: 100%; min-width: 1000px; min-height: 800px; }"
-				+ ".node { fill: #ffffff; stroke: #cfd8dc; stroke-width: 1px; transition: all 0.3s; }"
-				+ ".node:hover { stroke: #607d8b; stroke-width: 2px; }" + ".task { fill: #ffffff; stroke: #607d8b; }"
-				+ ".task.DONE { fill: #e8f5e9; stroke: #4caf50; }" + ".task.RUNNING { fill: #fffde7; stroke: #fbc02d; }"
-				+ ".task.FAILED { fill: #ffe9e9; stroke: #f44336; }"
-				+ ".agent { fill: #e3f2fd; stroke: #2196f3; stroke-width: 2px; }"
-				+ ".agent-link { stroke: #2196f3; stroke-width: 1px; stroke-dasharray: 4; }"
-				+ "text { font-size: 11px; fill: #455a64; pointer-events: none; text-anchor: middle; }"
-				+ "line { stroke: #b0bec5; stroke-width: 1.5px; marker-end: url(#arrowhead); }"
+				+ "body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; overflow: hidden; }"
+				+ "#canvas { width: 100vw; height: 100vh; }"
+				+ ".node { fill: #fff; stroke: #cbd5e1; stroke-width: 1px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }"
+				+ ".node:hover { stroke: #94a3b8; stroke-width: 2px; transform: translateY(-2px); }"
+				+ ".task.DONE { fill: #f0fdf4; stroke: #22c55e; }"
+				+ ".task.RUNNING { fill: #fffbeb; stroke: #f59e0b; }"
+				+ ".task.FAILED { fill: #fef2f2; stroke: #ef4444; }"
+				+ ".agent { fill: #eff6ff; stroke: #3b82f6; stroke-width: 2px; }"
+				+ ".agent-link { stroke: #3b82f6; stroke-width: 1px; stroke-dasharray: 4; }"
+				+ "text { font-size: 11px; fill: #334155; font-weight: 500; text-anchor: middle; pointer-events: none; }"
+				+ "line { stroke: #94a3b8; stroke-width: 1.5px; marker-end: url(#arrowhead); }"
 				+ ".loop-bg { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1px; rx: 12; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05)); }"
 				+ ".loop-node { fill: #f1f5f9; stroke: #64748b; stroke-width: 2px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }"
 				+ ".loop-node.active { fill: #3b82f6; stroke: #1d4ed8; stroke-width: 3px; }"
@@ -252,59 +257,62 @@ public class AiFlowPage extends Composite {
 				+ ".loop-text.active { fill: #ffffff; }"
 				+ ".loop-link { stroke: #94a3b8; stroke-width: 2px; fill: none; marker-end: url(#loop-arrow); }"
 				+ ".loop-link.active { stroke: #3b82f6; stroke-width: 3.5px; }"
-				+ "@keyframes pulse { 0% { r: 22; stroke-opacity: 1; stroke-width: 3px; } 50% { r: 28; stroke-opacity: 0.3; stroke-width: 6px; } 100% { r: 22; stroke-opacity: 1; stroke-width: 3px; } }"
-				+ ".loop-node.active { animation: pulse 1.5s infinite ease-in-out; }"
+				+ "@keyframes pulse { 0% { stroke-opacity: 1; stroke-width: 3px; } 50% { stroke-opacity: 0.4; stroke-width: 8px; } 100% { stroke-opacity: 1; stroke-width: 3px; } }"
+				+ ".loop-node.active { animation: pulse 2s infinite ease-in-out; }"
 				+ "</style></head><body>"
 				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs>"
-				+ "<marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#b0bec5'/></marker>"
+				+ "<marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker>"
 				+ "<marker id='loop-arrow' markerWidth='6' markerHeight='4' refX='6' refY='2' orient='auto'><polygon points='0 0, 6 2, 0 4' fill='#94a3b8'/></marker>"
 				+ "</defs>"
 				+ "<rect class='loop-bg' x='10' y='10' width='220' height='220' />"
 				+ "<g id='loop-diagram' transform='translate(120, 120)'></g>"
 				+ "<g id='viewport' transform='translate(280, 0)'></g></svg>"
-				+ "<script>" + "const viewport = document.getElementById('viewport');"
-				+ "window.addEventListener('wheel', (e) => {"
-				+ "  if (e.ctrlKey) {"
-				+ "    e.preventDefault();"
-				+ "    const factor = e.deltaY < 0 ? 1.1 : 0.9;"
-				+ "    if (typeof javaZoom === 'function') javaZoom(factor);"
-				+ "  }"
-				+ "}, { passive: false });"
+				+ "<script>" + "var viewport = document.getElementById('viewport');"
+				+ "var currentZoom = 1.0;"
+				+ "function applyZoom(factor) {"
+				+ "  currentZoom *= factor;"
+				+ "  viewport.setAttribute('transform', 'translate(280, 0) scale(' + currentZoom + ')');"
+				+ "}"
+				+ "function resetZoom() {"
+				+ "  currentZoom = 1.0;"
+				+ "  viewport.setAttribute('transform', 'translate(280, 0)');"
+				+ "}"
 				+ "function updateGraph(data) {"
-				+ "  viewport.innerHTML = '';" + "  if (!data) return;" + "  const nodes = {};" + "  const links = [];"
-				+ "  // Flow-like layout: sequential" + "  let x = 200, y = 50;" + "  if (data.tasks) {"
-				+ "    data.tasks.forEach(function(t) {" + "      nodes[t.id] = Object.assign({}, t, { x: x, y: y });"
+				+ "  viewport.innerHTML = '';" + "  if (!data) return;" + "  var nodes = {};" + "  var links = [];"
+				+ "  // Flow-like layout: sequential" + "  var x = 200, y = 80;" + "  if (data.tasks) {"
+				+ "    data.tasks.forEach(function(t) {"
+				+ "      nodes[t.id] = { id: t.id, name: t.name, status: t.status, next: t.next, x: x, y: y };"
 				+ "      x += 220;" + "      if (x > 700) { x = 200; y += 120; }"
 				+ "      if (t.next) { t.next.forEach(function(nid) { links.push({ from: t.id, to: nid }); }); }"
-				+ "    });" + "  }" + "  // Agent layout" + "  let ay = 50;" + "  if (data.agents) {"
+				+ "    });" + "  }" + "  // Agent layout" + "  var ay = 80;" + "  if (data.agents) {"
 				+ "    data.agents.forEach(function(a) {"
-				+ "      const agentNode = { id: a.id, name: a.id, type: 'agent', x: 20, y: ay };"
-				+ "      nodes[a.id] = agentNode;" + "      ay += 100;" + "      if (a.tasks) {"
+				+ "      var agentNode = { id: a.id, name: a.id, type: 'agent', x: 20, y: ay };"
+				+ "      nodes[a.id] = agentNode;" + "      ay += 120;" + "      if (a.tasks) {"
 				+ "        a.tasks.forEach(function(tid) { links.push({ from: a.id, to: tid, type: 'agent-link' }); });"
-				+ "      }" + "    });" + "  }" + "  links.forEach(function(l) {" + "    const n1 = nodes[l.from];"
-				+ "    const n2 = nodes[l.to];" + "    if (n1 && n2) {"
-				+ "      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');"
-				+ "      const isAgentLink = l.type === 'agent-link';"
+				+ "      }" + "    });" + "  }" + "  links.forEach(function(l) {" + "    var n1 = nodes[l.from];"
+				+ "    var n2 = nodes[l.to];" + "    if (n1 && n2) {"
+				+ "      var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');"
+				+ "      var isAgentLink = l.type === 'agent-link';"
 				+ "      line.setAttribute('x1', isAgentLink ? n1.x + 40 : n1.x + 160);"
-				+ "      line.setAttribute('y1', isAgentLink ? n1.y + 40 : n1.y + 25);"
-				+ "      line.setAttribute('x2', n2.x);" + "      line.setAttribute('y2', n2.y + 25);"
+				+ "      line.setAttribute('y1', isAgentLink ? n1.y + 40 : n1.y + 30);"
+				+ "      line.setAttribute('x2', n2.x);" + "      line.setAttribute('y2', n2.y + 30);"
 				+ "      line.className.baseVal = isAgentLink ? 'agent-link' : '';"
 				+ "      viewport.appendChild(line);" + "    }" + "  });"
-				+ "  Object.keys(nodes).forEach(function(key) {" + "    const n = nodes[key];"
-				+ "    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');"
-				+ "    const isAgent = n.type === 'agent';" + "    if (isAgent) {"
-				+ "      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');"
+				+ "  Object.keys(nodes).forEach(function(key) {" + "    var n = nodes[key];"
+				+ "    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');"
+				+ "    var isAgent = n.type === 'agent';" + "    if (isAgent) {"
+				+ "      var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');"
 				+ "      circle.setAttribute('cx', n.x + 40);" + "      circle.setAttribute('cy', n.y + 40);"
 				+ "      circle.setAttribute('r', 40);" + "      circle.className.baseVal = 'node agent';"
 				+ "      g.appendChild(circle);" + "    } else {"
-				+ "      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');"
+				+ "      var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');"
 				+ "      rect.setAttribute('x', n.x);" + "      rect.setAttribute('y', n.y);"
-				+ "      rect.setAttribute('width', 160);" + "      rect.setAttribute('height', 50);"
+				+ "      rect.setAttribute('width', 160);" + "      rect.setAttribute('height', 60);"
 				+ "      rect.setAttribute('rx', 8);" + "      rect.className.baseVal = 'node task ' + n.status;"
 				+ "      g.appendChild(rect);" + "    }"
-				+ "    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');"
+				+ "    var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');"
 				+ "    text.setAttribute('x', isAgent ? n.x + 40 : n.x + 80);"
-				+ "    text.setAttribute('y', isAgent ? n.y + 45 : n.y + 30);"
+				+ "    text.setAttribute('y', isAgent ? n.y + 45 : n.y + 35);"
 				+ "    text.textContent = n.name.length > 20 ? n.name.substring(0, 17) + '...' : n.name;"
 				+ "    g.appendChild(text);" + "    viewport.appendChild(g);" + "  });"
 				+ "  if (data.session) {"
@@ -314,34 +322,34 @@ public class AiFlowPage extends Composite {
 				+ "  }"
 				+ "}"
 				+ "function updateLoopDiagram(activePhase) {"
-				+ "  const loopContainer = document.getElementById('loop-diagram');"
+				+ "  var loopContainer = document.getElementById('loop-diagram');"
 				+ "  loopContainer.innerHTML = '';"
-				+ "  const phases = ['OBSERVE', 'ANALYZE', 'PLAN', 'VALIDATE', 'EXECUTE', 'TEST', 'EVALUATE', 'LEARN'];"
-				+ "  const radius = 75;"
-				+ "  const centerX = 0, centerY = 0;"
-				+ "  phases.forEach((p, i) => {"
-				+ "    const angle = (i / phases.length) * 2 * Math.PI - Math.PI / 2;"
-				+ "    const x = centerX + radius * Math.cos(angle);"
-				+ "    const y = centerY + radius * Math.sin(angle);"
-				+ "    const isActive = p === activePhase;"
-				+ "    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');"
-				+ "    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');"
+				+ "  var phases = ['OBSERVE', 'ANALYZE', 'PLAN', 'VALIDATE', 'EXECUTE', 'TEST', 'EVALUATE', 'LEARN'];"
+				+ "  var radius = 75;"
+				+ "  var centerX = 0, centerY = 0;"
+				+ "  phases.forEach(function(p, i) {"
+				+ "    var angle = (i / phases.length) * 2 * Math.PI - Math.PI / 2;"
+				+ "    var x = centerX + radius * Math.cos(angle);"
+				+ "    var y = centerY + radius * Math.sin(angle);"
+				+ "    var isActive = p === activePhase;"
+				+ "    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');"
+				+ "    var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');"
 				+ "    circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', 22);"
 				+ "    circle.className.baseVal = 'loop-node' + (isActive ? ' active' : '');"
 				+ "    g.appendChild(circle);"
-				+ "    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');"
+				+ "    var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');"
 				+ "    text.setAttribute('x', x); text.setAttribute('y', y + 4);"
 				+ "    text.className.baseVal = 'loop-text' + (isActive ? ' active' : '');"
 				+ "    text.textContent = p.substring(0, 3);"
 				+ "    g.appendChild(text);"
 				+ "    loopContainer.appendChild(g);"
-				+ "    const nextAngle = ((i + 1) / phases.length) * 2 * Math.PI - Math.PI / 2;"
-				+ "    const x1 = centerX + (radius) * Math.cos(angle + 0.35);"
-				+ "    const y1 = centerY + (radius) * Math.sin(angle + 0.35);"
-				+ "    const x2 = centerX + (radius) * Math.cos(nextAngle - 0.35);"
-				+ "    const y2 = centerY + (radius) * Math.sin(nextAngle - 0.35);"
-				+ "    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');"
-				+ "    path.setAttribute('d', `M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`);"
+				+ "    var nextAngle = ((i + 1) / phases.length) * 2 * Math.PI - Math.PI / 2;"
+				+ "    var x1 = centerX + (radius) * Math.cos(angle + 0.35);"
+				+ "    var y1 = centerY + (radius) * Math.sin(angle + 0.35);"
+				+ "    var x2 = centerX + (radius) * Math.cos(nextAngle - 0.35);"
+				+ "    var y2 = centerY + (radius) * Math.sin(nextAngle - 0.35);"
+				+ "    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');"
+				+ "    path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' A ' + radius + ' ' + radius + ' 0 0 1 ' + x2 + ' ' + y2);"
 				+ "    path.className.baseVal = 'loop-link' + (isActive ? ' active' : '');"
 				+ "    loopContainer.appendChild(path);"
 				+ "  });"
