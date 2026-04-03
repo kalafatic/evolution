@@ -305,6 +305,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 
 		isInited = true;
 
+		// Register package in the registry before initialization to break circular dependencies
+		EPackage.Registry.INSTANCE.put(OrchestrationPackage.eNS_URI, theOrchestrationPackage);
+
 		// Create package meta-data objects
 		theOrchestrationPackage.createPackageContents();
 
@@ -314,8 +317,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		// Mark meta-data to indicate it can't be changed
 		theOrchestrationPackage.freeze();
 
-		// Update the registry and return the package
-		EPackage.Registry.INSTANCE.put(OrchestrationPackage.eNS_URI, theOrchestrationPackage);
 		return theOrchestrationPackage;
 	}
 
