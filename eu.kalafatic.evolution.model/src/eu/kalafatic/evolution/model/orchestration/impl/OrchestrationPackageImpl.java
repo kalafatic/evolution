@@ -61,6 +61,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass eclipseEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass agentEClass = null;
 
 	/**
@@ -338,6 +345,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getTask_Likes() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(14);
+	public EReference getOrchestrator_Eclipse() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(23);
 	}
 
 	/**
@@ -358,6 +367,48 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getSelfDevSession_Rationale() {
 		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(5);
+	public EClass getEclipse() {
+		return eclipseEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_Workspace() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_Installation() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_TargetPlatform() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_TestStatus() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -1828,6 +1879,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__DATABASE);
 		createEReference(orchestratorEClass, ORCHESTRATOR__FILE_CONFIG);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__SHARED_MEMORY);
+		createEReference(orchestratorEClass, ORCHESTRATOR__ECLIPSE);
 
 		gitEClass = createEClass(GIT);
 		createEAttribute(gitEClass, GIT__REPOSITORY_URL);
@@ -1937,6 +1989,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(fileConfigEClass, FILE_CONFIG__LOCAL_PATH);
 		createEAttribute(fileConfigEClass, FILE_CONFIG__TEST_STATUS);
 
+		eclipseEClass = createEClass(ECLIPSE);
+		createEAttribute(eclipseEClass, ECLIPSE__WORKSPACE);
+		createEAttribute(eclipseEClass, ECLIPSE__INSTALLATION);
+		createEAttribute(eclipseEClass, ECLIPSE__TARGET_PLATFORM);
+		createEAttribute(eclipseEClass, ECLIPSE__TEST_STATUS);
+
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
 		commandStatusEEnum = createEEnum(COMMAND_STATUS);
@@ -2044,6 +2102,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_Database(), this.getDatabase(), null, "database", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_FileConfig(), this.getFileConfig(), null, "fileConfig", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_SharedMemory(), ecorePackage.getEString(), "sharedMemory", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_Eclipse(), this.getEclipse(), null, "eclipse", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(gitEClass, Git.class, "Git", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getGit_RepositoryUrl(), ecorePackage.getEString(), "repositoryUrl", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -2152,6 +2211,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEClass(fileConfigEClass, eu.kalafatic.evolution.model.orchestration.FileConfig.class, "FileConfig", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getFileConfig_LocalPath(), ecorePackage.getEString(), "localPath", null, 0, 1, eu.kalafatic.evolution.model.orchestration.FileConfig.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getFileConfig_TestStatus(), ecorePackage.getEString(), "testStatus", null, 0, 1, eu.kalafatic.evolution.model.orchestration.FileConfig.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(eclipseEClass, eu.kalafatic.evolution.model.orchestration.Eclipse.class, "Eclipse", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getEclipse_Workspace(), ecorePackage.getEString(), "workspace", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Eclipse.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEclipse_Installation(), ecorePackage.getEString(), "installation", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Eclipse.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEclipse_TargetPlatform(), ecorePackage.getEString(), "targetPlatform", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Eclipse.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEclipse_TestStatus(), ecorePackage.getEString(), "testStatus", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Eclipse.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Initialize enums and add enum literals
 		initEEnum(taskStatusEEnum, TaskStatus.class, "TaskStatus");
