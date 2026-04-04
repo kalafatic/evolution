@@ -1,8 +1,7 @@
-package eu.kalafatic.evolution.view.editors.pages.factories;
+package eu.kalafatic.evolution.view.editors;
 
 import org.eclipse.ui.PartInitException;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 
 public class AiChatPageFactory {

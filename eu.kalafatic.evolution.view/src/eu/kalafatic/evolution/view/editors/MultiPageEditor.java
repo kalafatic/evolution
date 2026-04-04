@@ -32,7 +32,6 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.listeners.EditorResourceChangeListener;
 import eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener;
 import eu.kalafatic.evolution.view.editors.pages.*;
-import eu.kalafatic.evolution.view.editors.pages.factories.*;
 
 public class MultiPageEditor extends MultiPageEditorPart {
 
@@ -65,22 +64,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     
     @Override
     public void createPartControl(Composite parent) {
-        ScrolledComposite scrolled = new ScrolledComposite(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-        scrolled.setExpandHorizontal(true);
-        scrolled.setExpandVertical(true);
-
-        Composite container = new Composite(scrolled, SWT.NONE);
-        container.setLayout(new FillLayout());
-        scrolled.setContent(container);
-
-        super.createPartControl(container);
-
-        container.addControlListener(new ControlAdapter() {
-            @Override
-            public void controlResized(ControlEvent e) {
-                scrolled.setMinSize(container.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-            }
-        });
+        super.createPartControl(parent);
     }
 
 
