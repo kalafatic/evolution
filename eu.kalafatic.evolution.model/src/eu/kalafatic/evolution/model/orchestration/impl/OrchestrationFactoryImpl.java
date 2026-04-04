@@ -40,6 +40,8 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
+import eu.kalafatic.evolution.model.orchestration.Test;
+import eu.kalafatic.evolution.model.orchestration.TestStatus;
 
 /**
  * <!-- begin-user-doc -->
@@ -70,7 +72,7 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated
+	 * @generated NOT
 	 */
 	@Override
 	public Eclipse createEclipse() {
@@ -118,6 +120,7 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.ITERATION: return createIteration();
 			case OrchestrationPackage.ECLIPSE: return createEclipse();
 			case OrchestrationPackage.EVALUATION_RESULT: return createEvaluationResult();
+			case OrchestrationPackage.TEST: return createTest();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -169,6 +172,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createIterationStatusFromString(eDataType, initialValue);
 			case OrchestrationPackage.SELF_DEV_DECISION:
 				return createSelfDevDecisionFromString(eDataType, initialValue);
+			case OrchestrationPackage.TEST_STATUS:
+				return createTestStatusFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -198,6 +203,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertIterationStatusToString(eDataType, instanceValue);
 			case OrchestrationPackage.SELF_DEV_DECISION:
 				return convertSelfDevDecisionToString(eDataType, instanceValue);
+			case OrchestrationPackage.TEST_STATUS:
+				return convertTestStatusToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -355,6 +362,15 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public NeuronAI createNeuronAI() {
 		NeuronAIImpl neuronAI = new NeuronAIImpl();
 		return neuronAI;
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	@Override
+	public Test createTest() {
+		TestImpl test = new TestImpl();
+		return test;
 	}
 
 	/**
@@ -569,6 +585,16 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	public String convertSelfDevDecisionToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	public TestStatus createTestStatusFromString(EDataType eDataType, String initialValue) {
+		TestStatus result = TestStatus.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	public String convertTestStatusToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 

@@ -53,12 +53,26 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass taskEClass = null;
+	private EClass testEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
+	 */
+	private EEnum testStatusEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass taskEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
 	 */
 	@Override
 	public EAttribute getTask_Rationale() {
@@ -341,8 +355,19 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		return theOrchestrationPackage;
 	}
 
+	/**
+	 * @generated NOT
+	 */
 	public EReference getOrchestrator_Eclipse() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(23);
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	@Override
+	public EReference getOrchestrator_Tests() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(24);
 	}
 
 	/**
@@ -398,6 +423,21 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	public EAttribute getEclipse_TestStatus() {
 		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(3);
 	}
+
+	@Override
+	public EClass getTest() { return testEClass; }
+	@Override
+	public EAttribute getTest_Id() { return (EAttribute)testEClass.getEStructuralFeatures().get(0); }
+	@Override
+	public EAttribute getTest_Name() { return (EAttribute)testEClass.getEStructuralFeatures().get(1); }
+	@Override
+	public EAttribute getTest_Type() { return (EAttribute)testEClass.getEStructuralFeatures().get(2); }
+	@Override
+	public EAttribute getTest_Path() { return (EAttribute)testEClass.getEStructuralFeatures().get(3); }
+	@Override
+	public EAttribute getTest_Status() { return (EAttribute)testEClass.getEStructuralFeatures().get(4); }
+	@Override
+	public EEnum getTestStatus() { return testStatusEEnum; }
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1994,6 +2034,15 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(eclipseEClass, ECLIPSE__TARGET_PLATFORM);
 		createEAttribute(eclipseEClass, ECLIPSE__TEST_STATUS);
 
+		createEReference(orchestratorEClass, ORCHESTRATOR__TESTS);
+
+		testEClass = createEClass(TEST);
+		createEAttribute(testEClass, TEST__ID);
+		createEAttribute(testEClass, TEST__NAME);
+		createEAttribute(testEClass, TEST__TYPE);
+		createEAttribute(testEClass, TEST__PATH);
+		createEAttribute(testEClass, TEST__STATUS);
+
 		evaluationResultEClass = createEClass(EVALUATION_RESULT);
 		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__SUCCESS);
 		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__TEST_PASS_RATE);
@@ -2203,6 +2252,15 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getEclipse_TargetPlatform(), ecorePackage.getEString(), "targetPlatform", null, 0, 1, Eclipse.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getEclipse_TestStatus(), ecorePackage.getEString(), "testStatus", null, 0, 1, Eclipse.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
+		initEReference(getOrchestrator_Tests(), this.getTest(), null, "tests", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(testEClass, eu.kalafatic.evolution.model.orchestration.Test.class, "Test", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getTest_Id(), ecorePackage.getEString(), "id", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTest_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTest_Type(), ecorePackage.getEString(), "type", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTest_Path(), ecorePackage.getEString(), "path", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTest_Status(), this.getTestStatus(), "status", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
 		initEClass(evaluationResultEClass, EvaluationResult.class, "EvaluationResult", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getEvaluationResult_Success(), ecorePackage.getEBoolean(), "success", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getEvaluationResult_TestPassRate(), ecorePackage.getEDouble(), "testPassRate", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -2257,6 +2315,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.CONTINUE);
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.ROLLBACK);
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.STOP);
+
+		testStatusEEnum = createEEnum(TEST_STATUS);
+		initEEnum(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.class, "TestStatus");
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PENDING);
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.RUNNING);
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PASSED);
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.FAILED);
 
 		// Create resource
 		createResource(eNS_URI);

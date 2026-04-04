@@ -39,6 +39,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig <em>File Config</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory <em>Shared Memory</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse <em>Eclipse</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getTests <em>Tests</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator()
@@ -557,5 +558,17 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	void setSharedMemory(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Tests</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.Test}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Tests</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_Tests()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<Test> getTests();
 
 } // Orchestrator

@@ -29,6 +29,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.model.orchestration.Test;
 
 /**
  * <!-- begin-user-doc -->
@@ -62,6 +63,7 @@ import eu.kalafatic.evolution.model.orchestration.Task;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getFileConfig <em>File Config</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getSharedMemory <em>Shared Memory</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getEclipse <em>Eclipse</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getTests <em>Tests</em>}</li>
  * </ul>
  *
  * @generated
@@ -416,6 +418,29 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected Eclipse eclipse;
+
+	/**
+	 * The cached value of the '{@link #getTests() <em>Tests</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTests()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<Test> tests;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EList<Test> getTests() {
+		if (tests == null) {
+			tests = new EObjectContainmentEList<Test>(Test.class, this, OrchestrationPackage.ORCHESTRATOR__TESTS);
+		}
+		return tests;
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1244,6 +1269,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return basicSetFileConfig(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				return basicSetEclipse(null, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
+				return ((InternalEList<?>)getTests()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1304,6 +1331,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getSharedMemory();
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				return getEclipse();
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
+				return getTests();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1391,6 +1420,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				setEclipse((Eclipse)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
+				getTests().clear();
+				getTests().addAll((Collection<? extends Test>)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1475,6 +1508,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				setEclipse((Eclipse)null);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
+				getTests().clear();
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1535,6 +1571,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return SHARED_MEMORY_EDEFAULT == null ? sharedMemory != null : !SHARED_MEMORY_EDEFAULT.equals(sharedMemory);
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				return eclipse != null;
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
+				return tests != null && !tests.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}
