@@ -348,7 +348,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 					// splash = (GeminiSplashHandler) SplashHandlerFactory.findSplashHandlerFor(product);
 				}
 				if (splash == null) {
-					// splash = (GeminiSplashHandler) new EclipseSplashHandler();
+					splash = new eu.kalafatic.utils.hack.EclipseSplashHandler();
 				}
 			}
 			return splash;

@@ -179,8 +179,10 @@ public class SWTFactory {
 		return group;
 	}
 
-	public static Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns) {
-		final Section section = toolkit.createSection(parent, Section.TITLE_BAR | Section.TWISTIE | Section.EXPANDED);
+	public static Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns, boolean expanded) {
+		int style = Section.TITLE_BAR | Section.TWISTIE;
+		if (expanded) style |= Section.EXPANDED;
+		final Section section = toolkit.createSection(parent, style);
 		section.setText(title);
 		section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 

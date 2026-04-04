@@ -86,7 +86,7 @@ public class ToolsPage extends SharedScrolledComposite {
     }
 
     private void createGitGroup(Composite parent) {
-        gitGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Git Tool Settings", 3);
+        gitGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Git Tool Settings", 3, true);
         Composite group = gitGroup;
         SWTFactory.createLabel(group, "Repository URL:");
         gitRepoText = SWTFactory.createText(group);
@@ -111,7 +111,7 @@ public class ToolsPage extends SharedScrolledComposite {
     }
 
     private void createMavenGroup(Composite parent) {
-        mavenGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Maven Tool Settings", 3);
+        mavenGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Maven Tool Settings", 3, false);
         Composite group = mavenGroup;
         SWTFactory.createLabel(group, "Goals:");
         mavenGoalsText = SWTFactory.createText(group);
@@ -132,7 +132,7 @@ public class ToolsPage extends SharedScrolledComposite {
     }
 
     private void createFileGroup(Composite parent) {
-        fileGroup = SWTFactory.createExpandableGroup(toolkit, parent, "File Tool Settings", 3);
+        fileGroup = SWTFactory.createExpandableGroup(toolkit, parent, "File Tool Settings", 3, false);
         Composite group = fileGroup;
         SWTFactory.createLabel(group, "Project Root:");
         fileLocalPathText = SWTFactory.createText(group);
@@ -150,7 +150,7 @@ public class ToolsPage extends SharedScrolledComposite {
     }
 
     private void createDatabaseGroup(Composite parent) {
-        dbGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Database Tool Settings", 3);
+        dbGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Database Tool Settings", 3, false);
         Composite group = dbGroup;
         SWTFactory.createLabel(group, "JDBC URL:");
         dbUrlText = SWTFactory.createText(group);
@@ -179,7 +179,7 @@ public class ToolsPage extends SharedScrolledComposite {
     }
 
     private void createEclipseGroup(Composite parent) {
-        eclipseGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Eclipse Development Settings", 3);
+        eclipseGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Eclipse Development Settings", 3, false);
         Composite group = eclipseGroup;
 
         SWTFactory.createLabel(group, "Workspace Path:");
@@ -205,7 +205,7 @@ public class ToolsPage extends SharedScrolledComposite {
     }
 
     private void createCompilerGroup(Composite parent) {
-        compilerGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Compiler & Language Settings", 3);
+        compilerGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Compiler & Language Settings", 3, false);
         Composite group = compilerGroup;
 
         SWTFactory.createLabel(group, "Java Source Version:");

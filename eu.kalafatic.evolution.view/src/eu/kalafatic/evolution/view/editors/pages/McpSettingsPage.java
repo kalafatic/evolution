@@ -39,7 +39,7 @@ public class McpSettingsPage extends SharedScrolledComposite {
         Composite comp = toolkit.createComposite(this);
         comp.setLayout(new GridLayout(1, false));
 
-        Composite configGroup = SWTFactory.createExpandableGroup(toolkit, comp, "MCP Configuration", 3);
+        Composite configGroup = SWTFactory.createExpandableGroup(toolkit, comp, "MCP Configuration", 3, true);
 
         SWTFactory.createLabel(configGroup, "Server URL:");
         mcpUrlText = SWTFactory.createText(configGroup);
@@ -58,7 +58,7 @@ public class McpSettingsPage extends SharedScrolledComposite {
             }
         });
 
-        Composite resourcesGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Available Resources", 1);
+        Composite resourcesGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Available Resources", 1, false);
 
         resourcesTable = new Table(resourcesGroup, SWT.BORDER | SWT.FULL_SELECTION);
         resourcesTable.setHeaderVisible(true);
