@@ -14,6 +14,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
@@ -21,6 +22,7 @@ import org.eclipse.swt.custom.SashForm;
 import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
+import org.eclipse.ui.forms.IFormColors;
 import org.eclipse.ui.forms.events.ExpansionAdapter;
 import org.eclipse.ui.forms.events.ExpansionEvent;
 import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
@@ -32,12 +34,23 @@ public class SWTFactory {
 	public static final int LABEL_WIDTH = 130;
 	public static final int BUTTON_WIDTH = 100;
 
+	public static Composite createComposite(Composite parent, int columns) {
+		Composite container = new Composite(parent, SWT.NONE);
+		container.setLayout(new GridLayout(columns, false));
+		container.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return container;
+	}
+
 	public static Group createGroup(Composite parent, String text, int columns) {
 		Group composite = new Group(parent, SWT.NONE);
 		composite.setText(text);
 		composite.setLayout(new GridLayout(columns, false));
 		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		return composite;
+	}
+
+	public static Label createLabel(Composite parent) {
+		return createLabel(parent, "");
 	}
 
 	public static Label createLabel(Composite parent, String text) {
@@ -48,17 +61,17 @@ public class SWTFactory {
 		label.setText(text);
 		return label;
 	}
-	
-	public static Button createButton(Composite parent, String text) {		
+
+	public static Button createButton(Composite parent, String text) {
 		return createButton(parent, text, BUTTON_WIDTH);
 	}
-	
+
 	public static Button createButton(Composite parent, String text, int widthHint) {
 		GridData gd = new GridData();
 		gd.widthHint = widthHint;
 		Button btn = new Button(parent, SWT.PUSH);
 		btn.setLayoutData(gd);
-		btn.setText(text);		
+		btn.setText(text);
 		return btn;
 	}
 
@@ -77,7 +90,7 @@ public class SWTFactory {
 		});
 		return btn;
 	}
-	
+
 	public static Text createText(Composite parent) {
 		Text text = new Text(parent, SWT.BORDER);
 		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -97,7 +110,7 @@ public class SWTFactory {
 	}
 
 	public static Combo createCombo(Composite parent) {
-		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);		
+		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);
 		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
 		combo.setLayoutData(gd);
 		return combo;
@@ -105,7 +118,7 @@ public class SWTFactory {
 
 	public static Combo selectModel(Composite parent, OllamaService ollamaService) {
 		Combo combo = createCombo(parent);
-		
+
 		List<eu.kalafatic.evolution.controller.manager.OllamaModel> models = ollamaService != null
 				? ollamaService.loadModels()
 				: new ArrayList<>();
@@ -131,7 +144,8 @@ public class SWTFactory {
 
 		Label label = new Label(header, SWT.NONE);
 		label.setText(text);
-		label.setFont(org.eclipse.jface.resource.JFaceResources.getFontRegistry().getBold(org.eclipse.jface.resource.JFaceResources.DEFAULT_FONT));
+		label.setFont(org.eclipse.jface.resource.JFaceResources.getFontRegistry()
+				.getBold(org.eclipse.jface.resource.JFaceResources.DEFAULT_FONT));
 		label.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 		Button maxBtn = new Button(header, SWT.PUSH | SWT.FLAT);
@@ -147,7 +161,8 @@ public class SWTFactory {
 		maxBtn.addDisposeListener(new DisposeListener() {
 			@Override
 			public void widgetDisposed(DisposeEvent e) {
-				if (orange != null && !orange.isDisposed()) orange.dispose();
+				if (orange != null && !orange.isDisposed())
+					orange.dispose();
 			}
 		});
 
@@ -179,10 +194,18 @@ public class SWTFactory {
 		return group;
 	}
 
-	public static Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns, boolean expanded) {
-		int style = Section.TITLE_BAR | Section.TWISTIE;
-		if (expanded) style |= Section.EXPANDED;
+	public static Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns,
+			boolean expanded) {
+		int style = Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE;
+		if (expanded)
+			style |= Section.EXPANDED;
 		final Section section = toolkit.createSection(parent, style);
+		// Set the color of the title text
+		Color BG = new Color(section.getDisplay(), 195, 195, 235);
+		Color FG = new Color(section.getDisplay(), 110, 124, 245);
+		section.setTitleBarForeground(FG);
+		section.setBackground(BG);
+
 		section.setText(title);
 		section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -194,11 +217,12 @@ public class SWTFactory {
 		maxBtn.setLayoutData(maxGd);
 		maxBtn.setText("\u25FB");
 		maxBtn.setToolTipText("Maximize");
-		Color orange = new Color(section.getDisplay(), 255, 140, 0);
+		Color orange = new Color(section.getDisplay(), 207, 159, 159);
 		maxBtn.setBackground(orange);
 		maxBtn.setForeground(section.getDisplay().getSystemColor(SWT.COLOR_WHITE));
 		maxBtn.addDisposeListener(e -> {
-			if (orange != null && !orange.isDisposed()) orange.dispose();
+			if (orange != null && !orange.isDisposed())
+				orange.dispose();
 		});
 		section.setTextClient(maxBtn);
 
@@ -230,7 +254,8 @@ public class SWTFactory {
 			if (sash.getMaximizedControl() == section) {
 				sash.setMaximizedControl(null);
 				int[] weights = (int[]) sash.getData("lastWeights");
-				if (weights != null) sash.setWeights(weights);
+				if (weights != null)
+					sash.setWeights(weights);
 				maxBtn.setText("\u25FB");
 				maxBtn.setToolTipText("Maximize");
 			} else {
@@ -285,6 +310,19 @@ public class SWTFactory {
 			c = c.getParent();
 		}
 		parent.layout(true, true);
+	}
+
+	public static void setControlEnabled(boolean enabled, boolean forceVisible, Control... controls) {
+		for (Control control : controls) {
+			control.setEnabled(enabled);
+
+			if (enabled || forceVisible ) {
+				control.setVisible(true);
+			} 
+			if (control instanceof Composite) {
+				setControlEnabled(enabled, forceVisible, ((Composite) control).getChildren());
+			}
+		}
 	}
 
 }

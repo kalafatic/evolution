@@ -92,6 +92,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getSelfDevSession_InitialRequest() {
 		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(6);
+	}
+	
 	public EAttribute getTask_ScheduledTime() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(16);
 	}
