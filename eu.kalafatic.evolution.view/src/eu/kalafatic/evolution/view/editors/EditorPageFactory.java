@@ -1,9 +1,8 @@
-package eu.kalafatic.evolution.view.editors.pages.factories;
+package eu.kalafatic.evolution.view.editors;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PartInitException;
-import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
 public class EditorPageFactory {
     public static Text createEditorPage(MultiPageEditor editor, String content) throws PartInitException {
