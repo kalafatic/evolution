@@ -173,7 +173,7 @@ public class AiChatPage extends SharedScrolledComposite {
         modeIndicatorLabel.setFont(bannerFont);
         modeIndicatorLabel.setText("INITIALIZING...");
 
-        Composite chatMgmtGroup = SWTFactory.createExpandableGroup(toolkit, content, "Chat Management", 5);
+        Composite chatMgmtGroup = SWTFactory.createExpandableGroup(toolkit, content, "Chat Management", 5, true);
 
         Button cleanButton = SWTFactory.createButton(chatMgmtGroup, "Clean");
         cleanButton.addSelectionListener(new SelectionAdapter() {
@@ -224,7 +224,7 @@ public class AiChatPage extends SharedScrolledComposite {
        
 
         
-        final Composite groupMode = SWTFactory.createExpandableGroup(toolkit, content, "AI Settings", 3);
+        final Composite groupMode = SWTFactory.createExpandableGroup(toolkit, content, "AI Settings", 3, false);
 
         SWTFactory.createLabel(groupMode, "AI Mode:");
         aiModeCombo = SWTFactory.createCombo(groupMode);
@@ -321,7 +321,7 @@ public class AiChatPage extends SharedScrolledComposite {
             }
         });
 
-        Composite inputGroup = SWTFactory.createExpandableGroup(toolkit, content, "Message Input", 1);
+        Composite inputGroup = SWTFactory.createExpandableGroup(toolkit, content, "Message Input", 1, false);
         requestText = new StyledText(inputGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         setupContextAssist();
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
@@ -345,7 +345,7 @@ public class AiChatPage extends SharedScrolledComposite {
             }
         });
 
-        Composite historyGroup = SWTFactory.createExpandableGroup(toolkit, content, "Conversation History", 1);
+        Composite historyGroup = SWTFactory.createExpandableGroup(toolkit, content, "Conversation History", 1, false);
         responseText = new StyledText(historyGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY | SWT.WRAP);
         GridData responseGridData = new GridData(GridData.FILL_BOTH);
         responseGridData.heightHint = 250;
@@ -354,7 +354,7 @@ public class AiChatPage extends SharedScrolledComposite {
         responseText.setFont(chatFont);
         responseText.setMargins(10, 10, 10, 10);
 
-        Composite systemStatusGroup = SWTFactory.createExpandableGroup(toolkit, content, "System Status", 4);
+        Composite systemStatusGroup = SWTFactory.createExpandableGroup(toolkit, content, "System Status", 4, false);
         SWTFactory.createLabel(systemStatusGroup, "Ollama Status:");
         ollamaStatusLabel = new Label(systemStatusGroup, SWT.NONE);
         ollamaStatusLabel.setText("Unknown");

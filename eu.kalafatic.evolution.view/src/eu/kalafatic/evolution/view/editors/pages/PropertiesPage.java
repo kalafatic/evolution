@@ -116,7 +116,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 		};
 		Display.getDefault().timerExec(1000, timer);
 
-		Composite orchGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Orchestrator", 3);
+		Composite orchGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Orchestrator", 3, true);
 		SWTFactory.createLabel(orchGroup, "ID:");
 		orchIdText = SWTFactory.createText(orchGroup);
 		SWTFactory.createEditButton(orchGroup, orchIdText);
@@ -124,7 +124,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 		orchNameText = SWTFactory.createText(orchGroup);
 		SWTFactory.createEditButton(orchGroup, orchNameText);
 
-		Composite llmGroup = SWTFactory.createExpandableGroup(toolkit, comp, "LLM Settings", 3);
+		Composite llmGroup = SWTFactory.createExpandableGroup(toolkit, comp, "LLM Settings", 3, false);
 		SWTFactory.createLabel(llmGroup, "Model:");
 		llmModelText = SWTFactory.createText(llmGroup);
 		SWTFactory.createEditButton(llmGroup, llmModelText);
@@ -132,7 +132,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 		llmTempText = SWTFactory.createText(llmGroup);
 		SWTFactory.createEditButton(llmGroup, llmTempText);
 
-		Composite ollamaGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Ollama Settings", 3);
+		Composite ollamaGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Ollama Settings", 3, false);
 		SWTFactory.createLabel(ollamaGroup, "URL:");
 		ollamaUrlText = SWTFactory.createText(ollamaGroup);
 		SWTFactory.createEditButton(ollamaGroup, ollamaUrlText);
@@ -158,7 +158,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 		ollamaVersionText.setEditable(false);
 		SWTFactory.createLabel(ollamaGroup, "");
 
-		Composite agentsGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Agents", 1);
+		Composite agentsGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Agents", 1, false);
 		agentsTable = new Table(agentsGroup, SWT.BORDER | SWT.FULL_SELECTION);
 		agentsTable.setHeaderVisible(true);
 		agentsTable.setLinesVisible(true);
@@ -171,7 +171,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 			col.setWidth(widths[i]);
 		}
 
-		Composite othersGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Additional AI & Tools", 3);
+		Composite othersGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Additional AI & Tools", 3, false);
 		SWTFactory.createLabel(othersGroup, "AI Chat URL:");
 		aiChatUrlText = SWTFactory.createText(othersGroup);
 		SWTFactory.createEditButton(othersGroup, aiChatUrlText);
@@ -182,7 +182,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 		compilerSourceText = SWTFactory.createText(othersGroup);
 		SWTFactory.createEditButton(othersGroup, compilerSourceText);
 
-		Composite mcpOpenAiGroup = SWTFactory.createExpandableGroup(toolkit, comp, "MCP & OpenAI (Hybrid Architecture)", 3);
+		Composite mcpOpenAiGroup = SWTFactory.createExpandableGroup(toolkit, comp, "MCP & OpenAI (Hybrid Architecture)", 3, false);
 		SWTFactory.createLabel(mcpOpenAiGroup, "AI Mode:");
 		aiModeCombo = SWTFactory.createCombo(mcpOpenAiGroup);
 		aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
@@ -213,7 +213,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 		openAiModelText = SWTFactory.createText(mcpOpenAiGroup);
 		SWTFactory.createEditButton(mcpOpenAiGroup, openAiModelText);
 
-		Composite aiModelGroup = SWTFactory.createExpandableGroup(toolkit, comp, "AI Chat Models (per Mode)", 3);
+		Composite aiModelGroup = SWTFactory.createExpandableGroup(toolkit, comp, "AI Chat Models (per Mode)", 3, false);
 		SWTFactory.createLabel(aiModelGroup, "Local Model:");
 		localModelText = SWTFactory.createText(aiModelGroup);
 		SWTFactory.createEditButton(aiModelGroup, localModelText);
