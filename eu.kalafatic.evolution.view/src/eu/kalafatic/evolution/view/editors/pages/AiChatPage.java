@@ -85,6 +85,8 @@ public class AiChatPage extends SharedScrolledComposite {
     private Map<String, StyleRange[]> threadStyles = new HashMap<>();
     private String currentThread = "Default";
     private Combo threadCombo;
+    private Button iterativeCheck;
+    private Button selfIterativeCheck;
     private Combo aiModeCombo;    
     private Combo aiRemoteCombo;
     private Label aiRemoteLabel;
@@ -213,12 +215,39 @@ public class AiChatPage extends SharedScrolledComposite {
             }
         });
 
-        Button selfDevButton = SWTFactory.createButton(chatMgmtGroup, "🚀 Self-Dev");
+        Button selfDevButton = toolkit.createButton(chatMgmtGroup, "🚀 Self-Dev", SWT.PUSH);
         selfDevButton.setToolTipText("Start an autonomous self-development session to improve the codebase.");
+        GridData selfDevGd = new GridData();
+        selfDevGd.widthHint = 100;
+        selfDevButton.setLayoutData(selfDevGd);
         selfDevButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                startSelfDevAction();
+                startSelfDevAction(requestText.getText().trim());
+            }
+        });
+
+        iterativeCheck = toolkit.createButton(chatMgmtGroup, "Iterative Dev", SWT.CHECK);
+        iterativeCheck.setToolTipText("Enable iterative development based on your prompt.");
+        iterativeCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (iterativeCheck.getSelection()) {
+                    selfIterativeCheck.setSelection(false);
+                }
+                syncModelWithUI();
+            }
+        });
+
+        selfIterativeCheck = toolkit.createButton(chatMgmtGroup, "Self Iterative Dev", SWT.CHECK);
+        selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");
+        selfIterativeCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (selfIterativeCheck.getSelection()) {
+                    iterativeCheck.setSelection(false);
+                }
+                syncModelWithUI();
             }
         });
        
@@ -531,6 +560,8 @@ public class AiChatPage extends SharedScrolledComposite {
         }
 
         orchestrator.setOpenAiToken(remoteTokenText.getText());
+        orchestrator.setIterativeMode(iterativeCheck.getSelection());
+        orchestrator.setSelfIterativeMode(selfIterativeCheck.getSelection());
 
         if (orchestrator.getAiChat() == null) {
             orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
@@ -544,6 +575,11 @@ public class AiChatPage extends SharedScrolledComposite {
     private void sendAction() {
         String request = requestText.getText().trim();
         if (request.isEmpty()) return;
+
+        if (orchestrator != null && (orchestrator.isIterativeMode() || orchestrator.isSelfIterativeMode())) {
+            startSelfDevAction(request);
+            return;
+        }
 
         if (orchestrator != null) {
             if (orchestrator.getAiChat() == null) {
@@ -671,9 +707,8 @@ public class AiChatPage extends SharedScrolledComposite {
         responseText.setSelection(responseText.getCharCount());
     }
 
-    private void startSelfDevAction() {
-        String request = requestText.getText().trim();
-        if (request.isEmpty()) {
+    private void startSelfDevAction(String request) {
+        if (request == null || request.isEmpty()) {
             request = "Analyze the project and suggest improvements.";
         }
 
@@ -729,6 +764,7 @@ public class AiChatPage extends SharedScrolledComposite {
                 SelfDevSession session = OrchestrationFactory.eINSTANCE.createSelfDevSession();
                 session.setId("session-" + System.currentTimeMillis());
                 session.setMaxIterations(5);
+                session.setInitialRequest(finalRequest);
                 orchestrator.setSelfDevSession(session);
 
                 SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context);
@@ -833,6 +869,9 @@ public class AiChatPage extends SharedScrolledComposite {
             remoteTokenText.setVisible(remoteVisible);
             remoteUrlLabel.setVisible(remoteVisible);
             remoteUrlText.setVisible(remoteVisible);
+
+            iterativeCheck.setSelection(orchestrator.isIterativeMode());
+            selfIterativeCheck.setSelection(orchestrator.isSelfIterativeMode());
         }
         updateStatusInfo();
         updateModeDisplay();

@@ -80,6 +80,18 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	}
 
 	@Override
+	public EAttribute getOrchestrator_IterativeMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(25);
+	}
+
+	@Override
+	public EAttribute getOrchestrator_SelfIterativeMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(26);
+	}
+
+	@Override
+	public EAttribute getSelfDevSession_InitialRequest() {
+		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(6);
 	public EAttribute getTask_ScheduledTime() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(16);
 	}
@@ -2017,6 +2029,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(selfDevSessionEClass, SELF_DEV_SESSION__STATUS);
 		createEReference(selfDevSessionEClass, SELF_DEV_SESSION__ITERATIONS);
 		createEAttribute(selfDevSessionEClass, SELF_DEV_SESSION__RATIONALE);
+		createEAttribute(selfDevSessionEClass, SELF_DEV_SESSION__INITIAL_REQUEST);
 
 		databaseEClass = createEClass(DATABASE);
 		createEAttribute(databaseEClass, DATABASE__URL);
@@ -2047,6 +2060,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(eclipseEClass, ECLIPSE__TEST_STATUS);
 
 		createEReference(orchestratorEClass, ORCHESTRATOR__TESTS);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__ITERATIVE_MODE);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__SELF_ITERATIVE_MODE);
 
 		testEClass = createEClass(TEST);
 		createEAttribute(testEClass, TEST__ID);
@@ -2237,6 +2252,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getSelfDevSession_Status(), this.getSelfDevStatus(), "status", null, 0, 1, SelfDevSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getSelfDevSession_Iterations(), this.getIteration(), null, "iterations", null, 0, -1, SelfDevSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getSelfDevSession_Rationale(), ecorePackage.getEString(), "rationale", null, 0, 1, SelfDevSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSelfDevSession_InitialRequest(), ecorePackage.getEString(), "initialRequest", null, 0, 1, SelfDevSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(databaseEClass, Database.class, "Database", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getDatabase_Url(), ecorePackage.getEString(), "url", null, 0, 1, Database.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -2267,6 +2283,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getEclipse_TestStatus(), ecorePackage.getEString(), "testStatus", null, 0, 1, Eclipse.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEReference(getOrchestrator_Tests(), this.getTest(), null, "tests", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(testEClass, eu.kalafatic.evolution.model.orchestration.Test.class, "Test", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getTest_Id(), ecorePackage.getEString(), "id", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

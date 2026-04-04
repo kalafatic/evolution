@@ -559,6 +559,11 @@ public interface Orchestrator extends EObject {
 	 */
 	void setSharedMemory(String value);
 
+	boolean isIterativeMode();
+	void setIterativeMode(boolean value);
+	boolean isSelfIterativeMode();
+	void setSelfIterativeMode(boolean value);
+
 	/**
 	 * Returns the value of the '<em><b>Tests</b></em>' containment reference list.
 	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.Test}.

@@ -26,4 +26,25 @@ public class ModelInitTest extends TestCase {
         assertEquals("/path/to/eclipse", orchestrator.getEclipse().getInstallation());
         assertEquals("Java-21", orchestrator.getEclipse().getTargetPlatform());
     }
+
+    public void testIterativeModes() {
+        eu.kalafatic.evolution.model.orchestration.Orchestrator orchestrator = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOrchestrator();
+        assertFalse(orchestrator.isIterativeMode());
+        assertFalse(orchestrator.isSelfIterativeMode());
+
+        orchestrator.setIterativeMode(true);
+        assertTrue(orchestrator.isIterativeMode());
+
+        orchestrator.setSelfIterativeMode(true);
+        assertTrue(orchestrator.isSelfIterativeMode());
+    }
+
+    public void testInitialRequest() {
+        eu.kalafatic.evolution.model.orchestration.SelfDevSession session = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createSelfDevSession();
+        assertNull(session.getInitialRequest());
+
+        String request = "Implement new feature X";
+        session.setInitialRequest(request);
+        assertEquals(request, session.getInitialRequest());
+    }
 }

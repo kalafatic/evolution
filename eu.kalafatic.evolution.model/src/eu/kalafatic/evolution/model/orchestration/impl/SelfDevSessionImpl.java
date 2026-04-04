@@ -128,6 +128,9 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 	 */
 	protected EList<Iteration> iterations;
 
+	protected static final String INITIAL_REQUEST_EDEFAULT = null;
+	protected String initialRequest = INITIAL_REQUEST_EDEFAULT;
+
 	/**
 	 * The default value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -295,6 +298,19 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SELF_DEV_SESSION__RATIONALE, oldRationale, rationale));
 	}
 
+	@Override
+	public String getInitialRequest() {
+		return initialRequest;
+	}
+
+	@Override
+	public void setInitialRequest(String newInitialRequest) {
+		String oldInitialRequest = initialRequest;
+		initialRequest = newInitialRequest;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SELF_DEV_SESSION__INITIAL_REQUEST, oldInitialRequest, initialRequest));
+	}
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -329,6 +345,8 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 				return getIterations();
 			case OrchestrationPackage.SELF_DEV_SESSION__RATIONALE:
 				return getRationale();
+			case OrchestrationPackage.SELF_DEV_SESSION__INITIAL_REQUEST:
+				return getInitialRequest();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -361,6 +379,9 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 			case OrchestrationPackage.SELF_DEV_SESSION__RATIONALE:
 				setRationale((String)newValue);
 				return;
+			case OrchestrationPackage.SELF_DEV_SESSION__INITIAL_REQUEST:
+				setInitialRequest((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -391,6 +412,9 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 			case OrchestrationPackage.SELF_DEV_SESSION__RATIONALE:
 				setRationale(RATIONALE_EDEFAULT);
 				return;
+			case OrchestrationPackage.SELF_DEV_SESSION__INITIAL_REQUEST:
+				setInitialRequest(INITIAL_REQUEST_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -415,6 +439,8 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 				return iterations != null && !iterations.isEmpty();
 			case OrchestrationPackage.SELF_DEV_SESSION__RATIONALE:
 				return RATIONALE_EDEFAULT == null ? rationale != null : !RATIONALE_EDEFAULT.equals(rationale);
+			case OrchestrationPackage.SELF_DEV_SESSION__INITIAL_REQUEST:
+				return INITIAL_REQUEST_EDEFAULT == null ? initialRequest != null : !INITIAL_REQUEST_EDEFAULT.equals(initialRequest);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -439,6 +465,8 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 		result.append(status);
 		result.append(", rationale: ");
 		result.append(rationale);
+		result.append(", initialRequest: ");
+		result.append(initialRequest);
 		result.append(')');
 		return result.toString();
 	}

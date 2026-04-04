@@ -16,14 +16,36 @@ public class TaskPlanner extends BaseAiAgent {
     }
 
     public List<Task> generateTasks(TaskContext context) throws Exception {
-        context.log("[PLANNER] Analyzing project to generate improvement tasks...");
+        String initialRequest = null;
+        if (context.getOrchestrator().getSelfDevSession() != null) {
+            initialRequest = context.getOrchestrator().getSelfDevSession().getInitialRequest();
+        }
 
-        String prompt = "You are a Self-Development Task Planner. Your goal is to improve the codebase.\n" +
-                "Analyze the project structure and provided context. Generate 1 to 5 atomic, independent improvement tasks.\n" +
-                "Tasks should focus on code quality, documentation, test coverage, or minor feature enhancements.\n" +
-                "Forbidden: Changing build config (pom.xml), core orchestrator engine, or deployment scripts.\n\n" +
-                "Output MUST be a valid JSON array of objects. Schema:\n" +
-                "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\", \"priority\": integer } ]\n";
+        boolean isIterative = context.getOrchestrator().isIterativeMode();
+        boolean isSelfIterative = context.getOrchestrator().isSelfIterativeMode();
+
+        String prompt;
+        if (isIterative && initialRequest != null && !initialRequest.isEmpty() && !"Analyze the project and suggest improvements.".equals(initialRequest)) {
+            context.log("[PLANNER] Analyzing project to fulfill iterative request: " + initialRequest);
+            prompt = "You are an Iterative Development Task Planner. Your goal is to fulfill the following user request: \"" + initialRequest + "\"\n" +
+                    "Analyze the project structure and provided context. Generate 1 to 5 atomic, independent tasks to achieve this goal.\n" +
+                    "Tasks can include code changes, test creation, or documentation.\n" +
+                    "Forbidden: Changing build config (pom.xml) unless explicitly requested, core orchestrator engine, or deployment scripts.\n\n" +
+                    "Output MUST be a valid JSON array of objects. Schema:\n" +
+                    "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\", \"priority\": integer, \"rationale\": \"string\" } ]\n";
+        } else {
+            context.log("[PLANNER] Analyzing project to generate autonomous improvement tasks...");
+            prompt = "You are a Self-Development Task Planner. Your goal is to improve the codebase autonomously.\n" +
+                    "Analyze the project structure and provided context. Generate 1 to 5 atomic, independent improvement tasks.\n" +
+                    "Tasks should focus on code quality, documentation, test coverage, or minor feature enhancements.\n" +
+                    "Forbidden: Changing build config (pom.xml), core orchestrator engine, or deployment scripts.\n\n" +
+                    "Output MUST be a valid JSON array of objects. Schema:\n" +
+                    "[ { \"id\": \"unique_id\", \"name\": \"Clear task description\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\", \"priority\": integer, \"rationale\": \"string\" } ]\n";
+
+            if (isSelfIterative && initialRequest != null && !initialRequest.isEmpty() && !"Analyze the project and suggest improvements.".equals(initialRequest)) {
+                prompt += "\nUser provided additional context/focus for this autonomous session: \"" + initialRequest + "\"";
+            }
+        }
 
         String response = aiService.sendRequest(context.getOrchestrator(), prompt, context);
         context.log("[PLANNER] AI response received.");

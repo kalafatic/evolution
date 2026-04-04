@@ -31,6 +31,7 @@ public class OrchestrationTests extends TestSuite {
 	 */
 	public static Test suite() {
 		TestSuite suite = new OrchestrationTests("orchestration Tests");
+		suite.addTestSuite(ModelInitTest.class);
 		return suite;
 	}
 
