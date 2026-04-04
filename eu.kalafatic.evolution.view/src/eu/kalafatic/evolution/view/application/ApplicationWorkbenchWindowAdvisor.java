@@ -15,21 +15,14 @@ import java.io.InputStream;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProduct;
-import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.LocalSelectionTransfer;
@@ -61,20 +54,15 @@ import org.eclipse.ui.application.ActionBarAdvisor;
 import org.eclipse.ui.application.IActionBarConfigurer;
 import org.eclipse.ui.application.IWorkbenchWindowConfigurer;
 import org.eclipse.ui.application.WorkbenchWindowAdvisor;
-import org.eclipse.ui.internal.splash.SplashHandlerFactory;
 import org.eclipse.ui.part.EditorInputTransfer;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.part.MarkerTransfer;
 import org.eclipse.ui.part.ResourceTransfer;
 import org.osgi.framework.Version;
 
+import eu.kalafatic.evolution.view.application.EvolutionSplashHandler.GSHf;
 import eu.kalafatic.evolution.view.provider.ProjectManager;
 import eu.kalafatic.utils.constants.FCoreImageConstants;
-import eu.kalafatic.utils.dialogs.GeminiSplashHandler;
-import eu.kalafatic.utils.dialogs.GeminiSplashHandler.GSHf;
-import eu.kalafatic.utils.hack.EclipseSplashHandler;
-import eu.kalafatic.utils.interfaces.ISplashUser;
-import eu.kalafatic.utils.lib.AppData;
 import eu.kalafatic.utils.log.Log;
 import eu.kalafatic.utils.preferences.ECorePreferences;
 
@@ -101,7 +89,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	private Display display;
 
 	/** The splash. */
-	private static GeminiSplashHandler splash;
+	private static EvolutionSplashHandler splash;
 
 	/** The action bar advisor. */
 	private ApplicationActionBarAdvisor actionBarAdvisor;
@@ -340,15 +328,15 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	 * @return the splash
 	 */
 		@SuppressWarnings({ "unused" })
-		private GeminiSplashHandler getSplash() {
+		private EvolutionSplashHandler getSplash() {
 			if (splash == null) {
 
 				IProduct product = Platform.getProduct();
 				if (product != null) {
-					// splash = (GeminiSplashHandler) SplashHandlerFactory.findSplashHandlerFor(product);
+					// splash = (EvolutionSplashHandler) SplashHandlerFactory.findSplashHandlerFor(product);
 				}
 				if (splash == null) {
-					splash = new eu.kalafatic.utils.hack.EclipseSplashHandler();
+					splash = new EvolutionSplashHandler();
 				}
 			}
 			return splash;
@@ -456,7 +444,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 		 * @see eu.kalafatic.gemini.core.interfaces.ISplashUser#endWithProgress()
 		 */
 		@Override
-		public void endWithProgress(final GeminiSplashHandler splashHandler) {
+		public void endWithProgress(final EvolutionSplashHandler splashHandler) {
 			try {
 				splashHandler.startSubTask("Stopping modules ...", (GSHf.FLAG & ~GSHf.VISIBLE));
 				Thread.sleep(500);
@@ -494,7 +482,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 				@Override
 				public void run() {
 					try {
-						splash = (GeminiSplashHandler) AppData.getInstance().getSplashHandler();
+						splash = (EvolutionSplashHandler) AppData.getInstance().getSplashHandler();
 						splash.setEndSplash(true);
 						Shell shell = splash.createUI(display);
 						splash.init(shell);
@@ -524,7 +512,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 
 				// --------------------------------------------------------------
 
-				private void finishApplications(GeminiSplashHandler splashHandler) {
+				private void finishApplications(EvolutionSplashHandler splashHandler) {
 					try {
 						final List<ISplashUser> splashUsers = AppData.getInstance().getSplashUsersUsers();
 

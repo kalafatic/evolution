@@ -92,6 +92,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getSelfDevSession_InitialRequest() {
 		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(6);
+	public EAttribute getTask_ScheduledTime() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(16);
+	}
+
+	@Override
+	public EAttribute getTask_Selected() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(17);
 	}
 
 	/**
@@ -1910,6 +1917,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(taskEClass, TASK__RATING);
 		createEAttribute(taskEClass, TASK__LIKES);
 		createEAttribute(taskEClass, TASK__RATIONALE);
+		createEAttribute(taskEClass, TASK__SCHEDULED_TIME);
+		createEAttribute(taskEClass, TASK__SELECTED);
 
 		agentEClass = createEClass(AGENT);
 		createEAttribute(agentEClass, AGENT__ID);
@@ -2131,6 +2140,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getTask_Rating(), ecorePackage.getEInt(), "rating", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_Likes(), ecorePackage.getEBoolean(), "likes", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_Rationale(), ecorePackage.getEString(), "rationale", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_ScheduledTime(), ecorePackage.getEString(), "scheduledTime", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_Selected(), ecorePackage.getEBoolean(), "selected", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(agentEClass, Agent.class, "Agent", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getAgent_Id(), ecorePackage.getEString(), "id", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

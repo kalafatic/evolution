@@ -93,7 +93,7 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 	}
 	public void contributeToMenu(IMenuManager manager) {
 		IMenuManager menu = new MenuManager("Editor &Menu");
-		manager.prependToGroup(IWorkbenchActionConstants.MB_ADDITIONS, menu);
+		//manager.prependToGroup(IWorkbenchActionConstants.MB_ADDITIONS, menu);
 		menu.add(sampleAction);
 	}
 	public void contributeToToolBar(IToolBarManager manager) {

@@ -30,6 +30,9 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getDescription <em>Description</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getRating <em>Rating</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isLikes <em>Likes</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getRationale <em>Rationale</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getScheduledTime <em>Scheduled Time</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isSelected <em>Selected</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -372,5 +375,49 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setRationale(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Scheduled Time</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Scheduled Time</em>' attribute.
+	 * @see #setScheduledTime(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_ScheduledTime()
+	 * @model
+	 * @generated
+	 */
+	String getScheduledTime();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getScheduledTime <em>Scheduled Time</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Scheduled Time</em>' attribute.
+	 * @see #getScheduledTime()
+	 * @generated
+	 */
+	void setScheduledTime(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Selected</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Selected</em>' attribute.
+	 * @see #setSelected(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Selected()
+	 * @model
+	 * @generated
+	 */
+	boolean isSelected();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#isSelected <em>Selected</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Selected</em>' attribute.
+	 * @see #isSelected()
+	 * @generated
+	 */
+	void setSelected(boolean value);
 
 } // Task
