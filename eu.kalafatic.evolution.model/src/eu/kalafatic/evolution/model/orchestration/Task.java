@@ -351,4 +351,26 @@ public interface Task extends EObject {
 	 */
 	void setLikes(boolean value);
 
+	/**
+	 * Returns the value of the '<em><b>Rationale</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Rationale</em>' attribute.
+	 * @see #setRationale(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Rationale()
+	 * @model
+	 * @generated
+	 */
+	String getRationale();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getRationale <em>Rationale</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Rationale</em>' attribute.
+	 * @see #getRationale()
+	 * @generated
+	 */
+	void setRationale(String value);
+
 } // Task
