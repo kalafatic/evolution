@@ -12,4 +12,13 @@ public interface IOrchestrator {
      * @throws Exception if execution fails and cannot be recovered.
      */
     String execute(String request, TaskContext context) throws Exception;
+
+    /**
+     * Executes a single task using the orchestrator's available agents and tools.
+     * @param task The task to execute.
+     * @param context The shared execution context.
+     * @return The result of task execution.
+     * @throws Exception if execution fails.
+     */
+    String executeTask(eu.kalafatic.evolution.model.orchestration.Task task, TaskContext context) throws Exception;
 }

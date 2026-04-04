@@ -39,16 +39,16 @@ public class SelfDevSupervisor {
                 iteration.setBranchName("selfdev/" + session.getId() + "/" + iteration.getId());
                 session.getIterations().add(iteration);
 
-                IterationManager iterationManager = new IterationManager(iteration, context);
+                IterationManager iterationManager = createIterationManager(iteration);
                 EvaluationResult result = iterationManager.run();
 
-                if (!result.isSuccess()) {
+                if (!result.isSuccess() || result.getDecision() == SelfDevDecision.ROLLBACK) {
                     failureCount++;
                     context.log("[SUPERVISOR] Iteration " + i + " failed. Total failures: " + failureCount);
                     if (failureCount >= MAX_FAILURES) {
                         context.log("[SUPERVISOR] Max failures (" + MAX_FAILURES + ") reached. Stopping session.");
                         session.setStatus(SelfDevStatus.FAILED);
-                        break;
+                        return; // Exit immediately
                     }
                 }
 
@@ -71,6 +71,10 @@ public class SelfDevSupervisor {
             context.log("[SUPERVISOR] Critical failure in session: " + e.getMessage());
             session.setStatus(SelfDevStatus.FAILED);
         }
+    }
+
+    protected IterationManager createIterationManager(Iteration iteration) {
+        return new IterationManager(iteration, context);
     }
 
     public void stopSession() {

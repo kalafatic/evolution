@@ -80,9 +80,6 @@ public class IterationItemProvider
 	protected void addRatingPropertyDescriptor(Object object) {
 		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "Rating", "Rating", OrchestrationPackage.Literals.ITERATION__RATING, true, false, false, ItemPropertyDescriptor.INTEGRAL_VALUE_IMAGE, null, null));
 	}
-	protected void addLikesPropertyDescriptor(Object object) {
-		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "Likes", "Likes", OrchestrationPackage.Literals.ITERATION__LIKES, true, false, false, ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE, null, null));
-	}
 	protected void addCommentsPropertyDescriptor(Object object) {
 		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "Comments", "Comments", OrchestrationPackage.Literals.ITERATION__COMMENTS, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
 	}
@@ -141,7 +138,6 @@ public class IterationItemProvider
 			case OrchestrationPackage.ITERATION__STATUS:
 			case OrchestrationPackage.ITERATION__PHASE:
 			case OrchestrationPackage.ITERATION__RATING:
-			case OrchestrationPackage.ITERATION__LIKES:
 			case OrchestrationPackage.ITERATION__COMMENTS:
 			case OrchestrationPackage.ITERATION__RATIONALE:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));

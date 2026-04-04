@@ -24,8 +24,18 @@ public class ShellTool implements ITool {
             throw new Exception("Security Violation: Command '" + firstArg + "' is not whitelisted for ShellTool.");
         }
 
-        String[] cmdArray = command.split("\\s+");
-        ProcessBuilder processBuilder = new ProcessBuilder(cmdArray);
+        // Handle quoted arguments for git commit and other commands
+        java.util.List<String> cmdList = new java.util.ArrayList<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(command);
+        while (m.find()) {
+            String arg = m.group(1);
+            if (arg.startsWith("\"") && arg.endsWith("\"")) {
+                arg = arg.substring(1, arg.length() - 1);
+            }
+            cmdList.add(arg);
+        }
+
+        ProcessBuilder processBuilder = new ProcessBuilder(cmdList);
         if (workingDir != null) {
             processBuilder.directory(workingDir);
         }
