@@ -18,6 +18,12 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.ui.forms.widgets.ExpandableComposite;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.Section;
+import org.eclipse.ui.forms.events.ExpansionAdapter;
+import org.eclipse.ui.forms.events.ExpansionEvent;
+import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 
@@ -171,6 +177,112 @@ public class SWTFactory {
 		});
 
 		return group;
+	}
+
+	public static Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns) {
+		final Section section = toolkit.createSection(parent, Section.TITLE_BAR | Section.TWISTIE | Section.EXPANDED);
+		section.setText(title);
+		section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		// Maximize Button
+		Button maxBtn = new Button(section, SWT.PUSH | SWT.FLAT);
+		GridData maxGd = new GridData();
+		maxGd.widthHint = 20;
+		maxGd.heightHint = 20;
+		maxBtn.setLayoutData(maxGd);
+		maxBtn.setText("\u25FB");
+		maxBtn.setToolTipText("Maximize");
+		Color orange = new Color(section.getDisplay(), 255, 140, 0);
+		maxBtn.setBackground(orange);
+		maxBtn.setForeground(section.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+		maxBtn.addDisposeListener(e -> {
+			if (orange != null && !orange.isDisposed()) orange.dispose();
+		});
+		section.setTextClient(maxBtn);
+
+		Composite client = toolkit.createComposite(section);
+		client.setLayout(new GridLayout(columns, false));
+		section.setClient(client);
+
+		section.addExpansionListener(new ExpansionAdapter() {
+			@Override
+			public void expansionStateChanged(ExpansionEvent e) {
+				reflow(parent);
+			}
+		});
+
+		maxBtn.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				toggleMaximize(section, maxBtn);
+			}
+		});
+
+		return client;
+	}
+
+	private static void toggleMaximize(Section section, Button maxBtn) {
+		Composite parent = section.getParent();
+		if (parent instanceof SashForm) {
+			SashForm sash = (SashForm) parent;
+			if (sash.getMaximizedControl() == section) {
+				sash.setMaximizedControl(null);
+				int[] weights = (int[]) sash.getData("lastWeights");
+				if (weights != null) sash.setWeights(weights);
+				maxBtn.setText("\u25FB");
+				maxBtn.setToolTipText("Maximize");
+			} else {
+				sash.setData("lastWeights", sash.getWeights());
+				sash.setMaximizedControl(section);
+				maxBtn.setText("\u25F2");
+				maxBtn.setToolTipText("Restore");
+			}
+		} else {
+			// Toggle visibility of siblings
+			boolean currentlyMaximized = Boolean.TRUE.equals(section.getData("isMaximized"));
+			if (currentlyMaximized) {
+				for (org.eclipse.swt.widgets.Control child : parent.getChildren()) {
+					child.setVisible(true);
+					if (child.getLayoutData() instanceof GridData) {
+						((GridData) child.getLayoutData()).exclude = false;
+					}
+				}
+				section.setData("isMaximized", false);
+				Object oldLd = section.getData("originalLayoutData");
+				if (oldLd instanceof GridData) {
+					section.setLayoutData((GridData) oldLd);
+				}
+				maxBtn.setText("\u25FB");
+				maxBtn.setToolTipText("Maximize");
+			} else {
+				for (org.eclipse.swt.widgets.Control child : parent.getChildren()) {
+					if (child != section) {
+						child.setVisible(false);
+						if (child.getLayoutData() instanceof GridData) {
+							((GridData) child.getLayoutData()).exclude = true;
+						}
+					}
+				}
+				section.setData("isMaximized", true);
+				section.setData("originalLayoutData", section.getLayoutData());
+				section.setLayoutData(new GridData(GridData.FILL_BOTH));
+				maxBtn.setText("\u25F2");
+				maxBtn.setToolTipText("Restore");
+			}
+		}
+		reflow(parent);
+	}
+
+	private static void reflow(Composite parent) {
+		Composite c = parent;
+		while (c != null) {
+			if (c instanceof SharedScrolledComposite) {
+				((SharedScrolledComposite) c).reflow(true);
+				break;
+			}
+			c = c.getParent();
+		}
+		parent.layout(true, true);
 	}
 
 }

@@ -11,7 +11,7 @@ public class GeminiSplashHandler extends AbstractSplashHandler {
     public Shell createUI(Display d) { return null; }
     public void init(Shell s) {}
     public void setMonitor() {}
-    public void getBundleProgressMonitor() {}
+    public org.eclipse.core.runtime.IProgressMonitor getBundleProgressMonitor() { return null; }
     public void update() {}
     public void done() {}
     public int getAlpha() { return 255; }

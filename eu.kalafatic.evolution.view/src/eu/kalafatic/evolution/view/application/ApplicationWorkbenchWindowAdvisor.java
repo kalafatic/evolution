@@ -340,15 +340,15 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	 * @return the splash
 	 */
 		@SuppressWarnings({ "unused" })
-		private EclipseSplashHandler getSplash() {
+		private GeminiSplashHandler getSplash() {
 			if (splash == null) {
 
 				IProduct product = Platform.getProduct();
 				if (product != null) {
-					splash = (GeminiSplashHandler) SplashHandlerFactory.findSplashHandlerFor(product);
+					// splash = (GeminiSplashHandler) SplashHandlerFactory.findSplashHandlerFor(product);
 				}
 				if (splash == null) {
-					splash = (GeminiSplashHandler) new EclipseSplashHandler();
+					// splash = (GeminiSplashHandler) new EclipseSplashHandler();
 				}
 			}
 			return splash;

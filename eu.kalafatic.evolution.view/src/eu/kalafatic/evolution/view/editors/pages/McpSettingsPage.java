@@ -1,13 +1,14 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
@@ -15,14 +16,14 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class McpSettingsPage extends ScrolledComposite {
+public class McpSettingsPage extends SharedScrolledComposite {
 
     private MultiPageEditor editor;
     private Orchestrator orchestrator;
     private Text mcpUrlText;
     private Table resourcesTable;
     private boolean isUpdating = false;
-    private SashForm sashForm;
+    private FormToolkit toolkit;
 
     public McpSettingsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -30,17 +31,15 @@ public class McpSettingsPage extends ScrolledComposite {
         this.orchestrator = orchestrator;
         this.setExpandHorizontal(true);
         this.setExpandVertical(true);
+        this.toolkit = new FormToolkit(parent.getDisplay());
         createControl();
     }
 
     private void createControl() {
-        Composite comp = new Composite(this, SWT.NONE);
+        Composite comp = toolkit.createComposite(this);
         comp.setLayout(new GridLayout(1, false));
 
-        sashForm = new SashForm(comp, SWT.VERTICAL);
-        sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-        Group configGroup = SWTFactory.createMaximizableGroup(sashForm, "MCP Configuration", 3);
+        Composite configGroup = SWTFactory.createExpandableGroup(toolkit, comp, "MCP Configuration", 3);
 
         SWTFactory.createLabel(configGroup, "Server URL:");
         mcpUrlText = SWTFactory.createText(configGroup);
@@ -59,7 +58,7 @@ public class McpSettingsPage extends ScrolledComposite {
             }
         });
 
-        Group resourcesGroup = SWTFactory.createMaximizableGroup(sashForm, "Available Resources", 1);
+        Composite resourcesGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Available Resources", 1);
 
         resourcesTable = new Table(resourcesGroup, SWT.BORDER | SWT.FULL_SELECTION);
         resourcesTable.setHeaderVisible(true);
@@ -81,8 +80,6 @@ public class McpSettingsPage extends ScrolledComposite {
                 refreshResources();
             }
         });
-
-        sashForm.setWeights(new int[] { 30, 70 });
 
         this.setContent(comp);
         this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
@@ -165,5 +162,13 @@ public class McpSettingsPage extends ScrolledComposite {
     public void setOrchestrator(Orchestrator orchestrator) {
         this.orchestrator = orchestrator;
         updateMcpInfo();
+    }
+
+    @Override
+    public void dispose() {
+        if (toolkit != null) {
+            toolkit.dispose();
+        }
+        super.dispose();
     }
 }

@@ -6,9 +6,10 @@ import java.util.List;
 import org.eclipse.jface.fieldassist.ControlDecoration;
 import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.*;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.GridData;
@@ -24,7 +25,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class PropertiesPage extends ScrolledComposite {
+public class PropertiesPage extends SharedScrolledComposite {
 
 	OllamaConfigManager.OllamaDefaults defaults = OllamaConfigManager.getDefaults();
 
@@ -41,7 +42,7 @@ public class PropertiesPage extends ScrolledComposite {
 	private Text localModelText, hybridModelText;
 	private Text mcpUrlText, openAiTokenText, openAiModelText;
 	private Table agentsTable;
-	private SashForm sashForm;
+	private FormToolkit toolkit;
 	private Text aiChatUrlText, neuronAiUrlText,
 			compilerSourceText;
 	private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator, llmTempDecorator;
@@ -53,6 +54,7 @@ public class PropertiesPage extends ScrolledComposite {
 		this.orchestrator = orchestrator;
 		this.setExpandHorizontal(true);
 		this.setExpandVertical(true);
+		this.toolkit = new FormToolkit(parent.getDisplay());
 		createControl();
 	}
 
@@ -60,7 +62,7 @@ public class PropertiesPage extends ScrolledComposite {
 
 		ollamaService = new OllamaService(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel());
 		
-		Composite comp = new Composite(this, SWT.NONE);
+		Composite comp = toolkit.createComposite(this);
 		comp.setLayout(new GridLayout(1, false));
 
 		modeIndicatorLabel = new Label(comp, SWT.CENTER);
@@ -114,10 +116,7 @@ public class PropertiesPage extends ScrolledComposite {
 		};
 		Display.getDefault().timerExec(1000, timer);
 
-		sashForm = new SashForm(comp, SWT.VERTICAL);
-		sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-		Group orchGroup = SWTFactory.createMaximizableGroup(sashForm, "Orchestrator", 3);
+		Composite orchGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Orchestrator", 3);
 		SWTFactory.createLabel(orchGroup, "ID:");
 		orchIdText = SWTFactory.createText(orchGroup);
 		SWTFactory.createEditButton(orchGroup, orchIdText);
@@ -125,7 +124,7 @@ public class PropertiesPage extends ScrolledComposite {
 		orchNameText = SWTFactory.createText(orchGroup);
 		SWTFactory.createEditButton(orchGroup, orchNameText);
 
-		Group llmGroup = SWTFactory.createMaximizableGroup(sashForm, "LLM Settings", 3);
+		Composite llmGroup = SWTFactory.createExpandableGroup(toolkit, comp, "LLM Settings", 3);
 		SWTFactory.createLabel(llmGroup, "Model:");
 		llmModelText = SWTFactory.createText(llmGroup);
 		SWTFactory.createEditButton(llmGroup, llmModelText);
@@ -133,7 +132,7 @@ public class PropertiesPage extends ScrolledComposite {
 		llmTempText = SWTFactory.createText(llmGroup);
 		SWTFactory.createEditButton(llmGroup, llmTempText);
 
-		Group ollamaGroup = SWTFactory.createMaximizableGroup(sashForm, "Ollama Settings", 3);
+		Composite ollamaGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Ollama Settings", 3);
 		SWTFactory.createLabel(ollamaGroup, "URL:");
 		ollamaUrlText = SWTFactory.createText(ollamaGroup);
 		SWTFactory.createEditButton(ollamaGroup, ollamaUrlText);
@@ -159,7 +158,7 @@ public class PropertiesPage extends ScrolledComposite {
 		ollamaVersionText.setEditable(false);
 		SWTFactory.createLabel(ollamaGroup, "");
 
-		Group agentsGroup = SWTFactory.createMaximizableGroup(sashForm, "Agents", 1);
+		Composite agentsGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Agents", 1);
 		agentsTable = new Table(agentsGroup, SWT.BORDER | SWT.FULL_SELECTION);
 		agentsTable.setHeaderVisible(true);
 		agentsTable.setLinesVisible(true);
@@ -172,7 +171,7 @@ public class PropertiesPage extends ScrolledComposite {
 			col.setWidth(widths[i]);
 		}
 
-		Group othersGroup = SWTFactory.createMaximizableGroup(sashForm, "Additional AI & Tools", 3);
+		Composite othersGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Additional AI & Tools", 3);
 		SWTFactory.createLabel(othersGroup, "AI Chat URL:");
 		aiChatUrlText = SWTFactory.createText(othersGroup);
 		SWTFactory.createEditButton(othersGroup, aiChatUrlText);
@@ -183,7 +182,7 @@ public class PropertiesPage extends ScrolledComposite {
 		compilerSourceText = SWTFactory.createText(othersGroup);
 		SWTFactory.createEditButton(othersGroup, compilerSourceText);
 
-		Group mcpOpenAiGroup = SWTFactory.createMaximizableGroup(sashForm, "MCP & OpenAI (Hybrid Architecture)", 3);
+		Composite mcpOpenAiGroup = SWTFactory.createExpandableGroup(toolkit, comp, "MCP & OpenAI (Hybrid Architecture)", 3);
 		SWTFactory.createLabel(mcpOpenAiGroup, "AI Mode:");
 		aiModeCombo = SWTFactory.createCombo(mcpOpenAiGroup);
 		aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
@@ -214,7 +213,7 @@ public class PropertiesPage extends ScrolledComposite {
 		openAiModelText = SWTFactory.createText(mcpOpenAiGroup);
 		SWTFactory.createEditButton(mcpOpenAiGroup, openAiModelText);
 
-		Group aiModelGroup = SWTFactory.createMaximizableGroup(sashForm, "AI Chat Models (per Mode)", 3);
+		Composite aiModelGroup = SWTFactory.createExpandableGroup(toolkit, comp, "AI Chat Models (per Mode)", 3);
 		SWTFactory.createLabel(aiModelGroup, "Local Model:");
 		localModelText = SWTFactory.createText(aiModelGroup);
 		SWTFactory.createEditButton(aiModelGroup, localModelText);
@@ -243,7 +242,6 @@ public class PropertiesPage extends ScrolledComposite {
 			}
 		});
 
-		sashForm.setWeights(new int[] { 10, 10, 18, 14, 13, 18, 17 });
 
 		ollamaUrlDecorator = new ControlDecoration(ollamaUrlText, SWT.TOP | SWT.LEFT);
 		ollamaUrlDecorator.setImage(
@@ -307,7 +305,7 @@ public class PropertiesPage extends ScrolledComposite {
 		}
 	}
 
-	private void selectModel(Group ollamaGroup, OllamaService ollamaService) {
+	private void selectModel(Composite ollamaGroup, OllamaService ollamaService) {
 		SWTFactory.selectModel(ollamaGroup, ollamaService).addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -462,5 +460,13 @@ public class PropertiesPage extends ScrolledComposite {
 		this.orchestrator = orchestrator;
 		updatePropertiesInfo();
 		updateModeDisplay();
+	}
+
+	@Override
+	public void dispose() {
+		if (toolkit != null) {
+			toolkit.dispose();
+		}
+		super.dispose();
 	}
 }

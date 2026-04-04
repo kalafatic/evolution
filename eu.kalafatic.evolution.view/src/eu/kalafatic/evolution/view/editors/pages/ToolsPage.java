@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -11,8 +10,9 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 
 import eu.kalafatic.evolution.controller.orchestration.DatabaseTool;
 import eu.kalafatic.evolution.controller.orchestration.FileTool;
@@ -25,7 +25,7 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 import java.io.File;
 
-public class ToolsPage extends ScrolledComposite {
+public class ToolsPage extends SharedScrolledComposite {
 
     private MultiPageEditor editor;
     private Orchestrator orchestrator;
@@ -38,8 +38,8 @@ public class ToolsPage extends ScrolledComposite {
     private Text sourceVersionText, targetVersionText, cPathText, cppPathText, makePathText, cmakePathText;
     private Text eclipseWorkspaceText, eclipseInstallationText, eclipseTargetPlatformText;
 
-    private SashForm sashForm;
-    private Group gitGroup, mavenGroup, fileGroup, dbGroup, compilerGroup, eclipseGroup;
+    private FormToolkit toolkit;
+    private Composite gitGroup, mavenGroup, fileGroup, dbGroup, compilerGroup, eclipseGroup;
     private Color successColor;
 
     public ToolsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
@@ -48,24 +48,20 @@ public class ToolsPage extends ScrolledComposite {
         this.orchestrator = orchestrator;
         this.setExpandHorizontal(true);
         this.setExpandVertical(true);
+        this.toolkit = new FormToolkit(parent.getDisplay());
         createControl();
     }
 
     private void createControl() {
-        Composite comp = new Composite(this, SWT.NONE);
+        Composite comp = toolkit.createComposite(this);
         comp.setLayout(new GridLayout(1, false));
 
-        sashForm = new SashForm(comp, SWT.VERTICAL);
-        sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-        createGitGroup(sashForm);
-        createMavenGroup(sashForm);
-        createFileGroup(sashForm);
-        createDatabaseGroup(sashForm);
-        createEclipseGroup(sashForm);
-        createCompilerGroup(sashForm);
-
-        sashForm.setWeights(new int[] { 15, 12, 10, 20, 20, 23 });
+        createGitGroup(comp);
+        createMavenGroup(comp);
+        createFileGroup(comp);
+        createDatabaseGroup(comp);
+        createEclipseGroup(comp);
+        createCompilerGroup(comp);
 
         successColor = new Color(getDisplay(), 200, 240, 200); // Light cool green
 
@@ -90,8 +86,8 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createGitGroup(Composite parent) {
-        gitGroup = SWTFactory.createMaximizableGroup(parent, "Git Tool Settings", 3);
-        Group group = gitGroup;
+        gitGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Git Tool Settings", 3);
+        Composite group = gitGroup;
         SWTFactory.createLabel(group, "Repository URL:");
         gitRepoText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, gitRepoText);
@@ -115,8 +111,8 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createMavenGroup(Composite parent) {
-        mavenGroup = SWTFactory.createMaximizableGroup(parent, "Maven Tool Settings", 3);
-        Group group = mavenGroup;
+        mavenGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Maven Tool Settings", 3);
+        Composite group = mavenGroup;
         SWTFactory.createLabel(group, "Goals:");
         mavenGoalsText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, mavenGoalsText);
@@ -136,8 +132,8 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createFileGroup(Composite parent) {
-        fileGroup = SWTFactory.createMaximizableGroup(parent, "File Tool Settings", 3);
-        Group group = fileGroup;
+        fileGroup = SWTFactory.createExpandableGroup(toolkit, parent, "File Tool Settings", 3);
+        Composite group = fileGroup;
         SWTFactory.createLabel(group, "Project Root:");
         fileLocalPathText = SWTFactory.createText(group);
         fileLocalPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -154,8 +150,8 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createDatabaseGroup(Composite parent) {
-        dbGroup = SWTFactory.createMaximizableGroup(parent, "Database Tool Settings", 3);
-        Group group = dbGroup;
+        dbGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Database Tool Settings", 3);
+        Composite group = dbGroup;
         SWTFactory.createLabel(group, "JDBC URL:");
         dbUrlText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, dbUrlText);
@@ -183,8 +179,8 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createEclipseGroup(Composite parent) {
-        eclipseGroup = SWTFactory.createMaximizableGroup(parent, "Eclipse Development Settings", 3);
-        Group group = eclipseGroup;
+        eclipseGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Eclipse Development Settings", 3);
+        Composite group = eclipseGroup;
 
         SWTFactory.createLabel(group, "Workspace Path:");
         eclipseWorkspaceText = SWTFactory.createText(group);
@@ -209,8 +205,8 @@ public class ToolsPage extends ScrolledComposite {
     }
 
     private void createCompilerGroup(Composite parent) {
-        compilerGroup = SWTFactory.createMaximizableGroup(parent, "Compiler & Language Settings", 3);
-        Group group = compilerGroup;
+        compilerGroup = SWTFactory.createExpandableGroup(toolkit, parent, "Compiler & Language Settings", 3);
+        Composite group = compilerGroup;
 
         SWTFactory.createLabel(group, "Java Source Version:");
         sourceVersionText = SWTFactory.createText(group);
@@ -296,7 +292,7 @@ public class ToolsPage extends ScrolledComposite {
         isUpdating = false;
     }
 
-    private void updateGroupStatus(Group group, String status) {
+    private void updateGroupStatus(Composite group, String status) {
         if ("SUCCESS".equals(status)) {
             group.setBackground(successColor);
         } else if ("FAILED".equals(status)) {
@@ -372,6 +368,9 @@ public class ToolsPage extends ScrolledComposite {
     public void dispose() {
         if (successColor != null && !successColor.isDisposed()) {
             successColor.dispose();
+        }
+        if (toolkit != null) {
+            toolkit.dispose();
         }
         super.dispose();
     }

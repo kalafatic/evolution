@@ -14,4 +14,6 @@ public class AppData {
     public GeminiSplashHandler getSplashHandler() { return null; }
     public List<ISplashUser> getSplashUsersUsers() { return splashUsers; }
     public void setTrayItem(TrayItem item) { this.trayItem = item; }
+    public void setSplashHandler(eu.kalafatic.utils.dialogs.GeminiSplashHandler handler) {}
+    public void setStatusLineManager(org.eclipse.jface.action.IStatusLineManager manager) {}
 }
