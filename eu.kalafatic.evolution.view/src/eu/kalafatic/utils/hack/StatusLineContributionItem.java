@@ -8,7 +8,7 @@
  * Contributors:
  *     Petr Kalafatic - initial API and implementation
  ******************************************************************************/
-package eu.kalafatic.evolution.view.application;
+package eu.kalafatic.utils.hack;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -16,6 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.action.ContributionItem;
 import org.eclipse.jface.action.LegacyActionTools;
+import org.eclipse.jface.preference.PreferenceDialog;
 import org.eclipse.jface.util.Util;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
@@ -26,12 +27,16 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.ui.dialogs.PreferencesUtil;
+
+import eu.kalafatic.utils.constants.FTextConstants;
+import eu.kalafatic.utils.lib.EView;
 
 /**
  * The Class class StatusLineContributionItem.
  * @author Petr Kalafatic
- * @version 3.0.0
  * @project Gemini
+ * @version 3.0.0
  */
 public class StatusLineContributionItem extends ContributionItem {
 
@@ -61,9 +66,6 @@ public class StatusLineContributionItem extends ContributionItem {
 
 	/** The settings item. */
 	private MenuItem enabledItem, stateItem, settingsItem;
-
-	/** The Constant SWITCH_ENABLED. */
-	public static final String[] SWITCH_ENABLED = new String[] { "Enabled", "Disabled" };
 
 	/**
 	 * Instantiates a new status line contribution item.
@@ -140,7 +142,7 @@ public class StatusLineContributionItem extends ContributionItem {
 		public void handleEvent(Event event) {
 			if (event.widget.equals(enabledItem)) {
 				boolean selection = enabledItem.getSelection();
-				enabledItem.setText(selection ? SWITCH_ENABLED[0] : SWITCH_ENABLED[1]);
+				enabledItem.setText(selection ? FTextConstants.SWITCH_ENABLED[0] : FTextConstants.SWITCH_ENABLED[1]);
 				stateItem.setEnabled(selection);
 				settingsItem.setEnabled(selection);
 
@@ -148,11 +150,11 @@ public class StatusLineContributionItem extends ContributionItem {
 				stateItem.setText("128");
 
 			} else if (event.widget.equals(settingsItem)) {
-				// PreferenceDialog pref = PreferencesUtil.createPreferenceDialogOn(statusLine.getShell(), EView.PREF_ALGORITHMS.ID, null, null);
-				// if (pref != null) {
-				// pref.open();
-				// loadPreferences();
-				// }
+				PreferenceDialog pref = PreferencesUtil.createPreferenceDialogOn(statusLine.getShell(), EView.PREF_ALGORITHMS.ID, null, null);
+				if (pref != null) {
+					pref.open();
+					loadPreferences();
+				}
 			}
 		}
 	};
@@ -164,9 +166,9 @@ public class StatusLineContributionItem extends ContributionItem {
 	 */
 	private void loadPreferences() {
 		enabledItem.setSelection(true);
-		enabledItem.setText(SWITCH_ENABLED[0]);
+		enabledItem.setText(FTextConstants.SWITCH_ENABLED[0]);
 
-		// stateItem.setText(RATIO_DEF);
+		stateItem.setText(FTextConstants.RATIO_DEF);
 	}
 
 	// ---------------------------------------------------------------

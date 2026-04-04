@@ -16,12 +16,11 @@ import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.application.ActionBarAdvisor;
 import org.eclipse.ui.application.IActionBarConfigurer;
 
-
 import eu.kalafatic.utils.builders.WorkbenchActionBuilder;
+import eu.kalafatic.utils.hack.StatusLineContributionItem;
 import eu.kalafatic.utils.lib.AppData;
 
 /**
