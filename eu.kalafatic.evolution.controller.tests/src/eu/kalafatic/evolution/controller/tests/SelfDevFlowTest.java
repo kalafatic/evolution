@@ -150,6 +150,62 @@ public class SelfDevFlowTest {
     }
 
     @Test
+    public void testIterativeDevelopmentFlow() throws Exception {
+        SelfDevSession session = OrchestrationFactory.eINSTANCE.createSelfDevSession();
+        session.setId("session-iterative");
+        session.setMaxIterations(1);
+        String customRequest = "Add a new C++ class for Arduino";
+        session.setInitialRequest(customRequest);
+        orchestrator.setSelfDevSession(session);
+        orchestrator.setIterativeMode(true);
+
+        TaskContext context = new TaskContext(orchestrator, tempDir);
+        context.addApprovalListener(message -> context.provideApproval(true));
+
+        String planResponse = "[{\"id\": \"it1\", \"name\": \"Create Arduino Class\", \"taskType\": \"file\", \"priority\": 1, \"rationale\": \"To fulfill user request\"}]";
+        String taskResponse = "C++ code content";
+        String evalResponse = "{\"success\": true, \"comment\": \"Build simulated success\"}";
+
+        mockLlm.setResponseSequence(new String[] {
+            planResponse,
+            taskResponse,
+            evalResponse
+        });
+
+        TaskPlanner planner = new TaskPlanner();
+        injectMockIntoAgent(planner, mockLlm);
+
+        TaskExecutor executor = new TaskExecutor(context);
+        Field orchField = TaskExecutor.class.getDeclaredField("orchestrator");
+        orchField.setAccessible(true);
+        injectMocksIntoOrchestrator((EvolutionOrchestrator) orchField.get(executor), mockLlm);
+
+        SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
+            @Override
+            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration) {
+                return new IterationManager(iteration, context, planner, executor);
+            }
+        };
+
+        supervisor.startSession();
+
+        assertEquals(SelfDevStatus.COMPLETED, session.getStatus());
+        assertEquals(1, session.getIterations().size());
+
+        boolean found = false;
+        for (String log : context.getLogs()) {
+            if (log != null && log.contains(customRequest)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            printLogs(context);
+        }
+        assertTrue("Log message containing '" + customRequest + "' not found in session logs", found);
+    }
+
+    @Test
     public void testMaxFailures() throws Exception {
         SelfDevSession session = OrchestrationFactory.eINSTANCE.createSelfDevSession();
         session.setId("session-max-failures");

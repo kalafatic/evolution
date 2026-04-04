@@ -131,6 +131,9 @@ public interface SelfDevSession extends EObject {
 	 */
 	EList<Iteration> getIterations();
 
+	String getInitialRequest();
+	void setInitialRequest(String value);
+
 	/**
 	 * Returns the value of the '<em><b>Rationale</b></em>' attribute.
 	 * <!-- begin-user-doc -->

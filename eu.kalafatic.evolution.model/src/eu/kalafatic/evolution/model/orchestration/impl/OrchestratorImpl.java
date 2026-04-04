@@ -419,6 +419,11 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 */
 	protected Eclipse eclipse;
 
+	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
+	protected boolean iterativeMode = ITERATIVE_MODE_EDEFAULT;
+	protected static final boolean SELF_ITERATIVE_MODE_EDEFAULT = false;
+	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
+
 	/**
 	 * The cached value of the '{@link #getTests() <em>Tests</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
@@ -1190,6 +1195,32 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY, oldSharedMemory, sharedMemory));
 	}
 
+	@Override
+	public boolean isIterativeMode() {
+		return iterativeMode;
+	}
+
+	@Override
+	public void setIterativeMode(boolean newIterativeMode) {
+		boolean oldIterativeMode = iterativeMode;
+		iterativeMode = newIterativeMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE, oldIterativeMode, iterativeMode));
+	}
+
+	@Override
+	public boolean isSelfIterativeMode() {
+		return selfIterativeMode;
+	}
+
+	@Override
+	public void setSelfIterativeMode(boolean newSelfIterativeMode) {
+		boolean oldSelfIterativeMode = selfIterativeMode;
+		selfIterativeMode = newSelfIterativeMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
+	}
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1329,6 +1360,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getFileConfig();
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				return getSharedMemory();
+			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
+				return isIterativeMode();
+			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
+				return isSelfIterativeMode();
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				return getEclipse();
 			case OrchestrationPackage.ORCHESTRATOR__TESTS:
@@ -1416,6 +1451,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory((String)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
+				setIterativeMode((Boolean)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
+				setSelfIterativeMode((Boolean)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				setEclipse((Eclipse)newValue);
@@ -1505,6 +1546,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory(SHARED_MEMORY_EDEFAULT);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
+				setIterativeMode(ITERATIVE_MODE_EDEFAULT);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
+				setSelfIterativeMode(SELF_ITERATIVE_MODE_EDEFAULT);
+				return;
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				setEclipse((Eclipse)null);
 				return;
@@ -1569,6 +1616,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return fileConfig != null;
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				return SHARED_MEMORY_EDEFAULT == null ? sharedMemory != null : !SHARED_MEMORY_EDEFAULT.equals(sharedMemory);
+			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
+				return iterativeMode != ITERATIVE_MODE_EDEFAULT;
+			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
+				return selfIterativeMode != SELF_ITERATIVE_MODE_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				return eclipse != null;
 			case OrchestrationPackage.ORCHESTRATOR__TESTS:
@@ -1609,6 +1660,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		result.append(offlineMode);
 		result.append(", sharedMemory: ");
 		result.append(sharedMemory);
+		result.append(", iterativeMode: ");
+		result.append(iterativeMode);
+		result.append(", selfIterativeMode: ");
+		result.append(selfIterativeMode);
 		result.append(')');
 		return result.toString();
 	}

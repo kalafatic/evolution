@@ -519,15 +519,9 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int ORCHESTRATOR__ECLIPSE = 23;
-
-	/**
-	 * The feature id for the '<em><b>Tests</b></em>' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
 	int ORCHESTRATOR__TESTS = 24;
+	int ORCHESTRATOR__ITERATIVE_MODE = 25;
+	int ORCHESTRATOR__SELF_ITERATIVE_MODE = 26;
 
 	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
@@ -536,7 +530,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 25;
+	int ORCHESTRATOR_FEATURE_COUNT = 27;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -1452,6 +1446,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int SELF_DEV_SESSION__RATIONALE = 5;
+	int SELF_DEV_SESSION__INITIAL_REQUEST = 6;
 
 	/**
 	 * The number of structural features of the '<em>Self Dev Session</em>' class.
@@ -1460,7 +1455,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int SELF_DEV_SESSION_FEATURE_COUNT = 6;
+	int SELF_DEV_SESSION_FEATURE_COUNT = 7;
 
 	/**
 	 * The number of operations of the '<em>Self Dev Session</em>' class.
@@ -3218,6 +3213,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getSelfDevSession_Rationale();
+	EAttribute getSelfDevSession_InitialRequest();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Iteration <em>Iteration</em>}'.
@@ -3694,6 +3690,8 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getOrchestrator_OfflineMode();
+	EAttribute getOrchestrator_IterativeMode();
+	EAttribute getOrchestrator_SelfIterativeMode();
 
 	/**
 	 * Returns the factory that creates the instances of the model.
@@ -4659,6 +4657,7 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute SELF_DEV_SESSION__RATIONALE = eINSTANCE.getSelfDevSession_Rationale();
+		EAttribute SELF_DEV_SESSION__INITIAL_REQUEST = eINSTANCE.getSelfDevSession_InitialRequest();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl <em>Iteration</em>}' class.
@@ -5005,6 +5004,8 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TEST__ID = eINSTANCE.getTest_Id();
+		EAttribute ORCHESTRATOR__ITERATIVE_MODE = eINSTANCE.getOrchestrator_IterativeMode();
+		EAttribute ORCHESTRATOR__SELF_ITERATIVE_MODE = eINSTANCE.getOrchestrator_SelfIterativeMode();
 
 		/**
 		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
