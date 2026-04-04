@@ -29,6 +29,18 @@ public class EvolutionOrchestrator implements IOrchestrator {
     }
 
     @Override
+    public String executeTask(Task task, TaskContext context) throws Exception {
+        context.log("Orchestrator: Executing single task: " + task.getName());
+        boolean success = executeTaskWithRetries(task, context);
+        if (!success) {
+            task.setStatus(TaskStatus.FAILED);
+            throw new Exception("Task failed after maximum retries: " + task.getName());
+        }
+        task.setStatus(TaskStatus.DONE);
+        return task.getResponse();
+    }
+
+    @Override
     public String execute(String request, TaskContext context) throws Exception {
         try {
             context.log("Orchestrator: Starting request - " + request);

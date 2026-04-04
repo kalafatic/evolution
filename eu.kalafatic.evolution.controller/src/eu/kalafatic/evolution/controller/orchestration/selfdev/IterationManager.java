@@ -18,11 +18,15 @@ public class IterationManager {
     private final Evaluator evaluator;
 
     public IterationManager(Iteration iteration, TaskContext context) {
+        this(iteration, context, new TaskPlanner(), new TaskExecutor(context));
+    }
+
+    public IterationManager(Iteration iteration, TaskContext context, TaskPlanner planner, TaskExecutor executor) {
         this.iteration = iteration;
         this.context = context;
         this.gitManager = new GitManager(context.getProjectRoot(), context);
-        this.planner = new TaskPlanner();
-        this.executor = new TaskExecutor(context);
+        this.planner = planner;
+        this.executor = executor;
         this.evaluator = new Evaluator(context.getProjectRoot(), context);
     }
 
@@ -56,38 +60,49 @@ public class IterationManager {
 
             iteration.setPhase("EXECUTE");
             boolean executionSuccess = executor.executeTasks(tasks);
-            if (!executionSuccess) {
-                context.log("[ITERATION] Execution failed. Rolling back.");
-                gitManager.rollback();
-                iteration.setStatus(IterationStatus.FAILED);
-                EvaluationResult failResult = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                failResult.setSuccess(false);
-                failResult.setDecision(SelfDevDecision.ROLLBACK);
-                return failResult;
-            }
 
             // 4. Evaluate
             iteration.setPhase("TEST");
-            // TEST and EVALUATE are handled by the evaluator
+            EvaluationResult result = evaluator.evaluate();
+
+            if (!executionSuccess || !result.isSuccess() || result.getDecision() == SelfDevDecision.ROLLBACK) {
+                context.log("[ITERATION] Iteration failed. Rolling back.");
+                gitManager.rollback();
+                iteration.setStatus(IterationStatus.FAILED);
+                if (result.getDecision() == SelfDevDecision.CONTINUE) {
+                    result.setDecision(SelfDevDecision.ROLLBACK);
+                }
+                return result;
+            }
+            iteration.setEvaluationResult(result);
 
             iteration.setPhase("EVALUATE");
-            EvaluationResult result = evaluator.evaluate();
-            iteration.setEvaluationResult(result);
+            if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
+                // Goal: commit -> PR -> feedback -> refine
+                iteration.setPhase("COMMIT");
+                gitManager.commit("Self-Development Iteration " + iteration.getId() + ": " + iteration.getTasks().get(0).getName());
+
+                iteration.setPhase("PR");
+                context.log("[ITERATION] Creating Pull Request (Simulated)");
+                // In a real RCP environment, this would call a GitHub/GitLab API or specialized tool.
+
+                iteration.setPhase("FEEDBACK");
+                context.log("[ITERATION] Requesting user feedback on PR...");
+                try {
+                    context.requestApproval("Pull Request for iteration " + iteration.getId() + " created. Please review and provide feedback.").get();
+                } catch (Exception e) {
+                    context.log("[ITERATION] Feedback step skipped: " + e.getMessage());
+                }
+
+                iteration.setPhase("REFINE");
+                context.log("[ITERATION] Refining based on feedback (if any)...");
+            }
 
             // 5. Decision
             iteration.setPhase("LEARN");
 
-            // Pause for user feedback if interactive mode is supported via TaskContext
-            try {
-                context.log("[ITERATION] Iteration " + iteration.getId() + " completed. Requesting user feedback/rating.");
-                context.requestApproval("Iteration " + iteration.getId() + " completed. Please rate and provide feedback in the 'Approval' or 'Ai Chat' page.").get();
-            } catch (Exception e) {
-                context.log("[ITERATION] User feedback skipped or timed out: " + e.getMessage());
-            }
-
             if (result.getDecision() == SelfDevDecision.CONTINUE) {
-                context.log("[ITERATION] Evaluation successful. Committing.");
-                gitManager.commit("Self-Development Iteration " + iteration.getId() + " success.");
+                context.log("[ITERATION] Evaluation successful.");
                 iteration.setStatus(IterationStatus.DONE);
             } else {
                 context.log("[ITERATION] Evaluation failed or rollback required. Decision: " + result.getDecision());
