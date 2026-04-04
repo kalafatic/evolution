@@ -47,6 +47,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private AiFlowPage aiFlowPage;
     private ApprovalPage approvalPage;
     private ToolsPage toolsPage;
+    private TestsPage testsPage;
     private Orchestrator orchestrator;
     private TaskContext currentContext;
     private boolean isDirty = false;
@@ -101,6 +102,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 aiFlowPage = AiFlowPageFactory.createAiFlowPage(this, orchestrator);
                 approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
                 toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
+                testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
             } else {
                 Composite placeholder = new Composite(getContainer(), SWT.NONE);
@@ -210,6 +212,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (aiFlowPage != null) aiFlowPage.setOrchestrator(orchestrator);
         if (approvalPage != null) approvalPage.setOrchestrator(orchestrator);
         if (toolsPage != null) toolsPage.setOrchestrator(orchestrator);
+        if (testsPage != null) testsPage.setOrchestrator(orchestrator);
     }
 
     public void reloadModel() {
@@ -265,6 +268,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
             propertiesPage.updatePropertiesInfo();
         } else if (control == toolsPage && toolsPage != null) {
             toolsPage.updateUIFromModel();
+        } else if (control == testsPage && testsPage != null) {
+            testsPage.setOrchestrator(orchestrator);
         } else if (control == previewPage && previewPage != null) {
             previewPage.sortWords();
         }

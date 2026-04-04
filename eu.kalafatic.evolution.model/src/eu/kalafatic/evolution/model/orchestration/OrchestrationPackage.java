@@ -521,13 +521,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__ECLIPSE = 23;
 
 	/**
+	 * The feature id for the '<em><b>Tests</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__TESTS = 24;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 24;
+	int ORCHESTRATOR_FEATURE_COUNT = 25;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -876,6 +885,15 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int OLLAMA__MODEL = 1;
+
+	/**
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__TYPE = 2;
 
 	/**
 	 * The feature id for the '<em><b>Path</b></em>' attribute.
@@ -1555,6 +1573,80 @@ public interface OrchestrationPackage extends EPackage {
 	int SELF_DEV_DECISION = 30;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TestImpl <em>Test</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.TestImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTest()
+	 * @generated
+	 */
+	int TEST = 31;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__ID = 0;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__NAME = 1;
+
+	/**
+	 * The feature id for the '<em><b>Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__PATH = 3;
+
+	/**
+	 * The feature id for the '<em><b>Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__STATUS = 4;
+
+	/**
+	 * The number of structural features of the '<em>Test</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST_FEATURE_COUNT = 5;
+
+	/**
+	 * The number of operations of the '<em>Test</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
+	 * @generated
+	 */
+	int TEST_STATUS = 32;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl <em>Database</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2169,6 +2261,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EClass getOrchestrator();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getTests <em>Tests</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Tests</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getTests()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_Tests();
 
 	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getId <em>Id</em>}'.
@@ -2966,6 +3069,81 @@ public interface OrchestrationPackage extends EPackage {
 	EEnum getAiMode();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Test <em>Test</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Test</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test
+	 * @generated
+	 */
+	EClass getTest();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getId <em>Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#getId()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Id();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getName <em>Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#getName()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Name();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getType <em>Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#getType()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Type();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getPath <em>Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#getPath()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Path();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getStatus <em>Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#getStatus()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Status();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
+	 * @generated
+	 */
+	EEnum getTestStatus();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession <em>Self Dev Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3540,6 +3718,14 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	interface Literals {
+		/**
+		 * The meta object literal for the '<em><b>Tests</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__TESTS = eINSTANCE.getOrchestrator_Tests();
+
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl <em>Task</em>}' class.
 		 * <!-- begin-user-doc -->
@@ -4117,6 +4303,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute OLLAMA__MODEL = eINSTANCE.getOllama_Model();
+
+		/**
+		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__TYPE = eINSTANCE.getTest_Type();
 
 		/**
 		 * The meta object literal for the '<em><b>Path</b></em>' attribute feature.
@@ -4793,6 +4987,58 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute ECLIPSE__TEST_STATUS = eINSTANCE.getEclipse_TestStatus();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TestImpl <em>Test</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.TestImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTest()
+		 * @generated
+		 */
+		EClass TEST = eINSTANCE.getTest();
+
+		/**
+		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__ID = eINSTANCE.getTest_Id();
+
+		/**
+		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__NAME = eINSTANCE.getTest_Name();
+
+		/**
+		 * The meta object literal for the '<em><b>Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__PATH = eINSTANCE.getTest_Path();
+
+		/**
+		 * The meta object literal for the '<em><b>Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__STATUS = eINSTANCE.getTest_Status();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
+		 * @generated
+		 */
+		EEnum TEST_STATUS = eINSTANCE.getTestStatus();
 
 	}
 

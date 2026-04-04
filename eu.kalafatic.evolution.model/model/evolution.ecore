@@ -45,6 +45,8 @@
         eType="#//Agent" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1"
         eType="#//Task" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tests" upperBound="-1"
+        eType="#//Test" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="git" eType="#//Git" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="maven" eType="#//Maven"
         containment="true"/>
@@ -240,5 +242,18 @@
         eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="decision" eType="#//SelfDevDecision"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="userSatisfaction" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="TestStatus">
+    <eLiterals name="PENDING"/>
+    <eLiterals name="RUNNING" value="1"/>
+    <eLiterals name="PASSED" value="2"/>
+    <eLiterals name="FAILED" value="3"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Test">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="path" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//TestStatus"/>
   </eClassifiers>
 </ecore:EPackage>
