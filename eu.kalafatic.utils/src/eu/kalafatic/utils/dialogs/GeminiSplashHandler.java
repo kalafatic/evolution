@@ -17,6 +17,10 @@ public class GeminiSplashHandler extends AbstractSplashHandler {
     public int getAlpha() { return 255; }
     public void setAlpha(int alpha) {}
 
+    public org.eclipse.swt.graphics.Rectangle getBounds() { return new org.eclipse.swt.graphics.Rectangle(0, 0, 800, 600); }
+    public org.eclipse.swt.graphics.Point getLocation() { return new org.eclipse.swt.graphics.Point(0, 0); }
+    public org.eclipse.swt.graphics.Rectangle getProgressRect() { return new org.eclipse.swt.graphics.Rectangle(10, 500, 780, 20); }
+
     public static class GSHf {
         public static int FLAG = 0;
         public static final int VISIBLE = 1;

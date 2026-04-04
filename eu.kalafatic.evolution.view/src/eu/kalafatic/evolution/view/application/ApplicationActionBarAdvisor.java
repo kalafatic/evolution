@@ -30,9 +30,7 @@ import eu.kalafatic.utils.lib.AppData;
  * @project Gemini
  * @version 3.0.0
  */
-public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
-
-	private WorkbenchActionBuilder builder;
+public class ApplicationActionBarAdvisor extends WorkbenchActionBuilder {
 
 	/** The width. */
 	private final int width = 70;
@@ -49,12 +47,11 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 	 */
 	ApplicationActionBarAdvisor(IActionBarConfigurer configurer) {
 		super(configurer);
-		builder = new WorkbenchActionBuilder(configurer);
 	}
 
 	@Override
 	protected void fillStatusLine(IStatusLineManager statusLineManager) {
-		// super.fillStatusLine(statusLineManager);
+		super.fillStatusLine(statusLineManager);
 
 		statusLineManager.add(langItem);
 		statusLineManager.add(cpuItem);
@@ -82,7 +79,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 	 */
 	@Override
 	protected void fillMenuBar(IMenuManager menuBar) {
-		// super.fillMenuBar(menuBar);
+		super.fillMenuBar(menuBar);
 
 		IWorkbenchWindow window = getActionBarConfigurer().getWindowConfigurer().getWindow();
 		menuBar.add(createExplorerMenu(window));
@@ -132,8 +129,8 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 	 * @param trayMenu the tray menu
 	 */
 	public void fillTrayItem(MenuManager trayMenu) {
-		// trayMenu.add(getAction(ActionFactory.ABOUT.getId()));
-		// trayMenu.add(getAction(ActionFactory.CLOSE.getId()));
+		trayMenu.add(getAction(ActionFactory.ABOUT.getId()));
+		trayMenu.add(getAction(ActionFactory.CLOSE.getId()));
 	}
 
 	protected org.eclipse.swt.graphics.Image getFlag(String locale) { return null; }

@@ -146,15 +146,15 @@ public class EvoSplashHandler extends EclipseSplashHandler {
 	public Shell createUI(Display display) {
 		splash = new Shell(this.display = display, SWT.ON_TOP | SWT.APPLICATION_MODAL | SWT.INHERIT_DEFAULT);
 		splash.setBackgroundImage(FCoreImageConstants.SPLASH_IMG);
-		// splash.setBounds(getBounds());
-		// splash.setLocation(getLocation());
+		splash.setBounds(getBounds());
+		splash.setLocation(getLocation());
 
 		String splashLoc = System.getProperty("org.eclipse.equinox.launcher.splash.location");
 		final Image background = ImageUtils.loadImage(splashLoc);
 
 		splash.setBackgroundImage(background);
 
-		Rectangle rect = new Rectangle(0,0,100,10); // getProgressRect();
+		Rectangle rect = getProgressRect();
 		createPending(new Rectangle(rect.x, rect.y - 5, rect.width, 3));
 
 		return splash;
@@ -309,11 +309,10 @@ public class EvoSplashHandler extends EclipseSplashHandler {
 
 		textLabel = appMonitor.getProgressText();
 
-		Color foreground = null;
-		if (foreground != null && !foreground.isDisposed()) {
-			textLabel.setForeground(foreground);
-			splash.setForeground(foreground);
-		}
+		// if (foreground != null && !foreground.isDisposed()) {
+		// 	textLabel.setForeground(foreground);
+		// 	splash.setForeground(foreground);
+		// }
 		progressIndicator.setVisible(true);
 	}
 
