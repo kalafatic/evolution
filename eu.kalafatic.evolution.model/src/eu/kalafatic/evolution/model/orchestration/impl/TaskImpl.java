@@ -43,6 +43,8 @@ import eu.kalafatic.evolution.model.orchestration.TaskStatus;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getRating <em>Rating</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isLikes <em>Likes</em>}</li>
 	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getRationale <em>Rationale</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getScheduledTime <em>Scheduled Time</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isSelected <em>Selected</em>}</li>
  * </ul>
  *
  * @generated
@@ -347,6 +349,46 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @ordered
 	 */
 	protected String rationale = RATIONALE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getScheduledTime() <em>Scheduled Time</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getScheduledTime()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String SCHEDULED_TIME_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getScheduledTime() <em>Scheduled Time</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getScheduledTime()
+	 * @generated
+	 * @ordered
+	 */
+	protected String scheduledTime = SCHEDULED_TIME_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isSelected() <em>Selected</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSelected()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean SELECTED_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isSelected() <em>Selected</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSelected()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean selected = SELECTED_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -746,6 +788,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return isLikes();
 			case OrchestrationPackage.TASK__RATIONALE:
 				return getRationale();
+			case OrchestrationPackage.TASK__SCHEDULED_TIME:
+				return getScheduledTime();
+			case OrchestrationPackage.TASK__SELECTED:
+				return isSelected();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -809,6 +855,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__RATIONALE:
 				setRationale((String)newValue);
 				return;
+			case OrchestrationPackage.TASK__SCHEDULED_TIME:
+				setScheduledTime((String)newValue);
+				return;
+			case OrchestrationPackage.TASK__SELECTED:
+				setSelected((Boolean)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -869,6 +921,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__RATIONALE:
 				setRationale(RATIONALE_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__SCHEDULED_TIME:
+				setScheduledTime(SCHEDULED_TIME_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__SELECTED:
+				setSelected(SELECTED_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -913,6 +971,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return likes != LIKES_EDEFAULT;
 			case OrchestrationPackage.TASK__RATIONALE:
 				return RATIONALE_EDEFAULT == null ? rationale != null : !RATIONALE_EDEFAULT.equals(rationale);
+			case OrchestrationPackage.TASK__SCHEDULED_TIME:
+				return SCHEDULED_TIME_EDEFAULT == null ? scheduledTime != null : !SCHEDULED_TIME_EDEFAULT.equals(scheduledTime);
+			case OrchestrationPackage.TASK__SELECTED:
+				return selected != SELECTED_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -955,6 +1017,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(likes);
 		result.append(", rationale: ");
 		result.append(rationale);
+		result.append(", scheduledTime: ");
+		result.append(scheduledTime);
+		result.append(", selected: ");
+		result.append(selected);
 		result.append(')');
 		return result.toString();
 	}
@@ -980,6 +1046,52 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		rationale = newRationale;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__RATIONALE, oldRationale, rationale));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getScheduledTime() {
+		return scheduledTime;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setScheduledTime(String newScheduledTime) {
+		String oldScheduledTime = scheduledTime;
+		scheduledTime = newScheduledTime;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__SCHEDULED_TIME, oldScheduledTime, scheduledTime));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isSelected() {
+		return selected;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSelected(boolean newSelected) {
+		boolean oldSelected = selected;
+		selected = newSelected;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__SELECTED, oldSelected, selected));
 	}
 
 } //TaskImpl

@@ -212,13 +212,31 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__RATIONALE = 15;
 
 	/**
+	 * The feature id for the '<em><b>Scheduled Time</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__SCHEDULED_TIME = 16;
+
+	/**
+	 * The feature id for the '<em><b>Selected</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__SELECTED = 17;
+
+	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 16;
+	int TASK_FEATURE_COUNT = 18;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -2188,6 +2206,28 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getTask_Rationale();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getScheduledTime <em>Scheduled Time</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Scheduled Time</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getScheduledTime()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_ScheduledTime();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isSelected <em>Selected</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Selected</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#isSelected()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_Selected();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3847,6 +3887,22 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__RATIONALE = eINSTANCE.getTask_Rationale();
+
+		/**
+		 * The meta object literal for the '<em><b>Scheduled Time</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__SCHEDULED_TIME = eINSTANCE.getTask_ScheduledTime();
+
+		/**
+		 * The meta object literal for the '<em><b>Selected</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__SELECTED = eINSTANCE.getTask_Selected();
 
 		/**
 		 * The meta object literal for the '<em><b>Priority</b></em>' attribute feature.
