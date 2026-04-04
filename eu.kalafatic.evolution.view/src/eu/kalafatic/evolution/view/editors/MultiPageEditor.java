@@ -32,6 +32,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.listeners.EditorResourceChangeListener;
 import eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener;
 import eu.kalafatic.evolution.view.editors.pages.*;
+import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
 
 public class MultiPageEditor extends MultiPageEditorPart {
 
@@ -47,6 +48,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private ApprovalPage approvalPage;
     private ToolsPage toolsPage;
     private TestsPage testsPage;
+    private TaskStackPage taskStackPage;
     private Orchestrator orchestrator;
     private TaskContext currentContext;
     private boolean isDirty = false;
@@ -87,6 +89,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
                 toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
                 testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
+                taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
             } else {
                 Composite placeholder = new Composite(getContainer(), SWT.NONE);
@@ -197,6 +200,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (approvalPage != null) approvalPage.setOrchestrator(orchestrator);
         if (toolsPage != null) toolsPage.setOrchestrator(orchestrator);
         if (testsPage != null) testsPage.setOrchestrator(orchestrator);
+        if (taskStackPage != null) taskStackPage.setOrchestrator(orchestrator);
     }
 
     public void reloadModel() {
@@ -254,6 +258,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
             toolsPage.updateUIFromModel();
         } else if (control == testsPage && testsPage != null) {
             testsPage.setOrchestrator(orchestrator);
+        } else if (control == taskStackPage && taskStackPage != null) {
+            taskStackPage.setOrchestrator(orchestrator);
         } else if (control == previewPage && previewPage != null) {
             previewPage.sortWords();
         }
