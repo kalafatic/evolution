@@ -352,6 +352,10 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         return aiService.sendRequest(orchestrator, prompt, proxyUrl, context);
     }
 
+    public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl) throws Exception {
+        return aiService.sendRequest(orchestrator, prompt, proxyUrl, null);
+    }
+
     private String executeCommand(java.io.File workingDir, String... command) throws Exception {
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         if (workingDir != null) {

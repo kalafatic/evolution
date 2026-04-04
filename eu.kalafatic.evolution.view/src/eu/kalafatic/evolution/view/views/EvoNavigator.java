@@ -240,7 +240,7 @@ public class EvoNavigator extends CommonNavigator {
 		if (selection instanceof TreeSelection) {
 			TreeSelection treeSelection = (TreeSelection) selection;
 
-				InputDialog dialog = new InputDialog(Display.getCurrent().getActiveShell(), "New Folder", "Enter 1+ characters", "", ValidationUtils.INSTANCE.new LengthValidator(1, 50));
+				InputDialog dialog = new InputDialog(Display.getCurrent().getActiveShell(), "New Folder", "Enter 1+ characters", "", eu.kalafatic.utils.application.ValidationUtils.INSTANCE.new LengthValidator(1, 50));
 
 				if (dialog.open() == Window.OK) {
 					String folderName = dialog.getValue();

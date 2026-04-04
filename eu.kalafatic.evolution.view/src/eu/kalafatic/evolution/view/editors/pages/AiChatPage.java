@@ -18,7 +18,6 @@ import org.eclipse.jface.fieldassist.IContentProposalProvider;
 import org.eclipse.jface.fieldassist.IControlContentAdapter;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
@@ -41,6 +40,8 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
@@ -61,7 +62,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class AiChatPage extends ScrolledComposite {
+public class AiChatPage extends SharedScrolledComposite {
     private MultiPageEditor editor;
     private Orchestrator orchestrator;
     private StyledText requestText;
@@ -92,7 +93,7 @@ public class AiChatPage extends ScrolledComposite {
     private Label remoteTokenLabel;
     private Label remoteUrlLabel;
     private Composite content;
-    private SashForm sashForm;
+    private FormToolkit toolkit;
 
     // Colors and Fonts
     private Color colorUser;
@@ -119,6 +120,7 @@ public class AiChatPage extends ScrolledComposite {
         this.setExpandHorizontal(true);
         this.setExpandVertical(true);
         this.orchestrator = orchestrator;
+        this.toolkit = new FormToolkit(parent.getDisplay());
         initResources();
         createControl();
         addDisposeListener(new DisposeListener() {
@@ -126,6 +128,7 @@ public class AiChatPage extends ScrolledComposite {
             public void widgetDisposed(DisposeEvent e) {
                 if (chatFont != null && !chatFont.isDisposed()) chatFont.dispose();
                 if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
+                if (toolkit != null) toolkit.dispose();
             }
         });
     }
@@ -161,7 +164,7 @@ public class AiChatPage extends ScrolledComposite {
     }
 
     private void createControl() {
-        content = new Composite(this, SWT.NONE);
+        content = toolkit.createComposite(this);
         content.setLayout(new GridLayout(1, false));
         this.setContent(content);
 
@@ -170,10 +173,7 @@ public class AiChatPage extends ScrolledComposite {
         modeIndicatorLabel.setFont(bannerFont);
         modeIndicatorLabel.setText("INITIALIZING...");
 
-        sashForm = new SashForm(content, SWT.VERTICAL);
-        sashForm.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-        Group chatMgmtGroup = SWTFactory.createMaximizableGroup(sashForm, "Chat Management", 5);
+        Composite chatMgmtGroup = SWTFactory.createExpandableGroup(toolkit, content, "Chat Management", 5);
 
         Button cleanButton = SWTFactory.createButton(chatMgmtGroup, "Clean");
         cleanButton.addSelectionListener(new SelectionAdapter() {
@@ -224,7 +224,7 @@ public class AiChatPage extends ScrolledComposite {
        
 
         
-        final Group groupMode = SWTFactory.createMaximizableGroup(sashForm, "AI Settings", 3);
+        final Composite groupMode = SWTFactory.createExpandableGroup(toolkit, content, "AI Settings", 3);
 
         SWTFactory.createLabel(groupMode, "AI Mode:");
         aiModeCombo = SWTFactory.createCombo(groupMode);
@@ -321,7 +321,7 @@ public class AiChatPage extends ScrolledComposite {
             }
         });
 
-        Group inputGroup = SWTFactory.createMaximizableGroup(sashForm, "Message Input", 1);
+        Composite inputGroup = SWTFactory.createExpandableGroup(toolkit, content, "Message Input", 1);
         requestText = new StyledText(inputGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         setupContextAssist();
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
@@ -345,7 +345,7 @@ public class AiChatPage extends ScrolledComposite {
             }
         });
 
-        Group historyGroup = SWTFactory.createMaximizableGroup(sashForm, "Conversation History", 1);
+        Composite historyGroup = SWTFactory.createExpandableGroup(toolkit, content, "Conversation History", 1);
         responseText = new StyledText(historyGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY | SWT.WRAP);
         GridData responseGridData = new GridData(GridData.FILL_BOTH);
         responseGridData.heightHint = 250;
@@ -354,7 +354,7 @@ public class AiChatPage extends ScrolledComposite {
         responseText.setFont(chatFont);
         responseText.setMargins(10, 10, 10, 10);
 
-        Group systemStatusGroup = SWTFactory.createMaximizableGroup(sashForm, "System Status", 4);
+        Composite systemStatusGroup = SWTFactory.createExpandableGroup(toolkit, content, "System Status", 4);
         SWTFactory.createLabel(systemStatusGroup, "Ollama Status:");
         ollamaStatusLabel = new Label(systemStatusGroup, SWT.NONE);
         ollamaStatusLabel.setText("Unknown");
@@ -371,8 +371,6 @@ public class AiChatPage extends ScrolledComposite {
         progressBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
         progressBar.setMinimum(0);
         progressBar.setMaximum(100);
-
-        sashForm.setWeights(new int[] { 10, 15, 20, 45, 10 });
 
         satisfactionComposite = new Composite(content, SWT.NONE);
         satisfactionComposite.setLayout(new GridLayout(2, false));
