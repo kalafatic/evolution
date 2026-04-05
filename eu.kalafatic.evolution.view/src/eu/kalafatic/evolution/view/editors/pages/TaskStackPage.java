@@ -135,8 +135,16 @@ public class TaskStackPage extends SharedScrolledComposite {
         executionModeCombo.add("Sequential");
         executionModeCombo.add("Parallel");
         executionModeCombo.select(0);
+        
+        
+        Composite compositeRemote = new Composite(body, SWT.BORDER);
+		compositeRemote.setLayout(new GridLayout(3, false));
+		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+		//gd.horizontalSpan = 3;		
+		//gd.grabExcessVerticalSpace=true;
+		compositeRemote.setLayoutData(gd);
 
-        Button executeBtn = SWTFactory.createButton(body, "Execute Selected", 150);
+        Button executeBtn = SWTFactory.createButton(compositeRemote, "Execute Selected", 150);
         executeBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -144,7 +152,7 @@ public class TaskStackPage extends SharedScrolledComposite {
             }
         });
 
-        Button addTaskBtn = SWTFactory.createButton(body, "Add New Task Idea", 150);
+        Button addTaskBtn = SWTFactory.createButton(compositeRemote, "Add New Task Idea", 150);
         addTaskBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
