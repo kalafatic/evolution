@@ -22,6 +22,8 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.model.orchestration.TestStatus;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.tests.iterative.ITestListener;
+import eu.kalafatic.evolution.tests.iterative.IterativeDevelopmentTest;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
@@ -37,6 +39,7 @@ public class TestsPage extends Composite {
     private Composite testsContent;
     private Browser statusBrowser;
     private List<TestRow> testRows = new ArrayList<>();
+    private IterativeDevelopmentTest iterativeTest;
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -219,84 +222,71 @@ public class TestsPage extends Composite {
     }
 
     private void runIterativeSimulation(Browser browser, Button runBtn) {
-        runBtn.setEnabled(false);
-        browser.execute("resetDiagram();");
-        simulateStep(browser, runBtn, "prompt", 0);
-    }
+        if (iterativeTest != null) {
+            iterativeTest.stop();
+        }
 
-    private void simulateStep(Browser browser, Button runBtn, String step, int iterationCount) {
-        if (browser == null || browser.isDisposed()) return;
-
-        browser.execute("setNodeStatus('" + step + "', 'active');");
-
-        int delay = 1000;
-        Display.getDefault().timerExec(delay, () -> {
-            if (browser.isDisposed()) return;
-
-            String nextStep = null;
-            String edgeId = null;
-
-            // Mark current node success before moving on
-            browser.execute("setNodeStatus('" + step + "', 'success');");
-
-            switch (step) {
-                case "prompt": nextStep = "plan"; edgeId = "prompt_plan"; break;
-                case "plan": nextStep = "implement"; edgeId = "plan_implement"; break;
-                case "implement": nextStep = "compile"; edgeId = "implement_compile"; break;
-                case "compile":
-                    if (Math.random() < 0.1) {
-                        browser.execute("setNodeStatus('compile', 'failed');");
-                        runBtn.setEnabled(true);
-                        return;
-                    }
-                    nextStep = "test"; edgeId = "compile_test"; break;
-                case "test":
-                    if (Math.random() < 0.15) {
-                        browser.execute("setNodeStatus('test', 'failed');");
-                        runBtn.setEnabled(true);
-                        return;
-                    }
-                    nextStep = "evaluate"; edgeId = "test_evaluate"; break;
-                case "evaluate": nextStep = "iterate"; edgeId = "evaluate_iterate"; break;
-                case "iterate":
-                    if (iterationCount < 1 && Math.random() < 0.4) {
-                        // Loop back to plan
-                        browser.execute("setEdgeStatus('iterate_plan', 'active');");
-                        Display.getDefault().timerExec(500, () -> {
-                            if (!browser.isDisposed()) {
-                                browser.execute("setEdgeStatus('iterate_plan', '');");
-                                simulateStep(browser, runBtn, "plan", iterationCount + 1);
-                            }
-                        });
-                        return;
-                    } else {
-                        nextStep = "commit"; edgeId = "iterate_commit";
-                    }
-                    break;
-                case "commit": nextStep = "PR"; edgeId = "commit_PR"; break;
-                case "PR": nextStep = "feedback"; edgeId = "PR_feedback"; break;
-                case "feedback": nextStep = "refine"; edgeId = "feedback_refine"; break;
-                case "refine":
-                    runBtn.setEnabled(true);
-                    return;
+        iterativeTest = new IterativeDevelopmentTest(new ITestListener() {
+            @Override
+            public void stepStarted(String step) {
+                Display.getDefault().asyncExec(() -> {
+                    if (!browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'active');");
+                });
             }
 
-            if (nextStep != null) {
-                if (edgeId != null) {
-                    browser.execute("setEdgeStatus('" + edgeId + "', 'active');");
-                    final String finalEdgeId = edgeId;
-                    final String finalNextStep = nextStep;
-                    Display.getDefault().timerExec(500, () -> {
-                        if (!browser.isDisposed()) {
-                            browser.execute("setEdgeStatus('" + finalEdgeId + "', '');");
-                            simulateStep(browser, runBtn, finalNextStep, iterationCount);
-                        }
-                    });
-                } else {
-                    simulateStep(browser, runBtn, nextStep, iterationCount);
-                }
+            @Override
+            public void stepSuccess(String step) {
+                Display.getDefault().asyncExec(() -> {
+                    if (!browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'success');");
+                });
+            }
+
+            @Override
+            public void stepFailed(String step) {
+                Display.getDefault().asyncExec(() -> {
+                    if (!browser.isDisposed()) {
+                        browser.execute("setNodeStatus('" + step + "', 'failed');");
+                        runBtn.setEnabled(true);
+                    }
+                });
+            }
+
+            @Override
+            public void stepSkipped(String step) {
+                Display.getDefault().asyncExec(() -> {
+                    if (!browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'skipped');");
+                });
+            }
+
+            @Override
+            public void transitionActive(String edgeId) {
+                Display.getDefault().asyncExec(() -> {
+                    if (!browser.isDisposed()) {
+                        browser.execute("setEdgeStatus('" + edgeId + "', 'active');");
+                        Display.getDefault().timerExec(500, () -> {
+                            if (!browser.isDisposed()) browser.execute("setEdgeStatus('" + edgeId + "', '');");
+                        });
+                    }
+                });
+            }
+
+            @Override
+            public void reset() {
+                Display.getDefault().asyncExec(() -> {
+                    if (!browser.isDisposed()) {
+                        browser.execute("resetDiagram();");
+                        runBtn.setEnabled(false);
+                    }
+                });
             }
         });
+
+        new Thread(() -> {
+            iterativeTest.run();
+            Display.getDefault().asyncExec(() -> {
+                if (!runBtn.isDisposed()) runBtn.setEnabled(true);
+            });
+        }).start();
     }
 
     private void createIterativeDevelopmentGroup(Composite parent) {
@@ -327,6 +317,7 @@ public class TestsPage extends Composite {
                 + ".node.active { fill: #eff6ff; stroke: #3b82f6; stroke-width: 3px; animation: pulse 1.5s infinite; }"
                 + ".node.success { fill: #f0fdf4; stroke: #22c55e; }"
                 + ".node.failed { fill: #fef2f2; stroke: #ef4444; }"
+                + ".node.skipped { fill: #f8fafc; stroke: #94a3b8; stroke-dasharray: 4; }"
                 + ".edge { stroke: #cbd5e1; stroke-width: 2px; fill: none; marker-end: url(#arrow); transition: stroke 0.3s; }"
                 + ".edge.active { stroke: #3b82f6; stroke-width: 3px; }"
                 + ".label { font-size: 10px; font-weight: 600; fill: #475569; text-anchor: middle; pointer-events: none; }"

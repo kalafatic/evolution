@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Evolution Predefined Tests
+Bundle-SymbolicName: eu.kalafatic.evolution.tests;singleton:=true
+Bundle-Version: 2.6.1.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Export-Package: eu.kalafatic.evolution.tests.iterative
+Automatic-Module-Name: eu.kalafatic.evolution.tests
