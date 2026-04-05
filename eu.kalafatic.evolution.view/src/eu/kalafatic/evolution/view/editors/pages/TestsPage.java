@@ -33,6 +33,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.model.orchestration.TestStatus;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.tests.iterative.ISimulationTest;
 import eu.kalafatic.evolution.tests.iterative.ITestListener;
 import eu.kalafatic.evolution.tests.iterative.IterativeDevelopmentTest;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -52,7 +53,7 @@ public class TestsPage extends Composite {
     private Browser statusBrowser;
     private Browser iterativeBrowser;
     private List<TestRow> testRows = new ArrayList<>();
-    private IterativeDevelopmentTest iterativeTest;
+    private ISimulationTest iterativeTest;
     private List<Class<?>> discoveredTestClasses = new ArrayList<>();
 
     private Adapter modelAdapter = new EContentAdapter() {
@@ -248,9 +249,17 @@ public class TestsPage extends Composite {
             }
         }
         if (discoveredTestClasses.isEmpty()) {
-            try {
-                discoveredTestClasses.add(bundle.loadClass("eu.kalafatic.evolution.tests.iterative.IterativeDevelopmentTest"));
-            } catch (Exception e) {}
+            String[] fallbacks = {
+                "eu.kalafatic.evolution.tests.iterative.ProjectSetupTest",
+                "eu.kalafatic.evolution.tests.iterative.ManualOrchestrationTest",
+                "eu.kalafatic.evolution.tests.iterative.IterativeDevelopmentTest",
+                "eu.kalafatic.evolution.tests.iterative.AutonomousImprovementTest"
+            };
+            for (String fallback : fallbacks) {
+                try {
+                    discoveredTestClasses.add(bundle.loadClass(fallback));
+                } catch (Exception e) {}
+            }
         }
     }
 
@@ -401,12 +410,17 @@ public class TestsPage extends Composite {
         refreshBrowser();
         for (TestRow row : testRows) {
             if (row.test == test) {
-                row.item.setText(2, TestStatus.RUNNING.toString()); // Update status column
+                row.item.setText(row.test.getType().equals("Predefined") ? 3 : 2, TestStatus.RUNNING.toString());
                 break;
             }
         }
 
-        if ("IterativeDevelopmentTest".equals(test.getName()) && iterativeBrowser != null && !iterativeBrowser.isDisposed()) {
+        boolean isSimulation = "ProjectSetupTest".equals(test.getName()) ||
+                               "ManualOrchestrationTest".equals(test.getName()) ||
+                               "IterativeDevelopmentTest".equals(test.getName()) ||
+                               "AutonomousImprovementTest".equals(test.getName());
+
+        if (isSimulation && iterativeBrowser != null && !iterativeBrowser.isDisposed()) {
             runIterativeSimulation(iterativeBrowser, null, test);
         } else {
             Display.getDefault().timerExec(2000, () -> {
@@ -449,7 +463,7 @@ public class TestsPage extends Composite {
             iterativeTest.stop();
         }
 
-        iterativeTest = new IterativeDevelopmentTest(new ITestListener() {
+        ITestListener listener = new ITestListener() {
             @Override
             public void stepStarted(String step) {
                 Display.getDefault().asyncExec(() -> {
@@ -461,13 +475,24 @@ public class TestsPage extends Composite {
             public void stepSuccess(String step) {
                 Display.getDefault().asyncExec(() -> {
                     if (browser != null && !browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'success');");
-                    if ("refine".equals(step)) {
-                        if (testModel != null) {
-                            testModel.setStatus(TestStatus.PASSED);
-                            updateStatusInTable(testModel);
+                    if ("refine".equals(step) || "learn".equals(step) || "validate".equals(step) || "evaluate".equals(step)) {
+                        // Check if it's the last step for the specific test
+                        boolean isLast = false;
+                        String name = (testModel != null) ? testModel.getName() : "";
+                        if ("ProjectSetupTest".equals(name) && "validate".equals(step)) isLast = true;
+                        else if ("ManualOrchestrationTest".equals(name) && "evaluate".equals(step)) isLast = true;
+                        else if ("IterativeDevelopmentTest".equals(name) && "learn".equals(step)) isLast = true;
+                        else if ("AutonomousImprovementTest".equals(name) && "learn".equals(step)) isLast = true;
+                        else if (testModel == null && "refine".equals(step)) isLast = true; // Default simulation
+
+                        if (isLast) {
+                            if (testModel != null) {
+                                testModel.setStatus(TestStatus.PASSED);
+                                updateStatusInTable(testModel);
+                            }
+                            if (runBtn != null) runBtn.setEnabled(true);
+                            refreshBrowser();
                         }
-                        if (runBtn != null) runBtn.setEnabled(true);
-                        refreshBrowser();
                     }
                 });
             }
@@ -515,7 +540,16 @@ public class TestsPage extends Composite {
                     }
                 });
             }
-        });
+        };
+
+        String testName = (testModel != null) ? testModel.getName() : "IterativeDevelopmentTest";
+        try {
+            Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.tests");
+            Class<?> clazz = bundle.loadClass("eu.kalafatic.evolution.tests.iterative." + testName);
+            iterativeTest = (ISimulationTest) clazz.getConstructor(ITestListener.class).newInstance(listener);
+        } catch (Exception e) {
+            iterativeTest = new IterativeDevelopmentTest(listener);
+        }
 
         new Thread(() -> {
             iterativeTest.run();
@@ -575,30 +609,33 @@ public class TestsPage extends Composite {
                 + "<defs><marker id='arrow' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#cbd5e1'/></marker></defs>"
                 // Nodes
                 + "<g id='nodes'>"
-                + "<circle id='n_prompt' class='node' cx='50' cy='50' r='20' /><text x='50' y='85' class='label'>Prompt</text>"
-                + "<circle id='n_plan' class='node' cx='150' cy='50' r='20' /><text x='150' y='85' class='label'>Plan</text>"
-                + "<circle id='n_implement' class='node' cx='250' cy='50' r='20' /><text x='250' y='85' class='label'>Implement</text>"
-                + "<circle id='n_compile' class='node' cx='350' cy='50' r='20' /><text x='350' y='85' class='label'>Compile</text>"
-                + "<circle id='n_test' class='node' cx='450' cy='50' r='20' /><text x='450' y='85' class='label'>Test</text>"
-                + "<circle id='n_evaluate' class='node' cx='550' cy='50' r='20' /><text x='550' y='85' class='label'>Evaluate</text>"
-                + "<circle id='n_iterate' class='node' cx='550' cy='150' r='20' /><text x='550' y='185' class='label'>Iterate</text>"
-                + "<circle id='n_commit' class='node' cx='450' cy='150' r='20' /><text x='450' y='185' class='label'>Commit</text>"
-                + "<circle id='n_PR' class='node' cx='350' cy='150' r='20' /><text x='350' y='185' class='label'>PR</text>"
-                + "<circle id='n_feedback' class='node' cx='250' cy='150' r='20' /><text x='250' y='185' class='label'>Feedback</text>"
-                + "<circle id='n_refine' class='node' cx='150' cy='150' r='20' /><text x='150' y='185' class='label'>Refine</text>"
+                + "<circle id='n_observe' class='node' cx='50' cy='50' r='20' /><text x='50' y='20' class='label'>Observe</text>"
+                + "<circle id='n_analyze' class='node' cx='150' cy='50' r='20' /><text x='150' y='20' class='label'>Analyze</text>"
+                + "<circle id='n_plan' class='node' cx='250' cy='50' r='20' /><text x='250' y='20' class='label'>Plan</text>"
+                + "<circle id='n_validate' class='node' cx='350' cy='50' r='20' /><text x='350' y='20' class='label'>Validate</text>"
+                + "<circle id='n_execute' class='node' cx='450' cy='50' r='20' /><text x='450' y='20' class='label'>Execute</text>"
+                + "<circle id='n_test' class='node' cx='550' cy='50' r='20' /><text x='550' y='20' class='label'>Test</text>"
+                + "<circle id='n_evaluate' class='node' cx='650' cy='50' r='20' /><text x='650' y='20' class='label'>Evaluate</text>"
+                + "<circle id='n_commit' class='node' cx='650' cy='150' r='20' /><text x='650' y='185' class='label'>Commit</text>"
+                + "<circle id='n_PR' class='node' cx='550' cy='150' r='20' /><text x='550' y='185' class='label'>PR</text>"
+                + "<circle id='n_feedback' class='node' cx='450' cy='150' r='20' /><text x='450' y='185' class='label'>Feedback</text>"
+                + "<circle id='n_refine' class='node' cx='350' cy='150' r='20' /><text x='350' y='185' class='label'>Refine</text>"
+                + "<circle id='n_learn' class='node' cx='250' cy='150' r='20' /><text x='250' y='185' class='label'>Learn</text>"
                 + "</g>"
                 // Edges
-                + "<path id='e_prompt_plan' class='edge' d='M 70 50 L 130 50' />"
-                + "<path id='e_plan_implement' class='edge' d='M 170 50 L 230 50' />"
-                + "<path id='e_implement_compile' class='edge' d='M 270 50 L 330 50' />"
-                + "<path id='e_compile_test' class='edge' d='M 370 50 L 430 50' />"
-                + "<path id='e_test_evaluate' class='edge' d='M 470 50 L 530 50' />"
-                + "<path id='e_evaluate_iterate' class='edge' d='M 550 70 L 550 130' />"
-                + "<path id='e_iterate_plan' class='edge' d='M 530 150 C 400 220 200 220 150 70' />" // Loop back to plan
-                + "<path id='e_iterate_commit' class='edge' d='M 530 150 L 470 150' />"
-                + "<path id='e_commit_PR' class='edge' d='M 430 150 L 370 150' />"
-                + "<path id='e_PR_feedback' class='edge' d='M 330 150 L 270 150' />"
-                + "<path id='e_feedback_refine' class='edge' d='M 230 150 L 170 150' />"
+                + "<path id='e_observe_analyze' class='edge' d='M 70 50 L 130 50' />"
+                + "<path id='e_analyze_plan' class='edge' d='M 170 50 L 230 50' />"
+                + "<path id='e_plan_validate' class='edge' d='M 270 50 L 330 50' />"
+                + "<path id='e_validate_execute' class='edge' d='M 370 50 L 430 50' />"
+                + "<path id='e_execute_test' class='edge' d='M 470 50 L 530 50' />"
+                + "<path id='e_test_evaluate' class='edge' d='M 570 50 L 630 50' />"
+                + "<path id='e_evaluate_commit' class='edge' d='M 650 70 L 650 130' />"
+                + "<path id='e_commit_PR' class='edge' d='M 630 150 L 570 150' />"
+                + "<path id='e_PR_feedback' class='edge' d='M 530 150 L 470 150' />"
+                + "<path id='e_feedback_refine' class='edge' d='M 430 150 L 370 150' />"
+                + "<path id='e_refine_learn' class='edge' d='M 330 150 L 270 150' />"
+                + "<path id='e_learn_plan' class='edge' d='M 230 150 C 200 130 200 70 230 50' />"
+                + "<path id='e_refine_plan' class='edge' d='M 350 130 C 350 110 280 90 270 65' />"
                 + "</svg>"
                 + "<script>"
                 + "function setNodeStatus(id, status) {"
