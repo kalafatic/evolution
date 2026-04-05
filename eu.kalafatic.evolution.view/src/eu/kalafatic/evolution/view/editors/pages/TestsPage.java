@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
@@ -15,8 +16,11 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.osgi.framework.Bundle;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Test;
@@ -38,8 +42,10 @@ public class TestsPage extends Composite {
     private ScrolledComposite testsScrolled;
     private Composite testsContent;
     private Browser statusBrowser;
+    private Browser iterativeBrowser;
     private List<TestRow> testRows = new ArrayList<>();
     private IterativeDevelopmentTest iterativeTest;
+    private List<Class<?>> discoveredTestClasses = new ArrayList<>();
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -121,10 +127,13 @@ public class TestsPage extends Composite {
         }
         testRows.clear();
 
+        discoverTests();
+
         // Use a SashForm to allow maximizable groups
         SashForm groupsSash = new SashForm(testsContent, SWT.VERTICAL);
         groupsSash.setLayoutData(new GridData(GridData.FILL_BOTH));
 
+        createPredefinedTestsGroup(groupsSash);
         createIterativeDevelopmentGroup(groupsSash);
 
         java.util.Map<String, List<Test>> groupedBy = new java.util.HashMap<>();
@@ -174,12 +183,142 @@ public class TestsPage extends Composite {
         isUpdating = false;
     }
 
+    private void discoverTests() {
+        if (!discoveredTestClasses.isEmpty()) return;
+        Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.tests");
+        if (bundle != null) {
+            java.util.Enumeration<java.net.URL> entries = bundle.findEntries("/", "*Test.class", true);
+            if (entries != null) {
+                while (entries.hasMoreElements()) {
+                    java.net.URL url = entries.nextElement();
+                    String path = url.getPath();
+                    // Convert path to class name
+                    String className = path.replace("/", ".").replace(".class", "");
+                    if (className.startsWith(".")) className = className.substring(1);
+                    if (className.contains("bin.")) className = className.substring(className.indexOf("bin.") + 4);
+
+                    try {
+                        Class<?> clazz = bundle.loadClass(className);
+                        if (!clazz.isInterface() && !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
+                            discoveredTestClasses.add(clazz);
+                        }
+                    } catch (Exception e) {
+                        // Skip un-loadable classes
+                    }
+                }
+            }
+        }
+        // Fallback if discovery fails in this environment
+        if (discoveredTestClasses.isEmpty()) {
+            try {
+                discoveredTestClasses.add(bundle.loadClass("eu.kalafatic.evolution.tests.iterative.IterativeDevelopmentTest"));
+            } catch (Exception e) {}
+        }
+    }
+
+    private void createPredefinedTestsGroup(Composite parent) {
+        Group group = SWTFactory.createMaximizableGroup(parent, "Predefined Tests", 5);
+
+        for (Class<?> testClass : discoveredTestClasses) {
+            String name = testClass.getSimpleName();
+            Test existing = null;
+            for (Test t : orchestrator.getTests()) {
+                if (name.equals(t.getName()) && "Predefined".equals(t.getType())) {
+                    existing = t;
+                    break;
+                }
+            }
+
+            if (existing == null) {
+                existing = OrchestrationFactory.eINSTANCE.createTest();
+                existing.setName(name);
+                existing.setType("Predefined");
+                existing.setStatus(TestStatus.PENDING);
+                orchestrator.getTests().add(existing);
+            }
+
+            final Test finalTest = existing;
+
+            SWTFactory.createLabel(group, name);
+            Text pathText = SWTFactory.createText(group);
+            pathText.setText(finalTest.getPath() != null ? finalTest.getPath() : "");
+            pathText.addModifyListener(e -> {
+                finalTest.setPath(pathText.getText());
+                editor.setDirty(true);
+            });
+
+            Button selectBtn = new Button(group, SWT.RADIO);
+            selectBtn.setSelection(finalTest.isSelected());
+            selectBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override
+                public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                    if (selectBtn.getSelection()) {
+                        isUpdating = true;
+                        for (Test t : orchestrator.getTests()) {
+                            t.setSelected(false);
+                        }
+                        finalTest.setSelected(true);
+                        // Update UI buttons state without full rebuild
+                        for (TestRow row : testRows) {
+                            row.executeBtn.setEnabled(row.test.isSelected());
+                        }
+                        isUpdating = false;
+                        editor.setDirty(true);
+                    }
+                }
+            });
+
+            Button execBtn = SWTFactory.createButton(group, "Execute");
+            execBtn.setEnabled(finalTest.isSelected());
+            execBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override
+                public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                    executeTest(finalTest);
+                }
+            });
+
+            testRows.add(new TestRow(finalTest, null, pathText, execBtn));
+        }
+    }
+
     private void addNewTest() {
-        Test newTest = OrchestrationFactory.eINSTANCE.createTest();
-        newTest.setName("New Test " + (orchestrator.getTests().size() + 1));
-        newTest.setStatus(TestStatus.PENDING);
-        orchestrator.getTests().add(newTest);
-        editor.setDirty(true);
+        discoverTests();
+        ElementListSelectionDialog dialog = new ElementListSelectionDialog(getShell(), new LabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return ((Class<?>) element).getSimpleName();
+            }
+        });
+        dialog.setTitle("Select Test to Add");
+        dialog.setMessage("Select a test from the available test modules:");
+        dialog.setElements(discoveredTestClasses.toArray());
+
+        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
+            Object[] result = dialog.getResult();
+            for (Object obj : result) {
+                Class<?> testClass = (Class<?>) obj;
+                String name = testClass.getSimpleName();
+
+                // Check if already exists
+                boolean exists = false;
+                for (Test t : orchestrator.getTests()) {
+                    if (name.equals(t.getName())) {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if (!exists) {
+                    Test newTest = OrchestrationFactory.eINSTANCE.createTest();
+                    newTest.setName(name);
+                    newTest.setType("General");
+                    newTest.setStatus(TestStatus.PENDING);
+                    orchestrator.getTests().add(newTest);
+                    editor.setDirty(true);
+                }
+            }
+            updateUIFromModel();
+        }
     }
 
     private void updateModelFromFields() {
@@ -193,13 +332,17 @@ public class TestsPage extends Composite {
         test.setStatus(TestStatus.RUNNING);
         refreshBrowser();
 
-        // Mock execution
-        Display.getDefault().timerExec(2000, () -> {
-            if (test.eContainer() != null) {
-                test.setStatus(Math.random() > 0.3 ? TestStatus.PASSED : TestStatus.FAILED);
-                refreshBrowser();
-            }
-        });
+        if ("IterativeDevelopmentTest".equals(test.getName()) && iterativeBrowser != null && !iterativeBrowser.isDisposed()) {
+            runIterativeSimulation(iterativeBrowser, null, test);
+        } else {
+            // Mock execution for others
+            Display.getDefault().timerExec(2000, () -> {
+                if (test.eContainer() != null) {
+                    test.setStatus(Math.random() > 0.3 ? TestStatus.PASSED : TestStatus.FAILED);
+                    refreshBrowser();
+                }
+            });
+        }
     }
 
     private void refreshBrowser() {
@@ -221,7 +364,7 @@ public class TestsPage extends Composite {
         return arr.toString();
     }
 
-    private void runIterativeSimulation(Browser browser, Button runBtn) {
+    private void runIterativeSimulation(Browser browser, Button runBtn, Test testModel) {
         if (iterativeTest != null) {
             iterativeTest.stop();
         }
@@ -238,6 +381,10 @@ public class TestsPage extends Composite {
             public void stepSuccess(String step) {
                 Display.getDefault().asyncExec(() -> {
                     if (!browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'success');");
+                    if ("refine".equals(step) && testModel != null) {
+                        testModel.setStatus(TestStatus.PASSED);
+                        refreshBrowser();
+                    }
                 });
             }
 
@@ -246,7 +393,11 @@ public class TestsPage extends Composite {
                 Display.getDefault().asyncExec(() -> {
                     if (!browser.isDisposed()) {
                         browser.execute("setNodeStatus('" + step + "', 'failed');");
-                        runBtn.setEnabled(true);
+                        if (runBtn != null) runBtn.setEnabled(true);
+                    }
+                    if (testModel != null) {
+                        testModel.setStatus(TestStatus.FAILED);
+                        refreshBrowser();
                     }
                 });
             }
@@ -275,7 +426,7 @@ public class TestsPage extends Composite {
                 Display.getDefault().asyncExec(() -> {
                     if (!browser.isDisposed()) {
                         browser.execute("resetDiagram();");
-                        runBtn.setEnabled(false);
+                        if (runBtn != null) runBtn.setEnabled(false);
                     }
                 });
             }
@@ -295,7 +446,7 @@ public class TestsPage extends Composite {
 
         Button runBtn = SWTFactory.createButton(group, "Run Lifecycle Simulation", 180);
 
-        Browser iterativeBrowser = new Browser(group, SWT.NONE);
+        iterativeBrowser = new Browser(group, SWT.NONE);
         GridData browserGD = new GridData(GridData.FILL_BOTH);
         browserGD.heightHint = 250;
         browserGD.horizontalSpan = 2;
@@ -305,7 +456,7 @@ public class TestsPage extends Composite {
         runBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                runIterativeSimulation(iterativeBrowser, runBtn);
+                runIterativeSimulation(iterativeBrowser, runBtn, null);
             }
         });
     }

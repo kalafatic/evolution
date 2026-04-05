@@ -35,4 +35,10 @@ public interface Test extends EObject {
 	 */
 	TestStatus getStatus();
 	void setStatus(TestStatus value);
+
+	/**
+	 * @model
+	 */
+	boolean isSelected();
+	void setSelected(boolean value);
 }
