@@ -7,17 +7,24 @@ import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.custom.SashForm;
-import org.eclipse.swt.custom.ScrolledComposite;
-import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.custom.TableEditor;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.jface.layout.TableColumnLayout;
+import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.osgi.framework.Bundle;
@@ -38,8 +45,9 @@ public class TestsPage extends Composite {
 
     private MultiPageEditor editor;
     private Orchestrator orchestrator;
+    private FormToolkit toolkit;
     private boolean isUpdating = false;
-    private ScrolledComposite testsScrolled;
+    private SharedScrolledComposite testsScrolled;
     private Composite testsContent;
     private Browser statusBrowser;
     private Browser iterativeBrowser;
@@ -66,15 +74,13 @@ public class TestsPage extends Composite {
 
     private class TestRow {
         Test test;
-        Text nameText;
-        Text pathText;
         Button executeBtn;
+        TableItem item;
 
-        TestRow(Test test, Text nameText, Text pathText, Button executeBtn) {
+        TestRow(Test test, Button executeBtn, TableItem item) {
             this.test = test;
-            this.nameText = nameText;
-            this.pathText = pathText;
             this.executeBtn = executeBtn;
+            this.item = item;
         }
     }
 
@@ -88,14 +94,16 @@ public class TestsPage extends Composite {
     }
 
     private void createControl() {
+        toolkit = new FormToolkit(getDisplay());
         SashForm mainSash = new SashForm(this, SWT.VERTICAL);
         mainSash.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-        testsScrolled = new ScrolledComposite(mainSash, SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER);
+        testsScrolled = new SharedScrolledComposite(mainSash, SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER) {
+        };
         testsScrolled.setExpandHorizontal(true);
         testsScrolled.setExpandVertical(true);
 
-        testsContent = new Composite(testsScrolled, SWT.NONE);
+        testsContent = toolkit.createComposite(testsScrolled, SWT.NONE);
         testsContent.setLayout(new GridLayout(1, false));
         testsScrolled.setContent(testsContent);
 
@@ -129,12 +137,8 @@ public class TestsPage extends Composite {
 
         discoverTests();
 
-        // Use a SashForm to allow maximizable groups
-        SashForm groupsSash = new SashForm(testsContent, SWT.VERTICAL);
-        groupsSash.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-        createPredefinedTestsGroup(groupsSash);
-        createIterativeDevelopmentGroup(groupsSash);
+        createPredefinedTestsGroup(testsContent);
+        createIterativeDevelopmentGroup(testsContent);
 
         java.util.Map<String, List<Test>> groupedBy = new java.util.HashMap<>();
         for (Test test : orchestrator.getTests()) {
@@ -144,45 +148,74 @@ public class TestsPage extends Composite {
             }
         }
 
-        ModifyListener ml = e -> {
-            if (!isUpdating) {
-                updateModelFromFields();
-                editor.setDirty(true);
-            }
-        };
-
         for (String type : groupedBy.keySet()) {
-            Group group = SWTFactory.createMaximizableGroup(groupsSash, type + " Tests", 3);
-            for (Test test : groupedBy.get(type)) {
-                SWTFactory.createLabel(group, test.getName() != null ? test.getName() : "New Test");
-                Text pathText = SWTFactory.createText(group);
-                pathText.setText(test.getPath() != null ? test.getPath() : "");
-                pathText.addModifyListener(ml);
-
-                Button execBtn = SWTFactory.createButton(group, "Execute");
-                execBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-                    @Override
-                    public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                        executeTest(test);
-                    }
-                });
-
-                testRows.add(new TestRow(test, null, pathText, execBtn));
-            }
+            createTestTableGroup(testsContent, type + " Tests", groupedBy.get(type), false);
         }
 
-        Button addBtn = SWTFactory.createButton(testsContent, "Add Test");
-        addBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+        Button addBtn = toolkit.createButton(testsContent, "Add Test", SWT.PUSH);
+        addBtn.addSelectionListener(new SelectionAdapter() {
             @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+            public void widgetSelected(SelectionEvent e) {
                 addNewTest();
             }
         });
 
         testsContent.layout(true, true);
-        testsScrolled.setMinSize(testsContent.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+        testsScrolled.reflow(true);
 
         isUpdating = false;
+    }
+
+    private void createTestTableGroup(Composite parent, String title, List<Test> tests, boolean expanded) {
+        Composite groupContainer = SWTFactory.createExpandableGroup(toolkit, parent, title, 1, expanded);
+
+        Composite tableComposite = toolkit.createComposite(groupContainer);
+        tableComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
+        TableColumnLayout layout = new TableColumnLayout();
+        tableComposite.setLayout(layout);
+
+        Table table = toolkit.createTable(tableComposite, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
+        table.setHeaderVisible(true);
+        table.setLinesVisible(true);
+
+        addColumn(table, layout, "Name", 150, 30);
+        addColumn(table, layout, "Path", 250, 40);
+        addColumn(table, layout, "Status", 100, 15);
+        addColumn(table, layout, "Execute", 100, 15);
+
+        for (final Test test : tests) {
+            final TableItem item = new TableItem(table, SWT.NONE);
+            updateTableItem(item, test);
+
+            TableEditor execEditor = new TableEditor(table);
+            Button execBtn = toolkit.createButton(table, "Execute", SWT.PUSH);
+            execBtn.pack();
+            execEditor.minimumWidth = execBtn.getSize().x;
+            execEditor.horizontalAlignment = SWT.CENTER;
+            execEditor.setEditor(execBtn, item, 3);
+            execBtn.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    executeTest(test);
+                }
+            });
+            testRows.add(new TestRow(test, execBtn, item));
+        }
+
+        GridData groupGd = (GridData) groupContainer.getLayoutData();
+        groupGd.heightHint = 200;
+    }
+
+    private void addColumn(Table table, TableColumnLayout layout, String text, int width, int weight) {
+        TableColumn col = new TableColumn(table, SWT.NONE);
+        col.setText(text);
+        layout.setColumnData(col, new ColumnWeightData(weight, width, true));
+    }
+
+    private void updateTableItem(TableItem item, Test test) {
+        item.setText(0, test.getName() != null ? test.getName() : "New Test");
+        item.setText(1, test.getPath() != null ? test.getPath() : "");
+        item.setText(2, test.getStatus().toString());
     }
 
     private void discoverTests() {
@@ -194,12 +227,10 @@ public class TestsPage extends Composite {
                 while (entries.hasMoreElements()) {
                     java.net.URL url = entries.nextElement();
                     String path = url.getPath();
-                    // Convert path to class name
                     String className = path.replace("/", ".");
                     if (className.endsWith(".class")) className = className.substring(0, className.length() - 6);
                     if (className.startsWith(".")) className = className.substring(1);
 
-                    // Handle various build structures (bin/, target/classes/, etc.)
                     String[] prefixes = {"bin.", "target.classes.", "target.test-classes."};
                     for (String pref : prefixes) {
                         if (className.contains(pref)) {
@@ -212,13 +243,10 @@ public class TestsPage extends Composite {
                         if (!clazz.isInterface() && !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
                             discoveredTestClasses.add(clazz);
                         }
-                    } catch (Exception e) {
-                        // Skip un-loadable classes
-                    }
+                    } catch (Exception e) {}
                 }
             }
         }
-        // Fallback if discovery fails in this environment
         if (discoveredTestClasses.isEmpty()) {
             try {
                 discoveredTestClasses.add(bundle.loadClass("eu.kalafatic.evolution.tests.iterative.IterativeDevelopmentTest"));
@@ -227,7 +255,22 @@ public class TestsPage extends Composite {
     }
 
     private void createPredefinedTestsGroup(Composite parent) {
-        Group group = SWTFactory.createMaximizableGroup(parent, "Predefined Tests", 5);
+        Composite container = SWTFactory.createExpandableGroup(toolkit, parent, "Predefined Tests", 1, true);
+
+        Composite tableComposite = toolkit.createComposite(container);
+        tableComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
+        TableColumnLayout layout = new TableColumnLayout();
+        tableComposite.setLayout(layout);
+
+        final Table table = toolkit.createTable(tableComposite, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL | SWT.H_SCROLL);
+        table.setHeaderVisible(true);
+        table.setLinesVisible(true);
+
+        addColumn(table, layout, "Sel", 40, 5);
+        addColumn(table, layout, "Name", 150, 25);
+        addColumn(table, layout, "Path", 250, 40);
+        addColumn(table, layout, "Status", 100, 15);
+        addColumn(table, layout, "Actions", 150, 15);
 
         for (Class<?> testClass : discoveredTestClasses) {
             String name = testClass.getSimpleName();
@@ -244,54 +287,63 @@ public class TestsPage extends Composite {
                 existing.setName(name);
                 existing.setType("Predefined");
                 existing.setStatus(TestStatus.PENDING);
-                // Do not mark editor dirty for initial population
                 isUpdating = true;
                 orchestrator.getTests().add(existing);
                 isUpdating = false;
             }
 
             final Test finalTest = existing;
+            final TableItem item = new TableItem(table, SWT.NONE);
+            item.setText(1, finalTest.getName());
+            item.setText(2, finalTest.getPath() != null ? finalTest.getPath() : "");
+            item.setText(3, finalTest.getStatus().toString());
 
-            Button selectBtn = new Button(group, SWT.RADIO);
-            selectBtn.setSelection(finalTest.isSelected());
-
-            Text nameText = SWTFactory.createText(group);
-            nameText.setText(finalTest.getName() != null ? finalTest.getName() : "");
-            nameText.addModifyListener(e -> {
-                finalTest.setName(nameText.getText());
-                editor.setDirty(true);
-            });
-
-            Text pathText = SWTFactory.createText(group);
-            pathText.setText(finalTest.getPath() != null ? finalTest.getPath() : "");
-            pathText.addModifyListener(e -> {
-                finalTest.setPath(pathText.getText());
-                editor.setDirty(true);
-            });
-
-            Button editBtn = SWTFactory.createEditButton(group, pathText);
-
-            Button execBtn = SWTFactory.createButton(group, "Execute");
-            execBtn.setEnabled(finalTest.isSelected());
-
-            selectBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            TableEditor selEditor = new TableEditor(table);
+            final Button radio = new Button(table, SWT.RADIO);
+            radio.setSelection(finalTest.isSelected());
+            radio.pack();
+            selEditor.minimumWidth = radio.getSize().x;
+            selEditor.horizontalAlignment = SWT.CENTER;
+            selEditor.setEditor(radio, item, 0);
+            radio.addSelectionListener(new SelectionAdapter() {
                 @Override
-                public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                    if (selectBtn.getSelection()) {
-                        handleTestSelection(finalTest);
-                    }
+                public void widgetSelected(SelectionEvent e) {
+                    if (radio.getSelection()) handleTestSelection(finalTest);
                 }
             });
 
-            execBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            TableEditor actionEditor = new TableEditor(table);
+            Composite actionComp = toolkit.createComposite(table);
+            GridLayout actionLayout = new GridLayout(2, false);
+            actionLayout.marginHeight = 0; actionLayout.marginWidth = 0;
+            actionComp.setLayout(actionLayout);
+
+            Button editBtn = toolkit.createButton(actionComp, "Edit", SWT.PUSH);
+            editBtn.addSelectionListener(new SelectionAdapter() {
                 @Override
-                public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                public void widgetSelected(SelectionEvent e) {
+                   // Placeholder for edit dialog
+                }
+            });
+
+            Button execBtn = toolkit.createButton(actionComp, "Execute", SWT.PUSH);
+            execBtn.setEnabled(finalTest.isSelected());
+            execBtn.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
                     executeTest(finalTest);
                 }
             });
 
-            testRows.add(new TestRow(finalTest, nameText, pathText, execBtn));
+            actionComp.pack();
+            actionEditor.minimumWidth = actionComp.getSize().x;
+            actionEditor.setEditor(actionComp, item, 4);
+
+            testRows.add(new TestRow(finalTest, execBtn, item));
         }
+
+        GridData containerGd = (GridData) container.getLayoutData();
+        containerGd.heightHint = 250;
     }
 
     private void addNewTest() {
@@ -312,7 +364,6 @@ public class TestsPage extends Composite {
                 Class<?> testClass = (Class<?>) obj;
                 String name = testClass.getSimpleName();
 
-                // Check if already exists
                 boolean exists = false;
                 for (Test t : orchestrator.getTests()) {
                     if (name.equals(t.getName())) {
@@ -340,30 +391,34 @@ public class TestsPage extends Composite {
         for (Test t : orchestrator.getTests()) {
             t.setSelected(t == selected);
         }
-        updateUIFromModel(); // Full update needed to synchronize radio states across groups
+        updateUIFromModel();
         isUpdating = false;
         editor.setDirty(true);
-    }
-
-    private void updateModelFromFields() {
-        if (orchestrator == null) return;
-        for (TestRow row : testRows) {
-            row.test.setPath(row.pathText.getText());
-            if (row.nameText != null) row.test.setName(row.nameText.getText());
-        }
     }
 
     private void executeTest(Test test) {
         test.setStatus(TestStatus.RUNNING);
         refreshBrowser();
+        for (TestRow row : testRows) {
+            if (row.test == test) {
+                row.item.setText(2, TestStatus.RUNNING.toString()); // Update status column
+                break;
+            }
+        }
 
         if ("IterativeDevelopmentTest".equals(test.getName()) && iterativeBrowser != null && !iterativeBrowser.isDisposed()) {
             runIterativeSimulation(iterativeBrowser, null, test);
         } else {
-            // Mock execution for others
             Display.getDefault().timerExec(2000, () -> {
                 if (test.eContainer() != null) {
-                    test.setStatus(Math.random() > 0.3 ? TestStatus.PASSED : TestStatus.FAILED);
+                    TestStatus status = Math.random() > 0.3 ? TestStatus.PASSED : TestStatus.FAILED;
+                    test.setStatus(status);
+                    for (TestRow row : testRows) {
+                        if (row.test == test) {
+                            row.item.setText(2, status.toString());
+                            break;
+                        }
+                    }
                     refreshBrowser();
                 }
             });
@@ -407,7 +462,10 @@ public class TestsPage extends Composite {
                 Display.getDefault().asyncExec(() -> {
                     if (browser != null && !browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'success');");
                     if ("refine".equals(step)) {
-                        if (testModel != null) testModel.setStatus(TestStatus.PASSED);
+                        if (testModel != null) {
+                            testModel.setStatus(TestStatus.PASSED);
+                            updateStatusInTable(testModel);
+                        }
                         if (runBtn != null) runBtn.setEnabled(true);
                         refreshBrowser();
                     }
@@ -423,6 +481,7 @@ public class TestsPage extends Composite {
                     }
                     if (testModel != null) {
                         testModel.setStatus(TestStatus.FAILED);
+                        updateStatusInTable(testModel);
                         refreshBrowser();
                     }
                 });
@@ -438,10 +497,10 @@ public class TestsPage extends Composite {
             @Override
             public void transitionActive(String edgeId) {
                 Display.getDefault().asyncExec(() -> {
-                    if (!browser.isDisposed()) {
+                    if (browser != null && !browser.isDisposed()) {
                         browser.execute("setEdgeStatus('" + edgeId + "', 'active');");
                         Display.getDefault().timerExec(500, () -> {
-                            if (!browser.isDisposed()) browser.execute("setEdgeStatus('" + edgeId + "', '');");
+                            if (browser != null && !browser.isDisposed()) browser.execute("setEdgeStatus('" + edgeId + "', '');");
                         });
                     }
                 });
@@ -450,7 +509,7 @@ public class TestsPage extends Composite {
             @Override
             public void reset() {
                 Display.getDefault().asyncExec(() -> {
-                    if (!browser.isDisposed()) {
+                    if (browser != null && !browser.isDisposed()) {
                         browser.execute("resetDiagram();");
                         if (runBtn != null) runBtn.setEnabled(false);
                     }
@@ -461,18 +520,30 @@ public class TestsPage extends Composite {
         new Thread(() -> {
             iterativeTest.run();
             Display.getDefault().asyncExec(() -> {
-                if (!runBtn.isDisposed()) runBtn.setEnabled(true);
+                if (runBtn != null && !runBtn.isDisposed()) runBtn.setEnabled(true);
             });
         }).start();
     }
 
+    private void updateStatusInTable(Test test) {
+        for (TestRow row : testRows) {
+            if (row.test == test) {
+                row.item.setText(row.test.getType().equals("Predefined") ? 3 : 2, test.getStatus().toString());
+                break;
+            }
+        }
+    }
+
     private void createIterativeDevelopmentGroup(Composite parent) {
-        Group group = SWTFactory.createMaximizableGroup(parent, "Iterative Development Lifecycle", 1);
-        group.setLayout(new GridLayout(2, false));
+        Composite container = SWTFactory.createExpandableGroup(toolkit, parent, "Iterative Development Lifecycle", 1, false);
+        container.setLayout(new GridLayout(2, false));
 
-        Button runBtn = SWTFactory.createButton(group, "Run Lifecycle Simulation", 180);
+        Button runBtn = toolkit.createButton(container, "Run Lifecycle Simulation", SWT.PUSH);
+        GridData btnGd = new GridData();
+        btnGd.widthHint = 180;
+        runBtn.setLayoutData(btnGd);
 
-        iterativeBrowser = new Browser(group, SWT.NONE);
+        iterativeBrowser = new Browser(container, SWT.NONE);
         GridData browserGD = new GridData(GridData.FILL_BOTH);
         browserGD.heightHint = 250;
         browserGD.horizontalSpan = 2;
@@ -585,6 +656,9 @@ public class TestsPage extends Composite {
     public void dispose() {
         if (orchestrator != null) {
             orchestrator.eAdapters().remove(modelAdapter);
+        }
+        if (toolkit != null) {
+            toolkit.dispose();
         }
         super.dispose();
     }
