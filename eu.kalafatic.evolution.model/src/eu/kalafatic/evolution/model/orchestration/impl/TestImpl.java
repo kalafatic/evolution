@@ -17,6 +17,7 @@ public class TestImpl extends MinimalEObjectImpl.Container implements Test {
 	protected String type = null;
 	protected String path = null;
 	protected TestStatus status = TestStatus.PENDING;
+	protected boolean selected = false;
 
 	protected TestImpl() { super(); }
 
@@ -74,6 +75,16 @@ public class TestImpl extends MinimalEObjectImpl.Container implements Test {
 	}
 
 	@Override
+	public boolean isSelected() { return selected; }
+	@Override
+	public void setSelected(boolean newSelected) {
+		boolean oldSelected = selected;
+		selected = newSelected;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TEST__SELECTED, oldSelected, selected));
+	}
+
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.TEST__ID: return getId();
@@ -81,6 +92,7 @@ public class TestImpl extends MinimalEObjectImpl.Container implements Test {
 			case OrchestrationPackage.TEST__TYPE: return getType();
 			case OrchestrationPackage.TEST__PATH: return getPath();
 			case OrchestrationPackage.TEST__STATUS: return getStatus();
+			case OrchestrationPackage.TEST__SELECTED: return isSelected();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -93,6 +105,7 @@ public class TestImpl extends MinimalEObjectImpl.Container implements Test {
 			case OrchestrationPackage.TEST__TYPE: setType((String)newValue); return;
 			case OrchestrationPackage.TEST__PATH: setPath((String)newValue); return;
 			case OrchestrationPackage.TEST__STATUS: setStatus((TestStatus)newValue); return;
+			case OrchestrationPackage.TEST__SELECTED: setSelected((Boolean)newValue); return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -105,6 +118,7 @@ public class TestImpl extends MinimalEObjectImpl.Container implements Test {
 			case OrchestrationPackage.TEST__TYPE: setType(null); return;
 			case OrchestrationPackage.TEST__PATH: setPath(null); return;
 			case OrchestrationPackage.TEST__STATUS: setStatus(TestStatus.PENDING); return;
+			case OrchestrationPackage.TEST__SELECTED: setSelected(false); return;
 		}
 		super.eUnset(featureID);
 	}
@@ -117,6 +131,7 @@ public class TestImpl extends MinimalEObjectImpl.Container implements Test {
 			case OrchestrationPackage.TEST__TYPE: return type != null;
 			case OrchestrationPackage.TEST__PATH: return path != null;
 			case OrchestrationPackage.TEST__STATUS: return status != TestStatus.PENDING;
+			case OrchestrationPackage.TEST__SELECTED: return selected != false;
 		}
 		return super.eIsSet(featureID);
 	}
