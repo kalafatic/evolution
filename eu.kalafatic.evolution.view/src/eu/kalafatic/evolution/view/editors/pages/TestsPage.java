@@ -139,7 +139,9 @@ public class TestsPage extends Composite {
         java.util.Map<String, List<Test>> groupedBy = new java.util.HashMap<>();
         for (Test test : orchestrator.getTests()) {
             String type = test.getType() != null ? test.getType() : "General";
-            groupedBy.computeIfAbsent(type, k -> new java.util.ArrayList<>()).add(test);
+            if (!"Predefined".equals(type)) {
+                groupedBy.computeIfAbsent(type, k -> new java.util.ArrayList<>()).add(test);
+            }
         }
 
         ModifyListener ml = e -> {
@@ -193,9 +195,17 @@ public class TestsPage extends Composite {
                     java.net.URL url = entries.nextElement();
                     String path = url.getPath();
                     // Convert path to class name
-                    String className = path.replace("/", ".").replace(".class", "");
+                    String className = path.replace("/", ".");
+                    if (className.endsWith(".class")) className = className.substring(0, className.length() - 6);
                     if (className.startsWith(".")) className = className.substring(1);
-                    if (className.contains("bin.")) className = className.substring(className.indexOf("bin.") + 4);
+
+                    // Handle various build structures (bin/, target/classes/, etc.)
+                    String[] prefixes = {"bin.", "target.classes.", "target.test-classes."};
+                    for (String pref : prefixes) {
+                        if (className.contains(pref)) {
+                            className = className.substring(className.indexOf(pref) + pref.length());
+                        }
+                    }
 
                     try {
                         Class<?> clazz = bundle.loadClass(className);
@@ -234,12 +244,24 @@ public class TestsPage extends Composite {
                 existing.setName(name);
                 existing.setType("Predefined");
                 existing.setStatus(TestStatus.PENDING);
+                // Do not mark editor dirty for initial population
+                isUpdating = true;
                 orchestrator.getTests().add(existing);
+                isUpdating = false;
             }
 
             final Test finalTest = existing;
 
-            SWTFactory.createLabel(group, name);
+            Button selectBtn = new Button(group, SWT.RADIO);
+            selectBtn.setSelection(finalTest.isSelected());
+
+            Text nameText = SWTFactory.createText(group);
+            nameText.setText(finalTest.getName() != null ? finalTest.getName() : "");
+            nameText.addModifyListener(e -> {
+                finalTest.setName(nameText.getText());
+                editor.setDirty(true);
+            });
+
             Text pathText = SWTFactory.createText(group);
             pathText.setText(finalTest.getPath() != null ? finalTest.getPath() : "");
             pathText.addModifyListener(e -> {
@@ -247,29 +269,20 @@ public class TestsPage extends Composite {
                 editor.setDirty(true);
             });
 
-            Button selectBtn = new Button(group, SWT.RADIO);
-            selectBtn.setSelection(finalTest.isSelected());
+            Button editBtn = SWTFactory.createEditButton(group, pathText);
+
+            Button execBtn = SWTFactory.createButton(group, "Execute");
+            execBtn.setEnabled(finalTest.isSelected());
+
             selectBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
                 @Override
                 public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
                     if (selectBtn.getSelection()) {
-                        isUpdating = true;
-                        for (Test t : orchestrator.getTests()) {
-                            t.setSelected(false);
-                        }
-                        finalTest.setSelected(true);
-                        // Update UI buttons state without full rebuild
-                        for (TestRow row : testRows) {
-                            row.executeBtn.setEnabled(row.test.isSelected());
-                        }
-                        isUpdating = false;
-                        editor.setDirty(true);
+                        handleTestSelection(finalTest);
                     }
                 }
             });
 
-            Button execBtn = SWTFactory.createButton(group, "Execute");
-            execBtn.setEnabled(finalTest.isSelected());
             execBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
                 @Override
                 public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -277,7 +290,7 @@ public class TestsPage extends Composite {
                 }
             });
 
-            testRows.add(new TestRow(finalTest, null, pathText, execBtn));
+            testRows.add(new TestRow(finalTest, nameText, pathText, execBtn));
         }
     }
 
@@ -321,10 +334,22 @@ public class TestsPage extends Composite {
         }
     }
 
+    private void handleTestSelection(Test selected) {
+        if (isUpdating) return;
+        isUpdating = true;
+        for (Test t : orchestrator.getTests()) {
+            t.setSelected(t == selected);
+        }
+        updateUIFromModel(); // Full update needed to synchronize radio states across groups
+        isUpdating = false;
+        editor.setDirty(true);
+    }
+
     private void updateModelFromFields() {
         if (orchestrator == null) return;
         for (TestRow row : testRows) {
             row.test.setPath(row.pathText.getText());
+            if (row.nameText != null) row.test.setName(row.nameText.getText());
         }
     }
 
@@ -373,16 +398,17 @@ public class TestsPage extends Composite {
             @Override
             public void stepStarted(String step) {
                 Display.getDefault().asyncExec(() -> {
-                    if (!browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'active');");
+                    if (browser != null && !browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'active');");
                 });
             }
 
             @Override
             public void stepSuccess(String step) {
                 Display.getDefault().asyncExec(() -> {
-                    if (!browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'success');");
-                    if ("refine".equals(step) && testModel != null) {
-                        testModel.setStatus(TestStatus.PASSED);
+                    if (browser != null && !browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'success');");
+                    if ("refine".equals(step)) {
+                        if (testModel != null) testModel.setStatus(TestStatus.PASSED);
+                        if (runBtn != null) runBtn.setEnabled(true);
                         refreshBrowser();
                     }
                 });
@@ -391,7 +417,7 @@ public class TestsPage extends Composite {
             @Override
             public void stepFailed(String step) {
                 Display.getDefault().asyncExec(() -> {
-                    if (!browser.isDisposed()) {
+                    if (browser != null && !browser.isDisposed()) {
                         browser.execute("setNodeStatus('" + step + "', 'failed');");
                         if (runBtn != null) runBtn.setEnabled(true);
                     }
@@ -405,7 +431,7 @@ public class TestsPage extends Composite {
             @Override
             public void stepSkipped(String step) {
                 Display.getDefault().asyncExec(() -> {
-                    if (!browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'skipped');");
+                    if (browser != null && !browser.isDisposed()) browser.execute("setNodeStatus('" + step + "', 'skipped');");
                 });
             }
 
