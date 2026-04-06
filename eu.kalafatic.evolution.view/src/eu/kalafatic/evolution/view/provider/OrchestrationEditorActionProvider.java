@@ -50,7 +50,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                 ISelection selection = event.getSelection();
                 if (selection instanceof IStructuredSelection) {
                     Object element = ((IStructuredSelection) selection).getFirstElement();
-                    if (element instanceof IFile || element instanceof EvoProject || element instanceof Orchestrator) {
+                    if (element instanceof IFile || element instanceof EvoProject || element instanceof Orchestrator || element instanceof org.eclipse.core.resources.IProject) {
                         Action openAction = createOpenAction(element);
                         if (openAction != null) {
                             openAction.run();
