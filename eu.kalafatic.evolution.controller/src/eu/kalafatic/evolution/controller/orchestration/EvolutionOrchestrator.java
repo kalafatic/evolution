@@ -68,6 +68,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
             int taskCount = tasks.size();
             String lastResult = "";
             for (int i = 0; i < taskCount; i++) {
+                context.checkPause();
+                if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
                 Task task = tasks.get(i);
 
                 // Check for User Approval
@@ -139,6 +141,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
         OrchestrationStatusManager.getInstance().updateAgentStatus(agent.getType(), "Executing: " + task.getName());
 
         for (int retry = 1; retry <= MAX_RETRIES; retry++) {
+            context.checkPause();
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             context.log("Orchestrator: Executing " + task.getName() + " (Attempt " + retry + ")");
 
             try {

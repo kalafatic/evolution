@@ -18,6 +18,7 @@ public class InstructionsGroup {
     private Composite group;
     private StyledText requestText;
     private Button iterativeCheck, selfIterativeCheck;
+    private Button sendButton, pauseButton, stopButton;
     private AiChatPage page;
     private Orchestrator orchestrator;
 
@@ -35,9 +36,32 @@ public class InstructionsGroup {
         requestGridData.heightHint = 100;
         requestText.setLayoutData(requestGridData);
 
-        Composite composite = SWTFactory.createComposite(group, 3);
-        Button sendButton = SWTFactory.createButton(composite, "Start");
+        Composite composite = SWTFactory.createComposite(group, 5);
+        sendButton = toolkit.createButton(composite, "Start Orchestration", SWT.PUSH);
+        GridData sendGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
+        sendGd.widthHint = 180;
+        sendGd.heightHint = 35;
+        sendButton.setLayoutData(sendGd);
+        sendButton.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
         sendButton.setToolTipText("Start a classic, iterative or autonomous iterative self-development session to improve the codebase.");
+
+        pauseButton = toolkit.createButton(composite, "Pause", SWT.PUSH);
+        pauseButton.setEnabled(false);
+        pauseButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.handlePause();
+            }
+        });
+
+        stopButton = toolkit.createButton(composite, "Stop", SWT.PUSH);
+        stopButton.setEnabled(false);
+        stopButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.handleStop();
+            }
+        });
 
         iterativeCheck = toolkit.createButton(composite, "Iterative Development", SWT.CHECK);
         iterativeCheck.setToolTipText("Enable iterative development based on your prompt.");
@@ -89,4 +113,15 @@ public class InstructionsGroup {
     public void setRequest(String text) { requestText.setText(text); }
     public boolean isIterative() { return iterativeCheck.getSelection(); }
     public boolean isSelfIterative() { return selfIterativeCheck.getSelection(); }
+
+    public void setOrchestrationRunning(boolean running) {
+        sendButton.setEnabled(!running);
+        pauseButton.setEnabled(running);
+        stopButton.setEnabled(running);
+        pauseButton.setText("Pause");
+    }
+
+    public void setPaused(boolean paused) {
+        pauseButton.setText(paused ? "Resume" : "Pause");
+    }
 }

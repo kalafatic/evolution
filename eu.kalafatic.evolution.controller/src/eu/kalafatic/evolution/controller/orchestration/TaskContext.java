@@ -23,6 +23,8 @@ public class TaskContext {
     private final List<ApprovalListener> approvalListeners = new CopyOnWriteArrayList<>();
     private final List<TokenRequestListener> tokenRequestListeners = new CopyOnWriteArrayList<>();
     private CompletableFuture<Boolean> approvalFuture;
+    private volatile boolean paused = false;
+    private final Object pauseLock = new Object();
 
     public interface LogListener {
         void onLog(String message);
@@ -83,6 +85,34 @@ public class TaskContext {
     public void provideApproval(boolean approved) {
         if (approvalFuture != null) {
             approvalFuture.complete(approved);
+        }
+    }
+
+    public boolean isPaused() {
+        return paused;
+    }
+
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+        if (!paused) {
+            synchronized (pauseLock) {
+                pauseLock.notifyAll();
+            }
+        }
+    }
+
+    public void checkPause() {
+        if (paused) {
+            synchronized (pauseLock) {
+                while (paused) {
+                    try {
+                        pauseLock.wait();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
         }
     }
 
