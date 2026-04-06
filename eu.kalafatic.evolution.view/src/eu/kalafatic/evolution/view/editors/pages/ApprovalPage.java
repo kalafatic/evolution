@@ -35,6 +35,7 @@ public class ApprovalPage extends SharedScrolledComposite {
 	private Orchestrator orchestrator;
 	private boolean isLoaded = false;
 	private FormToolkit toolkit;
+	private String lastJson = "";
 
 	private SummaryGroup summaryGroup;
 	private ReviewGroup reviewGroup;
@@ -140,11 +141,21 @@ public class ApprovalPage extends SharedScrolledComposite {
 
 	private void refreshBrowser() {
 		if (vizGroup.getBrowser() == null || vizGroup.getBrowser().isDisposed()) return;
-		if (!isLoaded) { vizGroup.getBrowser().setText(getHtmlTemplate()); return; }
+		if (!isLoaded) {
+			if (vizGroup.getBrowser().getText().isEmpty()) vizGroup.getBrowser().setText(getHtmlTemplate());
+			return;
+		}
 		String json = getModelAsJson();
+		if (json.equals(lastJson)) return;
+
 		Object result = vizGroup.getBrowser().evaluate("return typeof updateGraph !== 'undefined';");
-		if (result instanceof Boolean && (Boolean) result) vizGroup.getBrowser().execute("updateGraph(" + json + ");");
-		else { isLoaded = false; vizGroup.getBrowser().setText(getHtmlTemplate()); }
+		if (result instanceof Boolean && (Boolean) result) {
+			vizGroup.getBrowser().execute("updateGraph(" + json + ");");
+			lastJson = json;
+		} else {
+			isLoaded = false;
+			vizGroup.getBrowser().setText(getHtmlTemplate());
+		}
 	}
 
 	public void handleApprove() {
