@@ -9,28 +9,28 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Table;
+import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class ProposedTasksGroup {
-    private Group group;
+    private Composite group;
     private TableViewer tableViewer;
     private ApprovalPage page;
 
-    public ProposedTasksGroup(Composite parent, ApprovalPage page) {
+    public ProposedTasksGroup(FormToolkit toolkit, Composite parent, ApprovalPage page) {
         this.page = page;
-        createControl(parent);
+        createControl(toolkit, parent);
     }
 
-    private void createControl(Composite parent) {
-        group = SWTFactory.createGroup(parent, "Proposed Tasks", 1);
+    private void createControl(FormToolkit toolkit, Composite parent) {
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Proposed Tasks", 1, true);
         group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        ((GridData)group.getLayoutData()).heightHint = 180;
+        ((GridData)group.getLayoutData()).heightHint = 220;
 
-        Composite taskTableComposite = new Composite(group, SWT.NONE);
+        Composite taskTableComposite = toolkit.createComposite(group);
         taskTableComposite.setLayout(new GridLayout(2, false));
         taskTableComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
@@ -43,21 +43,24 @@ public class ProposedTasksGroup {
         page.createColumns(tableViewer);
         tableViewer.setContentProvider(ArrayContentProvider.getInstance());
 
-        Composite taskActions = new Composite(taskTableComposite, SWT.NONE);
+        Composite taskActions = toolkit.createComposite(taskTableComposite);
         taskActions.setLayout(new GridLayout(1, false));
         taskActions.setLayoutData(new GridData(SWT.BEGINNING, SWT.FILL, false, false));
 
-        Button upBtn = SWTFactory.createButton(taskActions, "Move Up", 80);
+        Button upBtn = toolkit.createButton(taskActions, "Move Up", SWT.PUSH);
+        upBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         upBtn.addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) { page.handleMoveTask(-1); }
         });
 
-        Button downBtn = SWTFactory.createButton(taskActions, "Move Down", 80);
+        Button downBtn = toolkit.createButton(taskActions, "Move Down", SWT.PUSH);
+        downBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         downBtn.addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) { page.handleMoveTask(1); }
         });
 
-        Button deleteBtn = SWTFactory.createButton(taskActions, "Delete", 80);
+        Button deleteBtn = toolkit.createButton(taskActions, "Delete", SWT.PUSH);
+        deleteBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         deleteBtn.addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) { page.handleDeleteTask(); }
         });

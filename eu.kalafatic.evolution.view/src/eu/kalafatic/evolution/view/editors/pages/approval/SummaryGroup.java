@@ -3,41 +3,43 @@ package eu.kalafatic.evolution.view.editors.pages.approval;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class SummaryGroup {
-    private Group group;
+    private Composite group;
     private Label sessionIdLabel, statusLabel, iterationsLabel, branchLabel, rationaleLabel;
 
-    public SummaryGroup(Composite parent) {
-        createControl(parent);
+    public SummaryGroup(FormToolkit toolkit, Composite parent, Orchestrator orchestrator) {
+        createControl(toolkit, parent);
+        updateUI(orchestrator);
     }
 
-    private void createControl(Composite parent) {
-        group = SWTFactory.createGroup(parent, "Approval Summary", 2);
+    private void createControl(FormToolkit toolkit, Composite parent) {
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Approval Summary", 2, true);
+
         SWTFactory.createLabel(group, "Session ID:");
-        sessionIdLabel = new Label(group, SWT.NONE);
+        sessionIdLabel = toolkit.createLabel(group, "");
         sessionIdLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         SWTFactory.createLabel(group, "Status:");
-        statusLabel = new Label(group, SWT.NONE);
+        statusLabel = toolkit.createLabel(group, "");
         statusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         SWTFactory.createLabel(group, "Iterations:");
-        iterationsLabel = new Label(group, SWT.NONE);
+        iterationsLabel = toolkit.createLabel(group, "");
         iterationsLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         SWTFactory.createLabel(group, "Git Branch:");
-        branchLabel = new Label(group, SWT.NONE);
+        branchLabel = toolkit.createLabel(group, "");
         branchLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         SWTFactory.createLabel(group, "AI Rationale:");
-        rationaleLabel = new Label(group, SWT.WRAP);
+        rationaleLabel = toolkit.createLabel(group, "", SWT.WRAP);
         GridData rationaleGD = new GridData(GridData.FILL_HORIZONTAL);
         rationaleGD.heightHint = 40;
         rationaleLabel.setLayoutData(rationaleGD);
