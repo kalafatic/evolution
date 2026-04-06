@@ -44,6 +44,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     public String execute(String request, TaskContext context) throws Exception {
         try {
             context.log("Orchestrator: Starting request - " + request);
+            context.appendSharedMemory("Initial user request: " + request);
 
             // 1. Planning
             OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Planning...");
@@ -170,12 +171,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
     private String performAction(Task task, IAgent agent, TaskContext context, String lastFeedback) throws Exception {
         String taskType = task.getType();
         String taskName = task.getName();
+        String taskDescription = task.getDescription();
+        String processInput = (taskDescription != null && !taskDescription.isEmpty()) ? taskDescription : taskName;
 
         // Check if task maps directly to a tool
         if ("file".equalsIgnoreCase(taskType)) {
             FileTool fileTool = new FileTool();
             // JavaDev/Architect will generate content first
-            String content = agent.process(taskName, context, lastFeedback);
+            String content = agent.process(processInput, context, lastFeedback);
 
             // Robust path extraction from task name
             String path = taskName.replaceFirst("(?i)^(Write|Create|Generate|Update|Modify)(\\s+file)?\\s+", "").trim();
@@ -189,7 +192,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
             path = path.replaceFirst("^([a-zA-Z]:)?(/|\\\\)+", "");
             // Normalize path: replace backslashes with forward slashes
             path = path.replace("\\", "/");
-            return fileTool.execute("WRITE " + path + "\n" + content, context.getProjectRoot(), context);
+            String writeResult = fileTool.execute("WRITE " + path + "\n" + content, context.getProjectRoot(), context);
+            return writeResult + "\nCONTENT:\n" + content;
         } else if ("maven".equalsIgnoreCase(taskType)) {
             MavenTool mavenTool = new MavenTool();
             return mavenTool.execute(taskName, context.getProjectRoot(), context);

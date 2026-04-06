@@ -16,7 +16,8 @@ public class JavaDevAgent extends BaseAiAgent {
     @Override
     protected String getAgentInstructions() {
         return "You are acting as a Senior Java Developer Agent.\n" +
-               "Generate Java source code or Maven POM content as requested.";
+               "Generate Java source code or Maven POM content as requested.\n" +
+               "IMPORTANT: Always look at the SHARED MEMORY for overall requirements and context to ensure your code matches the user's intent.";
     }
 
     @Override

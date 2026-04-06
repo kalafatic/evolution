@@ -129,13 +129,15 @@ public abstract class BaseAiAgent implements IAgent {
     }
 
     protected String cleanResponse(String response) {
-        if (response.trim().startsWith("```")) {
-            int firstNewline = response.indexOf("\n");
-            int lastBackticks = response.lastIndexOf("```");
+        String trimmed = response.trim();
+        int firstBackticks = trimmed.indexOf("```");
+        if (firstBackticks != -1) {
+            int firstNewline = trimmed.indexOf("\n", firstBackticks);
+            int lastBackticks = trimmed.lastIndexOf("```");
             if (firstNewline != -1 && lastBackticks > firstNewline) {
-                return response.substring(firstNewline + 1, lastBackticks).trim();
+                return trimmed.substring(firstNewline + 1, lastBackticks).trim();
             }
         }
-        return response.trim();
+        return trimmed;
     }
 }
