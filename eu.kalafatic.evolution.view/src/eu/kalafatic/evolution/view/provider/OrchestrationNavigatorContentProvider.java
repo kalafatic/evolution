@@ -74,9 +74,15 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
                 List<Object> children = new ArrayList<>();
                 for (IResource member : members) {
                     if (member instanceof IFile) {
-                        EvoProject ep = loadEvoProject((IFile) member);
-                        if (ep != null) {
-                            children.add(member); // Add the IFile, which will then have the EvoProject as its child
+                        IFile file = (IFile) member;
+                        String ext = file.getFileExtension();
+                        if (isCommonExtension(ext)) {
+                            children.add(member);
+                        } else {
+                            EvoProject ep = loadEvoProject(file);
+                            if (ep != null) {
+                                children.add(member);
+                            }
                         }
                     } else if (member instanceof IContainer) {
                         children.add(member);
@@ -110,6 +116,15 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
             return ((Task) parentElement).getSubTasks().toArray();
         }
         return new Object[0];
+    }
+
+    private boolean isCommonExtension(String ext) {
+        if (ext == null) return false;
+        String[] common = {"txt", "pdf", "java", "c", "properties", "gcode", "ktml", "xml", "xhtml", "kt", "py", "js", "ts", "html", "css", "md", "json", "yaml", "yml"};
+        for (String c : common) {
+            if (c.equalsIgnoreCase(ext)) return true;
+        }
+        return false;
     }
 
     private EvoProject loadEvoProject(IFile file) {

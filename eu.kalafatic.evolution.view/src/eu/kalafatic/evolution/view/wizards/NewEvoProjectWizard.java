@@ -43,6 +43,7 @@ import org.eclipse.ui.wizards.newresource.BasicNewResourceWizard;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
@@ -253,6 +254,10 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                     }
                 }
             }
+
+            FileConfig fileConfig = factory.createFileConfig();
+            fileConfig.setLocalPath(project.getLocation().append("resources").toOSString());
+            orchestrator.setFileConfig(fileConfig);
 
             evoProject.getOrchestrations().add(orchestrator);
             resource.getContents().add(evoProject);
