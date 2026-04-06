@@ -16,7 +16,7 @@ public class GitTool implements ITool {
 
     @Override
     public String execute(String command, File workingDir, TaskContext context) throws Exception {
-        context.log("GitTool: Running " + command);
+        context.log("Tool [GitTool]: Running " + command);
         File gitWorkingDir = workingDir;
         Git gitSettings = context.getOrchestrator().getGit();
         if (gitSettings != null && gitSettings.getLocalPath() != null && !gitSettings.getLocalPath().isEmpty()) {

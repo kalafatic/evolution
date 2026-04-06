@@ -69,6 +69,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	private Thread orchestrationThread;
 	private SatisfactionGroup satisfactionGroup;
 	private ApprovalGroup approvalGroup;
+	private InputGroup inputGroup;
 
 	private Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote;
 	private Font chatFont, bannerFont;
@@ -144,6 +145,7 @@ public class AiChatPage extends SharedScrolledComposite {
 		systemStatusGroup = new SystemStatusGroup(toolkit, content);
 		satisfactionGroup = new SatisfactionGroup(content, this);
 		approvalGroup = new ApprovalGroup(content, this);
+		inputGroup = new InputGroup(content, this);
 
 		threads.put(currentThread, "");
 		threadStyles.put(currentThread, new StyleRange[0]);
@@ -222,7 +224,7 @@ public class AiChatPage extends SharedScrolledComposite {
 		}
 		if (!historyGroup.getText().isEmpty()) historyGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 		historyGroup.appendText("You: " + request, colorUser, SWT.BOLD);
-		historyGroup.appendText("\n\nEvolution: Initializing orchestration...", colorEvolution, SWT.ITALIC);
+		historyGroup.appendText("\n\nEvo: Initializing orchestration...", colorEvolution, SWT.ITALIC);
 		threads.put(currentThread, historyGroup.getText());
 		threadStyles.put(currentThread, historyGroup.getStyleRanges());
 		instructionsGroup.setRequest("");
@@ -238,6 +240,9 @@ public class AiChatPage extends SharedScrolledComposite {
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
 					approvalGroup.show(message); updateScrolledContent();
 					if (TaskContext.PLAN_APPROVAL_MESSAGE.equals(message)) editor.showApprovalPage();
+				}));
+				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
+					inputGroup.show(message); updateScrolledContent();
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
 					String token = requestToken(provider);
@@ -256,7 +261,7 @@ public class AiChatPage extends SharedScrolledComposite {
 					if (!historyGroup.isDisposed()) {
 						historyGroup.setThinking(false);
 						historyGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
-						historyGroup.appendText("Evolution: " + result, colorEvolution, SWT.BOLD);
+						historyGroup.appendText("Evo: " + result, colorEvolution, SWT.BOLD);
 						threads.put(currentThread, historyGroup.getText());
 						threadStyles.put(currentThread, historyGroup.getStyleRanges());
 						satisfactionGroup.setVisible(true); updateScrolledContent();
@@ -345,7 +350,7 @@ public class AiChatPage extends SharedScrolledComposite {
 		}
 		if (!historyGroup.getText().isEmpty()) historyGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 		historyGroup.appendText("User [SELF-DEV]: " + finalRequest, colorUser, SWT.BOLD);
-		historyGroup.appendText("\n\nEvolution: Initializing Self-Development Supervisor loop...", colorEvolution, SWT.ITALIC | SWT.BOLD);
+		historyGroup.appendText("\n\nEvo: Initializing Self-Development Supervisor loop...", colorEvolution, SWT.ITALIC | SWT.BOLD);
 		instructionsGroup.setRequest("");
 		instructionsGroup.setOrchestrationRunning(true);
 		historyGroup.setThinking(true);
@@ -355,6 +360,12 @@ public class AiChatPage extends SharedScrolledComposite {
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
 				this.currentContext = context;
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!historyGroup.isDisposed()) processLogEntry(log); }));
+				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
+					approvalGroup.show(message); updateScrolledContent();
+				}));
+				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
+					inputGroup.show(message); updateScrolledContent();
+				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
 					String token = requestToken(provider);
 					if (token != null) { aiSettingsGroup.setRemoteToken(token); syncModelWithUI(); future.complete(token); }
@@ -370,7 +381,7 @@ public class AiChatPage extends SharedScrolledComposite {
 					if (!historyGroup.isDisposed()) {
 						historyGroup.setThinking(false);
 						historyGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
-						historyGroup.appendText("Evolution: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
+						historyGroup.appendText("Evo: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						satisfactionGroup.setVisible(true); updateScrolledContent();
 					}
@@ -452,10 +463,14 @@ public class AiChatPage extends SharedScrolledComposite {
 		if (currentContext != null) { currentContext.provideApproval(approved); approvalGroup.hide(); updateScrolledContent(); }
 	}
 
+	public void provideInput(String input) {
+		if (currentContext != null) { currentContext.provideInput(input); inputGroup.hide(); updateScrolledContent(); }
+	}
+
 	private void processLogEntry(String log) {
 		if (log == null || log.isEmpty()) return;
 		Color color = null; int style = SWT.NORMAL;
-		if (log.startsWith("Orchestrator:")) { color = colorEvolution; style = SWT.ITALIC; }
+		if (log.startsWith("Evo:") || log.startsWith("Orchestrator:")) { color = colorEvolution; style = SWT.ITALIC; }
 		else if (log.contains("Agent [") && log.contains("Planner")) { color = colorPlanner; style = SWT.BOLD; }
 		else if (log.contains("Agent [") && log.contains("Architect")) { color = colorArchitect; style = SWT.BOLD; }
 		else if (log.contains("Agent [") && log.contains("JavaDev")) { color = colorJavaDev; style = SWT.BOLD; }

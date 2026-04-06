@@ -30,7 +30,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
     @Override
     public String executeTask(Task task, TaskContext context) throws Exception {
-        context.log("Orchestrator: Executing single task: " + task.getName());
+        context.log("Evo: Executing single task: " + task.getName());
         boolean success = executeTaskWithRetries(task, context);
         if (!success) {
             task.setStatus(TaskStatus.FAILED);
@@ -43,7 +43,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     @Override
     public String execute(String request, TaskContext context) throws Exception {
         try {
-            context.log("Orchestrator: Starting request - " + request);
+            context.log("Evo: Starting request - " + request);
             context.appendSharedMemory("Initial user request: " + request);
 
             // 1. Planning
@@ -54,13 +54,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
             context.getOrchestrator().getTasks().addAll(originalPlannedTasks);
 
             // Pause for Plan Approval
-            context.log("Orchestrator: Plan generated. Waiting for user review and approval...");
+            context.log("Evo: Plan generated. Waiting for user review and approval...");
             Boolean planApproved = context.requestApproval(TaskContext.PLAN_APPROVAL_MESSAGE).get();
             if (planApproved == null || !planApproved) {
-                context.log("Orchestrator: Plan rejected by user.");
+                context.log("Evo: Plan rejected by user.");
                 throw new Exception("Orchestration plan rejected by user.");
             }
-            context.log("Orchestrator: Plan approved. Starting execution...");
+            context.log("Evo: Plan approved. Starting execution...");
 
             // Reload tasks from model in case the user modified them during approval
             List<Task> tasks = new ArrayList<>(context.getOrchestrator().getTasks());
@@ -76,7 +76,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 // Check for User Approval
                 if (task.isApprovalRequired() || "approval".equalsIgnoreCase(task.getType())) {
                     task.setStatus(TaskStatus.WAITING_FOR_APPROVAL);
-                    context.log("Orchestrator: Waiting for user approval for task: " + task.getName());
+                    context.log("Evo: Waiting for user approval for task: " + task.getName());
                     Boolean approved = context.requestApproval("Approve task: " + task.getName() + "?").get();
                     if (approved == null || !approved) {
                         task.setStatus(TaskStatus.FAILED);
@@ -117,7 +117,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
 
                     if (loopTargetIndex != -1) {
-                        context.log("Orchestrator: Looping back to task ID: " + loopToId);
+                        context.log("Evo: Looping back to task ID: " + loopToId);
                         i = loopTargetIndex - 1; // -1 because the for loop will increment i
                     }
                 }
@@ -126,7 +126,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             updateStatus(context, 1.0, "Completed");
             return lastResult != null && !lastResult.isEmpty() ? lastResult : "Orchestration successful.";
         } catch (Exception e) {
-            context.log("Orchestrator Error: " + e.getMessage());
+            context.log("Evo Error: " + e.getMessage());
             throw e;
         } finally {
             OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Idle");
@@ -144,7 +144,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
         for (int retry = 1; retry <= MAX_RETRIES; retry++) {
             context.checkPause();
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            context.log("Orchestrator: Executing " + task.getName() + " (Attempt " + retry + ")");
+            context.log("Evo: Executing " + task.getName() + " (Attempt " + retry + ")");
 
             try {
                 // Execute action (either via tool or reasoning)
@@ -201,6 +201,11 @@ public class EvolutionOrchestrator implements IOrchestrator {
             GitTool gitTool = new GitTool();
             return gitTool.execute(taskName, context.getProjectRoot(), context);
         } else if ("shell".equalsIgnoreCase(taskType)) {
+            context.log("Evo: Requesting approval for terminal command: " + taskName);
+            Boolean approved = context.requestApproval("Approve terminal command: " + taskName + "?").get();
+            if (approved == null || !approved) {
+                throw new Exception("Terminal command rejected by user: " + taskName);
+            }
             ShellTool shellTool = new ShellTool();
             return shellTool.execute(taskName, context.getProjectRoot(), context);
         }

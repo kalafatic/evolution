@@ -36,7 +36,7 @@ public class FileTool implements ITool {
             } catch (IOException e) {
                 throw new Exception("Failed to write file: " + pathPart + " - " + e.getMessage(), e);
             }
-            context.log("FileTool: Wrote file " + pathPart);
+            context.log("Tool [FileTool]: Wrote file " + pathPart);
             return "SUCCESS: Wrote file " + pathPart;
         } else if (command.startsWith("READ")) {
             String pathPart = command.substring(4).trim();
@@ -58,7 +58,7 @@ public class FileTool implements ITool {
             File file = new File(workingDir, pathPart);
             if (file.exists()) {
                 if (deleteRecursively(file)) {
-                    context.log("FileTool: Deleted " + pathPart);
+                    context.log("Tool [FileTool]: Deleted " + pathPart);
                     return "SUCCESS: Deleted " + pathPart;
                 } else {
                     throw new Exception("Failed to delete " + pathPart);
@@ -75,7 +75,7 @@ public class FileTool implements ITool {
                 return "SUCCESS: Directory already exists " + pathPart;
             }
             if (dir.mkdirs()) {
-                context.log("FileTool: Created directory " + pathPart);
+                context.log("Tool [FileTool]: Created directory " + pathPart);
                 return "SUCCESS: Created directory " + pathPart;
             } else {
                 throw new Exception("Failed to create directory " + pathPart);
