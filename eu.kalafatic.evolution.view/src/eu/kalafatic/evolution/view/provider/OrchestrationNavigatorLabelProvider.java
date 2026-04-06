@@ -140,10 +140,13 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
         } else if (element instanceof IFolder) {
             return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FOLDER);
         } else if (element instanceof IFile) {
-            String ext = ((IFile) element).getFileExtension();
-            if ("evo".equals(ext) || "xml".equals(ext)) {
+            IFile file = (IFile) element;
+            String ext = file.getFileExtension();
+            if ("evo".equals(ext)) {
                 return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_project.png");
             }
+            Image image = getEditorImage(file);
+            if (image != null) return image;
             return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
         } else if (element instanceof EvoProject) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_project.png");
@@ -169,6 +172,19 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
             return getCachedImage("eu.kalafatic.evolution.view", "icons/sample.png");
         }
         return super.getImage(element);
+    }
+
+    private Image getEditorImage(IFile file) {
+        String name = file.getName();
+        Image image = imageCache.get("file://" + name);
+        if (image == null) {
+            ImageDescriptor desc = PlatformUI.getWorkbench().getEditorRegistry().getImageDescriptor(name);
+            if (desc != null) {
+                image = desc.createImage();
+                imageCache.put("file://" + name, image);
+            }
+        }
+        return image;
     }
 
     private Image getCachedImage(String bundleId, String path) {

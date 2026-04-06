@@ -81,6 +81,14 @@ public class FileGroup {
             File f = new File(path);
             if (f.exists()) return f;
         }
+        if (editor.getEditorInput() instanceof org.eclipse.ui.IFileEditorInput) {
+            org.eclipse.core.resources.IProject project = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput()).getFile().getProject();
+            org.eclipse.core.resources.IFolder resources = project.getFolder("resources");
+            if (resources.exists()) {
+                return resources.getLocation().toFile();
+            }
+            return project.getLocation().toFile();
+        }
         return new File(System.getProperty("java.io.tmpdir"));
     }
 
