@@ -14,18 +14,13 @@ public class JavaDevAgent extends BaseAiAgent {
     }
 
     @Override
-    public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
-        String prompt = "You are acting as a Senior Java Developer Agent.\n" +
-                "Project Context: " + context.getSharedMemory() + "\n";
+    protected String getAgentInstructions() {
+        return "You are acting as a Senior Java Developer Agent.\n" +
+               "Generate Java source code or Maven POM content as requested.";
+    }
 
-        if (lastFeedback != null && !lastFeedback.isEmpty()) {
-            prompt += "PREVIOUS ATTEMPT FAILED. Feedback: " + lastFeedback + "\nPlease correct your approach.\n";
-        }
-
-        prompt += "Current Java Task: " + taskDescription + "\n" +
-                "Generate Java source code or Maven POM content as requested. Provide ONLY the code content for files.";
-
-        context.log("JavaDev [" + id + "]: Generating Java code for - " + taskDescription);
-        return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt, context));
+    @Override
+    protected String getFooterInstructions() {
+        return "Provide ONLY the code content for files, without any conversational preamble or markdown backticks unless specifically required for a file's format.";
     }
 }

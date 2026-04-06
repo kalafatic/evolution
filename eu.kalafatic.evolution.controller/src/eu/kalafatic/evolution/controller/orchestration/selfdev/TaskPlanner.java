@@ -15,6 +15,11 @@ public class TaskPlanner extends BaseAiAgent {
         super("TaskPlanner", "SelfDevPlanner");
     }
 
+    @Override
+    protected String getAgentInstructions() {
+        return "You are acting as a Task Planner Agent for self-development workflows.";
+    }
+
     public List<Task> generateTasks(TaskContext context) throws Exception {
         String initialRequest = null;
         if (context.getOrchestrator().getSelfDevSession() != null) {
@@ -47,7 +52,12 @@ public class TaskPlanner extends BaseAiAgent {
             }
         }
 
-        String response = aiService.sendRequest(context.getOrchestrator(), prompt, context);
+        // Use structured prompt building to include memory
+        String fullPrompt = buildPrompt("Generate improvement tasks", context, null);
+        fullPrompt = fullPrompt.replace("INSTRUCTIONS:\n" + getAgentInstructions(), "INSTRUCTIONS:\n" + prompt);
+        fullPrompt = fullPrompt.replace("CURRENT TASK:\nGenerate improvement tasks", "CURRENT TASK:\nAnalyze current state and plan next steps.");
+
+        String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("[PLANNER] AI response received.");
 
         int start = response.indexOf("[");

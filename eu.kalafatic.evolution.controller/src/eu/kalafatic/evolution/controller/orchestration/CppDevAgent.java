@@ -13,18 +13,13 @@ public class CppDevAgent extends BaseAiAgent {
     }
 
     @Override
-    public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
-        String prompt = "You are acting as a Senior C/C++ Developer Agent.\n" +
-                "Project Context: " + context.getSharedMemory() + "\n";
+    protected String getAgentInstructions() {
+        return "You are acting as a Senior C/C++ Developer Agent.\n" +
+               "Generate C/C++ source code, headers, Makefiles or CMakeLists.txt content as requested.";
+    }
 
-        if (lastFeedback != null && !lastFeedback.isEmpty()) {
-            prompt += "PREVIOUS ATTEMPT FAILED. Feedback: " + lastFeedback + "\nPlease correct your approach.\n";
-        }
-
-        prompt += "Current C/C++ Task: " + taskDescription + "\n" +
-                "Generate C/C++ source code, headers, Makefiles or CMakeLists.txt content as requested. Provide ONLY the code content for files.";
-
-        context.log("CppDev [" + id + "]: Generating C/C++ code for - " + taskDescription);
-        return cleanResponse(aiService.sendRequest(context.getOrchestrator(), prompt, context));
+    @Override
+    protected String getFooterInstructions() {
+        return "Provide ONLY the code content for files, without any conversational preamble or markdown backticks unless specifically required for a file's format.";
     }
 }

@@ -12,18 +12,17 @@ public class ReviewerAgent extends BaseAiAgent {
     }
 
     @Override
-    public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
-        String prompt = "You are an AI Critic and Reviewer. Evaluate the completion of the following task.\n\n" +
-                "OVERALL CONTEXT: " + context.getSharedMemory() + "\n" +
-                "TASK DESCRIPTION: " + taskDescription + "\n\n" +
-                "CRITERIA:\n" +
-                "1. Does the output directly address the goal or request?\n" +
-                "2. Is the response helpful, accurate, and complete based on the context?\n\n" +
-                "Output MUST be a valid JSON object. Schema:\n" +
-                "{ \"success\": boolean, \"feedback\": \"Detailed explanation of why it failed and how to fix it\", \"comment\": \"Brief success message\" }";
+    protected String getAgentInstructions() {
+        return "You are an AI Critic and Reviewer. Evaluate the completion of the following task.\n\n" +
+               "CRITERIA:\n" +
+               "1. Does the output directly address the goal or request?\n" +
+               "2. Is the response helpful, accurate, and complete based on the context?";
+    }
 
-        context.log("Reviewer [" + id + "]: Reviewing task - " + taskDescription);
-        return aiService.sendRequest(context.getOrchestrator(), prompt, context);
+    @Override
+    protected String getFooterInstructions() {
+        return "Output MUST be a valid JSON object. Schema:\n" +
+               "{ \"success\": boolean, \"feedback\": \"Detailed explanation of why it failed and how to fix it\", \"comment\": \"Brief success message\" }";
     }
 
     public JSONObject evaluate(String taskOutput, String taskDescription, TaskContext context) throws Exception {

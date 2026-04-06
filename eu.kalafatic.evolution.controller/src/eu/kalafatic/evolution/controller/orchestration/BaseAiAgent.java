@@ -42,8 +42,21 @@ public abstract class BaseAiAgent implements IAgent {
         tools.add(tool);
     }
 
-    @Override
-    public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
+    /**
+     * Specific instructions for the agent type.
+     * @return Agent-specific instructions.
+     */
+    protected abstract String getAgentInstructions();
+
+    /**
+     * Optional footer instructions for the agent (e.g. JSON format).
+     * @return Footer instructions.
+     */
+    protected String getFooterInstructions() {
+        return "Based on the context and the task, provide your response.";
+    }
+
+    protected String buildPrompt(String taskDescription, TaskContext context, String lastFeedback) {
         Orchestrator orchestrator = context.getOrchestrator();
 
         // 1. Fetch MCP context if enabled
@@ -53,32 +66,57 @@ public abstract class BaseAiAgent implements IAgent {
             try {
                 McpClient mcpClient = new McpClient(mcpUrl);
                 mcpClient.initialize();
-                // For now, let's just list resources as a proof of concept
                 mcpContext = "\nMCP Local Context: " + mcpClient.listResources();
             } catch (Exception e) {
-                context.log("MCP Warning: Could not fetch context from " + mcpUrl + ": " + e.getMessage());
+                // Log but continue
             }
         }
 
-        String prompt = "You are acting as a " + type + " Agent.\n" +
-                        "Overall Context: " + context.getSharedMemory() + "\n" +
-                        mcpContext + "\n";
+        String projectRootPath = context.getProjectRoot() != null ? context.getProjectRoot().getAbsolutePath() : "Unknown";
 
-        if (lastFeedback != null && !lastFeedback.isEmpty()) {
-            prompt += "PREVIOUS ATTEMPT FAILED. Feedback: " + lastFeedback + "\nPlease correct your approach.\n";
+        StringBuilder sb = new StringBuilder();
+        sb.append("You are acting as a ").append(type).append(" Agent.\n");
+        sb.append("PROJECT ROOT: ").append(projectRootPath).append("\n");
+
+        String memory = context.getSharedMemory();
+        if (memory != null && !memory.isEmpty()) {
+            sb.append("\n--- SHARED MEMORY (HISTORY) ---\n");
+            sb.append(memory).append("\n");
+            sb.append("--- END SHARED MEMORY ---\n");
         }
 
-        prompt += "Current Task: " + taskDescription + "\n" +
-                  "Based on the context and the task, provide your response.";
+        if (!mcpContext.isEmpty()) {
+            sb.append(mcpContext).append("\n");
+        }
 
-        // 2. Data Scrubbing if online
+        sb.append("\nINSTRUCTIONS:\n").append(getAgentInstructions()).append("\n");
+
+        if (lastFeedback != null && !lastFeedback.isEmpty()) {
+            sb.append("\n--- PREVIOUS ATTEMPT FAILED ---\n");
+            sb.append("Feedback: ").append(lastFeedback).append("\n");
+            sb.append("Please correct your approach based on this feedback.\n");
+        }
+
+        sb.append("\nCURRENT TASK:\n").append(taskDescription).append("\n");
+
+        sb.append("\nFINAL DIRECTIVE:\n").append(getFooterInstructions());
+
+        return sb.toString();
+    }
+
+    @Override
+    public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
+        Orchestrator orchestrator = context.getOrchestrator();
+        String prompt = buildPrompt(taskDescription, context, lastFeedback);
+
+        // Data Scrubbing if online
         if (!orchestrator.isOfflineMode()) {
             prompt = DataScrubber.scrub(prompt);
         }
 
         context.log("Agent [" + id + " (" + type + ")]: Processing task - " + taskDescription);
 
-        // 3. Routing via LlmRouter
+        // Routing via LlmRouter
         float temperature = 0.7f;
         if (orchestrator.getLlm() != null) {
             temperature = orchestrator.getLlm().getTemperature();
@@ -87,7 +125,6 @@ public abstract class BaseAiAgent implements IAgent {
         String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
         String response = llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
 
-        // Post-process if necessary
         return cleanResponse(response);
     }
 
