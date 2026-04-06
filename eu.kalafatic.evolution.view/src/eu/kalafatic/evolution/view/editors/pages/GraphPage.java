@@ -110,6 +110,7 @@ public class GraphPage extends Composite {
             mgr.add(new ZoomInAction(zoomManager));
             mgr.add(new ZoomOutAction(zoomManager));
             mgr.add(new Action("Fit") { @Override public void run() { zoomManager.setZoomAsText(ZoomManager.FIT_ALL); } });
+            mgr.add(new Action("Reset") { @Override public void run() { zoomManager.setZoom(1.0); } });
         }
         mgr.update(true);
     }
