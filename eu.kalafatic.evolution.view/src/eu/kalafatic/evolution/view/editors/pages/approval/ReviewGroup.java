@@ -57,16 +57,18 @@ public class ReviewGroup {
 
     private void updateDiff() {
         if (orchestrator == null || orchestrator.getSelfDevSession() == null || orchestrator.getSelfDevSession().getIterations().isEmpty()) {
-            diffText.setText("No active iteration to show diff.");
+            if (!diffText.getText().equals("No active iteration to show diff.")) {
+                diffText.setText("No active iteration to show diff.");
+            }
             return;
         }
 
         if (!(editor.getEditorInput() instanceof IFileEditorInput)) {
-            diffText.setText("Editor input is not a file, cannot show diff.");
+            if (!diffText.getText().equals("Editor input is not a file, cannot show diff.")) {
+                diffText.setText("Editor input is not a file, cannot show diff.");
+            }
             return;
         }
-
-        diffText.setText("Loading diff...");
 
         CompletableFuture.runAsync(() -> {
             try {
@@ -82,17 +84,21 @@ public class ReviewGroup {
 
                 Display.getDefault().asyncExec(() -> {
                     if (!diffText.isDisposed()) {
-                        if (diffResult == null || diffResult.trim().isEmpty()) {
-                            diffText.setText("No changes detected in the current working directory (compared to HEAD).");
-                        } else {
-                            diffText.setText(diffResult);
+                        String newText = (diffResult == null || diffResult.trim().isEmpty()) ?
+                            "No changes detected in the current working directory (compared to HEAD)." : diffResult;
+
+                        if (!diffText.getText().equals(newText)) {
+                            diffText.setText(newText);
                         }
                     }
                 });
             } catch (Exception e) {
                 Display.getDefault().asyncExec(() -> {
                     if (!diffText.isDisposed()) {
-                        diffText.setText("Error retrieving git diff: " + e.getMessage());
+                        String errorMsg = "Error retrieving git diff: " + e.getMessage();
+                        if (!diffText.getText().equals(errorMsg)) {
+                            diffText.setText(errorMsg);
+                        }
                     }
                 });
             }

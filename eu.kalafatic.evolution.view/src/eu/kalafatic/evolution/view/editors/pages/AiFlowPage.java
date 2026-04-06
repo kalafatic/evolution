@@ -37,6 +37,7 @@ public class AiFlowPage extends Composite {
 	private Composite browserContainer;
 	private int browserWidth = 1000;
 	private int browserHeight = 800;
+	private String lastJson = "";
 
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override
@@ -161,15 +162,19 @@ public class AiFlowPage extends Composite {
 			if (browser == null || browser.isDisposed()) return;
 
 			if (!isLoaded) {
-				browser.setText(getHtmlTemplate());
+				// Avoid redundant setText
+				if (browser.getText().isEmpty()) browser.setText(getHtmlTemplate());
 				return;
 			}
 
 			String json = getModelAsJson();
+			if (json.equals(lastJson)) return; // No change, avoid update
+
 			// If updateGraph is not defined, the template was lost (e.g. after reload)
 			Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
 			if (result instanceof Boolean && (Boolean) result) {
 				browser.execute("updateGraph(" + json + ");");
+				lastJson = json;
 			} else {
 				isLoaded = false;
 				browser.setText(getHtmlTemplate());
