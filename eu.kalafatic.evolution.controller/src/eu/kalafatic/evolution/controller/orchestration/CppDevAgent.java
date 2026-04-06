@@ -15,6 +15,11 @@ public class CppDevAgent extends BaseAiAgent {
     @Override
     protected String getAgentInstructions() {
         return "You are acting as a Senior C/C++ Developer Agent.\n" +
-               "Generate C/C++ source code, headers, Makefiles or CMakeLists.txt content as requested. Provide ONLY the code content for files.";
+               "Generate C/C++ source code, headers, Makefiles or CMakeLists.txt content as requested.";
+    }
+
+    @Override
+    protected String getFooterInstructions() {
+        return "Provide ONLY the code content for files, without any conversational preamble or markdown backticks unless specifically required for a file's format.";
     }
 }

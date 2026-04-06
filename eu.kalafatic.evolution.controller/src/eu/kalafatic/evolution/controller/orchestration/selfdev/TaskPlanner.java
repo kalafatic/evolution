@@ -52,7 +52,12 @@ public class TaskPlanner extends BaseAiAgent {
             }
         }
 
-        String response = aiService.sendRequest(context.getOrchestrator(), prompt, context);
+        // Use structured prompt building to include memory
+        String fullPrompt = buildPrompt("Generate improvement tasks", context, null);
+        fullPrompt = fullPrompt.replace("INSTRUCTIONS:\n" + getAgentInstructions(), "INSTRUCTIONS:\n" + prompt);
+        fullPrompt = fullPrompt.replace("CURRENT TASK:\nGenerate improvement tasks", "CURRENT TASK:\nAnalyze current state and plan next steps.");
+
+        String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("[PLANNER] AI response received.");
 
         int start = response.indexOf("[");
