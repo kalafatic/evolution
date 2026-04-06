@@ -7,13 +7,18 @@ import org.eclipse.draw2d.ScalableFigure;
 import org.eclipse.draw2d.Viewport;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EContentAdapter;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.gef.editparts.ZoomManager;
 import org.eclipse.gef.ui.actions.ZoomComboContributionItem;
 import org.eclipse.gef.ui.actions.ZoomInAction;
 import org.eclipse.gef.ui.actions.ZoomOutAction;
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IMenuListener;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.swt.SWT;
@@ -22,6 +27,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Menu;
 import org.eclipse.ui.IWorkbenchSite;
 import org.eclipse.zest.core.viewers.GraphViewer;
 import org.eclipse.zest.core.widgets.ZestStyles;
@@ -77,8 +83,91 @@ public class GraphPage extends Composite {
 
         setupZoomSupport();
         createGraphToolbar(tbComp);
+        hookContextMenu();
+        hookMouseWheel();
 
         viewer.setInput(orchestrator != null ? new Object[] { orchestrator } : new Object[0]);
+    }
+
+    private void hookMouseWheel() {
+        viewer.getControl().addMouseWheelListener(e -> {
+            if ((e.stateMask & SWT.CTRL) != 0) {
+                if (zoomManager != null) {
+                    if (e.count > 0) {
+                        zoomManager.zoomIn();
+                    } else {
+                        zoomManager.zoomOut();
+                    }
+                }
+            }
+        });
+    }
+
+    private void hookContextMenu() {
+        MenuManager menuMgr = new MenuManager("#PopupMenu");
+        menuMgr.setRemoveAllWhenShown(true);
+        menuMgr.addMenuListener(new IMenuListener() {
+            @Override
+            public void menuAboutToShow(IMenuManager manager) {
+                fillContextMenu(manager);
+            }
+        });
+        Menu menu = menuMgr.createContextMenu(viewer.getControl());
+        viewer.getControl().setMenu(menu);
+    }
+
+    private void fillContextMenu(IMenuManager manager) {
+        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+        if (!selection.isEmpty()) {
+            Object selectedNode = selection.getFirstElement();
+            if (selectedNode instanceof EObject) {
+                EObject eObj = (EObject) selectedNode;
+                EObject parent = eObj.eContainer();
+                if (parent != null) {
+                    manager.add(new Action("Show Parent") {
+                        @Override
+                        public void run() {
+                            viewer.setInput(new Object[] { parent });
+                            viewer.applyLayout();
+                        }
+                    });
+                }
+                manager.add(new Action("Show Children") {
+                    @Override
+                    public void run() {
+                        viewer.setInput(new Object[] { selectedNode });
+                        viewer.applyLayout();
+                    }
+                });
+            }
+        }
+        manager.add(new Action("Show All") {
+            @Override
+            public void run() {
+                viewer.setInput(orchestrator != null ? new Object[] { orchestrator } : new Object[0]);
+                viewer.applyLayout();
+            }
+        });
+        manager.add(new Separator());
+
+        if (zoomManager != null) {
+            manager.add(new Action("Zoom In") { @Override public void run() { zoomManager.zoomIn(); } });
+            manager.add(new Action("Zoom Out") { @Override public void run() { zoomManager.zoomOut(); } });
+            manager.add(new Action("Fit") { @Override public void run() {
+                viewer.applyLayout();
+                zoomManager.setZoomAsText(ZoomManager.FIT_ALL);
+            } });
+            manager.add(new Action("Reset") { @Override public void run() { zoomManager.setZoom(1.0); } });
+            manager.add(new Separator());
+        }
+
+        MenuManager layoutMenu = new MenuManager("Layout");
+        layoutMenu.add(new Action("Tree") { @Override public void run() { viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        layoutMenu.add(new Action("Horizontal") { @Override public void run() { viewer.setLayoutAlgorithm(new HorizontalTreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        layoutMenu.add(new Action("Spring") { @Override public void run() { viewer.setLayoutAlgorithm(new SpringLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        layoutMenu.add(new Action("Radial") { @Override public void run() { viewer.setLayoutAlgorithm(new RadialLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        layoutMenu.add(new Action("Grid") { @Override public void run() { viewer.setLayoutAlgorithm(new GridLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), true); } });
+        manager.add(layoutMenu);
     }
 
     private void setupZoomSupport() {
@@ -86,7 +175,7 @@ public class GraphPage extends Composite {
         IFigure contents = viewer.getGraphControl().getContents();
         Viewport viewport = viewer.getGraphControl().getViewport();
         zoomManager = new ZoomManager((ScalableFigure) contents, viewport);
-        zoomManager.setZoomLevels(new double[] { 0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0 });
+        zoomManager.setZoomLevels(new double[] { 0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 7.5, 10.0 });
         List<String> zoomContribs = new ArrayList<>();
         zoomContribs.add(ZoomManager.FIT_ALL);
         zoomContribs.add(ZoomManager.FIT_HEIGHT);
@@ -109,7 +198,10 @@ public class GraphPage extends Composite {
             mgr.add(new ZoomComboContributionItem(site.getPage()));
             mgr.add(new ZoomInAction(zoomManager));
             mgr.add(new ZoomOutAction(zoomManager));
-            mgr.add(new Action("Fit") { @Override public void run() { zoomManager.setZoomAsText(ZoomManager.FIT_ALL); } });
+            mgr.add(new Action("Fit") { @Override public void run() {
+                viewer.applyLayout();
+                zoomManager.setZoomAsText(ZoomManager.FIT_ALL);
+            } });
             mgr.add(new Action("Reset") { @Override public void run() { zoomManager.setZoom(1.0); } });
         }
         mgr.update(true);
