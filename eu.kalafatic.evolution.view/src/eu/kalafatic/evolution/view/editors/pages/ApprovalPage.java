@@ -17,6 +17,8 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -28,12 +30,14 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.approval.*;
 
-public class ApprovalPage extends Composite {
+public class ApprovalPage extends SharedScrolledComposite {
 	private MultiPageEditor editor;
 	private Orchestrator orchestrator;
 	private boolean isLoaded = false;
+	private FormToolkit toolkit;
 
 	private SummaryGroup summaryGroup;
+	private ReviewGroup reviewGroup;
 	private FeedbackGroup feedbackGroup;
 	private ProposedTasksGroup proposedTasksGroup;
 	private VizGroup vizGroup;
@@ -47,20 +51,29 @@ public class ApprovalPage extends Composite {
 	};
 
 	public ApprovalPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-		super(parent, SWT.NONE);
+		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		this.editor = editor;
 		this.orchestrator = orchestrator;
+		this.setExpandHorizontal(true);
+		this.setExpandVertical(true);
+		this.toolkit = new FormToolkit(parent.getDisplay());
 		createControl();
 		setOrchestrator(orchestrator);
 	}
 
 	private void createControl() {
-		this.setLayout(new GridLayout(1, false));
-		summaryGroup = new SummaryGroup(this);
-		feedbackGroup = new FeedbackGroup(this, editor, orchestrator);
-		proposedTasksGroup = new ProposedTasksGroup(this, this);
-		vizGroup = new VizGroup(this, this);
-		actionsGroup = new ActionsGroup(this, this);
+		Composite comp = toolkit.createComposite(this);
+		comp.setLayout(new GridLayout(1, false));
+
+		summaryGroup = new SummaryGroup(toolkit, comp, orchestrator);
+		reviewGroup = new ReviewGroup(toolkit, comp, editor, orchestrator);
+		feedbackGroup = new FeedbackGroup(toolkit, comp, editor, orchestrator);
+		proposedTasksGroup = new ProposedTasksGroup(toolkit, comp, this);
+		vizGroup = new VizGroup(toolkit, comp, this);
+		actionsGroup = new ActionsGroup(toolkit, comp, this);
+
+		this.setContent(comp);
+		this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
 	public void setOrchestrator(Orchestrator orchestrator) {
@@ -111,9 +124,11 @@ public class ApprovalPage extends Composite {
 		Display.getDefault().asyncExec(() -> {
 			if (isDisposed()) return;
 			summaryGroup.updateUI(orchestrator);
+			reviewGroup.updateUI(orchestrator);
 			feedbackGroup.updateUI(orchestrator);
 			proposedTasksGroup.updateUI(orchestrator);
 			refreshBrowser();
+			this.reflow(true);
 		});
 	}
 
@@ -314,6 +329,7 @@ public class ApprovalPage extends Composite {
 	@Override
 	public void dispose() {
 		if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
+		if (toolkit != null) toolkit.dispose();
 		super.dispose();
 	}
 }

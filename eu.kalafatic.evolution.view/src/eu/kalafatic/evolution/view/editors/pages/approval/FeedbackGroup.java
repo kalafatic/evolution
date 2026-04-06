@@ -3,30 +3,29 @@ package eu.kalafatic.evolution.view.editors.pages.approval;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class FeedbackGroup {
-    private Group group;
+    private Composite group;
     private Scale ratingScale;
     private Text commentsText;
     private MultiPageEditor editor;
     private Orchestrator orchestrator;
 
-    public FeedbackGroup(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
+    public FeedbackGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         this.editor = editor;
         this.orchestrator = orchestrator;
-        createControl(parent);
+        createControl(toolkit, parent);
     }
 
-    private void createControl(Composite parent) {
-        group = SWTFactory.createGroup(parent, "User Feedback & Satisfaction", 2);
-        group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+    private void createControl(FormToolkit toolkit, Composite parent) {
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "User Feedback & Satisfaction", 2, true);
 
         SWTFactory.createLabel(group, "Rating (1-5):");
         ratingScale = new Scale(group, SWT.HORIZONTAL);
@@ -46,7 +45,7 @@ public class FeedbackGroup {
         });
 
         SWTFactory.createLabel(group, "Comments:");
-        commentsText = new Text(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
+        commentsText = toolkit.createText(group, "", SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
         GridData commentsGD = new GridData(GridData.FILL_HORIZONTAL);
         commentsGD.heightHint = 60;
         commentsText.setLayoutData(commentsGD);
