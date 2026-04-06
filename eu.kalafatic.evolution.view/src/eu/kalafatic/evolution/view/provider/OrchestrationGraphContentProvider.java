@@ -6,6 +6,7 @@ import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.zest.core.viewers.IGraphEntityContentProvider;
 
@@ -61,6 +62,22 @@ public class OrchestrationGraphContentProvider extends ArrayContentProvider impl
             List<Object> connections = new ArrayList<>();
             connections.addAll(t.getSubTasks());
             connections.addAll(t.getNext());
+
+            // Logical connections to tools
+            Orchestrator o = findOrchestrator(t);
+            if (o != null) {
+                String type = t.getType() != null ? t.getType().toLowerCase() : "";
+                if (type.contains("git") && o.getGit() != null) connections.add(o.getGit());
+                if (type.contains("maven") && o.getMaven() != null) connections.add(o.getMaven());
+                if (type.contains("file") && o.getFileConfig() != null) connections.add(o.getFileConfig());
+                if (type.contains("llm") || type.contains("ai")) {
+                    if (o.getLlm() != null) connections.add(o.getLlm());
+                    if (o.getOllama() != null) connections.add(o.getOllama());
+                }
+                if (type.contains("db") && o.getDatabase() != null) connections.add(o.getDatabase());
+                if (type.contains("shell") && o.getCompiler() != null) connections.add(o.getCompiler());
+            }
+
             return connections.toArray();
         } else if (entity instanceof Agent) {
             Agent a = (Agent) entity;
@@ -81,5 +98,16 @@ public class OrchestrationGraphContentProvider extends ArrayContentProvider impl
             return connections.toArray();
         }
         return new Object[0];
+    }
+
+    private Orchestrator findOrchestrator(EObject obj) {
+        EObject current = obj;
+        while (current != null) {
+            if (current instanceof Orchestrator) {
+                return (Orchestrator) current;
+            }
+            current = current.eContainer();
+        }
+        return null;
     }
 }

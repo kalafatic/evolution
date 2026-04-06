@@ -51,9 +51,16 @@ public class GraphPage extends Composite {
         @Override
         public void notifyChanged(Notification notification) {
             super.notifyChanged(notification);
+            if (notification.isTouch()) return;
+
             Display.getDefault().asyncExec(() -> {
-                if (!isDisposed()) {
-                    refreshViewer();
+                if (!isDisposed() && viewer != null && !viewer.getControl().isDisposed()) {
+                    // If it's just an attribute change, refresh without re-layout
+                    if (notification.getEventType() == Notification.SET || notification.getEventType() == Notification.UNSET) {
+                        viewer.refresh();
+                    } else {
+                        refreshViewer();
+                    }
                 }
             });
         }

@@ -26,7 +26,9 @@ import eu.kalafatic.evolution.model.orchestration.MemoryRule;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.runtime.Platform;
@@ -123,40 +125,99 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
 
     @Override
     public String getText(Object element) {
+        StringBuilder sb = new StringBuilder();
         if (element instanceof Orchestrator) {
-            return "Orchestrator: " + ((Orchestrator) element).getName();
+            Orchestrator o = (Orchestrator) element;
+            sb.append("Orchestrator: ").append(o.getName());
         } else if (element instanceof Task) {
             Task t = (Task) element;
-            return t.getName() + " (" + t.getStatus() + ")";
+            sb.append(t.getName()).append(" (").append(t.getStatus()).append(")");
         } else if (element instanceof Agent) {
             Agent a = (Agent) element;
-            return "Agent: " + a.getId() + " [" + a.getType() + "]";
+            sb.append("Agent: ").append(a.getId()).append(" [").append(a.getType()).append("]");
         } else if (element instanceof NeuronAI) {
-            return "Neuron AI: " + ((NeuronAI) element).getModel();
+            sb.append("Neuron AI: ").append(((NeuronAI) element).getModel());
         } else if (element instanceof Git) {
             Git g = (Git) element;
-            return "Git: " + g.getBranch() + " (" + g.getRepositoryUrl() + ")";
+            sb.append("Git: ").append(g.getBranch()).append(" (").append(g.getRepositoryUrl()).append(")");
         } else if (element instanceof Database) {
-            return "DB: " + ((Database) element).getUrl();
+            sb.append("DB: ").append(((Database) element).getUrl());
         } else if (element instanceof SelfDevSession) {
-            return "Session: " + ((SelfDevSession) element).getId();
+            sb.append("Session: ").append(((SelfDevSession) element).getId());
         } else if (element instanceof Iteration) {
             Iteration i = (Iteration) element;
-            return "Iteration: " + i.getId() + " (" + i.getPhase() + ")";
+            sb.append("Iteration: ").append(i.getId()).append(" (").append(i.getPhase()).append(")");
         } else if (element instanceof Test) {
             Test t = (Test) element;
-            return "Test: " + t.getName() + " (" + t.getStatus() + ")";
+            sb.append("Test: ").append(t.getName()).append(" (").append(t.getStatus()).append(")");
         } else if (element instanceof Rule) {
-            return "Rule: " + ((Rule) element).getName();
+            sb.append("Rule: ").append(((Rule) element).getName());
         } else if (element instanceof Eclipse) {
-            return "Eclipse: " + ((Eclipse) element).getWorkspace();
+            sb.append("Eclipse: ").append(((Eclipse) element).getWorkspace());
         } else if (element instanceof FileConfig) {
-            return "File: " + ((FileConfig) element).getLocalPath();
+            sb.append("File: ").append(((FileConfig) element).getLocalPath());
         } else if (element instanceof EvaluationResult) {
             EvaluationResult er = (EvaluationResult) element;
-            return "Evaluation: " + (er.isSuccess() ? "PASS" : "FAIL");
+            sb.append("Evaluation: ").append(er.isSuccess() ? "PASS" : "FAIL");
+        } else {
+            return "";
         }
-        return "";
+
+        // Add child summary
+        String childrenSummary = getChildrenSummary(element);
+        if (!childrenSummary.isEmpty()) {
+            sb.append("\n").append(childrenSummary);
+        }
+
+        return sb.toString();
+    }
+
+    private String getChildrenSummary(Object element) {
+        List<String> summaries = new ArrayList<>();
+        if (element instanceof Orchestrator) {
+            Orchestrator o = (Orchestrator) element;
+            if (!o.getAgents().isEmpty()) summaries.add("🤖" + o.getAgents().size());
+            if (!o.getTasks().isEmpty()) summaries.add("📝" + o.getTasks().size());
+            if (!o.getTests().isEmpty()) summaries.add("🧪" + o.getTests().size());
+        } else if (element instanceof Agent) {
+            Agent a = (Agent) element;
+            if (!a.getTasks().isEmpty()) summaries.add("📝" + a.getTasks().size());
+            if (!a.getRules().isEmpty()) summaries.add("⚖️" + a.getRules().size());
+        } else if (element instanceof Task) {
+            Task t = (Task) element;
+            if (!t.getSubTasks().isEmpty()) summaries.add("📝" + t.getSubTasks().size());
+            if (!t.getNext().isEmpty()) summaries.add("➡️" + t.getNext().size());
+        } else if (element instanceof SelfDevSession) {
+            SelfDevSession s = (SelfDevSession) element;
+            if (!s.getIterations().isEmpty()) summaries.add("🔄" + s.getIterations().size());
+        } else if (element instanceof Iteration) {
+            Iteration i = (Iteration) element;
+            if (!i.getTasks().isEmpty()) summaries.add("📝" + i.getTasks().size());
+        }
+
+        if (summaries.isEmpty()) return "";
+        return String.join(" ", summaries);
+    }
+
+    private boolean hasChildren(Object element) {
+        if (element instanceof Orchestrator) return true;
+        if (element instanceof Agent) {
+            Agent a = (Agent) element;
+            return !a.getTasks().isEmpty() || !a.getRules().isEmpty();
+        }
+        if (element instanceof Task) {
+            Task t = (Task) element;
+            return !t.getSubTasks().isEmpty() || !t.getNext().isEmpty();
+        }
+        if (element instanceof SelfDevSession) {
+            SelfDevSession s = (SelfDevSession) element;
+            return !s.getIterations().isEmpty();
+        }
+        if (element instanceof Iteration) {
+            Iteration i = (Iteration) element;
+            return !i.getTasks().isEmpty() || i.getEvaluationResult() != null;
+        }
+        return false;
     }
 
     @Override
@@ -166,59 +227,71 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
 
     @Override
     public Color getBorderColor(Object entity) {
+        if (hasChildren(entity)) {
+            return getColor("PARENT_BORDER", new RGB(50, 50, 50));
+        }
         return null;
     }
 
     @Override
     public Color getBorderHighlightColor(Object entity) {
-        return null;
+        return getColor("BORDER_HIGHLIGHT", new RGB(0, 0, 255));
     }
 
     @Override
     public int getBorderWidth(Object entity) {
-        return 0;
+        return hasChildren(entity) ? 2 : 1;
     }
 
     @Override
     public Color getBackgroundColour(Object entity) {
+        Color baseColor = null;
         if (entity instanceof Task) {
             Task t = (Task) entity;
             if (t.getStatus() == TaskStatus.RUNNING) {
-                return getColor("TASK_RUNNING", new RGB(255, 255, 150));
+                baseColor = getColor("TASK_RUNNING", new RGB(255, 255, 150));
             } else if (t.getStatus() == TaskStatus.DONE) {
-                return getColor("TASK_DONE", new RGB(150, 255, 150));
+                baseColor = getColor("TASK_DONE", new RGB(150, 255, 150));
             } else if (t.getStatus() == TaskStatus.FAILED) {
-                return getColor("TASK_FAILED", new RGB(255, 150, 150));
+                baseColor = getColor("TASK_FAILED", new RGB(255, 150, 150));
             } else if (t.getStatus() == TaskStatus.PENDING) {
-                return getColor("TASK_PENDING", new RGB(240, 240, 240));
+                baseColor = getColor("TASK_PENDING", new RGB(240, 240, 240));
             } else if (t.getStatus() == TaskStatus.WAITING_FOR_APPROVAL) {
-                return getColor("TASK_WAITING_APPROVAL", new RGB(255, 200, 100));
+                baseColor = getColor("TASK_WAITING_APPROVAL", new RGB(255, 200, 100));
             }
         } else if (entity instanceof Test) {
             Test t = (Test) entity;
             if (t.getStatus() == TestStatus.PASSED) {
-                return getColor("TEST_PASSED", new RGB(150, 255, 150));
+                baseColor = getColor("TEST_PASSED", new RGB(150, 255, 150));
             } else if (t.getStatus() == TestStatus.FAILED) {
-                return getColor("TEST_FAILED", new RGB(255, 150, 150));
+                baseColor = getColor("TEST_FAILED", new RGB(255, 150, 150));
             } else if (t.getStatus() == TestStatus.RUNNING) {
-                return getColor("TEST_RUNNING", new RGB(255, 255, 150));
+                baseColor = getColor("TEST_RUNNING", new RGB(255, 255, 150));
             } else {
-                return getColor("TEST_PENDING", new RGB(240, 240, 240));
+                baseColor = getColor("TEST_PENDING", new RGB(240, 240, 240));
             }
         } else if (entity instanceof Orchestrator) {
-            return getColor("ORCHESTRATOR_BG", new RGB(180, 180, 255));
+            baseColor = getColor("ORCHESTRATOR_BG", new RGB(180, 180, 255));
         } else if (entity instanceof Agent) {
-            return getColor("AGENT_BG", new RGB(220, 220, 220));
+            baseColor = getColor("AGENT_BG", new RGB(220, 220, 220));
         } else if (entity instanceof NeuronAI || entity instanceof LLM || entity instanceof Ollama || entity instanceof AiChat) {
-            return getColor("AI_BG", new RGB(255, 220, 180));
+            baseColor = getColor("AI_BG", new RGB(255, 220, 180));
         } else if (entity instanceof Git || entity instanceof Maven || entity instanceof Compiler || entity instanceof Database || entity instanceof FileConfig || entity instanceof Eclipse) {
-            return getColor("TOOL_BG", new RGB(220, 255, 255));
+            baseColor = getColor("TOOL_BG", new RGB(220, 255, 255));
         } else if (entity instanceof SelfDevSession || entity instanceof Iteration || entity instanceof EvaluationResult) {
-            return getColor("SESSION_BG", new RGB(230, 210, 255));
+            baseColor = getColor("SESSION_BG", new RGB(230, 210, 255));
         } else if (entity instanceof Rule) {
-            return getColor("RULE_BG", new RGB(255, 255, 200));
+            baseColor = getColor("RULE_BG", new RGB(255, 255, 200));
         }
-        return null;
+
+        if (baseColor != null && hasChildren(entity)) {
+            // Darken the color slightly for parents
+            RGB rgb = baseColor.getRGB();
+            return getColor("PARENT_" + entity.getClass().getSimpleName(),
+                new RGB(Math.max(0, rgb.red - 20), Math.max(0, rgb.green - 20), Math.max(0, rgb.blue - 20)));
+        }
+
+        return baseColor;
     }
 
     @Override
