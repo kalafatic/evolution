@@ -17,6 +17,11 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
     }
 
     @Override
+    protected String getAgentInstructions() {
+        return "You are acting as a Planner Agent. Your goal is to decompose high-level requests into atomic tasks.";
+    }
+
+    @Override
     public List<Task> plan(String request, TaskContext context) throws Exception {
         context.log("Planner: Decomposing request - " + request);
 
@@ -26,6 +31,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "Available task types:\n" +
                 "- 'llm': For reasoning, planning, or general text generation.\n" +
                 "- 'file': For writing or creating files (e.g., Java source code, POM, README). Task name should be 'Write <path/to/file>'. File paths MUST be relative to the project root and MUST NOT start with a slash or drive letter.\n" +
+                "- 'shell': For executing shell commands. Use this for environment discovery (e.g., 'pwd', 'ls') or custom scripts.\n" +
                 "- 'git': For version control actions (add, commit, push).\n" +
                 "- 'maven': For building, testing, or packaging the project.\n" +
                 "- 'approval': A specialized task that pauses the workflow and waits for the user to click 'Approve' or 'Reject'. Use this for critical steps like code application or final delivery.\n" +

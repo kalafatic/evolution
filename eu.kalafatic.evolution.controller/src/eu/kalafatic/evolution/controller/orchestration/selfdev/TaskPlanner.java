@@ -15,6 +15,11 @@ public class TaskPlanner extends BaseAiAgent {
         super("TaskPlanner", "SelfDevPlanner");
     }
 
+    @Override
+    protected String getAgentInstructions() {
+        return "You are acting as a Task Planner Agent for self-development workflows.";
+    }
+
     public List<Task> generateTasks(TaskContext context) throws Exception {
         String initialRequest = null;
         if (context.getOrchestrator().getSelfDevSession() != null) {

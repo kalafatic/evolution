@@ -42,6 +42,12 @@ public abstract class BaseAiAgent implements IAgent {
         tools.add(tool);
     }
 
+    /**
+     * Specific instructions for the agent type.
+     * @return Agent-specific instructions.
+     */
+    protected abstract String getAgentInstructions();
+
     @Override
     public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
         Orchestrator orchestrator = context.getOrchestrator();
@@ -60,9 +66,13 @@ public abstract class BaseAiAgent implements IAgent {
             }
         }
 
+        String projectRootPath = context.getProjectRoot() != null ? context.getProjectRoot().getAbsolutePath() : "Unknown";
+
         String prompt = "You are acting as a " + type + " Agent.\n" +
+                        "Project Root: " + projectRootPath + "\n" +
                         "Overall Context: " + context.getSharedMemory() + "\n" +
-                        mcpContext + "\n";
+                        mcpContext + "\n" +
+                        getAgentInstructions() + "\n";
 
         if (lastFeedback != null && !lastFeedback.isEmpty()) {
             prompt += "PREVIOUS ATTEMPT FAILED. Feedback: " + lastFeedback + "\nPlease correct your approach.\n";

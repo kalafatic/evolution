@@ -172,7 +172,15 @@ public class EvolutionOrchestrator implements IOrchestrator {
             FileTool fileTool = new FileTool();
             // JavaDev/Architect will generate content first
             String content = agent.process(taskName, context, lastFeedback);
-            String path = taskName.replaceFirst("(?i)Write ", "").trim();
+
+            // Robust path extraction from task name
+            String path = taskName.replaceFirst("(?i)^(Write|Create|Generate|Update|Modify)(\\s+file)?\\s+", "").trim();
+
+            // Strip quotes if present
+            if ((path.startsWith("'") && path.endsWith("'")) || (path.startsWith("\"") && path.endsWith("\""))) {
+                path = path.substring(1, path.length() - 1);
+            }
+
             // Sanitize path: remove leading slashes and drive letters (e.g., C:/)
             path = path.replaceFirst("^([a-zA-Z]:)?(/|\\\\)+", "");
             // Normalize path: replace backslashes with forward slashes
