@@ -118,6 +118,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     	
         IEditorInput input = getEditorInput();
         if (input instanceof IFileEditorInput) {
+            setPartName(((IFileEditorInput) input).getFile().getProject().getName());
             URI uri = URI.createPlatformResourceURI(((IFileEditorInput) input).getFile().getFullPath().toString(), true);
             resource = resourceSet.getResource(uri, true);
             if (resource != null && !resource.getContents().isEmpty()) {
