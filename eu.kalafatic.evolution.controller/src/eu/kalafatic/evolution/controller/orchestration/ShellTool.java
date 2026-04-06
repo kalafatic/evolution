@@ -16,7 +16,7 @@ public class ShellTool implements ITool {
 
     @Override
     public String execute(String command, File workingDir, TaskContext context) throws Exception {
-        context.log("ShellTool: Running " + command);
+        context.log("Tool [ShellTool]: Running " + command);
 
         // Basic whitelist for safer execution
         String firstArg = command.split("\\s+")[0].toLowerCase();

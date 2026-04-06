@@ -21,8 +21,10 @@ public class TaskContext {
     private final List<String> logs = Collections.synchronizedList(new ArrayList<>());
     private final List<LogListener> listeners = new CopyOnWriteArrayList<>();
     private final List<ApprovalListener> approvalListeners = new CopyOnWriteArrayList<>();
+    private final List<InputListener> inputListeners = new CopyOnWriteArrayList<>();
     private final List<TokenRequestListener> tokenRequestListeners = new CopyOnWriteArrayList<>();
     private CompletableFuture<Boolean> approvalFuture;
+    private CompletableFuture<String> inputFuture;
     private volatile boolean paused = false;
     private final Object pauseLock = new Object();
 
@@ -32,6 +34,10 @@ public class TaskContext {
 
     public interface ApprovalListener {
         void onApprovalRequested(String message);
+    }
+
+    public interface InputListener {
+        void onInputRequested(String message);
     }
 
     public interface TokenRequestListener {
@@ -64,6 +70,10 @@ public class TaskContext {
         approvalListeners.add(listener);
     }
 
+    public void addInputListener(InputListener listener) {
+        inputListeners.add(listener);
+    }
+
     public void addTokenRequestListener(TokenRequestListener listener) {
         tokenRequestListeners.add(listener);
     }
@@ -85,6 +95,20 @@ public class TaskContext {
     public void provideApproval(boolean approved) {
         if (approvalFuture != null) {
             approvalFuture.complete(approved);
+        }
+    }
+
+    public CompletableFuture<String> requestInput(String message) {
+        inputFuture = new CompletableFuture<>();
+        for (InputListener listener : inputListeners) {
+            listener.onInputRequested(message);
+        }
+        return inputFuture;
+    }
+
+    public void provideInput(String input) {
+        if (inputFuture != null) {
+            inputFuture.complete(input);
         }
     }
 

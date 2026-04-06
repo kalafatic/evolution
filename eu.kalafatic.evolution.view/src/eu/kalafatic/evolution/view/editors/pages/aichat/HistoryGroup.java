@@ -92,7 +92,7 @@ public class HistoryGroup {
     }
 
     public void appendText(String text, org.eclipse.swt.graphics.Color color, int style) {
-        String sender = "Evolution";
+        String sender = "Evo";
         String content = text;
         if (text.startsWith("You: ")) {
             sender = "You";
@@ -101,10 +101,21 @@ public class HistoryGroup {
             sender = "User [SELF-DEV]";
             content = text.substring(17);
         } else if (text.startsWith("Evolution: ")) {
-            sender = "Evolution";
+            sender = "Evo";
             content = text.substring(11);
+        } else if (text.startsWith("Evo: ")) {
+            sender = "Evo";
+            content = text.substring(5);
         } else if (text.contains("Agent [")) {
             int start = text.indexOf("Agent [");
+            int end = text.indexOf("]", start);
+            if (end != -1) {
+                sender = text.substring(start, end + 1);
+                content = text.substring(end + 1).trim();
+                if (content.startsWith(":")) content = content.substring(1).trim();
+            }
+        } else if (text.contains("Tool [")) {
+            int start = text.indexOf("Tool [");
             int end = text.indexOf("]", start);
             if (end != -1) {
                 sender = text.substring(start, end + 1);
