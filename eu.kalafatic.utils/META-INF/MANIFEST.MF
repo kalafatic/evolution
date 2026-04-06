@@ -20,4 +20,5 @@ Export-Package: eu.kalafatic.utils.application,
  eu.kalafatic.utils.log,
  eu.kalafatic.utils.model,
  eu.kalafatic.utils.preferences,
+ eu.kalafatic.utils.providers,
  eu.kalafatic.utils.ui

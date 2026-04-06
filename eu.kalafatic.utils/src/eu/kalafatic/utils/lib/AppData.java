@@ -9,11 +9,12 @@ public class AppData {
     private static AppData instance = new AppData();
     private TrayItem trayItem;
     private List<ISplashUser> splashUsers = new ArrayList<>();
+    private Object splashHandler;
 
     public static AppData getInstance() { return instance; }
-    public GeminiSplashHandler getSplashHandler() { return null; }
+    public Object getSplashHandler() { return splashHandler; }
     public List<ISplashUser> getSplashUsersUsers() { return splashUsers; }
     public void setTrayItem(TrayItem item) { this.trayItem = item; }
-    public void setSplashHandler(eu.kalafatic.utils.dialogs.GeminiSplashHandler handler) {}
+    public void setSplashHandler(Object handler) { this.splashHandler = handler; }
     public void setStatusLineManager(org.eclipse.jface.action.IStatusLineManager manager) {}
 }

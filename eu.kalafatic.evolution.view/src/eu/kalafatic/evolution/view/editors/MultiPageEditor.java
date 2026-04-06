@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.editors;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Collections;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -13,9 +12,6 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.ScrolledComposite;
-import org.eclipse.swt.events.ControlAdapter;
-import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -168,7 +164,12 @@ public class MultiPageEditor extends MultiPageEditorPart {
     @Override
     public void setFocus() {
         int index = getActivePage();
-        if (index != -1) getControl(index).setFocus();
+        if (index != -1) {
+            Control control = getControl(index);
+            if (control != null && !control.isDisposed()) {
+                control.setFocus();
+            }
+        }
     }
 
     @Override
@@ -248,7 +249,9 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     @Override
     protected void pageChange(int newPageIndex) {
-        super.pageChange(newPageIndex);
+        if (getContainer() != null && !getContainer().isDisposed()) {
+            super.pageChange(newPageIndex);
+        }
         Control control = getControl(newPageIndex);
         if (control == aiChatPage && aiChatPage != null) {
             aiChatPage.setOrchestrator(orchestrator);
