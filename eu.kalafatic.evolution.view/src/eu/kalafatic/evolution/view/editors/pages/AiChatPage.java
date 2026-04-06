@@ -66,6 +66,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	private InstructionsGroup instructionsGroup;
 	private HistoryGroup historyGroup;
 	private SystemStatusGroup systemStatusGroup;
+	private Thread orchestrationThread;
 	private SatisfactionGroup satisfactionGroup;
 	private ApprovalGroup approvalGroup;
 
@@ -131,6 +132,15 @@ public class AiChatPage extends SharedScrolledComposite {
 		aiSettingsGroup = new AiSettingsGroup(toolkit, content, this, orchestrator);
 		instructionsGroup = new InstructionsGroup(toolkit, content, this, orchestrator);
 		historyGroup = new HistoryGroup(toolkit, content, chatFont);
+		historyGroup.setEditCallback((index, oldText) -> {
+			Display.getDefault().asyncExec(() -> {
+				InputDialog dlg = new InputDialog(getShell(), "Edit Message", "Modify the message content:", oldText, null);
+				if (dlg.open() == Window.OK) {
+					historyGroup.updateMessage(index, dlg.getValue());
+					editor.setDirty(true);
+				}
+			});
+		});
 		systemStatusGroup = new SystemStatusGroup(toolkit, content);
 		satisfactionGroup = new SatisfactionGroup(content, this);
 		approvalGroup = new ApprovalGroup(content, this);
@@ -216,7 +226,9 @@ public class AiChatPage extends SharedScrolledComposite {
 		threads.put(currentThread, historyGroup.getText());
 		threadStyles.put(currentThread, historyGroup.getStyleRanges());
 		instructionsGroup.setRequest("");
-		new Thread(() -> {
+		instructionsGroup.setOrchestrationRunning(true);
+		historyGroup.setThinking(true);
+		orchestrationThread = new Thread(() -> {
 			try {
 				EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
 				File projectRoot = getProjectRoot();
@@ -242,6 +254,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				String result = evolutionOrchestrator.execute(request, context);
 				Display.getDefault().asyncExec(() -> {
 					if (!historyGroup.isDisposed()) {
+						historyGroup.setThinking(false);
 						historyGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 						historyGroup.appendText("Evolution: " + result, colorEvolution, SWT.BOLD);
 						threads.put(currentThread, historyGroup.getText());
@@ -252,14 +265,37 @@ public class AiChatPage extends SharedScrolledComposite {
 			} catch (Exception e) {
 				Display.getDefault().asyncExec(() -> {
 					if (!historyGroup.isDisposed()) {
+						historyGroup.setThinking(false);
 						historyGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
-						historyGroup.appendText("Error: " + e.getMessage(), colorError, SWT.BOLD);
+						historyGroup.appendText("Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD);
 						threads.put(currentThread, historyGroup.getText());
 						threadStyles.put(currentThread, historyGroup.getStyleRanges());
 					}
 				});
+			} finally {
+				Display.getDefault().asyncExec(() -> {
+					instructionsGroup.setOrchestrationRunning(false);
+					orchestrationThread = null;
+				});
 			}
-		}).start();
+		});
+		orchestrationThread.start();
+	}
+
+	public void handlePause() {
+		if (currentContext != null) {
+			boolean isPaused = !currentContext.isPaused();
+			currentContext.setPaused(isPaused);
+			instructionsGroup.setPaused(isPaused);
+			historyGroup.setThinking(!isPaused);
+		}
+	}
+
+	public void handleStop() {
+		if (orchestrationThread != null && orchestrationThread.isAlive()) {
+			if (currentContext != null) currentContext.setPaused(false);
+			orchestrationThread.interrupt();
+		}
 	}
 
 	private String requestToken(String provider) {
@@ -311,7 +347,9 @@ public class AiChatPage extends SharedScrolledComposite {
 		historyGroup.appendText("User [SELF-DEV]: " + finalRequest, colorUser, SWT.BOLD);
 		historyGroup.appendText("\n\nEvolution: Initializing Self-Development Supervisor loop...", colorEvolution, SWT.ITALIC | SWT.BOLD);
 		instructionsGroup.setRequest("");
-		new Thread(() -> {
+		instructionsGroup.setOrchestrationRunning(true);
+		historyGroup.setThinking(true);
+		orchestrationThread = new Thread(() -> {
 			try {
 				File projectRoot = getProjectRoot();
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
@@ -330,6 +368,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				supervisor.startSession();
 				Display.getDefault().asyncExec(() -> {
 					if (!historyGroup.isDisposed()) {
+						historyGroup.setThinking(false);
 						historyGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 						historyGroup.appendText("Evolution: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
@@ -337,9 +376,15 @@ public class AiChatPage extends SharedScrolledComposite {
 					}
 				});
 			} catch (Exception e) {
-				Display.getDefault().asyncExec(() -> { if (!historyGroup.isDisposed()) { historyGroup.appendText("\n\n", colorWhite, SWT.NORMAL); historyGroup.appendText("Supervisor Error: " + e.getMessage(), colorError, SWT.BOLD); } });
+				Display.getDefault().asyncExec(() -> { if (!historyGroup.isDisposed()) { historyGroup.setThinking(false); historyGroup.appendText("\n\n", colorWhite, SWT.NORMAL); historyGroup.appendText("Supervisor Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD); } });
+			} finally {
+				Display.getDefault().asyncExec(() -> {
+					instructionsGroup.setOrchestrationRunning(false);
+					orchestrationThread = null;
+				});
 			}
-		}).start();
+		});
+		orchestrationThread.start();
 	}
 
 	private File getProjectRoot() {
