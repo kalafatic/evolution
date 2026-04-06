@@ -11,6 +11,19 @@ import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Compiler;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.Database;
+import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
+import eu.kalafatic.evolution.model.orchestration.Iteration;
+import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
+import eu.kalafatic.evolution.model.orchestration.Test;
+import eu.kalafatic.evolution.model.orchestration.TestStatus;
+import eu.kalafatic.evolution.model.orchestration.Eclipse;
+import eu.kalafatic.evolution.model.orchestration.FileConfig;
+import eu.kalafatic.evolution.model.orchestration.Rule;
+import eu.kalafatic.evolution.model.orchestration.AccessRule;
+import eu.kalafatic.evolution.model.orchestration.NetworkRule;
+import eu.kalafatic.evolution.model.orchestration.MemoryRule;
+import eu.kalafatic.evolution.model.orchestration.SecretRule;
 
 import java.net.URL;
 import java.util.HashMap;
@@ -61,11 +74,33 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
         } else if (element instanceof Compiler) {
             return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Compiler.gif");
         } else if (element instanceof Ollama) {
-            return getCachedImage("eu.kalafatic.evolution.view", "icons/orchestrator.png");
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Ollama.gif");
         } else if (element instanceof AiChat) {
-            return getCachedImage("eu.kalafatic.evolution.view", "icons/orchestrator.png");
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/AiChat.gif");
         } else if (element instanceof NeuronAI) {
-            return getCachedImage("eu.kalafatic.evolution.view", "icons/orchestrator.png");
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/NeuronAI.gif");
+        } else if (element instanceof Database) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Database.gif");
+        } else if (element instanceof SelfDevSession) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/SelfDevSession.gif");
+        } else if (element instanceof Iteration) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Iteration.gif");
+        } else if (element instanceof EvaluationResult) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/EvaluationResult.gif");
+        } else if (element instanceof Test) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Task.gif");
+        } else if (element instanceof Eclipse) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Eclipse.gif");
+        } else if (element instanceof FileConfig) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/FileConfig.gif");
+        } else if (element instanceof AccessRule) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/AccessRule.gif");
+        } else if (element instanceof NetworkRule) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/NetworkRule.gif");
+        } else if (element instanceof MemoryRule) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/MemoryRule.gif");
+        } else if (element instanceof SecretRule) {
+            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/SecretRule.gif");
         }
         return super.getImage(element);
     }
@@ -94,11 +129,34 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
             Task t = (Task) element;
             return t.getName() + " (" + t.getStatus() + ")";
         } else if (element instanceof Agent) {
-            return "Agent: " + ((Agent) element).getId();
+            Agent a = (Agent) element;
+            return "Agent: " + a.getId() + " [" + a.getType() + "]";
         } else if (element instanceof NeuronAI) {
             return "Neuron AI: " + ((NeuronAI) element).getModel();
+        } else if (element instanceof Git) {
+            Git g = (Git) element;
+            return "Git: " + g.getBranch() + " (" + g.getRepositoryUrl() + ")";
+        } else if (element instanceof Database) {
+            return "DB: " + ((Database) element).getUrl();
+        } else if (element instanceof SelfDevSession) {
+            return "Session: " + ((SelfDevSession) element).getId();
+        } else if (element instanceof Iteration) {
+            Iteration i = (Iteration) element;
+            return "Iteration: " + i.getId() + " (" + i.getPhase() + ")";
+        } else if (element instanceof Test) {
+            Test t = (Test) element;
+            return "Test: " + t.getName() + " (" + t.getStatus() + ")";
+        } else if (element instanceof Rule) {
+            return "Rule: " + ((Rule) element).getName();
+        } else if (element instanceof Eclipse) {
+            return "Eclipse: " + ((Eclipse) element).getWorkspace();
+        } else if (element instanceof FileConfig) {
+            return "File: " + ((FileConfig) element).getLocalPath();
+        } else if (element instanceof EvaluationResult) {
+            EvaluationResult er = (EvaluationResult) element;
+            return "Evaluation: " + (er.isSuccess() ? "PASS" : "FAIL");
         }
-        return "";//super.getText(element);
+        return "";
     }
 
     @Override
@@ -126,26 +184,39 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
         if (entity instanceof Task) {
             Task t = (Task) entity;
             if (t.getStatus() == TaskStatus.RUNNING) {
-                return getColor("TASK_RUNNING", new RGB(255, 255, 150)); // More saturated Yellow
+                return getColor("TASK_RUNNING", new RGB(255, 255, 150));
             } else if (t.getStatus() == TaskStatus.DONE) {
-                return getColor("TASK_DONE", new RGB(150, 255, 150)); // More saturated Green
+                return getColor("TASK_DONE", new RGB(150, 255, 150));
             } else if (t.getStatus() == TaskStatus.FAILED) {
-                return getColor("TASK_FAILED", new RGB(255, 150, 150)); // More saturated Red
+                return getColor("TASK_FAILED", new RGB(255, 150, 150));
             } else if (t.getStatus() == TaskStatus.PENDING) {
-                return getColor("TASK_PENDING", new RGB(240, 240, 240)); // Light Gray
+                return getColor("TASK_PENDING", new RGB(240, 240, 240));
             } else if (t.getStatus() == TaskStatus.WAITING_FOR_APPROVAL) {
-                return getColor("TASK_WAITING_APPROVAL", new RGB(255, 200, 100)); // Orange
+                return getColor("TASK_WAITING_APPROVAL", new RGB(255, 200, 100));
+            }
+        } else if (entity instanceof Test) {
+            Test t = (Test) entity;
+            if (t.getStatus() == TestStatus.PASSED) {
+                return getColor("TEST_PASSED", new RGB(150, 255, 150));
+            } else if (t.getStatus() == TestStatus.FAILED) {
+                return getColor("TEST_FAILED", new RGB(255, 150, 150));
+            } else if (t.getStatus() == TestStatus.RUNNING) {
+                return getColor("TEST_RUNNING", new RGB(255, 255, 150));
+            } else {
+                return getColor("TEST_PENDING", new RGB(240, 240, 240));
             }
         } else if (entity instanceof Orchestrator) {
-            return getColor("ORCHESTRATOR_BG", new RGB(180, 180, 255)); // Light Blue
+            return getColor("ORCHESTRATOR_BG", new RGB(180, 180, 255));
         } else if (entity instanceof Agent) {
-            return getColor("AGENT_BG", new RGB(220, 220, 220)); // Grayish
-        } else if (entity instanceof NeuronAI) {
-            return getColor("NEURON_AI_BG", new RGB(255, 180, 255)); // Pinkish
-        } else if (entity instanceof Git || entity instanceof Maven || entity instanceof Compiler) {
-            return getColor("TOOL_BG", new RGB(220, 255, 255)); // Cyan-ish
-        } else if (entity instanceof LLM || entity instanceof Ollama || entity instanceof AiChat) {
-            return getColor("AI_BG", new RGB(255, 220, 180)); // Orange-ish
+            return getColor("AGENT_BG", new RGB(220, 220, 220));
+        } else if (entity instanceof NeuronAI || entity instanceof LLM || entity instanceof Ollama || entity instanceof AiChat) {
+            return getColor("AI_BG", new RGB(255, 220, 180));
+        } else if (entity instanceof Git || entity instanceof Maven || entity instanceof Compiler || entity instanceof Database || entity instanceof FileConfig || entity instanceof Eclipse) {
+            return getColor("TOOL_BG", new RGB(220, 255, 255));
+        } else if (entity instanceof SelfDevSession || entity instanceof Iteration || entity instanceof EvaluationResult) {
+            return getColor("SESSION_BG", new RGB(230, 210, 255));
+        } else if (entity instanceof Rule) {
+            return getColor("RULE_BG", new RGB(255, 255, 200));
         }
         return null;
     }
@@ -165,7 +236,6 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
 			Task t = (Task) entity;
 			Figure tooltipFigure = new Figure();
 			tooltipFigure.setLayoutManager(new ToolbarLayout());
-
 			tooltipFigure.add(new Label("Status: " + t.getStatus()));
 			if (t.getResponse() != null && !t.getResponse().isEmpty()) {
 				tooltipFigure.add(new Label("Response: " + truncate(t.getResponse(), 200)));
@@ -174,7 +244,26 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
 				tooltipFigure.add(new Label("Feedback: " + truncate(t.getFeedback(), 200)));
 			}
 			return tooltipFigure;
-		}
+		} else if (entity instanceof Iteration) {
+            Iteration i = (Iteration) entity;
+            Figure tooltipFigure = new Figure();
+            tooltipFigure.setLayoutManager(new ToolbarLayout());
+            tooltipFigure.add(new Label("ID: " + i.getId()));
+            tooltipFigure.add(new Label("Status: " + i.getStatus()));
+            tooltipFigure.add(new Label("Phase: " + i.getPhase()));
+            if (i.getRationale() != null && !i.getRationale().isEmpty()) {
+                tooltipFigure.add(new Label("Rationale: " + truncate(i.getRationale(), 200)));
+            }
+            return tooltipFigure;
+        } else if (entity instanceof EvaluationResult) {
+            EvaluationResult er = (EvaluationResult) entity;
+            Figure tooltipFigure = new Figure();
+            tooltipFigure.setLayoutManager(new ToolbarLayout());
+            tooltipFigure.add(new Label("Success: " + er.isSuccess()));
+            tooltipFigure.add(new Label("Test Pass Rate: " + er.getTestPassRate()));
+            tooltipFigure.add(new Label("Coverage Change: " + er.getCoverageChange()));
+            return tooltipFigure;
+        }
 		return null;
 	}
 
@@ -187,7 +276,6 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
 
 	@Override
 	public boolean fisheyeNode(Object entity) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
