@@ -1,8 +1,8 @@
 package eu.kalafatic.evolution.view.editors;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Collections;
+
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -13,26 +13,36 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.ScrolledComposite;
-import org.eclipse.swt.events.ControlAdapter;
-import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.ui.*;
+import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.part.MultiPageEditorPart;
-import eu.kalafatic.evolution.model.orchestration.EvoProject;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.listeners.EditorResourceChangeListener;
 import eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener;
-import eu.kalafatic.evolution.view.editors.pages.*;
+import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
+import eu.kalafatic.evolution.view.editors.pages.AiFlowPage;
+import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
+import eu.kalafatic.evolution.view.editors.pages.BrowserPage;
+import eu.kalafatic.evolution.view.editors.pages.GraphPage;
+import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
+import eu.kalafatic.evolution.view.editors.pages.PreviewPage;
+import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
+import eu.kalafatic.evolution.view.editors.pages.TestsPage;
+import eu.kalafatic.evolution.view.editors.pages.ToolsPage;
 
 public class MultiPageEditor extends MultiPageEditorPart {
 
