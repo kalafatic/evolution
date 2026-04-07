@@ -10,7 +10,9 @@ import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class HistoryGroup {
@@ -92,6 +94,12 @@ public class HistoryGroup {
     }
 
     public void appendText(String text, org.eclipse.swt.graphics.Color color, int style) {
+    	if(color == null) {
+    		Display display = Display.getCurrent(); // safer in UI thread
+    		color = display.getSystemColor(SWT.COLOR_BLACK);
+    	}
+    	
+    	
         String sender = "Evo";
         String content = text;
         if (text.startsWith("You: ")) {
@@ -124,11 +132,20 @@ public class HistoryGroup {
             }
         }
 
-        String hexColor = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
-        boolean isBold = (style & SWT.BOLD) != 0;
-        boolean isItalic = (style & SWT.ITALIC) != 0;
+        try {
+        	if (color == null) {
+				color = browser.getDisplay().getSystemColor(SWT.COLOR_BLACK);
+				style = SWT.NORMAL;				
+			}
+			String hexColor = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+			boolean isBold = (style & SWT.BOLD) != 0;
+			boolean isItalic = (style & SWT.ITALIC) != 0;
 
-        messages.add(new ChatMessage(sender, content, hexColor, isBold, isItalic));
+			messages.add(new ChatMessage(sender, content, hexColor, isBold, isItalic));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         refreshBrowser();
     }
 

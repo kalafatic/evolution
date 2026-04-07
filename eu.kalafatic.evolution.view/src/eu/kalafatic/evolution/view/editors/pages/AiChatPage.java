@@ -94,7 +94,8 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	private void initResources() {
-		Display display = getDisplay();
+		//Display display = getDisplay();
+		Display display = Display.getCurrent(); // safer in UI thread
 		colorUser = display.getSystemColor(SWT.COLOR_DARK_BLUE);
 		colorEvolution = display.getSystemColor(SWT.COLOR_DARK_MAGENTA);
 		colorPlanner = display.getSystemColor(SWT.COLOR_DARK_CYAN);
