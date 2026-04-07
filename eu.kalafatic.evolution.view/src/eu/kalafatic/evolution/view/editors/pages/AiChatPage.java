@@ -239,7 +239,11 @@ public class AiChatPage extends SharedScrolledComposite {
 				Display.getDefault().asyncExec(() -> editor.setCurrentContext(context));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
 					approvalGroup.show(message); updateScrolledContent();
-					if (TaskContext.PLAN_APPROVAL_MESSAGE.equals(message)) editor.showApprovalPage();
+					if (TaskContext.PLAN_APPROVAL_MESSAGE.equals(message) ||
+						message.contains("DELETE") || message.contains("PR") ||
+						message.contains("Significant deletion")) {
+						editor.showApprovalPage();
+					}
 				}));
 				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
 					inputGroup.show(message); updateScrolledContent();
@@ -362,6 +366,9 @@ public class AiChatPage extends SharedScrolledComposite {
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!historyGroup.isDisposed()) processLogEntry(log); }));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
 					approvalGroup.show(message); updateScrolledContent();
+					if (message.contains("DELETE") || message.contains("PR") || message.contains("Significant deletion")) {
+						editor.showApprovalPage();
+					}
 				}));
 				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
 					inputGroup.show(message); updateScrolledContent();
@@ -461,6 +468,10 @@ public class AiChatPage extends SharedScrolledComposite {
 
 	public void provideApproval(boolean approved) {
 		if (currentContext != null) { currentContext.provideApproval(approved); approvalGroup.hide(); updateScrolledContent(); }
+	}
+
+	public void handleReview() {
+		editor.showApprovalPage();
 	}
 
 	public void provideInput(String input) {

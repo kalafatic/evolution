@@ -19,6 +19,7 @@ public class EclipseTool implements ITool {
 
         ShellTool shell = new ShellTool();
         String os = System.getProperty("os.name").toLowerCase();
+        // Default to 'mvn' (Linux/Ubuntu) unless Windows is explicitly detected
         String mvnCmd = os.contains("win") ? "mvn.cmd" : "mvn";
 
         switch (command.toUpperCase()) {

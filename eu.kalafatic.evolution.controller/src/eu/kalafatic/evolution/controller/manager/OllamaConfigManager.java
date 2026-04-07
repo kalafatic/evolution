@@ -46,7 +46,10 @@ public class OllamaConfigManager {
         String defaultHost = "127.0.0.1";
         String defaultPort = "11434";
 
-        switch (getOS()) {
+        OS os = getOS();
+        if (os == OS.UNKNOWN) os = OS.LINUX; // Default to Ubuntu/Linux
+
+        switch (os) {
             case WINDOWS:
                 String localAppData = System.getenv("LOCALAPPDATA");
                 return new OllamaDefaults(
