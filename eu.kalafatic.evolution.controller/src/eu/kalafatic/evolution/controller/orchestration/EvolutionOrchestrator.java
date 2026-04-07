@@ -177,15 +177,44 @@ public class EvolutionOrchestrator implements IOrchestrator {
         // Check if task maps directly to a tool
         if ("file".equalsIgnoreCase(taskType)) {
             FileTool fileTool = new FileTool();
-            // JavaDev/Architect will generate content first
-            String content = agent.process(processInput, context, lastFeedback);
 
             // Robust path extraction from task name
-            String path = taskName.replaceFirst("(?i)^(Write|Create|Generate|Update|Modify)(\\s+file)?\\s+", "").trim();
+            String path = taskName.replaceFirst("(?i)^(Write|Create|Generate|Update|Modify|Delete)(\\s+file)?\\s+", "").trim();
 
             // Strip quotes if present
             if ((path.startsWith("'") && path.endsWith("'")) || (path.startsWith("\"") && path.endsWith("\""))) {
                 path = path.substring(1, path.length() - 1);
+            }
+
+            if (taskName.toLowerCase().startsWith("delete")) {
+                context.log("Evo: Detected file deletion request for " + path);
+                Boolean approved = context.requestApproval("[DELETE] Approve deletion of file: " + path + "?").get();
+                if (approved == null || !approved) {
+                    throw new Exception("File deletion rejected by user: " + path);
+                }
+                return fileTool.execute("DELETE " + path, context.getProjectRoot(), context);
+            }
+
+            // JavaDev/Architect will generate content first
+            String content = agent.process(processInput, context, lastFeedback);
+
+            // Check for significant deletions
+            try {
+                String existingContent = fileTool.execute("READ " + path, context.getProjectRoot(), context);
+                if (existingContent != null && !existingContent.isEmpty()) {
+                    int existingLen = existingContent.length();
+                    int newLen = content.length();
+                    if (newLen < existingLen * 0.8) {
+                        double deletionPercent = (1.0 - (double)newLen / existingLen) * 100;
+                        context.log("Evo: Significant text deletion detected (" + String.format("%.1f", deletionPercent) + "%) for " + path);
+                        Boolean approved = context.requestApproval("[Significant deletion] Content of " + path + " will be reduced by " + String.format("%.1f", deletionPercent) + "%. Approve?").get();
+                        if (approved == null || !approved) {
+                            throw new Exception("Significant content reduction rejected by user for: " + path);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // File might not exist, which is fine for new files
             }
 
             // Sanitize path: remove leading slashes and drive letters (e.g., C:/)
@@ -198,6 +227,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
             MavenTool mavenTool = new MavenTool();
             return mavenTool.execute(taskName, context.getProjectRoot(), context);
         } else if ("git".equalsIgnoreCase(taskType)) {
+            if (taskName.toLowerCase().matches(".*\\b(pr|pull request)\\b.*")) {
+                context.log("Evo: Requesting approval for Pull Request action: " + taskName);
+                Boolean approved = context.requestApproval("[PR] Approve Pull Request creation? Task: " + taskName).get();
+                if (approved == null || !approved) {
+                    throw new Exception("PR rejected by user: " + taskName);
+                }
+            }
             GitTool gitTool = new GitTool();
             return gitTool.execute(taskName, context.getProjectRoot(), context);
         } else if ("shell".equalsIgnoreCase(taskType)) {

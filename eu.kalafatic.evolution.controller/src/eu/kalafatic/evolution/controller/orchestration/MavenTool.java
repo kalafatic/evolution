@@ -20,6 +20,7 @@ public class MavenTool implements ITool {
         List<String> mavenArgs = new ArrayList<>();
 
         String os = System.getProperty("os.name").toLowerCase();
+        // Default to 'mvn' (Linux/Ubuntu) unless Windows is explicitly detected
         String mavenCmd = os.contains("win") ? "mvn.cmd" : "mvn";
         mavenArgs.add(mavenCmd);
 

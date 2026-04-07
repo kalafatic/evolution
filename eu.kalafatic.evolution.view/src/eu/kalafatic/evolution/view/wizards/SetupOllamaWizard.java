@@ -113,14 +113,18 @@ public class SetupOllamaWizard extends Wizard implements INewWizard {
                             if (!binDir.exists()) binDir.mkdirs();
 
                             String os = System.getProperty("os.name").toLowerCase();
-                            String binName = os.contains("win") ? "ollama-windows-amd64.zip" : "ollama";
+                            // Default to Linux/Ubuntu if unknown
+                            boolean isWin = os.contains("win");
+                            boolean isMac = os.contains("mac");
+
+                            String binName = isWin ? "ollama-windows-amd64.zip" : "ollama";
                             File outputFile = new File(binDir, binName);
 
                             monitor.subTask("Downloading from ollama.com...");
                             String urlStr = "https://ollama.com/download/ollama-linux-amd64";
-                            if (os.contains("win")) {
+                            if (isWin) {
                                 urlStr = "https://ollama.com/download/ollama-windows-amd64.zip";
-                            } else if (os.contains("mac")) {
+                            } else if (isMac) {
                                 urlStr = "https://ollama.com/download/ollama-darwin-amd64";
                             }
 

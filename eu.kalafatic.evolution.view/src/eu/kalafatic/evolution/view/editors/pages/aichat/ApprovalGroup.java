@@ -46,6 +46,14 @@ public class ApprovalGroup {
                 page.provideApproval(false);
             }
         });
+
+        Button reviewButton = SWTFactory.createButton(group, "Review");
+        reviewButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.handleReview();
+            }
+        });
     }
 
     public void show(String message) {
