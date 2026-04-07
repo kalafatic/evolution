@@ -14,8 +14,11 @@ import org.eclipse.jface.action.GroupMarker;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.application.ActionBarAdvisor;
 import org.eclipse.ui.application.IActionBarConfigurer;
 
@@ -84,8 +87,40 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		// super.fillMenuBar(menuBar);
 
 		IWorkbenchWindow window = getActionBarConfigurer().getWindowConfigurer().getWindow();
+		menuBar.add(createFileMenu(window));
 		menuBar.add(createExplorerMenu(window));
 		menuBar.add(createToolsMenu(window));
+	}
+
+	// ---------------------------------------------------------------
+
+	/**
+	 * Creates the file menu.
+	 * @param window the window
+	 * @return the i menu manager
+	 */
+	private IMenuManager createFileMenu(final IWorkbenchWindow window) {
+		MenuManager menuManager = new MenuManager("&File", IWorkbenchActionConstants.M_FILE);
+		menuManager.add(new GroupMarker(IWorkbenchActionConstants.FILE_START));
+
+		IAction saveAction = ActionFactory.SAVE.create(window);
+		register(saveAction);
+		menuManager.add(saveAction);
+
+		IAction saveAllAction = ActionFactory.SAVE_ALL.create(window);
+		register(saveAllAction);
+		menuManager.add(saveAllAction);
+
+		menuManager.add(new Separator());
+		menuManager.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
+		menuManager.add(new Separator());
+
+		IAction quitAction = ActionFactory.QUIT.create(window);
+		register(quitAction);
+		menuManager.add(quitAction);
+
+		menuManager.add(new GroupMarker(IWorkbenchActionConstants.FILE_END));
+		return menuManager;
 	}
 
 	// ---------------------------------------------------------------
