@@ -30,7 +30,7 @@ public class VizGroup {
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();
             Composite toolbar = toolkit.createComposite(section);
-            toolbar.setLayout(new GridLayout(3, true));
+            toolbar.setLayout(new GridLayout(4, true));
 
             Button zoomIn = toolkit.createButton(toolbar, "+", SWT.PUSH);
             zoomIn.setToolTipText("Zoom In");
@@ -49,8 +49,10 @@ public class VizGroup {
             reset.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
                 @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { if (browser != null) browser.execute("resetZoom();"); }
             });
-
-            section.setTextClient(toolbar);
+            
+           SWTFactory.createMaximizeButton(toolbar, section, false);	
+           
+           section.setTextClient(toolbar);
         }
 
         Composite browserContainer = toolkit.createComposite(group);
@@ -58,7 +60,8 @@ public class VizGroup {
         browserContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         try {
-            browser = new Browser(browserContainer, SWT.NONE);
+        	browser = SWTFactory.createBrowser(browserContainer,400);
+          
             page.setupBrowserListeners(browser);
         } catch (Exception e) {
             toolkit.createLabel(browserContainer, "Browser not supported: " + e.getMessage());
