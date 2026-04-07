@@ -64,7 +64,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		cpuItem.setText("CPU: 100 %");
 
 		String locale = System.getProperty("osgi.nl");
-		langItem.setImage(getFlag(locale));
+		//langItem.setImage(getFlag(locale));
 		langItem.setText("NL: " + locale);
 
 		langItem.setVisible(true);
@@ -170,5 +170,8 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		// trayMenu.add(getAction(ActionFactory.CLOSE.getId()));
 	}
 
-	protected org.eclipse.swt.graphics.Image getFlag(String locale) { return null; }
+	protected org.eclipse.swt.graphics.Image getFlag(String locale) { 
+		return null; 
+		
+    }
 }
