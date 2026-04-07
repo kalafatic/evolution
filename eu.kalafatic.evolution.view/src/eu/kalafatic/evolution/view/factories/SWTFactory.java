@@ -212,8 +212,8 @@ public class SWTFactory {
 		// Maximize Button
 		Button maxBtn = new Button(section, SWT.PUSH | SWT.FLAT);
 		GridData maxGd = new GridData();
-		maxGd.widthHint = 20;
-		maxGd.heightHint = 20;
+		maxGd.widthHint = 10;
+		maxGd.heightHint = 10;
 		maxBtn.setLayoutData(maxGd);
 		maxBtn.setText("\u25FB");
 		maxBtn.setToolTipText("Maximize");
@@ -243,7 +243,10 @@ public class SWTFactory {
 				toggleMaximize(section, maxBtn);
 			}
 		});
-
+		
+		section.addListener(SWT.MouseMove, e -> {
+		    section.setCursor(section.getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
+		});
 		return client;
 	}
 
