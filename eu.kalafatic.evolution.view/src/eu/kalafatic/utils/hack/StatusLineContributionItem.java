@@ -232,13 +232,11 @@ public class StatusLineContributionItem extends ContributionItem {
 	 * @param image the new image
 	 */
 	public void setImage(Image image) {
-		Assert.isNotNull(image);
-
 		this.bgImage = image;
 
 		if (label != null && !label.isDisposed()) {
 
-			if (this.text.length() == 0) {
+			if (this.text.length() == 0 && this.bgImage == null) {
 				setVisible(false);
 			} else {
 				setVisible(true);

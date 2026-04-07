@@ -185,8 +185,26 @@ public class AiFlowPage extends Composite {
 				browser.execute("updateGraph(" + json + ");");
 				lastJson = json;
 			} else {
+			try {
+				// If updateGraph is not defined, the template was lost (e.g. after reload)
+				Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
+				if (result instanceof Boolean && (Boolean) result) {
+					browser.execute("updateGraph(" + json + ");");
+					lastJson = json;
+				} else {
+					isLoaded = false;
+					browser.setText(getHtmlTemplate());
+				}
+			} catch (Exception e) {
+				// Edge-based browser may throw exception if not fully initialized
 				isLoaded = false;
-				browser.setText(getHtmlTemplate());
+				try {
+					if (browser.getText().isEmpty()) {
+						browser.setText(getHtmlTemplate());
+					}
+				} catch (Exception e2) {
+					browser.setText(getHtmlTemplate());
+				}
 			}
 		});
 	}
