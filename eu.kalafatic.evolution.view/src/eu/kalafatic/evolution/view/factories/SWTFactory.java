@@ -199,7 +199,19 @@ public class SWTFactory {
 		int style = Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE;
 		if (expanded)
 			style |= Section.EXPANDED;
-		final Section section = toolkit.createSection(parent, style);
+
+		// Subclass Section to override setCursor and prevent flickering to HAND cursor
+		final Section section = new Section(parent, style) {
+			@Override
+			public void setCursor(org.eclipse.swt.graphics.Cursor cursor) {
+				if (cursor != null && cursor.equals(getDisplay().getSystemCursor(SWT.CURSOR_HAND))) {
+					super.setCursor(getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
+				} else {
+					super.setCursor(cursor);
+				}
+			}
+		};
+		toolkit.adapt(section, true, true);
 		section.setCursor(section.getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
 
 		// Set the color of the title text
