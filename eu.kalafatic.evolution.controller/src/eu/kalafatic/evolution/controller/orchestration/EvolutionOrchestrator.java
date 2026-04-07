@@ -186,11 +186,18 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 path = path.substring(1, path.length() - 1);
             }
 
+            task.setResultSummary(path);
             if (taskName.toLowerCase().startsWith("delete")) {
                 context.log("Evo: Detected file deletion request for " + path);
                 Boolean approved = context.requestApproval("[DELETE] Approve deletion of file: " + path + "?").get();
                 if (approved == null || !approved) {
                     throw new Exception("File deletion rejected by user: " + path);
+                }
+                try {
+                    String existingContent = fileTool.execute("READ " + path, context.getProjectRoot(), context);
+                    task.setRationale(existingContent);
+                } catch (Exception e) {
+                    // File might not exist
                 }
                 return fileTool.execute("DELETE " + path, context.getProjectRoot(), context);
             }
@@ -201,6 +208,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             // Check for significant deletions
             try {
                 String existingContent = fileTool.execute("READ " + path, context.getProjectRoot(), context);
+                task.setRationale(existingContent);
                 if (existingContent != null && !existingContent.isEmpty()) {
                     int existingLen = existingContent.length();
                     int newLen = content.length();
