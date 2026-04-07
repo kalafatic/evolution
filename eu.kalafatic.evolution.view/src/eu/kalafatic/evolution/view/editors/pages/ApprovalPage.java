@@ -142,13 +142,22 @@ public class ApprovalPage extends SharedScrolledComposite {
 	private void refreshBrowser() {
 		if (vizGroup.getBrowser() == null || vizGroup.getBrowser().isDisposed()) return;
 		if (!isLoaded) {
-			if (vizGroup.getBrowser().getText().isEmpty()) vizGroup.getBrowser().setText(getHtmlTemplate());
+			try {
+				if (vizGroup.getBrowser().getText().isEmpty()) vizGroup.getBrowser().setText(getHtmlTemplate());
+			} catch (Exception e) {
+				// Ignore Edge busy
+			}
 			return;
 		}
 		String json = getModelAsJson();
 		if (json.equals(lastJson)) return;
 
-		Object result = vizGroup.getBrowser().evaluate("return typeof updateGraph !== 'undefined';");
+		Object result = null;
+		try {
+			result = vizGroup.getBrowser().evaluate("return typeof updateGraph !== 'undefined';");
+		} catch (Exception e) {
+			// Ignore Edge busy
+		}
 		if (result instanceof Boolean && (Boolean) result) {
 			vizGroup.getBrowser().execute("updateGraph(" + json + ");");
 			lastJson = json;

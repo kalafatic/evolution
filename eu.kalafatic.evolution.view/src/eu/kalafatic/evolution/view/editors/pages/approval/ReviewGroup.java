@@ -143,8 +143,12 @@ public class ReviewGroup {
                     if (!browser.isDisposed()) {
                         String html = getDiffHtml(finalDiff, internalDiffJson);
                         if (!html.equals(lastHtml)) {
-                            browser.setText(html);
-                            lastHtml = html;
+                            try {
+                                browser.setText(html);
+                                lastHtml = html;
+                            } catch (Exception e2) {
+                                // Ignore browser busy/initializing
+                            }
                         }
                     }
                 });

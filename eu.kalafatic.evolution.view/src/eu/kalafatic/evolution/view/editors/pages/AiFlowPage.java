@@ -163,7 +163,11 @@ public class AiFlowPage extends Composite {
 
 			if (!isLoaded) {
 				// Avoid redundant setText
-				if (browser.getText().isEmpty()) browser.setText(getHtmlTemplate());
+				try {
+					if (browser.getText().isEmpty()) browser.setText(getHtmlTemplate());
+				} catch (Exception e) {
+					// Ignore: Edge might not be ready
+				}
 				return;
 			}
 
@@ -171,7 +175,12 @@ public class AiFlowPage extends Composite {
 			if (json.equals(lastJson)) return; // No change, avoid update
 
 			// If updateGraph is not defined, the template was lost (e.g. after reload)
-			Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
+			Object result = null;
+			try {
+				result = browser.evaluate("return typeof updateGraph !== 'undefined';");
+			} catch (Exception e) {
+				// Ignore: Edge might not be ready
+			}
 			if (result instanceof Boolean && (Boolean) result) {
 				browser.execute("updateGraph(" + json + ");");
 				lastJson = json;
