@@ -200,6 +200,8 @@ public class SWTFactory {
 		if (expanded)
 			style |= Section.EXPANDED;
 		final Section section = toolkit.createSection(parent, style);
+		section.setCursor(section.getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
+
 		// Set the color of the title text
 		Color BG = new Color(section.getDisplay(), 195, 195, 235);
 		Color FG = new Color(section.getDisplay(), 110, 124, 245);
