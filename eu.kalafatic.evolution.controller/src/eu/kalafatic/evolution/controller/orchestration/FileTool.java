@@ -33,6 +33,7 @@ public class FileTool implements ITool {
 
             try (FileWriter writer = new FileWriter(file)) {
                 writer.write(contentPart);
+                context.log("Tool [FileTool]: Successfully wrote " + contentPart.length() + " bytes to " + pathPart);
             } catch (IOException e) {
                 throw new Exception("Failed to write file: " + pathPart + " - " + e.getMessage(), e);
             }
@@ -49,7 +50,9 @@ public class FileTool implements ITool {
             }
             // Simple read logic
             byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
-            return new String(bytes);
+            String content = new String(bytes);
+            context.log("Tool [FileTool]: Read " + content.length() + " bytes from " + pathPart);
+            return content;
         } else if (command.startsWith("DELETE")) {
             String pathPart = command.substring(6).trim();
             if (pathPart.contains("..") || pathPart.startsWith("/") || pathPart.contains(":")) {

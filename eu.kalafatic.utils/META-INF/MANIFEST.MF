@@ -5,6 +5,7 @@ Bundle-SymbolicName: eu.kalafatic.utils;singleton:=true
 Bundle-Version: 2.6.1.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
+ org.eclipse.ui.console,
  org.eclipse.core.resources,
  org.eclipse.emf.ecore,
  org.eclipse.emf.common

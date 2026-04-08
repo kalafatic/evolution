@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.view.perspective;
 import org.eclipse.ui.IFolderLayout;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IPerspectiveFactory;
+import org.eclipse.ui.console.IConsoleConstants;
 
 import eu.kalafatic.evolution.view.views.AIOutputView;
 import eu.kalafatic.evolution.view.views.InternalBrowserView;
@@ -27,6 +28,10 @@ public class EvoPerspective implements IPerspectiveFactory {
         IFolderLayout left = layout.createFolder(EFolder.TOP_LEFT.ID, IPageLayout.LEFT, 0.20f, editorArea);
         left.addView("eu.kalafatic.views.EvoNavigator");
         //left.addView(IPageLayout.ID_PROJECT_EXPLORER);
+
+        // Bottom column - Console - 30%
+        IFolderLayout bottom = layout.createFolder(EFolder.BOTTOM_LEFT.ID, IPageLayout.BOTTOM, 0.70f, editorArea);
+        bottom.addView(IConsoleConstants.ID_CONSOLE_VIEW);
 
         // Bottom Area (relative to Editor Area) - Orchestration Graph, AI Output, and Properties - 30% of total height
         //IFolderLayout bottom = layout.createFolder(EFolder.BOTTOM_RIGHT.ID, IPageLayout.BOTTOM, 0.30f, editorArea);
