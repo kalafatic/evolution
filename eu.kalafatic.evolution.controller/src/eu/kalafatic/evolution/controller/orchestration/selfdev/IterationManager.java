@@ -25,6 +25,10 @@ public class IterationManager {
         this(iteration, context, new TaskPlanner(), new TaskExecutor(context), new IterationMemoryService(context.getProjectRoot()));
     }
 
+    public IterationManager(Iteration iteration, TaskContext context, TaskPlanner planner, TaskExecutor executor) {
+        this(iteration, context, planner, executor, new IterationMemoryService(context.getProjectRoot()));
+    }
+
     public IterationManager(Iteration iteration, TaskContext context, TaskPlanner planner, TaskExecutor executor, IterationMemoryService memoryService) {
         this.iteration = iteration;
         this.context = context;
@@ -44,7 +48,13 @@ public class IterationManager {
         String goal = context.getOrchestrator().getSelfDevSession() != null ?
                      context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
 
+        String originalBranch = gitManager.getCurrentBranch();
+        String snapshotBranch = "snapshot/" + iteration.getId() + "-" + System.currentTimeMillis();
+
         try {
+            // Before iteration: create a base snapshot branch
+            gitManager.createBranch(snapshotBranch);
+
             // Darwinian Branch Strategy
             iteration.setPhase("ANALYZE");
 
@@ -61,11 +71,34 @@ public class IterationManager {
             List<BranchVariant> variants = darwinEngine.generateVariants(goal, lastError);
 
             iteration.setPhase("PLAN");
+            // Ensure we start variants from the snapshot
+            gitManager.forceCheckout(snapshotBranch);
             BranchVariant bestVariant = darwinEngine.evaluateVariants(variants, planner, iteration);
+
+            // Save records for ALL variants to memory
+            for (BranchVariant v : variants) {
+                IterationRecord rec = new IterationRecord();
+                rec.setIteration(context.getOrchestrator().getSelfDevSession().getIterations().size());
+                rec.setGoal(goal);
+                rec.setStrategy(v.getStrategy());
+                rec.setBranch(v.getBranchName());
+                rec.setResult(v.isSuccess() ? "SUCCESS" : "FAIL");
+                rec.setScore(v.getScore());
+                rec.setErrorMessage(v.getErrorMessage());
+                rec.setChangedFiles(v.getChangedFiles());
+                rec.setTimestamp(System.currentTimeMillis());
+                memoryService.saveRecord(rec);
+            }
 
             if (bestVariant == null || bestVariant.getScore() <= 0) {
                 context.log("[ITERATION] No successful variant found. Skipping.");
                 iteration.setStatus(IterationStatus.FAILED);
+                // Cleanup
+                gitManager.forceCheckout(originalBranch);
+                gitManager.deleteBranch(snapshotBranch);
+                for (BranchVariant v : variants) {
+                    try { gitManager.deleteBranch(v.getBranchName()); } catch (Exception e) {}
+                }
                 EvaluationResult failResult = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 failResult.setSuccess(false);
                 failResult.setDecision(SelfDevDecision.ROLLBACK);
@@ -74,9 +107,9 @@ public class IterationManager {
 
             context.log("[ITERATION] Best variant selected: " + bestVariant.getBranchName() + " with score " + bestVariant.getScore());
 
-            // Merge best variant
+            // Merge best variant into original branch
             iteration.setPhase("EXECUTE");
-            String baseBranch = gitManager.getCurrentBranch();
+            gitManager.forceCheckout(originalBranch);
             gitManager.merge(bestVariant.getBranchName());
 
             // Final evaluation on main branch
@@ -84,29 +117,6 @@ public class IterationManager {
             EvaluationResult result = evaluator.evaluate();
 
             iteration.setEvaluationResult(result);
-
-            IterationRecord record = new IterationRecord();
-            record.setIteration(context.getOrchestrator().getSelfDevSession().getIterations().size());
-            record.setGoal(goal);
-            record.setBranch(bestVariant.getBranchName());
-            record.setResult(result.isSuccess() ? "SUCCESS" : "FAIL");
-            record.setScore(bestVariant.getScore());
-            record.setTimestamp(System.currentTimeMillis());
-            record.setAttempt(1); // Default to 1 for now
-
-            // Populate changed files from tasks
-            List<String> changedFiles = iteration.getTasks().stream()
-                .filter(t -> "file".equalsIgnoreCase(t.getType()))
-                .map(Task::getResultSummary)
-                .filter(path -> path != null && !path.isEmpty())
-                .distinct()
-                .collect(Collectors.toList());
-            record.setChangedFiles(changedFiles);
-
-            if (!result.isSuccess()) {
-                record.setErrorMessage(result.getErrors().toString());
-            }
-            memoryService.saveRecord(record);
 
             iteration.setPhase("EVALUATE");
             if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
@@ -124,7 +134,9 @@ public class IterationManager {
                 iteration.setPhase("REFINE");
             }
 
-            // Cleanup experiment branches
+            // Cleanup experiment branches and snapshot
+            gitManager.forceCheckout(originalBranch);
+            gitManager.deleteBranch(snapshotBranch);
             for (BranchVariant v : variants) {
                 try {
                     gitManager.deleteBranch(v.getBranchName());
@@ -143,6 +155,8 @@ public class IterationManager {
 
         } catch (Exception e) {
             context.log("[ITERATION] Error in iteration: " + e.getMessage());
+            gitManager.forceCheckout(originalBranch);
+            try { gitManager.deleteBranch(snapshotBranch); } catch (Exception ex) {}
             gitManager.rollback();
             iteration.setStatus(IterationStatus.FAILED);
             throw e;

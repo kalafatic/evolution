@@ -41,6 +41,7 @@ Export-Package: eu.kalafatic.evolution.view.application,
  eu.kalafatic.evolution.view.project,
  eu.kalafatic.evolution.view.provider,
  eu.kalafatic.evolution.view.views,
- eu.kalafatic.evolution.view.wizards
+ eu.kalafatic.evolution.view.wizards,
+ org.json
 Bundle-ClassPath: .,
  lib/json-20140107.jar
