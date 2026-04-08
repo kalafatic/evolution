@@ -22,11 +22,13 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.IFormColors;
 import org.eclipse.ui.forms.events.ExpansionAdapter;
 import org.eclipse.ui.forms.events.ExpansionEvent;
 import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
+import org.eclipse.ui.forms.widgets.TableWrapData;
 
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 
@@ -200,16 +202,29 @@ public class SWTFactory {
 		int style = Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE;
 		if (expanded)
 			style |= Section.EXPANDED;
-		final Section section = toolkit.createSection(parent, style);
-	
+		
+		toolkit = new FormToolkit(parent.getDisplay());
+		ScrolledForm form = toolkit.createScrolledForm(parent);
+		
+		final Section section = toolkit.createSection(form.getBody(), style);
+		TableWrapData td = new TableWrapData(TableWrapData.FILL);
+		// td.colspan = 2;
+		section.setLayoutData(td);
+		 
 		// Set the color of the title text
-		Color BG = new Color(section.getDisplay(), 195, 195, 235);
-		Color FG = new Color(section.getDisplay(), 110, 124, 245);
-		section.setTitleBarForeground(FG);
-		section.setBackground(BG);
+		Color BG = new Color(section.getDisplay(), 204, 204, 204);
+		Color FG = new Color(section.getDisplay(), 154, 154, 154);
+		//section.setTitleBarForeground(FG);
+		//section.setBackground(BG);
 
 		section.setText(title);
-		section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		//section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		
+		section.addExpansionListener(new ExpansionAdapter() {
+			  public void expansionStateChanged(ExpansionEvent e) {
+			   form.reflow(true);
+			  }
+			 });
 
 		Button maxBtn = createMaximizeButton(parent, section, true);		
 		section.setTextClient(maxBtn);
