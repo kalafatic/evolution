@@ -6,6 +6,7 @@ import java.util.Collections;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -150,6 +151,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     @Override
     public void doSave(IProgressMonitor monitor) {
+        SubMonitor subMonitor = SubMonitor.convert(monitor, 2);
         if (resource != null) {
             try {
                 resource.save(Collections.EMPTY_MAP);
@@ -158,8 +160,9 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 e.printStackTrace();
             }
         }
+        subMonitor.worked(1);
         if (textEditor != null) {
-            textEditor.doSave(monitor);
+            textEditor.doSave(subMonitor.newChild(1));
         }
     }
 
