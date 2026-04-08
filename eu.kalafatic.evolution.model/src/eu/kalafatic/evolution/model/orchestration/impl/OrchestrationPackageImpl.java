@@ -2119,56 +2119,49 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		setNsURI(eNS_URI);
 
 		// Initialize enums and add enum literals
-		initEEnum(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.class, "TestStatus");
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PENDING);
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.RUNNING);
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PASSED);
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.FAILED);
 		initEEnum(taskStatusEEnum, TaskStatus.class, "TaskStatus");
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.PENDING);
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.RUNNING);
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.DONE);
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.FAILED);
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.WAITING_FOR_APPROVAL);
-
 		initEEnum(commandStatusEEnum, CommandStatus.class, "CommandStatus");
 		addEEnumLiteral(commandStatusEEnum, CommandStatus.PENDING);
 		addEEnumLiteral(commandStatusEEnum, CommandStatus.RUNNING);
 		addEEnumLiteral(commandStatusEEnum, CommandStatus.COMPLETED);
 		addEEnumLiteral(commandStatusEEnum, CommandStatus.FAILED);
-
 		initEEnum(executionModeEEnum, ExecutionMode.class, "ExecutionMode");
 		addEEnumLiteral(executionModeEEnum, ExecutionMode.SERIAL);
 		addEEnumLiteral(executionModeEEnum, ExecutionMode.PARALLEL);
-
 		initEEnum(neuronTypeEEnum, NeuronType.class, "NeuronType");
 		addEEnumLiteral(neuronTypeEEnum, NeuronType.MLP);
 		addEEnumLiteral(neuronTypeEEnum, NeuronType.CNN);
 		addEEnumLiteral(neuronTypeEEnum, NeuronType.RNN);
 		addEEnumLiteral(neuronTypeEEnum, NeuronType.LSTM);
 		addEEnumLiteral(neuronTypeEEnum, NeuronType.TRANSFORMER);
-
 		initEEnum(aiModeEEnum, AiMode.class, "AiMode");
 		addEEnumLiteral(aiModeEEnum, AiMode.LOCAL);
 		addEEnumLiteral(aiModeEEnum, AiMode.HYBRID);
 		addEEnumLiteral(aiModeEEnum, AiMode.REMOTE);
-
 		initEEnum(selfDevStatusEEnum, SelfDevStatus.class, "SelfDevStatus");
 		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.RUNNING);
 		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.STOPPED);
 		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.FAILED);
 		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.COMPLETED);
-
 		initEEnum(iterationStatusEEnum, IterationStatus.class, "IterationStatus");
 		addEEnumLiteral(iterationStatusEEnum, IterationStatus.PENDING);
 		addEEnumLiteral(iterationStatusEEnum, IterationStatus.RUNNING);
 		addEEnumLiteral(iterationStatusEEnum, IterationStatus.DONE);
 		addEEnumLiteral(iterationStatusEEnum, IterationStatus.FAILED);
-
 		initEEnum(selfDevDecisionEEnum, SelfDevDecision.class, "SelfDevDecision");
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.CONTINUE);
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.ROLLBACK);
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.STOP);
+		initEEnum(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.class, "TestStatus");
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PENDING);
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.RUNNING);
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PASSED);
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.FAILED);
 
 
 		// Create type parameters
@@ -2350,7 +2343,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getTest_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTest_Type(), ecorePackage.getEString(), "type", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTest_Path(), ecorePackage.getEString(), "path", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
 		initEAttribute(getTest_Status(), this.getTestStatus(), "status", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTest_Selected(), ecorePackage.getEBoolean(), "selected", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
@@ -2363,6 +2355,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getEvaluationResult_UserSatisfaction(), ecorePackage.getEInt(), "userSatisfaction", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Initialize enums and add enum literals
+
+
+
+
+
+
+
 
 
 		// Create resource
