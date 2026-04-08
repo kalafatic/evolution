@@ -20,7 +20,7 @@ public class TaskPlanner extends BaseAiAgent {
         return "You are acting as a Task Planner Agent for self-development workflows.";
     }
 
-    public List<Task> generateTasks(TaskContext context) throws Exception {
+    public List<Task> generateTasks(TaskContext context, String strategy) throws Exception {
         String initialRequest = null;
         if (context.getOrchestrator().getSelfDevSession() != null) {
             initialRequest = context.getOrchestrator().getSelfDevSession().getInitialRequest();
@@ -33,6 +33,7 @@ public class TaskPlanner extends BaseAiAgent {
         if (isIterative && initialRequest != null && !initialRequest.isEmpty() && !"Analyze the project and suggest improvements.".equals(initialRequest)) {
             context.log("[PLANNER] Analyzing project to fulfill iterative request: " + initialRequest);
             prompt = "You are an Iterative Development Task Planner. Your goal is to fulfill the following user request: \"" + initialRequest + "\"\n" +
+                    (strategy != null ? "Strategy to follow: " + strategy + "\n" : "") +
                     "Analyze the project structure and provided context. Generate 1 to 5 atomic, independent tasks to achieve this goal.\n" +
                     "Tasks can include code changes, test creation, or documentation.\n" +
                     "Forbidden: Changing build config (pom.xml) unless explicitly requested, core orchestrator engine, or deployment scripts.\n\n" +
@@ -49,6 +50,9 @@ public class TaskPlanner extends BaseAiAgent {
 
             if (isSelfIterative && initialRequest != null && !initialRequest.isEmpty() && !"Analyze the project and suggest improvements.".equals(initialRequest)) {
                 prompt += "\nUser provided additional context/focus for this autonomous session: \"" + initialRequest + "\"";
+            }
+            if (strategy != null) {
+                prompt += "\nStrategy to follow: " + strategy;
             }
         }
 
