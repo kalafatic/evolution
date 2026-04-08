@@ -40,13 +40,20 @@ public class GitManager {
 
     public String deleteBranch(String branchName) throws Exception {
         context.log("[GIT] Deleting branch: " + branchName);
-        // Avoid hardcoded 'master' - try to find current branch or use 'main' as fallback
-        String baseBranch = "main";
-        try {
-            baseBranch = shell.execute("git symbolic-ref --short HEAD", projectRoot, context).trim();
-        } catch (Exception e) {}
-
-        shell.execute("git checkout " + baseBranch, projectRoot, context);
         return shell.execute("git branch -D " + branchName, projectRoot, context);
+    }
+
+    public String getCurrentBranch() throws Exception {
+        return shell.execute("git rev-parse --abbrev-ref HEAD", projectRoot, context).trim();
+    }
+
+    public String merge(String branchName) throws Exception {
+        context.log("[GIT] Merging branch: " + branchName);
+        return shell.execute("git merge " + branchName, projectRoot, context);
+    }
+
+    public void forceCheckout(String branchName) throws Exception {
+        context.log("[GIT] Force switching to branch: " + branchName);
+        shell.execute("git checkout -f " + branchName, projectRoot, context);
     }
 }
