@@ -20,7 +20,7 @@ public class SummaryGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Approval Summary", 2, true);
+        group = SWTFactory.createExpandableGroup(parent, "Approval Summary", 2, true);
 
         SWTFactory.createLabel(group, "Session ID:");
         sessionIdLabel = toolkit.createLabel(group, "");

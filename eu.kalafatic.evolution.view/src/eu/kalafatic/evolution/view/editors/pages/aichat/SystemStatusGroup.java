@@ -18,7 +18,7 @@ public class SystemStatusGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "System Status", 4, false);
+        group = SWTFactory.createExpandableGroup(parent, "System Status", 4, false);
         SWTFactory.createLabel(group, "Ollama Status:");
         ollamaStatusLabel = new Label(group, SWT.NONE);
         ollamaStatusLabel.setText("Unknown");

@@ -34,7 +34,7 @@ public class FileGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "File Tool Settings", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "File Tool Settings", 3, false);
         SWTFactory.createLabel(group, "Project Root:");
         fileLocalPathText = SWTFactory.createText(group);
         fileLocalPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));

@@ -32,7 +32,7 @@ public class GitGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Git Tool Settings", 3, true);
+        group = SWTFactory.createExpandableGroup(parent, "Git Tool Settings", 3, true);
         SWTFactory.createLabel(group, "Repository URL:");
         gitRepoText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, gitRepoText);

@@ -21,7 +21,7 @@ public class VizGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, ApprovalPage page) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Network Visualization", 1, true);
+        group = SWTFactory.createExpandableGroup(parent, "Network Visualization", 1, true);
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 400;
         group.setLayoutData(gd);
@@ -30,7 +30,7 @@ public class VizGroup {
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();
             Composite toolbar = toolkit.createComposite(section);
-            toolbar.setLayout(new GridLayout(4, true));
+            toolbar.setLayout(new GridLayout(3, true));
 
             Button zoomIn = toolkit.createButton(toolbar, "+", SWT.PUSH);
             zoomIn.setToolTipText("Zoom In");
@@ -49,10 +49,8 @@ public class VizGroup {
             reset.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
                 @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { if (browser != null) browser.execute("resetZoom();"); }
             });
-            
-           SWTFactory.createMaximizeButton(toolbar, section, false);	
-           
-           section.setTextClient(toolbar);
+
+            section.setTextClient(toolbar);
         }
 
         Composite browserContainer = toolkit.createComposite(group);
@@ -60,8 +58,7 @@ public class VizGroup {
         browserContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         try {
-        	browser = SWTFactory.createBrowser(browserContainer,400);
-          
+            browser = new Browser(browserContainer, SWT.NONE);
             page.setupBrowserListeners(browser);
         } catch (Exception e) {
             toolkit.createLabel(browserContainer, "Browser not supported: " + e.getMessage());

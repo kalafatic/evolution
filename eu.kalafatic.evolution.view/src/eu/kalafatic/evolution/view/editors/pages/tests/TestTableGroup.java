@@ -30,7 +30,7 @@ public class TestTableGroup {
     }
 
     private void createControl(Composite parent, String title, List<Test> tests, boolean expanded) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, title, 1, expanded);
+        group = SWTFactory.createExpandableGroup(parent, title, 1, expanded);
 
         Composite tableComposite = toolkit.createComposite(group);
         tableComposite.setLayoutData(new GridData(GridData.FILL_BOTH));

@@ -163,7 +163,7 @@ public class AiFlowPage extends Composite {
 
 			if (!isLoaded) {
 				// Avoid redundant setText
-				browser.setText(getHtmlTemplate());
+				if (browser.getText().isEmpty()) browser.setText(getHtmlTemplate());
 				return;
 			}
 

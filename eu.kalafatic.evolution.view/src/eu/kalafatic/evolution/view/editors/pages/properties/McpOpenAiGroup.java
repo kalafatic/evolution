@@ -29,7 +29,7 @@ public class McpOpenAiGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "MCP & OpenAI (Hybrid Architecture)", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "MCP & OpenAI (Hybrid Architecture)", 3, false);
         SWTFactory.createLabel(group, "AI Mode:");
         aiModeCombo = SWTFactory.createCombo(group);
         aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));

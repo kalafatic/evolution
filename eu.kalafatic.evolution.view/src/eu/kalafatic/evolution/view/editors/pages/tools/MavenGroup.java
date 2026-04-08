@@ -32,7 +32,7 @@ public class MavenGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Maven Tool Settings", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "Maven Tool Settings", 3, false);
         SWTFactory.createLabel(group, "Goals:");
         mavenGoalsText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, mavenGoalsText);

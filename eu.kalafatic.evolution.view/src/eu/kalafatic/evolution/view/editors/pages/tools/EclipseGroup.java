@@ -32,7 +32,7 @@ public class EclipseGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Eclipse Development Settings", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "Eclipse Development Settings", 3, false);
 
         SWTFactory.createLabel(group, "Workspace Path:");
         eclipseWorkspaceText = SWTFactory.createText(group);

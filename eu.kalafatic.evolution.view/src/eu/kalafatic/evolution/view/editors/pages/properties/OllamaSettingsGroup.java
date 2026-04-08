@@ -35,7 +35,7 @@ public class OllamaSettingsGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Ollama Settings", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "Ollama Settings", 3, false);
         SWTFactory.createLabel(group, "URL:");
         ollamaUrlText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, ollamaUrlText);

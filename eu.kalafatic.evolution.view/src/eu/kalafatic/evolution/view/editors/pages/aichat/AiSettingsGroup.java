@@ -35,7 +35,7 @@ public class AiSettingsGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "AI Settings", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "AI Settings", 3, false);
 
         SWTFactory.createLabel(group, "AI Mode:");
         aiModeCombo = SWTFactory.createCombo(group);

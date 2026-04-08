@@ -36,7 +36,7 @@ public class PredefinedTestsGroup {
 	}
 
 	private void createControl(Composite parent) {
-		group = SWTFactory.createExpandableGroup(toolkit, parent, "Predefined Tests", 1, true);
+		group = SWTFactory.createExpandableGroup(parent, "Predefined Tests", 1, true);
 
 		Composite tableComposite = toolkit.createComposite(group);
 		tableComposite.setLayoutData(new GridData(GridData.FILL_BOTH));

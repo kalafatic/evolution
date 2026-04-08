@@ -47,7 +47,7 @@ public class HistoryGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, Font chatFont) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Conversation History", 1, true);
+        group = SWTFactory.createExpandableGroup(parent, "Conversation History", 1, true);
         browser = new Browser(group, SWT.BORDER);
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 400;

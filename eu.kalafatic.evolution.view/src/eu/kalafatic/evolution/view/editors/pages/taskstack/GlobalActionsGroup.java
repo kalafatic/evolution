@@ -23,7 +23,7 @@ public class GlobalActionsGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Global Actions", 4, true);
+        group = SWTFactory.createExpandableGroup(parent, "Global Actions", 4, true);
 
         Button selectAllBtn = SWTFactory.createButton(group, "Select All");
         selectAllBtn.addSelectionListener(new SelectionAdapter() {

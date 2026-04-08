@@ -29,7 +29,7 @@ public class InstructionsGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Instructions", 1, false);
+        group = SWTFactory.createExpandableGroup(parent, "Instructions", 1, false);
         requestText = new StyledText(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         page.setupContextAssist(requestText);
         GridData requestGridData = new GridData(GridData.FILL_BOTH);

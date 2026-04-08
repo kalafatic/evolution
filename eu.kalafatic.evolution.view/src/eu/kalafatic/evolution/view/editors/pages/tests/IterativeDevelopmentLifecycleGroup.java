@@ -22,7 +22,7 @@ public class IterativeDevelopmentLifecycleGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Iterative Development Lifecycle", 1, false);
+        group = SWTFactory.createExpandableGroup(parent, "Iterative Development Lifecycle", 1, false);
         group.setLayout(new GridLayout(2, false));
 
         runBtn = toolkit.createButton(group, "Run Lifecycle Simulation", SWT.PUSH);

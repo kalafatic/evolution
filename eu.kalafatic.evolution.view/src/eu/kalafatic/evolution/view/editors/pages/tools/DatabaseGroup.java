@@ -33,7 +33,7 @@ public class DatabaseGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Database Tool Settings", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "Database Tool Settings", 3, false);
         SWTFactory.createLabel(group, "JDBC URL:");
         dbUrlText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, dbUrlText);

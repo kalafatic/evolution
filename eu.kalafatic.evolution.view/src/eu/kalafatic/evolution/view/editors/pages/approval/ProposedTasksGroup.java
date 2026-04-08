@@ -26,7 +26,7 @@ public class ProposedTasksGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Proposed Tasks", 1, true);
+        group = SWTFactory.createExpandableGroup(parent, "Proposed Tasks", 1, true);
         group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         ((GridData)group.getLayoutData()).heightHint = 220;
 

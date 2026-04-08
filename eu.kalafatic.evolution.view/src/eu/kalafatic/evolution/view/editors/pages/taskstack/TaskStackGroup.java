@@ -25,7 +25,7 @@ public class TaskStackGroup {
     }
 
     private void createControl(Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Task/Prompt Stack", 1, true);
+        group = SWTFactory.createExpandableGroup(parent, "Task/Prompt Stack", 1, true);
         group.setLayout(new GridLayout(1, false));
     }
 

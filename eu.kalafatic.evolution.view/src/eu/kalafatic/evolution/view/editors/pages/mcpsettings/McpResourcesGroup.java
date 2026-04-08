@@ -24,7 +24,7 @@ public class McpResourcesGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Available Resources", 1, false);
+        group = SWTFactory.createExpandableGroup(parent, "Available Resources", 1, false);
 
         resourcesTable = new Table(group, SWT.BORDER | SWT.FULL_SELECTION);
         resourcesTable.setHeaderVisible(true);

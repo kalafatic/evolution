@@ -24,7 +24,7 @@ public class McpConfigGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "MCP Configuration", 3, true);
+        group = SWTFactory.createExpandableGroup(parent, "MCP Configuration", 3, true);
         SWTFactory.createLabel(group, "Server URL:");
         mcpUrlText = SWTFactory.createText(group);
         mcpUrlText.addModifyListener(e -> {

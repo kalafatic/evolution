@@ -19,7 +19,7 @@ public class ActionsGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, ApprovalPage page) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Approval Actions", 2, true);
+        group = SWTFactory.createExpandableGroup(parent, "Approval Actions", 2, true);
         group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Button approveBtn = toolkit.createButton(group, "Approve & Apply Changes", SWT.PUSH);

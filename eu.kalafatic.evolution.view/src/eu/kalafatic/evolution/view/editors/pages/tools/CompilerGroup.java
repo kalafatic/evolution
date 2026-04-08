@@ -32,7 +32,7 @@ public class CompilerGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Compiler & Language Settings", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "Compiler & Language Settings", 3, false);
 
         SWTFactory.createLabel(group, "Java Source Version:");
         sourceVersionText = SWTFactory.createText(group);

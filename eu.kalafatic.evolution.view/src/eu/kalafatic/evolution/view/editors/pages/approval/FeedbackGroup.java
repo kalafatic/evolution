@@ -25,7 +25,7 @@ public class FeedbackGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "User Feedback & Satisfaction", 2, true);
+        group = SWTFactory.createExpandableGroup(parent, "User Feedback & Satisfaction", 2, true);
 
         SWTFactory.createLabel(group, "Rating (1-5):");
         ratingScale = new Scale(group, SWT.HORIZONTAL);

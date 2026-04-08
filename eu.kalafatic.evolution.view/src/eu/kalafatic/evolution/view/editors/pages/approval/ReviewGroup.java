@@ -42,7 +42,7 @@ public class ReviewGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Review Changes", 1, true);
+        group = SWTFactory.createExpandableGroup(parent, "Review Changes", 1, true);
         group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         try {

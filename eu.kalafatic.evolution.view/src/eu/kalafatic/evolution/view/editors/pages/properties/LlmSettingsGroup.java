@@ -22,7 +22,7 @@ public class LlmSettingsGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "LLM Settings", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "LLM Settings", 3, false);
         SWTFactory.createLabel(group, "Model:");
         llmModelText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, llmModelText);

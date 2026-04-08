@@ -22,7 +22,7 @@ public class AgentsGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Agents", 1, false);
+        group = SWTFactory.createExpandableGroup(parent, "Agents", 1, false);
         agentsTable = new Table(group, SWT.BORDER | SWT.FULL_SELECTION);
         agentsTable.setHeaderVisible(true);
         agentsTable.setLinesVisible(true);

@@ -18,7 +18,7 @@ public class AdditionalAiToolsGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Additional AI & Tools", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "Additional AI & Tools", 3, false);
         SWTFactory.createLabel(group, "AI Chat URL:");
         aiChatUrlText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, aiChatUrlText);

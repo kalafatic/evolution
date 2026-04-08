@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -195,24 +194,12 @@ public class SWTFactory {
 		return group;
 	}
 
-	public static Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns,
-			boolean expanded) {
+	public static Composite createExpandableGroup(Composite parent, String title, int columns, boolean expanded) {
 		int style = Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE;
 		if (expanded)
 			style |= Section.EXPANDED;
 
-		// Subclass Section to override setCursor and prevent flickering to HAND cursor
-		final Section section = new Section(parent, style) {
-			@Override
-			public void setCursor(org.eclipse.swt.graphics.Cursor cursor) {
-				if (cursor != null && cursor.equals(getDisplay().getSystemCursor(SWT.CURSOR_HAND))) {
-					super.setCursor(getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
-				} else {
-					super.setCursor(cursor);
-				}
-			}
-		};
-		toolkit.adapt(section, true, true);
+		final Section section = new Section(parent, style);
 		section.setCursor(section.getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
 
 		// Set the color of the title text
@@ -224,19 +211,8 @@ public class SWTFactory {
 		section.setText(title);
 		section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		Button maxBtn = createMaximizeButton(parent, section, true);
-		section.setTextClient(maxBtn);
-
-		Composite client = toolkit.createComposite(section);
-		client.setLayout(new GridLayout(columns, false));
-		section.setClient(client);
-
-		return client;
-	}
-
-	public static Button createMaximizeButton(Composite parent, final Section section, boolean single) {
 		// Maximize Button
-		Button maxBtn = new Button(single ? section : parent, SWT.PUSH | SWT.FLAT);
+		Button maxBtn = new Button(section, SWT.PUSH | SWT.FLAT);
 		GridData maxGd = new GridData();
 		maxGd.widthHint = 20;
 		maxGd.heightHint = 20;
@@ -250,6 +226,11 @@ public class SWTFactory {
 			if (orange != null && !orange.isDisposed())
 				orange.dispose();
 		});
+		section.setTextClient(maxBtn);
+
+		Composite client = new Composite(section, SWT.NONE);
+		client.setLayout(new GridLayout(columns, false));
+		section.setClient(client);
 
 		section.addExpansionListener(new ExpansionAdapter() {
 			@Override
@@ -264,7 +245,13 @@ public class SWTFactory {
 				toggleMaximize(section, maxBtn);
 			}
 		});
-		return maxBtn;
+
+		return client;
+	}
+
+	public static Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns,
+			boolean expanded) {
+		return createExpandableGroup(parent, title, columns, expanded);
 	}
 
 	private static void toggleMaximize(Section section, Button maxBtn) {
@@ -336,24 +323,13 @@ public class SWTFactory {
 		for (Control control : controls) {
 			control.setEnabled(enabled);
 
-			if (enabled || forceVisible) {
+			if (enabled || forceVisible ) {
 				control.setVisible(true);
 			}
 			if (control instanceof Composite) {
 				setControlEnabled(enabled, forceVisible, ((Composite) control).getChildren());
 			}
 		}
-	}
-
-	public static Browser createBrowser(Composite parent, int height) {
-		Browser browser = new Browser(parent, SWT.NONE);
-
-		GridData gd = new GridData();
-		// gd.widthHint = 20;
-		gd.heightHint = height;
-		browser.setLayoutData(gd);
-
-		return browser;
 	}
 
 }

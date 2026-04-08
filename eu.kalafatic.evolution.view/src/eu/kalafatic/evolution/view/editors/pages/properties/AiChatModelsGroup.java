@@ -28,7 +28,7 @@ public class AiChatModelsGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "AI Chat Models (per Mode)", 3, false);
+        group = SWTFactory.createExpandableGroup(parent, "AI Chat Models (per Mode)", 3, false);
         SWTFactory.createLabel(group, "Local Model:");
         localModelText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, localModelText);

@@ -17,7 +17,7 @@ public class OrchestratorGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Orchestrator", 3, true);
+        group = SWTFactory.createExpandableGroup(parent, "Orchestrator", 3, true);
         SWTFactory.createLabel(group, "ID:");
         orchIdText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, orchIdText);
