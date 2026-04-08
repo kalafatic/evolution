@@ -194,27 +194,14 @@ public class SWTFactory {
 
 		return group;
 	}
-
+	
 	public static Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns,
 			boolean expanded) {
 		int style = Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE;
 		if (expanded)
 			style |= Section.EXPANDED;
-
-		// Subclass Section to override setCursor and prevent flickering to HAND cursor
-		final Section section = new Section(parent, style) {
-			@Override
-			public void setCursor(org.eclipse.swt.graphics.Cursor cursor) {
-				if (cursor != null && cursor.equals(getDisplay().getSystemCursor(SWT.CURSOR_HAND))) {
-					super.setCursor(getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
-				} else {
-					super.setCursor(cursor);
-				}
-			}
-		};
-		toolkit.adapt(section, true, true);
-		section.setCursor(section.getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
-
+		final Section section = toolkit.createSection(parent, style);
+	
 		// Set the color of the title text
 		Color BG = new Color(section.getDisplay(), 195, 195, 235);
 		Color FG = new Color(section.getDisplay(), 110, 124, 245);
@@ -224,15 +211,47 @@ public class SWTFactory {
 		section.setText(title);
 		section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		Button maxBtn = createMaximizeButton(parent, section, true);
+		Button maxBtn = createMaximizeButton(parent, section, true);		
 		section.setTextClient(maxBtn);
-
+		
 		Composite client = toolkit.createComposite(section);
 		client.setLayout(new GridLayout(columns, false));
 		section.setClient(client);
-
+		
 		return client;
 	}
+
+	/*
+	 * public static Composite createExpandableGroup(FormToolkit toolkit, Composite
+	 * parent, String title, int columns, boolean expanded) { int style =
+	 * Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE; if (expanded)
+	 * style |= Section.EXPANDED;
+	 * 
+	 * // Subclass Section to override setCursor and prevent flickering to HAND
+	 * cursor // final Section section = new Section(parent, style) { // @Override
+	 * // public void setCursor(org.eclipse.swt.graphics.Cursor cursor) { // if
+	 * (cursor != null &&
+	 * cursor.equals(getDisplay().getSystemCursor(SWT.CURSOR_HAND))) { //
+	 * super.setCursor(getDisplay().getSystemCursor(SWT.CURSOR_ARROW)); // } else {
+	 * // super.setCursor(cursor); // } // } // }; toolkit.adapt(section, true,
+	 * true);
+	 * //section.setCursor(section.getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
+	 * 
+	 * // Set the color of the title text Color BG = new Color(section.getDisplay(),
+	 * 195, 195, 235); Color FG = new Color(section.getDisplay(), 110, 124, 245);
+	 * section.setTitleBarForeground(FG); section.setBackground(BG);
+	 * 
+	 * section.setText(title); section.setLayoutData(new
+	 * GridData(GridData.FILL_HORIZONTAL));
+	 * 
+	 * Button maxBtn = createMaximizeButton(parent, section, true);
+	 * section.setTextClient(maxBtn);
+	 * 
+	 * Composite client = toolkit.createComposite(section); client.setLayout(new
+	 * GridLayout(columns, false)); section.setClient(client);
+	 * 
+	 * return client; }
+	 */
 
 	public static Button createMaximizeButton(Composite parent, final Section section, boolean single) {
 		// Maximize Button
