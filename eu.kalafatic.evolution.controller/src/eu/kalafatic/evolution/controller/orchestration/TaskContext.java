@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.utils.log.Log;
 
 /**
  * Shared context for an orchestration task, including project info, state, and logs.
@@ -59,6 +60,7 @@ public class TaskContext {
 
     public void log(String message) {
         logs.add(message);
+        Log.log(message);
         notifyListeners(message);
     }
 

@@ -196,14 +196,17 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 try {
                     String existingContent = fileTool.execute("READ " + path, context.getProjectRoot(), context);
                     task.setRationale(existingContent);
+                    context.log("Evo: Read existing content for " + path + " to capture rationale.");
                 } catch (Exception e) {
-                    // File might not exist
+                    context.log("Evo: Could not read " + path + " (might be a new file).");
                 }
                 return fileTool.execute("DELETE " + path, context.getProjectRoot(), context);
             }
 
             // JavaDev/Architect will generate content first
+            context.log("Evo: Agent " + agent.getType() + " is processing content for " + path);
             String content = agent.process(processInput, context, lastFeedback);
+            context.log("Evo: Agent generated " + content.length() + " characters for " + path);
 
             // Check for significant deletions
             try {
@@ -230,6 +233,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             // Normalize path: replace backslashes with forward slashes
             path = path.replace("\\", "/");
             String writeResult = fileTool.execute("WRITE " + path + "\n" + content, context.getProjectRoot(), context);
+            context.log("Evo: FileTool result for " + path + ": " + writeResult);
             return writeResult + "\nCONTENT:\n" + content;
         } else if ("maven".equalsIgnoreCase(taskType)) {
             MavenTool mavenTool = new MavenTool();

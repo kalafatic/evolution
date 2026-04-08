@@ -42,6 +42,9 @@ public class MavenTool implements ITool {
 
         ShellTool shell = new ShellTool();
         String cmdStr = String.join(" ", mavenArgs);
-        return shell.execute(cmdStr, workingDir, context);
+        context.log("Tool [MavenTool]: Launching " + cmdStr);
+        String result = shell.execute(cmdStr, workingDir, context);
+        context.log("Tool [MavenTool]: Execution finished. Output length: " + result.length());
+        return result;
     }
 }

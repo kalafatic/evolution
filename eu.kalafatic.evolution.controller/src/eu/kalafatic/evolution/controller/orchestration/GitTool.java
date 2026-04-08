@@ -31,11 +31,13 @@ public class GitTool implements ITool {
         StringBuilder output = new StringBuilder();
 
         if (command.toLowerCase().contains("add") || command.toLowerCase().contains("commit")) {
+            context.log("Tool [GitTool]: Staging all changes and committing.");
             output.append(shell.execute("git add .", gitWorkingDir, context)).append("\n");
             output.append(shell.execute("git commit -m \"AI Evolution step: " + command + "\"", gitWorkingDir, context)).append("\n");
         }
 
         if (command.toLowerCase().contains("push")) {
+            context.log("Tool [GitTool]: Pushing to branch " + branch);
             output.append(shell.execute("git push origin " + branch, gitWorkingDir, context));
         }
 
