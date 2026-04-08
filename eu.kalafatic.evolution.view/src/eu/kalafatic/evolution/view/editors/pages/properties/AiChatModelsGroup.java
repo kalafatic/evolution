@@ -11,18 +11,18 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class AiChatModelsGroup {
-    private Composite group;
+public class AiChatModelsGroup extends AEvoGroup {
     private Text localModelText, hybridModelText;
     private Combo remoteModelCombo;
-    private Orchestrator orchestrator;
     private PropertiesPage page;
 
-    public AiChatModelsGroup(FormToolkit toolkit, Composite parent, Orchestrator orchestrator, PropertiesPage page) {
-        this.orchestrator = orchestrator;
+    public AiChatModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, PropertiesPage page) {
+        super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);
     }
@@ -54,6 +54,7 @@ public class AiChatModelsGroup {
         });
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator != null) {
             localModelText.setText(orchestrator.getLocalModel() != null ? orchestrator.getLocalModel() : "");
@@ -65,6 +66,7 @@ public class AiChatModelsGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator != null) {
             orchestrator.setLocalModel(localModelText.getText());
@@ -73,6 +75,7 @@ public class AiChatModelsGroup {
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { localModelText, hybridModelText };
     }

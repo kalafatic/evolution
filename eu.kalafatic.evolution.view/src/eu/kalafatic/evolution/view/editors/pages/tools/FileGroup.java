@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages.tools;
 
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -19,17 +18,11 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import java.io.File;
 
-public class FileGroup {
-    private Composite group;
+public class FileGroup extends AToolGroup {
     private Text fileLocalPathText;
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
-    private Color successColor;
 
     public FileGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.successColor = successColor;
+        super(editor, orchestrator, successColor);
         createControl(toolkit, parent);
     }
 
@@ -92,6 +85,7 @@ public class FileGroup {
         return new File(System.getProperty("java.io.tmpdir"));
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator.getFileConfig() != null) {
             FileConfig config = orchestrator.getFileConfig();
@@ -100,6 +94,7 @@ public class FileGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator.getFileConfig() == null) {
             orchestrator.setFileConfig(OrchestrationFactory.eINSTANCE.createFileConfig());
@@ -108,24 +103,20 @@ public class FileGroup {
         config.setLocalPath(fileLocalPathText.getText());
     }
 
-    public void updateGroupStatus() {
+    @Override
+    protected String getTestStatus() {
+        return orchestrator.getFileConfig() != null ? orchestrator.getFileConfig().getTestStatus() : null;
+    }
+
+    @Override
+    protected void clearTestStatus() {
         if (orchestrator.getFileConfig() != null) {
-            String status = orchestrator.getFileConfig().getTestStatus();
-            if ("SUCCESS".equals(status)) {
-                group.setBackground(successColor);
-            } else if ("FAILED".equals(status)) {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_RED));
-            } else {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
-            }
+            orchestrator.getFileConfig().setTestStatus(null);
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { fileLocalPathText };
-    }
-
-    public Composite getGroup() {
-        return group;
     }
 }

@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages.tools;
 
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -18,17 +17,11 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import java.io.File;
 
-public class DatabaseGroup {
-    private Composite group;
+public class DatabaseGroup extends AToolGroup {
     private Text dbUrlText, dbUsernameText, dbPasswordText, dbDriverText;
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
-    private Color successColor;
 
     public DatabaseGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.successColor = successColor;
+        super(editor, orchestrator, successColor);
         createControl(toolkit, parent);
     }
 
@@ -84,6 +77,7 @@ public class DatabaseGroup {
         return new File(System.getProperty("java.io.tmpdir"));
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator.getDatabase() != null) {
             Database db = orchestrator.getDatabase();
@@ -95,6 +89,7 @@ public class DatabaseGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator.getDatabase() == null) {
             orchestrator.setDatabase(OrchestrationFactory.eINSTANCE.createDatabase());
@@ -106,24 +101,20 @@ public class DatabaseGroup {
         db.setPassword(dbPasswordText.getText());
     }
 
-    public void updateGroupStatus() {
+    @Override
+    protected String getTestStatus() {
+        return orchestrator.getDatabase() != null ? orchestrator.getDatabase().getTestStatus() : null;
+    }
+
+    @Override
+    protected void clearTestStatus() {
         if (orchestrator.getDatabase() != null) {
-            String status = orchestrator.getDatabase().getTestStatus();
-            if ("SUCCESS".equals(status)) {
-                group.setBackground(successColor);
-            } else if ("FAILED".equals(status)) {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_RED));
-            } else {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
-            }
+            orchestrator.getDatabase().setTestStatus(null);
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { dbUrlText, dbUsernameText, dbPasswordText, dbDriverText };
-    }
-
-    public Composite getGroup() {
-        return group;
     }
 }

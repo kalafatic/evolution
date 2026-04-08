@@ -35,7 +35,7 @@ public class McpSettingsPage extends SharedScrolledComposite {
     private void createControl() {
         Composite comp = toolkit.createComposite(this);
         comp.setLayout(new GridLayout(1, false));
-        configGroup = new McpConfigGroup(toolkit, comp, orchestrator, this);
+        configGroup = new McpConfigGroup(toolkit, comp, editor, orchestrator, this);
         resourcesGroup = new McpResourcesGroup(toolkit, comp, this);
         this.setContent(comp);
         this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));

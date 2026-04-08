@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages.tools;
 
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -17,17 +16,11 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import java.io.File;
 
-public class GitGroup {
-    private Composite group;
+public class GitGroup extends AToolGroup {
     private Text gitRepoText, gitBranchText, gitLocalPathText;
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
-    private Color successColor;
 
     public GitGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.successColor = successColor;
+        super(editor, orchestrator, successColor);
         createControl(toolkit, parent);
     }
 
@@ -84,6 +77,7 @@ public class GitGroup {
         return new File(System.getProperty("java.io.tmpdir"));
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator.getGit() != null) {
             Git git = orchestrator.getGit();
@@ -94,6 +88,7 @@ public class GitGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator.getGit() == null) {
             orchestrator.setGit(OrchestrationFactory.eINSTANCE.createGit());
@@ -104,24 +99,20 @@ public class GitGroup {
         git.setLocalPath(gitLocalPathText.getText());
     }
 
-    public void updateGroupStatus() {
+    @Override
+    protected String getTestStatus() {
+        return orchestrator.getGit() != null ? orchestrator.getGit().getTestStatus() : null;
+    }
+
+    @Override
+    protected void clearTestStatus() {
         if (orchestrator.getGit() != null) {
-            String status = orchestrator.getGit().getTestStatus();
-            if ("SUCCESS".equals(status)) {
-                group.setBackground(successColor);
-            } else if ("FAILED".equals(status)) {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_RED));
-            } else {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
-            }
+            orchestrator.getGit().setTestStatus(null);
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { gitRepoText, gitBranchText, gitLocalPathText };
-    }
-
-    public Composite getGroup() {
-        return group;
     }
 }

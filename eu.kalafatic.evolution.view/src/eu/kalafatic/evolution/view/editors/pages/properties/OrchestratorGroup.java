@@ -4,15 +4,15 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class OrchestratorGroup {
-    private Composite group;
+public class OrchestratorGroup extends AEvoGroup {
     private Text orchIdText, orchNameText;
-    private Orchestrator orchestrator;
 
-    public OrchestratorGroup(FormToolkit toolkit, Composite parent, Orchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+    public OrchestratorGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
+        super(editor, orchestrator);
         createControl(toolkit, parent);
     }
 
@@ -26,6 +26,7 @@ public class OrchestratorGroup {
         SWTFactory.createEditButton(group, orchNameText);
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator != null) {
             orchIdText.setText(orchestrator.getId() != null ? orchestrator.getId() : "");
@@ -33,6 +34,7 @@ public class OrchestratorGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator != null) {
             orchestrator.setId(orchIdText.getText());
@@ -40,6 +42,7 @@ public class OrchestratorGroup {
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { orchIdText, orchNameText };
     }

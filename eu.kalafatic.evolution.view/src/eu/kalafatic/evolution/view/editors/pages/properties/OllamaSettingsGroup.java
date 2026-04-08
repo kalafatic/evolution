@@ -17,19 +17,20 @@ import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class OllamaSettingsGroup {
-    private Composite group;
+public class OllamaSettingsGroup extends AEvoGroup {
     private Text ollamaUrlText, ollamaModelText, ollamaPathText, ollamaVersionText;
-    private Orchestrator orchestrator;
     private PropertiesPage page;
     private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator;
     private OllamaService ollamaService;
+    private Combo modelCombo;
 
-    public OllamaSettingsGroup(FormToolkit toolkit, Composite parent, Orchestrator orchestrator, PropertiesPage page) {
-        this.orchestrator = orchestrator;
+    public OllamaSettingsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, PropertiesPage page) {
+        super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);
     }
@@ -44,7 +45,7 @@ public class OllamaSettingsGroup {
         SWTFactory.createEditButton(group, ollamaModelText);
         SWTFactory.createLabel(group, "Select Model:");
 
-        Combo modelCombo = SWTFactory.createCombo(group);
+        modelCombo = SWTFactory.createCombo(group);
         modelCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -58,8 +59,6 @@ public class OllamaSettingsGroup {
                 }
             }
         });
-        // We need a way to populate this, maybe in updateUI or a public method
-        this.modelCombo = modelCombo;
 
         SWTFactory.createLabel(group, "");
         SWTFactory.createLabel(group, "Model Path:");
@@ -85,8 +84,7 @@ public class OllamaSettingsGroup {
         ollamaPathDecorator.hide();
     }
 
-    private Combo modelCombo;
-
+    @Override
     public void updateUI() {
         if (orchestrator != null && orchestrator.getOllama() != null) {
             ollamaUrlText.setText(orchestrator.getOllama().getUrl() != null ? orchestrator.getOllama().getUrl() : "");
@@ -117,6 +115,7 @@ public class OllamaSettingsGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator != null) {
             if (orchestrator.getOllama() == null) {
@@ -136,6 +135,7 @@ public class OllamaSettingsGroup {
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { ollamaUrlText, ollamaModelText, ollamaPathText };
     }
