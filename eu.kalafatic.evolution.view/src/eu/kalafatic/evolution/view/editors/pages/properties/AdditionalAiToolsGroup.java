@@ -31,7 +31,7 @@ public class AdditionalAiToolsGroup extends AEvoGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator != null) {
             if (orchestrator.getAiChat() != null) aiChatUrlText.setText(orchestrator.getAiChat().getUrl() != null ? orchestrator.getAiChat().getUrl() : "");
             if (orchestrator.getNeuronAI() != null) neuronAiUrlText.setText(orchestrator.getNeuronAI().getUrl() != null ? orchestrator.getNeuronAI().getUrl() : "");

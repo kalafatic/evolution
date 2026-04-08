@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.view.editors.pages;
 
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -20,9 +21,21 @@ public abstract class AEvoGroup {
     }
 
     /**
-     * Updates the UI components with data from the model.
+     * Standardized thread-safe UI update.
      */
-    public abstract void updateUI();
+    public final void updateUI() {
+        Display.getDefault().asyncExec(() -> {
+            if (group != null && !group.isDisposed()) {
+                refreshUI();
+            }
+        });
+    }
+
+    /**
+     * Updates the UI components with data from the model.
+     * To be implemented by subclasses.
+     */
+    protected abstract void refreshUI();
 
     /**
      * Updates the model with data from the UI components.

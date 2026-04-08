@@ -78,7 +78,7 @@ public class DatabaseGroup extends AToolGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator.getDatabase() != null) {
             Database db = orchestrator.getDatabase();
             dbUrlText.setText(db.getUrl() != null ? db.getUrl() : "");

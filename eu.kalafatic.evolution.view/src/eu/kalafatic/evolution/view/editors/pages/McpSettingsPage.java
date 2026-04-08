@@ -69,7 +69,11 @@ public class McpSettingsPage extends SharedScrolledComposite {
 
     public void updateMcpInfo() { if (orchestrator == null || isUpdating) return; isUpdating = true; configGroup.updateUI(); isUpdating = false; refreshResources(); }
 
-    public void setOrchestrator(Orchestrator orchestrator) { this.orchestrator = orchestrator; updateMcpInfo(); }
+    public void setOrchestrator(Orchestrator orchestrator) {
+        this.orchestrator = orchestrator;
+        if (configGroup != null) configGroup.setOrchestrator(orchestrator);
+        updateMcpInfo();
+    }
 
     public void setDirty(boolean dirty) { editor.setDirty(dirty); }
 

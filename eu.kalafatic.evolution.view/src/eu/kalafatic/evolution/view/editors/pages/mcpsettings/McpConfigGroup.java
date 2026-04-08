@@ -43,7 +43,7 @@ public class McpConfigGroup extends AEvoGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator != null) {
             mcpUrlText.setText(orchestrator.getMcpServerUrl() != null ? orchestrator.getMcpServerUrl() : "");
         }

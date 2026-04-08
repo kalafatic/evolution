@@ -27,7 +27,7 @@ public class OrchestratorGroup extends AEvoGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator != null) {
             orchIdText.setText(orchestrator.getId() != null ? orchestrator.getId() : "");
             orchNameText.setText(orchestrator.getName() != null ? orchestrator.getName() : "");

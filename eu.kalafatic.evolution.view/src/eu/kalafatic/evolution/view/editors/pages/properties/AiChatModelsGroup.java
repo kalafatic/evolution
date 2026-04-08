@@ -55,7 +55,7 @@ public class AiChatModelsGroup extends AEvoGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator != null) {
             localModelText.setText(orchestrator.getLocalModel() != null ? orchestrator.getLocalModel() : "");
             hybridModelText.setText(orchestrator.getHybridModel() != null ? orchestrator.getHybridModel() : "");

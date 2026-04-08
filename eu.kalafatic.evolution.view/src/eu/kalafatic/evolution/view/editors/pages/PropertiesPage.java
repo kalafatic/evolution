@@ -153,6 +153,13 @@ public class PropertiesPage extends SharedScrolledComposite {
 
 	public void setOrchestrator(Orchestrator orchestrator) {
 		this.orchestrator = orchestrator;
+		if (orchestratorGroup != null) orchestratorGroup.setOrchestrator(orchestrator);
+		if (llmSettingsGroup != null) llmSettingsGroup.setOrchestrator(orchestrator);
+		if (ollamaSettingsGroup != null) ollamaSettingsGroup.setOrchestrator(orchestrator);
+		if (agentsGroup != null) agentsGroup.setOrchestrator(orchestrator);
+		if (additionalAiToolsGroup != null) additionalAiToolsGroup.setOrchestrator(orchestrator);
+		if (mcpOpenAiGroup != null) mcpOpenAiGroup.setOrchestrator(orchestrator);
+		if (aiChatModelsGroup != null) aiChatModelsGroup.setOrchestrator(orchestrator);
 		updatePropertiesInfo();
 		updateModeDisplay();
 	}

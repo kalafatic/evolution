@@ -36,7 +36,7 @@ public class LlmSettingsGroup extends AEvoGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator != null && orchestrator.getLlm() != null) {
             llmModelText.setText(orchestrator.getLlm().getModel() != null ? orchestrator.getLlm().getModel() : "");
             llmTempText.setText(String.valueOf(orchestrator.getLlm().getTemperature()));

@@ -88,6 +88,12 @@ public class ToolsPage extends SharedScrolledComposite {
 
     public void setOrchestrator(Orchestrator orchestrator) {
         this.orchestrator = orchestrator;
+        if (gitGroup != null) gitGroup.setOrchestrator(orchestrator);
+        if (mavenGroup != null) mavenGroup.setOrchestrator(orchestrator);
+        if (fileGroup != null) fileGroup.setOrchestrator(orchestrator);
+        if (databaseGroup != null) databaseGroup.setOrchestrator(orchestrator);
+        if (eclipseGroup != null) eclipseGroup.setOrchestrator(orchestrator);
+        if (compilerGroup != null) compilerGroup.setOrchestrator(orchestrator);
         updateUIFromModel();
     }
 

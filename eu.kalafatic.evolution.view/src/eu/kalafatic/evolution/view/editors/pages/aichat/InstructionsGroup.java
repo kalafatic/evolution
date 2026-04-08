@@ -11,20 +11,19 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class InstructionsGroup {
-    private Composite group;
+public class InstructionsGroup extends AEvoGroup {
     private StyledText requestText;
     private Button iterativeCheck, selfIterativeCheck;
     private Button sendButton, pauseButton, stopButton;
     private AiChatPage page;
-    private Orchestrator orchestrator;
 
     public InstructionsGroup(FormToolkit toolkit, Composite parent, AiChatPage page, Orchestrator orchestrator) {
+        super(page.getEditor(), orchestrator);
         this.page = page;
-        this.orchestrator = orchestrator;
         createControl(toolkit, parent);
     }
 
@@ -102,7 +101,8 @@ public class InstructionsGroup {
         });
     }
 
-    public void updateUI() {
+    @Override
+    protected void refreshUI() {
         if (orchestrator != null) {
             iterativeCheck.setSelection(orchestrator.isIterativeMode());
             selfIterativeCheck.setSelection(orchestrator.isSelfIterativeMode());
