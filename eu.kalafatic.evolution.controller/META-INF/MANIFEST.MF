@@ -34,7 +34,7 @@ Export-Package: eu.kalafatic.evolution.controller.engine,
  org.json
 Bundle-ClassPath: .,
  lib/json-20140107.jar,
- lib/jackson-annotations-3.0-rc5.jar,
- lib/jackson-core-3.1.1.jar,
- lib/jackson-databind-2.21.2.jar
+ lib/jackson-annotations.jar,
+ lib/jackson-core.jar,
+ lib/jackson-databind.jar
  

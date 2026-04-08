@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -41,26 +42,40 @@ public class DarwinEngine extends BaseAiAgent {
 
         StringBuilder prompt = new StringBuilder();
         prompt.append("Current Goal: ").append(goal).append("\n");
-        if (lastError != null) {
-            prompt.append("Last Error: ").append(lastError).append("\n");
-            List<IterationRecord> failedVariants = memoryService.findByError(lastError);
-            if (!failedVariants.isEmpty()) {
-                prompt.append("Failed attempts for this error:\n");
-                for (IterationRecord r : failedVariants) {
-                    prompt.append("- Attempted branch: ").append(r.getBranch()).append(" but failed.\n");
+
+        List<IterationRecord> allRecords = memoryService.getRecords();
+        if (!allRecords.isEmpty()) {
+            prompt.append("\n--- ITERATION HISTORY ---\n");
+
+            List<IterationRecord> failed = allRecords.stream()
+                .filter(r -> "FAIL".equals(r.getResult()))
+                .collect(Collectors.toList());
+            if (!failed.isEmpty()) {
+                prompt.append("FAILED STRATEGIES (DO NOT REPEAT THESE):\n");
+                for (IterationRecord r : failed) {
+                    prompt.append("- Strategy: ").append(r.getStrategy())
+                          .append(" | Error: ").append(r.getErrorMessage()).append("\n");
                 }
             }
-        }
 
-        List<IterationRecord> successful = memoryService.findSuccessfulPatterns(goal);
-        if (!successful.isEmpty()) {
-            prompt.append("Successful patterns from memory:\n");
-            for (IterationRecord r : successful) {
-                prompt.append("- ").append(r.getGoal()).append(" (Strategy used in successful branch: ").append(r.getBranch()).append(")\n");
+            List<IterationRecord> successful = allRecords.stream()
+                .filter(r -> "SUCCESS".equals(r.getResult()))
+                .collect(Collectors.toList());
+            if (!successful.isEmpty()) {
+                prompt.append("\nSUCCESSFUL PATTERNS (REUSE OR LEARN FROM THESE):\n");
+                for (IterationRecord r : successful) {
+                    prompt.append("- Goal: ").append(r.getGoal())
+                          .append(" | Strategy: ").append(r.getStrategy()).append("\n");
+                }
             }
+            prompt.append("--- END HISTORY ---\n");
         }
 
-        prompt.append("\nGenerate 2-3 different strategies to achieve the goal.\n");
+        if (lastError != null) {
+            prompt.append("\nURGENT: Last attempt failed with error: ").append(lastError).append("\n");
+        }
+
+        prompt.append("\nBased on the history and the current goal, generate 2-3 DIFFERENT strategies to achieve the goal.\n");
         prompt.append("Output MUST be a valid JSON array of objects with 'strategy' (description) and 'suffix' (short string for branch name).\n");
         prompt.append("Example: [{\"strategy\": \"Use pattern X\", \"suffix\": \"pattern-x\"}]\n");
 
@@ -104,12 +119,26 @@ public class DarwinEngine extends BaseAiAgent {
                 } else {
                     boolean success = executor.executeTasks(tasks);
 
+                    // Capture changed files
+                    List<String> changed = tasks.stream()
+                        .filter(t -> "file".equalsIgnoreCase(t.getType()))
+                        .map(Task::getResultSummary)
+                        .filter(path -> path != null && !path.isEmpty())
+                        .distinct()
+                        .collect(Collectors.toList());
+                    variant.setChangedFiles(changed);
+
                     // CRITICAL: Commit changes to the variant branch so they are not lost
                     if (success) {
                         gitManager.commit("Darwin Variant Strategy: " + variant.getStrategy());
                     }
 
                     EvaluationResult result = evaluator.evaluate();
+
+                    variant.setSuccess(result.isSuccess());
+                    if (!result.isSuccess()) {
+                        variant.setErrorMessage(result.getErrors().toString());
+                    }
 
                     // Simple scoring: testsPassed ? 1.0 : 0.0
                     double score = result.isSuccess() ? 1.0 : 0.0;

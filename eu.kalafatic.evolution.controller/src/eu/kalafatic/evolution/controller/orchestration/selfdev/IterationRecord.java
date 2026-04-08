@@ -5,6 +5,7 @@ import java.util.List;
 public class IterationRecord {
     private int iteration;
     private String goal;
+    private String strategy;
     private String branch;
     private List<String> changedFiles;
     private String result; // SUCCESS / FAIL
@@ -18,6 +19,9 @@ public class IterationRecord {
 
     public String getGoal() { return goal; }
     public void setGoal(String goal) { this.goal = goal; }
+
+    public String getStrategy() { return strategy; }
+    public void setStrategy(String strategy) { this.strategy = strategy; }
 
     public String getBranch() { return branch; }
     public void setBranch(String branch) { this.branch = branch; }
