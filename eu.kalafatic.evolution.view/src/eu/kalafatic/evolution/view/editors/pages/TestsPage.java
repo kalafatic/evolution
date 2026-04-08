@@ -23,6 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.osgi.framework.Bundle;
 
+import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.model.orchestration.TestStatus;
@@ -105,7 +106,7 @@ public class TestsPage extends Composite {
 		updateUIFromModel(); refreshBrowser();
 	}
 
-	private void updateUIFromModel() {
+	public void updateUIFromModel() {
 		if (isUpdating || orchestrator == null || testsContent == null || testsContent.isDisposed()) return;
 		isUpdating = true;
 		for (org.eclipse.swt.widgets.Control child : testsContent.getChildren()) child.dispose();
@@ -114,6 +115,20 @@ public class TestsPage extends Composite {
 
 		predefinedTestsGroup = new PredefinedTestsGroup(toolkit, testsContent, orchestrator, this);
 		iterativeDevelopmentLifecycleGroup = new IterativeDevelopmentLifecycleGroup(toolkit, testsContent, this);
+
+		// Synchronize Lifecycle Browser with Model Phase
+		if (orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
+			Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
+			String phase = last.getPhase();
+			if (phase != null && iterativeDevelopmentLifecycleGroup.getBrowser() != null) {
+				Display.getDefault().asyncExec(() -> {
+					if (!iterativeDevelopmentLifecycleGroup.getBrowser().isDisposed()) {
+						iterativeDevelopmentLifecycleGroup.getBrowser().execute("resetDiagram();");
+						iterativeDevelopmentLifecycleGroup.getBrowser().execute("setNodeStatus('" + phase.toLowerCase() + "', 'active');");
+					}
+				});
+			}
+		}
 
 		java.util.Map<String, List<Test>> groupedBy = new java.util.HashMap<>();
 		for (Test test : orchestrator.getTests()) {

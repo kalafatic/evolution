@@ -451,8 +451,16 @@ public class AiChatPage extends SharedScrolledComposite {
 
 	public void setOrchestrator(Orchestrator orchestrator) {
 		this.orchestrator = orchestrator; this.ollamaService = null;
-		if (orchestrator != null && aiSettingsGroup != null) { aiSettingsGroup.updateUI(); instructionsGroup.updateUI(); }
-		updateStatusInfo(); updateModeDisplay();
+		updateUI();
+	}
+
+	public void updateUI() {
+		if (orchestrator != null && aiSettingsGroup != null) {
+			aiSettingsGroup.updateUI();
+			instructionsGroup.updateUI();
+		}
+		updateStatusInfo();
+		updateModeDisplay();
 	}
 
 	public void submitFeedback(int satisfaction, String comments) {
@@ -493,6 +501,8 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	public String getCurrentThreadName() { return currentThread; }
+
+	public MultiPageEditor getEditor() { return editor; }
 
 	public void setupContextAssist(StyledText text) {
 		IContentProposalProvider proposalProvider = (contents, position) -> {

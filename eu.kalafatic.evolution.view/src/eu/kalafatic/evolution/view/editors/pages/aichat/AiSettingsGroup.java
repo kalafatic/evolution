@@ -16,21 +16,20 @@ import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class AiSettingsGroup {
-    private Composite group;
+public class AiSettingsGroup extends AEvoGroup {
     private Combo aiModeCombo;
     private Combo aiRemoteCombo;
     private Text remoteTokenText, remoteUrlText;
     private Composite compositeRemote;
     private AiChatPage page;
-    private Orchestrator orchestrator;
 
     public AiSettingsGroup(FormToolkit toolkit, Composite parent, AiChatPage page, Orchestrator orchestrator) {
+        super(page.getEditor(), orchestrator);
         this.page = page;
-        this.orchestrator = orchestrator;
         createControl(toolkit, parent);
     }
 
@@ -102,7 +101,8 @@ public class AiSettingsGroup {
         remoteUrlText.addModifyListener(e -> page.syncModelWithUI());
     }
 
-    public void updateUI() {
+    @Override
+    protected void refreshUI() {
         if (orchestrator != null) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
             String remoteModel = orchestrator.getRemoteModel();

@@ -304,7 +304,7 @@ public class ApprovalPage extends SharedScrolledComposite {
 				+ "function updateLoopDiagram(activePhase) {"
 				+ "  var loopContainer = document.getElementById('loop-diagram');"
 				+ "  loopContainer.innerHTML = '';"
-				+ "  var phases = ['OBSERVE', 'ANALYZE', 'PLAN', 'VALIDATE', 'EXECUTE', 'TEST', 'EVALUATE', 'LEARN'];"
+				+ "  var phases = ['OBSERVE', 'ANALYZE', 'PLAN', 'VALIDATE', 'EXECUTE', 'TEST', 'EVALUATE', 'COMMIT', 'PR', 'FEEDBACK', 'REFINE', 'LEARN'];"
 				+ "  var radius = 75;"
 				+ "  var centerX = 0, centerY = 0;"
 				+ "  phases.forEach(function(p, i) {"

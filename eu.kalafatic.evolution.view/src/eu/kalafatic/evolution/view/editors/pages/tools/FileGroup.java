@@ -86,7 +86,7 @@ public class FileGroup extends AToolGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator.getFileConfig() != null) {
             FileConfig config = orchestrator.getFileConfig();
             fileLocalPathText.setText(config.getLocalPath() != null ? config.getLocalPath() : "");

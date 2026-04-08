@@ -74,7 +74,7 @@ public class EclipseGroup extends AToolGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator.getEclipse() != null) {
             Eclipse eclipse = orchestrator.getEclipse();
             eclipseWorkspaceText.setText(eclipse.getWorkspace() != null ? eclipse.getWorkspace() : "");

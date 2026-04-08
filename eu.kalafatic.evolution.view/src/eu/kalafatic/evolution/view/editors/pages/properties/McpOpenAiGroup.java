@@ -65,7 +65,7 @@ public class McpOpenAiGroup extends AEvoGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator != null) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
             mcpUrlText.setText(orchestrator.getMcpServerUrl() != null ? orchestrator.getMcpServerUrl() : "");

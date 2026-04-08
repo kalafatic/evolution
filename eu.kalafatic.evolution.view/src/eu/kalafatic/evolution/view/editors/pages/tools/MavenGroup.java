@@ -70,7 +70,7 @@ public class MavenGroup extends AToolGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator.getMaven() != null) {
             Maven maven = orchestrator.getMaven();
             mavenGoalsText.setText(maven.getGoals().toString());

@@ -37,7 +37,7 @@ public class AgentsGroup extends AEvoGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator != null) {
             agentsTable.removeAll();
             for (Agent a : orchestrator.getAgents()) {

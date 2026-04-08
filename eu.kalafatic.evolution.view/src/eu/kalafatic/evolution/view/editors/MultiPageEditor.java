@@ -6,8 +6,11 @@ import java.util.Collections;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.emf.common.notify.Adapter;
+import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
@@ -16,6 +19,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
@@ -66,6 +70,26 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private Resource resource;
     private EditorResourceChangeListener resourceListener;
     private EditorSelectionListener selectionListener;
+
+    private Adapter modelAdapter = new EContentAdapter() {
+        @Override
+        public void notifyChanged(Notification notification) {
+            super.notifyChanged(notification);
+            if (notification.isTouch()) return;
+
+            if (notification.getEventType() == Notification.SET ||
+                notification.getEventType() == Notification.ADD ||
+                notification.getEventType() == Notification.REMOVE) {
+                setDirty(true);
+            }
+
+            Display.getDefault().asyncExec(() -> {
+                if (!getContainer().isDisposed()) {
+                    refreshPages();
+                }
+            });
+        }
+    };
 
     public MultiPageEditor() {
         super();
@@ -200,7 +224,14 @@ public class MultiPageEditor extends MultiPageEditorPart {
     }
 
     public void setOrchestrator(Orchestrator orchestrator) {
+        if (this.orchestrator != null) {
+            this.orchestrator.eAdapters().remove(modelAdapter);
+        }
         this.orchestrator = orchestrator;
+        if (this.orchestrator != null) {
+            this.orchestrator.eAdapters().add(modelAdapter);
+        }
+
         if (aiChatPage != null) aiChatPage.setOrchestrator(orchestrator);
         if (propertiesPage != null) propertiesPage.setOrchestrator(orchestrator);
         if (mcpSettingsPage != null) mcpSettingsPage.setOrchestrator(orchestrator);
@@ -227,6 +258,17 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     public TaskContext getCurrentContext() {
         return currentContext;
+    }
+
+    public void refreshPages() {
+        if (orchestrator == null) return;
+        if (aiChatPage != null) aiChatPage.updateUI();
+        if (propertiesPage != null) propertiesPage.updatePropertiesInfo();
+        if (toolsPage != null) toolsPage.updateUIFromModel();
+        if (taskStackPage != null) taskStackPage.updateUIFromModel();
+        if (testsPage != null) testsPage.updateUIFromModel();
+        if (mcpSettingsPage != null) mcpSettingsPage.updateMcpInfo();
+        // Other pages (ApprovalPage, AiFlowPage, GraphPage) have their own internal adapters for deep notification handling
     }
 
     public void showApprovalPage() {
@@ -261,19 +303,10 @@ public class MultiPageEditor extends MultiPageEditorPart {
     protected void pageChange(int newPageIndex) {
         super.pageChange(newPageIndex);
         Control control = getControl(newPageIndex);
-        if (control == aiChatPage && aiChatPage != null) {
-            aiChatPage.setOrchestrator(orchestrator);
-        } else if (control == propertiesPage && propertiesPage != null) {
-            propertiesPage.updatePropertiesInfo();
-        } else if (control == toolsPage && toolsPage != null) {
-            toolsPage.updateUIFromModel();
-        } else if (control == testsPage && testsPage != null) {
-            testsPage.setOrchestrator(orchestrator);
-        } else if (control == taskStackPage && taskStackPage != null) {
-            taskStackPage.setOrchestrator(orchestrator);
-        } else if (control == previewPage && previewPage != null) {
+        if (control == previewPage && previewPage != null) {
             previewPage.sortWords();
         }
+        // Other pages are now reactively updated via the model observer
     }
 
     public void gotoMarker(IMarker marker) {

@@ -86,7 +86,7 @@ public class CompilerGroup extends AToolGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator.getCompiler() != null) {
             Compiler compiler = orchestrator.getCompiler();
             sourceVersionText.setText(compiler.getSourceVersion() != null ? compiler.getSourceVersion() : "");

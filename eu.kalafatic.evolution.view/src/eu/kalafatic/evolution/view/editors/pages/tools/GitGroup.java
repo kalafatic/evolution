@@ -78,7 +78,7 @@ public class GitGroup extends AToolGroup {
     }
 
     @Override
-    public void updateUI() {
+    protected void refreshUI() {
         if (orchestrator.getGit() != null) {
             Git git = orchestrator.getGit();
             gitRepoText.setText(git.getRepositoryUrl() != null ? git.getRepositoryUrl() : "");
