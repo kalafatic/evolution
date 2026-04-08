@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages.tools;
 
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -17,17 +16,11 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import java.io.File;
 
-public class MavenGroup {
-    private Composite group;
+public class MavenGroup extends AToolGroup {
     private Text mavenGoalsText, mavenProfilesText;
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
-    private Color successColor;
 
     public MavenGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.successColor = successColor;
+        super(editor, orchestrator, successColor);
         createControl(toolkit, parent);
     }
 
@@ -76,6 +69,7 @@ public class MavenGroup {
         return new File(System.getProperty("java.io.tmpdir"));
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator.getMaven() != null) {
             Maven maven = orchestrator.getMaven();
@@ -85,6 +79,7 @@ public class MavenGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator.getMaven() == null) {
             orchestrator.setMaven(OrchestrationFactory.eINSTANCE.createMaven());
@@ -100,24 +95,20 @@ public class MavenGroup {
         }
     }
 
-    public void updateGroupStatus() {
+    @Override
+    protected String getTestStatus() {
+        return orchestrator.getMaven() != null ? orchestrator.getMaven().getTestStatus() : null;
+    }
+
+    @Override
+    protected void clearTestStatus() {
         if (orchestrator.getMaven() != null) {
-            String status = orchestrator.getMaven().getTestStatus();
-            if ("SUCCESS".equals(status)) {
-                group.setBackground(successColor);
-            } else if ("FAILED".equals(status)) {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_RED));
-            } else {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
-            }
+            orchestrator.getMaven().setTestStatus(null);
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { mavenGoalsText, mavenProfilesText };
-    }
-
-    public Composite getGroup() {
-        return group;
     }
 }

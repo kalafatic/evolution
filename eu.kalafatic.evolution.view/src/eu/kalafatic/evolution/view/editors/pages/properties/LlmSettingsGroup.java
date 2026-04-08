@@ -8,16 +8,16 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class LlmSettingsGroup {
-    private Composite group;
+public class LlmSettingsGroup extends AEvoGroup {
     private Text llmModelText, llmTempText;
-    private Orchestrator orchestrator;
     private ControlDecoration llmTempDecorator;
 
-    public LlmSettingsGroup(FormToolkit toolkit, Composite parent, Orchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+    public LlmSettingsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
+        super(editor, orchestrator);
         createControl(toolkit, parent);
     }
 
@@ -35,6 +35,7 @@ public class LlmSettingsGroup {
         llmTempDecorator.hide();
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator != null && orchestrator.getLlm() != null) {
             llmModelText.setText(orchestrator.getLlm().getModel() != null ? orchestrator.getLlm().getModel() : "");
@@ -42,6 +43,7 @@ public class LlmSettingsGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator != null) {
             if (orchestrator.getLlm() == null) {
@@ -58,6 +60,7 @@ public class LlmSettingsGroup {
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { llmModelText, llmTempText };
     }

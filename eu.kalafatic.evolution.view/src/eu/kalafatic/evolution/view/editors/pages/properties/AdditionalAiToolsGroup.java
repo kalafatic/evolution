@@ -5,15 +5,15 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class AdditionalAiToolsGroup {
-    private Composite group;
+public class AdditionalAiToolsGroup extends AEvoGroup {
     private Text aiChatUrlText, neuronAiUrlText, compilerSourceText;
-    private Orchestrator orchestrator;
 
-    public AdditionalAiToolsGroup(FormToolkit toolkit, Composite parent, Orchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+    public AdditionalAiToolsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
+        super(editor, orchestrator);
         createControl(toolkit, parent);
     }
 
@@ -30,6 +30,7 @@ public class AdditionalAiToolsGroup {
         SWTFactory.createEditButton(group, compilerSourceText);
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator != null) {
             if (orchestrator.getAiChat() != null) aiChatUrlText.setText(orchestrator.getAiChat().getUrl() != null ? orchestrator.getAiChat().getUrl() : "");
@@ -38,6 +39,7 @@ public class AdditionalAiToolsGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator != null) {
             if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
@@ -49,6 +51,7 @@ public class AdditionalAiToolsGroup {
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { aiChatUrlText, neuronAiUrlText, compilerSourceText };
     }

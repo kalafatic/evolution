@@ -59,24 +59,16 @@ public class ToolsPage extends SharedScrolledComposite {
             }
         };
 
-        addModifyListenerToGroup(gitGroup, ml);
-        addModifyListenerToGroup(mavenGroup, ml);
-        addModifyListenerToGroup(fileGroup, ml);
-        addModifyListenerToGroup(databaseGroup, ml);
-        addModifyListenerToGroup(eclipseGroup, ml);
-        addModifyListenerToGroup(compilerGroup, ml);
+        gitGroup.addModifyListener(ml);
+        mavenGroup.addModifyListener(ml);
+        fileGroup.addModifyListener(ml);
+        databaseGroup.addModifyListener(ml);
+        eclipseGroup.addModifyListener(ml);
+        compilerGroup.addModifyListener(ml);
 
         this.setContent(comp);
         this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
         updateUIFromModel();
-    }
-
-    private void addModifyListenerToGroup(Object group, ModifyListener ml) {
-        try {
-            java.lang.reflect.Method m = group.getClass().getMethod("getTextFields");
-            Text[] texts = (Text[]) m.invoke(group);
-            for (Text t : texts) t.addModifyListener(ml);
-        } catch (Exception e) {}
     }
 
     public void updateUIFromModel() {
@@ -107,18 +99,11 @@ public class ToolsPage extends SharedScrolledComposite {
     }
 
     private void resetBackgrounds() {
-        Color defaultColor = getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
-        gitGroup.getGroup().setBackground(defaultColor);
-        mavenGroup.getGroup().setBackground(defaultColor);
-        fileGroup.getGroup().setBackground(defaultColor);
-        databaseGroup.getGroup().setBackground(defaultColor);
-        compilerGroup.getGroup().setBackground(defaultColor);
-        eclipseGroup.getGroup().setBackground(defaultColor);
-        if (orchestrator.getGit() != null) orchestrator.getGit().setTestStatus(null);
-        if (orchestrator.getMaven() != null) orchestrator.getMaven().setTestStatus(null);
-        if (orchestrator.getFileConfig() != null) orchestrator.getFileConfig().setTestStatus(null);
-        if (orchestrator.getDatabase() != null) orchestrator.getDatabase().setTestStatus(null);
-        if (orchestrator.getCompiler() != null) orchestrator.getCompiler().setTestStatus(null);
-        if (orchestrator.getEclipse() != null) orchestrator.getEclipse().setTestStatus(null);
+        gitGroup.resetStatus();
+        mavenGroup.resetStatus();
+        fileGroup.resetStatus();
+        databaseGroup.resetStatus();
+        compilerGroup.resetStatus();
+        eclipseGroup.resetStatus();
     }
 }

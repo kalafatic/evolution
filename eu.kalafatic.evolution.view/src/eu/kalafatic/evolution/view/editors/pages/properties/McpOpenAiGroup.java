@@ -11,19 +11,19 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class McpOpenAiGroup {
-    private Composite group;
+public class McpOpenAiGroup extends AEvoGroup {
     private Combo aiModeCombo;
     private Button offlineBtn;
     private Text mcpUrlText, openAiTokenText, openAiModelText;
-    private Orchestrator orchestrator;
     private PropertiesPage page;
 
-    public McpOpenAiGroup(FormToolkit toolkit, Composite parent, Orchestrator orchestrator, PropertiesPage page) {
-        this.orchestrator = orchestrator;
+    public McpOpenAiGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, PropertiesPage page) {
+        super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);
     }
@@ -64,6 +64,7 @@ public class McpOpenAiGroup {
         SWTFactory.createEditButton(group, openAiModelText);
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator != null) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
@@ -74,6 +75,7 @@ public class McpOpenAiGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator != null) {
             orchestrator.setAiMode(AiMode.get(aiModeCombo.getSelectionIndex()));
@@ -84,6 +86,7 @@ public class McpOpenAiGroup {
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { mcpUrlText, openAiTokenText, openAiModelText };
     }

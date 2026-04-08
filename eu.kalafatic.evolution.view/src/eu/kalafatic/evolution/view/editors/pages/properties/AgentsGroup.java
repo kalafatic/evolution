@@ -9,15 +9,15 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class AgentsGroup {
-    private Composite group;
+public class AgentsGroup extends AEvoGroup {
     private Table agentsTable;
-    private Orchestrator orchestrator;
 
-    public AgentsGroup(FormToolkit toolkit, Composite parent, Orchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+    public AgentsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
+        super(editor, orchestrator);
         createControl(toolkit, parent);
     }
 
@@ -36,6 +36,7 @@ public class AgentsGroup {
         }
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator != null) {
             agentsTable.removeAll();

@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages.tools;
 
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -17,17 +16,11 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import java.io.File;
 
-public class EclipseGroup {
-    private Composite group;
+public class EclipseGroup extends AToolGroup {
     private Text eclipseWorkspaceText, eclipseInstallationText, eclipseTargetPlatformText;
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
-    private Color successColor;
 
     public EclipseGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.successColor = successColor;
+        super(editor, orchestrator, successColor);
         createControl(toolkit, parent);
     }
 
@@ -80,6 +73,7 @@ public class EclipseGroup {
         return new File(System.getProperty("java.io.tmpdir"));
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator.getEclipse() != null) {
             Eclipse eclipse = orchestrator.getEclipse();
@@ -90,6 +84,7 @@ public class EclipseGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator.getEclipse() == null) {
             orchestrator.setEclipse(OrchestrationFactory.eINSTANCE.createEclipse());
@@ -100,24 +95,20 @@ public class EclipseGroup {
         eclipse.setTargetPlatform(eclipseTargetPlatformText.getText());
     }
 
-    public void updateGroupStatus() {
+    @Override
+    protected String getTestStatus() {
+        return orchestrator.getEclipse() != null ? orchestrator.getEclipse().getTestStatus() : null;
+    }
+
+    @Override
+    protected void clearTestStatus() {
         if (orchestrator.getEclipse() != null) {
-            String status = orchestrator.getEclipse().getTestStatus();
-            if ("SUCCESS".equals(status)) {
-                group.setBackground(successColor);
-            } else if ("FAILED".equals(status)) {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_RED));
-            } else {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
-            }
+            orchestrator.getEclipse().setTestStatus(null);
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { eclipseWorkspaceText, eclipseInstallationText, eclipseTargetPlatformText };
-    }
-
-    public Composite getGroup() {
-        return group;
     }
 }

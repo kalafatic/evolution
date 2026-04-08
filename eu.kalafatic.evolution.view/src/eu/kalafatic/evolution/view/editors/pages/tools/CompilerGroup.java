@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages.tools;
 
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -17,17 +16,11 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import java.io.File;
 
-public class CompilerGroup {
-    private Composite group;
+public class CompilerGroup extends AToolGroup {
     private Text sourceVersionText, targetVersionText, cPathText, cppPathText, makePathText, cmakePathText;
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
-    private Color successColor;
 
     public CompilerGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.successColor = successColor;
+        super(editor, orchestrator, successColor);
         createControl(toolkit, parent);
     }
 
@@ -92,6 +85,7 @@ public class CompilerGroup {
         return new File(System.getProperty("java.io.tmpdir"));
     }
 
+    @Override
     public void updateUI() {
         if (orchestrator.getCompiler() != null) {
             Compiler compiler = orchestrator.getCompiler();
@@ -105,6 +99,7 @@ public class CompilerGroup {
         }
     }
 
+    @Override
     public void updateModel() {
         if (orchestrator.getCompiler() == null) {
             orchestrator.setCompiler(OrchestrationFactory.eINSTANCE.createCompiler());
@@ -118,24 +113,20 @@ public class CompilerGroup {
         compiler.setCmakePath(cmakePathText.getText());
     }
 
-    public void updateGroupStatus() {
+    @Override
+    protected String getTestStatus() {
+        return orchestrator.getCompiler() != null ? orchestrator.getCompiler().getTestStatus() : null;
+    }
+
+    @Override
+    protected void clearTestStatus() {
         if (orchestrator.getCompiler() != null) {
-            String status = orchestrator.getCompiler().getTestStatus();
-            if ("SUCCESS".equals(status)) {
-                group.setBackground(successColor);
-            } else if ("FAILED".equals(status)) {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_RED));
-            } else {
-                group.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
-            }
+            orchestrator.getCompiler().setTestStatus(null);
         }
     }
 
+    @Override
     public Text[] getTextFields() {
         return new Text[] { sourceVersionText, targetVersionText, cPathText, cppPathText, makePathText, cmakePathText };
-    }
-
-    public Composite getGroup() {
-        return group;
     }
 }

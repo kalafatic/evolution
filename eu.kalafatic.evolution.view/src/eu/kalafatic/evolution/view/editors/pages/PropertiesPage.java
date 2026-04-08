@@ -95,13 +95,13 @@ public class PropertiesPage extends SharedScrolledComposite {
 		};
 		Display.getDefault().timerExec(1000, timer);
 
-		orchestratorGroup = new OrchestratorGroup(toolkit, comp, orchestrator);
-		llmSettingsGroup = new LlmSettingsGroup(toolkit, comp, orchestrator);
-		ollamaSettingsGroup = new OllamaSettingsGroup(toolkit, comp, orchestrator, this);
-		agentsGroup = new AgentsGroup(toolkit, comp, orchestrator);
-		additionalAiToolsGroup = new AdditionalAiToolsGroup(toolkit, comp, orchestrator);
-		mcpOpenAiGroup = new McpOpenAiGroup(toolkit, comp, orchestrator, this);
-		aiChatModelsGroup = new AiChatModelsGroup(toolkit, comp, orchestrator, this);
+		orchestratorGroup = new OrchestratorGroup(toolkit, comp, editor, orchestrator);
+		llmSettingsGroup = new LlmSettingsGroup(toolkit, comp, editor, orchestrator);
+		ollamaSettingsGroup = new OllamaSettingsGroup(toolkit, comp, editor, orchestrator, this);
+		agentsGroup = new AgentsGroup(toolkit, comp, editor, orchestrator);
+		additionalAiToolsGroup = new AdditionalAiToolsGroup(toolkit, comp, editor, orchestrator);
+		mcpOpenAiGroup = new McpOpenAiGroup(toolkit, comp, editor, orchestrator, this);
+		aiChatModelsGroup = new AiChatModelsGroup(toolkit, comp, editor, orchestrator, this);
 
 		ModifyListener ml = e -> {
 			if (orchestrator != null && !isUpdating) {
@@ -109,25 +109,17 @@ public class PropertiesPage extends SharedScrolledComposite {
 				editor.setDirty(true);
 			}
 		};
-		addModifyListenerToGroup(orchestratorGroup, ml);
-		addModifyListenerToGroup(llmSettingsGroup, ml);
-		addModifyListenerToGroup(ollamaSettingsGroup, ml);
-		addModifyListenerToGroup(additionalAiToolsGroup, ml);
-		addModifyListenerToGroup(mcpOpenAiGroup, ml);
-		addModifyListenerToGroup(aiChatModelsGroup, ml);
+		orchestratorGroup.addModifyListener(ml);
+		llmSettingsGroup.addModifyListener(ml);
+		ollamaSettingsGroup.addModifyListener(ml);
+		additionalAiToolsGroup.addModifyListener(ml);
+		mcpOpenAiGroup.addModifyListener(ml);
+		aiChatModelsGroup.addModifyListener(ml);
 
 		this.setContent(comp);
 		this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 		updatePropertiesInfo();
 		updateModeDisplay();
-	}
-
-	private void addModifyListenerToGroup(Object group, ModifyListener ml) {
-		try {
-			java.lang.reflect.Method m = group.getClass().getMethod("getTextFields");
-			Text[] texts = (Text[]) m.invoke(group);
-			for (Text t : texts) t.addModifyListener(ml);
-		} catch (Exception e) {}
 	}
 
 	public void updateModeDisplay() {
