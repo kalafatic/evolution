@@ -41,6 +41,7 @@ import eu.kalafatic.evolution.view.editors.pages.AiFlowPage;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
 import eu.kalafatic.evolution.view.editors.pages.BrowserPage;
 import eu.kalafatic.evolution.view.editors.pages.GraphPage;
+import eu.kalafatic.evolution.view.editors.pages.IterationPage;
 import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
 import eu.kalafatic.evolution.view.editors.pages.PreviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
@@ -62,6 +63,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private ApprovalPage approvalPage;
     private ToolsPage toolsPage;
     private TestsPage testsPage;
+    private IterationPage iterationPage;
     private TaskStackPage taskStackPage;
     private Orchestrator orchestrator;
     private TaskContext currentContext;
@@ -123,6 +125,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
                 toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
                 testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
+                iterationPage = IterationPageFactory.createIterationPage(this, orchestrator);
                 taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
             } else {
@@ -242,6 +245,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (approvalPage != null) approvalPage.setOrchestrator(orchestrator);
         if (toolsPage != null) toolsPage.setOrchestrator(orchestrator);
         if (testsPage != null) testsPage.setOrchestrator(orchestrator);
+        if (iterationPage != null) iterationPage.setOrchestrator(orchestrator);
         if (taskStackPage != null) taskStackPage.setOrchestrator(orchestrator);
     }
 
@@ -267,6 +271,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (toolsPage != null) toolsPage.updateUIFromModel();
         if (taskStackPage != null) taskStackPage.updateUIFromModel();
         if (testsPage != null) testsPage.updateUIFromModel();
+        if (iterationPage != null) iterationPage.updateUIFromModel();
         if (mcpSettingsPage != null) mcpSettingsPage.updateMcpInfo();
         // Other pages (ApprovalPage, AiFlowPage, GraphPage) have their own internal adapters for deep notification handling
     }
