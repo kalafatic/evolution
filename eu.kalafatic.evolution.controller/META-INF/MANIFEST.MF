@@ -21,12 +21,6 @@ Require-Bundle: org.eclipse.swt,
  org.eclipse.core.runtime;bundle-version="3.34.100"
 Automatic-Module-Name: eu.kalafatic.evolution.controller
 Bundle-RequiredExecutionEnvironment: JavaSE-21
-Import-Package: com.fasterxml.jackson.annotation,
- com.fasterxml.jackson.core,
- com.fasterxml.jackson.core.type,
- com.fasterxml.jackson.core.util,
- com.fasterxml.jackson.databind,
- com.fasterxml.jackson.databind.node
 Export-Package: eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.handlers,
  eu.kalafatic.evolution.controller.manager,
@@ -38,4 +32,8 @@ Export-Package: eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.providers,
  org.json
 Bundle-ClassPath: .,
- lib/json-20140107.jar
+ lib/json-20140107.jar,
+ lib/jackson-annotations-3.0-rc5.jar,
+ lib/jackson-core-3.1.1.jar,
+ lib/jackson-databind-2.21.2.jar
+ 
