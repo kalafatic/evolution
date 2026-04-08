@@ -2092,6 +2092,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		selfDevStatusEEnum = createEEnum(SELF_DEV_STATUS);
 		iterationStatusEEnum = createEEnum(ITERATION_STATUS);
 		selfDevDecisionEEnum = createEEnum(SELF_DEV_DECISION);
+		testStatusEEnum = createEEnum(TEST_STATUS);
 	}
 
 	/**
@@ -2296,6 +2297,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getTest_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTest_Type(), ecorePackage.getEString(), "type", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTest_Path(), ecorePackage.getEString(), "path", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEEnum(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.class, "TestStatus");
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PENDING);
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.RUNNING);
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PASSED);
+		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.FAILED);
+
 		initEAttribute(getTest_Status(), this.getTestStatus(), "status", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTest_Selected(), ecorePackage.getEBoolean(), "selected", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
@@ -2354,12 +2361,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.ROLLBACK);
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.STOP);
 
-		testStatusEEnum = createEEnum(TEST_STATUS);
-		initEEnum(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.class, "TestStatus");
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PENDING);
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.RUNNING);
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PASSED);
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.FAILED);
 
 		// Create resource
 		createResource(eNS_URI);
