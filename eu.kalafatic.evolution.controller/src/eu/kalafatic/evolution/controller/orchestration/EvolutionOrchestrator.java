@@ -164,6 +164,31 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 lastFeedback = "Exception: " + e.getMessage();
                 task.setFeedback("Retry " + retry + " Exception: " + e.getMessage());
             }
+
+            if (retry == MAX_RETRIES) {
+                context.log("Evo: Task " + task.getName() + " failed after " + MAX_RETRIES + " retries.");
+                try {
+                    String guidance = context.requestInput("Task [" + task.getName() + "] failed consistently. Guidance? (retry/skip/hint)").get();
+                    if (guidance != null) {
+                        if ("retry".equalsIgnoreCase(guidance.trim())) {
+                            retry = 0; // Reset loop to try again
+                            lastFeedback = null;
+                            context.log("Evo: User requested retry for task: " + task.getName());
+                        } else if ("skip".equalsIgnoreCase(guidance.trim())) {
+                            context.log("Evo: User requested to skip task: " + task.getName());
+                            task.setFeedback("Skipped by user.");
+                            return true;
+                        } else {
+                            // Treat as hint for one more attempt
+                            lastFeedback = "User Hint: " + guidance;
+                            context.log("Evo: Applying user hint for one last attempt: " + guidance);
+                            retry = MAX_RETRIES - 1;
+                        }
+                    }
+                } catch (Exception ex) {
+                    context.log("Evo: Error getting user guidance: " + ex.getMessage());
+                }
+            }
         }
         return false;
     }

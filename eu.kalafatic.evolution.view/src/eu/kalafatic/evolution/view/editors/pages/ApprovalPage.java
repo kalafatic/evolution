@@ -34,6 +34,8 @@ public class ApprovalPage extends SharedScrolledComposite {
 	private MultiPageEditor editor;
 	private Orchestrator orchestrator;
 	private boolean isLoaded = false;
+	private int initRetries = 0;
+	private static final int MAX_INIT_RETRIES = 5;
 	private FormToolkit toolkit;
 	private String lastJson = "";
 
@@ -134,27 +136,47 @@ public class ApprovalPage extends SharedScrolledComposite {
 	}
 
 	public void setupBrowserListeners(Browser browser) {
-		browser.addProgressListener(new ProgressAdapter() { @Override public void completed(ProgressEvent event) { isLoaded = true; refreshBrowser(); } });
+		browser.addProgressListener(new ProgressAdapter() {
+			@Override public void completed(ProgressEvent event) {
+				isLoaded = true;
+				initRetries = 0;
+				refreshBrowser();
+			}
+		});
 		browser.addLocationListener(new LocationAdapter() { @Override public void changing(LocationEvent event) { if (event.location.startsWith("file://") || event.location.equals("about:blank")) { if (!event.location.equals("about:blank")) { event.doit = false; browser.setText(getHtmlTemplate()); } } } });
 		browser.setText(getHtmlTemplate());
 	}
 
 	private void refreshBrowser() {
 		if (vizGroup.getBrowser() == null || vizGroup.getBrowser().isDisposed()) return;
+
 		if (!isLoaded) {
-			if (vizGroup.getBrowser().getText().isEmpty()) vizGroup.getBrowser().setText(getHtmlTemplate());
+			// If not loaded and not in the middle of loading something, trigger load
+			String currentText = vizGroup.getBrowser().getText();
+			if (currentText == null || currentText.isEmpty() || currentText.equals("about:blank")) {
+				vizGroup.getBrowser().setText(getHtmlTemplate());
+			}
 			return;
 		}
+
 		String json = getModelAsJson();
 		if (json.equals(lastJson)) return;
 
-		Object result = vizGroup.getBrowser().evaluate("return typeof updateGraph !== 'undefined';");
-		if (result instanceof Boolean && (Boolean) result) {
-			vizGroup.getBrowser().execute("updateGraph(" + json + ");");
-			lastJson = json;
-		} else {
-			isLoaded = false;
-			vizGroup.getBrowser().setText(getHtmlTemplate());
+		try {
+			Object result = vizGroup.getBrowser().evaluate("return typeof updateGraph !== 'undefined';");
+			if (result instanceof Boolean && (Boolean) result) {
+				vizGroup.getBrowser().execute("updateGraph(" + json + ");");
+				lastJson = json;
+				initRetries = 0;
+			} else {
+				if (initRetries < MAX_INIT_RETRIES) {
+					initRetries++;
+					isLoaded = false;
+					vizGroup.getBrowser().setText(getHtmlTemplate());
+				}
+			}
+		} catch (Exception e) {
+			// Browser might not be ready for evaluate
 		}
 	}
 

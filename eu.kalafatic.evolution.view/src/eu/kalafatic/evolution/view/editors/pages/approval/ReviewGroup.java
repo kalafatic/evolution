@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -34,6 +35,8 @@ public class ReviewGroup {
     private MultiPageEditor editor;
     private Orchestrator orchestrator;
     private String lastHtml = "";
+    private final AtomicBoolean updating = new AtomicBoolean(false);
+    private long lastUpdate = 0;
 
     public ReviewGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         this.editor = editor;
@@ -114,8 +117,14 @@ public class ReviewGroup {
     private void updateDiff() {
         if (browser == null || browser.isDisposed()) return;
 
+        long now = System.currentTimeMillis();
+        if (now - lastUpdate < 1000) return; // Debounce
+
+        if (!updating.compareAndSet(false, true)) return;
+
         CompletableFuture.runAsync(() -> {
             try {
+                lastUpdate = System.currentTimeMillis();
                 String diffResult = null;
                 IProject project = null;
                 if (editor.getEditorInput() instanceof IFileEditorInput) {
@@ -154,6 +163,8 @@ public class ReviewGroup {
                         browser.setText("<html><body><h3>Error retrieving diff</h3><pre>" + e.getMessage() + "</pre></body></html>");
                     }
                 });
+            } finally {
+                updating.set(false);
             }
         });
     }

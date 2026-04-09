@@ -48,6 +48,10 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import eu.kalafatic.evolution.view.editors.pages.aichat.*;
+import eu.kalafatic.evolution.view.dialogs.ProjectSetupWizardDialog;
+import org.eclipse.jface.window.Window;
+import eu.kalafatic.evolution.controller.manager.EnvironmentSuggestionService;
+import java.util.List;
 
 public class AiChatPage extends SharedScrolledComposite {
 	private MultiPageEditor editor;
@@ -60,6 +64,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	private String currentThread = "Default";
 	private Composite content;
 	private FormToolkit toolkit;
+	private long lastStatusUpdate = 0;
 
 	private ChatMgmtGroup chatMgmtGroup;
 	private AiSettingsGroup aiSettingsGroup;
@@ -169,6 +174,44 @@ public class AiChatPage extends SharedScrolledComposite {
 		updateStatusInfo();
 		updateModeDisplay();
 		updateScrolledContent();
+
+		if (lastStatusUpdate == 0) Display.getDefault().asyncExec(() -> checkEnvironment());
+	}
+
+	private void checkEnvironment() {
+		if (orchestrator == null) return;
+		File projectRoot = getProjectRoot();
+		List<EnvironmentSuggestionService.Suggestion> suggestions = EnvironmentSuggestionService.getSuggestions(orchestrator, projectRoot);
+
+		boolean hasCriticalMissing = suggestions.stream().anyMatch(s -> s.isMissing);
+
+		if (hasCriticalMissing) {
+			ProjectSetupWizardDialog dialog = new ProjectSetupWizardDialog(getShell(), suggestions);
+			if (dialog.open() == Window.OK) {
+				List<EnvironmentSuggestionService.Suggestion> selected = dialog.getSelectedSuggestions();
+				EnvironmentSuggestionService.applySetup(orchestrator, selected);
+
+				// Handle Git Init if selected
+				if (selected.stream().anyMatch(s -> "Git".equals(s.field))) {
+					handleGitInit();
+				}
+
+				editor.setDirty(true);
+				updateUI();
+			}
+		}
+	}
+
+	private void handleGitInit() {
+		new Thread(() -> {
+			try {
+				eu.kalafatic.evolution.controller.orchestration.ShellTool shell = new eu.kalafatic.evolution.controller.orchestration.ShellTool();
+				shell.execute("git init", getProjectRoot(), null);
+				processLogEntry("Evo: Git repository initialized successfully.");
+			} catch (Exception e) {
+				processLogEntry("Error initializing git: " + e.getMessage());
+			}
+		}).start();
 	}
 
 	public void updateScrolledContent() {
