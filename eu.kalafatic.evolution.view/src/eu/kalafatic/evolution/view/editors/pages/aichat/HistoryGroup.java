@@ -7,6 +7,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.custom.StyleRange;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
@@ -97,11 +98,10 @@ public class HistoryGroup {
         this.editCallback = callback;
     }
 
-    public void appendText(String text, org.eclipse.swt.graphics.Color color, int style) {
-    	if(color == null) {
-    		Display display = Display.getCurrent(); // safer in UI thread
-    		color = display.getSystemColor(SWT.COLOR_BLACK);
-    	}
+    public void appendText(String text, org.eclipse.swt.graphics.Color color, int style) {    	
+    	if (color == null) {
+    		color = Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
+		}
     	
     	
         String sender = "Evo";
@@ -166,7 +166,7 @@ public class HistoryGroup {
         refreshBrowser();
     }
 
-    public void updateMessage(int index, String newText) {
+	public void updateMessage(int index, String newText) {
         if (index >= 0 && index < messages.size()) {
             messages.get(index).text = newText;
             refreshBrowser();

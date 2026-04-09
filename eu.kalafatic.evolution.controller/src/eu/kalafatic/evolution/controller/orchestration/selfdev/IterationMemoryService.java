@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 public class IterationMemoryService {
     private final File memoryDir;

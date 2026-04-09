@@ -31,13 +31,6 @@ Export-Package: eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.orchestration.selfdev,
  eu.kalafatic.evolution.controller.orchestration.util,
  eu.kalafatic.evolution.controller.providers,
- com.fasterxml.jackson.annotation,
- com.fasterxml.jackson.core,
- com.fasterxml.jackson.databind,
  org.json
 Bundle-ClassPath: .,
- lib/json-20140107.jar,
- lib/jackson-annotations.jar,
- lib/jackson-core.jar,
- lib/jackson-databind.jar
- 
+ lib/json-20140107.jar
