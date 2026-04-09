@@ -3,18 +3,6 @@
 <plugin>
 
    <extension
-         id="eu.kalafatic.evolution.view.application.Application"
-         name="EVO"
-         point="org.eclipse.core.runtime.applications">
-      <application
-            visible="true">
-         <run
-               class="eu.kalafatic.evolution.view.application.Application">
-         </run>
-      </application>
-   </extension>
-
-   <extension
          id="eu.kalafatic.evolution.view.product"
          point="org.eclipse.core.runtime.products">
       <product
@@ -46,6 +34,18 @@
          </property>
       </product>
    </extension>
+
+   <extension
+         id="eu.kalafatic.evolution.view.application.Application"
+         name="EVO"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            visible="true">
+         <run
+               class="eu.kalafatic.evolution.view.application.Application">
+         </run>
+      </application>
+   </extension>
       <extension
          point="org.eclipse.ui.perspectives">
       <perspective
@@ -54,6 +54,20 @@
             id="eu.kalafatic.evolution.view.evoPerspective"
             name="Evo">
       </perspective>
+   </extension>
+   <extension
+         id="eu.kalafatic.views.EvoNavigator"
+         name="Evo Navigator"
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.ui.resourcePerspective">
+         <view
+               id="eu.kalafatic.views.EvoNavigator"
+               ratio="0.5"
+               relationship="stack"
+               relative="org.eclipse.ui.navigator.ProjectExplorer">
+         </view>
+      </perspectiveExtension>
    </extension>
    <extension
          point="org.eclipse.ui.views">
@@ -690,18 +704,36 @@
       </splashHandler>
    </extension>
    <extension
-         id="eu.kalafatic.views.EvoNavigator"
-         name="Evo Navigator"
-         point="org.eclipse.ui.perspectiveExtensions">
-      <perspectiveExtension
-            targetID="org.eclipse.ui.resourcePerspective">
-         <view
-               id="eu.kalafatic.views.EvoNavigator"
-               ratio="0.5"
-               relationship="stack"
-               relative="org.eclipse.ui.navigator.ProjectExplorer">
-         </view>
-      </perspectiveExtension>
+         id="product"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="eu.kalafatic.evolution.view.application.Application"
+            name="AI Evolution">
+         <property
+               name="windowImages"
+               value="icons/eclipse16.png,icons/eclipse32.png,icons/eclipse48.png,icons/eclipse64.png, icons/eclipse128.png,icons/eclipse256.png">
+         </property>
+         <property
+               name="startupForegroundColor"
+               value="FF0000">
+         </property>
+         <property
+               name="startupProgressRect"
+               value="212,348,350,2">
+         </property>
+         <property
+               name="startupMessageRect"
+               value="212,335,350,5">
+         </property>
+         <property
+               name="appName"
+               value="AI Evolution">
+         </property>
+         <property
+               name="preferenceCustomization"
+               value="plugin_customization.ini">
+         </property>
+      </product>
    </extension>
    
 </plugin>

@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.application;
 
 import java.io.File;
-import java.net.URL;
 
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.equinox.app.IApplication;
