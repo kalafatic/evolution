@@ -36,15 +36,15 @@ public class InstructionsGroup extends AEvoGroup {
         requestText.setLayoutData(requestGridData);
 
         Composite composite = SWTFactory.createComposite(group, 5);
-        sendButton = toolkit.createButton(composite, "Start Orchestration", SWT.PUSH);
+        sendButton = toolkit.createButton(composite, "▶️ Start Orchestration", SWT.PUSH);
         GridData sendGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
-        sendGd.widthHint = 180;
+        sendGd.widthHint = 200;
         sendGd.heightHint = 35;
         sendButton.setLayoutData(sendGd);
         sendButton.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
         sendButton.setToolTipText("Start a classic, iterative or autonomous iterative self-development session to improve the codebase.");
 
-        pauseButton = toolkit.createButton(composite, "Pause", SWT.PUSH);
+        pauseButton = toolkit.createButton(composite, "⏸️ Pause", SWT.PUSH);
         pauseButton.setEnabled(false);
         pauseButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -53,7 +53,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        stopButton = toolkit.createButton(composite, "Stop", SWT.PUSH);
+        stopButton = toolkit.createButton(composite, "⏹️ Stop", SWT.PUSH);
         stopButton.setEnabled(false);
         stopButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -118,10 +118,10 @@ public class InstructionsGroup extends AEvoGroup {
         sendButton.setEnabled(!running);
         pauseButton.setEnabled(running);
         stopButton.setEnabled(running);
-        pauseButton.setText("Pause");
+        pauseButton.setText("⏸️ Pause");
     }
 
     public void setPaused(boolean paused) {
-        pauseButton.setText(paused ? "Resume" : "Pause");
+        pauseButton.setText(paused ? "▶️ Resume" : "⏸️ Pause");
     }
 }
