@@ -11,11 +11,20 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class ActionsGroup {
-    private Composite group;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 
-    public ActionsGroup(FormToolkit toolkit, Composite parent, ApprovalPage page) {
+public class ActionsGroup extends AEvoGroup {
+
+    public ActionsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, ApprovalPage page) {
+        super(editor, orchestrator);
         createControl(toolkit, parent, page);
+    }
+
+    @Override
+    protected void refreshUI() {
+        // No dynamic model data to refresh
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, ApprovalPage page) {

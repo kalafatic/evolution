@@ -10,12 +10,20 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class SummaryGroup {
-    private Composite group;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class SummaryGroup extends AEvoGroup {
     private Label sessionIdLabel, statusLabel, iterationsLabel, branchLabel, rationaleLabel;
 
-    public SummaryGroup(FormToolkit toolkit, Composite parent, Orchestrator orchestrator) {
+    public SummaryGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
+        super(editor, orchestrator);
         createControl(toolkit, parent);
+        refreshUI();
+    }
+
+    @Override
+    protected void refreshUI() {
         updateUI(orchestrator);
     }
 
@@ -45,7 +53,7 @@ public class SummaryGroup {
         rationaleLabel.setLayoutData(rationaleGD);
     }
 
-    public void updateUI(Orchestrator orchestrator) {
+    private void updateUI(Orchestrator orchestrator) {
         if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
             SelfDevSession session = orchestrator.getSelfDevSession();
             sessionIdLabel.setText(session.getId() != null ? session.getId() : "N/A");

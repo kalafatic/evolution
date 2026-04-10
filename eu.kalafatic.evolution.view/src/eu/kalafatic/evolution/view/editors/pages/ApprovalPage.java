@@ -68,12 +68,12 @@ public class ApprovalPage extends SharedScrolledComposite {
 		Composite comp = toolkit.createComposite(this);
 		comp.setLayout(new GridLayout(1, false));
 
-		summaryGroup = new SummaryGroup(toolkit, comp, orchestrator);
+		summaryGroup = new SummaryGroup(toolkit, comp, editor, orchestrator);
 		reviewGroup = new ReviewGroup(toolkit, comp, editor, orchestrator);
 		feedbackGroup = new FeedbackGroup(toolkit, comp, editor, orchestrator);
-		proposedTasksGroup = new ProposedTasksGroup(toolkit, comp, this);
-		vizGroup = new VizGroup(toolkit, comp, this);
-		actionsGroup = new ActionsGroup(toolkit, comp, this);
+		proposedTasksGroup = new ProposedTasksGroup(toolkit, comp, editor, orchestrator, this);
+		vizGroup = new VizGroup(toolkit, comp, editor, orchestrator, this);
+		actionsGroup = new ActionsGroup(toolkit, comp, editor, orchestrator, this);
 
 		this.setContent(comp);
 		this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
@@ -126,10 +126,10 @@ public class ApprovalPage extends SharedScrolledComposite {
 		if (isDisposed()) return;
 		Display.getDefault().asyncExec(() -> {
 			if (isDisposed()) return;
-			summaryGroup.updateUI(orchestrator);
-			reviewGroup.updateUI(orchestrator);
-			feedbackGroup.updateUI(orchestrator);
-			proposedTasksGroup.updateUI(orchestrator);
+			summaryGroup.updateUI();
+			reviewGroup.updateUI();
+			feedbackGroup.updateUI();
+			proposedTasksGroup.updateUI();
 			refreshBrowser();
 			this.reflow(true);
 		});

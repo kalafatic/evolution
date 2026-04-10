@@ -199,40 +199,28 @@ public class SWTFactory {
 	
 	public static Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns,
 			boolean expanded) {
-		int style = Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE;
+		int style = Section.TITLE_BAR | Section.TWISTIE;
 		if (expanded)
 			style |= Section.EXPANDED;
-		
-		toolkit = new FormToolkit(parent.getDisplay());
-		ScrolledForm form = toolkit.createScrolledForm(parent);
-		
-		final Section section = toolkit.createSection(form.getBody(), style);
-		TableWrapData td = new TableWrapData(TableWrapData.FILL);
-		// td.colspan = 2;
-		section.setLayoutData(td);
-		 
-		// Set the color of the title text
-		Color BG = new Color(section.getDisplay(), 204, 204, 204);
-		Color FG = new Color(section.getDisplay(), 154, 154, 154);
-		//section.setTitleBarForeground(FG);
-		//section.setBackground(BG);
 
+		final Section section = new Section(parent, style);
+		section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		section.setText(title);
-		//section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		
-		section.addExpansionListener(new ExpansionAdapter() {
-			  public void expansionStateChanged(ExpansionEvent e) {
-			   form.reflow(true);
-			  }
-			 });
 
-		Button maxBtn = createMaximizeButton(parent, section, true);		
+		section.addExpansionListener(new ExpansionAdapter() {
+			@Override
+			public void expansionStateChanged(ExpansionEvent e) {
+				reflow(parent);
+			}
+		});
+
+		Button maxBtn = createMaximizeButton(parent, section, true);
 		section.setTextClient(maxBtn);
-		
-		Composite client = toolkit.createComposite(section);
+
+		Composite client = new Composite(section, SWT.NONE);
 		client.setLayout(new GridLayout(columns, false));
 		section.setClient(client);
-		
+
 		return client;
 	}
 

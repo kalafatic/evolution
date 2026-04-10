@@ -13,15 +13,24 @@ import org.eclipse.swt.widgets.Text;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class SatisfactionGroup {
-    private Composite group;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class SatisfactionGroup extends AEvoGroup {
     private Scale satisfactionScale;
     private Text satisfactionCommentsText;
     private AiChatPage page;
 
-    public SatisfactionGroup(Composite parent, AiChatPage page) {
+    public SatisfactionGroup(Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiChatPage page) {
+        super(editor, orchestrator);
         this.page = page;
         createControl(parent);
+    }
+
+    @Override
+    protected void refreshUI() {
+        // No dynamic model data to refresh
     }
 
     private void createControl(Composite parent) {

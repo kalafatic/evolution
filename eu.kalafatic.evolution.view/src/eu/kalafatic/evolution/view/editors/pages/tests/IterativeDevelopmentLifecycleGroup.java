@@ -10,15 +10,24 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.editors.pages.TestsPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class IterativeDevelopmentLifecycleGroup {
-    private Composite group;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class IterativeDevelopmentLifecycleGroup extends AEvoGroup {
     private Browser iterativeBrowser;
     private Button runBtn;
     private TestsPage page;
 
-    public IterativeDevelopmentLifecycleGroup(FormToolkit toolkit, Composite parent, TestsPage page) {
+    public IterativeDevelopmentLifecycleGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, TestsPage page) {
+        super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);
+    }
+
+    @Override
+    protected void refreshUI() {
+        // Managed by TestsPage
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {

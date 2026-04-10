@@ -27,20 +27,17 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class ReviewGroup {
-    private Composite group;
+public class ReviewGroup extends AEvoGroup {
     private Browser browser;
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
     private String lastHtml = "";
     private final AtomicBoolean updating = new AtomicBoolean(false);
     private long lastUpdate = 0;
 
     public ReviewGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-        this.editor = editor;
-        this.orchestrator = orchestrator;
+        super(editor, orchestrator);
         createControl(toolkit, parent);
     }
 
@@ -109,8 +106,8 @@ public class ReviewGroup {
         });
     }
 
-    public void updateUI(Orchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+    @Override
+    public void refreshUI() {
         updateDiff();
     }
 

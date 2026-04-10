@@ -81,8 +81,8 @@ public class TaskStackPage extends SharedScrolledComposite {
         body.setLayout(new GridLayout(1, false));
         setContent(body);
 
-        globalActionsGroup = new GlobalActionsGroup(toolkit, body, this);
-        taskStackGroup = new TaskStackGroup(toolkit, body, this);
+        globalActionsGroup = new GlobalActionsGroup(toolkit, body, editor, orchestrator, this);
+        taskStackGroup = new TaskStackGroup(toolkit, body, editor, orchestrator, this);
 
         setOrchestrator(orchestrator);
         startTimer();
