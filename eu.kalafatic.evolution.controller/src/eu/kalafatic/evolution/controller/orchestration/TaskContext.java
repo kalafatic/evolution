@@ -24,6 +24,7 @@ public class TaskContext {
     private final List<ApprovalListener> approvalListeners = new CopyOnWriteArrayList<>();
     private final List<InputListener> inputListeners = new CopyOnWriteArrayList<>();
     private final List<TokenRequestListener> tokenRequestListeners = new CopyOnWriteArrayList<>();
+    private final List<String> instructionFiles = new CopyOnWriteArrayList<>();
     private CompletableFuture<Boolean> approvalFuture;
     private CompletableFuture<String> inputFuture;
     private volatile boolean paused = false;
@@ -48,6 +49,10 @@ public class TaskContext {
     public TaskContext(Orchestrator orchestrator, File projectRoot) {
         this.orchestrator = orchestrator;
         this.projectRoot = projectRoot;
+    }
+
+    public List<String> getInstructionFiles() {
+        return instructionFiles;
     }
 
     public Orchestrator getOrchestrator() {

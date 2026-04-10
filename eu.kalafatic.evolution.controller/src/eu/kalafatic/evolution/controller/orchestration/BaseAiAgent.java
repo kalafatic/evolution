@@ -1,5 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -114,6 +117,22 @@ public abstract class BaseAiAgent implements IAgent {
         String nc = neuronContextService.getContextPromptSnippet();
         if (nc != null && !nc.isEmpty()) {
             sb.append(nc).append("\n");
+        }
+
+        // External Instruction Files
+        List<String> extFiles = context.getInstructionFiles();
+        if (extFiles != null && !extFiles.isEmpty()) {
+            sb.append("\n--- EXTERNAL INSTRUCTIONS ---\n");
+            for (String filePath : extFiles) {
+                try {
+                    String content = Files.readString(Paths.get(filePath));
+                    sb.append("File: ").append(new File(filePath).getName()).append("\n");
+                    sb.append(content).append("\n\n");
+                } catch (Exception e) {
+                    sb.append("Error reading instruction file: ").append(filePath).append(" (").append(e.getMessage()).append(")\n");
+                }
+            }
+            sb.append("--- END EXTERNAL INSTRUCTIONS ---\n");
         }
 
         if (lastFeedback != null && !lastFeedback.isEmpty()) {

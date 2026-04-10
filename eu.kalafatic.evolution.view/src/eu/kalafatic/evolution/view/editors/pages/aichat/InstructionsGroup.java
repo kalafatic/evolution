@@ -1,5 +1,9 @@
 package eu.kalafatic.evolution.view.editors.pages.aichat;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.KeyAdapter;
@@ -18,7 +22,9 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 public class InstructionsGroup extends AEvoGroup {
     private StyledText requestText;
     private Button iterativeCheck, selfIterativeCheck;
-    private Button sendButton, pauseButton, stopButton;
+    private Button sendButton, pauseButton, stopButton, attachButton;
+    private Composite attachmentArea;
+    private List<String> instructionFiles = new ArrayList<>();
     private AiChatPage page;
 
     public InstructionsGroup(FormToolkit toolkit, Composite parent, AiChatPage page, Orchestrator orchestrator) {
@@ -35,7 +41,11 @@ public class InstructionsGroup extends AEvoGroup {
         requestGridData.heightHint = 66;
         requestText.setLayoutData(requestGridData);
 
-        Composite composite = SWTFactory.createComposite(group, 5);
+        attachmentArea = toolkit.createComposite(group);
+        attachmentArea.setLayout(new org.eclipse.swt.layout.RowLayout(SWT.HORIZONTAL));
+        attachmentArea.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Composite composite = SWTFactory.createComposite(group, 6);
         sendButton = toolkit.createButton(composite, "▶️ Start Orchestration", SWT.PUSH);
         GridData sendGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
         sendGd.widthHint = 132;
@@ -82,6 +92,27 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
+        attachButton = toolkit.createButton(composite, "\ud83d\udcce", SWT.PUSH);
+        attachButton.setToolTipText("Add External Instructions (.md)");
+        attachButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(group.getShell(), SWT.OPEN | SWT.MULTI);
+                dialog.setFilterExtensions(new String[] { "*.md" });
+                dialog.setFilterNames(new String[] { "Markdown Files (*.md)" });
+                dialog.setFilterPath(page.getProjectRoot().getAbsolutePath());
+                if (dialog.open() != null) {
+                    for (String fileName : dialog.getFileNames()) {
+                        String fullPath = dialog.getFilterPath() + File.separator + fileName;
+                        if (!instructionFiles.contains(fullPath)) {
+                            instructionFiles.add(fullPath);
+                        }
+                    }
+                    refreshAttachments();
+                }
+            }
+        });
+
         sendButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) {
                 page.handleSend();
@@ -123,5 +154,35 @@ public class InstructionsGroup extends AEvoGroup {
 
     public void setPaused(boolean paused) {
         pauseButton.setText(paused ? "▶️ Resume" : "⏸️ Pause");
+    }
+
+    public List<String> getInstructionFiles() {
+        return instructionFiles;
+    }
+
+    private void refreshAttachments() {
+        for (org.eclipse.swt.widgets.Control child : attachmentArea.getChildren()) {
+            child.dispose();
+        }
+        for (String filePath : instructionFiles) {
+            Composite item = page.getToolkit().createComposite(attachmentArea, SWT.BORDER);
+            org.eclipse.swt.layout.RowLayout row = new org.eclipse.swt.layout.RowLayout(SWT.HORIZONTAL);
+            row.marginTop = 2; row.marginBottom = 2; row.marginLeft = 5; row.marginRight = 5; row.center = true;
+            item.setLayout(row);
+
+            org.eclipse.swt.widgets.Label icon = page.getToolkit().createLabel(item, "\ud83d\udcc4");
+            org.eclipse.swt.widgets.Label name = page.getToolkit().createLabel(item, new File(filePath).getName());
+
+            Button remove = page.getToolkit().createButton(item, "\u2715", SWT.PUSH | SWT.FLAT);
+            remove.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    instructionFiles.remove(filePath);
+                    refreshAttachments();
+                }
+            });
+        }
+        attachmentArea.layout(true);
+        page.updateScrolledContent();
     }
 }
