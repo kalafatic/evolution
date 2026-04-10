@@ -29,7 +29,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat Management", 5, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat Management", 5, false);
 
         Button cleanButton = SWTFactory.createButton(group, "Clean");
         cleanButton.addSelectionListener(new SelectionAdapter() {

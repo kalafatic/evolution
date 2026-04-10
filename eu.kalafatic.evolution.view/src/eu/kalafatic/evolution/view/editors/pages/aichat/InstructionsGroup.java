@@ -28,7 +28,7 @@ public class InstructionsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Instructions", 1, false);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Instructions", 1, true);
         requestText = new StyledText(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         page.setupContextAssist(requestText);
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
