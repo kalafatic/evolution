@@ -14,10 +14,12 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class HistoryGroup {
-    private Composite group;
+public class HistoryGroup extends AEvoGroup {
     private Browser browser;
     private boolean isLoaded = false;
     private List<ChatMessage> messages = new ArrayList<>();
@@ -47,8 +49,14 @@ public class HistoryGroup {
         }
     }
 
-    public HistoryGroup(FormToolkit toolkit, Composite parent, Font chatFont) {
+    public HistoryGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Font chatFont) {
+        super(editor, orchestrator);
         createControl(toolkit, parent, chatFont);
+    }
+
+    @Override
+    protected void refreshUI() {
+        // Managed by AiChatPage
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, Font chatFont) {

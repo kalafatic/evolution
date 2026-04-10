@@ -135,10 +135,10 @@ public class AiChatPage extends SharedScrolledComposite {
 		modeIndicatorLabel.setFont(bannerFont);
 		modeIndicatorLabel.setText("INITIALIZING...");
 
-		chatMgmtGroup = new ChatMgmtGroup(toolkit, content, this);
+		chatMgmtGroup = new ChatMgmtGroup(toolkit, content, editor, orchestrator, this);
 		aiSettingsGroup = new AiSettingsGroup(toolkit, content, this, orchestrator);
 		instructionsGroup = new InstructionsGroup(toolkit, content, this, orchestrator);
-		historyGroup = new HistoryGroup(toolkit, content, chatFont);
+		historyGroup = new HistoryGroup(toolkit, content, editor, orchestrator, chatFont);
 		historyGroup.setEditCallback((index, oldText) -> {
 			Display.getDefault().asyncExec(() -> {
 				InputDialog dlg = new InputDialog(getShell(), "Edit Message", "Modify the message content:", oldText, null);
@@ -148,10 +148,10 @@ public class AiChatPage extends SharedScrolledComposite {
 				}
 			});
 		});
-		systemStatusGroup = new SystemStatusGroup(toolkit, content);
-		satisfactionGroup = new SatisfactionGroup(content, this);
-		approvalGroup = new ApprovalGroup(content, this);
-		inputGroup = new InputGroup(content, this);
+		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
+		satisfactionGroup = new SatisfactionGroup(content, editor, orchestrator, this);
+		approvalGroup = new ApprovalGroup(content, editor, orchestrator, this);
+		inputGroup = new InputGroup(content, editor, orchestrator, this);
 
 		threads.put(currentThread, "");
 		threadStyles.put(currentThread, new StyleRange[0]);

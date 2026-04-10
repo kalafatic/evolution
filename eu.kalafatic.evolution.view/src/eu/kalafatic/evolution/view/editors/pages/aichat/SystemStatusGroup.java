@@ -8,13 +8,22 @@ import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class SystemStatusGroup {
-    private Composite group;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class SystemStatusGroup extends AEvoGroup {
     private Label ollamaStatusLabel, modelStatusLabel, statusLabel;
     private ProgressBar progressBar;
 
-    public SystemStatusGroup(FormToolkit toolkit, Composite parent) {
+    public SystemStatusGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
+        super(editor, orchestrator);
         createControl(toolkit, parent);
+    }
+
+    @Override
+    protected void refreshUI() {
+        // Managed by AiChatPage
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {

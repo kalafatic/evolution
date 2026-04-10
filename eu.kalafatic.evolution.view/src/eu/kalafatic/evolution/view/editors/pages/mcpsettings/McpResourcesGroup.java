@@ -13,14 +13,23 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class McpResourcesGroup {
-    private Composite group;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class McpResourcesGroup extends AEvoGroup {
     private Table resourcesTable;
     private McpSettingsPage page;
 
-    public McpResourcesGroup(FormToolkit toolkit, Composite parent, McpSettingsPage page) {
+    public McpResourcesGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, McpSettingsPage page) {
+        super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);
+    }
+
+    @Override
+    protected void refreshUI() {
+        // Refresh handled by page.refreshResources()
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {

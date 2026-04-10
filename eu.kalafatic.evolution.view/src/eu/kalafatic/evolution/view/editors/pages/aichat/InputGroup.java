@@ -12,15 +12,24 @@ import org.eclipse.swt.widgets.Text;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class InputGroup {
-    private Composite group;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class InputGroup extends AEvoGroup {
     private Label promptLabel;
     private Text inputText;
     private AiChatPage page;
 
-    public InputGroup(Composite parent, AiChatPage page) {
+    public InputGroup(Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiChatPage page) {
+        super(editor, orchestrator);
         this.page = page;
         createControl(parent);
+    }
+
+    @Override
+    protected void refreshUI() {
+        // Managed by AiChatPage
     }
 
     private void createControl(Composite parent) {

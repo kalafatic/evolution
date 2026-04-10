@@ -12,14 +12,23 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class GlobalActionsGroup {
-    private Composite group;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class GlobalActionsGroup extends AEvoGroup {
     private Combo executionModeCombo;
     private TaskStackPage page;
 
-    public GlobalActionsGroup(FormToolkit toolkit, Composite parent, TaskStackPage page) {
+    public GlobalActionsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, TaskStackPage page) {
+        super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);
+    }
+
+    @Override
+    protected void refreshUI() {
+        // No dynamic model data to refresh currently
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {

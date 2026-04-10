@@ -13,15 +13,26 @@ import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class TaskStackGroup {
-    private Composite group;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class TaskStackGroup extends AEvoGroup {
     private FormToolkit toolkit;
     private TaskStackPage page;
 
-    public TaskStackGroup(FormToolkit toolkit, Composite parent, TaskStackPage page) {
+    public TaskStackGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, TaskStackPage page) {
+        super(editor, orchestrator);
         this.toolkit = toolkit;
         this.page = page;
         createControl(parent);
+    }
+
+    @Override
+    protected void refreshUI() {
+        if (page != null) {
+            page.updateUIFromModel();
+        }
     }
 
     private void createControl(Composite parent) {

@@ -18,15 +18,24 @@ import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.view.editors.pages.TestsPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class TestTableGroup {
-    private Composite group;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class TestTableGroup extends AEvoGroup {
     private FormToolkit toolkit;
     private TestsPage page;
 
-    public TestTableGroup(FormToolkit toolkit, Composite parent, String title, List<Test> tests, boolean expanded, TestsPage page) {
+    public TestTableGroup(FormToolkit toolkit, Composite parent, String title, List<Test> tests, boolean expanded, MultiPageEditor editor, Orchestrator orchestrator, TestsPage page) {
+        super(editor, orchestrator);
         this.toolkit = toolkit;
         this.page = page;
         createControl(parent, title, tests, expanded);
+    }
+
+    @Override
+    protected void refreshUI() {
+        // Managed by TestsPage
     }
 
     private void createControl(Composite parent, String title, List<Test> tests, boolean expanded) {

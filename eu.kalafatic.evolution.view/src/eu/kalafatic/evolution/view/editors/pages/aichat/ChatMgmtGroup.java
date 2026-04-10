@@ -9,14 +9,23 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class ChatMgmtGroup {
-    private Composite group;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class ChatMgmtGroup extends AEvoGroup {
     private Combo threadCombo;
     private AiChatPage page;
 
-    public ChatMgmtGroup(FormToolkit toolkit, Composite parent, AiChatPage page) {
+    public ChatMgmtGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiChatPage page) {
+        super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);
+    }
+
+    @Override
+    protected void refreshUI() {
+        // No dynamic model data to refresh
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {

@@ -19,20 +19,25 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.model.orchestration.TestStatus;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.TestsPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class PredefinedTestsGroup {
-	private Composite group;
-	private Orchestrator orchestrator;
+public class PredefinedTestsGroup extends AEvoGroup {
 	private TestsPage page;
 	private FormToolkit toolkit;
 
-	public PredefinedTestsGroup(FormToolkit toolkit, Composite parent, Orchestrator orchestrator, TestsPage page) {
+	public PredefinedTestsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, TestsPage page) {
+		super(editor, orchestrator);
 		this.toolkit = toolkit;
-		this.orchestrator = orchestrator;
 		this.page = page;
 		createControl(parent);
+	}
+
+	@Override
+	protected void refreshUI() {
+		// Handled by direct updates in TestsPage
 	}
 
 	private void createControl(Composite parent) {

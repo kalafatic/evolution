@@ -9,18 +9,15 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class FeedbackGroup {
-    private Composite group;
+public class FeedbackGroup extends AEvoGroup {
     private Scale ratingScale;
     private Text commentsText;
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
 
     public FeedbackGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-        this.editor = editor;
-        this.orchestrator = orchestrator;
+        super(editor, orchestrator);
         createControl(toolkit, parent);
     }
 
@@ -58,8 +55,8 @@ public class FeedbackGroup {
         });
     }
 
-    public void updateUI(Orchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+    @Override
+    public void refreshUI() {
         if (orchestrator != null && orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
             Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
             ratingScale.setSelection(last.getRating() > 0 ? last.getRating() : 3);

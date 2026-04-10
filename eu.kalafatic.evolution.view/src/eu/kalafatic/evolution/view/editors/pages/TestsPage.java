@@ -113,8 +113,8 @@ public class TestsPage extends Composite {
 		testRows.clear();
 		discoverTests();
 
-		predefinedTestsGroup = new PredefinedTestsGroup(toolkit, testsContent, orchestrator, this);
-		iterativeDevelopmentLifecycleGroup = new IterativeDevelopmentLifecycleGroup(toolkit, testsContent, this);
+		predefinedTestsGroup = new PredefinedTestsGroup(toolkit, testsContent, editor, orchestrator, this);
+		iterativeDevelopmentLifecycleGroup = new IterativeDevelopmentLifecycleGroup(toolkit, testsContent, editor, orchestrator, this);
 
 		// Synchronize Lifecycle Browser with Model Phase
 		if (orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
@@ -135,7 +135,7 @@ public class TestsPage extends Composite {
 			String type = test.getType() != null ? test.getType() : "General";
 			if (!"Predefined".equals(type)) groupedBy.computeIfAbsent(type, k -> new java.util.ArrayList<>()).add(test);
 		}
-		for (String type : groupedBy.keySet()) new TestTableGroup(toolkit, testsContent, type + " Tests", groupedBy.get(type), false, this);
+		for (String type : groupedBy.keySet()) new TestTableGroup(toolkit, testsContent, type + " Tests", groupedBy.get(type), false, editor, orchestrator, this);
 
 		Button addBtn = toolkit.createButton(testsContent, "Add Test", SWT.PUSH);
 		addBtn.addSelectionListener(new SelectionAdapter() {

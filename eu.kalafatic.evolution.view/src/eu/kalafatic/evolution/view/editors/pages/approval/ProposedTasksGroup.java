@@ -15,12 +15,15 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class ProposedTasksGroup {
-    private Composite group;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+
+public class ProposedTasksGroup extends AEvoGroup {
     private TableViewer tableViewer;
     private ApprovalPage page;
 
-    public ProposedTasksGroup(FormToolkit toolkit, Composite parent, ApprovalPage page) {
+    public ProposedTasksGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, ApprovalPage page) {
+        super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);
     }
@@ -66,7 +69,8 @@ public class ProposedTasksGroup {
         });
     }
 
-    public void updateUI(Orchestrator orchestrator) {
+    @Override
+    public void refreshUI() {
         if (orchestrator != null) {
             tableViewer.setInput(orchestrator.getTasks());
         }
