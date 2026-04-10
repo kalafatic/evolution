@@ -32,14 +32,14 @@ public class InstructionsGroup extends AEvoGroup {
         requestText = new StyledText(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         page.setupContextAssist(requestText);
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
-        requestGridData.heightHint = 100;
+        requestGridData.heightHint = 66;
         requestText.setLayoutData(requestGridData);
 
         Composite composite = SWTFactory.createComposite(group, 5);
         sendButton = toolkit.createButton(composite, "▶️ Start Orchestration", SWT.PUSH);
         GridData sendGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
-        sendGd.widthHint = 200;
-        sendGd.heightHint = 35;
+        sendGd.widthHint = 132;
+        sendGd.heightHint = 23;
         sendButton.setLayoutData(sendGd);
         sendButton.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
         sendButton.setToolTipText("Start a classic, iterative or autonomous iterative self-development session to improve the codebase.");

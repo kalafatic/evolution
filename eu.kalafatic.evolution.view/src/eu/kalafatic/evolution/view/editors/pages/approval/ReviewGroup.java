@@ -48,7 +48,7 @@ public class ReviewGroup extends AEvoGroup {
         try {
             browser = new Browser(group, SWT.BORDER);
             GridData gd = new GridData(GridData.FILL_BOTH);
-            gd.heightHint = 400;
+            gd.heightHint = 264;
             browser.setLayoutData(gd);
 
             new BrowserFunction(browser, "openFileInEclipse") {

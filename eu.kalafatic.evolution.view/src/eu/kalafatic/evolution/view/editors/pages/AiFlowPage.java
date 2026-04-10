@@ -35,8 +35,8 @@ public class AiFlowPage extends Composite {
 	private boolean isLoaded = false;
 	private ScrolledComposite vizScrolled;
 	private Composite browserContainer;
-	private int browserWidth = 1000;
-	private int browserHeight = 800;
+	private int browserWidth = 660;
+	private int browserHeight = 530;
 	private String lastJson = "";
 
 	private Adapter modelAdapter = new EContentAdapter() {
@@ -72,8 +72,8 @@ public class AiFlowPage extends Composite {
 		toolbarManager.add(new Action("Reset Zoom") {
 			@Override
 			public void run() {
-				browserWidth = 1000;
-				browserHeight = 800;
+				browserWidth = 660;
+				browserHeight = 530;
 				updateScrolledContent();
 			}
 		});
@@ -277,7 +277,7 @@ public class AiFlowPage extends Composite {
 				+ "@keyframes pulse { 0% { stroke-opacity: 1; stroke-width: 3px; } 50% { stroke-opacity: 0.4; stroke-width: 8px; } 100% { stroke-opacity: 1; stroke-width: 3px; } }"
 				+ ".loop-node.active { animation: pulse 2s infinite ease-in-out; }"
 				+ "</style></head><body>"
-				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs>"
+				+ "<svg id='canvas' viewBox='0 0 660 530'><defs>"
 				+ "<marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker>"
 				+ "<marker id='loop-arrow' markerWidth='6' markerHeight='4' refX='6' refY='2' orient='auto'><polygon points='0 0, 6 2, 0 4' fill='#94a3b8'/></marker>"
 				+ "</defs>"

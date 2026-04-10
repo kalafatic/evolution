@@ -73,7 +73,7 @@ public class TestTableGroup extends AEvoGroup {
             page.registerTestRow(test, execBtn, item);
         }
         GridData groupGd = (GridData) group.getLayoutData();
-        groupGd.heightHint = 200;
+        groupGd.heightHint = 132;
     }
 
     private void addColumn(Table table, TableColumnLayout layout, String text, int width, int weight) {
