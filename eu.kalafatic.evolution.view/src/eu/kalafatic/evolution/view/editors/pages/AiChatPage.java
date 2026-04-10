@@ -282,6 +282,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
 				File projectRoot = getProjectRoot();
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
+				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
 				this.currentContext = context;
 				Display.getDefault().asyncExec(() -> editor.setCurrentContext(context));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
@@ -404,6 +405,7 @@ public class AiChatPage extends SharedScrolledComposite {
 			try {
 				File projectRoot = getProjectRoot();
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
+				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
 				this.currentContext = context;
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!historyGroup.isDisposed()) processLogEntry(log); }));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
@@ -444,7 +446,7 @@ public class AiChatPage extends SharedScrolledComposite {
 		orchestrationThread.start();
 	}
 
-	private File getProjectRoot() {
+	public File getProjectRoot() {
 		File projectRoot = null;
 		if (editor.getEditorInput() instanceof IFileEditorInput) {
 			projectRoot = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject().getLocation().toFile();
@@ -560,6 +562,8 @@ public class AiChatPage extends SharedScrolledComposite {
 	public String getCurrentThreadName() { return currentThread; }
 
 	public MultiPageEditor getEditor() { return editor; }
+
+	public FormToolkit getToolkit() { return toolkit; }
 
 	public void setupContextAssist(StyledText text) {
 		IContentProposalProvider proposalProvider = (contents, position) -> {
