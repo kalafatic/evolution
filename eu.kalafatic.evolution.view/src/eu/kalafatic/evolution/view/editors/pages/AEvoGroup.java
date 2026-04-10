@@ -24,11 +24,17 @@ public abstract class AEvoGroup {
      * Standardized thread-safe UI update.
      */
     public final void updateUI() {
-        Display.getDefault().asyncExec(() -> {
+        if (Display.getCurrent() != null) {
             if (group != null && !group.isDisposed()) {
                 refreshUI();
             }
-        });
+        } else {
+            Display.getDefault().asyncExec(() -> {
+                if (group != null && !group.isDisposed()) {
+                    refreshUI();
+                }
+            });
+        }
     }
 
     /**
