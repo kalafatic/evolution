@@ -31,6 +31,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 	private AdditionalAiToolsGroup additionalAiToolsGroup;
 	private McpOpenAiGroup mcpOpenAiGroup;
 	private AiChatModelsGroup aiChatModelsGroup;
+	private ModelsGroup modelsGroup;
 
 	public PropertiesPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -102,6 +103,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 		additionalAiToolsGroup = new AdditionalAiToolsGroup(toolkit, comp, editor, orchestrator);
 		mcpOpenAiGroup = new McpOpenAiGroup(toolkit, comp, editor, orchestrator, this);
 		aiChatModelsGroup = new AiChatModelsGroup(toolkit, comp, editor, orchestrator, this);
+		modelsGroup = new ModelsGroup(toolkit, comp, editor, orchestrator);
 
 		ModifyListener ml = e -> {
 			if (orchestrator != null && !isUpdating) {
@@ -115,6 +117,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 		additionalAiToolsGroup.addModifyListener(ml);
 		mcpOpenAiGroup.addModifyListener(ml);
 		aiChatModelsGroup.addModifyListener(ml);
+		modelsGroup.addModifyListener(ml);
 
 		this.setContent(comp);
 		this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
@@ -137,14 +140,14 @@ public class PropertiesPage extends SharedScrolledComposite {
 	public void updatePropertiesInfo() {
 		if (orchestrator == null || isUpdating) return;
 		isUpdating = true;
-		orchestratorGroup.updateUI(); llmSettingsGroup.updateUI(); ollamaSettingsGroup.updateUI(); agentsGroup.updateUI(); additionalAiToolsGroup.updateUI(); mcpOpenAiGroup.updateUI(); aiChatModelsGroup.updateUI();
+		orchestratorGroup.updateUI(); llmSettingsGroup.updateUI(); ollamaSettingsGroup.updateUI(); agentsGroup.updateUI(); additionalAiToolsGroup.updateUI(); mcpOpenAiGroup.updateUI(); aiChatModelsGroup.updateUI(); modelsGroup.updateUI();
 		isUpdating = false;
 	}
 
 	public void syncModelWithUI() {
 		if (orchestrator == null || isUpdating) return;
 		isUpdating = true;
-		orchestratorGroup.updateModel(); llmSettingsGroup.updateModel(); ollamaSettingsGroup.updateModel(); additionalAiToolsGroup.updateModel(); mcpOpenAiGroup.updateModel(); aiChatModelsGroup.updateModel();
+		orchestratorGroup.updateModel(); llmSettingsGroup.updateModel(); ollamaSettingsGroup.updateModel(); additionalAiToolsGroup.updateModel(); mcpOpenAiGroup.updateModel(); aiChatModelsGroup.updateModel(); modelsGroup.updateModel();
 		isUpdating = false;
 		updateModeDisplay();
 	}
@@ -160,6 +163,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 		if (additionalAiToolsGroup != null) additionalAiToolsGroup.setOrchestrator(orchestrator);
 		if (mcpOpenAiGroup != null) mcpOpenAiGroup.setOrchestrator(orchestrator);
 		if (aiChatModelsGroup != null) aiChatModelsGroup.setOrchestrator(orchestrator);
+		if (modelsGroup != null) modelsGroup.setOrchestrator(orchestrator);
 		updatePropertiesInfo();
 		updateModeDisplay();
 	}
