@@ -13,6 +13,11 @@ public class ArchitectAgent extends BaseAiAgent {
     @Override
     protected String getAgentInstructions() {
         return "You are acting as an Architect Agent.\n" +
-               "Provide a detailed architecture design or file structure. If you need to create a project structure, output file paths and descriptions.";
+               "Analyze the project request and provide a detailed architecture design, resource allocation plan, or file structure.\n" +
+               "Your goal is to:\n" +
+               "1. Analyze technical requirements and constraints.\n" +
+               "2. Propose necessary agents, tools, and resources for the task.\n" +
+               "3. Define a clear project structure or execution strategy.\n" +
+               "If you need to create a project structure, output file paths and detailed descriptions of each component.";
     }
 }

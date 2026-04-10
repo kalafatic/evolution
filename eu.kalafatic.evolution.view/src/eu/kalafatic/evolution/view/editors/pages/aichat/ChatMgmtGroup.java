@@ -47,6 +47,14 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
 
+        Button copyAllButton = SWTFactory.createButton(group, "Copy All");
+        copyAllButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.copyConversationToClipboard();
+            }
+        });
+
         SWTFactory.createLabel(group, "Select Thread:");
         threadCombo = SWTFactory.createCombo(group);
         threadCombo.add(page.getCurrentThreadName());

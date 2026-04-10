@@ -26,23 +26,28 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
         context.log("Planner: Decomposing request - " + request);
 
         String plannerPrompt = "You are a workflow planner for an agentic system. " +
-                "Decompose the user request into a sequence of atomic, specialized tasks.\n" +
-                "If the request is a simple greeting or a general question, just create one 'llm' task to respond.\n" +
+                "Your first step is to analyze the request needs and severity.\n\n" +
+                "CATEGORIZATION:\n" +
+                "- CONVERSATIONAL: Greetings, simple questions, or small talk. (Low Severity)\n" +
+                "- INFORMATIONAL: Requests for system status, project overview, or explanations. (Medium Severity)\n" +
+                "- OPERATIONAL: Requests that modify files, run builds, or execute shell commands. (High Severity)\n\n" +
+                "STRATEGY:\n" +
+                "- For CONVERSATIONAL requests, create a single 'llm' task and set 'approvalRequired' to false.\n" +
+                "- For INFORMATIONAL requests, use agents to gather data. 'approvalRequired' should generally be false unless privacy is a concern.\n" +
+                "- For OPERATIONAL requests, decompose into specialized tasks. 'approvalRequired' should be true for tasks that change state.\n" +
+                "- Prefer using explicit agent names in task titles (e.g., 'Architect: Analyze project', 'JavaDev: Implement feature') to ensure correct resource allocation.\n\n" +
                 "Available task types:\n" +
                 "- 'llm': For reasoning, planning, or general text generation.\n" +
-                "- 'file': For writing or creating files (e.g., Java source code, POM, README). Task name should be 'Write <path/to/file>'. File paths MUST be relative to the project root and MUST NOT start with a slash or drive letter.\n" +
-                "- 'shell': For executing shell commands. Use this for environment discovery (e.g., 'pwd', 'ls') or custom scripts. For simple Java projects without Maven, use this for 'javac' and 'java' commands.\n" +
-                "- 'git': For version control actions (add, commit, push).\n" +
-                "- 'maven': For building, testing, or packaging the project.\n" +
-                "- 'approval': A specialized task that pauses the workflow and waits for the user to click 'Approve' or 'Reject'. Use this for critical steps like code application or final delivery.\n" +
-                "- 'train_nn': For local project neural network training.\n" +
-                "- 'train_llm': For local project LLM fine-tuning.\n" +
-                "- 'train_agent': For local project agent behavior training.\n\n" +
+                "- 'file': For writing or creating files. Task name: 'Write <path/to/file>'.\n" +
+                "- 'shell': For executing shell commands.\n" +
+                "- 'git': For version control actions.\n" +
+                "- 'maven': For building or testing.\n" +
+                "- 'approval': Explicitly pause for user input.\n" +
+                "- 'train_nn'/'train_llm'/'train_agent': Local training tasks.\n\n" +
                 "Looping and Iteration:\n" +
-                "- Any task can have a 'loopToTaskId' property. If present and not 'none', the orchestrator will jump back to the task with that ID after the current task completes.\n" +
-                "- Use loops for iterative processes like: programmer-analyze -> improve -> implement -> test -> (loop to analyze if tests fail).\n\n" +
+                "- Use 'loopToTaskId' for iterative processes (e.g., test-fix loops).\n\n" +
                 "Output MUST be a valid JSON array of objects. Schema:\n" +
-                "[ { \"id\": \"unique_id\", \"name\": \"Clear task name\", \"description\": \"Detailed instructions for the agent\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"approval\"|\"train_nn\"|\"train_llm\"|\"train_agent\", \"approvalRequired\": boolean, \"loopToTaskId\": \"id_to_jump_to\"|\"none\" } ]\n";
+                "[ { \"id\": \"unique_id\", \"name\": \"Clear task name\", \"description\": \"Detailed instructions\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"approval\"|\"train_nn\"|\"train_llm\"|\"train_agent\", \"approvalRequired\": boolean, \"loopToTaskId\": \"id_to_jump_to\"|\"none\" } ]\n";
 
         // Use structured prompt building to include shared memory/history in planning
         String fullPrompt = buildPrompt(request, context, null);
