@@ -58,6 +58,7 @@ public class ShellTool implements ITool {
                command.equals("git") || command.equals("ls") ||
                command.equals("pwd") || command.equals("cd") ||
                command.equals("mkdir") || command.equals("echo") ||
+               command.equals("ollama") ||
                command.equals("gcc") || command.equals("g++") ||
                command.equals("make") || command.equals("cmake") ||
                command.equals("java") || command.equals("javac") ||
