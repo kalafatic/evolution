@@ -56,6 +56,7 @@ import java.util.List;
 public class AiChatPage extends SharedScrolledComposite {
 	private MultiPageEditor editor;
 	private Orchestrator orchestrator;
+	private boolean isUpdating = false;
 	private Label modeIndicatorLabel;
 	private TaskContext currentContext;
 	private OllamaService ollamaService;
@@ -238,7 +239,8 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	public void syncModelWithUI() {
-		if (orchestrator == null) return;
+		if (orchestrator == null || isUpdating) return;
+		isUpdating = true;
 		orchestrator.setAiMode(AiMode.get(aiSettingsGroup.getAiModeIndex()));
 		String remoteModel = aiSettingsGroup.getRemoteModel();
 		orchestrator.setRemoteModel(remoteModel);
@@ -251,6 +253,7 @@ public class AiChatPage extends SharedScrolledComposite {
 		orchestrator.getAiChat().setUrl(aiSettingsGroup.getRemoteUrl());
 		editor.setDirty(true);
 		updateModeDisplay();
+		isUpdating = false;
 	}
 
 	public void handleSend() {
@@ -498,12 +501,14 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	public void updateUI() {
-		if (orchestrator != null && aiSettingsGroup != null) {
+		if (orchestrator != null && aiSettingsGroup != null && !isUpdating) {
+			isUpdating = true;
 			aiSettingsGroup.updateUI();
 			instructionsGroup.updateUI();
+			updateStatusInfo();
+			updateModeDisplay();
+			isUpdating = false;
 		}
-		updateStatusInfo();
-		updateModeDisplay();
 	}
 
 	public void submitFeedback(int satisfaction, String comments) {
