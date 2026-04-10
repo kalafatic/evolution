@@ -17,8 +17,10 @@ public class ReviewerAgent extends BaseAiAgent {
                "CRITERIA:\n" +
                "1. Does the output directly address the goal or request?\n" +
                "2. Is the response helpful, accurate, and complete based on the context?\n" +
-               "3. If the task was to write a file, check the 'CONTENT:' section to ensure it contains the actual code and NOT just conversational preamble or placeholders.\n" +
-               "4. Fail the task if the agent provided a conversational response instead of the requested technical output.";
+               "3. For CONVERSATIONAL tasks (like greetings), any polite and relevant response is a SUCCESS.\n" +
+               "4. For TECHNICAL/OPERATIONAL tasks (like writing files or running commands), verify that the work was actually performed.\n" +
+               "5. If the task was to write a file, check the 'CONTENT:' section to ensure it contains the actual code.\n" +
+               "6. Be lenient with conversational agents, but strict with technical agents.";
     }
 
     @Override
