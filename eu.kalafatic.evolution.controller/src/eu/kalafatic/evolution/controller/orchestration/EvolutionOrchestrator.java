@@ -53,14 +53,27 @@ public class EvolutionOrchestrator implements IOrchestrator {
             context.getOrchestrator().getTasks().clear();
             context.getOrchestrator().getTasks().addAll(originalPlannedTasks);
 
-            // Pause for Plan Approval
-            context.log("Evo: Plan generated. Waiting for user review and approval...");
-            Boolean planApproved = context.requestApproval(TaskContext.PLAN_APPROVAL_MESSAGE).get();
-            if (planApproved == null || !planApproved) {
-                context.log("Evo: Plan rejected by user.");
-                throw new Exception("Orchestration plan rejected by user.");
+            // Determine if Plan Approval is needed based on task severity
+            boolean requiresPlanApproval = false;
+            for (Task t : originalPlannedTasks) {
+                if (t.isApprovalRequired()) {
+                    requiresPlanApproval = true;
+                    break;
+                }
             }
-            context.log("Evo: Plan approved. Starting execution...");
+
+            if (requiresPlanApproval) {
+                // Pause for Plan Approval
+                context.log("Evo: Plan generated. Waiting for user review and approval...");
+                Boolean planApproved = context.requestApproval(TaskContext.PLAN_APPROVAL_MESSAGE).get();
+                if (planApproved == null || !planApproved) {
+                    context.log("Evo: Plan rejected by user.");
+                    throw new Exception("Orchestration plan rejected by user.");
+                }
+                context.log("Evo: Plan approved. Starting execution...");
+            } else {
+                context.log("Evo: Low severity plan generated. Skipping manual approval and starting execution...");
+            }
 
             // Reload tasks from model in case the user modified them during approval
             List<Task> tasks = new ArrayList<>(context.getOrchestrator().getTasks());

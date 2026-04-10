@@ -477,6 +477,15 @@ public class AiChatPage extends SharedScrolledComposite {
 		}
 	}
 
+	public void copyConversationToClipboard() {
+		String fullText = historyGroup.getText();
+		if (fullText != null && !fullText.isEmpty()) {
+			org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(getDisplay());
+			cb.setContents(new Object[] { fullText }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
+			cb.dispose();
+		}
+	}
+
 	public void updateStatusInfo() {
 		if (orchestrator != null && orchestrator.getOllama() != null) {
 			String url = orchestrator.getOllama().getUrl(); String model = orchestrator.getOllama().getModel();
