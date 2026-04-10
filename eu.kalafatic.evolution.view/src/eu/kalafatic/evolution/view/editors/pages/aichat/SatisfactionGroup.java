@@ -53,14 +53,30 @@ public class SatisfactionGroup extends AEvoGroup {
         satisfactionCommentsText = new Text(group, SWT.BORDER | SWT.SINGLE);
         satisfactionCommentsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        Button submitSatButton = SWTFactory.createButton(group, "Submit Feedback", 150);
-        GridData submitSatGD = new GridData();
-        submitSatGD.horizontalSpan = 2;
-        submitSatButton.setLayoutData(submitSatGD);
+        Composite buttonBox = new Composite(group, SWT.NONE);
+        GridLayout bbLayout = new GridLayout(2, true);
+        bbLayout.marginWidth = 0;
+        bbLayout.marginHeight = 0;
+        buttonBox.setLayout(bbLayout);
+        GridData bbGD = new GridData(GridData.FILL_HORIZONTAL);
+        bbGD.horizontalSpan = 2;
+        buttonBox.setLayoutData(bbGD);
+
+        Button submitSatButton = SWTFactory.createButton(buttonBox, "Submit Feedback", 120);
+        submitSatButton.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         submitSatButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.submitFeedback(satisfactionScale.getSelection(), satisfactionCommentsText.getText());
+            }
+        });
+
+        Button peerReviewBtn = SWTFactory.createButton(buttonBox, "Peer Review", 120);
+        peerReviewBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        peerReviewBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.handleReview();
             }
         });
     }

@@ -121,7 +121,7 @@ public class PredefinedTestsGroup extends AEvoGroup {
 			}
 		}
 		if (group.getLayoutData() != null && group.getLayoutData() instanceof GridData) {
-			((GridData) group.getLayoutData()).heightHint = 250;
+			((GridData) group.getLayoutData()).heightHint = 165;
 		}
 	}
 

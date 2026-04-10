@@ -36,12 +36,12 @@ public class IterativeDevelopmentLifecycleGroup extends AEvoGroup {
 
         runBtn = toolkit.createButton(group, "Run Lifecycle Simulation", SWT.PUSH);
         GridData btnGd = new GridData();
-        btnGd.widthHint = 180;
+        btnGd.widthHint = 120;
         runBtn.setLayoutData(btnGd);
 
         iterativeBrowser = new Browser(group, SWT.NONE);
         GridData browserGD = new GridData(GridData.FILL_BOTH);
-        browserGD.heightHint = 250;
+        browserGD.heightHint = 165;
         browserGD.horizontalSpan = 2;
         iterativeBrowser.setLayoutData(browserGD);
         iterativeBrowser.setText(page.getIterativeHtmlTemplate());

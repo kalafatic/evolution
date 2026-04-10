@@ -137,7 +137,7 @@ public class IterationPage extends Composite {
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
         GridData gdTable = new GridData(GridData.FILL_HORIZONTAL);
-        gdTable.heightHint = 150;
+        gdTable.heightHint = 100;
         table.setLayoutData(gdTable);
 
         createColumns();

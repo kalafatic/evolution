@@ -7,20 +7,27 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.custom.StyleRange;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.Section;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class HistoryGroup extends AEvoGroup {
     private Browser browser;
+    private AiChatPage page;
     private boolean isLoaded = false;
     private List<ChatMessage> messages = new ArrayList<>();
     private EditMessageCallback editCallback;
@@ -49,8 +56,9 @@ public class HistoryGroup extends AEvoGroup {
         }
     }
 
-    public HistoryGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Font chatFont) {
+    public HistoryGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Font chatFont, AiChatPage page) {
         super(editor, orchestrator);
+        this.page = page;
         createControl(toolkit, parent, chatFont);
     }
 
@@ -61,9 +69,34 @@ public class HistoryGroup extends AEvoGroup {
 
     private void createControl(FormToolkit toolkit, Composite parent, Font chatFont) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Conversation History", 1, true);
+
+        if (group.getParent() instanceof Section) {
+            Section section = (Section) group.getParent();
+            Composite toolbar = toolkit.createComposite(section);
+            toolbar.setLayout(new GridLayout(2, false));
+
+            Button selectAllBtn = toolkit.createButton(toolbar, "Select All", SWT.PUSH);
+            selectAllBtn.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    browser.execute("selectAll();");
+                }
+            });
+
+            Button toggleAllBtn = toolkit.createButton(toolbar, "\u2195 Expand/Collapse All", SWT.PUSH);
+            toggleAllBtn.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    browser.execute("toggleAll();");
+                }
+            });
+
+            section.setTextClient(toolbar);
+        }
+
         browser = new Browser(group, SWT.BORDER);
         GridData gd = new GridData(GridData.FILL_BOTH);
-        gd.heightHint = 400;
+        gd.heightHint = 264;
         browser.setLayoutData(gd);
 
         browser.addProgressListener(new org.eclipse.swt.browser.ProgressAdapter() {
@@ -95,6 +128,14 @@ public class HistoryGroup extends AEvoGroup {
                     cb.setContents(new Object[] { text }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
                     cb.dispose();
                 }
+                return null;
+            }
+        };
+
+        new BrowserFunction(browser, "callApprove") {
+            @Override
+            public Object function(Object[] arguments) {
+                page.provideApproval(true);
                 return null;
             }
         };
@@ -273,6 +314,8 @@ public class HistoryGroup extends AEvoGroup {
             + ".message:hover .actions { opacity: 1; }"
             + ".action-btn { background: white; border: 1px solid #e2e8f0; border-radius: 6px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; transition: all 0.2s; }"
             + ".action-btn:hover { background: #f1f5f9; color: #2563eb; border-color: #cbd5e1; }"
+            + ".action-btn.approve { color: #16a34a; }"
+            + ".action-btn.approve:hover { background: #f0fdf4; border-color: #bbf7d0; }"
             + ".collapsed .bubble-content { display: none; }"
             + ".collapsed .bubble { padding: 8px 16px; min-height: 0; opacity: 0.7; }"
             + ".collapsed .bubble::after { content: '... (message collapsed)'; font-style: italic; font-size: 12px; color: #94a3b8; }"
@@ -313,6 +356,21 @@ public class HistoryGroup extends AEvoGroup {
             + "  return unsafe.replace(/[&<\\\"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#039;' }[m]; });"
             + "}"
             + "function escapeJs(text) { return text.replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\").replace(/\\n/g, '\\\\n'); }"
+            + "function selectAll() {"
+            + "  var text = '';"
+            + "  var messages = document.querySelectorAll('.bubble-content');"
+            + "  messages.forEach(function(m) { text += m.innerText + '\\n\\n'; });"
+            + "  copyToClipboard(text);"
+            + "}"
+            + "function toggleAll() {"
+            + "  var messages = document.querySelectorAll('.message');"
+            + "  var anyOpen = false;"
+            + "  messages.forEach(function(m) { if (!m.classList.contains('collapsed')) anyOpen = true; });"
+            + "  messages.forEach(function(m) {"
+            + "    if (anyOpen) m.classList.add('collapsed');"
+            + "    else m.classList.remove('collapsed');"
+            + "  });"
+            + "}"
             + "function toggleCollapse(index) {"
             + "  document.getElementById('msg-' + index).classList.toggle('collapsed');"
             + "}"
@@ -335,7 +393,8 @@ public class HistoryGroup extends AEvoGroup {
             + "    content.innerHTML = formatText(m.text);"
             + "    bubble.appendChild(content);"
             + "    var actions = document.createElement('div'); actions.className = 'actions';"
-            + "    actions.innerHTML = '<button class=\"action-btn\" title=\"Copy Message\" onclick=\"event.stopPropagation(); copyToClipboard(\\'' + escapeJs(m.text) + '\\')\">📋</button>' +"
+            + "    actions.innerHTML = '<button class=\"action-btn approve\" title=\"Approve\" onclick=\"event.stopPropagation(); callApprove()\">\u2705</button>' +"
+            + "                        '<button class=\"action-btn\" title=\"Copy Message\" onclick=\"event.stopPropagation(); copyToClipboard(\\'' + escapeJs(m.text) + '\\')\">📋</button>' +"
             + "                        '<button class=\"action-btn\" title=\"Collapse/Expand\" onclick=\"event.stopPropagation(); toggleCollapse(' + m.index + ')\">↕️</button>';"
             + "    div.appendChild(header); div.appendChild(bubble); div.appendChild(actions);"
             + "    bubble.onclick = function() { callEditMessage(m.index, m.text); };"

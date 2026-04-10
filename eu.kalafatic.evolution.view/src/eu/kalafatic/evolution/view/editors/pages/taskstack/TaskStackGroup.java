@@ -73,7 +73,7 @@ public class TaskStackGroup extends AEvoGroup {
         SWTFactory.createLabel(row, "Time:");
         Text timeText = new Text(row, SWT.BORDER);
         GridData gd = new GridData();
-        gd.widthHint = 80;
+        gd.widthHint = 53;
         timeText.setLayoutData(gd);
         timeText.setText(task.getScheduledTime() != null ? task.getScheduledTime() : "");
         timeText.setMessage("e.g. 13:00");

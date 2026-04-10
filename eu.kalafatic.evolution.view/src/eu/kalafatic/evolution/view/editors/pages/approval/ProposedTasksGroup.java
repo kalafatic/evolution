@@ -31,7 +31,7 @@ public class ProposedTasksGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Proposed Tasks", 1, true);
         group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        ((GridData)group.getLayoutData()).heightHint = 220;
+        ((GridData)group.getLayoutData()).heightHint = 145;
 
         Composite taskTableComposite = toolkit.createComposite(group);
         taskTableComposite.setLayout(new GridLayout(2, false));

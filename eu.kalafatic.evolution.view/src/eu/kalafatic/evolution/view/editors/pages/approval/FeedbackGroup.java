@@ -44,7 +44,7 @@ public class FeedbackGroup extends AEvoGroup {
         SWTFactory.createLabel(group, "Comments:");
         commentsText = toolkit.createText(group, "", SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
         GridData commentsGD = new GridData(GridData.FILL_HORIZONTAL);
-        commentsGD.heightHint = 60;
+        commentsGD.heightHint = 40;
         commentsText.setLayoutData(commentsGD);
         commentsText.addModifyListener(e -> {
             if (orchestrator != null && orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {

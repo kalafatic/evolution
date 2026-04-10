@@ -49,7 +49,7 @@ public class SummaryGroup extends AEvoGroup {
         SWTFactory.createLabel(group, "AI Rationale:");
         rationaleLabel = toolkit.createLabel(group, "", SWT.WRAP);
         GridData rationaleGD = new GridData(GridData.FILL_HORIZONTAL);
-        rationaleGD.heightHint = 40;
+        rationaleGD.heightHint = 26;
         rationaleLabel.setLayoutData(rationaleGD);
     }
 

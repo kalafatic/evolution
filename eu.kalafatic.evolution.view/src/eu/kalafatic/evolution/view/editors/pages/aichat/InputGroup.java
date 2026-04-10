@@ -44,7 +44,7 @@ public class InputGroup extends AEvoGroup {
 
         inputText = new Text(group, SWT.BORDER);
         GridData textGd = new GridData(GridData.FILL_HORIZONTAL);
-        textGd.widthHint = 200;
+        textGd.widthHint = 132;
         inputText.setLayoutData(textGd);
 
         Button submitButton = SWTFactory.createButton(group, "Submit");

@@ -65,7 +65,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 		statusGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		statusCanvas = new Canvas(statusGroup, SWT.DOUBLE_BUFFERED | SWT.BORDER);
 		statusCanvas.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		((GridData) statusCanvas.getLayoutData()).heightHint = 80;
+		((GridData) statusCanvas.getLayoutData()).heightHint = 53;
 		statusCanvas.addPaintListener(e -> {
 			if (orchestrator == null) {
 				e.gc.drawString("No Orchestrator selected", 10, 10);
