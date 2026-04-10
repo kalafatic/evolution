@@ -6,6 +6,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
 import eu.kalafatic.evolution.controller.orchestration.util.DataScrubber;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.NeuronContextService;
 
 /**
  * Base AI Agent that wraps existing AI model/chat code.
@@ -17,6 +18,8 @@ public abstract class BaseAiAgent implements IAgent {
     protected final LlmRouter llmRouter = new LlmRouter();
     
     protected final AiService aiService = new AiService();
+    protected BestPracticesService bestPracticesService;
+    protected NeuronContextService neuronContextService;
 
     public BaseAiAgent(String id, String type) {
         this.id = id;
@@ -59,6 +62,14 @@ public abstract class BaseAiAgent implements IAgent {
     protected String buildPrompt(String taskDescription, TaskContext context, String lastFeedback) {
         Orchestrator orchestrator = context.getOrchestrator();
 
+        // Initialize services if needed
+        if (bestPracticesService == null) {
+            bestPracticesService = new BestPracticesService(context.getProjectRoot());
+        }
+        if (neuronContextService == null) {
+            neuronContextService = new NeuronContextService(context.getProjectRoot());
+        }
+
         // 1. Fetch MCP context if enabled
         String mcpContext = "";
         String mcpUrl = orchestrator.getMcpServerUrl();
@@ -90,6 +101,20 @@ public abstract class BaseAiAgent implements IAgent {
         }
 
         sb.append("\nINSTRUCTIONS:\n").append(getAgentInstructions()).append("\n");
+
+        // Best Practices
+        String bp = bestPracticesService.getPractices(type);
+        if (bp != null && !bp.isEmpty()) {
+            sb.append("\n--- BEST PRACTICES ---\n");
+            sb.append(bp).append("\n");
+            sb.append("--- END BEST PRACTICES ---\n");
+        }
+
+        // Neuron Context
+        String nc = neuronContextService.getContextPromptSnippet();
+        if (nc != null && !nc.isEmpty()) {
+            sb.append(nc).append("\n");
+        }
 
         if (lastFeedback != null && !lastFeedback.isEmpty()) {
             sb.append("\n--- PREVIOUS ATTEMPT FAILED ---\n");

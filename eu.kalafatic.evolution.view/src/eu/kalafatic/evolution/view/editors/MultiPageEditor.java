@@ -37,6 +37,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.listeners.EditorResourceChangeListener;
 import eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
+import eu.kalafatic.evolution.view.editors.pages.ContextPage;
 import eu.kalafatic.evolution.view.editors.pages.AiFlowPage;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
 import eu.kalafatic.evolution.view.editors.pages.BrowserPage;
@@ -54,6 +55,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public static final String ID = "eu.kalafatic.evolution.view.editors.MultiPageEditor";
     private TextEditor textEditor;
     private AiChatPage aiChatPage;
+    private ContextPage contextPage;
     private PropertiesPage propertiesPage;
     private McpSettingsPage mcpSettingsPage;
     private PreviewPage previewPage;
@@ -126,6 +128,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
                 testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
                 iterationPage = IterationPageFactory.createIterationPage(this, orchestrator);
+                contextPage = ContextPageFactory.createContextPage(this, orchestrator);
                 taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
             } else {
@@ -236,6 +239,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         }
 
         if (aiChatPage != null) aiChatPage.setOrchestrator(orchestrator);
+        if (contextPage != null) /* ContextPage doesn't have setOrchestrator, but we can add refresh if needed */;
         if (propertiesPage != null) propertiesPage.setOrchestrator(orchestrator);
         if (mcpSettingsPage != null) mcpSettingsPage.setOrchestrator(orchestrator);
         if (previewPage != null) previewPage.setOrchestrator(orchestrator);
@@ -267,6 +271,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void refreshPages() {
         if (orchestrator == null) return;
         if (aiChatPage != null) aiChatPage.updateUI();
+        if (contextPage != null) contextPage.refreshUI();
         if (propertiesPage != null) propertiesPage.updatePropertiesInfo();
         if (toolsPage != null) toolsPage.updateUIFromModel();
         if (taskStackPage != null) taskStackPage.updateUIFromModel();
