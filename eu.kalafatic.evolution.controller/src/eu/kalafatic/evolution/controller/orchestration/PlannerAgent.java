@@ -47,7 +47,8 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "Looping and Iteration:\n" +
                 "- Use 'loopToTaskId' for iterative processes (e.g., test-fix loops).\n\n" +
                 "Output MUST be a valid JSON array of objects. Schema:\n" +
-                "[ { \"id\": \"unique_id\", \"name\": \"Clear task name\", \"description\": \"Detailed instructions\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"approval\"|\"train_nn\"|\"train_llm\"|\"train_agent\", \"approvalRequired\": boolean, \"loopToTaskId\": \"id_to_jump_to\"|\"none\" } ]\n";
+                "[ { \"id\": \"unique_id\", \"name\": \"[Category]: [Action]\", \"description\": \"Detailed instructions for the agent\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"approval\"|\"train_nn\"|\"train_llm\"|\"train_agent\", \"approvalRequired\": boolean, \"loopToTaskId\": \"id_to_jump_to\"|\"none\" } ]\n" +
+                "Example for greeting: [ { \"id\": \"task1\", \"name\": \"General: Respond to greeting\", \"description\": \"Politely acknowledge the user's greeting.\", \"taskType\": \"llm\", \"approvalRequired\": false, \"loopToTaskId\": \"none\" } ]\n";
 
         // Use structured prompt building to include shared memory/history in planning
         String fullPrompt = buildPrompt(request, context, null);

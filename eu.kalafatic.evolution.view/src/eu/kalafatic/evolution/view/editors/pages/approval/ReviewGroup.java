@@ -136,7 +136,8 @@ public class ReviewGroup extends AEvoGroup {
                         context = new TaskContext(orchestrator, projectRoot);
                     }
                     try {
-                        diffResult = shell.execute("git diff HEAD", projectRoot, context);
+                        // Pass null for context to avoid logging background diff checks to the user chat
+                        diffResult = shell.execute("git diff HEAD", projectRoot, null);
                     } catch (Exception e) {
                         // Git failed, fallback to internal
                     }
