@@ -3,12 +3,18 @@ package eu.kalafatic.evolution.view.handlers;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.handlers.HandlerUtil;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
 public class SaveEvoTasksHandler extends AbstractHandler {
 
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
-        // TODO Auto-generated method stub
+        IEditorPart activeEditor = HandlerUtil.getActiveEditor(event);
+        if (activeEditor instanceof MultiPageEditor) {
+            ((MultiPageEditor) activeEditor).doSave(null);
+        }
         return null;
     }
 }

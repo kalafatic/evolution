@@ -549,7 +549,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 27;
+	int ORCHESTRATOR_FEATURE_COUNT = 28;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
