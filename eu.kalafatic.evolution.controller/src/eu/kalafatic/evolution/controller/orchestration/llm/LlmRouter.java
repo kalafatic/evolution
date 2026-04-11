@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.llm;
 
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 
 /**
  * Router that chooses between LLM providers based on orchestrator settings.
@@ -55,7 +55,6 @@ public class LlmRouter {
     }
 
     private String sendRemoteRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        AiProviders.initializeProviders(orchestrator);
         String remoteModel = orchestrator.getRemoteModel();
 
         // Default to deepseek if none selected
@@ -64,10 +63,7 @@ public class LlmRouter {
             orchestrator.setRemoteModel(remoteModel);
         }
 
-        AIProvider config = orchestrator.getAiProviders().stream()
-                .filter(p -> p.getName().equalsIgnoreCase(orchestrator.getRemoteModel()))
-                .findFirst()
-                .orElse(null);
+        ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
 
         if (config != null && "google".equals(config.getFormat())) {
             return geminiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
@@ -115,7 +111,6 @@ public class LlmRouter {
      * @throws Exception If an error occurs
      */
     public String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        AiProviders.initializeProviders(orchestrator);
         AiMode mode = orchestrator.getAiMode();
         if (mode == AiMode.REMOTE || mode == AiMode.HYBRID) {
             // For HYBRID, test remote connection as it's the most critical part
@@ -127,10 +122,7 @@ public class LlmRouter {
                 orchestrator.setRemoteModel(remoteModel);
             }
 
-            AIProvider config = orchestrator.getAiProviders().stream()
-                    .filter(p -> p.getName().equalsIgnoreCase(orchestrator.getRemoteModel()))
-                    .findFirst()
-                    .orElse(null);
+            ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
 
             if (config != null && "google".equals(config.getFormat())) {
                 return geminiProvider.testConnection(orchestrator, temperature, proxyUrl, context);

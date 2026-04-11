@@ -540,14 +540,6 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__TESTS = 24;
 	int ORCHESTRATOR__ITERATIVE_MODE = 25;
 	int ORCHESTRATOR__SELF_ITERATIVE_MODE = 26;
-
-	/**
-	 * The feature id for the '<em><b>Ai Providers</b></em>' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
 	int ORCHESTRATOR__AI_PROVIDERS = 27;
 
 	/**
@@ -557,7 +549,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 28;
+	int ORCHESTRATOR_FEATURE_COUNT = 27;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -1505,88 +1497,6 @@ public interface OrchestrationPackage extends EPackage {
 	int EVALUATION_RESULT = 22;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl <em>AI Provider</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAIProvider()
-	 * @generated
-	 */
-	int AI_PROVIDER = 33;
-
-	/**
-	 * The feature id for the '<em><b>Name</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AI_PROVIDER__NAME = 0;
-
-	/**
-	 * The feature id for the '<em><b>Url</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AI_PROVIDER__URL = 1;
-
-	/**
-	 * The feature id for the '<em><b>Api Key</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AI_PROVIDER__API_KEY = 2;
-
-	/**
-	 * The feature id for the '<em><b>Format</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AI_PROVIDER__FORMAT = 3;
-
-	/**
-	 * The feature id for the '<em><b>Local</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AI_PROVIDER__LOCAL = 4;
-
-	/**
-	 * The feature id for the '<em><b>Default Model</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AI_PROVIDER__DEFAULT_MODEL = 5;
-
-	/**
-	 * The number of structural features of the '<em>AI Provider</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AI_PROVIDER_FEATURE_COUNT = 6;
-
-	/**
-	 * The number of operations of the '<em>AI Provider</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AI_PROVIDER_OPERATION_COUNT = 0;
-
-	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1847,6 +1757,15 @@ public interface OrchestrationPackage extends EPackage {
 	int REVIEW_SESSION__COMMENTS = 2;
 	int REVIEW_SESSION__DECISION = 3;
 	int REVIEW_SESSION_FEATURE_COUNT = 4;
+
+	int AI_PROVIDER = 39;
+	int AI_PROVIDER__NAME = 0;
+	int AI_PROVIDER__URL = 1;
+	int AI_PROVIDER__API_KEY = 2;
+	int AI_PROVIDER__FORMAT = 3;
+	int AI_PROVIDER__LOCAL = 4;
+	int AI_PROVIDER__DEFAULT_MODEL = 5;
+	int AI_PROVIDER_FEATURE_COUNT = 6;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl <em>Database</em>}' class.
@@ -3398,6 +3317,15 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getReviewSession_Comments();
 	EAttribute getReviewSession_Decision();
 
+	EReference getOrchestrator_AiProviders();
+	EClass getAIProvider();
+	EAttribute getAIProvider_Name();
+	EAttribute getAIProvider_Url();
+	EAttribute getAIProvider_ApiKey();
+	EAttribute getAIProvider_Format();
+	EAttribute getAIProvider_Local();
+	EAttribute getAIProvider_DefaultModel();
+
 	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}'.
 	 * <!-- begin-user-doc -->
@@ -3964,93 +3892,6 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getOrchestrator_SelfIterativeMode();
 
 	/**
-	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiProviders <em>Ai Providers</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference list '<em>Ai Providers</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiProviders()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EReference getOrchestrator_AiProviders();
-
-	/**
-	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.AIProvider <em>AI Provider</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>AI Provider</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider
-	 * @generated
-	 */
-	EClass getAIProvider();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getName <em>Name</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Name</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getName()
-	 * @see #getAIProvider()
-	 * @generated
-	 */
-	EAttribute getAIProvider_Name();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getUrl <em>Url</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Url</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getUrl()
-	 * @see #getAIProvider()
-	 * @generated
-	 */
-	EAttribute getAIProvider_Url();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getApiKey <em>Api Key</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Api Key</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getApiKey()
-	 * @see #getAIProvider()
-	 * @generated
-	 */
-	EAttribute getAIProvider_ApiKey();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getFormat <em>Format</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Format</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getFormat()
-	 * @see #getAIProvider()
-	 * @generated
-	 */
-	EAttribute getAIProvider_Format();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#isLocal <em>Local</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Local</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#isLocal()
-	 * @see #getAIProvider()
-	 * @generated
-	 */
-	EAttribute getAIProvider_Local();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getDefaultModel <em>Default Model</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Default Model</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getDefaultModel()
-	 * @see #getAIProvider()
-	 * @generated
-	 */
-	EAttribute getAIProvider_DefaultModel();
-
-	/**
 	 * Returns the factory that creates the instances of the model.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -4080,14 +3921,6 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EReference ORCHESTRATOR__TESTS = eINSTANCE.getOrchestrator_Tests();
-
-		/**
-		 * The meta object literal for the '<em><b>Ai Providers</b></em>' containment reference list feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference ORCHESTRATOR__AI_PROVIDERS = eINSTANCE.getOrchestrator_AiProviders();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl <em>Task</em>}' class.
@@ -5459,6 +5292,15 @@ public interface OrchestrationPackage extends EPackage {
 		EReference REVIEW_SESSION__CHANGE_SET = eINSTANCE.getReviewSession_ChangeSet();
 		EReference REVIEW_SESSION__COMMENTS = eINSTANCE.getReviewSession_Comments();
 		EAttribute REVIEW_SESSION__DECISION = eINSTANCE.getReviewSession_Decision();
+
+		EReference ORCHESTRATOR__AI_PROVIDERS = eINSTANCE.getOrchestrator_AiProviders();
+		EClass AI_PROVIDER = eINSTANCE.getAIProvider();
+		EAttribute AI_PROVIDER__NAME = eINSTANCE.getAIProvider_Name();
+		EAttribute AI_PROVIDER__URL = eINSTANCE.getAIProvider_Url();
+		EAttribute AI_PROVIDER__API_KEY = eINSTANCE.getAIProvider_ApiKey();
+		EAttribute AI_PROVIDER__FORMAT = eINSTANCE.getAIProvider_Format();
+		EAttribute AI_PROVIDER__LOCAL = eINSTANCE.getAIProvider_Local();
+		EAttribute AI_PROVIDER__DEFAULT_MODEL = eINSTANCE.getAIProvider_DefaultModel();
 	}
 
 } //OrchestrationPackage

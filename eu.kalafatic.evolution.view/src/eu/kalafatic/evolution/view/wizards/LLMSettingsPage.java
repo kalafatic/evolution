@@ -26,7 +26,6 @@ import org.eclipse.swt.widgets.Text;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -94,11 +93,8 @@ public class LLMSettingsPage extends AWizardPage {
   
         aiRemoteCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
         aiRemoteCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        if (orchestrator != null) {
-            AiProviders.initializeProviders(orchestrator);
-            for (AIProvider provider : orchestrator.getAiProviders()) {
-                aiRemoteCombo.add(provider.getName());
-            }
+        for (String providerName : AiProviders.PROVIDERS.keySet()) {
+            aiRemoteCombo.add(providerName);
         }
         aiRemoteCombo.addSelectionListener(new SelectionAdapter() {
             @Override

@@ -9,7 +9,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -38,15 +38,16 @@ public class AiChatModelsGroup extends AEvoGroup {
         SWTFactory.createLabel(group, "Remote Model:");
         remoteModelCombo = SWTFactory.createCombo(group);
         remoteModelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
+        for (String providerName : AiProviders.PROVIDERS.keySet()) {
+            remoteModelCombo.add(providerName);
+        }
         remoteModelCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                String providerName = remoteModelCombo.getText();
-                AIProvider provider = orchestrator.getAiProviders().stream()
-                        .filter(p -> p.getName().equalsIgnoreCase(providerName))
-                        .findFirst().orElse(null);
-                if (provider != null) {
-                    page.updateAiChatUrl(provider.getUrl());
+                String provider = remoteModelCombo.getText();
+                ProviderConfig config = AiProviders.PROVIDERS.get(provider);
+                if (config != null) {
+                    page.updateAiChatUrl(config.getEndpointUrl());
                 }
                 page.syncModelWithUI();
             }
@@ -56,12 +57,6 @@ public class AiChatModelsGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (orchestrator != null) {
-            AiProviders.initializeProviders(orchestrator);
-            String current = remoteModelCombo.getText();
-            remoteModelCombo.removeAll();
-            for (AIProvider provider : orchestrator.getAiProviders()) {
-                remoteModelCombo.add(provider.getName());
-            }
             localModelText.setText(orchestrator.getLocalModel() != null ? orchestrator.getLocalModel() : "");
             hybridModelText.setText(orchestrator.getHybridModel() != null ? orchestrator.getHybridModel() : "");
             if (orchestrator.getRemoteModel() != null) {

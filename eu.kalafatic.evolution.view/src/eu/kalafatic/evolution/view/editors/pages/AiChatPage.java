@@ -42,7 +42,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevSupervisor
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -241,13 +241,10 @@ public class AiChatPage extends SharedScrolledComposite {
 	public void syncModelWithUI() {
 		if (orchestrator == null || isUpdating) return;
 		isUpdating = true;
-		AiProviders.initializeProviders(orchestrator);
 		orchestrator.setAiMode(AiMode.get(aiSettingsGroup.getAiModeIndex()));
 		String remoteModel = aiSettingsGroup.getRemoteModel();
 		orchestrator.setRemoteModel(remoteModel);
-		AIProvider config = orchestrator.getAiProviders().stream()
-				.filter(p -> p.getName().equalsIgnoreCase(remoteModel))
-				.findFirst().orElse(null);
+		ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel);
 		if (config != null) orchestrator.setOpenAiModel(config.getDefaultModel());
 		orchestrator.setOpenAiToken(aiSettingsGroup.getRemoteToken());
 		orchestrator.setIterativeMode(instructionsGroup.isIterative());

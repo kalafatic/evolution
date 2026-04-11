@@ -30,8 +30,7 @@ import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.orchestration.ShellTool;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -89,14 +88,6 @@ public class ModelsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 handleAddModel();
-            }
-        });
-
-        Button editButton = toolkit.createButton(buttonBar, "Edit", SWT.PUSH);
-        editButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleEditModel();
             }
         });
 
@@ -200,7 +191,7 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleAddModel() {
-        String[] options = { "Local (Ollama)", "Remote Provider" };
+        String[] options = { "Local (Ollama)", "Remote" };
         MessageDialog dialog = new MessageDialog(group.getShell(), "Add Model", null,
                 "Select the type of model to add:", MessageDialog.QUESTION, options, 0);
         int result = dialog.open();
@@ -214,62 +205,32 @@ public class ModelsGroup extends AEvoGroup {
                 }
             }
         } else if (result == 1) { // Remote
-            InputDialog input = new InputDialog(group.getShell(), "Add Provider",
-                    "Enter provider name (e.g. custom-openai):", "", null);
+            InputDialog input = new InputDialog(group.getShell(), "Add Remote Model",
+                    "Enter remote provider name:", "", null);
             if (input.open() == InputDialog.OK) {
-                String providerName = input.getValue();
-                if (providerName != null && !providerName.trim().isEmpty()) {
-                    InputDialog urlInput = new InputDialog(group.getShell(), "Provider URL",
-                            "Enter the API URL:", "", null);
+                String provider = input.getValue();
+                if (provider != null && !provider.trim().isEmpty()) {
+                    InputDialog urlInput = new InputDialog(group.getShell(), "Remote URL",
+                            "Enter the API URL for " + provider + ":", "", null);
                     if (urlInput.open() == InputDialog.OK) {
                         String url = urlInput.getValue();
-                        InputDialog tokenInput = new InputDialog(group.getShell(), "API Token",
-                                "Enter the API Token:", "", null);
+                        InputDialog tokenInput = new InputDialog(group.getShell(), "Remote Token",
+                                "Enter the API Token for " + provider + ":", "", null);
                         if (tokenInput.open() == InputDialog.OK) {
                             String token = tokenInput.getValue();
-
-                            AIProvider provider = OrchestrationFactory.eINSTANCE.createAIProvider();
-                            provider.setName(providerName.trim());
-                            provider.setUrl(url);
-                            provider.setApiKey(token);
-                            provider.setFormat("openai"); // Default
-                            provider.setLocal(false);
-
-                            orchestrator.getAiProviders().add(provider);
-                            editor.setDirty(true);
-                            refreshUI();
+                            if (orchestrator != null) {
+                                orchestrator.setRemoteModel(provider.trim());
+                                if (orchestrator.getAiChat() == null) {
+                                    orchestrator.setAiChat(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAiChat());
+                                }
+                                orchestrator.getAiChat().setUrl(url);
+                                orchestrator.setOpenAiToken(token);
+                                editor.setDirty(true);
+                                refreshUI();
+                            }
                         }
                     }
                 }
-            }
-        }
-    }
-
-    private void handleEditModel() {
-        IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
-        if (selection.isEmpty()) return;
-        ModelItem item = (ModelItem) selection.getFirstElement();
-        if (item.local) {
-             MessageDialog.openInformation(group.getShell(), "Edit", "Local models cannot be edited here.");
-             return;
-        }
-
-        AIProvider provider = orchestrator.getAiProviders().stream()
-                .filter(p -> p.getName().equalsIgnoreCase(item.name))
-                .findFirst().orElse(null);
-
-        if (provider == null) return;
-
-        InputDialog urlInput = new InputDialog(group.getShell(), "Edit Provider URL",
-                "Update the API URL for " + provider.getName() + ":", provider.getUrl(), null);
-        if (urlInput.open() == InputDialog.OK) {
-            provider.setUrl(urlInput.getValue());
-            InputDialog tokenInput = new InputDialog(group.getShell(), "Edit API Token",
-                    "Update the API Token for " + provider.getName() + ":", provider.getApiKey(), null);
-            if (tokenInput.open() == InputDialog.OK) {
-                provider.setApiKey(tokenInput.getValue());
-                editor.setDirty(true);
-                refreshUI();
             }
         }
     }
@@ -285,16 +246,12 @@ public class ModelsGroup extends AEvoGroup {
                 runTerminalCommand("ollama rm " + item.name);
             }
         } else {
-            if (MessageDialog.openConfirm(group.getShell(), "Remove Provider",
-                    "Are you sure you want to remove the provider: " + item.name + "?")) {
-                AIProvider provider = orchestrator.getAiProviders().stream()
-                        .filter(p -> p.getName().equalsIgnoreCase(item.name))
-                        .findFirst().orElse(null);
-                if (provider != null) {
-                    orchestrator.getAiProviders().remove(provider);
-                    if (item.name.equalsIgnoreCase(orchestrator.getRemoteModel())) {
-                        orchestrator.setRemoteModel("");
-                    }
+            if (MessageDialog.openConfirm(group.getShell(), "Remove Remote Model",
+                    "Remove remote model configuration for: " + item.name + "?")) {
+                // Remote models are from AiProviders, we don't really 'remove' them from the static map,
+                // but we could clear it from the orchestrator if it matches.
+                if (orchestrator != null && item.name.equalsIgnoreCase(orchestrator.getRemoteModel())) {
+                    orchestrator.setRemoteModel("");
                     editor.setDirty(true);
                     refreshUI();
                 }
@@ -327,25 +284,25 @@ public class ModelsGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (orchestrator == null) return;
-        AiProviders.initializeProviders(orchestrator);
 
         final List<ModelItem> newItems = new ArrayList<>();
 
-        // Load Remote Models from Ecore model
-        for (AIProvider provider : orchestrator.getAiProviders()) {
+        // Load Remote Models first (synchronously since it's just from memory)
+        for (String providerName : AiProviders.PROVIDERS.keySet()) {
+            ProviderConfig config = AiProviders.PROVIDERS.get(providerName);
             ModelState state = ModelState.NA;
 
             // For remote models, "ok" if we have a valid-looking token
             String token = orchestrator.getOpenAiToken();
-            boolean isCurrentProvider = provider.getName().equalsIgnoreCase(orchestrator.getRemoteModel());
+            boolean isCurrentProvider = providerName.equalsIgnoreCase(orchestrator.getRemoteModel());
 
             if (isCurrentProvider && token != null && !token.isEmpty() && !token.equals("YOUR_API_KEY")) {
                 state = ModelState.OK;
-            } else if (provider.getApiKey() != null && !provider.getApiKey().isEmpty() && !provider.getApiKey().equals("YOUR_API_KEY")) {
+            } else if (config.getApiKey() != null && !config.getApiKey().equals("YOUR_API_KEY")) {
                  state = ModelState.OK;
             }
 
-            newItems.add(new ModelItem(state, provider.getName(), provider.isLocal(), provider.getUrl()));
+            newItems.add(new ModelItem(state, providerName, false, config.getEndpointUrl()));
         }
 
         this.modelItems = newItems;

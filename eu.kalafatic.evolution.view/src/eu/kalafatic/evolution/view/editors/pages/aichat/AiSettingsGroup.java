@@ -13,7 +13,7 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -52,6 +52,9 @@ public class AiSettingsGroup extends AEvoGroup {
 
         SWTFactory.createLabel(compositeRemote, "AI Remote:");
         aiRemoteCombo = SWTFactory.createCombo(compositeRemote);
+        for (String providerName : AiProviders.PROVIDERS.keySet()) {
+            aiRemoteCombo.add(providerName);
+        }
 
         Button connectionButton = SWTFactory.createButton(compositeRemote, "Test Connection", 120);
         connectionButton.addSelectionListener(new SelectionAdapter() {
@@ -85,12 +88,10 @@ public class AiSettingsGroup extends AEvoGroup {
         aiRemoteCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                String providerName = aiRemoteCombo.getText();
-                AIProvider provider = orchestrator.getAiProviders().stream()
-                        .filter(p -> p.getName().equalsIgnoreCase(providerName))
-                        .findFirst().orElse(null);
-                if (provider != null) {
-                    remoteUrlText.setText(provider.getUrl() != null ? provider.getUrl() : "");
+                String provider = aiRemoteCombo.getText();
+                ProviderConfig config = AiProviders.PROVIDERS.get(provider);
+                if (config != null) {
+                    remoteUrlText.setText(config.getEndpointUrl() != null ? config.getEndpointUrl() : "");
                     page.syncModelWithUI();
                 }
             }
@@ -103,12 +104,6 @@ public class AiSettingsGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (orchestrator != null) {
-            AiProviders.initializeProviders(orchestrator);
-            aiRemoteCombo.removeAll();
-            for (AIProvider provider : orchestrator.getAiProviders()) {
-                aiRemoteCombo.add(provider.getName());
-            }
-
             aiModeCombo.select(orchestrator.getAiMode().getValue());
             String remoteModel = orchestrator.getRemoteModel();
             if (remoteModel == null || remoteModel.isEmpty()) {
