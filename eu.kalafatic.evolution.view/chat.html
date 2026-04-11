@@ -4,19 +4,37 @@
     <meta charset="UTF-8">
     <style>
         :root {
-            --bg-canvas: #f8fafc;
-            --user-bg: linear-gradient(135deg, #2563eb, #1d4ed8);
-            --user-text: #ffffff;
+            --bg-canvas: #f1f5f9;
+            --user-bg: #eff6ff;
+            --user-border: #bfdbfe;
+            --user-text: #1e40af;
             --ai-bg: #ffffff;
             --ai-text: #1e293b;
-            --accent: #64748b;
             --border: #e2e8f0;
-            --planner-accent: #0891b2;
-            --architect-accent: #059669;
-            --javadev-accent: #2563eb;
-            --tester-accent: #d97706;
-            --reviewer-accent: #7c3aed;
-            --tool-accent: #475569;
+
+            --planner-bg: #ecfeff;
+            --planner-border: #a5f3fc;
+            --planner-text: #155e75;
+
+            --architect-bg: #f0fdf4;
+            --architect-border: #bbf7d0;
+            --architect-text: #166534;
+
+            --javadev-bg: #f5f3ff;
+            --javadev-border: #ddd6fe;
+            --javadev-text: #5b21b6;
+
+            --tester-bg: #fffbeb;
+            --tester-border: #fef3c7;
+            --tester-text: #92400e;
+
+            --reviewer-bg: #fff1f2;
+            --reviewer-border: #fecdd3;
+            --reviewer-text: #9f1239;
+
+            --tool-bg: #f8fafc;
+            --tool-border: #e2e8f0;
+            --tool-text: #475569;
         }
 
         body { 
@@ -69,14 +87,21 @@
         .bubble { 
             padding: 8px 12px; border-radius: 12px;
             font-size: 13px; position: relative;
-            box-shadow: 0 2px 4px -1px rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04);
-            transition: all 0.2s; background: white; border: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s; background: var(--ai-bg); border: 1px solid var(--border);
             cursor: pointer;
+            color: var(--ai-text);
         }
-        .message.user .bubble { 
-            background: var(--user-bg); color: var(--user-text); 
-            border-bottom-right-radius: 4px; border: none;
-        }
+
+        /* Role Specific Styles */
+        .message.user .bubble { background: var(--user-bg); border-color: var(--user-border); color: var(--user-text); border-bottom-right-radius: 4px; }
+        .message.planner .bubble { background: var(--planner-bg); border-color: var(--planner-border); color: var(--planner-text); border-bottom-left-radius: 4px; }
+        .message.architect .bubble { background: var(--architect-bg); border-color: var(--architect-border); color: var(--architect-text); border-bottom-left-radius: 4px; }
+        .message.javadev .bubble { background: var(--javadev-bg); border-color: var(--javadev-border); color: var(--javadev-text); border-bottom-left-radius: 4px; }
+        .message.tester .bubble { background: var(--tester-bg); border-color: var(--tester-border); color: var(--tester-text); border-bottom-left-radius: 4px; }
+        .message.reviewer .bubble { background: var(--reviewer-bg); border-color: var(--reviewer-border); color: var(--reviewer-text); border-bottom-left-radius: 4px; }
+        .message.tool .bubble { background: var(--tool-bg); border-color: var(--tool-border); color: var(--tool-text); border-bottom-left-radius: 4px; }
+
         .message.ai .bubble { 
             border-bottom-left-radius: 4px;
         }
@@ -117,11 +142,9 @@
         }
         code {
             font-family: 'Fira Code', monospace; background: rgba(0,0,0,0.05);
-            padding: 2px 4px; border-radius: 4px; font-weight: 500;
+            padding: 2px 4px; border-radius: 4px; font-weight: 500; color: inherit;
         }
-        .user code { background: rgba(255,255,255,0.2); }
-        h3 { margin: 16px 0 8px 0; font-size: 16px; font-weight: 700; color: #1e293b; }
-        .user h3 { color: white; }
+        h3 { margin: 16px 0 8px 0; font-size: 16px; font-weight: 700; color: inherit; }
         ul { margin: 8px 0; padding-left: 20px; }
         li { margin: 4px 0; }
 
@@ -217,7 +240,12 @@
 
         function escapeJs(text) {
             if (!text) return "";
-            return text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/`/g, "\\`").replace(/\n/g, '\\n').replace(/\r/g, '');
+            return text.replace(/\\/g, '\\\\')
+                       .replace(/'/g, "\\'")
+                       .replace(/"/g, '\\"')
+                       .replace(/`/g, "\\`")
+                       .replace(/\n/g, '\\n')
+                       .replace(/\r/g, '');
         }
 
         function selectAll() {
@@ -249,8 +277,9 @@
             container.innerHTML = '';
             messages.forEach(m => {
                 const div = document.createElement('div');
-                const isUser = m.agentType === 'user' || m.sender.toLowerCase().includes('you') || m.sender.toLowerCase().includes('user');
-                div.className = 'message ' + (isUser ? 'user' : 'ai');
+                const role = (m.agentType || '').toLowerCase();
+                const isUser = role === 'user' || m.sender.toLowerCase().includes('you') || m.sender.toLowerCase().includes('user');
+                div.className = 'message ' + (isUser ? 'user' : 'ai') + ' ' + role;
                 div.id = 'msg-' + m.index;
 
                 const header = document.createElement('div');

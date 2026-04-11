@@ -282,11 +282,6 @@ public class HistoryGroup extends AEvoGroup {
         browser.execute("updateMessages(" + json + ");");
     }
 
-    private String escapeJs(String text) {
-        if (text == null) return "";
-        return text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "").replace("'", "\\'");
-    }
-
     public void clear() {
         messages.clear();
         refreshBrowser();
