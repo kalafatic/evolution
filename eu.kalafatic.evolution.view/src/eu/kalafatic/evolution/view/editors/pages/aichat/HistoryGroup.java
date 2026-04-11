@@ -21,6 +21,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -58,6 +60,19 @@ public class HistoryGroup extends AEvoGroup {
             this.isItalic = isItalic;
             this.agentType = agentType;
             this.timestamp = timestamp;
+        }
+
+        JSONObject toJsonObject() {
+            JSONObject obj = new JSONObject();
+            obj.put("index", index);
+            obj.put("sender", sender);
+            obj.put("text", text);
+            obj.put("color", color);
+            obj.put("isBold", isBold);
+            obj.put("isItalic", isItalic);
+            obj.put("agentType", agentType != null ? agentType : "ai");
+            obj.put("timestamp", timestamp != null ? timestamp : "");
+            return obj;
         }
     }
 
@@ -127,20 +142,24 @@ public class HistoryGroup extends AEvoGroup {
             @Override
             public Object function(Object[] args) {
                 if (args.length < 3) return null;
-                String action = (String) args[0];
-                int index = Integer.parseInt((String) args[1]);
-                String text = (String) args[2];
+                try {
+                    String action = (String) args[0];
+                    int index = Integer.parseInt((String) args[1]);
+                    String text = (String) args[2];
 
-                switch (action) {
-                    case "edit":
-                        handleEdit(index, text);
-                        break;
-                    case "copy":
-                        handleCopy(text);
-                        break;
-                    case "approve":
-                        page.provideApproval(true);
-                        break;
+                    switch (action) {
+                        case "edit":
+                            handleEdit(index, text);
+                            break;
+                        case "copy":
+                            handleCopy(text);
+                            break;
+                        case "approve":
+                            page.provideApproval(true);
+                            break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
                 return null;
             }
@@ -254,24 +273,13 @@ public class HistoryGroup extends AEvoGroup {
 
     private void refreshBrowser() {
         if (!isLoaded || browser.isDisposed()) return;
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < messages.size(); i++) {
-            ChatMessage m = messages.get(i);
-            if (i > 0) sb.append(",");
-            sb.append("{");
-            sb.append("\"index\":").append(m.index).append(",");
-            sb.append("\"sender\":\"").append(escapeJs(m.sender)).append("\",");
-            sb.append("\"text\":\"").append(escapeJs(m.text)).append("\",");
-            sb.append("\"color\":\"").append(m.color).append("\",");
-            sb.append("\"isBold\":").append(m.isBold).append(",");
-            sb.append("\"isItalic\":").append(m.isItalic).append(",");
-            sb.append("\"agentType\":\"").append(m.agentType != null ? m.agentType : "ai").append("\",");
-            sb.append("\"timestamp\":\"").append(m.timestamp != null ? m.timestamp : "").append("\"");
-            sb.append("}");
+        JSONArray array = new JSONArray();
+        for (ChatMessage m : messages) {
+            array.put(m.toJsonObject());
         }
-        sb.append("]");
-        browser.execute("updateMessages('" + escapeJs(sb.toString()) + "');");
+        String json = array.toString();
+        // Pass the JSON object directly to the JS function
+        browser.execute("updateMessages(" + json + ");");
     }
 
     private String escapeJs(String text) {
