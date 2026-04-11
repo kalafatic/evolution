@@ -53,6 +53,26 @@ public class NeuronAISettingsPage extends AWizardPage {
         setControl(container);
     }
 
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if (!visible && orchestrator != null) {
+            updateModel();
+        }
+    }
+
+    public void updateModel() {
+        if (orchestrator == null || isSkipped()) return;
+        eu.kalafatic.evolution.model.orchestration.NeuronAI neuronAI = orchestrator.getNeuronAI();
+        if (neuronAI == null) {
+            neuronAI = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createNeuronAI();
+            orchestrator.setNeuronAI(neuronAI);
+        }
+        neuronAI.setUrl(getUrl());
+        neuronAI.setModel(getModelName());
+        neuronAI.setType(getModelType());
+    }
+
     public String getUrl() { return urlText.getText(); }
     public String getModelName() { return modelText.getText(); }
     public NeuronType getModelType() {

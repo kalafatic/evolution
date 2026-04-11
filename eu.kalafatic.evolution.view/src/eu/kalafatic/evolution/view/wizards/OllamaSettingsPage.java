@@ -465,6 +465,26 @@ public class OllamaSettingsPage extends AWizardPage {
 	    return result;
 	}
 	
+	@Override
+	public void setVisible(boolean visible) {
+		super.setVisible(visible);
+		if (!visible && orchestrator != null) {
+			updateModel();
+		}
+	}
+
+	public void updateModel() {
+		if (orchestrator == null) return;
+		Ollama ollama = orchestrator.getOllama();
+		if (ollama == null) {
+			ollama = OrchestrationFactory.eINSTANCE.createOllama();
+			orchestrator.setOllama(ollama);
+		}
+		ollama.setUrl(getOllamaUrl());
+		ollama.setModel(getModelName());
+		ollama.setPath(getExecutablePath());
+	}
+
 	public String getOllamaUrl() {
 		return urlText.getText();
 	}

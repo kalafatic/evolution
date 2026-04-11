@@ -21,6 +21,7 @@ import java.util.Arrays;
 
 public class AddOrchestrationWizard extends Wizard implements INewWizard {
     private IFile targetFile;
+    private Orchestrator orchestrator;
     private OrchestrationGeneralPage generalPage;
     private GitSettingsPage gitPage;
     private OllamaSettingsPage ollamaPage;
@@ -32,6 +33,7 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
 
     public AddOrchestrationWizard() {
         setWindowTitle("Add Orchestration");
+        this.orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
     }
 
     @Override
@@ -66,6 +68,10 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
         neuronAIPage = new NeuronAISettingsPage();
         agentPage = new AgentSettingsPage();
 
+        for (AWizardPage page : new AWizardPage[] { generalPage, gitPage, ollamaPage, llmPage, mavenPage, aiChatPage, neuronAIPage, agentPage }) {
+            page.setOrchestrator(orchestrator);
+        }
+
         addPage(generalPage);
         addPage(gitPage);
         addPage(ollamaPage);
@@ -99,58 +105,86 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
             EvoProject evoProject = (EvoProject) resource.getContents().get(0);
             OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
 
-            Orchestrator orchestrator = factory.createOrchestrator();
             orchestrator.setName(generalPage.getOrchestrationName());
             orchestrator.setId(generalPage.getOrchestrationId());
 
             // Git Settings
-            Git git = factory.createGit();
-            git.setRepositoryUrl(gitPage.getRepoUrl());
-            git.setBranch(gitPage.getBranch());
-            git.setUsername(gitPage.getUsername());
-            git.setLocalPath(gitPage.getLocalPath());
-            orchestrator.setGit(git);
+            if (!gitPage.isSkipped()) {
+                Git git = orchestrator.getGit();
+                if (git == null) {
+                    git = factory.createGit();
+                    orchestrator.setGit(git);
+                }
+                git.setRepositoryUrl(gitPage.getRepoUrl());
+                git.setBranch(gitPage.getBranch());
+                git.setUsername(gitPage.getUsername());
+                git.setLocalPath(gitPage.getLocalPath());
+            }
 
             // Ollama Settings
-            Ollama ollama = factory.createOllama();
-            ollama.setUrl(ollamaPage.getOllamaUrl());
-            ollama.setModel(ollamaPage.getModelName());
-            ollama.setPath(ollamaPage.getExecutablePath());
-            orchestrator.setOllama(ollama);
+            if (!ollamaPage.isSkipped()) {
+                Ollama ollama = orchestrator.getOllama();
+                if (ollama == null) {
+                    ollama = factory.createOllama();
+                    orchestrator.setOllama(ollama);
+                }
+                ollama.setUrl(ollamaPage.getOllamaUrl());
+                ollama.setModel(ollamaPage.getModelName());
+                ollama.setPath(ollamaPage.getExecutablePath());
+            }
 
             // LLM Settings
-            LLM llm = factory.createLLM();
-            llm.setModel(llmPage.getLlmModel());
-            try {
-                llm.setTemperature(Float.parseFloat(llmPage.getTemperature()));
-            } catch (NumberFormatException e) {
-                llm.setTemperature(0.7f);
+            if (!llmPage.isSkipped()) {
+                LLM llm = orchestrator.getLlm();
+                if (llm == null) {
+                    llm = factory.createLLM();
+                    orchestrator.setLlm(llm);
+                }
+                llm.setModel(llmPage.getLlmModel());
+                try {
+                    llm.setTemperature(Float.parseFloat(llmPage.getTemperature()));
+                } catch (NumberFormatException e) {
+                    llm.setTemperature(1.0f);
+                }
             }
-            orchestrator.setLlm(llm);
 
             // Maven Settings
-            Maven maven = factory.createMaven();
-            String goals = mavenPage.getGoals();
-            if (goals != null && !goals.isEmpty()) {
-                maven.getGoals().addAll(Arrays.asList(goals.split("[,\\s]+")));
+            if (!mavenPage.isSkipped()) {
+                Maven maven = orchestrator.getMaven();
+                if (maven == null) {
+                    maven = factory.createMaven();
+                    orchestrator.setMaven(maven);
+                }
+                String goals = mavenPage.getGoals();
+                if (goals != null && !goals.isEmpty()) {
+                    maven.getGoals().clear();
+                    maven.getGoals().addAll(Arrays.asList(goals.split("[,\\s]+")));
+                }
             }
-            orchestrator.setMaven(maven);
 
             // AiChat Settings
-            AiChat aiChat = factory.createAiChat();
-            aiChat.setUrl(aiChatPage.getChatUrl());
-            aiChat.setToken(aiChatPage.getToken());
-            aiChat.setPrompt(aiChatPage.getPrompt());
-            aiChat.setProxyUrl(aiChatPage.getProxyUrl());
-            orchestrator.setAiChat(aiChat);
+            if (!aiChatPage.isSkipped()) {
+                AiChat aiChat = orchestrator.getAiChat();
+                if (aiChat == null) {
+                    aiChat = factory.createAiChat();
+                    orchestrator.setAiChat(aiChat);
+                }
+                aiChat.setUrl(aiChatPage.getChatUrl());
+                aiChat.setToken(aiChatPage.getToken());
+                aiChat.setPrompt(aiChatPage.getPrompt());
+                aiChat.setProxyUrl(aiChatPage.getProxyUrl());
+            }
 
             // Neuron AI Settings
             if (!neuronAIPage.isSkipped()) {
-                NeuronAI neuronAI = factory.createNeuronAI();
+                NeuronAI neuronAI = orchestrator.getNeuronAI();
+                if (neuronAI == null) {
+                    neuronAI = factory.createNeuronAI();
+                    orchestrator.setNeuronAI(neuronAI);
+                }
                 neuronAI.setUrl(neuronAIPage.getUrl());
                 neuronAI.setModel(neuronAIPage.getModelName());
                 neuronAI.setType(neuronAIPage.getModelType());
-                orchestrator.setNeuronAI(neuronAI);
             }
 
             // Agent Settings

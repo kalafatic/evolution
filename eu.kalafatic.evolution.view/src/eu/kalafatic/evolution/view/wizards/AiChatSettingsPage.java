@@ -52,6 +52,27 @@ public class AiChatSettingsPage extends AWizardPage {
         setControl(container);
     }
 
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if (!visible && orchestrator != null) {
+            updateModel();
+        }
+    }
+
+    public void updateModel() {
+        if (orchestrator == null || isSkipped()) return;
+        eu.kalafatic.evolution.model.orchestration.AiChat aiChat = orchestrator.getAiChat();
+        if (aiChat == null) {
+            aiChat = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAiChat();
+            orchestrator.setAiChat(aiChat);
+        }
+        aiChat.setUrl(getChatUrl());
+        aiChat.setToken(getToken());
+        aiChat.setPrompt(getPrompt());
+        aiChat.setProxyUrl(getProxyUrl());
+    }
+
     public String getChatUrl() { return urlText.getText(); }
     public String getToken() { return tokenText.getText(); }
     public String getPrompt() { return promptText.getText(); }
