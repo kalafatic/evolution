@@ -242,7 +242,7 @@
             if (!text) return "";
             return text.replace(/\\/g, '\\\\')
                        .replace(/'/g, "\\'")
-                       .replace(/"/g, '\\"')
+                       .replace(/"/g, "&quot;")
                        .replace(/`/g, "\\`")
                        .replace(/\n/g, '\\n')
                        .replace(/\r/g, '');
