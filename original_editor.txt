@@ -4,16 +4,15 @@ import java.io.IOException;
 import java.util.Collections;
 
 import org.eclipse.core.resources.IMarker;
-import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.SWT;
@@ -25,7 +24,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IFileEditorInput;
-import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.ide.IDE;
@@ -42,7 +40,6 @@ import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.editors.pages.AiFlowPage;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
 import eu.kalafatic.evolution.view.editors.pages.BrowserPage;
-import eu.kalafatic.evolution.view.editors.pages.ContextPage;
 import eu.kalafatic.evolution.view.editors.pages.GraphPage;
 import eu.kalafatic.evolution.view.editors.pages.IterationPage;
 import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
@@ -68,8 +65,6 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private TestsPage testsPage;
     private IterationPage iterationPage;
     private TaskStackPage taskStackPage;
-    private ContextPage contextPage;
-
     private Orchestrator orchestrator;
     private TaskContext currentContext;
     private boolean isDirty = false;
@@ -106,6 +101,12 @@ public class MultiPageEditor extends MultiPageEditorPart {
     }
 
     @Override
+    public void createPartControl(Composite parent) {
+        super.createPartControl(parent);
+    }
+
+
+    @Override
     protected void createPages() {
         loadModel();
         try {
@@ -125,7 +126,6 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
                 testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
                 iterationPage = IterationPageFactory.createIterationPage(this, orchestrator);
-                contextPage = ContextPageFactory.createContextPage(this, orchestrator);
                 taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
             } else {
@@ -148,8 +148,10 @@ public class MultiPageEditor extends MultiPageEditorPart {
     }
 
     private void loadModel() {
-        OrchestrationPackage.eINSTANCE.eClass();
-        OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
+	// This forces the EMF registry to load your specific implementation
+	OrchestrationPackage.eINSTANCE.eClass();
+	// Then try the cast/access again
+	OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
 
         IEditorInput input = getEditorInput();
         if (input instanceof IFileEditorInput) {
@@ -170,10 +172,6 @@ public class MultiPageEditor extends MultiPageEditorPart {
         } else if (input instanceof OrchestratorEditorInput) {
             orchestrator = ((OrchestratorEditorInput) input).getOrchestrator();
             resource = orchestrator.eResource();
-        }
-
-        if (orchestrator != null) {
-            orchestrator.eAdapters().add(modelAdapter);
         }
     }
 
@@ -215,12 +213,11 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void dispose() {
         if (resourceListener != null) ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceListener);
         if (selectionListener != null) getSite().getWorkbenchWindow().getSelectionService().removeSelectionListener(selectionListener);
-        if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
         super.dispose();
     }
 
     @Override
-    public boolean isDirty() { return isDirty || (textEditor != null && textEditor.isDirty()); }
+    public boolean isDirty() { return isDirty || super.isDirty(); }
 
     public void setDirty(boolean dirty) {
         if (this.isDirty != dirty) {
@@ -250,7 +247,6 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (testsPage != null) testsPage.setOrchestrator(orchestrator);
         if (iterationPage != null) iterationPage.setOrchestrator(orchestrator);
         if (taskStackPage != null) taskStackPage.setOrchestrator(orchestrator);
-        if (contextPage != null) contextPage.setOrchestrator(orchestrator);
     }
 
     public void reloadModel() {
@@ -277,20 +273,25 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (testsPage != null) testsPage.updateUIFromModel();
         if (iterationPage != null) iterationPage.updateUIFromModel();
         if (mcpSettingsPage != null) mcpSettingsPage.updateMcpInfo();
-        if (contextPage != null) contextPage.refreshUI();
+        // Other pages (ApprovalPage, AiFlowPage, GraphPage) have their own internal adapters for deep notification handling
     }
 
     public void showApprovalPage() {
-        setActivePageByControl(approvalPage);
+        int pageCount = getPageCount();
+        for (int i = 0; i < pageCount; i++) {
+            Control control = getControl(i);
+            if (control == approvalPage) {
+                setActivePage(i);
+                break;
+            }
+        }
     }
 
     public void showAiChatPage() {
-        setActivePageByControl(aiChatPage);
-    }
-
-    private void setActivePageByControl(Control control) {
-        for (int i = 0; i < getPageCount(); i++) {
-            if (getControl(i) == control) {
+        int pageCount = getPageCount();
+        for (int i = 0; i < pageCount; i++) {
+            Control control = getControl(i);
+            if (control == aiChatPage) {
                 setActivePage(i);
                 break;
             }
@@ -310,6 +311,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (control == previewPage && previewPage != null) {
             previewPage.sortWords();
         }
+        // Other pages are now reactively updated via the model observer
     }
 
     public void gotoMarker(IMarker marker) {

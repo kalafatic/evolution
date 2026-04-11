@@ -9,7 +9,8 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
 import eu.kalafatic.evolution.controller.orchestration.util.DataScrubber;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.NeuronContextService;
+import eu.kalafatic.evolution.controller.services.BestPracticesService;
+import eu.kalafatic.evolution.controller.services.NeuronContextService;
 
 /**
  * Base AI Agent that wraps existing AI model/chat code.
@@ -67,10 +68,10 @@ public abstract class BaseAiAgent implements IAgent {
 
         // Initialize services if needed
         if (bestPracticesService == null) {
-            bestPracticesService = new BestPracticesService(context.getProjectRoot());
+            bestPracticesService = new BestPracticesService(orchestrator, context.getProjectRoot());
         }
         if (neuronContextService == null) {
-            neuronContextService = new NeuronContextService(context.getProjectRoot());
+            neuronContextService = new NeuronContextService(orchestrator, context.getProjectRoot());
         }
 
         // 1. Fetch MCP context if enabled
@@ -105,18 +106,16 @@ public abstract class BaseAiAgent implements IAgent {
 
         sb.append("\nINSTRUCTIONS:\n").append(getAgentInstructions()).append("\n");
 
-        // Best Practices
-        String bp = bestPracticesService.getPractices(type);
+        // Best Practices injection
+        String bp = bestPracticesService.getCombinedPractices();
         if (bp != null && !bp.isEmpty()) {
-            sb.append("\n--- BEST PRACTICES ---\n");
-            sb.append(bp).append("\n");
-            sb.append("--- END BEST PRACTICES ---\n");
+            sb.append("\n").append(bp).append("\n");
         }
 
-        // Neuron Context
-        String nc = neuronContextService.getContextPromptSnippet();
+        // Neuron Context injection
+        String nc = neuronContextService.getLearnedContext();
         if (nc != null && !nc.isEmpty()) {
-            sb.append(nc).append("\n");
+            sb.append("\n").append(nc).append("\n");
         }
 
         // External Instruction Files
@@ -163,7 +162,7 @@ public abstract class BaseAiAgent implements IAgent {
         // Routing via LlmRouter
         float temperature = 0.7f;
         if (orchestrator.getLlm() != null) {
-            temperature = orchestrator.getLlm().getTemperature();
+            temperature = (float) orchestrator.getLlm().getTemperature();
         }
 
         String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
