@@ -63,13 +63,38 @@ public class LlmRouter {
             orchestrator.setRemoteModel(remoteModel);
         }
 
-        ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
+        final String finalRemoteModel = remoteModel;
 
-        if (config != null && "google".equals(config.getFormat())) {
+        String format = "openai"; // default
+
+        // 1. Check custom provider in model
+        if (orchestrator.getAiProviders() != null) {
+            eu.kalafatic.evolution.model.orchestration.AIProvider custom = orchestrator.getAiProviders().stream()
+                    .filter(p -> p.getName().equalsIgnoreCase(finalRemoteModel))
+                    .findFirst().orElse(null);
+            if (custom != null) {
+                format = custom.getFormat();
+            } else {
+                // 2. Check static config
+                ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
+                if (config != null) {
+                    format = config.getFormat();
+                }
+            }
+        } else {
+            // 2. Check static config
+            ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
+            if (config != null) {
+                format = config.getFormat();
+            }
+        }
+
+        if ("google".equals(format)) {
             return geminiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
         }
 
-        // Default to common calling (OpenAI format)
+        // TODO: implement anthropic, cohere if needed.
+        // For now, default to common calling (OpenAI format)
         return openAiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
@@ -122,9 +147,26 @@ public class LlmRouter {
                 orchestrator.setRemoteModel(remoteModel);
             }
 
-            ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
+            final String finalRemoteModel = remoteModel;
+            String format = "openai";
 
-            if (config != null && "google".equals(config.getFormat())) {
+            // 1. Check custom provider in model
+            if (orchestrator.getAiProviders() != null) {
+                eu.kalafatic.evolution.model.orchestration.AIProvider custom = orchestrator.getAiProviders().stream()
+                        .filter(p -> p.getName().equalsIgnoreCase(finalRemoteModel))
+                        .findFirst().orElse(null);
+                if (custom != null) {
+                    format = custom.getFormat();
+                } else {
+                    ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
+                    if (config != null) format = config.getFormat();
+                }
+            } else {
+                ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel.toLowerCase());
+                if (config != null) format = config.getFormat();
+            }
+
+            if ("google".equals(format)) {
                 return geminiProvider.testConnection(orchestrator, temperature, proxyUrl, context);
             }
 

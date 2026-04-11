@@ -24,28 +24,17 @@ public class GeminiProvider implements ILlmProvider {
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String remoteModelName = orchestrator.getRemoteModel();
-        String token = null;
-        String apiUrl = null;
-        String model = null;
 
-        // Try to find custom provider in orchestrator
-        eu.kalafatic.evolution.model.orchestration.AIProvider customProvider = null;
-        if (orchestrator.getAiProviders() != null) {
-            customProvider = orchestrator.getAiProviders().stream()
-                    .filter(p -> p.getName().equalsIgnoreCase(remoteModelName))
-                    .findFirst().orElse(null);
-        }
+        // Use generalized resolution mechanism
+        eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
+                eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().resolve(orchestrator, remoteModelName);
 
-        if (customProvider != null) {
-            token = eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().getToken(customProvider);
-            apiUrl = customProvider.getUrl();
-            model = customProvider.getDefaultModel();
-            if (model == null || model.isEmpty()) model = remoteModelName;
-        } else {
-            token = orchestrator.getOpenAiToken(); // Using OpenAiToken as general API key
-            ProviderConfig config = AiProviders.PROVIDERS.get(remoteModelName != null ? remoteModelName.toLowerCase() : "gemini");
-            apiUrl = (config != null) ? config.getUrl() : DEFAULT_GEMINI_URL_TEMPLATE;
-            model = (config != null) ? config.getDefaultModel() : remoteModelName;
+        String token = (resolved != null) ? resolved.token : null;
+        String apiUrl = (resolved != null && resolved.url != null) ? resolved.url : DEFAULT_GEMINI_URL_TEMPLATE;
+        String model = (resolved != null && resolved.model != null) ? resolved.model : remoteModelName;
+
+        if (model == null || model.isEmpty() || model.equalsIgnoreCase("gemini")) {
+            model = "gemini-1.5-pro";
         }
 
         if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {

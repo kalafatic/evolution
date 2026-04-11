@@ -248,7 +248,7 @@ public class ModelsGroup extends AEvoGroup {
             newProvider.setFormat("openai");
 
             ModelDetailsDialog detailsDialog = new ModelDetailsDialog(group.getShell(), newProvider);
-            if (detailsDialog.open() == IDialogConstants.OK_ID) {
+            if (detailsDialog.open() == org.eclipse.jface.window.Window.OK) {
                 if (orchestrator != null) {
                     orchestrator.getAiProviders().add(newProvider);
                     editor.setDirty(true);
@@ -262,13 +262,31 @@ public class ModelsGroup extends AEvoGroup {
         IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
         if (selection.isEmpty()) return;
         ModelItem item = (ModelItem) selection.getFirstElement();
-        if (item.local || item.provider == null) {
-            MessageDialog.openInformation(group.getShell(), "Edit", "Static providers or local models cannot be edited here.");
+        if (item.local) {
+            MessageDialog.openInformation(group.getShell(), "Edit", "Local Ollama models cannot be edited here.");
             return;
         }
 
-        ModelDetailsDialog detailsDialog = new ModelDetailsDialog(group.getShell(), item.provider);
-        if (detailsDialog.open() == IDialogConstants.OK_ID) {
+        eu.kalafatic.evolution.model.orchestration.AIProvider provider = item.provider;
+        boolean isNew = false;
+        if (provider == null) {
+            // It's a static provider, create a model entry for it
+            provider = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
+            provider.setName(item.name);
+            provider.setUrl(item.pathOrUrl);
+            ProviderConfig config = AiProviders.PROVIDERS.get(item.name.toLowerCase());
+            if (config != null) {
+                provider.setDefaultModel(config.getDefaultModel());
+                provider.setFormat(config.getFormat());
+            }
+            isNew = true;
+        }
+
+        ModelDetailsDialog detailsDialog = new ModelDetailsDialog(group.getShell(), provider);
+        if (detailsDialog.open() == org.eclipse.jface.window.Window.OK) {
+            if (isNew && orchestrator != null) {
+                orchestrator.getAiProviders().add(provider);
+            }
             editor.setDirty(true);
             refreshUI();
         }
@@ -325,42 +343,29 @@ public class ModelsGroup extends AEvoGroup {
         if (orchestrator == null) return;
 
         final List<ModelItem> newItems = new ArrayList<>();
+        eu.kalafatic.evolution.controller.security.TokenSecurityService security =
+                eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance();
 
-        // Load Providers from Model
+        // 1. Load Custom Providers from Model
         for (eu.kalafatic.evolution.model.orchestration.AIProvider p : orchestrator.getAiProviders()) {
-            ModelState state = ModelState.NA;
-            String token = p.getApiKey();
-            if (p.isUseEnvVar()) {
-                token = System.getenv(p.getEnvVarName());
-            }
-            if (token != null && !token.isEmpty() && !token.equals("YOUR_API_KEY")) {
-                state = ModelState.OK;
-            }
+            String token = security.getToken(p);
+            ModelState state = (token != null && !token.isEmpty() && !token.equals("YOUR_API_KEY")) ? ModelState.OK : ModelState.NA;
             ModelItem item = new ModelItem(state, p.getName(), false, p.getUrl(), token);
             item.provider = p;
             newItems.add(item);
         }
 
-        // Load Remote Models from static map (if not already in model)
+        // 2. Load Remote Models from static map (if not explicitly in model as custom)
         for (String providerName : AiProviders.PROVIDERS.keySet()) {
-            boolean exists = newItems.stream().anyMatch(i -> i.name.equalsIgnoreCase(providerName));
-            if (exists) continue;
+            if (newItems.stream().anyMatch(i -> i.name.equalsIgnoreCase(providerName))) continue;
 
-            ProviderConfig config = AiProviders.PROVIDERS.get(providerName);
-            ModelState state = ModelState.NA;
+            eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved = security.resolve(orchestrator, providerName);
+            ModelState state = (resolved != null && resolved.token != null && !resolved.token.isEmpty() && !"YOUR_API_KEY".equals(resolved.token))
+                    ? ModelState.OK : ModelState.NA;
 
-            // For remote models, "ok" if we have a valid-looking token
-            String token = orchestrator.getOpenAiToken();
-            boolean isCurrentProvider = providerName.equalsIgnoreCase(orchestrator.getRemoteModel());
-
-            if (isCurrentProvider && token != null && !token.isEmpty() && !token.equals("YOUR_API_KEY")) {
-                state = ModelState.OK;
-            } else if (config.getApiKey() != null && !config.getApiKey().equals("YOUR_API_KEY")) {
-                 state = ModelState.OK;
-                 token = config.getApiKey();
-            }
-
-            newItems.add(new ModelItem(state, providerName, false, config.getEndpointUrl(), token));
+            newItems.add(new ModelItem(state, providerName, false,
+                    (resolved != null) ? resolved.url : "",
+                    (resolved != null) ? resolved.token : ""));
         }
 
         this.modelItems = newItems;
@@ -375,7 +380,7 @@ public class ModelsGroup extends AEvoGroup {
                 List<OllamaModel> localModels = ollamaService.loadModels();
                 List<ModelItem> localItems = new ArrayList<>();
                 for (OllamaModel m : localModels) {
-                    localItems.add(new ModelItem(ModelState.OK, m.getName(), true, ollamaUrl));
+                    localItems.add(new ModelItem(ModelState.OK, m.getName(), true, ollamaUrl, null));
                 }
 
                 Display.getDefault().asyncExec(() -> {
@@ -391,7 +396,7 @@ public class ModelsGroup extends AEvoGroup {
                 Display.getDefault().asyncExec(() -> {
                     if (tableViewer.getTable().isDisposed()) return;
                     if (this.modelItems == newItems) {
-                        newItems.add(new ModelItem(ModelState.ERR, "Ollama", true, ollamaUrl));
+                        newItems.add(new ModelItem(ModelState.ERR, "Ollama", true, ollamaUrl, null));
                         tableViewer.refresh();
                     }
                 });

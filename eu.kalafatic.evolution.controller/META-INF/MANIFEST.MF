@@ -34,6 +34,7 @@ Export-Package: eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.providers,
  eu.kalafatic.evolution.controller.review.service,
  eu.kalafatic.evolution.controller.vcs,
+ eu.kalafatic.evolution.controller.security,
  org.json
 Bundle-ClassPath: .,
  lib/json-20140107.jar,

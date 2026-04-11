@@ -18,6 +18,7 @@ import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
+import eu.kalafatic.evolution.view.editors.pages.properties.ModelDetailsDialog;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class AiSettingsGroup extends AEvoGroup {
@@ -72,7 +73,15 @@ public class AiSettingsGroup extends AEvoGroup {
 
         SWTFactory.createLabel(compositeRemote, "Token:");
         remoteTokenText = SWTFactory.createPasswordText(compositeRemote);
-        SWTFactory.createEditButton(compositeRemote, remoteTokenText);
+        Button editTokenBtn = SWTFactory.createEditButton(compositeRemote, remoteTokenText);
+        editTokenBtn.setText("\u2699"); // Gear icon
+        editTokenBtn.setToolTipText("Detailed Configuration");
+        editTokenBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleDetailedConfig();
+            }
+        });
 
         SWTFactory.createLabel(compositeRemote, "API URL:");
         remoteUrlText = SWTFactory.createText(compositeRemote);
@@ -113,9 +122,12 @@ public class AiSettingsGroup extends AEvoGroup {
                 int index = aiRemoteCombo.indexOf(remoteModel);
                 if (index >= 0) aiRemoteCombo.select(index);
             }
-            remoteTokenText.setText(orchestrator.getOpenAiToken() != null ? orchestrator.getOpenAiToken() : "");
-            remoteUrlText.setText((orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null)
-                    ? orchestrator.getAiChat().getUrl() : "");
+
+            eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
+                    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().resolve(orchestrator, remoteModel);
+
+            remoteTokenText.setText((resolved != null && resolved.token != null) ? resolved.token : "");
+            remoteUrlText.setText((resolved != null && resolved.url != null) ? resolved.url : "");
 
             AiMode mode = orchestrator.getAiMode();
             boolean remoteEnabled = mode == AiMode.HYBRID || mode == AiMode.REMOTE;
@@ -131,5 +143,36 @@ public class AiSettingsGroup extends AEvoGroup {
 
     public void setRemoteToken(String token) {
 	remoteTokenText.setText(token);
+    }
+
+    private void handleDetailedConfig() {
+        if (orchestrator == null) return;
+        String providerName = aiRemoteCombo.getText();
+
+        // Find existing or create temporary provider
+        eu.kalafatic.evolution.model.orchestration.AIProvider provider = orchestrator.getAiProviders().stream()
+                .filter(p -> p.getName().equalsIgnoreCase(providerName))
+                .findFirst().orElse(null);
+
+        boolean isNew = false;
+        if (provider == null) {
+            provider = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
+            provider.setName(providerName);
+            ProviderConfig config = AiProviders.PROVIDERS.get(providerName.toLowerCase());
+            if (config != null) {
+                provider.setUrl(config.getUrl());
+                provider.setDefaultModel(config.getDefaultModel());
+            }
+            isNew = true;
+        }
+
+        ModelDetailsDialog dialog = new ModelDetailsDialog(group.getShell(), provider);
+        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
+            if (isNew) {
+                orchestrator.getAiProviders().add(provider);
+            }
+            editor.setDirty(true);
+            refreshUI();
+        }
     }
 }

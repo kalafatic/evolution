@@ -29,7 +29,7 @@ public class ModelDetailsDialog extends Dialog {
     private Button useEnvBtn;
     private Text envNameText;
 
-    protected ModelDetailsDialog(Shell parentShell, AIProvider provider) {
+    public ModelDetailsDialog(Shell parentShell, AIProvider provider) {
         super(parentShell);
         this.provider = provider;
     }
