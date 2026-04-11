@@ -9,7 +9,6 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.impl.EFactoryImpl;
 import org.eclipse.emf.ecore.plugin.EcorePlugin;
 
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
@@ -35,6 +34,7 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
 import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
@@ -133,6 +133,7 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.FILE_CHANGE: return createFileChange();
 			case OrchestrationPackage.CHANGE_SET: return createChangeSet();
 			case OrchestrationPackage.REVIEW_SESSION: return createReviewSession();
+			case OrchestrationPackage.AI_PROVIDER: return createAIProvider();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -257,17 +258,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public EvaluationResult createEvaluationResult() {
 		EvaluationResultImpl evaluationResult = new EvaluationResultImpl();
 		return evaluationResult;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public AIProvider createAIProvider() {
-		AIProviderImpl aiProvider = new AIProviderImpl();
-		return aiProvider;
 	}
 
 	/**
@@ -405,6 +395,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	@Override public FileChange createFileChange() { return new FileChangeImpl(); }
 	@Override public ChangeSet createChangeSet() { return new ChangeSetImpl(); }
 	@Override public ReviewSession createReviewSession() { return new ReviewSessionImpl(); }
+
+	@Override public AIProvider createAIProvider() { return new AIProviderImpl(); }
 
 	/**
 	 * <!-- begin-user-doc -->

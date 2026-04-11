@@ -576,16 +576,6 @@ public interface Orchestrator extends EObject {
 	 */
 	EList<Test> getTests();
 
-	/**
-	 * Returns the value of the '<em><b>Ai Providers</b></em>' containment reference list.
-	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.AIProvider}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Ai Providers</em>' containment reference list.
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_AiProviders()
-	 * @model containment="true"
-	 * @generated
-	 */
 	EList<AIProvider> getAiProviders();
 
 } // Orchestrator

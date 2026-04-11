@@ -433,15 +433,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected EList<Test> tests;
-
-	/**
-	 * The cached value of the '{@link #getAiProviders() <em>Ai Providers</em>}' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getAiProviders()
-	 * @generated
-	 * @ordered
-	 */
 	protected EList<eu.kalafatic.evolution.model.orchestration.AIProvider> aiProviders;
 
 	/**
@@ -457,11 +448,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		return tests;
 	}
 
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
 	@Override
 	public EList<eu.kalafatic.evolution.model.orchestration.AIProvider> getAiProviders() {
 		if (aiProviders == null) {

@@ -3,10 +3,6 @@ package eu.kalafatic.evolution.controller.providers;
 import java.util.HashMap;
 import java.util.Map;
 
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-
 public class AiProviders {
 
     public static final Map<String, ProviderConfig> PROVIDERS;
@@ -113,23 +109,5 @@ public class AiProviders {
                 true,
                 "llama3.1"
         ));
-    }
-
-    /**
-     * Initializes the Orchestrator with the default providers if the list is empty.
-     */
-    public static void initializeProviders(Orchestrator orchestrator) {
-        if (orchestrator.getAiProviders().isEmpty()) {
-            for (ProviderConfig config : PROVIDERS.values()) {
-                AIProvider provider = OrchestrationFactory.eINSTANCE.createAIProvider();
-                provider.setName(config.getName());
-                provider.setUrl(config.getUrl());
-                provider.setApiKey(config.getApiKey());
-                provider.setFormat(config.getFormat());
-                provider.setLocal(config.isLocal());
-                provider.setDefaultModel(config.getDefaultModel());
-                orchestrator.getAiProviders().add(provider);
-            }
-        }
     }
 }
