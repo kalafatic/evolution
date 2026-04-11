@@ -28,6 +28,7 @@ public class ToolsPage extends SharedScrolledComposite {
     private DatabaseGroup databaseGroup;
     private EclipseGroup eclipseGroup;
     private CompilerGroup compilerGroup;
+    private TerminalGroup terminalGroup;
 
     public ToolsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -51,6 +52,7 @@ public class ToolsPage extends SharedScrolledComposite {
         databaseGroup = new DatabaseGroup(toolkit, comp, editor, orchestrator, successColor);
         eclipseGroup = new EclipseGroup(toolkit, comp, editor, orchestrator, successColor);
         compilerGroup = new CompilerGroup(toolkit, comp, editor, orchestrator, successColor);
+        terminalGroup = new TerminalGroup(toolkit, comp, editor, orchestrator, successColor);
 
         ModifyListener ml = e -> {
             if (orchestrator != null && !isUpdating) {
@@ -65,6 +67,7 @@ public class ToolsPage extends SharedScrolledComposite {
         databaseGroup.addModifyListener(ml);
         eclipseGroup.addModifyListener(ml);
         compilerGroup.addModifyListener(ml);
+        terminalGroup.addModifyListener(ml);
 
         this.setContent(comp);
         this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
@@ -74,7 +77,7 @@ public class ToolsPage extends SharedScrolledComposite {
     public void updateUIFromModel() {
         if (orchestrator == null || isUpdating) return;
         isUpdating = true;
-        gitGroup.updateUI(); mavenGroup.updateUI(); fileGroup.updateUI(); databaseGroup.updateUI(); eclipseGroup.updateUI(); compilerGroup.updateUI();
+        gitGroup.updateUI(); mavenGroup.updateUI(); fileGroup.updateUI(); databaseGroup.updateUI(); eclipseGroup.updateUI(); compilerGroup.updateUI(); terminalGroup.updateUI();
         isUpdating = false;
     }
 
@@ -82,7 +85,7 @@ public class ToolsPage extends SharedScrolledComposite {
         resetBackgrounds();
         if (orchestrator == null || isUpdating) return;
         isUpdating = true;
-        gitGroup.updateModel(); mavenGroup.updateModel(); fileGroup.updateModel(); databaseGroup.updateModel(); eclipseGroup.updateModel(); compilerGroup.updateModel();
+        gitGroup.updateModel(); mavenGroup.updateModel(); fileGroup.updateModel(); databaseGroup.updateModel(); eclipseGroup.updateModel(); compilerGroup.updateModel(); terminalGroup.updateModel();
         isUpdating = false;
     }
 
@@ -94,6 +97,7 @@ public class ToolsPage extends SharedScrolledComposite {
         if (databaseGroup != null) databaseGroup.setOrchestrator(orchestrator);
         if (eclipseGroup != null) eclipseGroup.setOrchestrator(orchestrator);
         if (compilerGroup != null) compilerGroup.setOrchestrator(orchestrator);
+        if (terminalGroup != null) terminalGroup.setOrchestrator(orchestrator);
         updateUIFromModel();
     }
 
