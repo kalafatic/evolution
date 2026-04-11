@@ -9,10 +9,11 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
-import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 
 /**
  * Gemini LLM provider implementation.
@@ -23,10 +24,14 @@ public class GeminiProvider implements ILlmProvider {
 
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        AiProviders.initializeProviders(orchestrator);
         String token = orchestrator.getOpenAiToken(); // Using OpenAiToken as general API key
         String remoteModelName = orchestrator.getRemoteModel();
 
-        ProviderConfig config = AiProviders.PROVIDERS.get(remoteModelName != null ? remoteModelName.toLowerCase() : "gemini");
+        AIProvider config = orchestrator.getAiProviders().stream()
+                .filter(p -> p.getName().equalsIgnoreCase(remoteModelName != null ? remoteModelName : "gemini"))
+                .findFirst()
+                .orElse(null);
 
         String apiUrl = (config != null) ? config.getUrl() : DEFAULT_GEMINI_URL_TEMPLATE;
         String model = (config != null) ? config.getDefaultModel() : remoteModelName;

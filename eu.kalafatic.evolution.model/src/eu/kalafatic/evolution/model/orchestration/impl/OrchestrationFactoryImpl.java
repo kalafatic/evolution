@@ -9,6 +9,7 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.impl.EFactoryImpl;
 import org.eclipse.emf.ecore.plugin.EcorePlugin;
 
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
@@ -256,6 +257,17 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public EvaluationResult createEvaluationResult() {
 		EvaluationResultImpl evaluationResult = new EvaluationResultImpl();
 		return evaluationResult;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public AIProvider createAIProvider() {
+		AIProviderImpl aiProvider = new AIProviderImpl();
+		return aiProvider;
 	}
 
 	/**

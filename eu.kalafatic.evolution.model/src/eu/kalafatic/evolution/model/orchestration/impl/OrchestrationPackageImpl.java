@@ -306,6 +306,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass aiProviderEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EEnum taskStatusEEnum = null;
 
 	/**
@@ -430,6 +437,84 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EReference getOrchestrator_Tests() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(24);
+	}
+
+	/**
+	 * @generated NOT
+	 */
+	@Override
+	public EReference getOrchestrator_AiProviders() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(27);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getAIProvider() {
+		return aiProviderEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Name() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Url() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_ApiKey() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Format() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Local() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_DefaultModel() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(5);
 	}
 
 	/**
@@ -2104,6 +2189,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__TESTS);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__ITERATIVE_MODE);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__SELF_ITERATIVE_MODE);
+		createEReference(orchestratorEClass, ORCHESTRATOR__AI_PROVIDERS);
 
 		testEClass = createEClass(TEST);
 		createEAttribute(testEClass, TEST__ID);
@@ -2149,6 +2235,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__ERRORS);
 		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__DECISION);
 		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__USER_SATISFACTION);
+
+		aiProviderEClass = createEClass(AI_PROVIDER);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__NAME);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__URL);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__API_KEY);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__FORMAT);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__LOCAL);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__DEFAULT_MODEL);
 
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
@@ -2412,6 +2506,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_Tests(), this.getTest(), null, "tests", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_AiProviders(), this.getAIProvider(), null, "aiProviders", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(testEClass, eu.kalafatic.evolution.model.orchestration.Test.class, "Test", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getTest_Id(), ecorePackage.getEString(), "id", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -2457,6 +2552,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getEvaluationResult_Errors(), ecorePackage.getEString(), "errors", null, 0, -1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getEvaluationResult_Decision(), this.getSelfDevDecision(), "decision", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getEvaluationResult_UserSatisfaction(), ecorePackage.getEInt(), "userSatisfaction", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(aiProviderEClass, eu.kalafatic.evolution.model.orchestration.AIProvider.class, "AIProvider", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getAIProvider_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_Url(), ecorePackage.getEString(), "url", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_ApiKey(), ecorePackage.getEString(), "apiKey", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_Format(), ecorePackage.getEString(), "format", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_Local(), ecorePackage.getEBoolean(), "local", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_DefaultModel(), ecorePackage.getEString(), "defaultModel", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Initialize enums and add enum literals
 

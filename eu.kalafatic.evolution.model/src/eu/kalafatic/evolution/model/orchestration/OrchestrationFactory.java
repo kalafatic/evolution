@@ -193,6 +193,15 @@ public interface OrchestrationFactory extends EFactory {
 	EvaluationResult createEvaluationResult();
 
 	/**
+	 * Returns a new object of class '<em>AI Provider</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>AI Provider</em>'.
+	 * @generated
+	 */
+	AIProvider createAIProvider();
+
+	/**
 	 * Returns a new object of class '<em>Database</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

@@ -9,10 +9,11 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
-import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 
 /**
  * OpenAI-compatible LLM provider implementation.
@@ -23,10 +24,14 @@ public class OpenAIProvider implements ILlmProvider {
 
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        AiProviders.initializeProviders(orchestrator);
         String token = orchestrator.getOpenAiToken();
         String remoteModelName = orchestrator.getRemoteModel();
 
-        ProviderConfig config = AiProviders.PROVIDERS.get(remoteModelName != null ? remoteModelName.toLowerCase() : "openai");
+        AIProvider config = orchestrator.getAiProviders().stream()
+                .filter(p -> p.getName().equalsIgnoreCase(remoteModelName != null ? remoteModelName : "openai"))
+                .findFirst()
+                .orElse(null);
 
         String apiUrl = (config != null) ? config.getUrl() : DEFAULT_OPENAI_URL;
         String model = (config != null) ? config.getDefaultModel() : orchestrator.getOpenAiModel();
