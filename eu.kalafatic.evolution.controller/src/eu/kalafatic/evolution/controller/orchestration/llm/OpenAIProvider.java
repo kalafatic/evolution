@@ -23,13 +23,29 @@ public class OpenAIProvider implements ILlmProvider {
 
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        String token = orchestrator.getOpenAiToken();
         String remoteModelName = orchestrator.getRemoteModel();
+        String token = null;
+        String apiUrl = null;
+        String model = null;
 
-        ProviderConfig config = AiProviders.PROVIDERS.get(remoteModelName != null ? remoteModelName.toLowerCase() : "openai");
+        // Try to find custom provider in orchestrator
+        eu.kalafatic.evolution.model.orchestration.AIProvider customProvider = null;
+        if (orchestrator.getAiProviders() != null) {
+            customProvider = orchestrator.getAiProviders().stream()
+                    .filter(p -> p.getName().equalsIgnoreCase(remoteModelName))
+                    .findFirst().orElse(null);
+        }
 
-        String apiUrl = (config != null) ? config.getUrl() : DEFAULT_OPENAI_URL;
-        String model = (config != null) ? config.getDefaultModel() : orchestrator.getOpenAiModel();
+        if (customProvider != null) {
+            token = eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().getToken(customProvider);
+            apiUrl = customProvider.getUrl();
+            model = customProvider.getDefaultModel();
+        } else {
+            token = orchestrator.getOpenAiToken();
+            ProviderConfig config = AiProviders.PROVIDERS.get(remoteModelName != null ? remoteModelName.toLowerCase() : "openai");
+            apiUrl = (config != null) ? config.getUrl() : DEFAULT_OPENAI_URL;
+            model = (config != null) ? config.getDefaultModel() : orchestrator.getOpenAiModel();
+        }
 
         if (token == null || token.isEmpty() || "YOUR_API_KEY".equals(token)) {
             if (context != null) {

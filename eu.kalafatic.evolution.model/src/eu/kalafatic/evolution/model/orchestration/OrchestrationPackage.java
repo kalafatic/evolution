@@ -1765,7 +1765,10 @@ public interface OrchestrationPackage extends EPackage {
 	int AI_PROVIDER__FORMAT = 3;
 	int AI_PROVIDER__LOCAL = 4;
 	int AI_PROVIDER__DEFAULT_MODEL = 5;
-	int AI_PROVIDER_FEATURE_COUNT = 6;
+	int AI_PROVIDER__API_KEY_ENCRYPTED = 6;
+	int AI_PROVIDER__USE_ENV_VAR = 7;
+	int AI_PROVIDER__ENV_VAR_NAME = 8;
+	int AI_PROVIDER_FEATURE_COUNT = 9;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl <em>Database</em>}' class.
@@ -3325,6 +3328,9 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getAIProvider_Format();
 	EAttribute getAIProvider_Local();
 	EAttribute getAIProvider_DefaultModel();
+	EAttribute getAIProvider_ApiKeyEncrypted();
+	EAttribute getAIProvider_UseEnvVar();
+	EAttribute getAIProvider_EnvVarName();
 
 	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}'.
@@ -5301,6 +5307,9 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute AI_PROVIDER__FORMAT = eINSTANCE.getAIProvider_Format();
 		EAttribute AI_PROVIDER__LOCAL = eINSTANCE.getAIProvider_Local();
 		EAttribute AI_PROVIDER__DEFAULT_MODEL = eINSTANCE.getAIProvider_DefaultModel();
+		EAttribute AI_PROVIDER__API_KEY_ENCRYPTED = eINSTANCE.getAIProvider_ApiKeyEncrypted();
+		EAttribute AI_PROVIDER__USE_ENV_VAR = eINSTANCE.getAIProvider_UseEnvVar();
+		EAttribute AI_PROVIDER__ENV_VAR_NAME = eINSTANCE.getAIProvider_EnvVarName();
 	}
 
 } //OrchestrationPackage

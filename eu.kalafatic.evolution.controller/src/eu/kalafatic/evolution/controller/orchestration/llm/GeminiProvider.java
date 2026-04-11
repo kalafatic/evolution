@@ -23,13 +23,30 @@ public class GeminiProvider implements ILlmProvider {
 
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        String token = orchestrator.getOpenAiToken(); // Using OpenAiToken as general API key
         String remoteModelName = orchestrator.getRemoteModel();
+        String token = null;
+        String apiUrl = null;
+        String model = null;
 
-        ProviderConfig config = AiProviders.PROVIDERS.get(remoteModelName != null ? remoteModelName.toLowerCase() : "gemini");
+        // Try to find custom provider in orchestrator
+        eu.kalafatic.evolution.model.orchestration.AIProvider customProvider = null;
+        if (orchestrator.getAiProviders() != null) {
+            customProvider = orchestrator.getAiProviders().stream()
+                    .filter(p -> p.getName().equalsIgnoreCase(remoteModelName))
+                    .findFirst().orElse(null);
+        }
 
-        String apiUrl = (config != null) ? config.getUrl() : DEFAULT_GEMINI_URL_TEMPLATE;
-        String model = (config != null) ? config.getDefaultModel() : remoteModelName;
+        if (customProvider != null) {
+            token = eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().getToken(customProvider);
+            apiUrl = customProvider.getUrl();
+            model = customProvider.getDefaultModel();
+            if (model == null || model.isEmpty()) model = remoteModelName;
+        } else {
+            token = orchestrator.getOpenAiToken(); // Using OpenAiToken as general API key
+            ProviderConfig config = AiProviders.PROVIDERS.get(remoteModelName != null ? remoteModelName.toLowerCase() : "gemini");
+            apiUrl = (config != null) ? config.getUrl() : DEFAULT_GEMINI_URL_TEMPLATE;
+            model = (config != null) ? config.getDefaultModel() : remoteModelName;
+        }
 
         if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getUrl() != null && !orchestrator.getAiChat().getUrl().isEmpty()) {
             apiUrl = orchestrator.getAiChat().getUrl();
