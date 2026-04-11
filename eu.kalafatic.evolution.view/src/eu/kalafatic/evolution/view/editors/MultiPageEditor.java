@@ -46,6 +46,7 @@ import eu.kalafatic.evolution.view.editors.pages.ContextPage;
 import eu.kalafatic.evolution.view.editors.pages.GraphPage;
 import eu.kalafatic.evolution.view.editors.pages.IterationPage;
 import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
+import eu.kalafatic.evolution.view.editors.pages.PeerReviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PreviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
@@ -69,6 +70,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private IterationPage iterationPage;
     private TaskStackPage taskStackPage;
     private ContextPage contextPage;
+    private PeerReviewPage peerReviewPage;
 
     private Orchestrator orchestrator;
     private TaskContext currentContext;
@@ -126,6 +128,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
                 iterationPage = IterationPageFactory.createIterationPage(this, orchestrator);
                 contextPage = ContextPageFactory.createContextPage(this, orchestrator);
+                peerReviewPage = PeerReviewPageFactory.createPeerReviewPage(this, orchestrator);
                 taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
             } else {
@@ -249,6 +252,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (toolsPage != null) toolsPage.setOrchestrator(orchestrator);
         if (testsPage != null) testsPage.setOrchestrator(orchestrator);
         if (iterationPage != null) iterationPage.setOrchestrator(orchestrator);
+        if (peerReviewPage != null) peerReviewPage.setOrchestrator(orchestrator);
         if (taskStackPage != null) taskStackPage.setOrchestrator(orchestrator);
         if (contextPage != null) contextPage.setOrchestrator(orchestrator);
     }
@@ -276,6 +280,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (taskStackPage != null) taskStackPage.updateUIFromModel();
         if (testsPage != null) testsPage.updateUIFromModel();
         if (iterationPage != null) iterationPage.updateUIFromModel();
+        if (peerReviewPage != null) peerReviewPage.refreshUI();
         if (mcpSettingsPage != null) mcpSettingsPage.updateMcpInfo();
         if (contextPage != null) contextPage.refreshUI();
     }
