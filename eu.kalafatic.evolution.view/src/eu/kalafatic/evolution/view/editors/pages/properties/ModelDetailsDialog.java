@@ -11,6 +11,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
@@ -28,6 +29,10 @@ public class ModelDetailsDialog extends Dialog {
     private Button encryptedBtn;
     private Button useEnvBtn;
     private Text envNameText;
+    private org.eclipse.swt.widgets.Scale ratingScale;
+    private Label ratingLabel;
+    private Combo stateCombo;
+    private Text stateDescText;
 
     public ModelDetailsDialog(Shell parentShell, AIProvider provider) {
         super(parentShell);
@@ -100,6 +105,35 @@ public class ModelDetailsDialog extends Dialog {
             }
         });
 
+        createLabel(container, "User Rating (1-100):");
+        Composite ratingComp = new Composite(container, SWT.NONE);
+        ratingComp.setLayout(new GridLayout(2, false));
+        ratingComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+
+        ratingScale = new org.eclipse.swt.widgets.Scale(ratingComp, SWT.HORIZONTAL);
+        ratingScale.setMinimum(1);
+        ratingScale.setMaximum(100);
+        ratingScale.setSelection(provider.getRating() > 0 ? provider.getRating() : 50);
+        ratingScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        ratingLabel = new Label(ratingComp, SWT.NONE);
+        ratingLabel.setText(String.valueOf(ratingScale.getSelection()));
+        ratingScale.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) {
+                ratingLabel.setText(String.valueOf(ratingScale.getSelection()));
+            }
+        });
+
+        createLabel(container, "State:");
+        stateCombo = new Combo(container, SWT.READ_ONLY);
+        stateCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+        stateCombo.setItems(new String[] { "NA", "OK", "ERR" });
+        stateCombo.select(provider.getState() != null ? stateCombo.indexOf(provider.getState()) : 0);
+        if (stateCombo.getSelectionIndex() == -1) stateCombo.select(0);
+
+        createLabel(container, "State Description:");
+        stateDescText = createText(container, provider.getStateDescription(), false);
+
         return container;
     }
 
@@ -117,6 +151,10 @@ public class ModelDetailsDialog extends Dialog {
 
     @Override
     protected void okPressed() {
+        provider.setRating(ratingScale.getSelection());
+        provider.setState(stateCombo.getText());
+        provider.setStateDescription(stateDescText.getText());
+
         String token = tokenText.getText();
         if (encryptedBtn.getSelection()) {
             try {

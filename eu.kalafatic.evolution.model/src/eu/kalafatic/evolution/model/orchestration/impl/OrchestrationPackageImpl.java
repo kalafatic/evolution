@@ -153,6 +153,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override public EAttribute getAIProvider_ApiKeyEncrypted() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(6); }
 	@Override public EAttribute getAIProvider_UseEnvVar() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(7); }
 	@Override public EAttribute getAIProvider_EnvVarName() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(8); }
+	@Override public EAttribute getAIProvider_State() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(9); }
+	@Override public EAttribute getAIProvider_StateDescription() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(10); }
+	@Override public EAttribute getAIProvider_Rating() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(11); }
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -2166,6 +2169,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(aiProviderEClass, AI_PROVIDER__API_KEY_ENCRYPTED);
 		createEAttribute(aiProviderEClass, AI_PROVIDER__USE_ENV_VAR);
 		createEAttribute(aiProviderEClass, AI_PROVIDER__ENV_VAR_NAME);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__STATE);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__STATE_DESCRIPTION);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__RATING);
 
 		evaluationResultEClass = createEClass(EVALUATION_RESULT);
 		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__SUCCESS);
@@ -2486,6 +2492,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getAIProvider_ApiKeyEncrypted(), ecorePackage.getEBoolean(), "apiKeyEncrypted", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAIProvider_UseEnvVar(), ecorePackage.getEBoolean(), "useEnvVar", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAIProvider_EnvVarName(), ecorePackage.getEString(), "envVarName", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_State(), ecorePackage.getEString(), "state", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_StateDescription(), ecorePackage.getEString(), "stateDescription", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_Rating(), ecorePackage.getEInt(), "rating", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(evaluationResultEClass, EvaluationResult.class, "EvaluationResult", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getEvaluationResult_Success(), ecorePackage.getEBoolean(), "success", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
