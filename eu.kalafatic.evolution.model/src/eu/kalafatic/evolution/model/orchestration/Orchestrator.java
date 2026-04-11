@@ -19,6 +19,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getName <em>Name</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAgents <em>Agents</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getTasks <em>Tasks</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getTests <em>Tests</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getGit <em>Git</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMaven <em>Maven</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getLlm <em>Llm</em>}</li>
@@ -39,7 +40,9 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig <em>File Config</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory <em>Shared Memory</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse <em>Eclipse</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getTests <em>Tests</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isIterativeMode <em>Iterative Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isSelfIterativeMode <em>Self Iterative Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiProviders <em>Ai Providers</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator()

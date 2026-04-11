@@ -30,9 +30,9 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getDescription <em>Description</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getRating <em>Rating</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isLikes <em>Likes</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getRationale <em>Rationale</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getScheduledTime <em>Scheduled Time</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isSelected <em>Selected</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getRationale <em>Rationale</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getScheduledTime <em>Scheduled Time</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isSelected <em>Selected</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()

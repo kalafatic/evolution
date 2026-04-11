@@ -53,7 +53,7 @@ public class LLMImpl extends MinimalEObjectImpl.Container implements LLM {
 	 * @generated
 	 * @ordered
 	 */
-	protected static final float TEMPERATURE_EDEFAULT = 0.0F;
+	protected static final float TEMPERATURE_EDEFAULT = 1.0F;
 
 	/**
 	 * The cached value of the '{@link #getTemperature() <em>Temperature</em>}' attribute.

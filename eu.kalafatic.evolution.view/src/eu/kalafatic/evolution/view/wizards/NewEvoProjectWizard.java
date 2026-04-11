@@ -98,7 +98,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         addPage(mavenPage);
         addPage(aiChatPage);
         addPage(neuronAIPage);
-        addPage(agentPage);
+        addPage(agentPage);        
     }
 
     @Override

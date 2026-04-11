@@ -4,6 +4,7 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -18,6 +19,7 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
+import eu.kalafatic.evolution.model.orchestration.Test;
 import org.eclipse.emf.common.util.EList;
 
 /**
@@ -33,6 +35,8 @@ public interface OrchestratorValidator {
 	boolean validateName(String value);
 	boolean validateAgents(EList<Agent> value);
 	boolean validateTasks(EList<Task> value);
+	boolean validateTests(EList<Test> value);
+
 	boolean validateGit(Git value);
 	boolean validateMaven(Maven value);
 	boolean validateLlm(LLM value);
@@ -64,6 +68,12 @@ public interface OrchestratorValidator {
 	boolean validateSharedMemory(String value);
 
 	boolean validateEclipse(Eclipse value);
+
+	boolean validateIterativeMode(boolean value);
+
+	boolean validateSelfIterativeMode(boolean value);
+
+	boolean validateAiProviders(EList<AIProvider> value);
 
 	boolean validateMcpServerUr(String value);
 

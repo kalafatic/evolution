@@ -366,6 +366,8 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int ORCHESTRATOR__TASKS = 3;
 
+	int ORCHESTRATOR__TESTS = 24;
+
 	/**
 	 * The feature id for the '<em><b>Git</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
@@ -373,7 +375,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__GIT = 4;
+	int ORCHESTRATOR__GIT = 5;
 
 	/**
 	 * The feature id for the '<em><b>Maven</b></em>' containment reference.
@@ -382,7 +384,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__MAVEN = 5;
+	int ORCHESTRATOR__MAVEN = 6;
 
 	/**
 	 * The feature id for the '<em><b>Llm</b></em>' containment reference.
@@ -391,7 +393,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__LLM = 6;
+	int ORCHESTRATOR__LLM = 7;
 
 	/**
 	 * The feature id for the '<em><b>Compiler</b></em>' containment reference.
@@ -400,7 +402,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__COMPILER = 7;
+	int ORCHESTRATOR__COMPILER = 8;
 
 	/**
 	 * The feature id for the '<em><b>Ollama</b></em>' containment reference.
@@ -409,7 +411,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__OLLAMA = 8;
+	int ORCHESTRATOR__OLLAMA = 9;
 
 	/**
 	 * The feature id for the '<em><b>Ai Chat</b></em>' containment reference.
@@ -418,7 +420,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__AI_CHAT = 9;
+	int ORCHESTRATOR__AI_CHAT = 10;
 
 	/**
 	 * The feature id for the '<em><b>Neuron AI</b></em>' containment reference.
@@ -427,7 +429,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__NEURON_AI = 10;
+	int ORCHESTRATOR__NEURON_AI = 11;
 
 	/**
 	 * The feature id for the '<em><b>Remote Model</b></em>' attribute.
@@ -436,7 +438,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__REMOTE_MODEL = 11;
+	int ORCHESTRATOR__REMOTE_MODEL = 12;
 
 	/**
 	 * The feature id for the '<em><b>Ai Mode</b></em>' attribute.
@@ -445,7 +447,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__AI_MODE = 12;
+	int ORCHESTRATOR__AI_MODE = 13;
 
 	/**
 	 * The feature id for the '<em><b>Mcp Server Url</b></em>' attribute.
@@ -454,7 +456,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__MCP_SERVER_URL = 13;
+	int ORCHESTRATOR__MCP_SERVER_URL = 14;
 
 	/**
 	 * The feature id for the '<em><b>Open Ai Token</b></em>' attribute.
@@ -463,7 +465,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__OPEN_AI_TOKEN = 14;
+	int ORCHESTRATOR__OPEN_AI_TOKEN = 15;
 
 	/**
 	 * The feature id for the '<em><b>Open Ai Model</b></em>' attribute.
@@ -472,7 +474,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__OPEN_AI_MODEL = 15;
+	int ORCHESTRATOR__OPEN_AI_MODEL = 16;
 
 	/**
 	 * The feature id for the '<em><b>Local Model</b></em>' attribute.
@@ -481,7 +483,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__LOCAL_MODEL = 16;
+	int ORCHESTRATOR__LOCAL_MODEL = 17;
 
 	/**
 	 * The feature id for the '<em><b>Hybrid Model</b></em>' attribute.
@@ -490,7 +492,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__HYBRID_MODEL = 17;
+	int ORCHESTRATOR__HYBRID_MODEL = 18;
 
 	/**
 	 * The feature id for the '<em><b>Offline Mode</b></em>' attribute.
@@ -499,7 +501,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__OFFLINE_MODE = 18;
+	int ORCHESTRATOR__OFFLINE_MODE = 19;
 
 	/**
 	 * The feature id for the '<em><b>Self Dev Session</b></em>' containment reference.
@@ -508,7 +510,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__SELF_DEV_SESSION = 19;
+	int ORCHESTRATOR__SELF_DEV_SESSION = 20;
 
 	/**
 	 * The feature id for the '<em><b>Database</b></em>' containment reference.
@@ -517,7 +519,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__DATABASE = 20;
+	int ORCHESTRATOR__DATABASE = 21;
 
 	/**
 	 * The feature id for the '<em><b>File Config</b></em>' containment reference.
@@ -526,7 +528,8 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__FILE_CONFIG = 21;
+	int ORCHESTRATOR__FILE_CONFIG = 22;
+
 	int ORCHESTRATOR__SHARED_MEMORY = 22;
 
 	/**
@@ -536,8 +539,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__ECLIPSE = 23;
-	int ORCHESTRATOR__TESTS = 24;
+	int ORCHESTRATOR__ECLIPSE = 24;
 	int ORCHESTRATOR__ITERATIVE_MODE = 25;
 	int ORCHESTRATOR__SELF_ITERATIVE_MODE = 26;
 	int ORCHESTRATOR__AI_PROVIDERS = 27;
@@ -568,7 +570,352 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getGit()
 	 * @generated
 	 */
-	int GIT = 3;
+	int GIT = 4;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MavenImpl <em>Maven</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.MavenImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMaven()
+	 * @generated
+	 */
+	int MAVEN = 5;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.LLMImpl <em>LLM</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.LLMImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLLM()
+	 * @generated
+	 */
+	int LLM = 6;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CompilerImpl <em>Compiler</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.CompilerImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCompiler()
+	 * @generated
+	 */
+	int COMPILER = 7;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommandImpl <em>Command</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.CommandImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommand()
+	 * @generated
+	 */
+	int COMMAND = 8;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl <em>Ollama</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getOllama()
+	 * @generated
+	 */
+	int OLLAMA = 9;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl <em>Ai Chat</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiChat()
+	 * @generated
+	 */
+	int AI_CHAT = 10;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl <em>Neuron AI</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronAI()
+	 * @generated
+	 */
+	int NEURON_AI = 11;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl <em>Evo Project</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvoProject()
+	 * @generated
+	 */
+	int EVO_PROJECT = 12;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.RuleImpl <em>Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.RuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getRule()
+	 * @generated
+	 */
+	int RULE = 13;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl <em>Access Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAccessRule()
+	 * @generated
+	 */
+	int ACCESS_RULE = 14;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl <em>Network Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkRule()
+	 * @generated
+	 */
+	int NETWORK_RULE = 15;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl <em>Memory Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMemoryRule()
+	 * @generated
+	 */
+	int MEMORY_RULE = 16;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl <em>Secret Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSecretRule()
+	 * @generated
+	 */
+	int SECRET_RULE = 17;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl <em>Self Dev Session</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevSession()
+	 * @generated
+	 */
+	int SELF_DEV_SESSION = 18;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl <em>Iteration</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.IterationImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIteration()
+	 * @generated
+	 */
+	int ITERATION = 21;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl <em>Evaluation Result</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvaluationResult()
+	 * @generated
+	 */
+	int EVALUATION_RESULT = 23;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
+	 * @generated
+	 */
+	int TASK_STATUS = 30;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
+	 * @generated
+	 */
+	int COMMAND_STATUS = 31;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
+	 * @generated
+	 */
+	int EXECUTION_MODE = 32;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
+	 * @generated
+	 */
+	int NEURON_TYPE = 33;
+
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
+	 * @generated
+	 */
+	int AI_MODE = 34;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
+	 * @generated
+	 */
+	int SELF_DEV_STATUS = 35;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.IterationStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
+	 * @generated
+	 */
+	int ITERATION_STATUS = 36;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevDecision
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
+	 * @generated
+	 */
+	int SELF_DEV_DECISION = 37;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TestImpl <em>Test</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.TestImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTest()
+	 * @generated
+	 */
+	int TEST = 24;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
+	 * @generated
+	 */
+	int TEST_STATUS = 38;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.ReviewDecision
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
+	 * @generated
+	 */
+	int REVIEW_DECISION = 39;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommentImpl <em>Comment</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.CommentImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComment()
+	 * @generated
+	 */
+	int COMMENT = 25;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl <em>Diff Hunk</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDiffHunk()
+	 * @generated
+	 */
+	int DIFF_HUNK = 26;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl <em>File Change</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileChange()
+	 * @generated
+	 */
+	int FILE_CHANGE = 27;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl <em>Change Set</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChangeSet()
+	 * @generated
+	 */
+	int CHANGE_SET = 28;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl <em>Review Session</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewSession()
+	 * @generated
+	 */
+	int REVIEW_SESSION = 29;
+
+	int AI_PROVIDER = 39;
+	int AI_PROVIDER__NAME = 0;
+	int AI_PROVIDER__URL = 1;
+	int AI_PROVIDER__API_KEY = 2;
+	int AI_PROVIDER__FORMAT = 3;
+	int AI_PROVIDER__LOCAL = 4;
+	int AI_PROVIDER__DEFAULT_MODEL = 5;
+	int AI_PROVIDER__API_KEY_ENCRYPTED = 6;
+	int AI_PROVIDER__USE_ENV_VAR = 7;
+	int AI_PROVIDER__ENV_VAR_NAME = 8;
+	int AI_PROVIDER__STATE = 9;
+	int AI_PROVIDER__STATE_DESCRIPTION = 10;
+	int AI_PROVIDER__RATING = 11;
+	int AI_PROVIDER_FEATURE_COUNT = 12;
+
+	/**
+	 * The number of operations of the '<em>AI Provider</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AI_PROVIDER_OPERATION_COUNT = 0;
 
 	/**
 	 * The feature id for the '<em><b>Repository Url</b></em>' attribute.
@@ -634,16 +981,6 @@ public interface OrchestrationPackage extends EPackage {
 	int GIT_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MavenImpl <em>Maven</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.MavenImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMaven()
-	 * @generated
-	 */
-	int MAVEN = 4;
-
-	/**
 	 * The feature id for the '<em><b>Goals</b></em>' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -689,16 +1026,6 @@ public interface OrchestrationPackage extends EPackage {
 	int MAVEN_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.LLMImpl <em>LLM</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.LLMImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLLM()
-	 * @generated
-	 */
-	int LLM = 5;
-
-	/**
 	 * The feature id for the '<em><b>Model</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -733,16 +1060,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int LLM_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CompilerImpl <em>Compiler</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.CompilerImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCompiler()
-	 * @generated
-	 */
-	int COMPILER = 6;
 
 	/**
 	 * The feature id for the '<em><b>Source Version</b></em>' attribute.
@@ -826,16 +1143,6 @@ public interface OrchestrationPackage extends EPackage {
 	int COMPILER_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommandImpl <em>Command</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.CommandImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommand()
-	 * @generated
-	 */
-	int COMMAND = 7;
-
-	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -870,16 +1177,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int COMMAND_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl <em>Ollama</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getOllama()
-	 * @generated
-	 */
-	int OLLAMA = 8;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -925,16 +1222,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int OLLAMA_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl <em>Ai Chat</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiChat()
-	 * @generated
-	 */
-	int AI_CHAT = 9;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -991,16 +1278,6 @@ public interface OrchestrationPackage extends EPackage {
 	int AI_CHAT_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl <em>Neuron AI</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronAI()
-	 * @generated
-	 */
-	int NEURON_AI = 10;
-
-	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1055,16 +1332,6 @@ public interface OrchestrationPackage extends EPackage {
 	int NEURON_AI_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl <em>Evo Project</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvoProject()
-	 * @generated
-	 */
-	int EVO_PROJECT = 11;
-
-	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1101,16 +1368,6 @@ public interface OrchestrationPackage extends EPackage {
 	int EVO_PROJECT_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.RuleImpl <em>Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.RuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getRule()
-	 * @generated
-	 */
-	int RULE = 12;
-
-	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1145,16 +1402,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int RULE_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl <em>Access Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAccessRule()
-	 * @generated
-	 */
-	int ACCESS_RULE = 13;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1211,16 +1458,6 @@ public interface OrchestrationPackage extends EPackage {
 	int ACCESS_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl <em>Network Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkRule()
-	 * @generated
-	 */
-	int NETWORK_RULE = 14;
-
-	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1273,16 +1510,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int NETWORK_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl <em>Memory Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMemoryRule()
-	 * @generated
-	 */
-	int MEMORY_RULE = 15;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1339,16 +1566,6 @@ public interface OrchestrationPackage extends EPackage {
 	int MEMORY_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl <em>Secret Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSecretRule()
-	 * @generated
-	 */
-	int SECRET_RULE = 16;
-
-	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1392,16 +1609,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int SECRET_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl <em>Self Dev Session</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevSession()
-	 * @generated
-	 */
-	int SELF_DEV_SESSION = 17;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -1456,6 +1663,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int SELF_DEV_SESSION__RATIONALE = 5;
+
 	int SELF_DEV_SESSION__INITIAL_REQUEST = 6;
 
 	/**
@@ -1477,303 +1685,6 @@ public interface OrchestrationPackage extends EPackage {
 	int SELF_DEV_SESSION_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl <em>Iteration</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.IterationImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIteration()
-	 * @generated
-	 */
-	int ITERATION = 20;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl <em>Evaluation Result</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvaluationResult()
-	 * @generated
-	 */
-	int EVALUATION_RESULT = 22;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
-	 * @generated
-	 */
-	int TASK_STATUS = 23;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
-	 * @generated
-	 */
-	int COMMAND_STATUS = 24;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
-	 * @generated
-	 */
-	int EXECUTION_MODE = 25;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
-	 * @generated
-	 */
-	int NEURON_TYPE = 26;
-
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
-	 * @generated
-	 */
-	int AI_MODE = 27;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
-	 * @generated
-	 */
-	int SELF_DEV_STATUS = 28;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.IterationStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
-	 * @generated
-	 */
-	int ITERATION_STATUS = 29;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevDecision
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
-	 * @generated
-	 */
-	int SELF_DEV_DECISION = 30;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TestImpl <em>Test</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.TestImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTest()
-	 * @generated
-	 */
-	int TEST = 31;
-
-	/**
-	 * The feature id for the '<em><b>Id</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int TEST__ID = 0;
-
-	/**
-	 * The feature id for the '<em><b>Name</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int TEST__NAME = 1;
-
-	/**
-	 * The feature id for the '<em><b>Type</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int TEST__TYPE = 2;
-
-	/**
-	 * The feature id for the '<em><b>Path</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int TEST__PATH = 3;
-
-	/**
-	 * The feature id for the '<em><b>Status</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int TEST__STATUS = 4;
-
-	/**
-	 * The feature id for the '<em><b>Selected</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int TEST__SELECTED = 5;
-
-	/**
-	 * The number of structural features of the '<em>Test</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int TEST_FEATURE_COUNT = 6;
-
-	/**
-	 * The number of operations of the '<em>Test</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int TEST_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
-	 * @generated
-	 */
-	int TEST_STATUS = 32;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.ReviewDecision
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
-	 * @generated
-	 */
-	int REVIEW_DECISION = 33;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommentImpl <em>Comment</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.CommentImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComment()
-	 * @generated
-	 */
-	int COMMENT = 34;
-
-	int COMMENT__ID = 0;
-	int COMMENT__FILE_PATH = 1;
-	int COMMENT__START_LINE = 2;
-	int COMMENT__END_LINE = 3;
-	int COMMENT__AUTHOR = 4;
-	int COMMENT__CONTENT = 5;
-	int COMMENT__TIMESTAMP = 6;
-	int COMMENT__RESOLVED = 7;
-	int COMMENT_FEATURE_COUNT = 8;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl <em>Diff Hunk</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDiffHunk()
-	 * @generated
-	 */
-	int DIFF_HUNK = 35;
-
-	int DIFF_HUNK__HEADER = 0;
-	int DIFF_HUNK__LINES = 1;
-	int DIFF_HUNK_FEATURE_COUNT = 2;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl <em>File Change</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileChange()
-	 * @generated
-	 */
-	int FILE_CHANGE = 36;
-
-	int FILE_CHANGE__FILE_PATH = 0;
-	int FILE_CHANGE__STATUS = 1;
-	int FILE_CHANGE__HUNKS = 2;
-	int FILE_CHANGE_FEATURE_COUNT = 3;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl <em>Change Set</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChangeSet()
-	 * @generated
-	 */
-	int CHANGE_SET = 37;
-
-	int CHANGE_SET__COMMIT_ID = 0;
-	int CHANGE_SET__FILES = 1;
-	int CHANGE_SET_FEATURE_COUNT = 2;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl <em>Review Session</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewSession()
-	 * @generated
-	 */
-	int REVIEW_SESSION = 38;
-
-	int REVIEW_SESSION__ID = 0;
-	int REVIEW_SESSION__CHANGE_SET = 1;
-	int REVIEW_SESSION__COMMENTS = 2;
-	int REVIEW_SESSION__DECISION = 3;
-	int REVIEW_SESSION_FEATURE_COUNT = 4;
-
-	int AI_PROVIDER = 39;
-	int AI_PROVIDER__NAME = 0;
-	int AI_PROVIDER__URL = 1;
-	int AI_PROVIDER__API_KEY = 2;
-	int AI_PROVIDER__FORMAT = 3;
-	int AI_PROVIDER__LOCAL = 4;
-	int AI_PROVIDER__DEFAULT_MODEL = 5;
-	int AI_PROVIDER__API_KEY_ENCRYPTED = 6;
-	int AI_PROVIDER__USE_ENV_VAR = 7;
-	int AI_PROVIDER__ENV_VAR_NAME = 8;
-	int AI_PROVIDER__STATE = 9;
-	int AI_PROVIDER__STATE_DESCRIPTION = 10;
-	int AI_PROVIDER__RATING = 11;
-	int AI_PROVIDER_FEATURE_COUNT = 12;
-
-	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl <em>Database</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1781,7 +1692,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDatabase()
 	 * @generated
 	 */
-	int DATABASE = 18;
+	int DATABASE = 19;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -1854,7 +1765,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileConfig()
 	 * @generated
 	 */
-	int FILE_CONFIG = 19;
+	int FILE_CONFIG = 20;
 
 	/**
 	 * The feature id for the '<em><b>Local Path</b></em>' attribute.
@@ -1999,7 +1910,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEclipse()
 	 * @generated
 	 */
-	int ECLIPSE = 21;
+	int ECLIPSE = 22;
 
 	/**
 	 * The feature id for the '<em><b>Workspace</b></em>' attribute.
@@ -2126,6 +2037,171 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int EVALUATION_RESULT_OPERATION_COUNT = 0;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__ID = 0;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__NAME = 1;
+
+	/**
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__TYPE = 2;
+
+	/**
+	 * The feature id for the '<em><b>Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__PATH = 3;
+
+	/**
+	 * The feature id for the '<em><b>Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__STATUS = 4;
+
+	/**
+	 * The feature id for the '<em><b>Selected</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST__SELECTED = 5;
+
+	/**
+	 * The number of structural features of the '<em>Test</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST_FEATURE_COUNT = 6;
+
+	/**
+	 * The number of operations of the '<em>Test</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TEST_OPERATION_COUNT = 0;
+
+	int COMMENT__ID = 0;
+
+	int COMMENT__FILE_PATH = 1;
+
+	int COMMENT__START_LINE = 2;
+
+	int COMMENT__END_LINE = 3;
+
+	int COMMENT__AUTHOR = 4;
+
+	int COMMENT__CONTENT = 5;
+
+	int COMMENT__TIMESTAMP = 6;
+
+	int COMMENT__RESOLVED = 7;
+
+	int COMMENT_FEATURE_COUNT = 8;
+
+	/**
+	 * The number of operations of the '<em>Comment</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMMENT_OPERATION_COUNT = 0;
+
+	int DIFF_HUNK__HEADER = 0;
+
+	int DIFF_HUNK__LINES = 1;
+
+	int DIFF_HUNK_FEATURE_COUNT = 2;
+
+	/**
+	 * The number of operations of the '<em>Diff Hunk</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DIFF_HUNK_OPERATION_COUNT = 0;
+
+	int FILE_CHANGE__FILE_PATH = 0;
+
+	int FILE_CHANGE__STATUS = 1;
+
+	int FILE_CHANGE__HUNKS = 2;
+
+	int FILE_CHANGE_FEATURE_COUNT = 3;
+
+	/**
+	 * The number of operations of the '<em>File Change</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int FILE_CHANGE_OPERATION_COUNT = 0;
+
+	int CHANGE_SET__COMMIT_ID = 0;
+
+	int CHANGE_SET__FILES = 1;
+
+	int CHANGE_SET_FEATURE_COUNT = 2;
+
+	/**
+	 * The number of operations of the '<em>Change Set</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHANGE_SET_OPERATION_COUNT = 0;
+
+	int REVIEW_SESSION__ID = 0;
+
+	int REVIEW_SESSION__CHANGE_SET = 1;
+
+	int REVIEW_SESSION__COMMENTS = 2;
+
+	int REVIEW_SESSION__DECISION = 3;
+
+	int REVIEW_SESSION_FEATURE_COUNT = 4;
+
+	/**
+	 * The number of operations of the '<em>Review Session</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int REVIEW_SESSION_OPERATION_COUNT = 0;
 
 
 	/**

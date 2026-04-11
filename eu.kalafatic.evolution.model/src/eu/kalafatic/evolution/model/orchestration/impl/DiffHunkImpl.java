@@ -11,7 +11,16 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
 
 public class DiffHunkImpl extends MinimalEObjectImpl.Container implements DiffHunk {
-    protected String header;
+    /**
+	 * The default value of the '{@link #getHeader() <em>Header</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getHeader()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String HEADER_EDEFAULT = null;
+				protected String header;
     protected EList<String> lines;
 
     protected DiffHunkImpl() { super(); }
@@ -49,4 +58,56 @@ public class DiffHunkImpl extends MinimalEObjectImpl.Container implements DiffHu
         }
         super.eSet(featureID, newValue);
     }
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void eUnset(int featureID) {
+		switch (featureID) {
+			case OrchestrationPackage.DIFF_HUNK__HEADER:
+				setHeader(HEADER_EDEFAULT);
+				return;
+			case OrchestrationPackage.DIFF_HUNK__LINES:
+				getLines().clear();
+				return;
+		}
+		super.eUnset(featureID);
+	}
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean eIsSet(int featureID) {
+		switch (featureID) {
+			case OrchestrationPackage.DIFF_HUNK__HEADER:
+				return HEADER_EDEFAULT == null ? header != null : !HEADER_EDEFAULT.equals(header);
+			case OrchestrationPackage.DIFF_HUNK__LINES:
+				return lines != null && !lines.isEmpty();
+		}
+		return super.eIsSet(featureID);
+	}
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (header: ");
+		result.append(header);
+		result.append(", lines: ");
+		result.append(lines);
+		result.append(')');
+		return result.toString();
+	}
 }

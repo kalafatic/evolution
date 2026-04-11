@@ -21,6 +21,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getStatus <em>Status</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getIterations <em>Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getRationale <em>Rationale</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getInitialRequest <em>Initial Request</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getSelfDevSession()

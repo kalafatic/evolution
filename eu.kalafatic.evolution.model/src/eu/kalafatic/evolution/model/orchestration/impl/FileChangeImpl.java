@@ -15,8 +15,26 @@ import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.InternalEList;
 
 public class FileChangeImpl extends MinimalEObjectImpl.Container implements FileChange {
-    protected String filePath;
-    protected String status;
+    /**
+	 * The default value of the '{@link #getFilePath() <em>File Path</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getFilePath()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String FILE_PATH_EDEFAULT = null;
+				protected String filePath;
+    /**
+	 * The default value of the '{@link #getStatus() <em>Status</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getStatus()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String STATUS_EDEFAULT = null;
+				protected String status;
     protected EList<DiffHunk> hunks;
 
     protected FileChangeImpl() { super(); }
@@ -68,4 +86,61 @@ public class FileChangeImpl extends MinimalEObjectImpl.Container implements File
         }
         super.eSet(featureID, newValue);
     }
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void eUnset(int featureID) {
+		switch (featureID) {
+			case OrchestrationPackage.FILE_CHANGE__FILE_PATH:
+				setFilePath(FILE_PATH_EDEFAULT);
+				return;
+			case OrchestrationPackage.FILE_CHANGE__STATUS:
+				setStatus(STATUS_EDEFAULT);
+				return;
+			case OrchestrationPackage.FILE_CHANGE__HUNKS:
+				getHunks().clear();
+				return;
+		}
+		super.eUnset(featureID);
+	}
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean eIsSet(int featureID) {
+		switch (featureID) {
+			case OrchestrationPackage.FILE_CHANGE__FILE_PATH:
+				return FILE_PATH_EDEFAULT == null ? filePath != null : !FILE_PATH_EDEFAULT.equals(filePath);
+			case OrchestrationPackage.FILE_CHANGE__STATUS:
+				return STATUS_EDEFAULT == null ? status != null : !STATUS_EDEFAULT.equals(status);
+			case OrchestrationPackage.FILE_CHANGE__HUNKS:
+				return hunks != null && !hunks.isEmpty();
+		}
+		return super.eIsSet(featureID);
+	}
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (filePath: ");
+		result.append(filePath);
+		result.append(", status: ");
+		result.append(status);
+		result.append(')');
+		return result.toString();
+	}
 }

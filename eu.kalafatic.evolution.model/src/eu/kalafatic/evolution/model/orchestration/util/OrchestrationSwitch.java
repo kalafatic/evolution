@@ -2,14 +2,19 @@
  */
 package eu.kalafatic.evolution.model.orchestration.util;
 
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Command;
+import eu.kalafatic.evolution.model.orchestration.Comment;
 import eu.kalafatic.evolution.model.orchestration.Database;
+import eu.kalafatic.evolution.model.orchestration.DiffHunk;
 import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
+import eu.kalafatic.evolution.model.orchestration.FileChange;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
@@ -21,11 +26,13 @@ import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
+import eu.kalafatic.evolution.model.orchestration.Test;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 
@@ -103,6 +110,12 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 			case OrchestrationPackage.ORCHESTRATOR: {
 				Orchestrator orchestrator = (Orchestrator)theEObject;
 				T result = caseOrchestrator(orchestrator);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.AI_PROVIDER: {
+				AIProvider aiProvider = (AIProvider)theEObject;
+				T result = caseAIProvider(aiProvider);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -230,6 +243,42 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
+			case OrchestrationPackage.TEST: {
+				Test test = (Test)theEObject;
+				T result = caseTest(test);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.COMMENT: {
+				Comment comment = (Comment)theEObject;
+				T result = caseComment(comment);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.DIFF_HUNK: {
+				DiffHunk diffHunk = (DiffHunk)theEObject;
+				T result = caseDiffHunk(diffHunk);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.FILE_CHANGE: {
+				FileChange fileChange = (FileChange)theEObject;
+				T result = caseFileChange(fileChange);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.CHANGE_SET: {
+				ChangeSet changeSet = (ChangeSet)theEObject;
+				T result = caseChangeSet(changeSet);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.REVIEW_SESSION: {
+				ReviewSession reviewSession = (ReviewSession)theEObject;
+				T result = caseReviewSession(reviewSession);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
 			default: return defaultCase(theEObject);
 		}
 	}
@@ -276,6 +325,21 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseOrchestrator(Orchestrator object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>AI Provider</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>AI Provider</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseAIProvider(AIProvider object) {
 		return null;
 	}
 
@@ -561,6 +625,96 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseEvaluationResult(EvaluationResult object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Test</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Test</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseTest(Test object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Comment</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Comment</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseComment(Comment object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Diff Hunk</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Diff Hunk</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseDiffHunk(DiffHunk object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>File Change</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>File Change</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseFileChange(FileChange object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Change Set</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Change Set</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseChangeSet(ChangeSet object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Review Session</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Review Session</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseReviewSession(ReviewSession object) {
 		return null;
 	}
 

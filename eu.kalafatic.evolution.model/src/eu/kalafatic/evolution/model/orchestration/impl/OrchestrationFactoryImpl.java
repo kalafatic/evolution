@@ -108,6 +108,7 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.TASK: return createTask();
 			case OrchestrationPackage.AGENT: return createAgent();
 			case OrchestrationPackage.ORCHESTRATOR: return createOrchestrator();
+			case OrchestrationPackage.AI_PROVIDER: return createAIProvider();
 			case OrchestrationPackage.GIT: return createGit();
 			case OrchestrationPackage.MAVEN: return createMaven();
 			case OrchestrationPackage.LLM: return createLLM();
@@ -133,7 +134,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.FILE_CHANGE: return createFileChange();
 			case OrchestrationPackage.CHANGE_SET: return createChangeSet();
 			case OrchestrationPackage.REVIEW_SESSION: return createReviewSession();
-			case OrchestrationPackage.AI_PROVIDER: return createAIProvider();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}

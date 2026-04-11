@@ -15,7 +15,16 @@ import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.InternalEList;
 
 public class ChangeSetImpl extends MinimalEObjectImpl.Container implements ChangeSet {
-    protected String commitId;
+    /**
+	 * The default value of the '{@link #getCommitId() <em>Commit Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getCommitId()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String COMMIT_ID_EDEFAULT = null;
+				protected String commitId;
     protected EList<FileChange> files;
 
     protected ChangeSetImpl() { super(); }
@@ -59,4 +68,54 @@ public class ChangeSetImpl extends MinimalEObjectImpl.Container implements Chang
         }
         super.eSet(featureID, newValue);
     }
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void eUnset(int featureID) {
+		switch (featureID) {
+			case OrchestrationPackage.CHANGE_SET__COMMIT_ID:
+				setCommitId(COMMIT_ID_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHANGE_SET__FILES:
+				getFiles().clear();
+				return;
+		}
+		super.eUnset(featureID);
+	}
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean eIsSet(int featureID) {
+		switch (featureID) {
+			case OrchestrationPackage.CHANGE_SET__COMMIT_ID:
+				return COMMIT_ID_EDEFAULT == null ? commitId != null : !COMMIT_ID_EDEFAULT.equals(commitId);
+			case OrchestrationPackage.CHANGE_SET__FILES:
+				return files != null && !files.isEmpty();
+		}
+		return super.eIsSet(featureID);
+	}
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (commitId: ");
+		result.append(commitId);
+		result.append(')');
+		return result.toString();
+	}
 }

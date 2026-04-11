@@ -33,6 +33,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl#getStatus <em>Status</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl#getIterations <em>Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl#getRationale <em>Rationale</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl#getInitialRequest <em>Initial Request</em>}</li>
  * </ul>
  *
  * @generated
@@ -128,9 +129,6 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 	 */
 	protected EList<Iteration> iterations;
 
-	protected static final String INITIAL_REQUEST_EDEFAULT = null;
-	protected String initialRequest = INITIAL_REQUEST_EDEFAULT;
-
 	/**
 	 * The default value of the '{@link #getRationale() <em>Rationale</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -150,6 +148,10 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected String rationale = RATIONALE_EDEFAULT;
+
+	protected static final String INITIAL_REQUEST_EDEFAULT = null;
+
+	protected String initialRequest = INITIAL_REQUEST_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->

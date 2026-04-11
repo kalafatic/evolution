@@ -42,9 +42,9 @@ import eu.kalafatic.evolution.model.orchestration.TaskStatus;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getDescription <em>Description</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getRating <em>Rating</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isLikes <em>Likes</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getRationale <em>Rationale</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getScheduledTime <em>Scheduled Time</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isSelected <em>Selected</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getRationale <em>Rationale</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getScheduledTime <em>Scheduled Time</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isSelected <em>Selected</em>}</li>
  * </ul>
  *
  * @generated

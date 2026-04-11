@@ -17,10 +17,28 @@ import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.InternalEList;
 
 public class ReviewSessionImpl extends MinimalEObjectImpl.Container implements ReviewSession {
-    protected String id;
+    /**
+	 * The default value of the '{@link #getId() <em>Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getId()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String ID_EDEFAULT = null;
+				protected String id;
     protected ChangeSet changeSet;
     protected EList<Comment> comments;
-    protected ReviewDecision decision = ReviewDecision.OPEN;
+    /**
+	 * The default value of the '{@link #getDecision() <em>Decision</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDecision()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final ReviewDecision DECISION_EDEFAULT = ReviewDecision.OPEN;
+				protected ReviewDecision decision = ReviewDecision.OPEN;
 
     protected ReviewSessionImpl() { super(); }
 
@@ -95,4 +113,66 @@ public class ReviewSessionImpl extends MinimalEObjectImpl.Container implements R
         }
         super.eSet(featureID, newValue);
     }
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void eUnset(int featureID) {
+		switch (featureID) {
+			case OrchestrationPackage.REVIEW_SESSION__ID:
+				setId(ID_EDEFAULT);
+				return;
+			case OrchestrationPackage.REVIEW_SESSION__CHANGE_SET:
+				setChangeSet((ChangeSet)null);
+				return;
+			case OrchestrationPackage.REVIEW_SESSION__COMMENTS:
+				getComments().clear();
+				return;
+			case OrchestrationPackage.REVIEW_SESSION__DECISION:
+				setDecision(DECISION_EDEFAULT);
+				return;
+		}
+		super.eUnset(featureID);
+	}
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean eIsSet(int featureID) {
+		switch (featureID) {
+			case OrchestrationPackage.REVIEW_SESSION__ID:
+				return ID_EDEFAULT == null ? id != null : !ID_EDEFAULT.equals(id);
+			case OrchestrationPackage.REVIEW_SESSION__CHANGE_SET:
+				return changeSet != null;
+			case OrchestrationPackage.REVIEW_SESSION__COMMENTS:
+				return comments != null && !comments.isEmpty();
+			case OrchestrationPackage.REVIEW_SESSION__DECISION:
+				return decision != DECISION_EDEFAULT;
+		}
+		return super.eIsSet(featureID);
+	}
+
+				/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (id: ");
+		result.append(id);
+		result.append(", decision: ");
+		result.append(decision);
+		result.append(')');
+		return result.toString();
+	}
 }

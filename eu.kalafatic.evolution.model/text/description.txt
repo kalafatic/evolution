@@ -23,6 +23,9 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute description : EString
     Attribute rating : EInt
     Attribute likes : EBoolean
+    Attribute rationale : EString
+    Attribute scheduledTime : EString
+    Attribute selected : EBoolean
 
   Class Agent
     Attribute id : EString
@@ -36,6 +39,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute name : EString
     Reference agents : Agent<<0..*>>
     Reference tasks : Task<<0..*>>
+    Reference tests : Test<<0..*>>
     Reference git : Git
     Reference maven : Maven
     Reference llm : LLM
@@ -56,6 +60,23 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Reference fileConfig : FileConfig
     Attribute sharedMemory : EString
     Reference eclipse : Eclipse
+    Attribute iterativeMode : EBoolean
+    Attribute selfIterativeMode : EBoolean
+    Reference aiProviders : AIProvider<<0..*>>
+
+  Class AIProvider
+    Attribute name : EString
+    Attribute url : EString
+    Attribute apiKey : EString
+    Attribute format : EString
+    Attribute local : EBoolean
+    Attribute defaultModel : EString
+    Attribute apiKeyEncrypted : EBoolean
+    Attribute useEnvVar : EBoolean
+    Attribute envVarName : EString
+    Attribute state : EString
+    Attribute stateDescription : EString
+    Attribute rating : EInt
 
   Class Git
     Attribute repositoryUrl : EString
@@ -133,6 +154,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute status : SelfDevStatus
     Reference iterations : Iteration<<0..*>>
     Attribute rationale : EString
+    Attribute initialRequest : EString
 
   Class Database
     Attribute url : EString
@@ -169,6 +191,43 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute errors : EString<<0..*>>
     Attribute decision : SelfDevDecision
     Attribute userSatisfaction : EInt
+
+  Class Test
+    Attribute id : EString
+    Attribute name : EString
+    Attribute type : EString
+    Attribute path : EString
+    Attribute status : TestStatus
+    Attribute selected : EBoolean
+
+  Class Comment
+    Attribute id : EString
+    Attribute filePath : EString
+    Attribute startLine : EInt
+    Attribute endLine : EInt
+    Attribute author : EString
+    Attribute content : EString
+    Attribute timestamp : EString
+    Attribute resolved : EBoolean
+
+  Class DiffHunk
+    Attribute header : EString
+    Attribute lines : EString<<0..*>>
+
+  Class FileChange
+    Attribute filePath : EString
+    Attribute status : EString
+    Reference hunks : DiffHunk<<0..*>>
+
+  Class ChangeSet
+    Attribute commitId : EString
+    Reference files : FileChange<<0..*>>
+
+  Class ReviewSession
+    Attribute id : EString
+    Reference changeSet : ChangeSet
+    Reference comments : Comment<<0..*>>
+    Attribute decision : ReviewDecision
 
   Enum TaskStatus
     Literal PENDING = 0
@@ -215,3 +274,16 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Literal CONTINUE = 0
     Literal ROLLBACK = 1
     Literal STOP = 2
+
+  Enum TestStatus
+    Literal PENDING = 0
+    Literal RUNNING = 1
+    Literal PASSED = 2
+    Literal FAILED = 3
+
+  Enum ReviewDecision
+    Literal OPEN = 0
+    Literal IN_REVIEW = 1
+    Literal APPROVED = 2
+    Literal REJECTED = 3
+    Literal CHANGES_REQUESTED = 4

@@ -40,4 +40,10 @@ public interface TaskValidator {
 	boolean validateRating(int value);
 
 	boolean validateLikes(boolean value);
+
+	boolean validateRationale(String value);
+
+	boolean validateScheduledTime(String value);
+
+	boolean validateSelected(boolean value);
 }
