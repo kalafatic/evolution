@@ -90,6 +90,8 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		menuBar.add(createFileMenu(window));
 		menuBar.add(createExplorerMenu(window));
 		menuBar.add(createToolsMenu(window));
+		menuBar.add(createWindowMenu(window));
+		menuBar.add(createHelpMenu(window));
 	}
 
 	// ---------------------------------------------------------------
@@ -103,6 +105,9 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		MenuManager menuManager = new MenuManager("&File", IWorkbenchActionConstants.M_FILE);
 		menuManager.add(new GroupMarker(IWorkbenchActionConstants.FILE_START));
 
+		menuManager.add(ActionFactory.NEW.create(window));
+		menuManager.add(new Separator());
+
 		IAction saveAction = ActionFactory.SAVE.create(window);
 		register(saveAction);
 		menuManager.add(saveAction);
@@ -112,6 +117,10 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		menuManager.add(saveAllAction);
 
 		menuManager.add(new Separator());
+		menuManager.add(ActionFactory.IMPORT.create(window));
+		menuManager.add(ActionFactory.EXPORT.create(window));
+		menuManager.add(new Separator());
+
 		menuManager.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
 		menuManager.add(new Separator());
 
@@ -160,6 +169,40 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 	}
 
 	// ---------------------------------------------------------------
+
+	private IMenuManager createWindowMenu(IWorkbenchWindow window) {
+		MenuManager menu = new MenuManager("&Window", IWorkbenchActionConstants.M_WINDOW);
+		menu.add(ActionFactory.OPEN_NEW_WINDOW.create(window));
+		menu.add(new Separator());
+		MenuManager showViewMenuMgr = new MenuManager("Show &View");
+		showViewMenuMgr.add(org.eclipse.ui.actions.ContributionItemFactory.VIEWS_SHORTLIST.create(window));
+		menu.add(showViewMenuMgr);
+
+		MenuManager perspectiveMenuMgr = new MenuManager("Open &Perspective");
+		perspectiveMenuMgr.add(org.eclipse.ui.actions.ContributionItemFactory.PERSPECTIVES_SHORTLIST.create(window));
+		menu.add(perspectiveMenuMgr);
+
+		menu.add(new Separator());
+		IAction preferencesAction = ActionFactory.PREFERENCES.create(window);
+		register(preferencesAction);
+		menu.add(preferencesAction);
+
+		menu.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
+
+		return menu;
+	}
+
+	private IMenuManager createHelpMenu(IWorkbenchWindow window) {
+		MenuManager menu = new MenuManager("&Help", IWorkbenchActionConstants.M_HELP);
+		menu.add(new GroupMarker(IWorkbenchActionConstants.HELP_START));
+
+		// For RCPs, these often need specific bundles, but we add the markers and standard actions
+		menu.add(ActionFactory.ABOUT.create(window));
+
+		menu.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
+		menu.add(new GroupMarker(IWorkbenchActionConstants.HELP_END));
+		return menu;
+	}
 
 	/**
 	 * Fill tray item.
