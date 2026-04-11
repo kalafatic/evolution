@@ -214,6 +214,12 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (index != -1) getControl(index).setFocus();
     }
 
+    public Object getActivePageInstance() {
+        int index = getActivePage();
+        if (index != -1) return getControl(index);
+        return null;
+    }
+
     @Override
     public void dispose() {
         if (resourceListener != null) ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceListener);

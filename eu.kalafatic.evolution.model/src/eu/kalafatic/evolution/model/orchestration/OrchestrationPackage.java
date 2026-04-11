@@ -1669,6 +1669,95 @@ public interface OrchestrationPackage extends EPackage {
 	int TEST_STATUS = 32;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.ReviewDecision
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
+	 * @generated
+	 */
+	int REVIEW_DECISION = 33;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommentImpl <em>Comment</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.CommentImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComment()
+	 * @generated
+	 */
+	int COMMENT = 34;
+
+	int COMMENT__ID = 0;
+	int COMMENT__FILE_PATH = 1;
+	int COMMENT__START_LINE = 2;
+	int COMMENT__END_LINE = 3;
+	int COMMENT__AUTHOR = 4;
+	int COMMENT__CONTENT = 5;
+	int COMMENT__TIMESTAMP = 6;
+	int COMMENT__RESOLVED = 7;
+	int COMMENT_FEATURE_COUNT = 8;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl <em>Diff Hunk</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDiffHunk()
+	 * @generated
+	 */
+	int DIFF_HUNK = 35;
+
+	int DIFF_HUNK__HEADER = 0;
+	int DIFF_HUNK__LINES = 1;
+	int DIFF_HUNK_FEATURE_COUNT = 2;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl <em>File Change</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileChange()
+	 * @generated
+	 */
+	int FILE_CHANGE = 36;
+
+	int FILE_CHANGE__FILE_PATH = 0;
+	int FILE_CHANGE__STATUS = 1;
+	int FILE_CHANGE__HUNKS = 2;
+	int FILE_CHANGE_FEATURE_COUNT = 3;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl <em>Change Set</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChangeSet()
+	 * @generated
+	 */
+	int CHANGE_SET = 37;
+
+	int CHANGE_SET__COMMIT_ID = 0;
+	int CHANGE_SET__FILES = 1;
+	int CHANGE_SET_FEATURE_COUNT = 2;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl <em>Review Session</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewSession()
+	 * @generated
+	 */
+	int REVIEW_SESSION = 38;
+
+	int REVIEW_SESSION__ID = 0;
+	int REVIEW_SESSION__CHANGE_SET = 1;
+	int REVIEW_SESSION__COMMENTS = 2;
+	int REVIEW_SESSION__DECISION = 3;
+	int REVIEW_SESSION_FEATURE_COUNT = 4;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl <em>Database</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3187,6 +3276,36 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getTest_Selected();
+
+	EEnum getReviewDecision();
+	EClass getComment();
+	EAttribute getComment_Id();
+	EAttribute getComment_FilePath();
+	EAttribute getComment_StartLine();
+	EAttribute getComment_EndLine();
+	EAttribute getComment_Author();
+	EAttribute getComment_Content();
+	EAttribute getComment_Timestamp();
+	EAttribute getComment_Resolved();
+
+	EClass getDiffHunk();
+	EAttribute getDiffHunk_Header();
+	EAttribute getDiffHunk_Lines();
+
+	EClass getFileChange();
+	EAttribute getFileChange_FilePath();
+	EAttribute getFileChange_Status();
+	EReference getFileChange_Hunks();
+
+	EClass getChangeSet();
+	EAttribute getChangeSet_CommitId();
+	EReference getChangeSet_Files();
+
+	EClass getReviewSession();
+	EAttribute getReviewSession_Id();
+	EReference getReviewSession_ChangeSet();
+	EReference getReviewSession_Comments();
+	EAttribute getReviewSession_Decision();
 
 	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}'.
@@ -5125,6 +5244,35 @@ public interface OrchestrationPackage extends EPackage {
 		 */
 		EEnum TEST_STATUS = eINSTANCE.getTestStatus();
 
+		EEnum REVIEW_DECISION = eINSTANCE.getReviewDecision();
+		EClass COMMENT = eINSTANCE.getComment();
+		EAttribute COMMENT__ID = eINSTANCE.getComment_Id();
+		EAttribute COMMENT__FILE_PATH = eINSTANCE.getComment_FilePath();
+		EAttribute COMMENT__START_LINE = eINSTANCE.getComment_StartLine();
+		EAttribute COMMENT__END_LINE = eINSTANCE.getComment_EndLine();
+		EAttribute COMMENT__AUTHOR = eINSTANCE.getComment_Author();
+		EAttribute COMMENT__CONTENT = eINSTANCE.getComment_Content();
+		EAttribute COMMENT__TIMESTAMP = eINSTANCE.getComment_Timestamp();
+		EAttribute COMMENT__RESOLVED = eINSTANCE.getComment_Resolved();
+
+		EClass DIFF_HUNK = eINSTANCE.getDiffHunk();
+		EAttribute DIFF_HUNK__HEADER = eINSTANCE.getDiffHunk_Header();
+		EAttribute DIFF_HUNK__LINES = eINSTANCE.getDiffHunk_Lines();
+
+		EClass FILE_CHANGE = eINSTANCE.getFileChange();
+		EAttribute FILE_CHANGE__FILE_PATH = eINSTANCE.getFileChange_FilePath();
+		EAttribute FILE_CHANGE__STATUS = eINSTANCE.getFileChange_Status();
+		EReference FILE_CHANGE__HUNKS = eINSTANCE.getFileChange_Hunks();
+
+		EClass CHANGE_SET = eINSTANCE.getChangeSet();
+		EAttribute CHANGE_SET__COMMIT_ID = eINSTANCE.getChangeSet_CommitId();
+		EReference CHANGE_SET__FILES = eINSTANCE.getChangeSet_Files();
+
+		EClass REVIEW_SESSION = eINSTANCE.getReviewSession();
+		EAttribute REVIEW_SESSION__ID = eINSTANCE.getReviewSession_Id();
+		EReference REVIEW_SESSION__CHANGE_SET = eINSTANCE.getReviewSession_ChangeSet();
+		EReference REVIEW_SESSION__COMMENTS = eINSTANCE.getReviewSession_Comments();
+		EAttribute REVIEW_SESSION__DECISION = eINSTANCE.getReviewSession_Decision();
 	}
 
 } //OrchestrationPackage

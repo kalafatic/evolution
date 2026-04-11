@@ -53,8 +53,8 @@ public class PeerReviewPage extends SharedScrolledComposite {
         fileTreeGroup.getTreeViewer().addSelectionChangedListener(event -> {
             org.eclipse.jface.viewers.IStructuredSelection selection = (org.eclipse.jface.viewers.IStructuredSelection) event.getSelection();
             Object firstElement = selection.getFirstElement();
-            if (firstElement instanceof java.io.File && ((java.io.File) firstElement).isFile()) {
-                diffViewerGroup.setFile((java.io.File) firstElement);
+            if (firstElement instanceof String) {
+                diffViewerGroup.setFilePath((String) firstElement);
             }
         });
 
@@ -72,7 +72,8 @@ public class PeerReviewPage extends SharedScrolledComposite {
             }
             if (project != null) {
                 java.io.File projectRoot = project.getLocation().toFile();
-                fileTreeGroup.getTreeViewer().setInput(new java.io.File[] { projectRoot });
+                java.util.List<String> changedFiles = eu.kalafatic.evolution.controller.review.service.PeerReviewService.getInstance().getChangedFiles(projectRoot);
+                fileTreeGroup.getTreeViewer().setInput(changedFiles);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -84,6 +85,10 @@ public class PeerReviewPage extends SharedScrolledComposite {
         this.orchestrator = orchestrator;
         if (this.orchestrator != null) this.orchestrator.eAdapters().add(modelAdapter);
         refreshUI();
+    }
+
+    public void notifyLineSelected(String filePath, int lineNum) {
+        commentsGroup.setSelectedLine(filePath, lineNum);
     }
 
     public void refreshUI() {

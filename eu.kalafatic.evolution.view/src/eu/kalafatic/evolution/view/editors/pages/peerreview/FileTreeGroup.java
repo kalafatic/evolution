@@ -52,6 +52,7 @@ public class FileTreeGroup extends AEvoGroup {
     private class FileTreeContentProvider implements ITreeContentProvider {
         @Override
         public Object[] getElements(Object inputElement) {
+            if (inputElement instanceof java.util.List) return ((java.util.List<?>) inputElement).toArray();
             if (inputElement instanceof File[]) return (File[]) inputElement;
             return new Object[0];
         }
@@ -67,10 +68,12 @@ public class FileTreeGroup extends AEvoGroup {
     private class FileTreeLabelProvider extends LabelProvider {
         @Override
         public String getText(Object element) {
+            if (element instanceof String) return (String) element;
             return ((File) element).getName();
         }
         @Override
         public Image getImage(Object element) {
+            if (element instanceof String) return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
             String imageKey = ((File) element).isDirectory() ? ISharedImages.IMG_OBJ_FOLDER : ISharedImages.IMG_OBJ_FILE;
             return PlatformUI.getWorkbench().getSharedImages().getImage(imageKey);
         }

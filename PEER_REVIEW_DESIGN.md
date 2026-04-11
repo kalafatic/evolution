@@ -47,7 +47,7 @@
 
 ## 2. Java Package Structure
 
-- `eu.kalafatic.evolution.controller.review.model`: Domain objects (`ReviewSession`, `Comment`, `FileChange`, `DiffHunk`, `ReviewDecision`)
+- `eu.kalafatic.evolution.model.orchestration`: EMF Domain objects (`ReviewSession`, `Comment`, `FileChange`, `DiffHunk`, `ReviewDecision`)
 - `eu.kalafatic.evolution.controller.review.service`: Business logic (`PeerReviewService`)
 - `eu.kalafatic.evolution.controller.vcs`: VCS abstraction (`VersionControlProvider`) and Git implementation (`GitVersionControlProvider`)
 - `eu.kalafatic.evolution.view.editors.pages`: Main `PeerReviewPage`
@@ -57,12 +57,14 @@
 
 ### ReviewSession
 ```java
-public class ReviewSession {
-    private String id;
-    private ChangeSet changeSet;
-    private List<Comment> comments;
-    private ReviewDecision decision; // OPEN, IN_REVIEW, APPROVED, REJECTED, CHANGES_REQUESTED
-    // Getters and setters
+public interface ReviewSession extends EObject {
+    String getId();
+    void setId(String value);
+    ChangeSet getChangeSet();
+    void setChangeSet(ChangeSet value);
+    EList<Comment> getComments();
+    ReviewDecision getDecision();
+    void setDecision(ReviewDecision value);
 }
 ```
 
@@ -81,6 +83,7 @@ public class FileChange {
 public interface VersionControlProvider {
     List<String> fetchCommits(File workingDir) throws Exception;
     String getDiff(File workingDir, String commitId) throws Exception;
+    String getFileDiff(File workingDir, String commitId, String filePath) throws Exception;
     void checkoutBranch(File workingDir, String branchName) throws Exception;
     void commitChanges(File workingDir, String message) throws Exception;
     void push(File workingDir) throws Exception;

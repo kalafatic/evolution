@@ -17,12 +17,14 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.review.service.PeerReviewService;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.PeerReviewPage;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class DiffViewerGroup extends AEvoGroup {
     private Browser browser;
     private File currentFile;
+    private String relativeFilePath;
 
     public DiffViewerGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(editor, orchestrator);
@@ -37,6 +39,17 @@ public class DiffViewerGroup extends AEvoGroup {
             browser = new Browser(group, SWT.NONE);
             browser.setLayoutData(new GridData(GridData.FILL_BOTH));
             browser.setText("<html><body><h3>Select a file to view diff</h3></body></html>");
+
+            new org.eclipse.swt.browser.BrowserFunction(browser, "addLineComment") {
+                @Override
+                public Object function(Object[] arguments) {
+                    if (arguments.length > 0 && arguments[0] instanceof Double) {
+                        int lineNum = ((Double) arguments[0]).intValue();
+                        handleLineClick(lineNum);
+                    }
+                    return null;
+                }
+            };
         } catch (Exception e) {
             toolkit.createLabel(group, "Browser not supported: " + e.getMessage());
         }
@@ -45,6 +58,18 @@ public class DiffViewerGroup extends AEvoGroup {
     public void setFile(File file) {
         this.currentFile = file;
         updateUI();
+    }
+
+    public void setFilePath(String path) {
+        IProject project = null;
+        if (editor.getEditorInput() instanceof IFileEditorInput) {
+            project = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject();
+        }
+        if (project != null) {
+            this.currentFile = project.getFile(path).getLocation().toFile();
+            this.relativeFilePath = path;
+            updateUI();
+        }
     }
 
     @Override
@@ -61,7 +86,7 @@ public class DiffViewerGroup extends AEvoGroup {
                     }
                     if (project != null) {
                         File projectRoot = project.getLocation().toFile();
-                        String diff = PeerReviewService.getInstance().getDiff(projectRoot, "HEAD");
+                        String diff = PeerReviewService.getInstance().getFileDiff(projectRoot, "HEAD", relativeFilePath);
                         final String html = getDiffHtml(diff);
                         Display.getDefault().asyncExec(() -> {
                             if (!browser.isDisposed()) browser.setText(html);
@@ -87,19 +112,22 @@ public class DiffViewerGroup extends AEvoGroup {
         html.append(".deleted { background-color: #ffeef0; color: #cb2431; }");
         html.append(".header { background-color: #f1f8ff; color: #005cc5; font-weight: bold; border-top: 1px solid #c0d3eb; border-bottom: 1px solid #c0d3eb; }");
         html.append(".info { color: #6a737d; }");
+        html.append(".line:hover { background-color: #f6f8fa; cursor: pointer; }");
         html.append("</style></head><body>");
 
         if (diff == null || diff.isEmpty()) {
             html.append("<div class='info'>No changes detected in this file.</div>");
         } else {
+            int lineNum = 0;
             for (String line : diff.split("\n")) {
+                lineNum++;
                 String cls = "line";
                 if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("diff ") || line.startsWith("index ")) cls += " header";
                 else if (line.startsWith("+")) cls += " added";
                 else if (line.startsWith("-")) cls += " deleted";
                 else if (line.startsWith("@@")) cls += " info";
 
-                html.append("<div class='").append(cls).append("'>").append(escapeHtml(line)).append("</div>");
+                html.append("<div class='").append(cls).append("' onclick='addLineComment(").append(lineNum).append(")'>").append(escapeHtml(line)).append("</div>");
             }
         }
 
@@ -107,7 +135,16 @@ public class DiffViewerGroup extends AEvoGroup {
         return html.toString();
     }
 
+    private void handleLineClick(int lineNum) {
+        Display.getDefault().asyncExec(() -> {
+            if (editor.getActivePageInstance() instanceof PeerReviewPage) {
+                ((PeerReviewPage) editor.getActivePageInstance()).notifyLineSelected(relativeFilePath != null ? relativeFilePath : "unknown", lineNum);
+            }
+        });
+    }
+
     private String escapeHtml(String text) {
+        if (text == null) return "";
         return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 }
