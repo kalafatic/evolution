@@ -36,11 +36,19 @@
         /* Message Structure */
         .message { 
             display: flex; flex-direction: column; 
-            max-width: 90%; position: relative;
+            max-width: 95%; position: relative;
             animation: slideIn 0.3s ease-out;
         }
-        .message.user { align-self: flex-end; }
+        .message.user { align-self: flex-end; align-items: flex-end; }
         .message.ai { align-self: flex-start; }
+
+        .message-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        .user .message-content { flex-direction: row-reverse; }
 
         .header { 
             display: flex; align-items: center; gap: 6px;
@@ -79,17 +87,16 @@
 
         /* Hover Actions */
         .actions { 
-            position: absolute; top: 0; right: -40px;
-            display: flex; flex-direction: column; gap: 4px;
+            display: flex; flex-direction: row; gap: 4px;
             opacity: 0; transition: opacity 0.2s;
         }
-        .message.user .actions { left: -40px; right: auto; }
         .message:hover .actions { opacity: 1; }
 
         .action-btn {
-            background: white; border: 1px solid var(--border); border-radius: 6px;
-            width: 32px; height: 32px; display: flex; align-items: center;
+            background: white; border: 1px solid var(--border); border-radius: 4px;
+            width: 24px; height: 24px; display: flex; align-items: center;
             justify-content: center; cursor: pointer; color: #64748b; transition: all 0.2s;
+            font-size: 12px;
         }
         .action-btn:hover { background: #f1f5f9; color: #2563eb; border-color: #cbd5e1; }
         .action-btn.approve { color: #16a34a; }
@@ -265,6 +272,9 @@
                 header.appendChild(sender);
                 header.appendChild(time);
 
+                const msgContent = document.createElement('div');
+                msgContent.className = 'message-content';
+
                 const bubble = document.createElement('div');
                 bubble.className = 'bubble';
                 bubble.onclick = () => JavaHandler('edit', m.index.toString(), m.text);
@@ -282,9 +292,11 @@
                     <button class="action-btn" title="Collapse/Expand" onclick="event.stopPropagation(); toggleCollapse(${m.index})">↕️</button>
                 `;
 
+                msgContent.appendChild(bubble);
+                msgContent.appendChild(actions);
+
                 div.appendChild(header);
-                div.appendChild(bubble);
-                div.appendChild(actions);
+                div.appendChild(msgContent);
                 container.appendChild(div);
             });
 
