@@ -35,8 +35,14 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
+import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
+import eu.kalafatic.evolution.model.orchestration.Comment;
+import eu.kalafatic.evolution.model.orchestration.DiffHunk;
+import eu.kalafatic.evolution.model.orchestration.FileChange;
+import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.Task;
@@ -122,6 +128,11 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.ECLIPSE: return createEclipse();
 			case OrchestrationPackage.EVALUATION_RESULT: return createEvaluationResult();
 			case OrchestrationPackage.TEST: return createTest();
+			case OrchestrationPackage.COMMENT: return createComment();
+			case OrchestrationPackage.DIFF_HUNK: return createDiffHunk();
+			case OrchestrationPackage.FILE_CHANGE: return createFileChange();
+			case OrchestrationPackage.CHANGE_SET: return createChangeSet();
+			case OrchestrationPackage.REVIEW_SESSION: return createReviewSession();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -175,6 +186,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createSelfDevDecisionFromString(eDataType, initialValue);
 			case OrchestrationPackage.TEST_STATUS:
 				return createTestStatusFromString(eDataType, initialValue);
+			case OrchestrationPackage.REVIEW_DECISION:
+				return createReviewDecisionFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -206,6 +219,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertSelfDevDecisionToString(eDataType, instanceValue);
 			case OrchestrationPackage.TEST_STATUS:
 				return convertTestStatusToString(eDataType, instanceValue);
+			case OrchestrationPackage.REVIEW_DECISION:
+				return convertReviewDecisionToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -384,6 +399,12 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 		TestImpl test = new TestImpl();
 		return test;
 	}
+
+	@Override public Comment createComment() { return new CommentImpl(); }
+	@Override public DiffHunk createDiffHunk() { return new DiffHunkImpl(); }
+	@Override public FileChange createFileChange() { return new FileChangeImpl(); }
+	@Override public ChangeSet createChangeSet() { return new ChangeSetImpl(); }
+	@Override public ReviewSession createReviewSession() { return new ReviewSessionImpl(); }
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -629,6 +650,16 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	@Deprecated
 	public static OrchestrationPackage getPackage() {
 		return OrchestrationPackage.eINSTANCE;
+	}
+
+	public ReviewDecision createReviewDecisionFromString(EDataType eDataType, String initialValue) {
+		ReviewDecision result = ReviewDecision.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	public String convertReviewDecisionToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
 	}
 
 } //OrchestrationFactoryImpl

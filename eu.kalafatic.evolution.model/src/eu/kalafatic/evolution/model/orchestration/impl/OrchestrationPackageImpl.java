@@ -38,8 +38,14 @@ import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
+import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
+import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
+import eu.kalafatic.evolution.model.orchestration.Comment;
+import eu.kalafatic.evolution.model.orchestration.DiffHunk;
+import eu.kalafatic.evolution.model.orchestration.FileChange;
+import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 
 /**
  * <!-- begin-user-doc -->
@@ -54,6 +60,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EClass testEClass = null;
+	private EClass commentEClass = null;
+	private EClass diffHunkEClass = null;
+	private EClass fileChangeEClass = null;
+	private EClass changeSetEClass = null;
+	private EClass reviewSessionEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -61,6 +72,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EEnum testStatusEEnum = null;
+	private EEnum reviewDecisionEEnum = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -102,6 +114,32 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	public EAttribute getTask_Selected() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(17);
 	}
+
+	@Override public EEnum getReviewDecision() { return reviewDecisionEEnum; }
+	@Override public EClass getComment() { return commentEClass; }
+	@Override public EAttribute getComment_Id() { return (EAttribute)commentEClass.getEStructuralFeatures().get(0); }
+	@Override public EAttribute getComment_FilePath() { return (EAttribute)commentEClass.getEStructuralFeatures().get(1); }
+	@Override public EAttribute getComment_StartLine() { return (EAttribute)commentEClass.getEStructuralFeatures().get(2); }
+	@Override public EAttribute getComment_EndLine() { return (EAttribute)commentEClass.getEStructuralFeatures().get(3); }
+	@Override public EAttribute getComment_Author() { return (EAttribute)commentEClass.getEStructuralFeatures().get(4); }
+	@Override public EAttribute getComment_Content() { return (EAttribute)commentEClass.getEStructuralFeatures().get(5); }
+	@Override public EAttribute getComment_Timestamp() { return (EAttribute)commentEClass.getEStructuralFeatures().get(6); }
+	@Override public EAttribute getComment_Resolved() { return (EAttribute)commentEClass.getEStructuralFeatures().get(7); }
+	@Override public EClass getDiffHunk() { return diffHunkEClass; }
+	@Override public EAttribute getDiffHunk_Header() { return (EAttribute)diffHunkEClass.getEStructuralFeatures().get(0); }
+	@Override public EAttribute getDiffHunk_Lines() { return (EAttribute)diffHunkEClass.getEStructuralFeatures().get(1); }
+	@Override public EClass getFileChange() { return fileChangeEClass; }
+	@Override public EAttribute getFileChange_FilePath() { return (EAttribute)fileChangeEClass.getEStructuralFeatures().get(0); }
+	@Override public EAttribute getFileChange_Status() { return (EAttribute)fileChangeEClass.getEStructuralFeatures().get(1); }
+	@Override public EReference getFileChange_Hunks() { return (EReference)fileChangeEClass.getEStructuralFeatures().get(2); }
+	@Override public EClass getChangeSet() { return changeSetEClass; }
+	@Override public EAttribute getChangeSet_CommitId() { return (EAttribute)changeSetEClass.getEStructuralFeatures().get(0); }
+	@Override public EReference getChangeSet_Files() { return (EReference)changeSetEClass.getEStructuralFeatures().get(1); }
+	@Override public EClass getReviewSession() { return reviewSessionEClass; }
+	@Override public EAttribute getReviewSession_Id() { return (EAttribute)reviewSessionEClass.getEStructuralFeatures().get(0); }
+	@Override public EReference getReviewSession_ChangeSet() { return (EReference)reviewSessionEClass.getEStructuralFeatures().get(1); }
+	@Override public EReference getReviewSession_Comments() { return (EReference)reviewSessionEClass.getEStructuralFeatures().get(2); }
+	@Override public EAttribute getReviewSession_Decision() { return (EAttribute)reviewSessionEClass.getEStructuralFeatures().get(3); }
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -2161,6 +2199,35 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(testEClass, TEST__STATUS);
 		createEAttribute(testEClass, TEST__SELECTED);
 
+		commentEClass = createEClass(COMMENT);
+		createEAttribute(commentEClass, COMMENT__ID);
+		createEAttribute(commentEClass, COMMENT__FILE_PATH);
+		createEAttribute(commentEClass, COMMENT__START_LINE);
+		createEAttribute(commentEClass, COMMENT__END_LINE);
+		createEAttribute(commentEClass, COMMENT__AUTHOR);
+		createEAttribute(commentEClass, COMMENT__CONTENT);
+		createEAttribute(commentEClass, COMMENT__TIMESTAMP);
+		createEAttribute(commentEClass, COMMENT__RESOLVED);
+
+		diffHunkEClass = createEClass(DIFF_HUNK);
+		createEAttribute(diffHunkEClass, DIFF_HUNK__HEADER);
+		createEAttribute(diffHunkEClass, DIFF_HUNK__LINES);
+
+		fileChangeEClass = createEClass(FILE_CHANGE);
+		createEAttribute(fileChangeEClass, FILE_CHANGE__FILE_PATH);
+		createEAttribute(fileChangeEClass, FILE_CHANGE__STATUS);
+		createEReference(fileChangeEClass, FILE_CHANGE__HUNKS);
+
+		changeSetEClass = createEClass(CHANGE_SET);
+		createEAttribute(changeSetEClass, CHANGE_SET__COMMIT_ID);
+		createEReference(changeSetEClass, CHANGE_SET__FILES);
+
+		reviewSessionEClass = createEClass(REVIEW_SESSION);
+		createEAttribute(reviewSessionEClass, REVIEW_SESSION__ID);
+		createEReference(reviewSessionEClass, REVIEW_SESSION__CHANGE_SET);
+		createEReference(reviewSessionEClass, REVIEW_SESSION__COMMENTS);
+		createEAttribute(reviewSessionEClass, REVIEW_SESSION__DECISION);
+
 		evaluationResultEClass = createEClass(EVALUATION_RESULT);
 		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__SUCCESS);
 		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__TEST_PASS_RATE);
@@ -2187,6 +2254,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		iterationStatusEEnum = createEEnum(ITERATION_STATUS);
 		selfDevDecisionEEnum = createEEnum(SELF_DEV_DECISION);
 		testStatusEEnum = createEEnum(TEST_STATUS);
+		reviewDecisionEEnum = createEEnum(REVIEW_DECISION);
 	}
 
 	/**
@@ -2256,6 +2324,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.RUNNING);
 		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PASSED);
 		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.FAILED);
+
+		initEEnum(reviewDecisionEEnum, ReviewDecision.class, "ReviewDecision");
+		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.OPEN);
+		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.IN_REVIEW);
+		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.APPROVED);
+		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.REJECTED);
+		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.CHANGES_REQUESTED);
 
 
 		// Create type parameters
@@ -2440,6 +2515,35 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getTest_Path(), ecorePackage.getEString(), "path", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTest_Status(), this.getTestStatus(), "status", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTest_Selected(), ecorePackage.getEBoolean(), "selected", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(commentEClass, Comment.class, "Comment", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getComment_Id(), ecorePackage.getEString(), "id", null, 0, 1, Comment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getComment_FilePath(), ecorePackage.getEString(), "filePath", null, 0, 1, Comment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getComment_StartLine(), ecorePackage.getEInt(), "startLine", null, 0, 1, Comment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getComment_EndLine(), ecorePackage.getEInt(), "endLine", null, 0, 1, Comment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getComment_Author(), ecorePackage.getEString(), "author", null, 0, 1, Comment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getComment_Content(), ecorePackage.getEString(), "content", null, 0, 1, Comment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getComment_Timestamp(), ecorePackage.getEString(), "timestamp", null, 0, 1, Comment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getComment_Resolved(), ecorePackage.getEBoolean(), "resolved", null, 0, 1, Comment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(diffHunkEClass, DiffHunk.class, "DiffHunk", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getDiffHunk_Header(), ecorePackage.getEString(), "header", null, 0, 1, DiffHunk.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDiffHunk_Lines(), ecorePackage.getEString(), "lines", null, 0, -1, DiffHunk.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(fileChangeEClass, FileChange.class, "FileChange", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getFileChange_FilePath(), ecorePackage.getEString(), "filePath", null, 0, 1, FileChange.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getFileChange_Status(), ecorePackage.getEString(), "status", null, 0, 1, FileChange.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getFileChange_Hunks(), this.getDiffHunk(), null, "hunks", null, 0, -1, FileChange.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(changeSetEClass, ChangeSet.class, "ChangeSet", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getChangeSet_CommitId(), ecorePackage.getEString(), "commitId", null, 0, 1, ChangeSet.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getChangeSet_Files(), this.getFileChange(), null, "files", null, 0, -1, ChangeSet.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(reviewSessionEClass, ReviewSession.class, "ReviewSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getReviewSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getReviewSession_ChangeSet(), this.getChangeSet(), null, "changeSet", null, 0, 1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getReviewSession_Comments(), this.getComment(), null, "comments", null, 0, -1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getReviewSession_Decision(), this.getReviewDecision(), "decision", null, 0, 1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(evaluationResultEClass, EvaluationResult.class, "EvaluationResult", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getEvaluationResult_Success(), ecorePackage.getEBoolean(), "success", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

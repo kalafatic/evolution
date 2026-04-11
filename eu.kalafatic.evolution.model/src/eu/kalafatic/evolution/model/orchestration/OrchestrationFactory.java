@@ -237,6 +237,12 @@ public interface OrchestrationFactory extends EFactory {
 	 */
 	Test createTest();
 
+	Comment createComment();
+	DiffHunk createDiffHunk();
+	FileChange createFileChange();
+	ChangeSet createChangeSet();
+	ReviewSession createReviewSession();
+
 	/**
 	 * Returns the package supported by this factory.
 	 * <!-- begin-user-doc -->
