@@ -28,7 +28,7 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class HistoryGroup extends AEvoGroup {
+public class HistoryGroup2 extends AEvoGroup {
     private Browser browser;
     private AiChatPage page;
     private boolean isLoaded = false;
@@ -59,7 +59,7 @@ public class HistoryGroup extends AEvoGroup {
         }
     }
 
-    public HistoryGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Font chatFont, AiChatPage page) {
+    public HistoryGroup2(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Font chatFont, AiChatPage page) {
         super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent, chatFont);
@@ -95,13 +95,16 @@ public class HistoryGroup extends AEvoGroup {
             });
             SWTFactory.createMaximizeButton(toolbar, section, false);
             section.setTextClient(toolbar);
-        }
+        }       
+        
 
         browser = new Browser(group, SWT.BORDER);
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 264;
         browser.setLayoutData(gd);
+        
 
+      
         browser.addProgressListener(new org.eclipse.swt.browser.ProgressAdapter() {
             @Override
             public void completed(org.eclipse.swt.browser.ProgressEvent event) {
@@ -138,7 +141,7 @@ public class HistoryGroup extends AEvoGroup {
     
     private void setupBrowser(Browser browser) {
         // IMPORTANT: Bridges must be created BEFORE setUrl/setText
-       //setupJavaScriptBridges();
+        setupJavaScriptBridges();
         
         
         // 1. Load the template
@@ -146,17 +149,17 @@ public class HistoryGroup extends AEvoGroup {
         browser.setText(html);
 
         // 2. Create Bridges (Replaces 'onclick="callApprove()"' etc.)
-//        new BrowserFunction(browser, "JavaHandler") {
-//            @Override
-//            public Object function(Object[] arguments) {
-//                String action = (String) arguments[0];
-//                if ("editMessage".equals(action)) {
-//                    String index = (String) arguments[1];
-//                    handleEdit(index);
-//                }
-//                return null;
-//            }
-//        };
+        new BrowserFunction(browser, "JavaHandler") {
+            @Override
+            public Object function(Object[] arguments) {
+                String action = (String) arguments[0];
+                if ("editMessage".equals(action)) {
+                    String index = (String) arguments[1];
+                    handleEdit(index);
+                }
+                return null;
+            }
+        };
         
         new BrowserFunction(browser, "copyToClipboard") {
             @Override
@@ -178,39 +181,67 @@ public class HistoryGroup extends AEvoGroup {
                 return null;
             }
         };
-
-        browser.setText(getHtmlTemplate());
     }
     
-    private String loadHtmlTemplate(String path) {
-        // Try to load from the classpath (src/main/resources)
-        try (var is = getClass().getResourceAsStream(path)) {
-            if (is == null) {
-                return "<html><body>Error: Template not found at " + path + "</body></html>";
+    private void setupJavaScriptBridges() {
+        new BrowserFunction(browser, "JavaHandler") {
+            @Override
+            public Object function(Object[] args) {
+                String action = (String) args[0];
+                int index = Integer.parseInt((String) args[1]);
+                String text = (String) args[2];
+
+                switch (action) {
+                    case "edit":
+                        handleEdit(index, text);
+                        break;
+                    case "copy":
+                        handleCopy(text);
+                        break;
+                }
+                return null;
             }
-            try (var reader = new BufferedReader(new InputStreamReader(is))) {
-                return reader.lines().collect(Collectors.joining("\n"));
+        };
+	}
+        
+        private void handleEdit(int index, String oldText) {
+            // This connects the Browser click back to your AiChatPage logic
+            if (editCallback != null) {
+                Display.getDefault().asyncExec(() -> {
+                    editCallback.onEditMessage(index, oldText);
+                });
             }
-        } catch (Exception e) {
-            return "<html><body>Exception: " + e.getMessage() + "</body></html>";
         }
-    }
+
+        private void handleCopy(String text) {
+            org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(browser.getDisplay());
+            cb.setContents(new Object[]{text}, new org.eclipse.swt.dnd.Transfer[]{org.eclipse.swt.dnd.TextTransfer.getInstance()});
+            cb.dispose();
+        }
+
+        private String loadHtmlTemplate(String path) {
+            // Try to load from the classpath (src/main/resources)
+            try (var is = getClass().getResourceAsStream(path)) {
+                if (is == null) {
+                    return "<html><body>Error: Template not found at " + path + "</body></html>";
+                }
+                try (var reader = new BufferedReader(new InputStreamReader(is))) {
+                    return reader.lines().collect(Collectors.joining("\n"));
+                }
+            } catch (Exception e) {
+                return "<html><body>Exception: " + e.getMessage() + "</body></html>";
+            }
+        }
+
     
-    private void handleEdit(int index, String oldText) {
-        // This connects the Browser click back to your AiChatPage logic
-        if (editCallback != null) {
-            Display.getDefault().asyncExec(() -> {
-                editCallback.onEditMessage(index, oldText);
-            });
-        }
+    private void handleEdit(String index) {
+        // 1. Find the message in your local list/database using the index
+        // 2. Open an SWT 'Dialog' or 'Shell' with a Text widget
+        // 3. Update the message text and call browser.execute("updateMessages(...)")
+        System.out.println("User wants to edit message ID: " + index);
     }
 
-    private void handleCopy(String text) {
-        org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(browser.getDisplay());
-        cb.setContents(new Object[]{text}, new org.eclipse.swt.dnd.Transfer[]{org.eclipse.swt.dnd.TextTransfer.getInstance()});
-        cb.dispose();
-    }
-
+   
     public void setEditCallback(EditMessageCallback callback) {
         this.editCallback = callback;
     }
