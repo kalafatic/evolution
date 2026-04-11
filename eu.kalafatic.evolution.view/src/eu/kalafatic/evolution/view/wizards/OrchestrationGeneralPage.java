@@ -36,6 +36,15 @@ public class OrchestrationGeneralPage extends AWizardPage {
         setControl(container);
     }
 
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if (!visible && orchestrator != null) {
+            orchestrator.setName(getOrchestrationName());
+            orchestrator.setId(getOrchestrationId());
+        }
+    }
+
     public String getOrchestrationName() { return nameText.getText(); }
     public String getOrchestrationId() { return idText.getText(); }
 }
