@@ -46,10 +46,12 @@ public class ModelsGroup extends AEvoGroup {
 
     public static class ModelItem {
         public ModelState state;
+        public String stateDescription;
         public String name;
         public boolean local;
         public String pathOrUrl;
         public String token;
+        public int rating;
         public eu.kalafatic.evolution.model.orchestration.AIProvider provider;
 
         public ModelItem(ModelState state, String name, boolean local, String pathOrUrl, String token) {
@@ -61,9 +63,13 @@ public class ModelsGroup extends AEvoGroup {
         }
     }
 
+    private Color lightRed, lightOrange;
+
     public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(editor, orchestrator);
         this.lightGreen = new Color(Display.getDefault(), 220, 255, 220);
+        this.lightRed = new Color(Display.getDefault(), 255, 220, 220);
+        this.lightOrange = new Color(Display.getDefault(), 255, 240, 200);
         createControl(toolkit, parent);
     }
 
@@ -128,12 +134,14 @@ public class ModelsGroup extends AEvoGroup {
 
         group.addDisposeListener(e -> {
             if (lightGreen != null && !lightGreen.isDisposed()) lightGreen.dispose();
+            if (lightRed != null && !lightRed.isDisposed()) lightRed.dispose();
+            if (lightOrange != null && !lightOrange.isDisposed()) lightOrange.dispose();
         });
     }
 
     private void createColumns() {
-        String[] titles = { "State", "Name", "Local", "Path/URL", "Token" };
-        int[] bounds = { 60, 150, 60, 300, 100 };
+        String[] titles = { "State", "Name", "Local", "Path/URL", "Token", "Rating" };
+        int[] bounds = { 60, 150, 60, 250, 80, 60 };
 
         // State
         TableViewerColumn colState = createTableViewerColumn(titles[0], bounds[0]);
@@ -143,13 +151,19 @@ public class ModelsGroup extends AEvoGroup {
                 return ((ModelItem) element).state.toString();
             }
             @Override
+            public String getToolTipText(Object element) {
+                return ((ModelItem) element).stateDescription;
+            }
+            @Override
             public Color getBackground(Object element) {
-                if (((ModelItem) element).state == ModelState.OK) {
-                    return lightGreen;
-                }
+                ModelItem item = (ModelItem) element;
+                if (item.state == ModelState.OK) return lightGreen;
+                if (item.state == ModelState.ERR) return lightRed;
+                if (item.state == ModelState.NA) return lightOrange;
                 return null;
             }
         });
+        org.eclipse.jface.viewers.ColumnViewerToolTipSupport.enableFor(tableViewer);
 
         // Token
         TableViewerColumn colToken = createTableViewerColumn(titles[4], bounds[4]);
@@ -162,9 +176,10 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                if (((ModelItem) element).state == ModelState.OK) {
-                    return lightGreen;
-                }
+                ModelItem item = (ModelItem) element;
+                if (item.state == ModelState.OK) return lightGreen;
+                if (item.state == ModelState.ERR) return lightRed;
+                if (item.state == ModelState.NA) return lightOrange;
                 return null;
             }
         });
@@ -210,12 +225,93 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                if (((ModelItem) element).state == ModelState.OK) {
-                    return lightGreen;
-                }
+                ModelItem item = (ModelItem) element;
+                if (item.state == ModelState.OK) return lightGreen;
+                if (item.state == ModelState.ERR) return lightRed;
+                if (item.state == ModelState.NA) return lightOrange;
                 return null;
             }
         });
+
+        // Rating
+        TableViewerColumn colRating = createTableViewerColumn(titles[5], bounds[5]);
+        colRating.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return String.valueOf(((ModelItem) element).rating);
+            }
+            @Override
+            public Color getBackground(Object element) {
+                ModelItem item = (ModelItem) element;
+                if (item.state == ModelState.OK) return lightGreen;
+                if (item.state == ModelState.ERR) return lightRed;
+                if (item.state == ModelState.NA) return lightOrange;
+                return null;
+            }
+        });
+
+        setupSorting(colName, colState, colRating);
+    }
+
+    private void setupSorting(TableViewerColumn colName, TableViewerColumn colState, TableViewerColumn colRating) {
+        ModelComparator comparator = new ModelComparator();
+        tableViewer.setComparator(comparator);
+
+        colName.getColumn().addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) {
+                comparator.setColumn(0);
+                tableViewer.refresh();
+            }
+        });
+        colState.getColumn().addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) {
+                comparator.setColumn(1);
+                tableViewer.refresh();
+            }
+        });
+        colRating.getColumn().addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) {
+                comparator.setColumn(2);
+                tableViewer.refresh();
+            }
+        });
+    }
+
+    private static class ModelComparator extends org.eclipse.jface.viewers.ViewerComparator {
+        private int propertyIndex = 0;
+        private static final int DESCENDING = 1;
+        private int direction = DESCENDING;
+
+        public void setColumn(int column) {
+            if (column == this.propertyIndex) {
+                direction = 1 - direction;
+            } else {
+                this.propertyIndex = column;
+                direction = DESCENDING;
+            }
+        }
+
+        @Override
+        public int compare(org.eclipse.jface.viewers.Viewer viewer, Object e1, Object e2) {
+            ModelItem m1 = (ModelItem) e1;
+            ModelItem m2 = (ModelItem) e2;
+            int rc = 0;
+            switch (propertyIndex) {
+            case 0: // Name
+                rc = m1.name.compareToIgnoreCase(m2.name);
+                break;
+            case 1: // State
+                rc = m1.state.toString().compareTo(m2.state.toString());
+                break;
+            case 2: // Rating
+                rc = Integer.compare(m1.rating, m2.rating);
+                break;
+            default:
+                rc = 0;
+            }
+            if (direction == DESCENDING) rc = -rc;
+            return rc;
+        }
     }
 
     private TableViewerColumn createTableViewerColumn(String title, int bound) {
@@ -350,7 +446,12 @@ public class ModelsGroup extends AEvoGroup {
         for (eu.kalafatic.evolution.model.orchestration.AIProvider p : orchestrator.getAiProviders()) {
             String token = security.getToken(p);
             ModelState state = (token != null && !token.isEmpty() && !token.equals("YOUR_API_KEY")) ? ModelState.OK : ModelState.NA;
+            if (p.getState() != null && !p.getState().isEmpty()) {
+                try { state = ModelState.valueOf(p.getState()); } catch (Exception e) {}
+            }
             ModelItem item = new ModelItem(state, p.getName(), false, p.getUrl(), token);
+            item.stateDescription = p.getStateDescription();
+            item.rating = p.getRating();
             item.provider = p;
             newItems.add(item);
         }

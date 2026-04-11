@@ -21,4 +21,10 @@ public interface AIProvider extends EObject {
     void setUseEnvVar(boolean value);
     String getEnvVarName();
     void setEnvVarName(String value);
+    String getState();
+    void setState(String value);
+    String getStateDescription();
+    void setStateDescription(String value);
+    int getRating();
+    void setRating(int value);
 }
