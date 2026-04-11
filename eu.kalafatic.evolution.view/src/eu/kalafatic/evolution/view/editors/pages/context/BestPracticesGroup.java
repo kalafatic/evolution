@@ -38,7 +38,9 @@ public class BestPracticesGroup extends AEvoGroup {
         syncBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                new BestPracticesService(orchestrator, projectRoot);
+                if (orchestrator != null && projectRoot != null) {
+                    new BestPracticesService(orchestrator, projectRoot);
+                }
             }
         });
 
