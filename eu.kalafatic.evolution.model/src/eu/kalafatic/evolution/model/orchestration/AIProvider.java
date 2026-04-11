@@ -15,4 +15,10 @@ public interface AIProvider extends EObject {
     void setLocal(boolean value);
     String getDefaultModel();
     void setDefaultModel(String value);
+    boolean isApiKeyEncrypted();
+    void setApiKeyEncrypted(boolean value);
+    boolean isUseEnvVar();
+    void setUseEnvVar(boolean value);
+    String getEnvVarName();
+    void setEnvVarName(String value);
 }

@@ -246,7 +246,10 @@ public class AiChatPage extends SharedScrolledComposite {
 		orchestrator.setRemoteModel(remoteModel);
 		ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel);
 		if (config != null) orchestrator.setOpenAiModel(config.getDefaultModel());
-		orchestrator.setOpenAiToken(aiSettingsGroup.getRemoteToken());
+
+		eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
+		    .updateToken(orchestrator, remoteModel, aiSettingsGroup.getRemoteToken());
+
 		orchestrator.setIterativeMode(instructionsGroup.isIterative());
 		orchestrator.setSelfIterativeMode(instructionsGroup.isSelfIterative());
 		if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
@@ -293,8 +296,12 @@ public class AiChatPage extends SharedScrolledComposite {
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
 					String token = requestToken(provider);
-					if (token != null) { aiSettingsGroup.setRemoteToken(token); syncModelWithUI(); future.complete(token); }
-					else future.completeExceptionally(new Exception("Token request cancelled by user."));
+					if (token != null) {
+					    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().updateToken(orchestrator, provider, token);
+					    aiSettingsGroup.setRemoteToken(token);
+					    syncModelWithUI();
+					    future.complete(token);
+					} else future.completeExceptionally(new Exception("Token request cancelled by user."));
 				}));
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> {
 					if (!historyGroup.isDisposed()) {
@@ -620,8 +627,12 @@ public class AiChatPage extends SharedScrolledComposite {
 				TaskContext context = new TaskContext(tempOrch, null);
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
 					String newToken = requestToken(provider);
-					if (newToken != null) { aiSettingsGroup.setRemoteToken(newToken); syncModelWithUI(); future.complete(newToken); }
-					else future.completeExceptionally(new Exception("Token request cancelled by user."));
+					if (newToken != null) {
+					    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().updateToken(orchestrator, provider, newToken);
+					    aiSettingsGroup.setRemoteToken(newToken);
+					    syncModelWithUI();
+					    future.complete(newToken);
+					} else future.completeExceptionally(new Exception("Token request cancelled by user."));
 				}));
 				String response = router.testConnection(tempOrch, temp, proxyUrl, context);
 				Display.getDefault().asyncExec(() -> {

@@ -58,7 +58,15 @@ public class McpOpenAiGroup extends AEvoGroup {
         SWTFactory.createEditButton(group, mcpUrlText);
         SWTFactory.createLabel(group, "OpenAI Token:");
         openAiTokenText = SWTFactory.createPasswordText(group);
-        SWTFactory.createEditButton(group, openAiTokenText);
+        Button editTokenBtn = SWTFactory.createEditButton(group, openAiTokenText);
+        editTokenBtn.setText("\u2699");
+        editTokenBtn.setToolTipText("Detailed Configuration");
+        editTokenBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleDetailedConfig();
+            }
+        });
         SWTFactory.createLabel(group, "OpenAI Model:");
         openAiModelText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, openAiModelText);
@@ -69,8 +77,12 @@ public class McpOpenAiGroup extends AEvoGroup {
         if (orchestrator != null) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
             mcpUrlText.setText(orchestrator.getMcpServerUrl() != null ? orchestrator.getMcpServerUrl() : "");
-            openAiTokenText.setText(orchestrator.getOpenAiToken() != null ? orchestrator.getOpenAiToken() : "");
-            openAiModelText.setText(orchestrator.getOpenAiModel() != null ? orchestrator.getOpenAiModel() : "");
+
+            eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
+                    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().resolve(orchestrator, "openai");
+
+            openAiTokenText.setText((resolved != null && resolved.token != null) ? resolved.token : "");
+            openAiModelText.setText((resolved != null && resolved.model != null) ? resolved.model : "");
             offlineBtn.setSelection(orchestrator.isOfflineMode());
         }
     }
@@ -80,7 +92,10 @@ public class McpOpenAiGroup extends AEvoGroup {
         if (orchestrator != null) {
             orchestrator.setAiMode(AiMode.get(aiModeCombo.getSelectionIndex()));
             orchestrator.setMcpServerUrl(mcpUrlText.getText());
-            orchestrator.setOpenAiToken(openAiTokenText.getText());
+
+            eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
+                .updateToken(orchestrator, "openai", openAiTokenText.getText());
+
             orchestrator.setOpenAiModel(openAiModelText.getText());
             orchestrator.setOfflineMode(offlineBtn.getSelection());
         }
@@ -89,5 +104,36 @@ public class McpOpenAiGroup extends AEvoGroup {
     @Override
     public Text[] getTextFields() {
         return new Text[] { mcpUrlText, openAiTokenText, openAiModelText };
+    }
+
+    private void handleDetailedConfig() {
+        if (orchestrator == null) return;
+        String providerName = "openai";
+
+        // Find existing or create temporary provider
+        eu.kalafatic.evolution.model.orchestration.AIProvider provider = orchestrator.getAiProviders().stream()
+                .filter(p -> p.getName().equalsIgnoreCase(providerName))
+                .findFirst().orElse(null);
+
+        boolean isNew = false;
+        if (provider == null) {
+            provider = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
+            provider.setName(providerName);
+            eu.kalafatic.evolution.controller.providers.ProviderConfig config = eu.kalafatic.evolution.controller.providers.AiProviders.PROVIDERS.get(providerName);
+            if (config != null) {
+                provider.setUrl(config.getUrl());
+                provider.setDefaultModel(config.getDefaultModel());
+            }
+            isNew = true;
+        }
+
+        ModelDetailsDialog dialog = new ModelDetailsDialog(group.getShell(), provider);
+        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
+            if (isNew) {
+                orchestrator.getAiProviders().add(provider);
+            }
+            editor.setDirty(true);
+            refreshUI();
+        }
     }
 }

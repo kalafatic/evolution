@@ -23,13 +23,15 @@ public class OpenAIProvider implements ILlmProvider {
 
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        String token = orchestrator.getOpenAiToken();
         String remoteModelName = orchestrator.getRemoteModel();
 
-        ProviderConfig config = AiProviders.PROVIDERS.get(remoteModelName != null ? remoteModelName.toLowerCase() : "openai");
+        // Use generalized resolution mechanism
+        eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
+                eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().resolve(orchestrator, remoteModelName);
 
-        String apiUrl = (config != null) ? config.getUrl() : DEFAULT_OPENAI_URL;
-        String model = (config != null) ? config.getDefaultModel() : orchestrator.getOpenAiModel();
+        String token = (resolved != null) ? resolved.token : null;
+        String apiUrl = (resolved != null && resolved.url != null) ? resolved.url : DEFAULT_OPENAI_URL;
+        String model = (resolved != null && resolved.model != null) ? resolved.model : orchestrator.getOpenAiModel();
 
         if (token == null || token.isEmpty() || "YOUR_API_KEY".equals(token)) {
             if (context != null) {

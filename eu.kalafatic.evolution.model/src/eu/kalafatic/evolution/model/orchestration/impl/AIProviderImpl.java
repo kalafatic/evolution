@@ -14,6 +14,9 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
     protected String format;
     protected boolean local;
     protected String defaultModel;
+    protected boolean apiKeyEncrypted;
+    protected boolean useEnvVar;
+    protected String envVarName;
 
     protected AIProviderImpl() { super(); }
 
@@ -55,6 +58,24 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
         if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__DEFAULT_MODEL, oldDefaultModel, defaultModel));
     }
 
+    @Override public boolean isApiKeyEncrypted() { return apiKeyEncrypted; }
+    @Override public void setApiKeyEncrypted(boolean newApiKeyEncrypted) {
+        boolean oldApiKeyEncrypted = apiKeyEncrypted; apiKeyEncrypted = newApiKeyEncrypted;
+        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__API_KEY_ENCRYPTED, oldApiKeyEncrypted, apiKeyEncrypted));
+    }
+
+    @Override public boolean isUseEnvVar() { return useEnvVar; }
+    @Override public void setUseEnvVar(boolean newUseEnvVar) {
+        boolean oldUseEnvVar = useEnvVar; useEnvVar = newUseEnvVar;
+        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__USE_ENV_VAR, oldUseEnvVar, useEnvVar));
+    }
+
+    @Override public String getEnvVarName() { return envVarName; }
+    @Override public void setEnvVarName(String newEnvVarName) {
+        String oldEnvVarName = envVarName; envVarName = newEnvVarName;
+        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__ENV_VAR_NAME, oldEnvVarName, envVarName));
+    }
+
     @Override
     public Object eGet(int featureID, boolean resolve, boolean coreType) {
         switch (featureID) {
@@ -64,6 +85,9 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
             case OrchestrationPackage.AI_PROVIDER__FORMAT: return getFormat();
             case OrchestrationPackage.AI_PROVIDER__LOCAL: return isLocal();
             case OrchestrationPackage.AI_PROVIDER__DEFAULT_MODEL: return getDefaultModel();
+            case OrchestrationPackage.AI_PROVIDER__API_KEY_ENCRYPTED: return isApiKeyEncrypted();
+            case OrchestrationPackage.AI_PROVIDER__USE_ENV_VAR: return isUseEnvVar();
+            case OrchestrationPackage.AI_PROVIDER__ENV_VAR_NAME: return getEnvVarName();
         }
         return super.eGet(featureID, resolve, coreType);
     }
@@ -77,6 +101,9 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
             case OrchestrationPackage.AI_PROVIDER__FORMAT: setFormat((String)newValue); return;
             case OrchestrationPackage.AI_PROVIDER__LOCAL: setLocal((Boolean)newValue); return;
             case OrchestrationPackage.AI_PROVIDER__DEFAULT_MODEL: setDefaultModel((String)newValue); return;
+            case OrchestrationPackage.AI_PROVIDER__API_KEY_ENCRYPTED: setApiKeyEncrypted((Boolean)newValue); return;
+            case OrchestrationPackage.AI_PROVIDER__USE_ENV_VAR: setUseEnvVar((Boolean)newValue); return;
+            case OrchestrationPackage.AI_PROVIDER__ENV_VAR_NAME: setEnvVarName((String)newValue); return;
         }
         super.eSet(featureID, newValue);
     }

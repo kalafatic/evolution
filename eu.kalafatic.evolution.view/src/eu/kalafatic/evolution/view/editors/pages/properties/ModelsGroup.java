@@ -49,12 +49,15 @@ public class ModelsGroup extends AEvoGroup {
         public String name;
         public boolean local;
         public String pathOrUrl;
+        public String token;
+        public eu.kalafatic.evolution.model.orchestration.AIProvider provider;
 
-        public ModelItem(ModelState state, String name, boolean local, String pathOrUrl) {
+        public ModelItem(ModelState state, String name, boolean local, String pathOrUrl, String token) {
             this.state = state;
             this.name = name;
             this.local = local;
             this.pathOrUrl = pathOrUrl;
+            this.token = token;
         }
     }
 
@@ -80,7 +83,7 @@ public class ModelsGroup extends AEvoGroup {
         tableViewer.setContentProvider(ArrayContentProvider.getInstance());
 
         Composite buttonBar = toolkit.createComposite(group);
-        buttonBar.setLayout(new GridLayout(3, false));
+        buttonBar.setLayout(new GridLayout(5, false));
         buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
 
         Button addButton = toolkit.createButton(buttonBar, "Add", SWT.PUSH);
@@ -91,11 +94,27 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
+        Button editButton = toolkit.createButton(buttonBar, "Edit", SWT.PUSH);
+        editButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleEditModel();
+            }
+        });
+
         Button removeButton = toolkit.createButton(buttonBar, "Remove", SWT.PUSH);
         removeButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 handleRemoveModel();
+            }
+        });
+
+        Button saveButton = toolkit.createButton(buttonBar, "Save to Model", SWT.PUSH);
+        saveButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                editor.doSave(null);
             }
         });
 
@@ -113,8 +132,8 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void createColumns() {
-        String[] titles = { "State", "Name", "Local", "Path/URL" };
-        int[] bounds = { 60, 150, 60, 300 };
+        String[] titles = { "State", "Name", "Local", "Path/URL", "Token" };
+        int[] bounds = { 60, 150, 60, 300, 100 };
 
         // State
         TableViewerColumn colState = createTableViewerColumn(titles[0], bounds[0]);
@@ -122,6 +141,24 @@ public class ModelsGroup extends AEvoGroup {
             @Override
             public String getText(Object element) {
                 return ((ModelItem) element).state.toString();
+            }
+            @Override
+            public Color getBackground(Object element) {
+                if (((ModelItem) element).state == ModelState.OK) {
+                    return lightGreen;
+                }
+                return null;
+            }
+        });
+
+        // Token
+        TableViewerColumn colToken = createTableViewerColumn(titles[4], bounds[4]);
+        colToken.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                String t = ((ModelItem) element).token;
+                if (t == null || t.isEmpty() || t.equals("YOUR_API_KEY")) return "";
+                return "****";
             }
             @Override
             public Color getBackground(Object element) {
@@ -205,33 +242,53 @@ public class ModelsGroup extends AEvoGroup {
                 }
             }
         } else if (result == 1) { // Remote
-            InputDialog input = new InputDialog(group.getShell(), "Add Remote Model",
-                    "Enter remote provider name:", "", null);
-            if (input.open() == InputDialog.OK) {
-                String provider = input.getValue();
-                if (provider != null && !provider.trim().isEmpty()) {
-                    InputDialog urlInput = new InputDialog(group.getShell(), "Remote URL",
-                            "Enter the API URL for " + provider + ":", "", null);
-                    if (urlInput.open() == InputDialog.OK) {
-                        String url = urlInput.getValue();
-                        InputDialog tokenInput = new InputDialog(group.getShell(), "Remote Token",
-                                "Enter the API Token for " + provider + ":", "", null);
-                        if (tokenInput.open() == InputDialog.OK) {
-                            String token = tokenInput.getValue();
-                            if (orchestrator != null) {
-                                orchestrator.setRemoteModel(provider.trim());
-                                if (orchestrator.getAiChat() == null) {
-                                    orchestrator.setAiChat(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAiChat());
-                                }
-                                orchestrator.getAiChat().setUrl(url);
-                                orchestrator.setOpenAiToken(token);
-                                editor.setDirty(true);
-                                refreshUI();
-                            }
-                        }
-                    }
+            eu.kalafatic.evolution.model.orchestration.AIProvider newProvider =
+                eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
+            newProvider.setName("new-provider");
+            newProvider.setFormat("openai");
+
+            ModelDetailsDialog detailsDialog = new ModelDetailsDialog(group.getShell(), newProvider);
+            if (detailsDialog.open() == org.eclipse.jface.window.Window.OK) {
+                if (orchestrator != null) {
+                    orchestrator.getAiProviders().add(newProvider);
+                    editor.setDirty(true);
+                    refreshUI();
                 }
             }
+        }
+    }
+
+    private void handleEditModel() {
+        IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
+        if (selection.isEmpty()) return;
+        ModelItem item = (ModelItem) selection.getFirstElement();
+        if (item.local) {
+            MessageDialog.openInformation(group.getShell(), "Edit", "Local Ollama models cannot be edited here.");
+            return;
+        }
+
+        eu.kalafatic.evolution.model.orchestration.AIProvider provider = item.provider;
+        boolean isNew = false;
+        if (provider == null) {
+            // It's a static provider, create a model entry for it
+            provider = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
+            provider.setName(item.name);
+            provider.setUrl(item.pathOrUrl);
+            ProviderConfig config = AiProviders.PROVIDERS.get(item.name.toLowerCase());
+            if (config != null) {
+                provider.setDefaultModel(config.getDefaultModel());
+                provider.setFormat(config.getFormat());
+            }
+            isNew = true;
+        }
+
+        ModelDetailsDialog detailsDialog = new ModelDetailsDialog(group.getShell(), provider);
+        if (detailsDialog.open() == org.eclipse.jface.window.Window.OK) {
+            if (isNew && orchestrator != null) {
+                orchestrator.getAiProviders().add(provider);
+            }
+            editor.setDirty(true);
+            refreshUI();
         }
     }
 
@@ -286,23 +343,29 @@ public class ModelsGroup extends AEvoGroup {
         if (orchestrator == null) return;
 
         final List<ModelItem> newItems = new ArrayList<>();
+        eu.kalafatic.evolution.controller.security.TokenSecurityService security =
+                eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance();
 
-        // Load Remote Models first (synchronously since it's just from memory)
+        // 1. Load Custom Providers from Model
+        for (eu.kalafatic.evolution.model.orchestration.AIProvider p : orchestrator.getAiProviders()) {
+            String token = security.getToken(p);
+            ModelState state = (token != null && !token.isEmpty() && !token.equals("YOUR_API_KEY")) ? ModelState.OK : ModelState.NA;
+            ModelItem item = new ModelItem(state, p.getName(), false, p.getUrl(), token);
+            item.provider = p;
+            newItems.add(item);
+        }
+
+        // 2. Load Remote Models from static map (if not explicitly in model as custom)
         for (String providerName : AiProviders.PROVIDERS.keySet()) {
-            ProviderConfig config = AiProviders.PROVIDERS.get(providerName);
-            ModelState state = ModelState.NA;
+            if (newItems.stream().anyMatch(i -> i.name.equalsIgnoreCase(providerName))) continue;
 
-            // For remote models, "ok" if we have a valid-looking token
-            String token = orchestrator.getOpenAiToken();
-            boolean isCurrentProvider = providerName.equalsIgnoreCase(orchestrator.getRemoteModel());
+            eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved = security.resolve(orchestrator, providerName);
+            ModelState state = (resolved != null && resolved.token != null && !resolved.token.isEmpty() && !"YOUR_API_KEY".equals(resolved.token))
+                    ? ModelState.OK : ModelState.NA;
 
-            if (isCurrentProvider && token != null && !token.isEmpty() && !token.equals("YOUR_API_KEY")) {
-                state = ModelState.OK;
-            } else if (config.getApiKey() != null && !config.getApiKey().equals("YOUR_API_KEY")) {
-                 state = ModelState.OK;
-            }
-
-            newItems.add(new ModelItem(state, providerName, false, config.getEndpointUrl()));
+            newItems.add(new ModelItem(state, providerName, false,
+                    (resolved != null) ? resolved.url : "",
+                    (resolved != null) ? resolved.token : ""));
         }
 
         this.modelItems = newItems;
@@ -317,7 +380,7 @@ public class ModelsGroup extends AEvoGroup {
                 List<OllamaModel> localModels = ollamaService.loadModels();
                 List<ModelItem> localItems = new ArrayList<>();
                 for (OllamaModel m : localModels) {
-                    localItems.add(new ModelItem(ModelState.OK, m.getName(), true, ollamaUrl));
+                    localItems.add(new ModelItem(ModelState.OK, m.getName(), true, ollamaUrl, null));
                 }
 
                 Display.getDefault().asyncExec(() -> {
@@ -333,7 +396,7 @@ public class ModelsGroup extends AEvoGroup {
                 Display.getDefault().asyncExec(() -> {
                     if (tableViewer.getTable().isDisposed()) return;
                     if (this.modelItems == newItems) {
-                        newItems.add(new ModelItem(ModelState.ERR, "Ollama", true, ollamaUrl));
+                        newItems.add(new ModelItem(ModelState.ERR, "Ollama", true, ollamaUrl, null));
                         tableViewer.refresh();
                     }
                 });
