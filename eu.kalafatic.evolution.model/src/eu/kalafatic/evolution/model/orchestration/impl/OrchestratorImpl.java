@@ -435,6 +435,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected EList<Test> tests;
 
 	/**
+	 * The cached value of the '{@link #getAiProviders() <em>Ai Providers</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAiProviders()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<eu.kalafatic.evolution.model.orchestration.AIProvider> aiProviders;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated NOT
@@ -445,6 +455,19 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			tests = new EObjectContainmentEList<Test>(Test.class, this, OrchestrationPackage.ORCHESTRATOR__TESTS);
 		}
 		return tests;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EList<eu.kalafatic.evolution.model.orchestration.AIProvider> getAiProviders() {
+		if (aiProviders == null) {
+			aiProviders = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.AIProvider>(eu.kalafatic.evolution.model.orchestration.AIProvider.class, this, OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS);
+		}
+		return aiProviders;
 	}
 
 	/**
@@ -1302,6 +1325,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return basicSetEclipse(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__TESTS:
 				return ((InternalEList<?>)getTests()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
+				return ((InternalEList<?>)getAiProviders()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1368,6 +1393,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getEclipse();
 			case OrchestrationPackage.ORCHESTRATOR__TESTS:
 				return getTests();
+			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
+				return getAiProviders();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1465,6 +1492,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				getTests().clear();
 				getTests().addAll((Collection<? extends Test>)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
+				getAiProviders().clear();
+				getAiProviders().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.AIProvider>)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1558,6 +1589,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__TESTS:
 				getTests().clear();
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
+				getAiProviders().clear();
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1624,6 +1658,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return eclipse != null;
 			case OrchestrationPackage.ORCHESTRATOR__TESTS:
 				return tests != null && !tests.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
+				return aiProviders != null && !aiProviders.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}
