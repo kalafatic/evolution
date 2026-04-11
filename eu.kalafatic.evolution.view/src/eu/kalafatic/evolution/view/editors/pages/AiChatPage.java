@@ -112,9 +112,9 @@ public class AiChatPage extends SharedScrolledComposite {
 		colorReviewer = display.getSystemColor(SWT.COLOR_MAGENTA);
 		colorError = display.getSystemColor(SWT.COLOR_RED);
 		colorWhite = display.getSystemColor(SWT.COLOR_WHITE);
-		colorLocal = display.getSystemColor(SWT.COLOR_DARK_GREEN);
-		colorHybrid = display.getSystemColor(SWT.COLOR_DARK_BLUE);
-		colorRemote = display.getSystemColor(SWT.COLOR_DARK_MAGENTA);
+		colorLocal = display.getSystemColor(SWT.COLOR_GREEN);
+		colorHybrid = display.getSystemColor(SWT.COLOR_CYAN);
+		colorRemote = display.getSystemColor(SWT.COLOR_MAGENTA);
 
 		Font defaultFont = JFaceResources.getDefaultFont();
 		FontData[] fontData = defaultFont.getFontData();
@@ -225,8 +225,16 @@ public class AiChatPage extends SharedScrolledComposite {
 	public void updateModeDisplay() {
 		if (orchestrator == null || modeIndicatorLabel == null || modeIndicatorLabel.isDisposed()) return;
 		AiMode mode = orchestrator.getAiMode();
-		modeIndicatorLabel.setText(mode.getName().toUpperCase() + " MODE ACTIVE");
-		modeIndicatorLabel.setForeground(colorWhite);
+		String modelName = "UNKNOWN";
+		if (mode == AiMode.LOCAL) {
+			modelName = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "NONE";
+		} else {
+			modelName = orchestrator.getRemoteModel();
+		}
+		if (modelName == null) modelName = "NOT SET";
+
+		modeIndicatorLabel.setText("-" + mode.getName().toUpperCase() + " MODE ACTIVE - " + modelName.toUpperCase() + " (ACCORDING TO CURRENT SETTINGS)");
+		modeIndicatorLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
 		switch (mode) {
 		case LOCAL: modeIndicatorLabel.setBackground(colorLocal); break;
 		case HYBRID: modeIndicatorLabel.setBackground(colorHybrid); break;
