@@ -100,6 +100,14 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
+        Button downloadButton = toolkit.createButton(buttonBar, "Download", SWT.PUSH);
+        downloadButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleDownloadModel();
+            }
+        });
+
         Button editButton = toolkit.createButton(buttonBar, "Edit", SWT.PUSH);
         editButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -323,6 +331,30 @@ public class ModelsGroup extends AEvoGroup {
         return viewerColumn;
     }
 
+    private void handleDownloadModel() {
+        String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+        ModelDownloadDialog dialog = new ModelDownloadDialog(group.getShell(), ollamaUrl);
+        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
+            String modelName = dialog.getDownloadedModelName();
+            if (modelName != null && !modelName.isEmpty()) {
+                // Check if it already exists in aiProviders
+                boolean exists = orchestrator.getAiProviders().stream()
+                        .anyMatch(p -> modelName.equalsIgnoreCase(p.getName()) && p.isLocal());
+                if (!exists) {
+                    eu.kalafatic.evolution.model.orchestration.AIProvider newProvider =
+                            eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
+                    newProvider.setName(modelName);
+                    newProvider.setLocal(true);
+                    newProvider.setUrl(ollamaUrl);
+                    newProvider.setFormat("ollama");
+                    orchestrator.getAiProviders().add(newProvider);
+                    editor.setDirty(true);
+                }
+                refreshUI();
+            }
+        }
+    }
+
     private void handleAddModel() {
         String[] options = { "Local (Ollama)", "Remote" };
         MessageDialog dialog = new MessageDialog(group.getShell(), "Add Model", null,
@@ -334,7 +366,17 @@ public class ModelsGroup extends AEvoGroup {
             if (input.open() == InputDialog.OK) {
                 String modelName = input.getValue();
                 if (modelName != null && !modelName.trim().isEmpty()) {
-                    runTerminalCommand("ollama run " + modelName.trim());
+                    // Just add it to providers if it's already there or verified
+                    eu.kalafatic.evolution.model.orchestration.AIProvider newProvider =
+                            eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
+                    newProvider.setName(modelName.trim());
+                    newProvider.setLocal(true);
+                    String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+                    newProvider.setUrl(ollamaUrl);
+                    newProvider.setFormat("ollama");
+                    orchestrator.getAiProviders().add(newProvider);
+                    editor.setDirty(true);
+                    refreshUI();
                 }
             }
         } else if (result == 1) { // Remote
@@ -480,8 +522,26 @@ public class ModelsGroup extends AEvoGroup {
             try {
                 List<OllamaModel> localModels = ollamaService.loadModels();
                 List<ModelItem> localItems = new ArrayList<>();
+
+                // Mark EMF local providers status
+                for (ModelItem item : newItems) {
+                    if (item.local && item.provider != null) {
+                        boolean exists = localModels.stream().anyMatch(m -> m.getName().equalsIgnoreCase(item.name) || (item.name.contains("/") && m.getName().contains(item.name)));
+                        if (exists) {
+                            item.state = ModelState.OK;
+                            item.stateDescription = "Model found in Ollama.";
+                        } else {
+                            item.state = ModelState.ERR;
+                            item.stateDescription = "Model NOT found in Ollama. Please download it.";
+                        }
+                    }
+                }
+
                 for (OllamaModel m : localModels) {
-                    localItems.add(new ModelItem(ModelState.OK, m.getName(), true, ollamaUrl, null));
+                    // Only add if not already in newItems (which contains EMF providers)
+                    if (newItems.stream().noneMatch(i -> i.name.equalsIgnoreCase(m.getName()))) {
+                        localItems.add(new ModelItem(ModelState.OK, m.getName(), true, ollamaUrl, null));
+                    }
                 }
 
                 Display.getDefault().asyncExec(() -> {

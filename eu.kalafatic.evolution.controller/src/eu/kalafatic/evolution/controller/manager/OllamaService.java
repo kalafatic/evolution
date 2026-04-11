@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.manager;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.function.Consumer;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URI;
@@ -229,6 +230,48 @@ public class OllamaService {
     public List<Message> getMessages() {
         return messages;
     }
+
+    /**
+     * Pulls a model from Ollama or a library (like HF).
+     * @param modelName The name of the model to pull.
+     * @param progressCallback Callback for progress updates (status, completed, total).
+     * @throws Exception if pulling fails.
+     */
+    public void pullModel(String modelName, Consumer<ProgressUpdate> progressCallback) throws Exception {
+        String pullUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/pull";
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("name", modelName);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(pullUrl))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
+                .build();
+
+        HttpResponse<java.util.stream.Stream<String>> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofLines());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Ollama pull error: " + response.statusCode());
+        }
+
+        try (java.util.stream.Stream<String> lines = response.body()) {
+            lines.forEach(line -> {
+                if (line != null && !line.isBlank()) {
+                    JSONObject obj = new JSONObject(line);
+                    String status = obj.optString("status");
+                    long completed = obj.optLong("completed", 0);
+                    long total = obj.optLong("total", 0);
+                    progressCallback.accept(new ProgressUpdate(status, completed, total));
+                    if ("success".equals(status)) {
+                        // done
+                    }
+                }
+            });
+        }
+    }
+
+    public static record ProgressUpdate(String status, long completed, long total) {}
 
     /**
      * Fetches the list of models from the Ollama API.
