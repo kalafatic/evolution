@@ -111,11 +111,14 @@ public class TokenSecurityService {
         ProviderConfig config = (name != null) ? AiProviders.PROVIDERS.get(name.toLowerCase()) : null;
         if (config != null) {
             String token = config.getApiKey();
+            if ("YOUR_API_KEY".equals(token)) token = null;
+
             // If it's the currently selected remote model in orchestrator, check openAiToken first
+            String orchToken = orchestrator.getOpenAiToken();
             if (name.equalsIgnoreCase(orchestrator.getRemoteModel()) &&
-                orchestrator.getOpenAiToken() != null && !orchestrator.getOpenAiToken().isEmpty() &&
-                !"YOUR_API_KEY".equals(orchestrator.getOpenAiToken())) {
-                token = orchestrator.getOpenAiToken();
+                orchToken != null && !orchToken.isEmpty() &&
+                !"YOUR_API_KEY".equals(orchToken)) {
+                token = orchToken;
             }
 
             return new ResolvedProvider(
@@ -131,7 +134,8 @@ public class TokenSecurityService {
         // 3. Last fallback to legacy fields if name matches or is generic
         if (name == null || "openai".equalsIgnoreCase(name) || name.equalsIgnoreCase(orchestrator.getRemoteModel())) {
             String token = orchestrator.getOpenAiToken();
-            if (token == null && orchestrator.getAiChat() != null) token = orchestrator.getAiChat().getToken();
+            if (("YOUR_API_KEY".equals(token) || token == null) && orchestrator.getAiChat() != null) token = orchestrator.getAiChat().getToken();
+            if ("YOUR_API_KEY".equals(token)) token = null;
 
             String url = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getUrl() : null;
             String model = orchestrator.getOpenAiModel();

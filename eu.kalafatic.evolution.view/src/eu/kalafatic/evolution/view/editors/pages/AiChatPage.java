@@ -50,6 +50,7 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 import eu.kalafatic.evolution.view.editors.pages.aichat.*;
 import eu.kalafatic.evolution.view.dialogs.ProjectSetupWizardDialog;
 import org.eclipse.jface.window.Window;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import eu.kalafatic.evolution.controller.manager.EnvironmentSuggestionService;
 import java.util.List;
 
@@ -614,6 +615,12 @@ public class AiChatPage extends SharedScrolledComposite {
 			try {
 				Orchestrator tempOrch = OrchestrationFactory.eINSTANCE.createOrchestrator();
 				tempOrch.setAiMode(AiMode.get(modeIndex)); tempOrch.setRemoteModel(remoteModel); tempOrch.setOpenAiToken(token);
+
+				// Copy custom providers for resolution during test
+				if (orchestrator != null) {
+				    tempOrch.getAiProviders().addAll(org.eclipse.emf.ecore.util.EcoreUtil.copyAll(orchestrator.getAiProviders()));
+				}
+
 				tempOrch.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat()); tempOrch.getAiChat().setUrl(apiUrl);
 				tempOrch.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
 				tempOrch.setHybridModel(orchestrator.getHybridModel()); tempOrch.setLocalModel(orchestrator.getLocalModel());

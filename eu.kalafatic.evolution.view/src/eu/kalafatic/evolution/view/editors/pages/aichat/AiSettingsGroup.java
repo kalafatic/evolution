@@ -53,9 +53,7 @@ public class AiSettingsGroup extends AEvoGroup {
 
         SWTFactory.createLabel(compositeRemote, "AI Remote:");
         aiRemoteCombo = SWTFactory.createCombo(compositeRemote);
-        for (String providerName : AiProviders.PROVIDERS.keySet()) {
-            aiRemoteCombo.add(providerName);
-        }
+        // Providers will be populated in refreshUI
 
         Button connectionButton = SWTFactory.createButton(compositeRemote, "Test Connection", 120);
         connectionButton.addSelectionListener(new SelectionAdapter() {
@@ -97,10 +95,12 @@ public class AiSettingsGroup extends AEvoGroup {
         aiRemoteCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                String provider = aiRemoteCombo.getText();
-                ProviderConfig config = AiProviders.PROVIDERS.get(provider);
-                if (config != null) {
-                    remoteUrlText.setText(config.getEndpointUrl() != null ? config.getEndpointUrl() : "");
+                String providerName = aiRemoteCombo.getText();
+                eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
+                        eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().resolve(orchestrator, providerName);
+                if (resolved != null) {
+                    remoteUrlText.setText(resolved.url != null ? resolved.url : "");
+                    remoteTokenText.setText(resolved.token != null ? resolved.token : "");
                     page.syncModelWithUI();
                 }
             }
@@ -114,6 +114,23 @@ public class AiSettingsGroup extends AEvoGroup {
     protected void refreshUI() {
         if (orchestrator != null) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
+
+            // Populate AI Remote combo with model and static providers
+            String current = aiRemoteCombo.getText();
+            aiRemoteCombo.removeAll();
+            java.util.Set<String> names = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+            names.addAll(AiProviders.PROVIDERS.keySet());
+            if (orchestrator.getAiProviders() != null) {
+                for (eu.kalafatic.evolution.model.orchestration.AIProvider p : orchestrator.getAiProviders()) {
+                    names.add(p.getName());
+                }
+            }
+            for (String n : names) aiRemoteCombo.add(n);
+            if (!current.isEmpty()) {
+                int idx = aiRemoteCombo.indexOf(current);
+                if (idx >= 0) aiRemoteCombo.select(idx);
+            }
+
             String remoteModel = orchestrator.getRemoteModel();
             if (remoteModel == null || remoteModel.isEmpty()) {
                 remoteModel = "deepseek";

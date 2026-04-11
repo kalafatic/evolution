@@ -49,7 +49,7 @@ public class GeminiProvider implements ILlmProvider {
             if (context != null) {
                 try {
                     token = context.requestToken(remoteModelName != null ? remoteModelName : "Gemini").get();
-                    orchestrator.setOpenAiToken(token);
+                    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().updateToken(orchestrator, remoteModelName, token);
                 } catch (Exception e) {
                     throw new Exception("Failed to obtain token: " + e.getMessage());
                 }
