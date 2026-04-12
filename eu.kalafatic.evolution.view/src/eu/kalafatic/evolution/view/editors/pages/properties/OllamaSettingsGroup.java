@@ -1,7 +1,9 @@
 package eu.kalafatic.evolution.view.editors.pages.properties;
 
 import java.io.File;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.eclipse.jface.fieldassist.ControlDecoration;
 import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.swt.SWT;
@@ -50,12 +52,9 @@ public class OllamaSettingsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 int idx = modelCombo.getSelectionIndex();
-                if (idx >= 0 && ollamaService != null) {
-                    List<OllamaModel> models = ollamaService.loadModels();
-                    if (idx < models.size()) {
-                        ollamaModelText.setText(models.get(idx).getName());
-                        page.syncModelWithUI();
-                    }
+                if (idx >= 0) {
+                    ollamaModelText.setText(modelCombo.getItem(idx));
+                    page.syncModelWithUI();
                 }
             }
         });
@@ -94,13 +93,15 @@ public class OllamaSettingsGroup extends AEvoGroup {
             ollamaService = new OllamaService(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel());
 
             // Populate combo
-            modelCombo.removeAll();
             new Thread(() -> {
                 if (ollamaService.ping()) {
                     List<OllamaModel> models = ollamaService.loadModels();
                     Display.getDefault().asyncExec(() -> {
                         if (!modelCombo.isDisposed()) {
-                            for (OllamaModel m : models) modelCombo.add(m.getName());
+                            modelCombo.removeAll();
+                            Set<String> uniqueModels = new LinkedHashSet<>();
+                            for (OllamaModel m : models) uniqueModels.add(m.getName());
+                            for (String name : uniqueModels) modelCombo.add(name);
                         }
                     });
                 }

@@ -13,7 +13,9 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -214,8 +216,12 @@ public class OllamaSettingsPage extends AWizardPage {
 		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		
 		if (models != null) {
+			Set<String> uniqueModels = new LinkedHashSet<>();
 		    for (OllamaModel f : models) {
-		        combo.add(f.getName());
+			uniqueModels.add(f.getName());
+		    }
+		    for (String name : uniqueModels) {
+			combo.add(name);
 		    }
 		}
 
@@ -223,10 +229,9 @@ public class OllamaSettingsPage extends AWizardPage {
 		combo.addListener(SWT.Selection, e -> {
 		    int index = combo.getSelectionIndex();
 		    if (index >= 0) {
-		    	OllamaModel selected = models.get(index);
-		    	
-		    	modelText.setText(selected.getName());
-		        System.out.println("Selected: " + selected.getName());
+			String selectedName = combo.getItem(index);
+			modelText.setText(selectedName);
+		        System.out.println("Selected: " + selectedName);
 		    }
 		});
 		return combo;
