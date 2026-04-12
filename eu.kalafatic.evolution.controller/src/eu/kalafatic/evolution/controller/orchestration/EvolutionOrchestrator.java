@@ -26,6 +26,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
         availableAgents.add(new TesterAgent());
         availableAgents.add(new ReviewerAgent());
         availableAgents.add(new GeneralAgent());
+        availableAgents.add(new TerminalAgent());
+        availableAgents.add(new FileAgent());
+        availableAgents.add(new MavenAgent());
+        availableAgents.add(new GitAgent());
+        availableAgents.add(new StructureAgent());
+        availableAgents.add(new WebSearchAgent());
+        availableAgents.add(new QualityAgent());
+        availableAgents.add(new ObservabilityAgent());
     }
 
     @Override
@@ -311,9 +319,18 @@ public class EvolutionOrchestrator implements IOrchestrator {
             }
         }
 
-        // 2. Map task types to default agents
-        if (type.contains("maven") || type.contains("test")) return availableAgents.stream().filter(a -> a instanceof TesterAgent).findFirst().orElse(availableAgents.get(2));
-        if (type.contains("file") || type.contains("java")) return availableAgents.stream().filter(a -> a instanceof JavaDevAgent).findFirst().orElse(availableAgents.get(1));
+        // 2. Map task types to specialized agents
+        if (type.contains("terminal") || type.contains("shell")) return availableAgents.stream().filter(a -> a instanceof TerminalAgent).findFirst().orElse(availableAgents.get(0));
+        if (type.contains("file")) return availableAgents.stream().filter(a -> a instanceof FileAgent).findFirst().orElse(availableAgents.get(0));
+        if (type.contains("maven")) return availableAgents.stream().filter(a -> a instanceof MavenAgent).findFirst().orElse(availableAgents.get(0));
+        if (type.contains("git")) return availableAgents.stream().filter(a -> a instanceof GitAgent).findFirst().orElse(availableAgents.get(0));
+        if (type.contains("structure") || type.contains("tree")) return availableAgents.stream().filter(a -> a instanceof StructureAgent).findFirst().orElse(availableAgents.get(0));
+        if (type.contains("search") || type.contains("web")) return availableAgents.stream().filter(a -> a instanceof WebSearchAgent).findFirst().orElse(availableAgents.get(0));
+        if (type.contains("quality") || type.contains("linter") || type.contains("checkstyle")) return availableAgents.stream().filter(a -> a instanceof QualityAgent).findFirst().orElse(availableAgents.get(0));
+        if (type.contains("observability") || type.contains("log") || type.contains("tail")) return availableAgents.stream().filter(a -> a instanceof ObservabilityAgent).findFirst().orElse(availableAgents.get(0));
+
+        if (type.contains("test")) return availableAgents.stream().filter(a -> a instanceof TesterAgent).findFirst().orElse(availableAgents.get(2));
+        if (type.contains("java")) return availableAgents.stream().filter(a -> a instanceof JavaDevAgent).findFirst().orElse(availableAgents.get(1));
         if (type.contains("arch") || type.contains("design")) return availableAgents.stream().filter(a -> a instanceof ArchitectAgent).findFirst().orElse(availableAgents.get(0));
 
         // Default to General Agent for reasoning or unknown tasks

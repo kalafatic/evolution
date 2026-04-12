@@ -199,20 +199,12 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
             }
 
             // Agent Settings
-            String agentsData = agentPage.getAgentsData();
-            if (agentsData != null && !agentsData.isEmpty()) {
-                String[] lines = agentsData.split("\\r?\\n");
-                for (String line : lines) {
-                    String[] parts = line.split(":", 3);
-                    if (parts.length >= 2) {
-                        Agent agent = factory.createAgent();
-                        agent.setId(parts[0].trim());
-                        agent.setType(parts[1].trim());
-                        if (parts.length >= 3) {
-                            RuleParser.parseAndAddRules(agent, parts[2].trim());
-                        }
-                        orchestrator.getAgents().add(agent);
-                    }
+            if (!agentPage.isSkipped()) {
+                for (AgentSettingsPage.AgentEntry entry : agentPage.getSelectedAgents()) {
+                    Agent agent = factory.createAgent();
+                    agent.setId(entry.id);
+                    agent.setType(entry.type);
+                    orchestrator.getAgents().add(agent);
                 }
             }
 
