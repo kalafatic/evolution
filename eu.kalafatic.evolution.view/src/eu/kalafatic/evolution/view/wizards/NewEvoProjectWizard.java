@@ -240,18 +240,11 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
             // Agent Settings
             if (!agentPage.isSkipped()) {
-                String agentsData = agentPage.getAgentsData();
-                if (agentsData != null && !agentsData.isEmpty()) {
-                    String[] lines = agentsData.split("\\r?\\n");
-                    for (String line : lines) {
-                        String[] parts = line.split(":");
-                        if (parts.length >= 2) {
-                            Agent agent = factory.createAgent();
-                            agent.setId(parts[0].trim());
-                            agent.setType(parts[1].trim());
-                            orchestrator.getAgents().add(agent);
-                        }
-                    }
+                for (AgentSettingsPage.AgentEntry entry : agentPage.getSelectedAgents()) {
+                    Agent agent = factory.createAgent();
+                    agent.setId(entry.id);
+                    agent.setType(entry.type);
+                    orchestrator.getAgents().add(agent);
                 }
             }
 
