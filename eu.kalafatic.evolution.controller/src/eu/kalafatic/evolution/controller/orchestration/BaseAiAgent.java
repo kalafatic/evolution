@@ -112,6 +112,20 @@ public abstract class BaseAiAgent implements IAgent {
             sb.append("\n").append(bp).append("\n");
         }
 
+        // Special Context injection
+        if (orchestrator.isIterativeMode()) {
+            String ic = bestPracticesService.getSpecialContext("iterative_loop.md");
+            if (ic != null && !ic.isEmpty()) {
+                sb.append("\n--- ITERATIVE LOOP CONTEXT ---\n").append(ic).append("\n--- END ITERATIVE LOOP CONTEXT ---\n");
+            }
+        }
+        if (orchestrator.isSelfIterativeMode()) {
+            String sc = bestPracticesService.getSpecialContext("self_development.md");
+            if (sc != null && !sc.isEmpty()) {
+                sb.append("\n--- SELF DEVELOPMENT CONTEXT ---\n").append(sc).append("\n--- END SELF DEVELOPMENT CONTEXT ---\n");
+            }
+        }
+
         // Neuron Context injection
         String nc = neuronContextService.getLearnedContext();
         if (nc != null && !nc.isEmpty()) {
