@@ -69,6 +69,13 @@ public class TaskContext {
         notifyListeners(message);
     }
 
+    /**
+     * Logs only to the console and file, without notifying UI listeners (chat history).
+     */
+    public void consoleLog(String message) {
+        Log.log(message);
+    }
+
     public void addLogListener(LogListener listener) {
         listeners.add(listener);
     }

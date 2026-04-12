@@ -156,6 +156,8 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 	public void postWindowOpen() {
 		super.postWindowOpen();
 
+		Log.redirectSystemStreams();
+
 		//window = getWindowConfigurer().getWindow();
 
 		// test
