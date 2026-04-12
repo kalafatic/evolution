@@ -60,10 +60,11 @@ import org.eclipse.ui.part.MarkerTransfer;
 import org.eclipse.ui.part.ResourceTransfer;
 import org.osgi.framework.Version;
 
+import eu.kalafatic.evolution.controller.log.Log;
 import eu.kalafatic.evolution.view.application.EvolutionSplashHandler.GSHf;
 import eu.kalafatic.evolution.view.provider.ProjectManager;
 import eu.kalafatic.utils.constants.FCoreImageConstants;
-import eu.kalafatic.utils.log.Log;
+
 import eu.kalafatic.utils.preferences.ECorePreferences;
 
 
@@ -392,7 +393,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 					}
 				});
 			} catch (Exception e) {
-				Log.log(ECorePreferences.MODULE, e);
+				Log.log(e.getMessage());
 			}
 			return trayItem;
 		}
@@ -452,7 +453,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 				Thread.sleep(500);
 
 			} catch (Exception e) {
-				Log.log(ECorePreferences.MODULE, e);
+				Log.log(e.getMessage());
 			}
 		}
 
@@ -504,7 +505,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 							}
 						}
 					} catch (Exception e) {
-						Log.log(ECorePreferences.MODULE, e);
+						Log.log(e.getMessage());
 					} finally {
 						if (splash != null) {
 							splash.done();
@@ -541,7 +542,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 						Thread.sleep(500);
 
 					} catch (Exception e) {
-						Log.log(ECorePreferences.MODULE, e);
+						Log.log(e.getMessage());
 					} finally {
 						GSHf.FLAG = GSHf.DONE;
 					}

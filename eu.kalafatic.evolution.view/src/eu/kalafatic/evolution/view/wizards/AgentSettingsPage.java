@@ -168,6 +168,8 @@ public class AgentSettingsPage extends AWizardPage {
             result.add((AgentEntry) obj);
         }
         return result;
+        
+    }
     @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
@@ -178,26 +180,6 @@ public class AgentSettingsPage extends AWizardPage {
 
     public void updateModel() {
         if (orchestrator == null || isSkipped()) return;
-        String agentsData = getAgentsData();
-        if (agentsData != null && !agentsData.isEmpty()) {
-            orchestrator.getAgents().clear();
-            String[] lines = agentsData.split("\\r?\\n");
-            for (String line : lines) {
-                String[] parts = line.split(":", 3);
-                if (parts.length >= 2) {
-                    eu.kalafatic.evolution.model.orchestration.Agent agent = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAgent();
-                    agent.setId(parts[0].trim());
-                    agent.setType(parts[1].trim());
-                    if (parts.length >= 3) {
-                        RuleParser.parseAndAddRules(agent, parts[2].trim());
-                    }
-                    orchestrator.getAgents().add(agent);
-                }
-            }
-        }
-    }
-
-    public String getAgentsData() {
-        return agentsText.getText();
+        tableViewer.refresh(true);;
     }
 }
