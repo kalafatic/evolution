@@ -1,4 +1,7 @@
-package eu.kalafatic.evolution.controller.orchestration;
+package eu.kalafatic.evolution.controller.agents;
+
+import eu.kalafatic.evolution.controller.tools.MavenTool;
+import eu.kalafatic.evolution.controller.tools.ShellTool;
 
 /**
  * Specialized agent for testing and validation.

@@ -207,7 +207,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	private void handleGitInit() {
 		new Thread(() -> {
 			try {
-				eu.kalafatic.evolution.controller.orchestration.ShellTool shell = new eu.kalafatic.evolution.controller.orchestration.ShellTool();
+				eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
 				shell.execute("git init", getProjectRoot(), null);
 				processLogEntry("Evo: Git repository initialized successfully.");
 			} catch (Exception e) {

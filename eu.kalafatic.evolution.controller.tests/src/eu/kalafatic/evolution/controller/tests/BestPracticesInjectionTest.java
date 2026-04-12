@@ -5,7 +5,8 @@ import java.io.File;
 import java.nio.file.Files;
 import org.junit.Before;
 import org.junit.Test;
-import eu.kalafatic.evolution.controller.orchestration.BaseAiAgent;
+
+import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;

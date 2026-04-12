@@ -6,9 +6,10 @@ import java.nio.file.Files;
 import java.lang.reflect.Method;
 import org.junit.Before;
 import org.junit.Test;
+
+import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.orchestration.IAgent;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
@@ -44,7 +45,7 @@ public class OrchestrationPathTest {
         IAgent mockAgent = new IAgent() {
             @Override public String getId() { return "mock"; }
             @Override public String getType() { return "JavaDev"; }
-            @Override public java.util.List<eu.kalafatic.evolution.controller.orchestration.ITool> getTools() { return java.util.Collections.emptyList(); }
+            @Override public java.util.List<eu.kalafatic.evolution.controller.tools.ITool> getTools() { return java.util.Collections.emptyList(); }
             @Override public String process(String desc, TaskContext ctx, String feedback) { return "public class Test {}"; }
         };
 

@@ -10,9 +10,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
 import org.junit.Test;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
-import eu.kalafatic.evolution.controller.orchestration.IAgent;
-import eu.kalafatic.evolution.controller.orchestration.PlannerAgent;
-import eu.kalafatic.evolution.controller.orchestration.ReviewerAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.llm.ILlmProvider;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
@@ -20,8 +17,11 @@ import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
+import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
+import eu.kalafatic.evolution.controller.agents.IAgent;
+import eu.kalafatic.evolution.controller.agents.PlannerAgent;
+import eu.kalafatic.evolution.controller.agents.ReviewerAgent;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
-import eu.kalafatic.evolution.controller.orchestration.BaseAiAgent;
 
 public class OrchestratorFlowTest {
 

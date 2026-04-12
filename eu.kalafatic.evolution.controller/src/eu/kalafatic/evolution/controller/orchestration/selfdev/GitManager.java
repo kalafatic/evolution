@@ -1,8 +1,9 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
-import eu.kalafatic.evolution.controller.orchestration.ShellTool;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.tools.ShellTool;
 
 public class GitManager {
     private final File projectRoot;

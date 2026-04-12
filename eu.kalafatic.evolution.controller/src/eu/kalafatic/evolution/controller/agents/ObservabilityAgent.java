@@ -1,4 +1,6 @@
-package eu.kalafatic.evolution.controller.orchestration;
+package eu.kalafatic.evolution.controller.agents;
+
+import eu.kalafatic.evolution.controller.tools.ShellTool;
 
 /**
  * Agent specialized in Observability and Logs.

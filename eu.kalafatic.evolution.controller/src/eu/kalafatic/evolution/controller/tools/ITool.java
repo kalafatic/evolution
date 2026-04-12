@@ -1,6 +1,8 @@
-package eu.kalafatic.evolution.controller.orchestration;
+package eu.kalafatic.evolution.controller.tools;
 
 import java.io.File;
+
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
  * Interface for tools used by agents to interact with the environment.

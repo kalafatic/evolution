@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
+import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
+
 /**
  * Agent specialized in Web Searching and Documentation.
  */

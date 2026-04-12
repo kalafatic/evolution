@@ -7,7 +7,25 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
+import eu.kalafatic.evolution.controller.agents.ArchitectAgent;
+import eu.kalafatic.evolution.controller.agents.FileAgent;
+import eu.kalafatic.evolution.controller.agents.GeneralAgent;
+import eu.kalafatic.evolution.controller.agents.GitAgent;
+import eu.kalafatic.evolution.controller.agents.IAgent;
+import eu.kalafatic.evolution.controller.agents.JavaDevAgent;
+import eu.kalafatic.evolution.controller.agents.MavenAgent;
+import eu.kalafatic.evolution.controller.agents.ObservabilityAgent;
+import eu.kalafatic.evolution.controller.agents.PlannerAgent;
+import eu.kalafatic.evolution.controller.agents.QualityAgent;
+import eu.kalafatic.evolution.controller.agents.ReviewerAgent;
+import eu.kalafatic.evolution.controller.agents.StructureAgent;
+import eu.kalafatic.evolution.controller.agents.TerminalAgent;
+import eu.kalafatic.evolution.controller.agents.TesterAgent;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
+import eu.kalafatic.evolution.controller.tools.FileTool;
+import eu.kalafatic.evolution.controller.tools.GitTool;
+import eu.kalafatic.evolution.controller.tools.MavenTool;
+import eu.kalafatic.evolution.controller.tools.ShellTool;
 
 /**
  * Core Orchestrator implementation that manages the task lifecycle and execution.

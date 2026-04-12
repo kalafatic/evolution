@@ -1,4 +1,7 @@
-package eu.kalafatic.evolution.controller.orchestration;
+package eu.kalafatic.evolution.controller.agents;
+
+import eu.kalafatic.evolution.controller.tools.FileTool;
+import eu.kalafatic.evolution.controller.tools.ShellTool;
 
 /**
  * Specialized agent for project structure and design.

@@ -1,6 +1,8 @@
-package eu.kalafatic.evolution.controller.orchestration;
+package eu.kalafatic.evolution.controller.agents;
 
 import org.json.JSONObject;
+
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
  * Specialized agent for code review and evaluation.

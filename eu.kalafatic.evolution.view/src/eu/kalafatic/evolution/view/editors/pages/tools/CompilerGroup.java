@@ -63,7 +63,7 @@ public class CompilerGroup extends AToolGroup {
 
     private void testCompiler() {
         try {
-            eu.kalafatic.evolution.controller.orchestration.CppTool tool = new eu.kalafatic.evolution.controller.orchestration.CppTool();
+            eu.kalafatic.evolution.controller.tools.CppTool tool = new eu.kalafatic.evolution.controller.tools.CppTool();
             File workingDir = getWorkingDir();
             TaskContext context = new TaskContext(orchestrator, workingDir);
             String result = tool.execute("TEST_CONNECTION", workingDir, context);

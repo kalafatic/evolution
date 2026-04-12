@@ -4,7 +4,8 @@ import static org.junit.Assert.*;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
-import eu.kalafatic.evolution.controller.orchestration.PlannerAgent;
+
+import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.llm.ILlmProvider;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;

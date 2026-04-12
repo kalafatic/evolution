@@ -1,6 +1,9 @@
-package eu.kalafatic.evolution.controller.orchestration;
+package eu.kalafatic.evolution.controller.agents;
 
 import java.util.List;
+
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.tools.ITool;
 
 /**
  * Interface for agents in the orchestration system.

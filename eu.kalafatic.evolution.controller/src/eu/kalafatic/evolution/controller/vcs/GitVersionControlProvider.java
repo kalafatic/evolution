@@ -4,7 +4,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import eu.kalafatic.evolution.controller.orchestration.ShellTool;
+
+import eu.kalafatic.evolution.controller.tools.ShellTool;
 
 public class GitVersionControlProvider implements VersionControlProvider {
     private ShellTool shell = new ShellTool();

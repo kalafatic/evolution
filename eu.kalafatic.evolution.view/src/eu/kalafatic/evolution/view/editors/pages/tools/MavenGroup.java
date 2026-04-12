@@ -48,7 +48,7 @@ public class MavenGroup extends AToolGroup {
         try {
             File workingDir = getWorkingDir();
             TaskContext context = new TaskContext(orchestrator, workingDir);
-            eu.kalafatic.evolution.controller.orchestration.ShellTool shell = new eu.kalafatic.evolution.controller.orchestration.ShellTool();
+            eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
             String result = shell.execute(System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd -version" : "mvn -version", workingDir, context);
             MessageDialog.openInformation(group.getShell(), "Maven Test", "Maven is available:\n" + result);
             if (orchestrator.getMaven() != null) {

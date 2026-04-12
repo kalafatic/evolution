@@ -52,7 +52,7 @@ public class GitGroup extends AToolGroup {
         try {
             File workingDir = getWorkingDir();
             TaskContext context = new TaskContext(orchestrator, workingDir);
-            eu.kalafatic.evolution.controller.orchestration.ShellTool shell = new eu.kalafatic.evolution.controller.orchestration.ShellTool();
+            eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
             String result = shell.execute("git --version", workingDir, context);
             MessageDialog.openInformation(group.getShell(), "Git Test", "Git is available:\n" + result);
             if (orchestrator.getGit() != null) {

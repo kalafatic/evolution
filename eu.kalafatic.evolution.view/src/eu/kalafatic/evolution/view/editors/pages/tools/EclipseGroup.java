@@ -51,7 +51,7 @@ public class EclipseGroup extends AToolGroup {
 
     private void testEclipse() {
         try {
-            eu.kalafatic.evolution.controller.orchestration.EclipseTool tool = new eu.kalafatic.evolution.controller.orchestration.EclipseTool();
+            eu.kalafatic.evolution.controller.tools.EclipseTool tool = new eu.kalafatic.evolution.controller.tools.EclipseTool();
             File workingDir = getWorkingDir();
             TaskContext context = new TaskContext(orchestrator, workingDir);
             String result = tool.execute("TEST_CONNECTION", workingDir, context);
