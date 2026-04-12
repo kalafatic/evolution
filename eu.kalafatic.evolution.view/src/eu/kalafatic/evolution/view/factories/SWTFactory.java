@@ -1,7 +1,9 @@
 package eu.kalafatic.evolution.view.factories;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
@@ -125,8 +127,11 @@ public class SWTFactory {
 		List<eu.kalafatic.evolution.controller.manager.OllamaModel> models = ollamaService != null
 				? ollamaService.loadModels()
 				: new ArrayList<>();
+		Set<String> uniqueModels = new LinkedHashSet<>();
 		for (eu.kalafatic.evolution.controller.manager.OllamaModel m : models)
-			combo.add(m.getName());
+			uniqueModels.add(m.getName());
+		for (String name : uniqueModels)
+			combo.add(name);
 		return combo;
 	}
 
