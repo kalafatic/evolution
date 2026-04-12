@@ -30,7 +30,7 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class HistoryGroup extends AEvoGroup {
+public class ChatGroup extends AEvoGroup {
     private Browser browser;
     private AiChatPage page;
     private boolean isLoaded = false;
@@ -76,7 +76,7 @@ public class HistoryGroup extends AEvoGroup {
         }
     }
 
-    public HistoryGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Font chatFont, AiChatPage page) {
+    public ChatGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Font chatFont, AiChatPage page) {
         super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent, chatFont);
@@ -88,12 +88,12 @@ public class HistoryGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, Font chatFont) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Conversation History", 1, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat", 1, true);
 
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();
             Composite toolbar = toolkit.createComposite(section);
-            toolbar.setLayout(new GridLayout(3, false));
+            toolbar.setLayout(new GridLayout(4, false));
 
             Button selectAllBtn = toolkit.createButton(toolbar, "Select All", SWT.PUSH);
             selectAllBtn.addSelectionListener(new SelectionAdapter() {
@@ -110,6 +110,15 @@ public class HistoryGroup extends AEvoGroup {
                     browser.execute("toggleAll();");
                 }
             });
+
+            Button copySelectionBtn = toolkit.createButton(toolbar, "Copy Selection", SWT.PUSH);
+            copySelectionBtn.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    browser.execute("var sel = window.getSelection().toString(); if(sel) { JavaHandler('copy', '0', sel); }");
+                }
+            });
+
             SWTFactory.createMaximizeButton(toolbar, section, false);
             section.setTextClient(toolbar);
         }
