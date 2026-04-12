@@ -23,6 +23,14 @@ public class OllamaProvider implements ILlmProvider {
 
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, 0);
+    }
+
+    private String sendRequestWithRetry(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context, int depth) throws Exception {
+        if (depth > 3) {
+            throw new Exception("Maximum fallback depth reached for Ollama requests");
+        }
+
         if (orchestrator.getOllama() == null || orchestrator.getOllama().getUrl() == null || orchestrator.getOllama().getUrl().isEmpty()) {
             throw new Exception("Ollama is not configured");
         }
@@ -73,7 +81,7 @@ public class OllamaProvider implements ILlmProvider {
                     context.log("Ollama: Falling back to model: " + fallbackModel);
                     updateOrchestratorModel(orchestrator, fallbackModel);
                     // Retry with new model
-                    return sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+                    return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
                 }
             }
             throw new Exception("Ollama error: " + response.statusCode() + " - " + body);
