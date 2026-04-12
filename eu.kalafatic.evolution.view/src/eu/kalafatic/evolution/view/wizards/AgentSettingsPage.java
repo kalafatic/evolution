@@ -9,6 +9,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
+import eu.kalafatic.evolution.controller.parsers.RuleParser;
+
 public class AgentSettingsPage extends AWizardPage {
     private Text agentsText;
     private Button skipCheck;
@@ -63,7 +65,7 @@ public class AgentSettingsPage extends AWizardPage {
                     agent.setId(parts[0].trim());
                     agent.setType(parts[1].trim());
                     if (parts.length >= 3) {
-                        eu.kalafatic.evolution.model.orchestration.util.RuleParser.parseAndAddRules(agent, parts[2].trim());
+                        RuleParser.parseAndAddRules(agent, parts[2].trim());
                     }
                     orchestrator.getAgents().add(agent);
                 }

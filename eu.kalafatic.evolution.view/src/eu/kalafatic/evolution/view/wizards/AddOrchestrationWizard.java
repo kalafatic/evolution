@@ -1,10 +1,8 @@
 package eu.kalafatic.evolution.view.wizards;
 
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.wizard.Wizard;
-import org.eclipse.ui.INewWizard;
-import org.eclipse.ui.IWorkbench;
+import java.util.Arrays;
+import java.util.Collections;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -14,10 +12,23 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import eu.kalafatic.evolution.model.orchestration.*;
-import eu.kalafatic.evolution.model.orchestration.util.RuleParser;
-import java.util.Collections;
-import java.util.Arrays;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.wizard.Wizard;
+import org.eclipse.ui.INewWizard;
+import org.eclipse.ui.IWorkbench;
+
+import eu.kalafatic.evolution.controller.parsers.RuleParser;
+import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.EvoProject;
+import eu.kalafatic.evolution.model.orchestration.Git;
+import eu.kalafatic.evolution.model.orchestration.LLM;
+import eu.kalafatic.evolution.model.orchestration.Maven;
+import eu.kalafatic.evolution.model.orchestration.NeuronAI;
+import eu.kalafatic.evolution.model.orchestration.Ollama;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class AddOrchestrationWizard extends Wizard implements INewWizard {
     private IFile targetFile;
