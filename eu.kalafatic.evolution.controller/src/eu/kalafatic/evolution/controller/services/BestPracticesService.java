@@ -31,8 +31,33 @@ public class BestPracticesService {
             baseDir.mkdirs();
         }
 
-        String[] roles = {"architect", "planner", "agent", "tools"};
-        for (String role : roles) {
+        Map<String, String> roleDefaults = new HashMap<>();
+        roleDefaults.put("architect", "# ARCHITECT Best Practices\n\n" +
+                "- Design for modularity and high cohesion.\n" +
+                "- Use EMF-based modeling for core domain entities.\n" +
+                "- Follow the 'Separation of Concerns' principle between UI and logic.\n" +
+                "- Prioritize maintainability and extensibility in all design decisions.");
+
+        roleDefaults.put("planner", "# PLANNER Best Practices\n\n" +
+                "- Decompose user requests into atomic, actionable tasks.\n" +
+                "- Handle ambiguity by generating a clarification task (the 'Jules' way).\n" +
+                "- Assign specific agent roles (JavaDev, Tester, etc.) to tasks for better accuracy.\n" +
+                "- Use 'loopToTaskId' for iterative fix-test-improve cycles.");
+
+        roleDefaults.put("agent", "# AGENT Best Practices\n\n" +
+                "- Be concise and professional in all communications.\n" +
+                "- Prioritize using available tools over general reasoning for technical tasks.\n" +
+                "- Report errors clearly and suggest potential fixes or workarounds.\n" +
+                "- Always verify the outcome of tool execution.");
+
+        roleDefaults.put("tools", "# TOOLS Best Practices\n\n" +
+                "- Ensure all file paths are normalized and relative to the project root.\n" +
+                "- Request explicit user approval for high-risk actions (e.g., DELETE, SHELL).\n" +
+                "- Log tool execution results, including partial successes or informative failures.\n" +
+                "- Clean up temporary resources or side effects after execution.");
+
+        for (Map.Entry<String, String> entry : roleDefaults.entrySet()) {
+            String role = entry.getKey();
             File roleDir = new File(baseDir, role);
             if (!roleDir.exists()) {
                 roleDir.mkdirs();
@@ -40,7 +65,7 @@ public class BestPracticesService {
             File guidelines = new File(roleDir, "guidelines.md");
             if (!guidelines.exists()) {
                 try {
-                    Files.write(guidelines.toPath(), ("# " + role.toUpperCase() + " Best Practices\n\n- Add your specific instructions here.").getBytes(StandardCharsets.UTF_8));
+                    Files.write(guidelines.toPath(), entry.getValue().getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
                     Log.log("BestPractices: Could not initialize default guidelines for " + role + ": " + e.getMessage());
                 }
