@@ -44,13 +44,21 @@ public class ShellTool implements ITool {
         }
         processBuilder.redirectErrorStream(true);
         Process process = processBuilder.start();
+        StringBuilder output = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String output = reader.lines().collect(Collectors.joining(System.lineSeparator()));
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new Exception("Shell command failed (exit code " + exitCode + "):\n" + output);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append(System.lineSeparator());
+                if (context != null) {
+                    context.consoleLog(line);
+                }
             }
-            return output;
+            int exitCode = process.waitFor();
+            String finalOutput = output.toString().trim();
+            if (exitCode != 0) {
+                throw new Exception("Shell command failed (exit code " + exitCode + "):\n" + finalOutput);
+            }
+            return finalOutput;
         }
     }
 

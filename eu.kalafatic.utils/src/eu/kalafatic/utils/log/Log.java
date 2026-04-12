@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.FileHandler;
@@ -24,6 +26,7 @@ public class Log {
     private static final String CONSOLE_NAME = "Evo Orchestration Console";
     private static MessageConsole console;
     private static MessageConsoleStream consoleStream;
+    private static boolean redirected = false;
     private static Logger fileLogger;
     private static final String LOG_DIR = getLogDirectory();
     private static final String LOG_FILE = LOG_DIR + "/evo.log";
@@ -62,8 +65,10 @@ public class Log {
     }
 
     public static void log(String msg) {
-        // Log to stdout for basic visibility
-        System.out.println(msg);
+        // Log to stdout for basic visibility (only if not redirected to avoid duplicates)
+        if (!redirected) {
+            System.out.println(msg);
+        }
 
         // Log to file
         if (fileLogger != null) {
@@ -82,14 +87,48 @@ public class Log {
         }
     }
 
+    public static void redirectSystemStreams() {
+        if (redirected) return;
+        try {
+            initConsole();
+            if (consoleStream != null) {
+                PrintStream ps = new PrintStream(new OutputStream() {
+                    @Override
+                    public void write(int b) throws IOException {
+                        consoleStream.write(b);
+                    }
+                    @Override
+                    public void write(byte[] b, int off, int len) throws IOException {
+                        consoleStream.write(b, off, len);
+                    }
+                    @Override
+                    public void flush() throws IOException {
+                        consoleStream.flush();
+                    }
+                }, true);
+                System.setOut(ps);
+                System.setErr(ps);
+                redirected = true;
+                log("System streams redirected to Eclipse Console.");
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to redirect system streams: " + e.getMessage());
+        }
+    }
+
+    private static void initConsole() {
+        if (consoleStream == null) {
+            console = findConsole(CONSOLE_NAME);
+            if (console != null) {
+                consoleStream = console.newMessageStream();
+                consoleStream.setActivateOnWrite(true);
+            }
+        }
+    }
+
     private static void logToConsole(String message) {
         try {
-            if (consoleStream == null) {
-                console = findConsole(CONSOLE_NAME);
-                if (console != null) {
-                    consoleStream = console.newMessageStream();
-                }
-            }
+            initConsole();
             if (consoleStream != null) {
                 consoleStream.println(message);
             }
