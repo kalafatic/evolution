@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature id="eu.kalafatic.evolution.feature" version="0.0.0">
+      <category name="eu.kalafatic.evolution.category"/>
+   </feature>
+   <category-def name="eu.kalafatic.evolution.category" label="AI Evolution"/>
+</site>

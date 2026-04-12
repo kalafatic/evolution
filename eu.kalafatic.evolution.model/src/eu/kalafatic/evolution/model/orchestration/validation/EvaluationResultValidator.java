@@ -22,6 +22,5 @@ public interface EvaluationResultValidator {
 	boolean validateCoverageChange(double value);
 	boolean validateErrors(EList<String> value);
 	boolean validateDecision(SelfDevDecision value);
-
 	boolean validateUserSatisfaction(int value);
 }

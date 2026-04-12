@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 
-public class GitSettingsPage extends WizardPage {
+public class GitSettingsPage extends AWizardPage {
     private Text repoUrlText, branchText, usernameText, localPathText;
     private Button skipCheck;
     private ControlDecoration gitDecorator;
@@ -33,6 +33,16 @@ public class GitSettingsPage extends WizardPage {
         super("GitSettingsPage");
         setTitle("Git Settings");
         setDescription("Configure Git repository settings.");
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if (visible && orchestrator != null) {
+            // Update model with any values already entered if needed,
+            // but usually we do it on performFinish.
+            // Here we could pre-populate from model if it was already set.
+        }
     }
 
     @Override

@@ -149,18 +149,16 @@ public class LLMSettingsPage extends AWizardPage {
                 }
             }
         });
-        
-       
 
         new Label(groupLinks, SWT.NONE).setText("LLM Model:");
         modelText = new Text(groupLinks, SWT.BORDER);
         modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        modelText.setText("gpt-4o");
+        //modelText.setText(ollam);
 
         new Label(groupLinks, SWT.NONE).setText("Temperature:");
         tempText = new Text(groupLinks, SWT.BORDER);
         tempText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        tempText.setText("0.7");
+        tempText.setText("1.0");
 
         Link pullModelLink = new Link(groupLinks, SWT.NONE);
         pullModelLink.setText("<a>Setup/Pull Ollama Model...</a>");
@@ -204,6 +202,17 @@ public class LLMSettingsPage extends AWizardPage {
         skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
 
         setControl(container);
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if (visible && orchestrator != null && orchestrator.getOllama() != null) {
+            String ollamaModel = orchestrator.getOllama().getModel();
+            if (ollamaModel != null && !ollamaModel.isEmpty() && (modelText.getText().equals("gpt-4o") || modelText.getText().isEmpty())) {
+                modelText.setText(ollamaModel);
+            }
+        }
     }
 
     public String getLlmModel() { return modelText.getText(); }

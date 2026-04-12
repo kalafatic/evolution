@@ -49,6 +49,15 @@ public interface OrchestrationFactory extends EFactory {
 	Orchestrator createOrchestrator();
 
 	/**
+	 * Returns a new object of class '<em>AI Provider</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>AI Provider</em>'.
+	 * @generated
+	 */
+	AIProvider createAIProvider();
+
+	/**
 	 * Returns a new object of class '<em>Git</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -175,24 +184,6 @@ public interface OrchestrationFactory extends EFactory {
 	SelfDevSession createSelfDevSession();
 
 	/**
-	 * Returns a new object of class '<em>Iteration</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Iteration</em>'.
-	 * @generated
-	 */
-	Iteration createIteration();
-
-	/**
-	 * Returns a new object of class '<em>Evaluation Result</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Evaluation Result</em>'.
-	 * @generated
-	 */
-	EvaluationResult createEvaluationResult();
-
-	/**
 	 * Returns a new object of class '<em>Database</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -211,6 +202,15 @@ public interface OrchestrationFactory extends EFactory {
 	FileConfig createFileConfig();
 
 	/**
+	 * Returns a new object of class '<em>Iteration</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Iteration</em>'.
+	 * @generated
+	 */
+	Iteration createIteration();
+
+	/**
 	 * Returns a new object of class '<em>Eclipse</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -218,6 +218,15 @@ public interface OrchestrationFactory extends EFactory {
 	 * @generated
 	 */
 	Eclipse createEclipse();
+
+	/**
+	 * Returns a new object of class '<em>Evaluation Result</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Evaluation Result</em>'.
+	 * @generated
+	 */
+	EvaluationResult createEvaluationResult();
 
 	/**
 	 * Returns a new object of class '<em>Test</em>'.
@@ -228,13 +237,50 @@ public interface OrchestrationFactory extends EFactory {
 	 */
 	Test createTest();
 
+	/**
+	 * Returns a new object of class '<em>Comment</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Comment</em>'.
+	 * @generated
+	 */
 	Comment createComment();
-	DiffHunk createDiffHunk();
-	FileChange createFileChange();
-	ChangeSet createChangeSet();
-	ReviewSession createReviewSession();
 
-	AIProvider createAIProvider();
+	/**
+	 * Returns a new object of class '<em>Diff Hunk</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Diff Hunk</em>'.
+	 * @generated
+	 */
+	DiffHunk createDiffHunk();
+
+	/**
+	 * Returns a new object of class '<em>File Change</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>File Change</em>'.
+	 * @generated
+	 */
+	FileChange createFileChange();
+
+	/**
+	 * Returns a new object of class '<em>Change Set</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Change Set</em>'.
+	 * @generated
+	 */
+	ChangeSet createChangeSet();
+
+	/**
+	 * Returns a new object of class '<em>Review Session</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Review Session</em>'.
+	 * @generated
+	 */
+	ReviewSession createReviewSession();
 
 	/**
 	 * Returns the package supported by this factory.

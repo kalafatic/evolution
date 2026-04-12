@@ -2,18 +2,7 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import java.util.Collection;
-
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.NotificationChain;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.InternalEObject;
-import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-import org.eclipse.emf.ecore.util.EObjectContainmentEList;
-import org.eclipse.emf.ecore.util.InternalEList;
-
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -31,6 +20,22 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
 
+import java.util.Collection;
+
+import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.common.notify.NotificationChain;
+
+import org.eclipse.emf.common.util.EList;
+
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.InternalEObject;
+
+import org.eclipse.emf.ecore.impl.ENotificationImpl;
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.InternalEList;
+
 /**
  * <!-- begin-user-doc -->
  * An implementation of the model object '<em><b>Orchestrator</b></em>'.
@@ -43,6 +48,7 @@ import eu.kalafatic.evolution.model.orchestration.Test;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getName <em>Name</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAgents <em>Agents</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getTasks <em>Tasks</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getTests <em>Tests</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getGit <em>Git</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMaven <em>Maven</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getLlm <em>Llm</em>}</li>
@@ -63,7 +69,9 @@ import eu.kalafatic.evolution.model.orchestration.Test;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getFileConfig <em>File Config</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getSharedMemory <em>Shared Memory</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getEclipse <em>Eclipse</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getTests <em>Tests</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#isIterativeMode <em>Iterative Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#isSelfIterativeMode <em>Self Iterative Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAiProviders <em>Ai Providers</em>}</li>
  * </ul>
  *
  * @generated
@@ -128,6 +136,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected EList<Task> tasks;
+
+	/**
+	 * The cached value of the '{@link #getTests() <em>Tests</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTests()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<Test> tests;
 
 	/**
 	 * The cached value of the '{@link #getGit() <em>Git</em>}' containment reference.
@@ -419,42 +437,55 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 */
 	protected Eclipse eclipse;
 
-	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
-	protected boolean iterativeMode = ITERATIVE_MODE_EDEFAULT;
-	protected static final boolean SELF_ITERATIVE_MODE_EDEFAULT = false;
-	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
-
 	/**
-	 * The cached value of the '{@link #getTests() <em>Tests</em>}' containment reference list.
+	 * The default value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getTests()
+	 * @see #isIterativeMode()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Test> tests;
-	protected EList<eu.kalafatic.evolution.model.orchestration.AIProvider> aiProviders;
+	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
 
 	/**
+	 * The cached value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @see #isIterativeMode()
+	 * @generated
+	 * @ordered
 	 */
-	@Override
-	public EList<Test> getTests() {
-		if (tests == null) {
-			tests = new EObjectContainmentEList<Test>(Test.class, this, OrchestrationPackage.ORCHESTRATOR__TESTS);
-		}
-		return tests;
-	}
+	protected boolean iterativeMode = ITERATIVE_MODE_EDEFAULT;
 
-	@Override
-	public EList<eu.kalafatic.evolution.model.orchestration.AIProvider> getAiProviders() {
-		if (aiProviders == null) {
-			aiProviders = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.AIProvider>(eu.kalafatic.evolution.model.orchestration.AIProvider.class, this, OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS);
-		}
-		return aiProviders;
-	}
+	/**
+	 * The default value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSelfIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean SELF_ITERATIVE_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSelfIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
+
+	/**
+	 * The cached value of the '{@link #getAiProviders() <em>Ai Providers</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAiProviders()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<AIProvider> aiProviders;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -545,6 +576,19 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			tasks = new EObjectContainmentEList<Task>(Task.class, this, OrchestrationPackage.ORCHESTRATOR__TASKS);
 		}
 		return tasks;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<Test> getTests() {
+		if (tests == null) {
+			tests = new EObjectContainmentEList<Test>(Test.class, this, OrchestrationPackage.ORCHESTRATOR__TESTS);
+		}
+		return tests;
 	}
 
 	/**
@@ -1204,32 +1248,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY, oldSharedMemory, sharedMemory));
 	}
 
-	@Override
-	public boolean isIterativeMode() {
-		return iterativeMode;
-	}
-
-	@Override
-	public void setIterativeMode(boolean newIterativeMode) {
-		boolean oldIterativeMode = iterativeMode;
-		iterativeMode = newIterativeMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE, oldIterativeMode, iterativeMode));
-	}
-
-	@Override
-	public boolean isSelfIterativeMode() {
-		return selfIterativeMode;
-	}
-
-	@Override
-	public void setSelfIterativeMode(boolean newSelfIterativeMode) {
-		boolean oldSelfIterativeMode = selfIterativeMode;
-		selfIterativeMode = newSelfIterativeMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
-	}
-
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1281,12 +1299,73 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
+	public boolean isIterativeMode() {
+		return iterativeMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setIterativeMode(boolean newIterativeMode) {
+		boolean oldIterativeMode = iterativeMode;
+		iterativeMode = newIterativeMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE, oldIterativeMode, iterativeMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isSelfIterativeMode() {
+		return selfIterativeMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSelfIterativeMode(boolean newSelfIterativeMode) {
+		boolean oldSelfIterativeMode = selfIterativeMode;
+		selfIterativeMode = newSelfIterativeMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<AIProvider> getAiProviders() {
+		if (aiProviders == null) {
+			aiProviders = new EObjectContainmentEList<AIProvider>(AIProvider.class, this, OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS);
+		}
+		return aiProviders;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
 				return ((InternalEList<?>)getAgents()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__TASKS:
 				return ((InternalEList<?>)getTasks()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
+				return ((InternalEList<?>)getTests()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				return basicSetGit(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__MAVEN:
@@ -1309,8 +1388,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return basicSetFileConfig(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				return basicSetEclipse(null, msgs);
-			case OrchestrationPackage.ORCHESTRATOR__TESTS:
-				return ((InternalEList<?>)getTests()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
 				return ((InternalEList<?>)getAiProviders()).basicRemove(otherEnd, msgs);
 		}
@@ -1333,6 +1410,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getAgents();
 			case OrchestrationPackage.ORCHESTRATOR__TASKS:
 				return getTasks();
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
+				return getTests();
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				return getGit();
 			case OrchestrationPackage.ORCHESTRATOR__MAVEN:
@@ -1371,14 +1450,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getFileConfig();
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				return getSharedMemory();
+			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
+				return getEclipse();
 			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
 				return isIterativeMode();
 			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
 				return isSelfIterativeMode();
-			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
-				return getEclipse();
-			case OrchestrationPackage.ORCHESTRATOR__TESTS:
-				return getTests();
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
 				return getAiProviders();
 		}
@@ -1407,6 +1484,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__TASKS:
 				getTasks().clear();
 				getTasks().addAll((Collection<? extends Task>)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
+				getTests().clear();
+				getTests().addAll((Collection<? extends Test>)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				setGit((Git)newValue);
@@ -1465,22 +1546,18 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory((String)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
+				setEclipse((Eclipse)newValue);
+				return;
 			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
 				setIterativeMode((Boolean)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
 				setSelfIterativeMode((Boolean)newValue);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
-				setEclipse((Eclipse)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__TESTS:
-				getTests().clear();
-				getTests().addAll((Collection<? extends Test>)newValue);
-				return;
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
 				getAiProviders().clear();
-				getAiProviders().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.AIProvider>)newValue);
+				getAiProviders().addAll((Collection<? extends AIProvider>)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -1505,6 +1582,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__TASKS:
 				getTasks().clear();
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
+				getTests().clear();
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				setGit((Git)null);
@@ -1563,17 +1643,14 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				setSharedMemory(SHARED_MEMORY_EDEFAULT);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
+				setEclipse((Eclipse)null);
+				return;
 			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
 				setIterativeMode(ITERATIVE_MODE_EDEFAULT);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
 				setSelfIterativeMode(SELF_ITERATIVE_MODE_EDEFAULT);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
-				setEclipse((Eclipse)null);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__TESTS:
-				getTests().clear();
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
 				getAiProviders().clear();
@@ -1598,6 +1675,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return agents != null && !agents.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__TASKS:
 				return tasks != null && !tasks.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
+				return tests != null && !tests.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 				return git != null;
 			case OrchestrationPackage.ORCHESTRATOR__MAVEN:
@@ -1636,14 +1715,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return fileConfig != null;
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
 				return SHARED_MEMORY_EDEFAULT == null ? sharedMemory != null : !SHARED_MEMORY_EDEFAULT.equals(sharedMemory);
+			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
+				return eclipse != null;
 			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
 				return iterativeMode != ITERATIVE_MODE_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
 				return selfIterativeMode != SELF_ITERATIVE_MODE_EDEFAULT;
-			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
-				return eclipse != null;
-			case OrchestrationPackage.ORCHESTRATOR__TESTS:
-				return tests != null && !tests.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
 				return aiProviders != null && !aiProviders.isEmpty();
 		}

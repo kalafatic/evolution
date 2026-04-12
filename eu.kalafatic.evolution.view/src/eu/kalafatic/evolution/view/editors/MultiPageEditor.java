@@ -184,9 +184,19 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void doSave(IProgressMonitor monitor) {
         if (resource != null) {
             try {
-                resource.save(Collections.EMPTY_MAP);
+                org.eclipse.ui.actions.WorkspaceModifyOperation operation = new org.eclipse.ui.actions.WorkspaceModifyOperation() {
+                    @Override
+                    protected void execute(IProgressMonitor monitor) throws org.eclipse.core.runtime.CoreException, java.lang.reflect.InvocationTargetException {
+                        try {
+                            resource.save(Collections.EMPTY_MAP);
+                        } catch (IOException e) {
+                            throw new org.eclipse.core.runtime.CoreException(new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", e.getMessage(), e));
+                        }
+                    }
+                };
+                operation.run(monitor);
                 setDirty(false);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

@@ -28,21 +28,34 @@ public class SaveCommandHandler extends AbstractOrchestratorHandler {
     }
 
     private void saveProperties(EObject properties, Shell shell) {
-        EObject git = (EObject) properties.eGet(properties.eClass().getEStructuralFeature("git"));
-        String localPath = (String) git.eGet(git.eClass().getEStructuralFeature("localPath"));
-        String filePath = localPath + "/orchestrator.xml";
-
-        Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xml", new XMIResourceFactoryImpl());
-        ResourceSet resourceSet = new ResourceSetImpl();
-        URI fileURI = URI.createFileURI(filePath);
-        Resource resource = resourceSet.createResource(fileURI);
-        resource.getContents().add(properties);
-
-        try {
-            resource.save(Collections.EMPTY_MAP);
-            System.out.println("Properties saved to " + filePath);
-        } catch (IOException e) {
-            e.printStackTrace();
+        Resource resource = properties.eResource();
+        if (resource != null) {
+            try {
+                resource.save(Collections.EMPTY_MAP);
+                System.out.println("Properties saved to " + resource.getURI());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            // Fallback for detached objects if any
+            EObject git = (EObject) properties.eGet(properties.eClass().getEStructuralFeature("git"));
+            if (git != null) {
+                String localPath = (String) git.eGet(git.eClass().getEStructuralFeature("localPath"));
+                if (localPath != null) {
+                    String filePath = localPath + "/orchestrator.xml";
+                    ResourceSet resourceSet = new ResourceSetImpl();
+                    resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xml", new XMIResourceFactoryImpl());
+                    URI fileURI = URI.createFileURI(filePath);
+                    Resource newResource = resourceSet.createResource(fileURI);
+                    newResource.getContents().add(properties);
+                    try {
+                        newResource.save(Collections.EMPTY_MAP);
+                        System.out.println("Properties saved to " + filePath);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
     }
 }

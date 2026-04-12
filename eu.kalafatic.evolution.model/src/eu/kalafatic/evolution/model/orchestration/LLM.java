@@ -46,12 +46,13 @@ public interface LLM extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Temperature</b></em>' attribute.
+	 * The default value is <code>"1.0"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Temperature</em>' attribute.
 	 * @see #setTemperature(float)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getLLM_Temperature()
-	 * @model
+	 * @model default="1.0"
 	 * @generated
 	 */
 	float getTemperature();

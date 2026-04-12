@@ -15,6 +15,5 @@ public interface FileConfigValidator {
 	boolean validate();
 
 	boolean validateLocalPath(String value);
-
 	boolean validateTestStatus(String value);
 }

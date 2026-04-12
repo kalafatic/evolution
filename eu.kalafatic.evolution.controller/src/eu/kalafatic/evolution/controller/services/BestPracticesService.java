@@ -46,6 +46,39 @@ public class BestPracticesService {
                 }
             }
         }
+
+        // Initialize Special Contexts
+        File specialDir = new File(baseDir, "special");
+        if (!specialDir.exists()) {
+            specialDir.mkdirs();
+        }
+
+        initializeSpecialFile(specialDir, "iterative_loop.md",
+            "# ITERATIVE LOOP CONTEXT\n\n" +
+            "You are operating in an Iterative Development Loop (OBSERVE -> ANALYZE -> PLAN -> TEST).\n" +
+            "1. OBSERVE: Look at the current state, logs, and errors.\n" +
+            "2. ANALYZE: Identify the root cause of any issues.\n" +
+            "3. PLAN: Create a small, verifiable step to improve the situation.\n" +
+            "4. TEST: Verify the change. If it fails, start the loop again with the new observation.");
+
+        initializeSpecialFile(specialDir, "self_development.md",
+            "# SELF DEVELOPMENT CONTEXT\n\n" +
+            "You are in Autonomous Self-Development mode.\n" +
+            "Your goal is to suggest and implement improvements to your own codebase or project structure.\n" +
+            "1. Focus on code quality, performance, and robustness.\n" +
+            "2. Generate variants for complex problems and evaluate them based on fitness (tests passed, coverage).\n" +
+            "3. Ensure each iteration moves the project toward a more 'evolved' and stable state.");
+    }
+
+    private void initializeSpecialFile(File dir, String fileName, String content) {
+        File file = new File(dir, fileName);
+        if (!file.exists()) {
+            try {
+                Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                Log.log("BestPractices: Could not initialize special context " + fileName + ": " + e.getMessage());
+            }
+        }
     }
 
     public String getPracticesForRole(String role) {
@@ -90,5 +123,17 @@ public class BestPracticesService {
             }
         }
         return found ? sb.toString() : "";
+    }
+
+    public String getSpecialContext(String fileName) {
+        File specialFile = new File(getInstructionsPath() + File.separator + "special", fileName);
+        if (specialFile.exists()) {
+            try {
+                return new String(Files.readAllBytes(specialFile.toPath()), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                Log.log("BestPractices: Error reading special context " + fileName + ": " + e.getMessage());
+            }
+        }
+        return "";
     }
 }

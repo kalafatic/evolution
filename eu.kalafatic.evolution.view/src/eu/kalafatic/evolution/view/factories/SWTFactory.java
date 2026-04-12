@@ -1,7 +1,9 @@
 package eu.kalafatic.evolution.view.factories;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
@@ -125,8 +127,11 @@ public class SWTFactory {
 		List<eu.kalafatic.evolution.controller.manager.OllamaModel> models = ollamaService != null
 				? ollamaService.loadModels()
 				: new ArrayList<>();
+		Set<String> uniqueModels = new LinkedHashSet<>();
 		for (eu.kalafatic.evolution.controller.manager.OllamaModel m : models)
-			combo.add(m.getName());
+			uniqueModels.add(m.getName());
+		for (String name : uniqueModels)
+			combo.add(name);
 		return combo;
 	}
 
@@ -200,8 +205,9 @@ public class SWTFactory {
 	public static Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns,
 			boolean expanded) {
 		int style = Section.TITLE_BAR | Section.TWISTIE;
-		if (expanded)
+		if (expanded) {
 			style |= Section.EXPANDED;
+		}
 
 		final Section section = new Section(parent, style);
 		section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -224,38 +230,6 @@ public class SWTFactory {
 		return client;
 	}
 
-	/*
-	 * public static Composite createExpandableGroup(FormToolkit toolkit, Composite
-	 * parent, String title, int columns, boolean expanded) { int style =
-	 * Section.DESCRIPTION | Section.TITLE_BAR | Section.TWISTIE; if (expanded)
-	 * style |= Section.EXPANDED;
-	 * 
-	 * // Subclass Section to override setCursor and prevent flickering to HAND
-	 * cursor // final Section section = new Section(parent, style) { // @Override
-	 * // public void setCursor(org.eclipse.swt.graphics.Cursor cursor) { // if
-	 * (cursor != null &&
-	 * cursor.equals(getDisplay().getSystemCursor(SWT.CURSOR_HAND))) { //
-	 * super.setCursor(getDisplay().getSystemCursor(SWT.CURSOR_ARROW)); // } else {
-	 * // super.setCursor(cursor); // } // } // }; toolkit.adapt(section, true,
-	 * true);
-	 * //section.setCursor(section.getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
-	 * 
-	 * // Set the color of the title text Color BG = new Color(section.getDisplay(),
-	 * 195, 195, 235); Color FG = new Color(section.getDisplay(), 110, 124, 245);
-	 * section.setTitleBarForeground(FG); section.setBackground(BG);
-	 * 
-	 * section.setText(title); section.setLayoutData(new
-	 * GridData(GridData.FILL_HORIZONTAL));
-	 * 
-	 * Button maxBtn = createMaximizeButton(parent, section, true);
-	 * section.setTextClient(maxBtn);
-	 * 
-	 * Composite client = toolkit.createComposite(section); client.setLayout(new
-	 * GridLayout(columns, false)); section.setClient(client);
-	 * 
-	 * return client; }
-	 */
-
 	public static Button createMaximizeButton(Composite parent, final Section section, boolean single) {
 		// Maximize Button
 		Button maxBtn = new Button(single ? section : parent, SWT.PUSH | SWT.FLAT);
@@ -265,13 +239,9 @@ public class SWTFactory {
 		maxBtn.setLayoutData(maxGd);
 		maxBtn.setText("\u25FB");
 		maxBtn.setToolTipText("Maximize");
-		Color orange = new Color(section.getDisplay(), 207, 159, 159);
-		maxBtn.setBackground(orange);
+		
+		maxBtn.setBackground(section.getDisplay().getSystemColor(SWT.COLOR_BLUE));
 		maxBtn.setForeground(section.getDisplay().getSystemColor(SWT.COLOR_WHITE));
-		maxBtn.addDisposeListener(e -> {
-			if (orange != null && !orange.isDisposed())
-				orange.dispose();
-		});
 
 		section.addExpansionListener(new ExpansionAdapter() {
 			@Override

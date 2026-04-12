@@ -2,24 +2,22 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import org.eclipse.emf.ecore.EAttribute;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EEnum;
-import org.eclipse.emf.ecore.EPackage;
-import org.eclipse.emf.ecore.EReference;
-import org.eclipse.emf.ecore.impl.EPackageImpl;
-
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
+import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
+import eu.kalafatic.evolution.model.orchestration.Comment;
 import eu.kalafatic.evolution.model.orchestration.Database;
+import eu.kalafatic.evolution.model.orchestration.DiffHunk;
 import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
+import eu.kalafatic.evolution.model.orchestration.FileChange;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
@@ -33,19 +31,25 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
+import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
-import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
-import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
-import eu.kalafatic.evolution.model.orchestration.Comment;
-import eu.kalafatic.evolution.model.orchestration.DiffHunk;
-import eu.kalafatic.evolution.model.orchestration.FileChange;
-import eu.kalafatic.evolution.model.orchestration.ChangeSet;
+import eu.kalafatic.evolution.model.orchestration.Test;
+import eu.kalafatic.evolution.model.orchestration.TestStatus;
+
+import org.eclipse.emf.ecore.EAttribute;
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EEnum;
+import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.EReference;
+
+import org.eclipse.emf.ecore.impl.EPackageImpl;
 
 /**
  * <!-- begin-user-doc -->
@@ -59,116 +63,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass testEClass = null;
-	private EClass commentEClass = null;
-	private EClass diffHunkEClass = null;
-	private EClass fileChangeEClass = null;
-	private EClass changeSetEClass = null;
-	private EClass reviewSessionEClass = null;
-	private EClass aiProviderEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EEnum testStatusEEnum = null;
-	private EEnum reviewDecisionEEnum = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass taskEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public EAttribute getTask_Rationale() {
-		return (EAttribute)taskEClass.getEStructuralFeatures().get(15);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_IterativeMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(25);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_SelfIterativeMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(26);
-	}
-
-	@Override
-	public EAttribute getSelfDevSession_InitialRequest() {
-		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(6);
-	}
-	
-	public EAttribute getTask_ScheduledTime() {
-		return (EAttribute)taskEClass.getEStructuralFeatures().get(16);
-	}
-
-	@Override
-	public EAttribute getTask_Selected() {
-		return (EAttribute)taskEClass.getEStructuralFeatures().get(17);
-	}
-
-	@Override public EEnum getReviewDecision() { return reviewDecisionEEnum; }
-	@Override public EClass getComment() { return commentEClass; }
-	@Override public EAttribute getComment_Id() { return (EAttribute)commentEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getComment_FilePath() { return (EAttribute)commentEClass.getEStructuralFeatures().get(1); }
-	@Override public EAttribute getComment_StartLine() { return (EAttribute)commentEClass.getEStructuralFeatures().get(2); }
-	@Override public EAttribute getComment_EndLine() { return (EAttribute)commentEClass.getEStructuralFeatures().get(3); }
-	@Override public EAttribute getComment_Author() { return (EAttribute)commentEClass.getEStructuralFeatures().get(4); }
-	@Override public EAttribute getComment_Content() { return (EAttribute)commentEClass.getEStructuralFeatures().get(5); }
-	@Override public EAttribute getComment_Timestamp() { return (EAttribute)commentEClass.getEStructuralFeatures().get(6); }
-	@Override public EAttribute getComment_Resolved() { return (EAttribute)commentEClass.getEStructuralFeatures().get(7); }
-	@Override public EClass getDiffHunk() { return diffHunkEClass; }
-	@Override public EAttribute getDiffHunk_Header() { return (EAttribute)diffHunkEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getDiffHunk_Lines() { return (EAttribute)diffHunkEClass.getEStructuralFeatures().get(1); }
-	@Override public EClass getFileChange() { return fileChangeEClass; }
-	@Override public EAttribute getFileChange_FilePath() { return (EAttribute)fileChangeEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getFileChange_Status() { return (EAttribute)fileChangeEClass.getEStructuralFeatures().get(1); }
-	@Override public EReference getFileChange_Hunks() { return (EReference)fileChangeEClass.getEStructuralFeatures().get(2); }
-	@Override public EClass getChangeSet() { return changeSetEClass; }
-	@Override public EAttribute getChangeSet_CommitId() { return (EAttribute)changeSetEClass.getEStructuralFeatures().get(0); }
-	@Override public EReference getChangeSet_Files() { return (EReference)changeSetEClass.getEStructuralFeatures().get(1); }
-	@Override public EClass getReviewSession() { return reviewSessionEClass; }
-	@Override public EAttribute getReviewSession_Id() { return (EAttribute)reviewSessionEClass.getEStructuralFeatures().get(0); }
-	@Override public EReference getReviewSession_ChangeSet() { return (EReference)reviewSessionEClass.getEStructuralFeatures().get(1); }
-	@Override public EReference getReviewSession_Comments() { return (EReference)reviewSessionEClass.getEStructuralFeatures().get(2); }
-	@Override public EAttribute getReviewSession_Decision() { return (EAttribute)reviewSessionEClass.getEStructuralFeatures().get(3); }
-
-	@Override public EReference getOrchestrator_AiProviders() { return (EReference)orchestratorEClass.getEStructuralFeatures().get(27); }
-	@Override public EClass getAIProvider() { return aiProviderEClass; }
-	@Override public EAttribute getAIProvider_Name() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getAIProvider_Url() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(1); }
-	@Override public EAttribute getAIProvider_ApiKey() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(2); }
-	@Override public EAttribute getAIProvider_Format() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(3); }
-	@Override public EAttribute getAIProvider_Local() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(4); }
-	@Override public EAttribute getAIProvider_DefaultModel() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(5); }
-	@Override public EAttribute getAIProvider_ApiKeyEncrypted() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(6); }
-	@Override public EAttribute getAIProvider_UseEnvVar() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(7); }
-	@Override public EAttribute getAIProvider_EnvVarName() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(8); }
-	@Override public EAttribute getAIProvider_State() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(9); }
-	@Override public EAttribute getAIProvider_StateDescription() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(10); }
-	@Override public EAttribute getAIProvider_Rating() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(11); }
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass eclipseEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -183,6 +78,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EClass orchestratorEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass aiProviderEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -252,20 +154,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass databaseEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass fileConfigEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass ruleEClass = null;
 
 	/**
@@ -308,6 +196,20 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass databaseEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass fileConfigEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass iterationEClass = null;
 
 	/**
@@ -315,7 +217,56 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass eclipseEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass evaluationResultEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass testEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass commentEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass diffHunkEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass fileChangeEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass changeSetEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass reviewSessionEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -374,6 +325,20 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	private EEnum selfDevDecisionEEnum = null;
 
 	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum testStatusEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum reviewDecisionEEnum = null;
+
+	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
 	 * {@link org.eclipse.emf.ecore.EPackage.Registry EPackage.Registry} by the package
 	 * package URI value.
@@ -386,10 +351,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @see org.eclipse.emf.ecore.EPackage.Registry
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#eNS_URI
 	 * @see #init()
-	 * @generated NOT
+	 * @generated
 	 */
 	private OrchestrationPackageImpl() {
-		super(eNS_URI, new OrchestrationFactoryImpl());
+		super(eNS_URI, OrchestrationFactory.eINSTANCE);
 	}
 	/**
 	 * <!-- begin-user-doc -->
@@ -434,21 +399,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	}
 
 	/**
-	 * @generated NOT
-	 */
-	public EReference getOrchestrator_Eclipse() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(23);
-	}
-
-	/**
-	 * @generated NOT
-	 */
-	@Override
-	public EReference getOrchestrator_Tests() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(24);
-	}
-
-	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -456,87 +406,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EClass getTask() {
 		return taskEClass;
-	}
-
-	public EClass getEclipse() {
-		return eclipseEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getEclipse_Workspace() {
-		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getEclipse_Installation() {
-		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getEclipse_TargetPlatform() {
-		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getEclipse_TestStatus() {
-		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(3);
-	}
-
-	@Override
-	public EClass getTest() { return testEClass; }
-	@Override
-	public EAttribute getTest_Id() { return (EAttribute)testEClass.getEStructuralFeatures().get(0); }
-	@Override
-	public EAttribute getTest_Name() { return (EAttribute)testEClass.getEStructuralFeatures().get(1); }
-	@Override
-	public EAttribute getTest_Type() { return (EAttribute)testEClass.getEStructuralFeatures().get(2); }
-	@Override
-	public EAttribute getTest_Path() { return (EAttribute)testEClass.getEStructuralFeatures().get(3); }
-	@Override
-	public EAttribute getTest_Status() { return (EAttribute)testEClass.getEStructuralFeatures().get(4); }
-	@Override
-	public EAttribute getTest_Selected() { return (EAttribute)testEClass.getEStructuralFeatures().get(5); }
-	@Override
-	public EEnum getTestStatus() { return testStatusEEnum; }
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getDatabase() {
-		return databaseEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getFileConfig() {
-		return fileConfigEClass;
 	}
 
 	/**
@@ -695,6 +564,36 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getTask_Rationale() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(15);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTask_ScheduledTime() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(16);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTask_Selected() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(17);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getAgent() {
 		return agentEClass;
 	}
@@ -805,7 +704,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getOrchestrator_Git() {
+	public EReference getOrchestrator_Tests() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(4);
 	}
 
@@ -815,7 +714,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getOrchestrator_Maven() {
+	public EReference getOrchestrator_Git() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(5);
 	}
 
@@ -825,7 +724,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getOrchestrator_Llm() {
+	public EReference getOrchestrator_Maven() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(6);
 	}
 
@@ -835,7 +734,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getOrchestrator_Compiler() {
+	public EReference getOrchestrator_Llm() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(7);
 	}
 
@@ -845,7 +744,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getOrchestrator_Ollama() {
+	public EReference getOrchestrator_Compiler() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(8);
 	}
 
@@ -855,7 +754,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getOrchestrator_AiChat() {
+	public EReference getOrchestrator_Ollama() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(9);
 	}
 
@@ -865,7 +764,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getOrchestrator_NeuronAI() {
+	public EReference getOrchestrator_AiChat() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(10);
 	}
 
@@ -875,108 +774,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EAttribute getOrchestrator_AiMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(12);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_McpServerUrl() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(13);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_OpenAiToken() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(14);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_OpenAiModel() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(15);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_LocalModel() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(16);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_HybridModel() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(17);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_OfflineMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(18);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_SelfDevSession() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(19);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_Database() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(20);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_FileConfig() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(21);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_SharedMemory() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(22);
+	public EReference getOrchestrator_NeuronAI() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(11);
 	}
 
 	/**
@@ -986,7 +785,287 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 */
 	@Override
 	public EAttribute getOrchestrator_RemoteModel() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(11);
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(12);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_AiMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(13);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_McpServerUrl() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(14);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_OpenAiToken() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(15);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_OpenAiModel() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(16);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_LocalModel() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(17);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_HybridModel() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(18);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_OfflineMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(19);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_SelfDevSession() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(20);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_Database() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(21);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_FileConfig() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(22);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_SharedMemory() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(23);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_Eclipse() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(24);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_IterativeMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(25);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_SelfIterativeMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(26);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_AiProviders() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(27);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getAIProvider() {
+		return aiProviderEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Name() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Url() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_ApiKey() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Format() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Local() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_DefaultModel() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_ApiKeyEncrypted() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_UseEnvVar() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(7);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_EnvVarName() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(8);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_State() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(9);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_StateDescription() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(10);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Rating() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(11);
 	}
 
 	/**
@@ -1057,56 +1136,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EClass getMaven() {
 		return mavenEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getDatabase_Url() {
-		return (EAttribute)databaseEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getDatabase_Username() {
-		return (EAttribute)databaseEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getDatabase_Password() {
-		return (EAttribute)databaseEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getDatabase_Driver() {
-		return (EAttribute)databaseEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getDatabase_TestStatus() {
-		return (EAttribute)databaseEClass.getEStructuralFeatures().get(4);
 	}
 
 	/**
@@ -1465,26 +1494,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EAttribute getFileConfig_LocalPath() {
-		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getFileConfig_TestStatus() {
-		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public EAttribute getRule_Name() {
 		return (EAttribute)ruleEClass.getEStructuralFeatures().get(0);
 	}
@@ -1685,6 +1694,106 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getSelfDevSession_InitialRequest() {
+		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getDatabase() {
+		return databaseEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Url() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Username() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Password() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Driver() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_TestStatus() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getFileConfig() {
+		return fileConfigEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getFileConfig_LocalPath() {
+		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getFileConfig_TestStatus() {
+		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getIteration() {
 		return iterationEClass;
 	}
@@ -1785,6 +1894,56 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EClass getEclipse() {
+		return eclipseEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_Workspace() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_Installation() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_TargetPlatform() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_TestStatus() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getEvaluationResult() {
 		return evaluationResultEClass;
 	}
@@ -1847,6 +2006,316 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getEvaluationResult_UserSatisfaction() {
 		return (EAttribute)evaluationResultEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getTest() {
+		return testEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Id() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Name() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Type() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Path() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Status() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Selected() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getComment() {
+		return commentEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_Id() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_FilePath() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_StartLine() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_EndLine() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_Author() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_Content() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_Timestamp() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_Resolved() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(7);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getDiffHunk() {
+		return diffHunkEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDiffHunk_Header() {
+		return (EAttribute)diffHunkEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDiffHunk_Lines() {
+		return (EAttribute)diffHunkEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getFileChange() {
+		return fileChangeEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getFileChange_FilePath() {
+		return (EAttribute)fileChangeEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getFileChange_Status() {
+		return (EAttribute)fileChangeEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getFileChange_Hunks() {
+		return (EReference)fileChangeEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getChangeSet() {
+		return changeSetEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChangeSet_CommitId() {
+		return (EAttribute)changeSetEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getChangeSet_Files() {
+		return (EReference)changeSetEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getReviewSession() {
+		return reviewSessionEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getReviewSession_Id() {
+		return (EAttribute)reviewSessionEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getReviewSession_ChangeSet() {
+		return (EReference)reviewSessionEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getReviewSession_Comments() {
+		return (EReference)reviewSessionEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getReviewSession_Decision() {
+		return (EAttribute)reviewSessionEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -1935,6 +2404,26 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EEnum getTestStatus() {
+		return testStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getReviewDecision() {
+		return reviewDecisionEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public OrchestrationFactory getOrchestrationFactory() {
 		return (OrchestrationFactory)getEFactoryInstance();
 	}
@@ -1990,6 +2479,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__NAME);
 		createEReference(orchestratorEClass, ORCHESTRATOR__AGENTS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__TASKS);
+		createEReference(orchestratorEClass, ORCHESTRATOR__TESTS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__GIT);
 		createEReference(orchestratorEClass, ORCHESTRATOR__MAVEN);
 		createEReference(orchestratorEClass, ORCHESTRATOR__LLM);
@@ -2010,6 +2500,23 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__FILE_CONFIG);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__SHARED_MEMORY);
 		createEReference(orchestratorEClass, ORCHESTRATOR__ECLIPSE);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__ITERATIVE_MODE);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__SELF_ITERATIVE_MODE);
+		createEReference(orchestratorEClass, ORCHESTRATOR__AI_PROVIDERS);
+
+		aiProviderEClass = createEClass(AI_PROVIDER);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__NAME);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__URL);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__API_KEY);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__FORMAT);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__LOCAL);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__DEFAULT_MODEL);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__API_KEY_ENCRYPTED);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__USE_ENV_VAR);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__ENV_VAR_NAME);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__STATE);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__STATE_DESCRIPTION);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__RATING);
 
 		gitEClass = createEClass(GIT);
 		createEAttribute(gitEClass, GIT__REPOSITORY_URL);
@@ -2117,10 +2624,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(eclipseEClass, ECLIPSE__TARGET_PLATFORM);
 		createEAttribute(eclipseEClass, ECLIPSE__TEST_STATUS);
 
-		createEReference(orchestratorEClass, ORCHESTRATOR__TESTS);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__ITERATIVE_MODE);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__SELF_ITERATIVE_MODE);
-		createEReference(orchestratorEClass, ORCHESTRATOR__AI_PROVIDERS);
+		evaluationResultEClass = createEClass(EVALUATION_RESULT);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__SUCCESS);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__TEST_PASS_RATE);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__COVERAGE_CHANGE);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__ERRORS);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__DECISION);
+		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__USER_SATISFACTION);
 
 		testEClass = createEClass(TEST);
 		createEAttribute(testEClass, TEST__ID);
@@ -2159,28 +2669,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(reviewSessionEClass, REVIEW_SESSION__COMMENTS);
 		createEAttribute(reviewSessionEClass, REVIEW_SESSION__DECISION);
 
-		aiProviderEClass = createEClass(AI_PROVIDER);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__NAME);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__URL);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__API_KEY);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__FORMAT);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__LOCAL);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__DEFAULT_MODEL);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__API_KEY_ENCRYPTED);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__USE_ENV_VAR);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__ENV_VAR_NAME);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__STATE);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__STATE_DESCRIPTION);
-		createEAttribute(aiProviderEClass, AI_PROVIDER__RATING);
-
-		evaluationResultEClass = createEClass(EVALUATION_RESULT);
-		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__SUCCESS);
-		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__TEST_PASS_RATE);
-		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__COVERAGE_CHANGE);
-		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__ERRORS);
-		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__DECISION);
-		createEAttribute(evaluationResultEClass, EVALUATION_RESULT__USER_SATISFACTION);
-
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
 		commandStatusEEnum = createEEnum(COMMAND_STATUS);
@@ -2216,59 +2704,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		setName(eNAME);
 		setNsPrefix(eNS_PREFIX);
 		setNsURI(eNS_URI);
-
-		// Initialize enums and add enum literals
-		initEEnum(taskStatusEEnum, TaskStatus.class, "TaskStatus");
-		addEEnumLiteral(taskStatusEEnum, TaskStatus.PENDING);
-		addEEnumLiteral(taskStatusEEnum, TaskStatus.RUNNING);
-		addEEnumLiteral(taskStatusEEnum, TaskStatus.DONE);
-		addEEnumLiteral(taskStatusEEnum, TaskStatus.FAILED);
-		addEEnumLiteral(taskStatusEEnum, TaskStatus.WAITING_FOR_APPROVAL);
-		initEEnum(commandStatusEEnum, CommandStatus.class, "CommandStatus");
-		addEEnumLiteral(commandStatusEEnum, CommandStatus.PENDING);
-		addEEnumLiteral(commandStatusEEnum, CommandStatus.RUNNING);
-		addEEnumLiteral(commandStatusEEnum, CommandStatus.COMPLETED);
-		addEEnumLiteral(commandStatusEEnum, CommandStatus.FAILED);
-		initEEnum(executionModeEEnum, ExecutionMode.class, "ExecutionMode");
-		addEEnumLiteral(executionModeEEnum, ExecutionMode.SERIAL);
-		addEEnumLiteral(executionModeEEnum, ExecutionMode.PARALLEL);
-		initEEnum(neuronTypeEEnum, NeuronType.class, "NeuronType");
-		addEEnumLiteral(neuronTypeEEnum, NeuronType.MLP);
-		addEEnumLiteral(neuronTypeEEnum, NeuronType.CNN);
-		addEEnumLiteral(neuronTypeEEnum, NeuronType.RNN);
-		addEEnumLiteral(neuronTypeEEnum, NeuronType.LSTM);
-		addEEnumLiteral(neuronTypeEEnum, NeuronType.TRANSFORMER);
-		initEEnum(aiModeEEnum, AiMode.class, "AiMode");
-		addEEnumLiteral(aiModeEEnum, AiMode.LOCAL);
-		addEEnumLiteral(aiModeEEnum, AiMode.HYBRID);
-		addEEnumLiteral(aiModeEEnum, AiMode.REMOTE);
-		initEEnum(selfDevStatusEEnum, SelfDevStatus.class, "SelfDevStatus");
-		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.RUNNING);
-		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.STOPPED);
-		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.FAILED);
-		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.COMPLETED);
-		initEEnum(iterationStatusEEnum, IterationStatus.class, "IterationStatus");
-		addEEnumLiteral(iterationStatusEEnum, IterationStatus.PENDING);
-		addEEnumLiteral(iterationStatusEEnum, IterationStatus.RUNNING);
-		addEEnumLiteral(iterationStatusEEnum, IterationStatus.DONE);
-		addEEnumLiteral(iterationStatusEEnum, IterationStatus.FAILED);
-		initEEnum(selfDevDecisionEEnum, SelfDevDecision.class, "SelfDevDecision");
-		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.CONTINUE);
-		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.ROLLBACK);
-		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.STOP);
-		initEEnum(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.class, "TestStatus");
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PENDING);
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.RUNNING);
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.PASSED);
-		addEEnumLiteral(testStatusEEnum, eu.kalafatic.evolution.model.orchestration.TestStatus.FAILED);
-
-		initEEnum(reviewDecisionEEnum, ReviewDecision.class, "ReviewDecision");
-		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.OPEN);
-		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.IN_REVIEW);
-		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.APPROVED);
-		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.REJECTED);
-		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.CHANGES_REQUESTED);
-
 
 		// Create type parameters
 
@@ -2313,6 +2748,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getOrchestrator_Name(), ecorePackage.getEString(), "name", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Agents(), this.getAgent(), null, "agents", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Tasks(), this.getTask(), null, "tasks", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_Tests(), this.getTest(), null, "tests", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Git(), this.getGit(), null, "git", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Maven(), this.getMaven(), null, "maven", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Llm(), this.getLLM(), null, "llm", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -2333,6 +2769,23 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_FileConfig(), this.getFileConfig(), null, "fileConfig", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_SharedMemory(), ecorePackage.getEString(), "sharedMemory", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Eclipse(), this.getEclipse(), null, "eclipse", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_AiProviders(), this.getAIProvider(), null, "aiProviders", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(aiProviderEClass, AIProvider.class, "AIProvider", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getAIProvider_Name(), ecorePackage.getEString(), "name", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_Url(), ecorePackage.getEString(), "url", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_ApiKey(), ecorePackage.getEString(), "apiKey", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_Format(), ecorePackage.getEString(), "format", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_Local(), ecorePackage.getEBoolean(), "local", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_DefaultModel(), ecorePackage.getEString(), "defaultModel", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_ApiKeyEncrypted(), ecorePackage.getEBoolean(), "apiKeyEncrypted", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_UseEnvVar(), ecorePackage.getEBoolean(), "useEnvVar", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_EnvVarName(), ecorePackage.getEString(), "envVarName", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_State(), ecorePackage.getEString(), "state", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_StateDescription(), ecorePackage.getEString(), "stateDescription", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_Rating(), ecorePackage.getEInt(), "rating", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(gitEClass, Git.class, "Git", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getGit_RepositoryUrl(), ecorePackage.getEString(), "repositoryUrl", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -2348,7 +2801,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 
 		initEClass(llmEClass, eu.kalafatic.evolution.model.orchestration.LLM.class, "LLM", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getLLM_Model(), ecorePackage.getEString(), "model", null, 0, 1, eu.kalafatic.evolution.model.orchestration.LLM.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getLLM_Temperature(), ecorePackage.getEFloat(), "temperature", null, 0, 1, eu.kalafatic.evolution.model.orchestration.LLM.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getLLM_Temperature(), ecorePackage.getEFloat(), "temperature", "1.0", 0, 1, eu.kalafatic.evolution.model.orchestration.LLM.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(compilerEClass, eu.kalafatic.evolution.model.orchestration.Compiler.class, "Compiler", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getCompiler_SourceVersion(), ecorePackage.getEString(), "sourceVersion", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Compiler.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -2440,18 +2893,21 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getEclipse_TargetPlatform(), ecorePackage.getEString(), "targetPlatform", null, 0, 1, Eclipse.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getEclipse_TestStatus(), ecorePackage.getEString(), "testStatus", null, 0, 1, Eclipse.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
-		initEReference(getOrchestrator_Tests(), this.getTest(), null, "tests", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getOrchestrator_AiProviders(), this.getAIProvider(), null, "aiProviders", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEClass(evaluationResultEClass, EvaluationResult.class, "EvaluationResult", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getEvaluationResult_Success(), ecorePackage.getEBoolean(), "success", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEvaluationResult_TestPassRate(), ecorePackage.getEDouble(), "testPassRate", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEvaluationResult_CoverageChange(), ecorePackage.getEDouble(), "coverageChange", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEvaluationResult_Errors(), ecorePackage.getEString(), "errors", null, 0, -1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEvaluationResult_Decision(), this.getSelfDevDecision(), "decision", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getEvaluationResult_UserSatisfaction(), ecorePackage.getEInt(), "userSatisfaction", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
-		initEClass(testEClass, eu.kalafatic.evolution.model.orchestration.Test.class, "Test", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getTest_Id(), ecorePackage.getEString(), "id", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getTest_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getTest_Type(), ecorePackage.getEString(), "type", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getTest_Path(), ecorePackage.getEString(), "path", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getTest_Status(), this.getTestStatus(), "status", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getTest_Selected(), ecorePackage.getEBoolean(), "selected", null, 0, 1, eu.kalafatic.evolution.model.orchestration.Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEClass(testEClass, Test.class, "Test", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getTest_Id(), ecorePackage.getEString(), "id", null, 0, 1, Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTest_Name(), ecorePackage.getEString(), "name", null, 0, 1, Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTest_Type(), ecorePackage.getEString(), "type", null, 0, 1, Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTest_Path(), ecorePackage.getEString(), "path", null, 0, 1, Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTest_Status(), this.getTestStatus(), "status", null, 0, 1, Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTest_Selected(), ecorePackage.getEBoolean(), "selected", null, 0, 1, Test.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(commentEClass, Comment.class, "Comment", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getComment_Id(), ecorePackage.getEString(), "id", null, 0, 1, Comment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -2482,37 +2938,65 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getReviewSession_Comments(), this.getComment(), null, "comments", null, 0, -1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getReviewSession_Decision(), this.getReviewDecision(), "decision", null, 0, 1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
-		initEClass(aiProviderEClass, eu.kalafatic.evolution.model.orchestration.AIProvider.class, "AIProvider", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getAIProvider_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_Url(), ecorePackage.getEString(), "url", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_ApiKey(), ecorePackage.getEString(), "apiKey", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_Format(), ecorePackage.getEString(), "format", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_Local(), ecorePackage.getEBoolean(), "local", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_DefaultModel(), ecorePackage.getEString(), "defaultModel", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_ApiKeyEncrypted(), ecorePackage.getEBoolean(), "apiKeyEncrypted", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_UseEnvVar(), ecorePackage.getEBoolean(), "useEnvVar", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_EnvVarName(), ecorePackage.getEString(), "envVarName", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_State(), ecorePackage.getEString(), "state", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_StateDescription(), ecorePackage.getEString(), "stateDescription", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAIProvider_Rating(), ecorePackage.getEInt(), "rating", null, 0, 1, eu.kalafatic.evolution.model.orchestration.AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(evaluationResultEClass, EvaluationResult.class, "EvaluationResult", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getEvaluationResult_Success(), ecorePackage.getEBoolean(), "success", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getEvaluationResult_TestPassRate(), ecorePackage.getEDouble(), "testPassRate", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getEvaluationResult_CoverageChange(), ecorePackage.getEDouble(), "coverageChange", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getEvaluationResult_Errors(), ecorePackage.getEString(), "errors", null, 0, -1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getEvaluationResult_Decision(), this.getSelfDevDecision(), "decision", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getEvaluationResult_UserSatisfaction(), ecorePackage.getEInt(), "userSatisfaction", null, 0, 1, EvaluationResult.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
 		// Initialize enums and add enum literals
+		initEEnum(taskStatusEEnum, TaskStatus.class, "TaskStatus");
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.PENDING);
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.RUNNING);
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.DONE);
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.FAILED);
+		addEEnumLiteral(taskStatusEEnum, TaskStatus.WAITING_FOR_APPROVAL);
 
+		initEEnum(commandStatusEEnum, CommandStatus.class, "CommandStatus");
+		addEEnumLiteral(commandStatusEEnum, CommandStatus.PENDING);
+		addEEnumLiteral(commandStatusEEnum, CommandStatus.RUNNING);
+		addEEnumLiteral(commandStatusEEnum, CommandStatus.COMPLETED);
+		addEEnumLiteral(commandStatusEEnum, CommandStatus.FAILED);
 
+		initEEnum(executionModeEEnum, ExecutionMode.class, "ExecutionMode");
+		addEEnumLiteral(executionModeEEnum, ExecutionMode.SERIAL);
+		addEEnumLiteral(executionModeEEnum, ExecutionMode.PARALLEL);
 
+		initEEnum(neuronTypeEEnum, NeuronType.class, "NeuronType");
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.MLP);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.CNN);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.RNN);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.LSTM);
+		addEEnumLiteral(neuronTypeEEnum, NeuronType.TRANSFORMER);
 
+		initEEnum(aiModeEEnum, AiMode.class, "AiMode");
+		addEEnumLiteral(aiModeEEnum, AiMode.LOCAL);
+		addEEnumLiteral(aiModeEEnum, AiMode.HYBRID);
+		addEEnumLiteral(aiModeEEnum, AiMode.REMOTE);
 
+		initEEnum(selfDevStatusEEnum, SelfDevStatus.class, "SelfDevStatus");
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.RUNNING);
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.STOPPED);
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.FAILED);
+		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.COMPLETED);
 
+		initEEnum(iterationStatusEEnum, IterationStatus.class, "IterationStatus");
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.PENDING);
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.RUNNING);
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.DONE);
+		addEEnumLiteral(iterationStatusEEnum, IterationStatus.FAILED);
 
+		initEEnum(selfDevDecisionEEnum, SelfDevDecision.class, "SelfDevDecision");
+		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.CONTINUE);
+		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.ROLLBACK);
+		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.STOP);
 
+		initEEnum(testStatusEEnum, TestStatus.class, "TestStatus");
+		addEEnumLiteral(testStatusEEnum, TestStatus.PENDING);
+		addEEnumLiteral(testStatusEEnum, TestStatus.RUNNING);
+		addEEnumLiteral(testStatusEEnum, TestStatus.PASSED);
+		addEEnumLiteral(testStatusEEnum, TestStatus.FAILED);
+
+		initEEnum(reviewDecisionEEnum, ReviewDecision.class, "ReviewDecision");
+		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.OPEN);
+		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.IN_REVIEW);
+		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.APPROVED);
+		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.REJECTED);
+		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.CHANGES_REQUESTED);
 
 		// Create resource
 		createResource(eNS_URI);

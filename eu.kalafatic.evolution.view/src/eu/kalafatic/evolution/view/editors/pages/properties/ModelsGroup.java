@@ -40,7 +40,7 @@ public class ModelsGroup extends AEvoGroup {
 
     private TableViewer tableViewer;
     private List<ModelItem> modelItems = new ArrayList<>();
-    private Color lightGreen;
+    
 
     public enum ModelState { OK, ERR, NA }
 
@@ -63,13 +63,10 @@ public class ModelsGroup extends AEvoGroup {
         }
     }
 
-    private Color lightRed, lightOrange;
 
     public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(editor, orchestrator);
-        this.lightGreen = new Color(Display.getDefault(), 220, 255, 220);
-        this.lightRed = new Color(Display.getDefault(), 255, 220, 220);
-        this.lightOrange = new Color(Display.getDefault(), 255, 240, 200);
+       
         createControl(toolkit, parent);
     }
 
@@ -443,12 +440,16 @@ public class ModelsGroup extends AEvoGroup {
         } else {
             if (MessageDialog.openConfirm(group.getShell(), "Remove Remote Model",
                     "Remove remote model configuration for: " + item.name + "?")) {
-                // Remote models are from AiProviders, we don't really 'remove' them from the static map,
-                // but we could clear it from the orchestrator if it matches.
-                if (orchestrator != null && item.name.equalsIgnoreCase(orchestrator.getRemoteModel())) {
-                    orchestrator.setRemoteModel("");
-                    editor.setDirty(true);
-                    refreshUI();
+                if (orchestrator != null) {
+                    if (item.provider != null) {
+                        orchestrator.getAiProviders().remove(item.provider);
+                        editor.setDirty(true);
+                        refreshUI();
+                    } else if (item.name.equalsIgnoreCase(orchestrator.getRemoteModel())) {
+                        orchestrator.setRemoteModel("");
+                        editor.setDirty(true);
+                        refreshUI();
+                    }
                 }
             }
         }

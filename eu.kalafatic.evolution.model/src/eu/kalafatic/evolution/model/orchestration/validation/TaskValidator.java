@@ -26,18 +26,14 @@ public interface TaskValidator {
 	boolean validateSubTasks(EList<Task> value);
 	boolean validateResponse(String value);
 	boolean validateFeedback(String value);
-
 	boolean validateApprovalRequired(boolean value);
-
 	boolean validateLoopToTaskId(String value);
-
 	boolean validatePriority(int value);
-
 	boolean validateResultSummary(String value);
-
 	boolean validateDescription(String value);
-
 	boolean validateRating(int value);
-
 	boolean validateLikes(boolean value);
+	boolean validateRationale(String value);
+	boolean validateScheduledTime(String value);
+	boolean validateSelected(boolean value);
 }

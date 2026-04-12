@@ -251,5 +251,5 @@ public enum SelfDevStatus implements Enumerator {
 	public String toString() {
 		return literal;
 	}
-
+	
 } //SelfDevStatus

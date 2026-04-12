@@ -18,6 +18,5 @@ public interface DatabaseValidator {
 	boolean validateUsername(String value);
 	boolean validatePassword(String value);
 	boolean validateDriver(String value);
-
 	boolean validateTestStatus(String value);
 }
