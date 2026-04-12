@@ -228,5 +228,5 @@ public enum SelfDevDecision implements Enumerator {
 	public String toString() {
 		return literal;
 	}
-
+	
 } //SelfDevDecision

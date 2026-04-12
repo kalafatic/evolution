@@ -233,7 +233,7 @@ public class AiChatPage extends SharedScrolledComposite {
 		}
 		if (modelName == null) modelName = "NOT SET";
 
-		modeIndicatorLabel.setText("-" + mode.getName().toUpperCase() + " MODE ACTIVE - " + modelName.toUpperCase() + " (ACCORDING TO CURRENT SETTINGS)");
+		modeIndicatorLabel.setText("-" + mode.getName().toUpperCase() + " MODE ACTIVE - " + modelName.toUpperCase());
 		modeIndicatorLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
 		switch (mode) {
 		case LOCAL: modeIndicatorLabel.setBackground(colorLocal); break;

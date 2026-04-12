@@ -40,7 +40,7 @@ public class ModelsGroup extends AEvoGroup {
 
     private TableViewer tableViewer;
     private List<ModelItem> modelItems = new ArrayList<>();
-    private Color lightGreen;
+    
 
     public enum ModelState { OK, ERR, NA }
 
@@ -63,13 +63,10 @@ public class ModelsGroup extends AEvoGroup {
         }
     }
 
-    private Color lightRed, lightOrange;
 
     public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(editor, orchestrator);
-        this.lightGreen = new Color(Display.getDefault(), 220, 255, 220);
-        this.lightRed = new Color(Display.getDefault(), 255, 220, 220);
-        this.lightOrange = new Color(Display.getDefault(), 255, 240, 200);
+       
         createControl(toolkit, parent);
     }
 

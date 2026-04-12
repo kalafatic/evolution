@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
@@ -14,10 +15,16 @@ public abstract class AEvoGroup {
     protected Composite group;
     protected MultiPageEditor editor;
     protected Orchestrator orchestrator;
+   
+    protected Color lightGreen, lightRed, lightOrange;
 
     public AEvoGroup(MultiPageEditor editor, Orchestrator orchestrator) {
         this.editor = editor;
         this.orchestrator = orchestrator;
+        
+        this.lightGreen = new Color(Display.getDefault(), 220, 255, 220);
+        this.lightRed = new Color(Display.getDefault(), 255, 220, 220);
+        this.lightOrange = new Color(Display.getDefault(), 255, 240, 200);
     }
 
     /**

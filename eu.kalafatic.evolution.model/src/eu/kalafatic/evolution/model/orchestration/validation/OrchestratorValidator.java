@@ -18,8 +18,8 @@ import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
-
 import eu.kalafatic.evolution.model.orchestration.Test;
+
 import org.eclipse.emf.common.util.EList;
 
 /**
@@ -36,7 +36,6 @@ public interface OrchestratorValidator {
 	boolean validateAgents(EList<Agent> value);
 	boolean validateTasks(EList<Task> value);
 	boolean validateTests(EList<Test> value);
-
 	boolean validateGit(Git value);
 	boolean validateMaven(Maven value);
 	boolean validateLlm(LLM value);
@@ -44,38 +43,20 @@ public interface OrchestratorValidator {
 	boolean validateOllama(Ollama value);
 	boolean validateAiChat(AiChat value);
 	boolean validateNeuronAI(NeuronAI value);
-
-	boolean validateAiMode(AiMode value);
-
-	boolean validateMcpServerUrl(String value);
-
-	boolean validateOpenAiToken(String value);
-
-	boolean validateOpenAiModel(String value);
-
-	boolean validateLocalModel(String value);
-
-	boolean validateHybridModel(String value);
-
-	boolean validateOfflineMode(boolean value);
-
-	boolean validateSelfDevSession(SelfDevSession value);
-
-	boolean validateDatabase(Database value);
-
-	boolean validateFileConfig(FileConfig value);
-
-	boolean validateSharedMemory(String value);
-
-	boolean validateEclipse(Eclipse value);
-
-	boolean validateIterativeMode(boolean value);
-
-	boolean validateSelfIterativeMode(boolean value);
-
-	boolean validateAiProviders(EList<AIProvider> value);
-
-	boolean validateMcpServerUr(String value);
-
 	boolean validateRemoteModel(String value);
+	boolean validateAiMode(AiMode value);
+	boolean validateMcpServerUrl(String value);
+	boolean validateOpenAiToken(String value);
+	boolean validateOpenAiModel(String value);
+	boolean validateLocalModel(String value);
+	boolean validateHybridModel(String value);
+	boolean validateOfflineMode(boolean value);
+	boolean validateSelfDevSession(SelfDevSession value);
+	boolean validateDatabase(Database value);
+	boolean validateFileConfig(FileConfig value);
+	boolean validateSharedMemory(String value);
+	boolean validateEclipse(Eclipse value);
+	boolean validateIterativeMode(boolean value);
+	boolean validateSelfIterativeMode(boolean value);
+	boolean validateAiProviders(EList<AIProvider> value);
 }

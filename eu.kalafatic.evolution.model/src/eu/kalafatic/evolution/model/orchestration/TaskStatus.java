@@ -56,7 +56,9 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	FAILED(3, "FAILED", "FAILED"), /**
+	FAILED(3, "FAILED", "FAILED"),
+
+	/**
 	 * The '<em><b>WAITING FOR APPROVAL</b></em>' literal object.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

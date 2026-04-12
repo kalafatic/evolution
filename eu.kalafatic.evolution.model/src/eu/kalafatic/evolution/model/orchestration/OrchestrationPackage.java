@@ -366,7 +366,14 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int ORCHESTRATOR__TASKS = 3;
 
-	int ORCHESTRATOR__TESTS = 24;
+	/**
+	 * The feature id for the '<em><b>Tests</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__TESTS = 4;
 
 	/**
 	 * The feature id for the '<em><b>Git</b></em>' containment reference.
@@ -530,7 +537,14 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int ORCHESTRATOR__FILE_CONFIG = 22;
 
-	int ORCHESTRATOR__SHARED_MEMORY = 22;
+	/**
+	 * The feature id for the '<em><b>Shared Memory</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__SHARED_MEMORY = 23;
 
 	/**
 	 * The feature id for the '<em><b>Eclipse</b></em>' containment reference.
@@ -540,8 +554,32 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int ORCHESTRATOR__ECLIPSE = 24;
+
+	/**
+	 * The feature id for the '<em><b>Iterative Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int ORCHESTRATOR__ITERATIVE_MODE = 25;
+
+	/**
+	 * The feature id for the '<em><b>Self Iterative Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int ORCHESTRATOR__SELF_ITERATIVE_MODE = 26;
+
+	/**
+	 * The feature id for the '<em><b>Ai Providers</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int ORCHESTRATOR__AI_PROVIDERS = 27;
 
 	/**
@@ -563,349 +601,130 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl <em>Git</em>}' class.
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl <em>AI Provider</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.GitImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getGit()
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAIProvider()
 	 * @generated
 	 */
-	int GIT = 4;
+	int AI_PROVIDER = 3;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MavenImpl <em>Maven</em>}' class.
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.MavenImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMaven()
 	 * @generated
+	 * @ordered
 	 */
-	int MAVEN = 5;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.LLMImpl <em>LLM</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.LLMImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLLM()
-	 * @generated
-	 */
-	int LLM = 6;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CompilerImpl <em>Compiler</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.CompilerImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCompiler()
-	 * @generated
-	 */
-	int COMPILER = 7;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommandImpl <em>Command</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.CommandImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommand()
-	 * @generated
-	 */
-	int COMMAND = 8;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl <em>Ollama</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getOllama()
-	 * @generated
-	 */
-	int OLLAMA = 9;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl <em>Ai Chat</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiChat()
-	 * @generated
-	 */
-	int AI_CHAT = 10;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl <em>Neuron AI</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronAI()
-	 * @generated
-	 */
-	int NEURON_AI = 11;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl <em>Evo Project</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvoProject()
-	 * @generated
-	 */
-	int EVO_PROJECT = 12;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.RuleImpl <em>Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.RuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getRule()
-	 * @generated
-	 */
-	int RULE = 13;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl <em>Access Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAccessRule()
-	 * @generated
-	 */
-	int ACCESS_RULE = 14;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl <em>Network Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkRule()
-	 * @generated
-	 */
-	int NETWORK_RULE = 15;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl <em>Memory Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMemoryRule()
-	 * @generated
-	 */
-	int MEMORY_RULE = 16;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl <em>Secret Rule</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSecretRule()
-	 * @generated
-	 */
-	int SECRET_RULE = 17;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl <em>Self Dev Session</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevSession()
-	 * @generated
-	 */
-	int SELF_DEV_SESSION = 18;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl <em>Iteration</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.IterationImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIteration()
-	 * @generated
-	 */
-	int ITERATION = 21;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl <em>Evaluation Result</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvaluationResult()
-	 * @generated
-	 */
-	int EVALUATION_RESULT = 23;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
-	 * @generated
-	 */
-	int TASK_STATUS = 30;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
-	 * @generated
-	 */
-	int COMMAND_STATUS = 31;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
-	 * @generated
-	 */
-	int EXECUTION_MODE = 32;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
-	 * @generated
-	 */
-	int NEURON_TYPE = 33;
-
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
-	 * @generated
-	 */
-	int AI_MODE = 34;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
-	 * @generated
-	 */
-	int SELF_DEV_STATUS = 35;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.IterationStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
-	 * @generated
-	 */
-	int ITERATION_STATUS = 36;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevDecision
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
-	 * @generated
-	 */
-	int SELF_DEV_DECISION = 37;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TestImpl <em>Test</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.TestImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTest()
-	 * @generated
-	 */
-	int TEST = 24;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
-	 * @generated
-	 */
-	int TEST_STATUS = 38;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.ReviewDecision
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
-	 * @generated
-	 */
-	int REVIEW_DECISION = 39;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommentImpl <em>Comment</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.CommentImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComment()
-	 * @generated
-	 */
-	int COMMENT = 25;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl <em>Diff Hunk</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDiffHunk()
-	 * @generated
-	 */
-	int DIFF_HUNK = 26;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl <em>File Change</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileChange()
-	 * @generated
-	 */
-	int FILE_CHANGE = 27;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl <em>Change Set</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChangeSet()
-	 * @generated
-	 */
-	int CHANGE_SET = 28;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl <em>Review Session</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewSession()
-	 * @generated
-	 */
-	int REVIEW_SESSION = 29;
-
-	int AI_PROVIDER = 39;
 	int AI_PROVIDER__NAME = 0;
+
+	/**
+	 * The feature id for the '<em><b>Url</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__URL = 1;
+
+	/**
+	 * The feature id for the '<em><b>Api Key</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__API_KEY = 2;
+
+	/**
+	 * The feature id for the '<em><b>Format</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__FORMAT = 3;
+
+	/**
+	 * The feature id for the '<em><b>Local</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__LOCAL = 4;
+
+	/**
+	 * The feature id for the '<em><b>Default Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__DEFAULT_MODEL = 5;
+
+	/**
+	 * The feature id for the '<em><b>Api Key Encrypted</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__API_KEY_ENCRYPTED = 6;
+
+	/**
+	 * The feature id for the '<em><b>Use Env Var</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__USE_ENV_VAR = 7;
+
+	/**
+	 * The feature id for the '<em><b>Env Var Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__ENV_VAR_NAME = 8;
+
+	/**
+	 * The feature id for the '<em><b>State</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__STATE = 9;
+
+	/**
+	 * The feature id for the '<em><b>State Description</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__STATE_DESCRIPTION = 10;
+
+	/**
+	 * The feature id for the '<em><b>Rating</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER__RATING = 11;
+
+	/**
+	 * The number of structural features of the '<em>AI Provider</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int AI_PROVIDER_FEATURE_COUNT = 12;
 
 	/**
@@ -916,6 +735,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int AI_PROVIDER_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl <em>Git</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.GitImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getGit()
+	 * @generated
+	 */
+	int GIT = 4;
 
 	/**
 	 * The feature id for the '<em><b>Repository Url</b></em>' attribute.
@@ -981,6 +810,16 @@ public interface OrchestrationPackage extends EPackage {
 	int GIT_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MavenImpl <em>Maven</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.MavenImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMaven()
+	 * @generated
+	 */
+	int MAVEN = 5;
+
+	/**
 	 * The feature id for the '<em><b>Goals</b></em>' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1026,6 +865,16 @@ public interface OrchestrationPackage extends EPackage {
 	int MAVEN_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.LLMImpl <em>LLM</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.LLMImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLLM()
+	 * @generated
+	 */
+	int LLM = 6;
+
+	/**
 	 * The feature id for the '<em><b>Model</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1060,6 +909,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int LLM_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CompilerImpl <em>Compiler</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.CompilerImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCompiler()
+	 * @generated
+	 */
+	int COMPILER = 7;
 
 	/**
 	 * The feature id for the '<em><b>Source Version</b></em>' attribute.
@@ -1143,6 +1002,16 @@ public interface OrchestrationPackage extends EPackage {
 	int COMPILER_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommandImpl <em>Command</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.CommandImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommand()
+	 * @generated
+	 */
+	int COMMAND = 8;
+
+	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1177,6 +1046,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int COMMAND_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl <em>Ollama</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OllamaImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getOllama()
+	 * @generated
+	 */
+	int OLLAMA = 9;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -1222,6 +1101,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int OLLAMA_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl <em>Ai Chat</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiChat()
+	 * @generated
+	 */
+	int AI_CHAT = 10;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -1278,6 +1167,16 @@ public interface OrchestrationPackage extends EPackage {
 	int AI_CHAT_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl <em>Neuron AI</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronAI()
+	 * @generated
+	 */
+	int NEURON_AI = 11;
+
+	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1332,6 +1231,16 @@ public interface OrchestrationPackage extends EPackage {
 	int NEURON_AI_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl <em>Evo Project</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.EvoProjectImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvoProject()
+	 * @generated
+	 */
+	int EVO_PROJECT = 12;
+
+	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1368,6 +1277,16 @@ public interface OrchestrationPackage extends EPackage {
 	int EVO_PROJECT_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.RuleImpl <em>Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.RuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getRule()
+	 * @generated
+	 */
+	int RULE = 13;
+
+	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1402,6 +1321,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int RULE_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl <em>Access Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.AccessRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAccessRule()
+	 * @generated
+	 */
+	int ACCESS_RULE = 14;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1458,6 +1387,16 @@ public interface OrchestrationPackage extends EPackage {
 	int ACCESS_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl <em>Network Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkRule()
+	 * @generated
+	 */
+	int NETWORK_RULE = 15;
+
+	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1510,6 +1449,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int NETWORK_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl <em>Memory Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.MemoryRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMemoryRule()
+	 * @generated
+	 */
+	int MEMORY_RULE = 16;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1566,6 +1515,16 @@ public interface OrchestrationPackage extends EPackage {
 	int MEMORY_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl <em>Secret Rule</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SecretRuleImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSecretRule()
+	 * @generated
+	 */
+	int SECRET_RULE = 17;
+
+	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1609,6 +1568,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int SECRET_RULE_OPERATION_COUNT = RULE_OPERATION_COUNT + 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl <em>Self Dev Session</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevSession()
+	 * @generated
+	 */
+	int SELF_DEV_SESSION = 18;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -1664,6 +1633,13 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int SELF_DEV_SESSION__RATIONALE = 5;
 
+	/**
+	 * The feature id for the '<em><b>Initial Request</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int SELF_DEV_SESSION__INITIAL_REQUEST = 6;
 
 	/**
@@ -1802,6 +1778,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int FILE_CONFIG_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl <em>Iteration</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.IterationImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIteration()
+	 * @generated
+	 */
+	int ITERATION = 21;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -1967,6 +1953,16 @@ public interface OrchestrationPackage extends EPackage {
 	int ECLIPSE_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl <em>Evaluation Result</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvaluationResult()
+	 * @generated
+	 */
+	int EVALUATION_RESULT = 23;
+
+	/**
 	 * The feature id for the '<em><b>Success</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2037,6 +2033,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int EVALUATION_RESULT_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TestImpl <em>Test</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.TestImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTest()
+	 * @generated
+	 */
+	int TEST = 24;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -2110,22 +2116,95 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int TEST_OPERATION_COUNT = 0;
 
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommentImpl <em>Comment</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.CommentImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComment()
+	 * @generated
+	 */
+	int COMMENT = 25;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int COMMENT__ID = 0;
 
+	/**
+	 * The feature id for the '<em><b>File Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int COMMENT__FILE_PATH = 1;
 
+	/**
+	 * The feature id for the '<em><b>Start Line</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int COMMENT__START_LINE = 2;
 
+	/**
+	 * The feature id for the '<em><b>End Line</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int COMMENT__END_LINE = 3;
 
+	/**
+	 * The feature id for the '<em><b>Author</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int COMMENT__AUTHOR = 4;
 
+	/**
+	 * The feature id for the '<em><b>Content</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int COMMENT__CONTENT = 5;
 
+	/**
+	 * The feature id for the '<em><b>Timestamp</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int COMMENT__TIMESTAMP = 6;
 
+	/**
+	 * The feature id for the '<em><b>Resolved</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int COMMENT__RESOLVED = 7;
 
+	/**
+	 * The number of structural features of the '<em>Comment</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int COMMENT_FEATURE_COUNT = 8;
 
 	/**
@@ -2137,10 +2216,41 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int COMMENT_OPERATION_COUNT = 0;
 
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl <em>Diff Hunk</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDiffHunk()
+	 * @generated
+	 */
+	int DIFF_HUNK = 26;
+
+	/**
+	 * The feature id for the '<em><b>Header</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int DIFF_HUNK__HEADER = 0;
 
+	/**
+	 * The feature id for the '<em><b>Lines</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int DIFF_HUNK__LINES = 1;
 
+	/**
+	 * The number of structural features of the '<em>Diff Hunk</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int DIFF_HUNK_FEATURE_COUNT = 2;
 
 	/**
@@ -2152,12 +2262,50 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int DIFF_HUNK_OPERATION_COUNT = 0;
 
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl <em>File Change</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileChange()
+	 * @generated
+	 */
+	int FILE_CHANGE = 27;
+
+	/**
+	 * The feature id for the '<em><b>File Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int FILE_CHANGE__FILE_PATH = 0;
 
+	/**
+	 * The feature id for the '<em><b>Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int FILE_CHANGE__STATUS = 1;
 
+	/**
+	 * The feature id for the '<em><b>Hunks</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int FILE_CHANGE__HUNKS = 2;
 
+	/**
+	 * The number of structural features of the '<em>File Change</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int FILE_CHANGE_FEATURE_COUNT = 3;
 
 	/**
@@ -2169,10 +2317,41 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int FILE_CHANGE_OPERATION_COUNT = 0;
 
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl <em>Change Set</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChangeSet()
+	 * @generated
+	 */
+	int CHANGE_SET = 28;
+
+	/**
+	 * The feature id for the '<em><b>Commit Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int CHANGE_SET__COMMIT_ID = 0;
 
+	/**
+	 * The feature id for the '<em><b>Files</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int CHANGE_SET__FILES = 1;
 
+	/**
+	 * The number of structural features of the '<em>Change Set</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int CHANGE_SET_FEATURE_COUNT = 2;
 
 	/**
@@ -2184,14 +2363,59 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int CHANGE_SET_OPERATION_COUNT = 0;
 
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl <em>Review Session</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewSession()
+	 * @generated
+	 */
+	int REVIEW_SESSION = 29;
+
+	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int REVIEW_SESSION__ID = 0;
 
+	/**
+	 * The feature id for the '<em><b>Change Set</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int REVIEW_SESSION__CHANGE_SET = 1;
 
+	/**
+	 * The feature id for the '<em><b>Comments</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int REVIEW_SESSION__COMMENTS = 2;
 
+	/**
+	 * The feature id for the '<em><b>Decision</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int REVIEW_SESSION__DECISION = 3;
 
+	/**
+	 * The number of structural features of the '<em>Review Session</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int REVIEW_SESSION_FEATURE_COUNT = 4;
 
 	/**
@@ -2202,6 +2426,106 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int REVIEW_SESSION_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
+	 * @generated
+	 */
+	int TASK_STATUS = 30;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
+	 * @generated
+	 */
+	int COMMAND_STATUS = 31;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
+	 * @generated
+	 */
+	int EXECUTION_MODE = 32;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
+	 * @generated
+	 */
+	int NEURON_TYPE = 33;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
+	 * @generated
+	 */
+	int AI_MODE = 34;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
+	 * @generated
+	 */
+	int SELF_DEV_STATUS = 35;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.IterationStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
+	 * @generated
+	 */
+	int ITERATION_STATUS = 36;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevDecision
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
+	 * @generated
+	 */
+	int SELF_DEV_DECISION = 37;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
+	 * @generated
+	 */
+	int TEST_STATUS = 38;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.ReviewDecision
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
+	 * @generated
+	 */
+	int REVIEW_DECISION = 39;
 
 
 	/**
@@ -2488,17 +2812,6 @@ public interface OrchestrationPackage extends EPackage {
 	EClass getOrchestrator();
 
 	/**
-	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getTests <em>Tests</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference list '<em>Tests</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getTests()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EReference getOrchestrator_Tests();
-
-	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getId <em>Id</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2541,6 +2854,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getOrchestrator_Tasks();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getTests <em>Tests</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Tests</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getTests()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_Tests();
 
 	/**
 	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getGit <em>Git</em>}'.
@@ -2620,6 +2944,17 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_NeuronAI();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getRemoteModel <em>Remote Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Remote Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getRemoteModel()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_RemoteModel();
+
+	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiMode <em>Ai Mode</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2642,15 +2977,289 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getOrchestrator_McpServerUrl();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getRemoteModel <em>Remote Model</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiToken <em>Open Ai Token</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Remote Model</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getRemoteModel()
+	 * @return the meta object for the attribute '<em>Open Ai Token</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiToken()
 	 * @see #getOrchestrator()
 	 * @generated
 	 */
-	EAttribute getOrchestrator_RemoteModel();
+	EAttribute getOrchestrator_OpenAiToken();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiModel <em>Open Ai Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Open Ai Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiModel()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_OpenAiModel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getLocalModel <em>Local Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Local Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getLocalModel()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_LocalModel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getHybridModel <em>Hybrid Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Hybrid Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getHybridModel()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_HybridModel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isOfflineMode <em>Offline Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Offline Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isOfflineMode()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_OfflineMode();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession <em>Self Dev Session</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Self Dev Session</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_SelfDevSession();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase <em>Database</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Database</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_Database();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig <em>File Config</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>File Config</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_FileConfig();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory <em>Shared Memory</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Shared Memory</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_SharedMemory();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse <em>Eclipse</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Eclipse</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_Eclipse();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isIterativeMode <em>Iterative Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Iterative Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isIterativeMode()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_IterativeMode();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isSelfIterativeMode <em>Self Iterative Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Self Iterative Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isSelfIterativeMode()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_SelfIterativeMode();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiProviders <em>Ai Providers</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Ai Providers</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiProviders()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_AiProviders();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.AIProvider <em>AI Provider</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>AI Provider</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider
+	 * @generated
+	 */
+	EClass getAIProvider();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getName <em>Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getName()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_Name();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getUrl <em>Url</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Url</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getUrl()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_Url();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getApiKey <em>Api Key</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Api Key</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getApiKey()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_ApiKey();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getFormat <em>Format</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Format</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getFormat()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_Format();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#isLocal <em>Local</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Local</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#isLocal()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_Local();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getDefaultModel <em>Default Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Default Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getDefaultModel()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_DefaultModel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#isApiKeyEncrypted <em>Api Key Encrypted</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Api Key Encrypted</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#isApiKeyEncrypted()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_ApiKeyEncrypted();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#isUseEnvVar <em>Use Env Var</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Use Env Var</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#isUseEnvVar()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_UseEnvVar();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getEnvVarName <em>Env Var Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Env Var Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getEnvVarName()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_EnvVarName();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getState <em>State</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>State</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getState()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_State();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getStateDescription <em>State Description</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>State Description</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getStateDescription()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_StateDescription();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRating <em>Rating</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rating</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getRating()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_Rating();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Git <em>Git</em>}'.
@@ -3244,187 +3853,6 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getSecretRule_AllowedSecrets();
 
 	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Task Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
-	 * @generated
-	 */
-	EEnum getTaskStatus();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Command Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
-	 * @generated
-	 */
-	EEnum getCommandStatus();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Execution Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
-	 * @generated
-	 */
-	EEnum getExecutionMode();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Neuron Type</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
-	 * @generated
-	 */
-	EEnum getNeuronType();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Ai Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
-	 * @generated
-	 */
-	EEnum getAiMode();
-
-	/**
-	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Test <em>Test</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Test</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Test
-	 * @generated
-	 */
-	EClass getTest();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getId <em>Id</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Id</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Test#getId()
-	 * @see #getTest()
-	 * @generated
-	 */
-	EAttribute getTest_Id();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getName <em>Name</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Name</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Test#getName()
-	 * @see #getTest()
-	 * @generated
-	 */
-	EAttribute getTest_Name();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getType <em>Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Type</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Test#getType()
-	 * @see #getTest()
-	 * @generated
-	 */
-	EAttribute getTest_Type();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getPath <em>Path</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Path</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Test#getPath()
-	 * @see #getTest()
-	 * @generated
-	 */
-	EAttribute getTest_Path();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getStatus <em>Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Test#getStatus()
-	 * @see #getTest()
-	 * @generated
-	 */
-	EAttribute getTest_Status();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#isSelected <em>Selected</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Selected</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Test#isSelected()
-	 * @see #getTest()
-	 * @generated
-	 */
-	EAttribute getTest_Selected();
-
-	EEnum getReviewDecision();
-	EClass getComment();
-	EAttribute getComment_Id();
-	EAttribute getComment_FilePath();
-	EAttribute getComment_StartLine();
-	EAttribute getComment_EndLine();
-	EAttribute getComment_Author();
-	EAttribute getComment_Content();
-	EAttribute getComment_Timestamp();
-	EAttribute getComment_Resolved();
-
-	EClass getDiffHunk();
-	EAttribute getDiffHunk_Header();
-	EAttribute getDiffHunk_Lines();
-
-	EClass getFileChange();
-	EAttribute getFileChange_FilePath();
-	EAttribute getFileChange_Status();
-	EReference getFileChange_Hunks();
-
-	EClass getChangeSet();
-	EAttribute getChangeSet_CommitId();
-	EReference getChangeSet_Files();
-
-	EClass getReviewSession();
-	EAttribute getReviewSession_Id();
-	EReference getReviewSession_ChangeSet();
-	EReference getReviewSession_Comments();
-	EAttribute getReviewSession_Decision();
-
-	EReference getOrchestrator_AiProviders();
-	EClass getAIProvider();
-	EAttribute getAIProvider_Name();
-	EAttribute getAIProvider_Url();
-	EAttribute getAIProvider_ApiKey();
-	EAttribute getAIProvider_Format();
-	EAttribute getAIProvider_Local();
-	EAttribute getAIProvider_DefaultModel();
-	EAttribute getAIProvider_ApiKeyEncrypted();
-	EAttribute getAIProvider_UseEnvVar();
-	EAttribute getAIProvider_EnvVarName();
-	EAttribute getAIProvider_State();
-	EAttribute getAIProvider_StateDescription();
-	EAttribute getAIProvider_Rating();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Test Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
-	 * @generated
-	 */
-	EEnum getTestStatus();
-
-	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession <em>Self Dev Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3499,7 +3927,114 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getSelfDevSession_Rationale();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getInitialRequest <em>Initial Request</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Initial Request</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevSession#getInitialRequest()
+	 * @see #getSelfDevSession()
+	 * @generated
+	 */
 	EAttribute getSelfDevSession_InitialRequest();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Database <em>Database</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Database</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database
+	 * @generated
+	 */
+	EClass getDatabase();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getUrl <em>Url</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Url</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getUrl()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_Url();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getUsername <em>Username</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Username</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getUsername()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_Username();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getPassword <em>Password</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Password</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getPassword()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_Password();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getDriver <em>Driver</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Driver</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getDriver()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_Driver();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Database#getTestStatus()
+	 * @see #getDatabase()
+	 * @generated
+	 */
+	EAttribute getDatabase_TestStatus();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.FileConfig <em>File Config</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>File Config</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig
+	 * @generated
+	 */
+	EClass getFileConfig();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.FileConfig#getLocalPath <em>Local Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Local Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig#getLocalPath()
+	 * @see #getFileConfig()
+	 * @generated
+	 */
+	EAttribute getFileConfig_LocalPath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.FileConfig#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig#getTestStatus()
+	 * @see #getFileConfig()
+	 * @generated
+	 */
+	EAttribute getFileConfig_TestStatus();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Iteration <em>Iteration</em>}'.
@@ -3611,6 +4146,60 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getIteration_Rationale();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Eclipse <em>Eclipse</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Eclipse</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse
+	 * @generated
+	 */
+	EClass getEclipse();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getWorkspace <em>Workspace</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Workspace</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getWorkspace()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_Workspace();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getInstallation <em>Installation</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Installation</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getInstallation()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_Installation();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getTargetPlatform <em>Target Platform</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Target Platform</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getTargetPlatform()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_TargetPlatform();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getTestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getTestStatus()
+	 * @see #getEclipse()
+	 * @generated
+	 */
+	EAttribute getEclipse_TestStatus();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult <em>Evaluation Result</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3687,6 +4276,391 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getEvaluationResult_UserSatisfaction();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Test <em>Test</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Test</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test
+	 * @generated
+	 */
+	EClass getTest();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getId <em>Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#getId()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Id();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getName <em>Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#getName()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Name();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getType <em>Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#getType()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Type();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getPath <em>Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#getPath()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Path();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#getStatus <em>Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#getStatus()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Status();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Test#isSelected <em>Selected</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Selected</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Test#isSelected()
+	 * @see #getTest()
+	 * @generated
+	 */
+	EAttribute getTest_Selected();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Comment <em>Comment</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Comment</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Comment
+	 * @generated
+	 */
+	EClass getComment();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Comment#getId <em>Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Comment#getId()
+	 * @see #getComment()
+	 * @generated
+	 */
+	EAttribute getComment_Id();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Comment#getFilePath <em>File Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>File Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Comment#getFilePath()
+	 * @see #getComment()
+	 * @generated
+	 */
+	EAttribute getComment_FilePath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Comment#getStartLine <em>Start Line</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Start Line</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Comment#getStartLine()
+	 * @see #getComment()
+	 * @generated
+	 */
+	EAttribute getComment_StartLine();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Comment#getEndLine <em>End Line</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>End Line</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Comment#getEndLine()
+	 * @see #getComment()
+	 * @generated
+	 */
+	EAttribute getComment_EndLine();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Comment#getAuthor <em>Author</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Author</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Comment#getAuthor()
+	 * @see #getComment()
+	 * @generated
+	 */
+	EAttribute getComment_Author();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Comment#getContent <em>Content</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Content</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Comment#getContent()
+	 * @see #getComment()
+	 * @generated
+	 */
+	EAttribute getComment_Content();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Comment#getTimestamp <em>Timestamp</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Timestamp</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Comment#getTimestamp()
+	 * @see #getComment()
+	 * @generated
+	 */
+	EAttribute getComment_Timestamp();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Comment#isResolved <em>Resolved</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Resolved</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Comment#isResolved()
+	 * @see #getComment()
+	 * @generated
+	 */
+	EAttribute getComment_Resolved();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.DiffHunk <em>Diff Hunk</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Diff Hunk</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.DiffHunk
+	 * @generated
+	 */
+	EClass getDiffHunk();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.DiffHunk#getHeader <em>Header</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Header</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.DiffHunk#getHeader()
+	 * @see #getDiffHunk()
+	 * @generated
+	 */
+	EAttribute getDiffHunk_Header();
+
+	/**
+	 * Returns the meta object for the attribute list '{@link eu.kalafatic.evolution.model.orchestration.DiffHunk#getLines <em>Lines</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute list '<em>Lines</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.DiffHunk#getLines()
+	 * @see #getDiffHunk()
+	 * @generated
+	 */
+	EAttribute getDiffHunk_Lines();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.FileChange <em>File Change</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>File Change</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileChange
+	 * @generated
+	 */
+	EClass getFileChange();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.FileChange#getFilePath <em>File Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>File Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileChange#getFilePath()
+	 * @see #getFileChange()
+	 * @generated
+	 */
+	EAttribute getFileChange_FilePath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.FileChange#getStatus <em>Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileChange#getStatus()
+	 * @see #getFileChange()
+	 * @generated
+	 */
+	EAttribute getFileChange_Status();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.FileChange#getHunks <em>Hunks</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Hunks</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FileChange#getHunks()
+	 * @see #getFileChange()
+	 * @generated
+	 */
+	EReference getFileChange_Hunks();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChangeSet <em>Change Set</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Change Set</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChangeSet
+	 * @generated
+	 */
+	EClass getChangeSet();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChangeSet#getCommitId <em>Commit Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Commit Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChangeSet#getCommitId()
+	 * @see #getChangeSet()
+	 * @generated
+	 */
+	EAttribute getChangeSet_CommitId();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.ChangeSet#getFiles <em>Files</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Files</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChangeSet#getFiles()
+	 * @see #getChangeSet()
+	 * @generated
+	 */
+	EReference getChangeSet_Files();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ReviewSession <em>Review Session</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Review Session</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ReviewSession
+	 * @generated
+	 */
+	EClass getReviewSession();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ReviewSession#getId <em>Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ReviewSession#getId()
+	 * @see #getReviewSession()
+	 * @generated
+	 */
+	EAttribute getReviewSession_Id();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.ReviewSession#getChangeSet <em>Change Set</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Change Set</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ReviewSession#getChangeSet()
+	 * @see #getReviewSession()
+	 * @generated
+	 */
+	EReference getReviewSession_ChangeSet();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.ReviewSession#getComments <em>Comments</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Comments</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ReviewSession#getComments()
+	 * @see #getReviewSession()
+	 * @generated
+	 */
+	EReference getReviewSession_Comments();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ReviewSession#getDecision <em>Decision</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Decision</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ReviewSession#getDecision()
+	 * @see #getReviewSession()
+	 * @generated
+	 */
+	EAttribute getReviewSession_Decision();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Task Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
+	 * @generated
+	 */
+	EEnum getTaskStatus();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Command Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
+	 * @generated
+	 */
+	EEnum getCommandStatus();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Execution Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+	 * @generated
+	 */
+	EEnum getExecutionMode();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Neuron Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+	 * @generated
+	 */
+	EEnum getNeuronType();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Ai Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
+	 * @generated
+	 */
+	EEnum getAiMode();
+
+	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3717,267 +4691,24 @@ public interface OrchestrationPackage extends EPackage {
 	EEnum getSelfDevDecision();
 
 	/**
-	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase <em>Database</em>}'.
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Database</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getDatabase()
-	 * @see #getOrchestrator()
+	 * @return the meta object for enum '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
 	 * @generated
 	 */
-	EReference getOrchestrator_Database();
+	EEnum getTestStatus();
 
 	/**
-	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig <em>File Config</em>}'.
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>File Config</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getFileConfig()
-	 * @see #getOrchestrator()
+	 * @return the meta object for enum '<em>Review Decision</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ReviewDecision
 	 * @generated
 	 */
-	EReference getOrchestrator_FileConfig();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse <em>Eclipse</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Eclipse</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EReference getOrchestrator_Eclipse();
-
-	/**
-	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Database <em>Database</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Database</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Database
-	 * @generated
-	 */
-	EClass getDatabase();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getUrl <em>Url</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Url</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Database#getUrl()
-	 * @see #getDatabase()
-	 * @generated
-	 */
-	EAttribute getDatabase_Url();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getUsername <em>Username</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Username</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Database#getUsername()
-	 * @see #getDatabase()
-	 * @generated
-	 */
-	EAttribute getDatabase_Username();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getPassword <em>Password</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Password</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Database#getPassword()
-	 * @see #getDatabase()
-	 * @generated
-	 */
-	EAttribute getDatabase_Password();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getDriver <em>Driver</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Driver</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Database#getDriver()
-	 * @see #getDatabase()
-	 * @generated
-	 */
-	EAttribute getDatabase_Driver();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Database#getTestStatus <em>Test Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Test Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Database#getTestStatus()
-	 * @see #getDatabase()
-	 * @generated
-	 */
-	EAttribute getDatabase_TestStatus();
-
-	/**
-	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.FileConfig <em>File Config</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>File Config</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig
-	 * @generated
-	 */
-	EClass getFileConfig();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.FileConfig#getLocalPath <em>Local Path</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Local Path</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig#getLocalPath()
-	 * @see #getFileConfig()
-	 * @generated
-	 */
-	EAttribute getFileConfig_LocalPath();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.FileConfig#getTestStatus <em>Test Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Test Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.FileConfig#getTestStatus()
-	 * @see #getFileConfig()
-	 * @generated
-	 */
-	EAttribute getFileConfig_TestStatus();
-
-	/**
-	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Eclipse <em>Eclipse</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Eclipse</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse
-	 * @generated
-	 */
-	EClass getEclipse();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getWorkspace <em>Workspace</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Workspace</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getWorkspace()
-	 * @see #getEclipse()
-	 * @generated
-	 */
-	EAttribute getEclipse_Workspace();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getInstallation <em>Installation</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Installation</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getInstallation()
-	 * @see #getEclipse()
-	 * @generated
-	 */
-	EAttribute getEclipse_Installation();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getTargetPlatform <em>Target Platform</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Target Platform</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getTargetPlatform()
-	 * @see #getEclipse()
-	 * @generated
-	 */
-	EAttribute getEclipse_TargetPlatform();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Eclipse#getTestStatus <em>Test Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Test Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Eclipse#getTestStatus()
-	 * @see #getEclipse()
-	 * @generated
-	 */
-	EAttribute getEclipse_TestStatus();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession <em>Self Dev Session</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Self Dev Session</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getSelfDevSession()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EReference getOrchestrator_SelfDevSession();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory <em>Shared Memory</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Shared Memory</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_SharedMemory();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiToken <em>Open Ai Token</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Open Ai Token</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiToken()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_OpenAiToken();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiModel <em>Open Ai Model</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Open Ai Model</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getOpenAiModel()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_OpenAiModel();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getLocalModel <em>Local Model</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Local Model</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getLocalModel()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_LocalModel();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getHybridModel <em>Hybrid Model</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Hybrid Model</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getHybridModel()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_HybridModel();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isOfflineMode <em>Offline Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Offline Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isOfflineMode()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_OfflineMode();
-	EAttribute getOrchestrator_IterativeMode();
-	EAttribute getOrchestrator_SelfIterativeMode();
+	EEnum getReviewDecision();
 
 	/**
 	 * Returns the factory that creates the instances of the model.
@@ -4002,14 +4733,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	interface Literals {
-		/**
-		 * The meta object literal for the '<em><b>Tests</b></em>' containment reference list feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference ORCHESTRATOR__TESTS = eINSTANCE.getOrchestrator_Tests();
-
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl <em>Task</em>}' class.
 		 * <!-- begin-user-doc -->
@@ -4101,6 +4824,22 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute TASK__LOOP_TO_TASK_ID = eINSTANCE.getTask_LoopToTaskId();
 
 		/**
+		 * The meta object literal for the '<em><b>Priority</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__PRIORITY = eINSTANCE.getTask_Priority();
+
+		/**
+		 * The meta object literal for the '<em><b>Result Summary</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__RESULT_SUMMARY = eINSTANCE.getTask_ResultSummary();
+
+		/**
 		 * The meta object literal for the '<em><b>Description</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4147,22 +4886,6 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__SELECTED = eINSTANCE.getTask_Selected();
-
-		/**
-		 * The meta object literal for the '<em><b>Priority</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TASK__PRIORITY = eINSTANCE.getTask_Priority();
-
-		/**
-		 * The meta object literal for the '<em><b>Result Summary</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TASK__RESULT_SUMMARY = eINSTANCE.getTask_ResultSummary();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.
@@ -4257,6 +4980,14 @@ public interface OrchestrationPackage extends EPackage {
 		EReference ORCHESTRATOR__TASKS = eINSTANCE.getOrchestrator_Tasks();
 
 		/**
+		 * The meta object literal for the '<em><b>Tests</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__TESTS = eINSTANCE.getOrchestrator_Tests();
+
+		/**
 		 * The meta object literal for the '<em><b>Git</b></em>' containment reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4311,6 +5042,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EReference ORCHESTRATOR__NEURON_AI = eINSTANCE.getOrchestrator_NeuronAI();
+
+		/**
+		 * The meta object literal for the '<em><b>Remote Model</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__REMOTE_MODEL = eINSTANCE.getOrchestrator_RemoteModel();
 
 		/**
 		 * The meta object literal for the '<em><b>Ai Mode</b></em>' attribute feature.
@@ -4369,12 +5108,174 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute ORCHESTRATOR__OFFLINE_MODE = eINSTANCE.getOrchestrator_OfflineMode();
 
 		/**
-		 * The meta object literal for the '<em><b>Remote Model</b></em>' attribute feature.
+		 * The meta object literal for the '<em><b>Self Dev Session</b></em>' containment reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute ORCHESTRATOR__REMOTE_MODEL = eINSTANCE.getOrchestrator_RemoteModel();
+		EReference ORCHESTRATOR__SELF_DEV_SESSION = eINSTANCE.getOrchestrator_SelfDevSession();
+
+		/**
+		 * The meta object literal for the '<em><b>Database</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__DATABASE = eINSTANCE.getOrchestrator_Database();
+
+		/**
+		 * The meta object literal for the '<em><b>File Config</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__FILE_CONFIG = eINSTANCE.getOrchestrator_FileConfig();
+
+		/**
+		 * The meta object literal for the '<em><b>Shared Memory</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__SHARED_MEMORY = eINSTANCE.getOrchestrator_SharedMemory();
+
+		/**
+		 * The meta object literal for the '<em><b>Eclipse</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__ECLIPSE = eINSTANCE.getOrchestrator_Eclipse();
+
+		/**
+		 * The meta object literal for the '<em><b>Iterative Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__ITERATIVE_MODE = eINSTANCE.getOrchestrator_IterativeMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Self Iterative Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__SELF_ITERATIVE_MODE = eINSTANCE.getOrchestrator_SelfIterativeMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Ai Providers</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__AI_PROVIDERS = eINSTANCE.getOrchestrator_AiProviders();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl <em>AI Provider</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAIProvider()
+		 * @generated
+		 */
+		EClass AI_PROVIDER = eINSTANCE.getAIProvider();
+
+		/**
+		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__NAME = eINSTANCE.getAIProvider_Name();
+
+		/**
+		 * The meta object literal for the '<em><b>Url</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__URL = eINSTANCE.getAIProvider_Url();
+
+		/**
+		 * The meta object literal for the '<em><b>Api Key</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__API_KEY = eINSTANCE.getAIProvider_ApiKey();
+
+		/**
+		 * The meta object literal for the '<em><b>Format</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__FORMAT = eINSTANCE.getAIProvider_Format();
+
+		/**
+		 * The meta object literal for the '<em><b>Local</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__LOCAL = eINSTANCE.getAIProvider_Local();
+
+		/**
+		 * The meta object literal for the '<em><b>Default Model</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__DEFAULT_MODEL = eINSTANCE.getAIProvider_DefaultModel();
+
+		/**
+		 * The meta object literal for the '<em><b>Api Key Encrypted</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__API_KEY_ENCRYPTED = eINSTANCE.getAIProvider_ApiKeyEncrypted();
+
+		/**
+		 * The meta object literal for the '<em><b>Use Env Var</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__USE_ENV_VAR = eINSTANCE.getAIProvider_UseEnvVar();
+
+		/**
+		 * The meta object literal for the '<em><b>Env Var Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__ENV_VAR_NAME = eINSTANCE.getAIProvider_EnvVarName();
+
+		/**
+		 * The meta object literal for the '<em><b>State</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__STATE = eINSTANCE.getAIProvider_State();
+
+		/**
+		 * The meta object literal for the '<em><b>State Description</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__STATE_DESCRIPTION = eINSTANCE.getAIProvider_StateDescription();
+
+		/**
+		 * The meta object literal for the '<em><b>Rating</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__RATING = eINSTANCE.getAIProvider_Rating();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl <em>Git</em>}' class.
@@ -4603,14 +5504,6 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute OLLAMA__MODEL = eINSTANCE.getOllama_Model();
-
-		/**
-		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TEST__TYPE = eINSTANCE.getTest_Type();
 
 		/**
 		 * The meta object literal for the '<em><b>Path</b></em>' attribute feature.
@@ -4853,56 +5746,6 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute SECRET_RULE__ALLOWED_SECRETS = eINSTANCE.getSecretRule_AllowedSecrets();
 
 		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
-		 * @generated
-		 */
-		EEnum TASK_STATUS = eINSTANCE.getTaskStatus();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
-		 * @generated
-		 */
-		EEnum COMMAND_STATUS = eINSTANCE.getCommandStatus();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
-		 * @generated
-		 */
-		EEnum EXECUTION_MODE = eINSTANCE.getExecutionMode();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
-		 * @generated
-		 */
-		EEnum NEURON_TYPE = eINSTANCE.getNeuronType();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.AiMode
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
-		 * @generated
-		 */
-		EEnum AI_MODE = eINSTANCE.getAiMode();
-
-		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SelfDevSessionImpl <em>Self Dev Session</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -4959,7 +5802,90 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute SELF_DEV_SESSION__RATIONALE = eINSTANCE.getSelfDevSession_Rationale();
+
+		/**
+		 * The meta object literal for the '<em><b>Initial Request</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
 		EAttribute SELF_DEV_SESSION__INITIAL_REQUEST = eINSTANCE.getSelfDevSession_InitialRequest();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl <em>Database</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDatabase()
+		 * @generated
+		 */
+		EClass DATABASE = eINSTANCE.getDatabase();
+
+		/**
+		 * The meta object literal for the '<em><b>Url</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__URL = eINSTANCE.getDatabase_Url();
+
+		/**
+		 * The meta object literal for the '<em><b>Username</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__USERNAME = eINSTANCE.getDatabase_Username();
+
+		/**
+		 * The meta object literal for the '<em><b>Password</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__PASSWORD = eINSTANCE.getDatabase_Password();
+
+		/**
+		 * The meta object literal for the '<em><b>Driver</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__DRIVER = eINSTANCE.getDatabase_Driver();
+
+		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DATABASE__TEST_STATUS = eINSTANCE.getDatabase_TestStatus();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl <em>File Config</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileConfig()
+		 * @generated
+		 */
+		EClass FILE_CONFIG = eINSTANCE.getFileConfig();
+
+		/**
+		 * The meta object literal for the '<em><b>Local Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FILE_CONFIG__LOCAL_PATH = eINSTANCE.getFileConfig_LocalPath();
+
+		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FILE_CONFIG__TEST_STATUS = eINSTANCE.getFileConfig_TestStatus();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl <em>Iteration</em>}' class.
@@ -5044,6 +5970,48 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute ITERATION__RATIONALE = eINSTANCE.getIteration_Rationale();
 
 		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl <em>Eclipse</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEclipse()
+		 * @generated
+		 */
+		EClass ECLIPSE = eINSTANCE.getEclipse();
+
+		/**
+		 * The meta object literal for the '<em><b>Workspace</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__WORKSPACE = eINSTANCE.getEclipse_Workspace();
+
+		/**
+		 * The meta object literal for the '<em><b>Installation</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__INSTALLATION = eINSTANCE.getEclipse_Installation();
+
+		/**
+		 * The meta object literal for the '<em><b>Target Platform</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__TARGET_PLATFORM = eINSTANCE.getEclipse_TargetPlatform();
+
+		/**
+		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ECLIPSE__TEST_STATUS = eINSTANCE.getEclipse_TestStatus();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl <em>Evaluation Result</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -5102,6 +6070,316 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute EVALUATION_RESULT__USER_SATISFACTION = eINSTANCE.getEvaluationResult_UserSatisfaction();
 
 		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TestImpl <em>Test</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.TestImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTest()
+		 * @generated
+		 */
+		EClass TEST = eINSTANCE.getTest();
+
+		/**
+		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__ID = eINSTANCE.getTest_Id();
+
+		/**
+		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__NAME = eINSTANCE.getTest_Name();
+
+		/**
+		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__TYPE = eINSTANCE.getTest_Type();
+
+		/**
+		 * The meta object literal for the '<em><b>Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__PATH = eINSTANCE.getTest_Path();
+
+		/**
+		 * The meta object literal for the '<em><b>Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__STATUS = eINSTANCE.getTest_Status();
+
+		/**
+		 * The meta object literal for the '<em><b>Selected</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TEST__SELECTED = eINSTANCE.getTest_Selected();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.CommentImpl <em>Comment</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.CommentImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComment()
+		 * @generated
+		 */
+		EClass COMMENT = eINSTANCE.getComment();
+
+		/**
+		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMMENT__ID = eINSTANCE.getComment_Id();
+
+		/**
+		 * The meta object literal for the '<em><b>File Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMMENT__FILE_PATH = eINSTANCE.getComment_FilePath();
+
+		/**
+		 * The meta object literal for the '<em><b>Start Line</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMMENT__START_LINE = eINSTANCE.getComment_StartLine();
+
+		/**
+		 * The meta object literal for the '<em><b>End Line</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMMENT__END_LINE = eINSTANCE.getComment_EndLine();
+
+		/**
+		 * The meta object literal for the '<em><b>Author</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMMENT__AUTHOR = eINSTANCE.getComment_Author();
+
+		/**
+		 * The meta object literal for the '<em><b>Content</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMMENT__CONTENT = eINSTANCE.getComment_Content();
+
+		/**
+		 * The meta object literal for the '<em><b>Timestamp</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMMENT__TIMESTAMP = eINSTANCE.getComment_Timestamp();
+
+		/**
+		 * The meta object literal for the '<em><b>Resolved</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMMENT__RESOLVED = eINSTANCE.getComment_Resolved();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl <em>Diff Hunk</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.DiffHunkImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDiffHunk()
+		 * @generated
+		 */
+		EClass DIFF_HUNK = eINSTANCE.getDiffHunk();
+
+		/**
+		 * The meta object literal for the '<em><b>Header</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DIFF_HUNK__HEADER = eINSTANCE.getDiffHunk_Header();
+
+		/**
+		 * The meta object literal for the '<em><b>Lines</b></em>' attribute list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute DIFF_HUNK__LINES = eINSTANCE.getDiffHunk_Lines();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl <em>File Change</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.FileChangeImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileChange()
+		 * @generated
+		 */
+		EClass FILE_CHANGE = eINSTANCE.getFileChange();
+
+		/**
+		 * The meta object literal for the '<em><b>File Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FILE_CHANGE__FILE_PATH = eINSTANCE.getFileChange_FilePath();
+
+		/**
+		 * The meta object literal for the '<em><b>Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FILE_CHANGE__STATUS = eINSTANCE.getFileChange_Status();
+
+		/**
+		 * The meta object literal for the '<em><b>Hunks</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference FILE_CHANGE__HUNKS = eINSTANCE.getFileChange_Hunks();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl <em>Change Set</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.ChangeSetImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChangeSet()
+		 * @generated
+		 */
+		EClass CHANGE_SET = eINSTANCE.getChangeSet();
+
+		/**
+		 * The meta object literal for the '<em><b>Commit Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHANGE_SET__COMMIT_ID = eINSTANCE.getChangeSet_CommitId();
+
+		/**
+		 * The meta object literal for the '<em><b>Files</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference CHANGE_SET__FILES = eINSTANCE.getChangeSet_Files();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl <em>Review Session</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewSession()
+		 * @generated
+		 */
+		EClass REVIEW_SESSION = eINSTANCE.getReviewSession();
+
+		/**
+		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute REVIEW_SESSION__ID = eINSTANCE.getReviewSession_Id();
+
+		/**
+		 * The meta object literal for the '<em><b>Change Set</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference REVIEW_SESSION__CHANGE_SET = eINSTANCE.getReviewSession_ChangeSet();
+
+		/**
+		 * The meta object literal for the '<em><b>Comments</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference REVIEW_SESSION__COMMENTS = eINSTANCE.getReviewSession_Comments();
+
+		/**
+		 * The meta object literal for the '<em><b>Decision</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute REVIEW_SESSION__DECISION = eINSTANCE.getReviewSession_Decision();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
+		 * @generated
+		 */
+		EEnum TASK_STATUS = eINSTANCE.getTaskStatus();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
+		 * @generated
+		 */
+		EEnum COMMAND_STATUS = eINSTANCE.getCommandStatus();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
+		 * @generated
+		 */
+		EEnum EXECUTION_MODE = eINSTANCE.getExecutionMode();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
+		 * @generated
+		 */
+		EEnum NEURON_TYPE = eINSTANCE.getNeuronType();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.AiMode
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
+		 * @generated
+		 */
+		EEnum AI_MODE = eINSTANCE.getAiMode();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -5132,216 +6410,6 @@ public interface OrchestrationPackage extends EPackage {
 		EEnum SELF_DEV_DECISION = eINSTANCE.getSelfDevDecision();
 
 		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl <em>Database</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.DatabaseImpl
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDatabase()
-		 * @generated
-		 */
-		EClass DATABASE = eINSTANCE.getDatabase();
-
-		/**
-		 * The meta object literal for the '<em><b>Url</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DATABASE__URL = eINSTANCE.getDatabase_Url();
-
-		/**
-		 * The meta object literal for the '<em><b>Username</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DATABASE__USERNAME = eINSTANCE.getDatabase_Username();
-
-		/**
-		 * The meta object literal for the '<em><b>Password</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DATABASE__PASSWORD = eINSTANCE.getDatabase_Password();
-
-		/**
-		 * The meta object literal for the '<em><b>Driver</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DATABASE__DRIVER = eINSTANCE.getDatabase_Driver();
-
-		/**
-		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DATABASE__TEST_STATUS = eINSTANCE.getDatabase_TestStatus();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl <em>File Config</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.FileConfigImpl
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileConfig()
-		 * @generated
-		 */
-		EClass FILE_CONFIG = eINSTANCE.getFileConfig();
-
-		/**
-		 * The meta object literal for the '<em><b>Local Path</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute FILE_CONFIG__LOCAL_PATH = eINSTANCE.getFileConfig_LocalPath();
-
-		/**
-		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute FILE_CONFIG__TEST_STATUS = eINSTANCE.getFileConfig_TestStatus();
-
-		/**
-		 * The meta object literal for the '<em><b>Database</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference ORCHESTRATOR__DATABASE = eINSTANCE.getOrchestrator_Database();
-
-		/**
-		 * The meta object literal for the '<em><b>File Config</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference ORCHESTRATOR__FILE_CONFIG = eINSTANCE.getOrchestrator_FileConfig();
-
-		/**
-		 * The meta object literal for the '<em><b>Eclipse</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference ORCHESTRATOR__ECLIPSE = eINSTANCE.getOrchestrator_Eclipse();
-
-		/**
-		 * The meta object literal for the '<em><b>Self Dev Session</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference ORCHESTRATOR__SELF_DEV_SESSION = eINSTANCE.getOrchestrator_SelfDevSession();
-
-		/**
-		 * The meta object literal for the '<em><b>Shared Memory</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ORCHESTRATOR__SHARED_MEMORY = eINSTANCE.getOrchestrator_SharedMemory();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl <em>Eclipse</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEclipse()
-		 * @generated
-		 */
-		EClass ECLIPSE = eINSTANCE.getEclipse();
-
-		/**
-		 * The meta object literal for the '<em><b>Workspace</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ECLIPSE__WORKSPACE = eINSTANCE.getEclipse_Workspace();
-
-		/**
-		 * The meta object literal for the '<em><b>Installation</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ECLIPSE__INSTALLATION = eINSTANCE.getEclipse_Installation();
-
-		/**
-		 * The meta object literal for the '<em><b>Target Platform</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ECLIPSE__TARGET_PLATFORM = eINSTANCE.getEclipse_TargetPlatform();
-
-		/**
-		 * The meta object literal for the '<em><b>Test Status</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ECLIPSE__TEST_STATUS = eINSTANCE.getEclipse_TestStatus();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TestImpl <em>Test</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.TestImpl
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTest()
-		 * @generated
-		 */
-		EClass TEST = eINSTANCE.getTest();
-
-		/**
-		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TEST__ID = eINSTANCE.getTest_Id();
-		EAttribute ORCHESTRATOR__ITERATIVE_MODE = eINSTANCE.getOrchestrator_IterativeMode();
-		EAttribute ORCHESTRATOR__SELF_ITERATIVE_MODE = eINSTANCE.getOrchestrator_SelfIterativeMode();
-
-		/**
-		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TEST__NAME = eINSTANCE.getTest_Name();
-
-		/**
-		 * The meta object literal for the '<em><b>Path</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TEST__PATH = eINSTANCE.getTest_Path();
-
-		/**
-		 * The meta object literal for the '<em><b>Status</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TEST__STATUS = eINSTANCE.getTest_Status();
-
-		/**
-		 * The meta object literal for the '<em><b>Selected</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TEST__SELECTED = eINSTANCE.getTest_Selected();
-
-		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -5351,50 +6419,16 @@ public interface OrchestrationPackage extends EPackage {
 		 */
 		EEnum TEST_STATUS = eINSTANCE.getTestStatus();
 
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.ReviewDecision
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
+		 * @generated
+		 */
 		EEnum REVIEW_DECISION = eINSTANCE.getReviewDecision();
-		EClass COMMENT = eINSTANCE.getComment();
-		EAttribute COMMENT__ID = eINSTANCE.getComment_Id();
-		EAttribute COMMENT__FILE_PATH = eINSTANCE.getComment_FilePath();
-		EAttribute COMMENT__START_LINE = eINSTANCE.getComment_StartLine();
-		EAttribute COMMENT__END_LINE = eINSTANCE.getComment_EndLine();
-		EAttribute COMMENT__AUTHOR = eINSTANCE.getComment_Author();
-		EAttribute COMMENT__CONTENT = eINSTANCE.getComment_Content();
-		EAttribute COMMENT__TIMESTAMP = eINSTANCE.getComment_Timestamp();
-		EAttribute COMMENT__RESOLVED = eINSTANCE.getComment_Resolved();
 
-		EClass DIFF_HUNK = eINSTANCE.getDiffHunk();
-		EAttribute DIFF_HUNK__HEADER = eINSTANCE.getDiffHunk_Header();
-		EAttribute DIFF_HUNK__LINES = eINSTANCE.getDiffHunk_Lines();
-
-		EClass FILE_CHANGE = eINSTANCE.getFileChange();
-		EAttribute FILE_CHANGE__FILE_PATH = eINSTANCE.getFileChange_FilePath();
-		EAttribute FILE_CHANGE__STATUS = eINSTANCE.getFileChange_Status();
-		EReference FILE_CHANGE__HUNKS = eINSTANCE.getFileChange_Hunks();
-
-		EClass CHANGE_SET = eINSTANCE.getChangeSet();
-		EAttribute CHANGE_SET__COMMIT_ID = eINSTANCE.getChangeSet_CommitId();
-		EReference CHANGE_SET__FILES = eINSTANCE.getChangeSet_Files();
-
-		EClass REVIEW_SESSION = eINSTANCE.getReviewSession();
-		EAttribute REVIEW_SESSION__ID = eINSTANCE.getReviewSession_Id();
-		EReference REVIEW_SESSION__CHANGE_SET = eINSTANCE.getReviewSession_ChangeSet();
-		EReference REVIEW_SESSION__COMMENTS = eINSTANCE.getReviewSession_Comments();
-		EAttribute REVIEW_SESSION__DECISION = eINSTANCE.getReviewSession_Decision();
-
-		EReference ORCHESTRATOR__AI_PROVIDERS = eINSTANCE.getOrchestrator_AiProviders();
-		EClass AI_PROVIDER = eINSTANCE.getAIProvider();
-		EAttribute AI_PROVIDER__NAME = eINSTANCE.getAIProvider_Name();
-		EAttribute AI_PROVIDER__URL = eINSTANCE.getAIProvider_Url();
-		EAttribute AI_PROVIDER__API_KEY = eINSTANCE.getAIProvider_ApiKey();
-		EAttribute AI_PROVIDER__FORMAT = eINSTANCE.getAIProvider_Format();
-		EAttribute AI_PROVIDER__LOCAL = eINSTANCE.getAIProvider_Local();
-		EAttribute AI_PROVIDER__DEFAULT_MODEL = eINSTANCE.getAIProvider_DefaultModel();
-		EAttribute AI_PROVIDER__API_KEY_ENCRYPTED = eINSTANCE.getAIProvider_ApiKeyEncrypted();
-		EAttribute AI_PROVIDER__USE_ENV_VAR = eINSTANCE.getAIProvider_UseEnvVar();
-		EAttribute AI_PROVIDER__ENV_VAR_NAME = eINSTANCE.getAIProvider_EnvVarName();
-		EAttribute AI_PROVIDER__STATE = eINSTANCE.getAIProvider_State();
-		EAttribute AI_PROVIDER__STATE_DESCRIPTION = eINSTANCE.getAIProvider_StateDescription();
-		EAttribute AI_PROVIDER__RATING = eINSTANCE.getAIProvider_Rating();
 	}
 
 } //OrchestrationPackage

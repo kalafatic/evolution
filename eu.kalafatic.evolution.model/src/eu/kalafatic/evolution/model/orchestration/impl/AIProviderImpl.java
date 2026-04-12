@@ -1,14 +1,43 @@
+/**
+ */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+
 import org.eclipse.emf.common.notify.Notification;
+
 import org.eclipse.emf.ecore.EClass;
+
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
+/**
+ * <!-- begin-user-doc -->
+ * An implementation of the model object '<em><b>AI Provider</b></em>'.
+ * <!-- end-user-doc -->
+ * <p>
+ * The following features are implemented:
+ * </p>
+ * <ul>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getName <em>Name</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getUrl <em>Url</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getApiKey <em>Api Key</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getFormat <em>Format</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#isLocal <em>Local</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getDefaultModel <em>Default Model</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#isApiKeyEncrypted <em>Api Key Encrypted</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#isUseEnvVar <em>Use Env Var</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getEnvVarName <em>Env Var Name</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getState <em>State</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getStateDescription <em>State Description</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getRating <em>Rating</em>}</li>
+ * </ul>
+ *
+ * @generated
+ */
 public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIProvider {
-    /**
+	/**
 	 * The default value of the '{@link #getName() <em>Name</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -17,11 +46,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final String NAME_EDEFAULT = null;
-				/**
-     * @generated NOT
-     */
-    protected String name;
-    /**
+
+	/**
+	 * The cached value of the '{@link #getName() <em>Name</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getName()
+	 * @generated
+	 * @ordered
+	 */
+	protected String name = NAME_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getUrl() <em>Url</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -30,8 +66,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final String URL_EDEFAULT = null;
-				protected String url;
-    /**
+
+	/**
+	 * The cached value of the '{@link #getUrl() <em>Url</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getUrl()
+	 * @generated
+	 * @ordered
+	 */
+	protected String url = URL_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getApiKey() <em>Api Key</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -40,8 +86,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final String API_KEY_EDEFAULT = null;
-				protected String apiKey;
-    /**
+
+	/**
+	 * The cached value of the '{@link #getApiKey() <em>Api Key</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getApiKey()
+	 * @generated
+	 * @ordered
+	 */
+	protected String apiKey = API_KEY_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getFormat() <em>Format</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -50,8 +106,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final String FORMAT_EDEFAULT = null;
-				protected String format;
-    /**
+
+	/**
+	 * The cached value of the '{@link #getFormat() <em>Format</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getFormat()
+	 * @generated
+	 * @ordered
+	 */
+	protected String format = FORMAT_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #isLocal() <em>Local</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -60,8 +126,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final boolean LOCAL_EDEFAULT = false;
-				protected boolean local;
-    /**
+
+	/**
+	 * The cached value of the '{@link #isLocal() <em>Local</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isLocal()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean local = LOCAL_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getDefaultModel() <em>Default Model</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -70,8 +146,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final String DEFAULT_MODEL_EDEFAULT = null;
-				protected String defaultModel;
-    /**
+
+	/**
+	 * The cached value of the '{@link #getDefaultModel() <em>Default Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDefaultModel()
+	 * @generated
+	 * @ordered
+	 */
+	protected String defaultModel = DEFAULT_MODEL_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #isApiKeyEncrypted() <em>Api Key Encrypted</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -80,8 +166,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final boolean API_KEY_ENCRYPTED_EDEFAULT = false;
-				protected boolean apiKeyEncrypted;
-    /**
+
+	/**
+	 * The cached value of the '{@link #isApiKeyEncrypted() <em>Api Key Encrypted</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isApiKeyEncrypted()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean apiKeyEncrypted = API_KEY_ENCRYPTED_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #isUseEnvVar() <em>Use Env Var</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -90,8 +186,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final boolean USE_ENV_VAR_EDEFAULT = false;
-				protected boolean useEnvVar;
-    /**
+
+	/**
+	 * The cached value of the '{@link #isUseEnvVar() <em>Use Env Var</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isUseEnvVar()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean useEnvVar = USE_ENV_VAR_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getEnvVarName() <em>Env Var Name</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -100,8 +206,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final String ENV_VAR_NAME_EDEFAULT = null;
-				protected String envVarName;
-    /**
+
+	/**
+	 * The cached value of the '{@link #getEnvVarName() <em>Env Var Name</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getEnvVarName()
+	 * @generated
+	 * @ordered
+	 */
+	protected String envVarName = ENV_VAR_NAME_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getState() <em>State</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -110,8 +226,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final String STATE_EDEFAULT = null;
-				protected String state;
-    /**
+
+	/**
+	 * The cached value of the '{@link #getState() <em>State</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getState()
+	 * @generated
+	 * @ordered
+	 */
+	protected String state = STATE_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getStateDescription() <em>State Description</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -120,8 +246,18 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final String STATE_DESCRIPTION_EDEFAULT = null;
-				protected String stateDescription;
-    /**
+
+	/**
+	 * The cached value of the '{@link #getStateDescription() <em>State Description</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getStateDescription()
+	 * @generated
+	 * @ordered
+	 */
+	protected String stateDescription = STATE_DESCRIPTION_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getRating() <em>Rating</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -130,201 +266,397 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected static final int RATING_EDEFAULT = 0;
-				protected int rating;
 
-    protected AIProviderImpl() { super(); }
+	/**
+	 * The cached value of the '{@link #getRating() <em>Rating</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRating()
+	 * @generated
+	 * @ordered
+	 */
+	protected int rating = RATING_EDEFAULT;
 
-    @Override protected EClass eStaticClass() { return OrchestrationPackage.Literals.AI_PROVIDER; }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected AIProviderImpl() {
+		super();
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public String getName() { return name; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setName(String newName) {
-        String oldName = name; name = newName;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__NAME, oldName, name));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	protected EClass eStaticClass() {
+		return OrchestrationPackage.Literals.AI_PROVIDER;
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public String getUrl() { return url; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setUrl(String newUrl) {
-        String oldUrl = url; url = newUrl;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__URL, oldUrl, url));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getName() {
+		return name;
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public String getApiKey() { return apiKey; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setApiKey(String newApiKey) {
-        String oldApiKey = apiKey; apiKey = newApiKey;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__API_KEY, oldApiKey, apiKey));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setName(String newName) {
+		String oldName = name;
+		name = newName;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__NAME, oldName, name));
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public String getFormat() { return format; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setFormat(String newFormat) {
-        String oldFormat = format; format = newFormat;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__FORMAT, oldFormat, format));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getUrl() {
+		return url;
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public boolean isLocal() { return local; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setLocal(boolean newLocal) {
-        boolean oldLocal = local; local = newLocal;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__LOCAL, oldLocal, local));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setUrl(String newUrl) {
+		String oldUrl = url;
+		url = newUrl;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__URL, oldUrl, url));
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public String getDefaultModel() { return defaultModel; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setDefaultModel(String newDefaultModel) {
-        String oldDefaultModel = defaultModel; defaultModel = newDefaultModel;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__DEFAULT_MODEL, oldDefaultModel, defaultModel));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getApiKey() {
+		return apiKey;
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public boolean isApiKeyEncrypted() { return apiKeyEncrypted; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setApiKeyEncrypted(boolean newApiKeyEncrypted) {
-        boolean oldApiKeyEncrypted = apiKeyEncrypted; apiKeyEncrypted = newApiKeyEncrypted;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__API_KEY_ENCRYPTED, oldApiKeyEncrypted, apiKeyEncrypted));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setApiKey(String newApiKey) {
+		String oldApiKey = apiKey;
+		apiKey = newApiKey;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__API_KEY, oldApiKey, apiKey));
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public boolean isUseEnvVar() { return useEnvVar; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setUseEnvVar(boolean newUseEnvVar) {
-        boolean oldUseEnvVar = useEnvVar; useEnvVar = newUseEnvVar;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__USE_ENV_VAR, oldUseEnvVar, useEnvVar));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getFormat() {
+		return format;
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public String getEnvVarName() { return envVarName; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setEnvVarName(String newEnvVarName) {
-        String oldEnvVarName = envVarName; envVarName = newEnvVarName;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__ENV_VAR_NAME, oldEnvVarName, envVarName));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setFormat(String newFormat) {
+		String oldFormat = format;
+		format = newFormat;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__FORMAT, oldFormat, format));
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public String getState() { return state; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setState(String newState) {
-        String oldState = state; state = newState;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__STATE, oldState, state));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isLocal() {
+		return local;
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public String getStateDescription() { return stateDescription; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setStateDescription(String newStateDescription) {
-        String oldStateDescription = stateDescription; stateDescription = newStateDescription;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__STATE_DESCRIPTION, oldStateDescription, stateDescription));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setLocal(boolean newLocal) {
+		boolean oldLocal = local;
+		local = newLocal;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__LOCAL, oldLocal, local));
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override public int getRating() { return rating; }
-    /**
-     * @generated NOT
-     */
-    @Override public void setRating(int newRating) {
-        int oldRating = rating; rating = newRating;
-        if (eNotificationRequired()) eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING, oldRating, rating));
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getDefaultModel() {
+		return defaultModel;
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override
-    public Object eGet(int featureID, boolean resolve, boolean coreType) {
-        switch (featureID) {
-            case OrchestrationPackage.AI_PROVIDER__NAME: return getName();
-            case OrchestrationPackage.AI_PROVIDER__URL: return getUrl();
-            case OrchestrationPackage.AI_PROVIDER__API_KEY: return getApiKey();
-            case OrchestrationPackage.AI_PROVIDER__FORMAT: return getFormat();
-            case OrchestrationPackage.AI_PROVIDER__LOCAL: return isLocal();
-            case OrchestrationPackage.AI_PROVIDER__DEFAULT_MODEL: return getDefaultModel();
-            case OrchestrationPackage.AI_PROVIDER__API_KEY_ENCRYPTED: return isApiKeyEncrypted();
-            case OrchestrationPackage.AI_PROVIDER__USE_ENV_VAR: return isUseEnvVar();
-            case OrchestrationPackage.AI_PROVIDER__ENV_VAR_NAME: return getEnvVarName();
-            case OrchestrationPackage.AI_PROVIDER__STATE: return getState();
-            case OrchestrationPackage.AI_PROVIDER__STATE_DESCRIPTION: return getStateDescription();
-            case OrchestrationPackage.AI_PROVIDER__RATING: return getRating();
-        }
-        return super.eGet(featureID, resolve, coreType);
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setDefaultModel(String newDefaultModel) {
+		String oldDefaultModel = defaultModel;
+		defaultModel = newDefaultModel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__DEFAULT_MODEL, oldDefaultModel, defaultModel));
+	}
 
-    /**
-     * @generated NOT
-     */
-    @Override
-    public void eSet(int featureID, Object newValue) {
-        switch (featureID) {
-            case OrchestrationPackage.AI_PROVIDER__NAME: setName((String)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__URL: setUrl((String)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__API_KEY: setApiKey((String)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__FORMAT: setFormat((String)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__LOCAL: setLocal((Boolean)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__DEFAULT_MODEL: setDefaultModel((String)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__API_KEY_ENCRYPTED: setApiKeyEncrypted((Boolean)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__USE_ENV_VAR: setUseEnvVar((Boolean)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__ENV_VAR_NAME: setEnvVarName((String)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__STATE: setState((String)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__STATE_DESCRIPTION: setStateDescription((String)newValue); return;
-            case OrchestrationPackage.AI_PROVIDER__RATING: setRating((Integer)newValue); return;
-        }
-        super.eSet(featureID, newValue);
-    }
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isApiKeyEncrypted() {
+		return apiKeyEncrypted;
+	}
 
-				/**
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setApiKeyEncrypted(boolean newApiKeyEncrypted) {
+		boolean oldApiKeyEncrypted = apiKeyEncrypted;
+		apiKeyEncrypted = newApiKeyEncrypted;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__API_KEY_ENCRYPTED, oldApiKeyEncrypted, apiKeyEncrypted));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isUseEnvVar() {
+		return useEnvVar;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setUseEnvVar(boolean newUseEnvVar) {
+		boolean oldUseEnvVar = useEnvVar;
+		useEnvVar = newUseEnvVar;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__USE_ENV_VAR, oldUseEnvVar, useEnvVar));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getEnvVarName() {
+		return envVarName;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setEnvVarName(String newEnvVarName) {
+		String oldEnvVarName = envVarName;
+		envVarName = newEnvVarName;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__ENV_VAR_NAME, oldEnvVarName, envVarName));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getState() {
+		return state;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setState(String newState) {
+		String oldState = state;
+		state = newState;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__STATE, oldState, state));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getStateDescription() {
+		return stateDescription;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setStateDescription(String newStateDescription) {
+		String oldStateDescription = stateDescription;
+		stateDescription = newStateDescription;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__STATE_DESCRIPTION, oldStateDescription, stateDescription));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getRating() {
+		return rating;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRating(int newRating) {
+		int oldRating = rating;
+		rating = newRating;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING, oldRating, rating));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Object eGet(int featureID, boolean resolve, boolean coreType) {
+		switch (featureID) {
+			case OrchestrationPackage.AI_PROVIDER__NAME:
+				return getName();
+			case OrchestrationPackage.AI_PROVIDER__URL:
+				return getUrl();
+			case OrchestrationPackage.AI_PROVIDER__API_KEY:
+				return getApiKey();
+			case OrchestrationPackage.AI_PROVIDER__FORMAT:
+				return getFormat();
+			case OrchestrationPackage.AI_PROVIDER__LOCAL:
+				return isLocal();
+			case OrchestrationPackage.AI_PROVIDER__DEFAULT_MODEL:
+				return getDefaultModel();
+			case OrchestrationPackage.AI_PROVIDER__API_KEY_ENCRYPTED:
+				return isApiKeyEncrypted();
+			case OrchestrationPackage.AI_PROVIDER__USE_ENV_VAR:
+				return isUseEnvVar();
+			case OrchestrationPackage.AI_PROVIDER__ENV_VAR_NAME:
+				return getEnvVarName();
+			case OrchestrationPackage.AI_PROVIDER__STATE:
+				return getState();
+			case OrchestrationPackage.AI_PROVIDER__STATE_DESCRIPTION:
+				return getStateDescription();
+			case OrchestrationPackage.AI_PROVIDER__RATING:
+				return getRating();
+		}
+		return super.eGet(featureID, resolve, coreType);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void eSet(int featureID, Object newValue) {
+		switch (featureID) {
+			case OrchestrationPackage.AI_PROVIDER__NAME:
+				setName((String)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__URL:
+				setUrl((String)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__API_KEY:
+				setApiKey((String)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__FORMAT:
+				setFormat((String)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__LOCAL:
+				setLocal((Boolean)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__DEFAULT_MODEL:
+				setDefaultModel((String)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__API_KEY_ENCRYPTED:
+				setApiKeyEncrypted((Boolean)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__USE_ENV_VAR:
+				setUseEnvVar((Boolean)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__ENV_VAR_NAME:
+				setEnvVarName((String)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__STATE:
+				setState((String)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__STATE_DESCRIPTION:
+				setStateDescription((String)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__RATING:
+				setRating((Integer)newValue);
+				return;
+		}
+		super.eSet(featureID, newValue);
+	}
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -372,7 +704,7 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 		super.eUnset(featureID);
 	}
 
-				/**
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -408,7 +740,7 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 		return super.eIsSet(featureID);
 	}
 
-				/**
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -445,4 +777,5 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 		result.append(')');
 		return result.toString();
 	}
-}
+
+} //AIProviderImpl

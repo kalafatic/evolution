@@ -24,12 +24,8 @@ public interface IterationValidator {
 	boolean validateTasks(EList<Task> value);
 	boolean validateEvaluationResult(EvaluationResult value);
 	boolean validateStatus(IterationStatus value);
-
 	boolean validatePhase(String value);
-
 	boolean validateComments(String value);
-
 	boolean validateRating(int value);
-
 	boolean validateRationale(String value);
 }

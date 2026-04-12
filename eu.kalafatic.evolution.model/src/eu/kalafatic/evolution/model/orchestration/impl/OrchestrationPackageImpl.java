@@ -3,24 +3,21 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.AIProvider;
-import org.eclipse.emf.ecore.EAttribute;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EEnum;
-import org.eclipse.emf.ecore.EPackage;
-import org.eclipse.emf.ecore.EReference;
-import org.eclipse.emf.ecore.impl.EPackageImpl;
-
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
+import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
+import eu.kalafatic.evolution.model.orchestration.Comment;
 import eu.kalafatic.evolution.model.orchestration.Database;
+import eu.kalafatic.evolution.model.orchestration.DiffHunk;
 import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
+import eu.kalafatic.evolution.model.orchestration.FileChange;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
@@ -34,21 +31,25 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
+import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
-import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
-import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.model.orchestration.TestStatus;
-import eu.kalafatic.evolution.model.orchestration.Comment;
-import eu.kalafatic.evolution.model.orchestration.DiffHunk;
-import eu.kalafatic.evolution.model.orchestration.FileChange;
-import eu.kalafatic.evolution.model.orchestration.ChangeSet;
+
+import org.eclipse.emf.ecore.EAttribute;
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EEnum;
+import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.EReference;
+
+import org.eclipse.emf.ecore.impl.EPackageImpl;
 
 /**
  * <!-- begin-user-doc -->
@@ -62,116 +63,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass testEClass = null;
-	private EClass commentEClass = null;
-	private EClass diffHunkEClass = null;
-	private EClass fileChangeEClass = null;
-	private EClass changeSetEClass = null;
-	private EClass reviewSessionEClass = null;
-	private EClass aiProviderEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EEnum testStatusEEnum = null;
-	private EEnum reviewDecisionEEnum = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass taskEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public EAttribute getTask_Rationale() {
-		return (EAttribute)taskEClass.getEStructuralFeatures().get(15);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_IterativeMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(25);
-	}
-
-	@Override
-	public EAttribute getOrchestrator_SelfIterativeMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(26);
-	}
-
-	@Override
-	public EAttribute getSelfDevSession_InitialRequest() {
-		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(6);
-	}
-	
-	public EAttribute getTask_ScheduledTime() {
-		return (EAttribute)taskEClass.getEStructuralFeatures().get(16);
-	}
-
-	@Override
-	public EAttribute getTask_Selected() {
-		return (EAttribute)taskEClass.getEStructuralFeatures().get(17);
-	}
-
-	@Override public EEnum getReviewDecision() { return reviewDecisionEEnum; }
-	@Override public EClass getComment() { return commentEClass; }
-	@Override public EAttribute getComment_Id() { return (EAttribute)commentEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getComment_FilePath() { return (EAttribute)commentEClass.getEStructuralFeatures().get(1); }
-	@Override public EAttribute getComment_StartLine() { return (EAttribute)commentEClass.getEStructuralFeatures().get(2); }
-	@Override public EAttribute getComment_EndLine() { return (EAttribute)commentEClass.getEStructuralFeatures().get(3); }
-	@Override public EAttribute getComment_Author() { return (EAttribute)commentEClass.getEStructuralFeatures().get(4); }
-	@Override public EAttribute getComment_Content() { return (EAttribute)commentEClass.getEStructuralFeatures().get(5); }
-	@Override public EAttribute getComment_Timestamp() { return (EAttribute)commentEClass.getEStructuralFeatures().get(6); }
-	@Override public EAttribute getComment_Resolved() { return (EAttribute)commentEClass.getEStructuralFeatures().get(7); }
-	@Override public EClass getDiffHunk() { return diffHunkEClass; }
-	@Override public EAttribute getDiffHunk_Header() { return (EAttribute)diffHunkEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getDiffHunk_Lines() { return (EAttribute)diffHunkEClass.getEStructuralFeatures().get(1); }
-	@Override public EClass getFileChange() { return fileChangeEClass; }
-	@Override public EAttribute getFileChange_FilePath() { return (EAttribute)fileChangeEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getFileChange_Status() { return (EAttribute)fileChangeEClass.getEStructuralFeatures().get(1); }
-	@Override public EReference getFileChange_Hunks() { return (EReference)fileChangeEClass.getEStructuralFeatures().get(2); }
-	@Override public EClass getChangeSet() { return changeSetEClass; }
-	@Override public EAttribute getChangeSet_CommitId() { return (EAttribute)changeSetEClass.getEStructuralFeatures().get(0); }
-	@Override public EReference getChangeSet_Files() { return (EReference)changeSetEClass.getEStructuralFeatures().get(1); }
-	@Override public EClass getReviewSession() { return reviewSessionEClass; }
-	@Override public EAttribute getReviewSession_Id() { return (EAttribute)reviewSessionEClass.getEStructuralFeatures().get(0); }
-	@Override public EReference getReviewSession_ChangeSet() { return (EReference)reviewSessionEClass.getEStructuralFeatures().get(1); }
-	@Override public EReference getReviewSession_Comments() { return (EReference)reviewSessionEClass.getEStructuralFeatures().get(2); }
-	@Override public EAttribute getReviewSession_Decision() { return (EAttribute)reviewSessionEClass.getEStructuralFeatures().get(3); }
-
-	@Override public EReference getOrchestrator_AiProviders() { return (EReference)orchestratorEClass.getEStructuralFeatures().get(27); }
-	@Override public EClass getAIProvider() { return aiProviderEClass; }
-	@Override public EAttribute getAIProvider_Name() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(0); }
-	@Override public EAttribute getAIProvider_Url() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(1); }
-	@Override public EAttribute getAIProvider_ApiKey() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(2); }
-	@Override public EAttribute getAIProvider_Format() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(3); }
-	@Override public EAttribute getAIProvider_Local() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(4); }
-	@Override public EAttribute getAIProvider_DefaultModel() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(5); }
-	@Override public EAttribute getAIProvider_ApiKeyEncrypted() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(6); }
-	@Override public EAttribute getAIProvider_UseEnvVar() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(7); }
-	@Override public EAttribute getAIProvider_EnvVarName() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(8); }
-	@Override public EAttribute getAIProvider_State() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(9); }
-	@Override public EAttribute getAIProvider_StateDescription() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(10); }
-	@Override public EAttribute getAIProvider_Rating() { return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(11); }
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass eclipseEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -186,6 +78,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EClass orchestratorEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass aiProviderEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -255,20 +154,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass databaseEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass fileConfigEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass ruleEClass = null;
 
 	/**
@@ -311,6 +196,20 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass databaseEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass fileConfigEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass iterationEClass = null;
 
 	/**
@@ -318,7 +217,56 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass eclipseEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass evaluationResultEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass testEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass commentEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass diffHunkEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass fileChangeEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass changeSetEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass reviewSessionEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -377,6 +325,20 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	private EEnum selfDevDecisionEEnum = null;
 
 	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum testStatusEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum reviewDecisionEEnum = null;
+
+	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
 	 * {@link org.eclipse.emf.ecore.EPackage.Registry EPackage.Registry} by the package
 	 * package URI value.
@@ -389,10 +351,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @see org.eclipse.emf.ecore.EPackage.Registry
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#eNS_URI
 	 * @see #init()
-	 * @generated NOT
+	 * @generated
 	 */
 	private OrchestrationPackageImpl() {
-		super(eNS_URI, new OrchestrationFactoryImpl());
+		super(eNS_URI, OrchestrationFactory.eINSTANCE);
 	}
 	/**
 	 * <!-- begin-user-doc -->
@@ -437,21 +399,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	}
 
 	/**
-	 * @generated NOT
-	 */
-	public EReference getOrchestrator_Eclipse() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(23);
-	}
-
-	/**
-	 * @generated NOT
-	 */
-	@Override
-	public EReference getOrchestrator_Tests() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(24);
-	}
-
-	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -459,87 +406,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EClass getTask() {
 		return taskEClass;
-	}
-
-	public EClass getEclipse() {
-		return eclipseEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getEclipse_Workspace() {
-		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getEclipse_Installation() {
-		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getEclipse_TargetPlatform() {
-		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getEclipse_TestStatus() {
-		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(3);
-	}
-
-	@Override
-	public EClass getTest() { return testEClass; }
-	@Override
-	public EAttribute getTest_Id() { return (EAttribute)testEClass.getEStructuralFeatures().get(0); }
-	@Override
-	public EAttribute getTest_Name() { return (EAttribute)testEClass.getEStructuralFeatures().get(1); }
-	@Override
-	public EAttribute getTest_Type() { return (EAttribute)testEClass.getEStructuralFeatures().get(2); }
-	@Override
-	public EAttribute getTest_Path() { return (EAttribute)testEClass.getEStructuralFeatures().get(3); }
-	@Override
-	public EAttribute getTest_Status() { return (EAttribute)testEClass.getEStructuralFeatures().get(4); }
-	@Override
-	public EAttribute getTest_Selected() { return (EAttribute)testEClass.getEStructuralFeatures().get(5); }
-	@Override
-	public EEnum getTestStatus() { return testStatusEEnum; }
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getDatabase() {
-		return databaseEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getFileConfig() {
-		return fileConfigEClass;
 	}
 
 	/**
@@ -698,6 +564,36 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getTask_Rationale() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(15);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTask_ScheduledTime() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(16);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTask_Selected() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(17);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getAgent() {
 		return agentEClass;
 	}
@@ -808,6 +704,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EReference getOrchestrator_Tests() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EReference getOrchestrator_Git() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(5);
 	}
@@ -870,6 +776,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EReference getOrchestrator_NeuronAI() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(11);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_RemoteModel() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(12);
 	}
 
 	/**
@@ -988,8 +904,168 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EAttribute getOrchestrator_RemoteModel() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(12);
+	public EReference getOrchestrator_Eclipse() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(24);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_IterativeMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(25);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_SelfIterativeMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(26);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_AiProviders() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(27);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getAIProvider() {
+		return aiProviderEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Name() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Url() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_ApiKey() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Format() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Local() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_DefaultModel() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_ApiKeyEncrypted() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_UseEnvVar() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(7);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_EnvVarName() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(8);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_State() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(9);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_StateDescription() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(10);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_Rating() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(11);
 	}
 
 	/**
@@ -1060,56 +1136,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EClass getMaven() {
 		return mavenEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getDatabase_Url() {
-		return (EAttribute)databaseEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getDatabase_Username() {
-		return (EAttribute)databaseEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getDatabase_Password() {
-		return (EAttribute)databaseEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getDatabase_Driver() {
-		return (EAttribute)databaseEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getDatabase_TestStatus() {
-		return (EAttribute)databaseEClass.getEStructuralFeatures().get(4);
 	}
 
 	/**
@@ -1468,26 +1494,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EAttribute getFileConfig_LocalPath() {
-		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getFileConfig_TestStatus() {
-		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public EAttribute getRule_Name() {
 		return (EAttribute)ruleEClass.getEStructuralFeatures().get(0);
 	}
@@ -1688,6 +1694,106 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getSelfDevSession_InitialRequest() {
+		return (EAttribute)selfDevSessionEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getDatabase() {
+		return databaseEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Url() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Username() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Password() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_Driver() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDatabase_TestStatus() {
+		return (EAttribute)databaseEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getFileConfig() {
+		return fileConfigEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getFileConfig_LocalPath() {
+		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getFileConfig_TestStatus() {
+		return (EAttribute)fileConfigEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getIteration() {
 		return iterationEClass;
 	}
@@ -1788,6 +1894,56 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EClass getEclipse() {
+		return eclipseEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_Workspace() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_Installation() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_TargetPlatform() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getEclipse_TestStatus() {
+		return (EAttribute)eclipseEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getEvaluationResult() {
 		return evaluationResultEClass;
 	}
@@ -1850,6 +2006,316 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getEvaluationResult_UserSatisfaction() {
 		return (EAttribute)evaluationResultEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getTest() {
+		return testEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Id() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Name() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Type() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Path() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Status() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTest_Selected() {
+		return (EAttribute)testEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getComment() {
+		return commentEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_Id() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_FilePath() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_StartLine() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_EndLine() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_Author() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_Content() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_Timestamp() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComment_Resolved() {
+		return (EAttribute)commentEClass.getEStructuralFeatures().get(7);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getDiffHunk() {
+		return diffHunkEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDiffHunk_Header() {
+		return (EAttribute)diffHunkEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getDiffHunk_Lines() {
+		return (EAttribute)diffHunkEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getFileChange() {
+		return fileChangeEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getFileChange_FilePath() {
+		return (EAttribute)fileChangeEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getFileChange_Status() {
+		return (EAttribute)fileChangeEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getFileChange_Hunks() {
+		return (EReference)fileChangeEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getChangeSet() {
+		return changeSetEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChangeSet_CommitId() {
+		return (EAttribute)changeSetEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getChangeSet_Files() {
+		return (EReference)changeSetEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getReviewSession() {
+		return reviewSessionEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getReviewSession_Id() {
+		return (EAttribute)reviewSessionEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getReviewSession_ChangeSet() {
+		return (EReference)reviewSessionEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getReviewSession_Comments() {
+		return (EReference)reviewSessionEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getReviewSession_Decision() {
+		return (EAttribute)reviewSessionEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -1930,6 +2396,26 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EEnum getSelfDevDecision() {
 		return selfDevDecisionEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getTestStatus() {
+		return testStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getReviewDecision() {
+		return reviewDecisionEEnum;
 	}
 
 	/**

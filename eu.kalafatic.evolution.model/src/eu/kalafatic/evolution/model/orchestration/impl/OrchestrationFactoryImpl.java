@@ -2,24 +2,22 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EDataType;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EPackage;
-import org.eclipse.emf.ecore.impl.EFactoryImpl;
-import org.eclipse.emf.ecore.plugin.EcorePlugin;
-
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
+import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
+import eu.kalafatic.evolution.model.orchestration.Comment;
 import eu.kalafatic.evolution.model.orchestration.Database;
+import eu.kalafatic.evolution.model.orchestration.DiffHunk;
 import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
+import eu.kalafatic.evolution.model.orchestration.FileChange;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
@@ -34,21 +32,25 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
 import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
-import eu.kalafatic.evolution.model.orchestration.Comment;
-import eu.kalafatic.evolution.model.orchestration.DiffHunk;
-import eu.kalafatic.evolution.model.orchestration.FileChange;
-import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.model.orchestration.TestStatus;
+
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EDataType;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EPackage;
+
+import org.eclipse.emf.ecore.impl.EFactoryImpl;
+
+import org.eclipse.emf.ecore.plugin.EcorePlugin;
 
 /**
  * <!-- begin-user-doc -->
@@ -61,30 +63,19 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * Creates the default factory implementation.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	public static OrchestrationFactory init() {
 		try {
-			Object result = EPackage.Registry.INSTANCE.getEFactory(OrchestrationPackage.eNS_URI);
-			if (result instanceof OrchestrationFactory) {
-				return (OrchestrationFactory)result;
+			OrchestrationFactory theOrchestrationFactory = (OrchestrationFactory)EPackage.Registry.INSTANCE.getEFactory(OrchestrationPackage.eNS_URI);
+			if (theOrchestrationFactory != null) {
+				return theOrchestrationFactory;
 			}
 		}
 		catch (Exception exception) {
 			EcorePlugin.INSTANCE.log(exception);
 		}
 		return new OrchestrationFactoryImpl();
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public Eclipse createEclipse() {
-		EclipseImpl eclipse = new EclipseImpl();
-		return eclipse;
 	}
 
 	/**
@@ -137,28 +128,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public Database createDatabase() {
-		DatabaseImpl database = new DatabaseImpl();
-		return database;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public FileConfig createFileConfig() {
-		FileConfigImpl fileConfig = new FileConfigImpl();
-		return fileConfig;
 	}
 
 	/**
@@ -233,39 +202,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public SelfDevSession createSelfDevSession() {
-		SelfDevSessionImpl selfDevSession = new SelfDevSessionImpl();
-		return selfDevSession;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public Iteration createIteration() {
-		IterationImpl iteration = new IterationImpl();
-		return iteration;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EvaluationResult createEvaluationResult() {
-		EvaluationResultImpl evaluationResult = new EvaluationResultImpl();
-		return evaluationResult;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public Task createTask() {
 		TaskImpl task = new TaskImpl();
 		return task;
@@ -291,6 +227,17 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public Orchestrator createOrchestrator() {
 		OrchestratorImpl orchestrator = new OrchestratorImpl();
 		return orchestrator;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public AIProvider createAIProvider() {
+		AIProviderImpl aiProvider = new AIProviderImpl();
+		return aiProvider;
 	}
 
 	/**
@@ -382,23 +329,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	}
 
 	/**
-	 * @generated NOT
-	 */
-	@Override
-	public Test createTest() {
-		TestImpl test = new TestImpl();
-		return test;
-	}
-
-	@Override public Comment createComment() { return new CommentImpl(); }
-	@Override public DiffHunk createDiffHunk() { return new DiffHunkImpl(); }
-	@Override public FileChange createFileChange() { return new FileChangeImpl(); }
-	@Override public ChangeSet createChangeSet() { return new ChangeSetImpl(); }
-	@Override public ReviewSession createReviewSession() { return new ReviewSessionImpl(); }
-
-	@Override public AIProvider createAIProvider() { return new AIProviderImpl(); }
-
-	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -451,6 +381,138 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public SecretRule createSecretRule() {
 		SecretRuleImpl secretRule = new SecretRuleImpl();
 		return secretRule;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public SelfDevSession createSelfDevSession() {
+		SelfDevSessionImpl selfDevSession = new SelfDevSessionImpl();
+		return selfDevSession;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Database createDatabase() {
+		DatabaseImpl database = new DatabaseImpl();
+		return database;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public FileConfig createFileConfig() {
+		FileConfigImpl fileConfig = new FileConfigImpl();
+		return fileConfig;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Iteration createIteration() {
+		IterationImpl iteration = new IterationImpl();
+		return iteration;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Eclipse createEclipse() {
+		EclipseImpl eclipse = new EclipseImpl();
+		return eclipse;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EvaluationResult createEvaluationResult() {
+		EvaluationResultImpl evaluationResult = new EvaluationResultImpl();
+		return evaluationResult;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Test createTest() {
+		TestImpl test = new TestImpl();
+		return test;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Comment createComment() {
+		CommentImpl comment = new CommentImpl();
+		return comment;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public DiffHunk createDiffHunk() {
+		DiffHunkImpl diffHunk = new DiffHunkImpl();
+		return diffHunk;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public FileChange createFileChange() {
+		FileChangeImpl fileChange = new FileChangeImpl();
+		return fileChange;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ChangeSet createChangeSet() {
+		ChangeSetImpl changeSet = new ChangeSetImpl();
+		return changeSet;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ReviewSession createReviewSession() {
+		ReviewSessionImpl reviewSession = new ReviewSessionImpl();
+		return reviewSession;
 	}
 
 	/**
@@ -613,13 +675,43 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public TestStatus createTestStatusFromString(EDataType eDataType, String initialValue) {
 		TestStatus result = TestStatus.get(initialValue);
 		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
 		return result;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public String convertTestStatusToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public ReviewDecision createReviewDecisionFromString(EDataType eDataType, String initialValue) {
+		ReviewDecision result = ReviewDecision.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertReviewDecisionToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 
@@ -642,16 +734,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	@Deprecated
 	public static OrchestrationPackage getPackage() {
 		return OrchestrationPackage.eINSTANCE;
-	}
-
-	public ReviewDecision createReviewDecisionFromString(EDataType eDataType, String initialValue) {
-		ReviewDecision result = ReviewDecision.get(initialValue);
-		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
-		return result;
-	}
-
-	public String convertReviewDecisionToString(EDataType eDataType, Object instanceValue) {
-		return instanceValue == null ? null : instanceValue.toString();
 	}
 
 } //OrchestrationFactoryImpl

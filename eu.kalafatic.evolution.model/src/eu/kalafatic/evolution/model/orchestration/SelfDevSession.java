@@ -132,9 +132,6 @@ public interface SelfDevSession extends EObject {
 	 */
 	EList<Iteration> getIterations();
 
-	String getInitialRequest();
-	void setInitialRequest(String value);
-
 	/**
 	 * Returns the value of the '<em><b>Rationale</b></em>' attribute.
 	 * <!-- begin-user-doc -->
@@ -156,5 +153,27 @@ public interface SelfDevSession extends EObject {
 	 * @generated
 	 */
 	void setRationale(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Initial Request</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Initial Request</em>' attribute.
+	 * @see #setInitialRequest(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getSelfDevSession_InitialRequest()
+	 * @model
+	 * @generated
+	 */
+	String getInitialRequest();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevSession#getInitialRequest <em>Initial Request</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Initial Request</em>' attribute.
+	 * @see #getInitialRequest()
+	 * @generated
+	 */
+	void setInitialRequest(String value);
 
 } // SelfDevSession

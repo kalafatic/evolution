@@ -251,5 +251,5 @@ public enum IterationStatus implements Enumerator {
 	public String toString() {
 		return literal;
 	}
-
+	
 } //IterationStatus

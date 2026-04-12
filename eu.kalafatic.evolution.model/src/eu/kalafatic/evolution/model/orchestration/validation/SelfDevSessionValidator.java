@@ -23,8 +23,6 @@ public interface SelfDevSessionValidator {
 	boolean validateMaxIterations(int value);
 	boolean validateStatus(SelfDevStatus value);
 	boolean validateIterations(EList<Iteration> value);
-
 	boolean validateRationale(String value);
-
 	boolean validateInitialRequest(String value);
 }

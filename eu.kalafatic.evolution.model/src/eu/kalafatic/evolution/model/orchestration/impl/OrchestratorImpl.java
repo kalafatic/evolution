@@ -3,18 +3,6 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.AIProvider;
-import java.util.Collection;
-
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.NotificationChain;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.InternalEObject;
-import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-import org.eclipse.emf.ecore.util.EObjectContainmentEList;
-import org.eclipse.emf.ecore.util.InternalEList;
-
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -31,6 +19,22 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
+
+import java.util.Collection;
+
+import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.common.notify.NotificationChain;
+
+import org.eclipse.emf.common.util.EList;
+
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.InternalEObject;
+
+import org.eclipse.emf.ecore.impl.ENotificationImpl;
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.InternalEList;
 
 /**
  * <!-- begin-user-doc -->
@@ -433,35 +437,55 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 */
 	protected Eclipse eclipse;
 
-	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
-
-	protected boolean iterativeMode = ITERATIVE_MODE_EDEFAULT;
-
-	protected static final boolean SELF_ITERATIVE_MODE_EDEFAULT = false;
-
-	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
-	protected EList<eu.kalafatic.evolution.model.orchestration.AIProvider> aiProviders;
-
 	/**
+	 * The default value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @see #isIterativeMode()
+	 * @generated
+	 * @ordered
 	 */
-	@Override
-	public EList<Test> getTests() {
-		if (tests == null) {
-			tests = new EObjectContainmentEList<Test>(Test.class, this, OrchestrationPackage.ORCHESTRATOR__TESTS);
-		}
-		return tests;
-	}
+	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
 
-	@Override
-	public EList<eu.kalafatic.evolution.model.orchestration.AIProvider> getAiProviders() {
-		if (aiProviders == null) {
-			aiProviders = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.AIProvider>(eu.kalafatic.evolution.model.orchestration.AIProvider.class, this, OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS);
-		}
-		return aiProviders;
-	}
+	/**
+	 * The cached value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean iterativeMode = ITERATIVE_MODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSelfIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean SELF_ITERATIVE_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSelfIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
+
+	/**
+	 * The cached value of the '{@link #getAiProviders() <em>Ai Providers</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAiProviders()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<AIProvider> aiProviders;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -552,6 +576,19 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			tasks = new EObjectContainmentEList<Task>(Task.class, this, OrchestrationPackage.ORCHESTRATOR__TASKS);
 		}
 		return tasks;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<Test> getTests() {
+		if (tests == null) {
+			tests = new EObjectContainmentEList<Test>(Test.class, this, OrchestrationPackage.ORCHESTRATOR__TESTS);
+		}
+		return tests;
 	}
 
 	/**
@@ -1211,32 +1248,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY, oldSharedMemory, sharedMemory));
 	}
 
-	@Override
-	public boolean isIterativeMode() {
-		return iterativeMode;
-	}
-
-	@Override
-	public void setIterativeMode(boolean newIterativeMode) {
-		boolean oldIterativeMode = iterativeMode;
-		iterativeMode = newIterativeMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE, oldIterativeMode, iterativeMode));
-	}
-
-	@Override
-	public boolean isSelfIterativeMode() {
-		return selfIterativeMode;
-	}
-
-	@Override
-	public void setSelfIterativeMode(boolean newSelfIterativeMode) {
-		boolean oldSelfIterativeMode = selfIterativeMode;
-		selfIterativeMode = newSelfIterativeMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
-	}
-
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1280,6 +1291,65 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		}
 		else if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ECLIPSE, newEclipse, newEclipse));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isIterativeMode() {
+		return iterativeMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setIterativeMode(boolean newIterativeMode) {
+		boolean oldIterativeMode = iterativeMode;
+		iterativeMode = newIterativeMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE, oldIterativeMode, iterativeMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isSelfIterativeMode() {
+		return selfIterativeMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSelfIterativeMode(boolean newSelfIterativeMode) {
+		boolean oldSelfIterativeMode = selfIterativeMode;
+		selfIterativeMode = newSelfIterativeMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<AIProvider> getAiProviders() {
+		if (aiProviders == null) {
+			aiProviders = new EObjectContainmentEList<AIProvider>(AIProvider.class, this, OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS);
+		}
+		return aiProviders;
 	}
 
 	/**

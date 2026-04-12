@@ -119,6 +119,18 @@ public interface Orchestrator extends EObject {
 	EList<Task> getTasks();
 
 	/**
+	 * Returns the value of the '<em><b>Tests</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.Test}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Tests</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_Tests()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<Test> getTests();
+
+	/**
 	 * Returns the value of the '<em><b>Git</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -273,6 +285,28 @@ public interface Orchestrator extends EObject {
 	void setNeuronAI(NeuronAI value);
 
 	/**
+	 * Returns the value of the '<em><b>Remote Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Remote Model</em>' attribute.
+	 * @see #setRemoteModel(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_RemoteModel()
+	 * @model
+	 * @generated
+	 */
+	String getRemoteModel();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getRemoteModel <em>Remote Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Remote Model</em>' attribute.
+	 * @see #getRemoteModel()
+	 * @generated
+	 */
+	void setRemoteModel(String value);
+
+	/**
 	 * Returns the value of the '<em><b>Ai Mode</b></em>' attribute.
 	 * The literals are from the enumeration {@link eu.kalafatic.evolution.model.orchestration.AiMode}.
 	 * <!-- begin-user-doc -->
@@ -318,28 +352,6 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	void setMcpServerUrl(String value);
-
-	/**
-	 * Returns the value of the '<em><b>Remote Model</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Remote Model</em>' attribute.
-	 * @see #setRemoteModel(String)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_RemoteModel()
-	 * @model
-	 * @generated
-	 */
-	String getRemoteModel();
-
-	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getRemoteModel <em>Remote Model</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Remote Model</em>' attribute.
-	 * @see #getRemoteModel()
-	 * @generated
-	 */
-	void setRemoteModel(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Open Ai Token</b></em>' attribute.
@@ -519,6 +531,28 @@ public interface Orchestrator extends EObject {
 	void setFileConfig(FileConfig value);
 
 	/**
+	 * Returns the value of the '<em><b>Shared Memory</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Shared Memory</em>' attribute.
+	 * @see #setSharedMemory(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_SharedMemory()
+	 * @model
+	 * @generated
+	 */
+	String getSharedMemory();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory <em>Shared Memory</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Shared Memory</em>' attribute.
+	 * @see #getSharedMemory()
+	 * @generated
+	 */
+	void setSharedMemory(String value);
+
+	/**
 	 * Returns the value of the '<em><b>Eclipse</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -541,44 +575,61 @@ public interface Orchestrator extends EObject {
 	void setEclipse(Eclipse value);
 
 	/**
-	 * Returns the value of the '<em><b>Shared Memory</b></em>' attribute.
+	 * Returns the value of the '<em><b>Iterative Mode</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Shared Memory</em>' attribute.
-	 * @see #setSharedMemory(String)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_SharedMemory()
-	 * @model
+	 * @return the value of the '<em>Iterative Mode</em>' attribute.
+	 * @see #setIterativeMode(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_IterativeMode()
+	 * @model default="false"
 	 * @generated
 	 */
-	String getSharedMemory();
+	boolean isIterativeMode();
 
 	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSharedMemory <em>Shared Memory</em>}' attribute.
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isIterativeMode <em>Iterative Mode</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Shared Memory</em>' attribute.
-	 * @see #getSharedMemory()
+	 * @param value the new value of the '<em>Iterative Mode</em>' attribute.
+	 * @see #isIterativeMode()
 	 * @generated
 	 */
-	void setSharedMemory(String value);
-
-	boolean isIterativeMode();
 	void setIterativeMode(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Self Iterative Mode</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Self Iterative Mode</em>' attribute.
+	 * @see #setSelfIterativeMode(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_SelfIterativeMode()
+	 * @model default="false"
+	 * @generated
+	 */
 	boolean isSelfIterativeMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isSelfIterativeMode <em>Self Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Self Iterative Mode</em>' attribute.
+	 * @see #isSelfIterativeMode()
+	 * @generated
+	 */
 	void setSelfIterativeMode(boolean value);
 
 	/**
-	 * Returns the value of the '<em><b>Tests</b></em>' containment reference list.
-	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.Test}.
+	 * Returns the value of the '<em><b>Ai Providers</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.AIProvider}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Tests</em>' containment reference list.
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_Tests()
+	 * @return the value of the '<em>Ai Providers</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_AiProviders()
 	 * @model containment="true"
 	 * @generated
 	 */
-	EList<Test> getTests();
-
 	EList<AIProvider> getAiProviders();
 
 } // Orchestrator

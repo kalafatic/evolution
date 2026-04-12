@@ -18,6 +18,5 @@ public interface GitValidator {
 	boolean validateBranch(String value);
 	boolean validateUsername(String value);
 	boolean validateLocalPath(String value);
-
 	boolean validateTestStatus(String value);
 }
