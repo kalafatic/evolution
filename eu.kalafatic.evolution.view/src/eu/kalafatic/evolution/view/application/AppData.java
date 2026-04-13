@@ -18,8 +18,8 @@ import java.util.Map;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.swt.widgets.TrayItem;
 
-import eu.kalafatic.utils.hack.EclipseSplashHandler;
-import eu.kalafatic.utils.hack.StatusLineContributionItem;
+import eu.kalafatic.evolution.view.hack.EclipseSplashHandler;
+import eu.kalafatic.evolution.view.hack.StatusLineContributionItem;
 
 /**
  * The Class class AppData.

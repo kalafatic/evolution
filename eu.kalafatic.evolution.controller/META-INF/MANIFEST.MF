@@ -23,7 +23,8 @@ Require-Bundle: org.eclipse.swt,
  org.eclipse.ui.console;bundle-version="3.15.0"
 Automatic-Module-Name: eu.kalafatic.evolution.controller
 Bundle-RequiredExecutionEnvironment: JavaSE-21
-Export-Package: eu.kalafatic.evolution.controller.engine,
+Export-Package: eu.kalafatic.evolution.controller.agents,
+ eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.handlers,
  eu.kalafatic.evolution.controller.log,
  eu.kalafatic.evolution.controller.manager,
@@ -37,6 +38,7 @@ Export-Package: eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.review.service,
  eu.kalafatic.evolution.controller.security,
  eu.kalafatic.evolution.controller.services,
+ eu.kalafatic.evolution.controller.tools,
  eu.kalafatic.evolution.controller.vcs,
  org.json
 Bundle-ClassPath: .,

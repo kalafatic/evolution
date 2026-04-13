@@ -23,7 +23,7 @@ import org.eclipse.ui.application.ActionBarAdvisor;
 import org.eclipse.ui.application.IActionBarConfigurer;
 
 import eu.kalafatic.utils.builders.WorkbenchActionBuilder;
-import eu.kalafatic.utils.hack.StatusLineContributionItem;
+import eu.kalafatic.evolution.view.hack.StatusLineContributionItem;
 import eu.kalafatic.utils.lib.AppData;
 
 /**

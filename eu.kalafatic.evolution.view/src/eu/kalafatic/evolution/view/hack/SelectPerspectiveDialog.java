@@ -8,7 +8,7 @@
  * Contributors:
  *     Petr Kalafatic - initial API and implementation
  ******************************************************************************/
-package eu.kalafatic.utils.hack;
+package eu.kalafatic.evolution.view.hack;
 
 /*******************************************************************************
  * Copyright (c) 2000, 2009 IBM Corporation and others.

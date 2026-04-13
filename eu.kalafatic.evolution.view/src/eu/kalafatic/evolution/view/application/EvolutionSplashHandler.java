@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 
 import eu.kalafatic.utils.constants.FCoreImageConstants;
-import eu.kalafatic.utils.hack.EclipseSplashHandler;
+import eu.kalafatic.evolution.view.hack.EclipseSplashHandler;
 import eu.kalafatic.utils.lib.AppData;
 import eu.kalafatic.utils.log.Log;
 import eu.kalafatic.utils.preferences.ECorePreferences;
