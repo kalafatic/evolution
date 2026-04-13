@@ -35,7 +35,7 @@ import eu.kalafatic.evolution.view.editors.OrchestratorEditorInput;
 public class OrchestrationEditorActionProvider extends CommonActionProvider {
 
     private Action refreshAction;
-    private Action deleteAction;
+    private Action removeAction;
     private Action rateTaskAction;
     private Action startSelfDevAction;
 
@@ -70,7 +70,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
         };
         refreshAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_SYNCED));
 
-        deleteAction = new Action("Delete") {
+        removeAction = new Action("Remove") {
             @Override
             public void run() {
                 ISelection selection = getContext().getSelection();
@@ -95,7 +95,9 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                 }
             }
         };
-        deleteAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_TOOL_DELETE));
+        removeAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_TOOL_DELETE));
+        removeAction.setActionDefinitionId("org.eclipse.ui.edit.delete");
+        refreshAction.setActionDefinitionId("org.eclipse.ui.file.refresh");
 
         rateTaskAction = new Action("Rate Task...") {
             @Override
@@ -160,7 +162,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                 menu.appendToGroup(ICommonMenuConstants.GROUP_OPEN, startSelfDevAction);
             }
         }
-        menu.appendToGroup(ICommonMenuConstants.GROUP_EDIT, deleteAction);
+        menu.appendToGroup(ICommonMenuConstants.GROUP_EDIT, removeAction);
         menu.appendToGroup(ICommonMenuConstants.GROUP_BUILD, refreshAction);
         menu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
     }
@@ -272,7 +274,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
         };
         actionBars.setGlobalActionHandler(ICommonActionConstants.OPEN, openAction);
         actionBars.setGlobalActionHandler(ActionFactory.REFRESH.getId(), refreshAction);
-        actionBars.setGlobalActionHandler(ActionFactory.DELETE.getId(), deleteAction);
+        actionBars.setGlobalActionHandler(ActionFactory.DELETE.getId(), removeAction);
         actionBars.updateActionBars();
     }
 }
