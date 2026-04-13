@@ -1,10 +1,12 @@
 package eu.kalafatic.evolution.view.editors.pages.tools;
 
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
@@ -21,6 +23,7 @@ import java.io.File;
 
 public class FileGroup extends AToolGroup {
     private Text fileLocalPathText;
+    private Text filePathText, newFilePathText;
 
     public FileGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
         super(editor, orchestrator, successColor);
@@ -34,8 +37,52 @@ public class FileGroup extends AToolGroup {
         fileLocalPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         SWTFactory.createEditButton(group, fileLocalPathText);
 
+        SWTFactory.createLabel(group, "Path:");
+        filePathText = SWTFactory.createText(group);
         SWTFactory.createLabel(group, "");
-        Button testBtn = SWTFactory.createButton(group, "Test File");
+
+        SWTFactory.createLabel(group, "New Path:");
+        newFilePathText = SWTFactory.createText(group);
+        SWTFactory.createLabel(group, "");
+
+        Composite btnComp = toolkit.createComposite(group);
+        btnComp.setLayout(new RowLayout());
+        GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
+        btnComp.setLayoutData(btnGd);
+
+        Button createFileBtn = SWTFactory.createButton(btnComp, "Create File");
+        createFileBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("WRITE " + filePathText.getText() + "\n ", "file");
+            }
+        });
+
+        Button createFolderBtn = SWTFactory.createButton(btnComp, "Create Folder");
+        createFolderBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("MKDIR " + filePathText.getText(), "file");
+            }
+        });
+
+        Button removeBtn = SWTFactory.createButton(btnComp, "Remove");
+        removeBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("DELETE " + filePathText.getText(), "file");
+            }
+        });
+
+        Button renameBtn = SWTFactory.createButton(btnComp, "Rename");
+        renameBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("RENAME " + filePathText.getText() + " " + newFilePathText.getText(), "file");
+            }
+        });
+
+        Button testBtn = SWTFactory.createButton(btnComp, "Test File");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
