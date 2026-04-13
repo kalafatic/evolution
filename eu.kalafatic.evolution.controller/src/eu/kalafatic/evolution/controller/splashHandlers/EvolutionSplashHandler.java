@@ -15,6 +15,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 
+import eu.kalafatic.utils.Activator;
 import eu.kalafatic.utils.constants.FCoreImageConstants;
 import eu.kalafatic.utils.hack.EclipseSplashHandler;
 import eu.kalafatic.utils.lib.AppData;
@@ -29,6 +30,8 @@ import eu.kalafatic.utils.ui.ImageUtils;
  * @version 3.0.0
  */
 public class EvolutionSplashHandler extends EclipseSplashHandler {
+	
+	public static final Image SPLASH_IMG = Activator.getImageDescriptor("splash.bmp").createImage();
 
 	/**
 	 * The Class class GSHf.
@@ -145,7 +148,7 @@ public class EvolutionSplashHandler extends EclipseSplashHandler {
 	 */
 	public Shell createUI(Display display) {
 		splash = new Shell(this.display = display, SWT.ON_TOP | SWT.APPLICATION_MODAL | SWT.INHERIT_DEFAULT);
-		splash.setBackgroundImage(FCoreImageConstants.SPLASH_IMG);
+		splash.setBackgroundImage(SPLASH_IMG);
 		 splash.setBounds(getBounds());
 		 splash.setLocation(getLocation());
 

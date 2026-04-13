@@ -225,7 +225,7 @@ public final class FCoreImageConstants {
 
 	// OTHER
 	/** The Constant SPLASH_IMG. */
-	public static final Image SPLASH_IMG = Activator.getImageDescriptor("splash.bmp").createImage();
+	//public static final Image SPLASH_IMG = Activator.getImageDescriptor("splash.bmp").createImage();
 
 	/** The Constant CONSOLE_IMG. */
 	public static final Image CONSOLE_IMG = Activator.getImageDescriptor("icons/console.png").createImage();

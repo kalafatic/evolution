@@ -150,7 +150,7 @@ public class GeminiSplashHandler extends EclipseSplashHandler {
 	 */
 	public Shell createUI(Display display) {
 		splash = new Shell(this.display = display, SWT.ON_TOP | SWT.APPLICATION_MODAL | SWT.INHERIT_DEFAULT);
-		splash.setBackgroundImage(FCoreImageConstants.SPLASH_IMG);
+		//splash.setBackgroundImage(FCoreImageConstants.SPLASH_IMG);
 		splash.setBounds(getBounds());
 		splash.setLocation(getLocation());
 
