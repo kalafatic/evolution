@@ -71,6 +71,7 @@ public class OrchestratorFlowTest {
         String successEval = "{\"success\": true, \"comment\": \"Looks good\"}";
 
         mockOllama.setResponseSequence(new String[] {
+            "{\"category\":\"CODING\", \"isAmbiguous\":false}", // AnalyticAgent
             planResponse, // Planner
             javaCode,     // JavaDevAgent (for Write src/Main.java)
             successEval,  // Reviewer (for t1)

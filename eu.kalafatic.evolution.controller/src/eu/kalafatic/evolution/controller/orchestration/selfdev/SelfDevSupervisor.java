@@ -1,5 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
+import org.json.JSONObject;
+import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
+import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
@@ -11,6 +14,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 public class SelfDevSupervisor {
     private final SelfDevSession session;
     private final TaskContext context;
+    private final AnalyticAgent analyticAgent = new AnalyticAgent();
     private static final int MAX_FAILURES = 3;
 
     public SelfDevSupervisor(SelfDevSession session, TaskContext context) {
@@ -20,6 +24,18 @@ public class SelfDevSupervisor {
 
     public void startSession() {
         context.log("[SUPERVISOR] Starting Self-Development Session: " + session.getId());
+
+        // Analytic Phase for the initial request
+        try {
+            String initialRequest = session.getInitialRequest();
+            if (initialRequest != null && !initialRequest.isEmpty()) {
+                String refinedRequest = analyzeAndClarify(initialRequest);
+                session.setInitialRequest(refinedRequest);
+            }
+        } catch (Exception e) {
+            context.log("[SUPERVISOR] Analytic Phase warning: " + e.getMessage());
+        }
+
         session.setStatus(SelfDevStatus.RUNNING);
         session.setStartTime(System.currentTimeMillis());
 
@@ -70,6 +86,42 @@ public class SelfDevSupervisor {
         } catch (Exception e) {
             context.log("[SUPERVISOR] Critical failure in session: " + e.getMessage());
             session.setStatus(SelfDevStatus.FAILED);
+        }
+    }
+
+    private String analyzeAndClarify(String request) throws Exception {
+        OrchestrationStatusManager.getInstance().updateAgentStatus("Analytic", "Analyzing request...");
+        try {
+            JSONObject analysis = analyticAgent.analyze(request, context);
+            context.log("[SUPERVISOR] Analytic Agent identified category: " + analysis.optString("category"));
+
+            if (analysis.optBoolean("isAmbiguous", false)) {
+                String question = analysis.optString("clarificationQuestion", "The request is ambiguous. Can you please provide more details?");
+                context.log("[SUPERVISOR] Request is ambiguous. Asking for clarification...");
+
+                String clarification = context.requestInput(question).get();
+                if (clarification == null || clarification.trim().isEmpty()) {
+                    context.log("[SUPERVISOR] No clarification provided. Proceeding with original request.");
+                    return request;
+                }
+
+                context.log("[SUPERVISOR] Received clarification: " + clarification);
+                context.appendSharedMemory("User Clarification: " + clarification);
+
+                // Recursively analyze with the clarification
+                return analyzeAndClarify(request + "\nClarification: " + clarification);
+            }
+
+            String refined = analysis.optString("refinedPrompt", request);
+            if (!refined.equals(request)) {
+                context.log("[SUPERVISOR] Analytic Agent refined the prompt.");
+            }
+            return refined;
+        } catch (Exception e) {
+            context.log("[SUPERVISOR] Analytic Warning: " + e.getMessage() + ". Proceeding with original request.");
+            return request;
+        } finally {
+            OrchestrationStatusManager.getInstance().updateAgentStatus("Analytic", "Idle");
         }
     }
 
