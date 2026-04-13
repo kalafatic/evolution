@@ -36,21 +36,21 @@ import org.eclipse.ui.Saveable;
 import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.part.DrillDownAdapter;
 
-import eu.kalafatic.utils.application.ValidationUtils;
-import eu.kalafatic.utils.constants.FCoreImageConstants;
-import eu.kalafatic.utils.constants.FTextConstants;
+//import eu.kalafatic.utils.application.ValidationUtils;
+//import eu.kalafatic.utils.constants.FCoreImageConstants;
+//import eu.kalafatic.utils.constants.FTextConstants;
 
-import static eu.kalafatic.utils.constants.FCoreImageConstants.ADD_DESC;
-import static eu.kalafatic.utils.constants.FCoreImageConstants.ADD_X_DESC;
-import static eu.kalafatic.utils.constants.FCoreImageConstants.COLLAPSE_ALL_DESC;
-import static eu.kalafatic.utils.constants.FCoreImageConstants.DELETE_DESC;
-import static eu.kalafatic.utils.constants.FCoreImageConstants.EXPAND_ALL_DESC;
-import static eu.kalafatic.utils.constants.FCoreImageConstants.TREE_IMG;
-import static eu.kalafatic.utils.constants.FTextConstants.ADD_FOLDER;
-import static eu.kalafatic.utils.constants.FTextConstants.ADD_PAGE;
-import static eu.kalafatic.utils.constants.FTextConstants.COLLAPSE_ALL;
-import static eu.kalafatic.utils.constants.FTextConstants.EXPAND_ALL;
-import static eu.kalafatic.utils.constants.FTextConstants.REMOVE;
+//import static eu.kalafatic.utils.constants.FCoreImageConstants.ADD_DESC;
+//import static eu.kalafatic.utils.constants.FCoreImageConstants.ADD_X_DESC;
+//import static eu.kalafatic.utils.constants.FCoreImageConstants.COLLAPSE_ALL_DESC;
+//import static eu.kalafatic.utils.constants.FCoreImageConstants.DELETE_DESC;
+//import static eu.kalafatic.utils.constants.FCoreImageConstants.EXPAND_ALL_DESC;
+//import static eu.kalafatic.utils.constants.FCoreImageConstants.TREE_IMG;
+//import static eu.kalafatic.utils.constants.FTextConstants.ADD_FOLDER;
+//import static eu.kalafatic.utils.constants.FTextConstants.ADD_PAGE;
+//import static eu.kalafatic.utils.constants.FTextConstants.COLLAPSE_ALL;
+//import static eu.kalafatic.utils.constants.FTextConstants.EXPAND_ALL;
+//import static eu.kalafatic.utils.constants.FTextConstants.REMOVE;
 
 public class EvoNavigator extends CommonNavigator {
 
@@ -165,8 +165,8 @@ public class EvoNavigator extends CommonNavigator {
 //		manager.add(addPageAction);
 //		manager.add(removeAction);
 //		manager.add(new Separator());
-		manager.add(expandAllAction);
-		manager.add(collapseAllAction);
+		//manager.add(expandAllAction);
+		//manager.add(collapseAllAction);
 //		drillDownAdapter.addNavigationActions(manager);
 	}
 
@@ -175,61 +175,61 @@ public class EvoNavigator extends CommonNavigator {
 	 */
 	private void makeActions() {
 
-			expandAllAction = new Action() {
-				@Override
-				public void run() {
-					getCommonViewer().expandAll();
-				}
-			};
-			expandAllAction.setToolTipText(FTextConstants.EXPAND_ALL);
-			expandAllAction.setImageDescriptor(FCoreImageConstants.EXPAND_ALL_DESC);
-
-			collapseAllAction = new Action() {
-				@Override
-				public void run() {
-					getCommonViewer().collapseAll();
-				}
-			};
-
-			collapseAllAction.setToolTipText(FTextConstants.COLLAPSE_ALL);
-			collapseAllAction.setImageDescriptor(FCoreImageConstants.COLLAPSE_ALL_DESC);
-
-			addFolderAction = new Action() {
-				@Override
-				public void run() {
-					addFolder();
-				}
-
-			};
-
-			addFolderAction.setText(ADD_FOLDER);
-			addFolderAction.setToolTipText(ADD_FOLDER);
-			addFolderAction.setImageDescriptor(ADD_DESC);
-
-			addPageAction = new Action() {
-				@Override
-				public void run() {
-					addPage();
-
-				}
-
-			};
-
-			addPageAction.setText(ADD_PAGE);
-			addPageAction.setToolTipText(ADD_PAGE);
-			addPageAction.setImageDescriptor(ADD_X_DESC);
-
-			removeAction = new Action() {
-				@Override
-				public void run() {
-					remove();
-				}
-
-			};
-
-			removeAction.setText(REMOVE);
-			removeAction.setToolTipText(REMOVE);
-			removeAction.setImageDescriptor(DELETE_DESC);
+//			expandAllAction = new Action() {
+//				@Override
+//				public void run() {
+//					getCommonViewer().expandAll();
+//				}
+//			};
+//			expandAllAction.setToolTipText(FTextConstants.EXPAND_ALL);
+//			expandAllAction.setImageDescriptor(FCoreImageConstants.EXPAND_ALL_DESC);
+//
+//			collapseAllAction = new Action() {
+//				@Override
+//				public void run() {
+//					getCommonViewer().collapseAll();
+//				}
+//			};
+//
+//			collapseAllAction.setToolTipText(FTextConstants.COLLAPSE_ALL);
+//			collapseAllAction.setImageDescriptor(FCoreImageConstants.COLLAPSE_ALL_DESC);
+//
+//			addFolderAction = new Action() {
+//				@Override
+//				public void run() {
+//					addFolder();
+//				}
+//
+//			};
+//
+//			addFolderAction.setText(ADD_FOLDER);
+//			addFolderAction.setToolTipText(ADD_FOLDER);
+//			addFolderAction.setImageDescriptor(ADD_DESC);
+//
+//			addPageAction = new Action() {
+//				@Override
+//				public void run() {
+//					addPage();
+//
+//				}
+//
+//			};
+//
+//			addPageAction.setText(ADD_PAGE);
+//			addPageAction.setToolTipText(ADD_PAGE);
+//			addPageAction.setImageDescriptor(ADD_X_DESC);
+//
+//			removeAction = new Action() {
+//				@Override
+//				public void run() {
+//					remove();
+//				}
+//
+//			};
+//
+//			removeAction.setText(REMOVE);
+//			removeAction.setToolTipText(REMOVE);
+//			removeAction.setImageDescriptor(DELETE_DESC);
 	}
 
 	/**
@@ -240,10 +240,10 @@ public class EvoNavigator extends CommonNavigator {
 		if (selection instanceof TreeSelection) {
 			TreeSelection treeSelection = (TreeSelection) selection;
 
-				InputDialog dialog = new InputDialog(Display.getCurrent().getActiveShell(), "New Folder", "Enter 1+ characters", "", eu.kalafatic.utils.application.ValidationUtils.INSTANCE.new LengthValidator(1, 50));
+				//InputDialog dialog = new InputDialog(Display.getCurrent().getActiveShell(), "New Folder", "Enter 1+ characters", "", eu.kalafatic.utils.application.ValidationUtils.INSTANCE.new LengthValidator(1, 50));
 
-				if (dialog.open() == Window.OK) {
-					String folderName = dialog.getValue();
+				//if (dialog.open() == Window.OK) {
+				//	String folderName = dialog.getValue();
 
 //					Folder folder = RcFactory.eINSTANCE.createFolder();
 //					folder.setAddress(folderName);
@@ -259,7 +259,7 @@ public class EvoNavigator extends CommonNavigator {
 //						parentFolder.getFolders().put(folderName, folder);
 //					}
 					refresh();
-				}
+				//}
 		}
 	}
 

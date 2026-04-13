@@ -208,7 +208,7 @@ public class SelectPerspectiveDialog extends Dialog implements ISelectionChanged
 		viewer = new TableViewer(parent, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
 		viewer.getTable().setFont(parent.getFont());
 		viewer.setLabelProvider(new PerspectiveLabelProvider());
-		viewer.setContentProvider(new PerspectiveContentProvider());
+		//viewer.setContentProvider(new PerspectiveContentProvider());
 		viewer.setComparator(new ViewerComparator());
 		viewer.setInput(geminiPerspectives);
 		viewer.addSelectionChangedListener(this);

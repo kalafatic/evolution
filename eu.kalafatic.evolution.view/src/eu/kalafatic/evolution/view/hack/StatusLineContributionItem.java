@@ -142,7 +142,7 @@ public class StatusLineContributionItem extends ContributionItem {
 		public void handleEvent(Event event) {
 			if (event.widget.equals(enabledItem)) {
 				boolean selection = enabledItem.getSelection();
-				enabledItem.setText(selection ? FTextConstants.SWITCH_ENABLED[0] : FTextConstants.SWITCH_ENABLED[1]);
+				//enabledItem.setText(selection ? FTextConstants.SWITCH_ENABLED[0] : FTextConstants.SWITCH_ENABLED[1]);
 				stateItem.setEnabled(selection);
 				settingsItem.setEnabled(selection);
 
@@ -150,11 +150,11 @@ public class StatusLineContributionItem extends ContributionItem {
 				stateItem.setText("128");
 
 			} else if (event.widget.equals(settingsItem)) {
-				PreferenceDialog pref = PreferencesUtil.createPreferenceDialogOn(statusLine.getShell(), EView.PREF_ALGORITHMS.ID, null, null);
-				if (pref != null) {
-					pref.open();
-					loadPreferences();
-				}
+//				PreferenceDialog pref = PreferencesUtil.createPreferenceDialogOn(statusLine.getShell(), EView.PREF_ALGORITHMS.ID, null, null);
+//				if (pref != null) {
+//					pref.open();
+//					loadPreferences();
+//				}
 			}
 		}
 	};
@@ -166,9 +166,9 @@ public class StatusLineContributionItem extends ContributionItem {
 	 */
 	private void loadPreferences() {
 		enabledItem.setSelection(true);
-		enabledItem.setText(FTextConstants.SWITCH_ENABLED[0]);
+		//enabledItem.setText(FTextConstants.SWITCH_ENABLED[0]);
 
-		stateItem.setText(FTextConstants.RATIO_DEF);
+		//stateItem.setText(FTextConstants.RATIO_DEF);
 	}
 
 	// ---------------------------------------------------------------

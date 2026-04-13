@@ -62,8 +62,9 @@ import org.osgi.framework.Version;
 
 import eu.kalafatic.evolution.controller.log.Log;
 import eu.kalafatic.evolution.view.application.EvolutionSplashHandler.GSHf;
+
 import eu.kalafatic.evolution.view.provider.ProjectManager;
-import eu.kalafatic.utils.constants.FCoreImageConstants;
+
 
 import eu.kalafatic.utils.preferences.ECorePreferences;
 
@@ -373,7 +374,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 			try {
 				final Tray tray = window.getShell().getDisplay().getSystemTray();
 				trayItem = new TrayItem(tray, SWT.NONE);
-				trayItem.setImage(FCoreImageConstants.GEMINI_IMG);
+				//trayItem.setImage(FCoreImageConstants.GEMINI_IMG);
 				trayItem.setToolTipText("Gemini");
 
 				tip = new ToolTip(window.getShell(), SWT.BALLOON | SWT.ICON_INFORMATION);

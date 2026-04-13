@@ -22,12 +22,13 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 
-import eu.kalafatic.utils.constants.FCoreImageConstants;
+
 import eu.kalafatic.evolution.view.hack.EclipseSplashHandler;
+//import eu.kalafatic.evolution.view.hack.FCoreImageConstants;
+//import eu.kalafatic.evolution.view.hack.ImageUtils;
 import eu.kalafatic.utils.lib.AppData;
 import eu.kalafatic.utils.log.Log;
 import eu.kalafatic.utils.preferences.ECorePreferences;
-import eu.kalafatic.utils.ui.ImageUtils;
 
 /**
  * The Class class GeminiSplashHandler.
@@ -128,16 +129,16 @@ public class EvolutionSplashHandler extends EclipseSplashHandler {
 	 */
 	private void createPending(final Rectangle rectangle) {
 		try {
-			animated = ImageUtils.loadGif("icons/actions/pending.gif");
+			//animated = ImageUtils.loadGif("icons/actions/pending.gif");
 
 			pendingLabel = new Label(splash, SWT.NONE);
 			pendingLabel.setBounds(rectangle);
 
-			pendingImage = animated[pendingIndex++];
-			pendingLabel.setBackgroundImage(pendingImage);
+			//pendingImage = animated[pendingIndex++];
+			//pendingLabel.setBackgroundImage(pendingImage);
 
 		} catch (Exception e) {
-			Log.log(ECorePreferences.MODULE, e);
+			//Log.log(e.getMessage()
 		}
 	}
 
@@ -150,14 +151,14 @@ public class EvolutionSplashHandler extends EclipseSplashHandler {
 	 */
 	public Shell createUI(Display display) {
 		splash = new Shell(this.display = display, SWT.ON_TOP | SWT.APPLICATION_MODAL | SWT.INHERIT_DEFAULT);
-		splash.setBackgroundImage(FCoreImageConstants.SPLASH_IMG);
+		//splash.setBackgroundImage(FCoreImageConstants.SPLASH_IMG);
 		splash.setBounds(getBounds());
 		splash.setLocation(getLocation());
 
 		String splashLoc = System.getProperty("org.eclipse.equinox.launcher.splash.location");
-		final Image background = ImageUtils.loadImage(splashLoc);
+		//final Image background = ImageUtils.loadImage(splashLoc);
 
-		splash.setBackgroundImage(background);
+	//	splash.setBackgroundImage(background);
 
 		Rectangle rect = getProgressRect();
 		createPending(new Rectangle(rect.x, rect.y - 5, rect.width, 3));
@@ -173,7 +174,7 @@ public class EvolutionSplashHandler extends EclipseSplashHandler {
 	 */
 	@Override
 	public void dispose() {
-		AppData.getInstance().setSplashHandler(this);
+		//AppData.getInstance().setSplashHandler(this);
 		super.dispose();
 	}
 
@@ -260,7 +261,7 @@ public class EvolutionSplashHandler extends EclipseSplashHandler {
 				Thread.sleep(100);
 			}
 		} catch (Exception e) {
-			Log.log(ECorePreferences.MODULE, e);
+			//Log.log(ECorePreferences.MODULE, e);
 		}
 	}
 
@@ -399,7 +400,7 @@ public class EvolutionSplashHandler extends EclipseSplashHandler {
 			splash.redraw();
 
 		} catch (Exception e) {
-			Log.log(ECorePreferences.MODULE, e);
+			//Log.log(ECorePreferences.MODULE, e);
 		}
 	}
 }

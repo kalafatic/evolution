@@ -22,9 +22,10 @@ import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.application.ActionBarAdvisor;
 import org.eclipse.ui.application.IActionBarConfigurer;
 
-import eu.kalafatic.utils.builders.WorkbenchActionBuilder;
+
 import eu.kalafatic.evolution.view.hack.StatusLineContributionItem;
-import eu.kalafatic.utils.lib.AppData;
+import eu.kalafatic.evolution.view.hack.WorkbenchActionBuilder;
+
 
 /**
  * The Class class ApplicationActionBarAdvisor.
