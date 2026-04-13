@@ -1,196 +1,148 @@
+/*******************************************************************************
+ * Copyright (c) 2010, Petr Kalafatic (gemini@kalafatic.eu).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU GPL Version 3
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.txt
+ *
+ * Contributors:
+ *     Petr Kalafatic - initial API and implementation
+ ******************************************************************************/
 package eu.kalafatic.utils.log;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.logging.FileHandler;
+import static eu.kalafatic.utils.constants.FConstants.PREFERENCES;
+
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
-import org.eclipse.ui.console.ConsolePlugin;
-import org.eclipse.ui.console.IConsole;
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.ui.console.IConsoleManager;
-import org.eclipse.ui.console.MessageConsole;
-import org.eclipse.ui.console.MessageConsoleStream;
+import org.eclipse.emf.common.util.Enumerator;
 
-public class Log {
-    private static final String CONSOLE_NAME = "Evo Orchestration Console";
-    private static MessageConsole console;
-    private static MessageConsoleStream consoleStream;
-    private static boolean redirected = false;
-    private static Logger fileLogger;
-    private static final String LOG_DIR = getLogDirectory();
-    private static final String LOG_FILE = LOG_DIR + "/evo.log";
+import eu.kalafatic.utils.constants.FTextConstants;
+import eu.kalafatic.utils.interfaces.ALog;
+import eu.kalafatic.utils.interfaces.IPreference;
+import eu.kalafatic.utils.lib.ELogEvent;
+import eu.kalafatic.utils.model.LogElement;
+import eu.kalafatic.utils.preferences.ECorePreferences;
 
-    private static String getLogDirectory() {
-        try {
-            // Try to use Eclipse state location
-            return Platform.getStateLocation(Platform.getBundle("eu.kalafatic.utils")).toOSString() + "/logs";
-        } catch (Exception e) {
-            // Fallback to local logs directory if Platform is not available
-            return "logs";
-        }
-    }
-    private static final int LOG_FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
-    private static final int LOG_FILE_COUNT = 5;
+/**
+ * The Class class Log.
+ * @author Petr Kalafatic
+ * @project Gemini
+ * @version 3.0.0
+ */
+public class Log extends ALog {
 
-    static {
-        initFileLogger();
-        zipOldLogs();
-    }
+	/** The Constant INSTANCE. */
+	private static final Log INSTANCE = new Log();
 
-    private static void initFileLogger() {
-        try {
-            File dir = new File(LOG_DIR);
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
-            fileLogger = Logger.getLogger("EvoLogger");
-            FileHandler fh = new FileHandler(LOG_FILE, LOG_FILE_SIZE_LIMIT, LOG_FILE_COUNT, true);
-            fh.setFormatter(new SimpleFormatter());
-            fileLogger.addHandler(fh);
-            fileLogger.setLevel(Level.ALL);
-        } catch (IOException e) {
-            System.err.println("Failed to initialize file logger: " + e.getMessage());
-        }
-    }
+	// ---------------------------------------------------------------
+	// ---------------------------------------------------------------
 
-    public static void log(String msg) {
-        // Log to stdout for basic visibility (only if not redirected to avoid duplicates)
-        if (!redirected) {
-            System.out.println(msg);
-        }
+	/**
+	 * Log.
+	 * @param msg the msg
+	 */
+	public static void log(String msg) {
+		Log.log(ECorePreferences.MODULE, msg);
+	}
 
-        // Log to file
-        if (fileLogger != null) {
-            fileLogger.info(msg);
-        }
+	// ---------------------------------------------------------------
 
-        // Log to Eclipse Console
-        logToConsole(msg);
-    }
+	/**
+	 * Log.
+	 * @param iPreference the i preference
+	 * @param msg the msg
+	 */
+	public static void log(IPreference iPreference, String msg) {
+		INSTANCE.log(iPreference.getName(), msg);
+	}
 
-    public static void log(String module, Exception e) {
-        String msg = "ERROR [" + module + "]: " + e.getMessage();
-        log(msg);
-        if (fileLogger != null) {
-            fileLogger.log(Level.SEVERE, msg, e);
-        }
-    }
+	// ---------------------------------------------------------------
 
-    public static void redirectSystemStreams() {
-        if (redirected) return;
-        try {
-            initConsole();
-            if (consoleStream != null) {
-                PrintStream ps = new PrintStream(new OutputStream() {
-                    @Override
-                    public void write(int b) throws IOException {
-                        consoleStream.write(b);
-                    }
-                    @Override
-                    public void write(byte[] b, int off, int len) throws IOException {
-                        consoleStream.write(b, off, len);
-                    }
-                    @Override
-                    public void flush() throws IOException {
-                        consoleStream.flush();
-                    }
-                }, true);
-                System.setOut(ps);
-                System.setErr(ps);
-                redirected = true;
-                log("System streams redirected to Eclipse Console.");
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to redirect system streams: " + e.getMessage());
-        }
-    }
+	/**
+	 * Log.
+	 * @param iPreference the i preference
+	 * @param enumerator the enumerator
+	 */
+	public static void log(IPreference iPreference, Enumerator enumerator) {
+		INSTANCE.log(iPreference.getName(), enumerator.getLiteral());
+	}
 
-    private static void initConsole() {
-        if (consoleStream == null) {
-            console = findConsole(CONSOLE_NAME);
-            if (console != null) {
-                consoleStream = console.newMessageStream();
-                consoleStream.setActivateOnWrite(true);
-            }
-        }
-    }
+	// ---------------------------------------------------------------
 
-    private static void logToConsole(String message) {
-        try {
-            initConsole();
-            if (consoleStream != null) {
-                consoleStream.println(message);
-            }
-        } catch (NoClassDefFoundError | Exception e) {
-            // Silently ignore if console is not available (e.g. headless mode)
-        }
-    }
+	/*
+	 * (non-Javadoc)
+	 * @see eu.kalafatic.gemini.core.interfaces.ILog#log(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void log(String logName, String msg) {
+		LogElement logElement = LoggerUtils.getInstance().getLogElement("INF", logName, msg);
 
-    private static MessageConsole findConsole(String name) {
-        try {
-            ConsolePlugin plugin = ConsolePlugin.getDefault();
-            if (plugin == null) return null;
-            IConsoleManager conMan = plugin.getConsoleManager();
-            IConsole[] existing = conMan.getConsoles();
-            for (int i = 0; i < existing.length; i++) {
-                if (name.equals(existing[i].getName())) {
-                    return (MessageConsole) existing[i];
-                }
-            }
-            // no console found, so create a new one
-            MessageConsole myConsole = new MessageConsole(name, null);
-            conMan.addConsoles(new IConsole[]{myConsole});
-            return myConsole;
-        } catch (NoClassDefFoundError e) {
-            return null;
-        }
-    }
+		System.out.println(logElement.getLineMsg());
 
-    public static void zipOldLogs() {
-        File dir = new File(LOG_DIR);
-        if (!dir.exists() || !dir.isDirectory()) return;
+		if (LOG_CONSOLE) {
+			printConsole(logElement);
+		}
 
-        File[] files = dir.listFiles((d, name) -> name.startsWith("evo.log.") && !name.endsWith(".zip"));
-        if (files == null || files.length == 0) return;
+		if (!LOG_ENABLED) {
+			return;
+		}
+		String logEvent = PREFERENCES.get(ECorePreferences.LOG_EVENT.getName(), (String) ECorePreferences.LOG_EVENT.getDef());
 
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        File zipFile = new File(LOG_DIR, "logs_archived_" + timestamp + ".zip");
+		if (logEvent.equals(ELogEvent.BOTH.getValue()) || logEvent.equals(ELogEvent.EVENTS.getValue())) {
 
-        try (FileOutputStream fos = new FileOutputStream(zipFile);
-             ZipOutputStream zos = new ZipOutputStream(fos)) {
+			logger = LoggerUtils.getInstance().getLogger(logName);
 
-            for (File file : files) {
-                addToZip(file, zos);
-                file.delete();
-            }
-            log("Old logs archived to: " + zipFile.getAbsolutePath());
-        } catch (IOException e) {
-            System.err.println("Failed to zip old logs: " + e.getMessage());
-        }
-    }
+			logger.log(Level.INFO, msg);
+		}
+	}
 
-    private static void addToZip(File file, ZipOutputStream zos) throws IOException {
-        try (FileInputStream fis = new FileInputStream(file)) {
-            ZipEntry zipEntry = new ZipEntry(file.getName());
-            zos.putNextEntry(zipEntry);
+	// ---------------------------------------------------------------
 
-            byte[] bytes = new byte[1024];
-            int length;
-            while ((length = fis.read(bytes)) >= 0) {
-                zos.write(bytes, 0, length);
-            }
-            zos.closeEntry();
-        }
-    }
+	/**
+	 * Log.
+	 * @param iPreference the i preference
+	 * @param exception the exception
+	 */
+	public static void log(IPreference iPreference, Exception exception) {
+		INSTANCE.log(iPreference.getName(), "", exception);
+	}
+
+	// ---------------------------------------------------------------
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.kalafatic.gemini.core.interfaces.ILog#log(java.lang.String, java.lang.Exception)
+	 */
+	@Override
+	public void log(String logName, Exception exception) {
+		INSTANCE.log(logName, "", exception);
+	}
+
+	// ---------------------------------------------------------------
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.kalafatic.gemini.core.interfaces.ILog#log(java.lang.String, java.lang.String, java.lang.Exception)
+	 */
+	@Override
+	public void log(String logName, String msg, Exception exception) {
+		LogElement logElement = LoggerUtils.getInstance().getLogElement("ERR", logName, FTextConstants.EX + " : " + exception.getMessage());
+		logElement.setException(exception);
+
+		System.err.println(logElement.getLineMsg());
+
+		if (LOG_CONSOLE) {
+			printConsole(logElement);
+		}
+
+		if (!LOG_ENABLED) {
+			return;
+		}
+		if (LOG_EVENT.equals(ELogEvent.BOTH.getValue()) || LOG_EVENT.equals(ELogEvent.EXCEPTIONS.getValue())) {
+
+			logger = LoggerUtils.getInstance().getLogger(logName);
+
+			logger.log(Level.WARNING, msg, exception);
+		}
+	}
 }

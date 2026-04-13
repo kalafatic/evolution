@@ -16,16 +16,27 @@ import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.application.ActionBarAdvisor;
 import org.eclipse.ui.application.IActionBarConfigurer;
 
+import eu.kalafatic.utils.builders.WorkbenchActionBuilder;
+import eu.kalafatic.utils.hack.StatusLineContributionItem;
+import eu.kalafatic.utils.lib.AppData;
+import eu.kalafatic.utils.lib.ELang;
 
-import eu.kalafatic.evolution.view.hack.StatusLineContributionItem;
-import eu.kalafatic.evolution.view.hack.WorkbenchActionBuilder;
-
+import static eu.kalafatic.utils.constants.FCoreConstants.FILTERED_ACTIONSETS;
+import static eu.kalafatic.utils.constants.FCoreImageConstants.ARROW_DOWN_IMG;
+import static eu.kalafatic.utils.constants.FCoreImageConstants.ARROW_UP_IMG;
+import static eu.kalafatic.utils.constants.FCoreImageConstants.CS_IMG;
+import static eu.kalafatic.utils.constants.FCoreImageConstants.DE_IMG;
+import static eu.kalafatic.utils.constants.FCoreImageConstants.EN_IMG;
+import static eu.kalafatic.utils.constants.FCoreImageConstants.ES_IMG;
+import static eu.kalafatic.utils.constants.FCoreImageConstants.RU_IMG;
+import static eu.kalafatic.utils.constants.FCoreImageConstants.ZH_IMG;
 
 /**
  * The Class class ApplicationActionBarAdvisor.
@@ -65,7 +76,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		cpuItem.setText("CPU: 100 %");
 
 		String locale = System.getProperty("osgi.nl");
-		//langItem.setImage(getFlag(locale));
+		langItem.setImage(getFlag(locale));
 		langItem.setText("NL: " + locale);
 
 		langItem.setVisible(true);
@@ -73,9 +84,9 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 
 		AppData.getInstance().setStatusLineManager(statusLineManager);
 
-		// AppData.getInstance().setCpuItem(cpuItem);
+		//AppData.getInstance().setCpuItem(cpuItem);
 
-		// statusLineManager.setErrorMessage("fhn");
+		statusLineManager.setErrorMessage("fhn");
 		statusLineManager.update(true);
 	}
 
@@ -210,12 +221,29 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 	 * @param trayMenu the tray menu
 	 */
 	public void fillTrayItem(MenuManager trayMenu) {
-		// trayMenu.add(getAction(ActionFactory.ABOUT.getId()));
-		// trayMenu.add(getAction(ActionFactory.CLOSE.getId()));
+		 trayMenu.add(getAction(ActionFactory.ABOUT.getId()));
+		 trayMenu.add(getAction(ActionFactory.CLOSE.getId()));
 	}
 
-	protected org.eclipse.swt.graphics.Image getFlag(String locale) { 
-		return null; 
-		
-    }
+	/**
+	 * Gets the flag.
+	 * @param locale the locale
+	 * @return the flag
+	 */
+	private Image getFlag(String locale) {
+		if (locale.toUpperCase().startsWith(ELang.CS.literal)) {
+			return CS_IMG;
+		} else if (locale.toUpperCase().startsWith(ELang.EN.literal)) {
+			return EN_IMG;
+		} else if (locale.toUpperCase().startsWith(ELang.DE.literal)) {
+			return DE_IMG;
+		} else if (locale.toUpperCase().startsWith(ELang.ZH.literal)) {
+			return ZH_IMG;
+		} else if (locale.toUpperCase().startsWith(ELang.RU.literal)) {
+			return RU_IMG;
+		} else if (locale.toUpperCase().startsWith(ELang.ES.literal)) {
+			return ES_IMG;
+		}
+		return EN_IMG;
+	}
 }

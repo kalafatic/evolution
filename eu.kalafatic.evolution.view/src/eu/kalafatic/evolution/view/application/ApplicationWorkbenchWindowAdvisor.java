@@ -60,13 +60,13 @@ import org.eclipse.ui.part.MarkerTransfer;
 import org.eclipse.ui.part.ResourceTransfer;
 import org.osgi.framework.Version;
 
+import eu.kalafatic.evolution.controller.AppData;
 import eu.kalafatic.evolution.controller.log.Log;
-import eu.kalafatic.evolution.view.application.EvolutionSplashHandler.GSHf;
-
+import eu.kalafatic.evolution.controller.splashHandlers.EvolutionSplashHandler;
+import eu.kalafatic.evolution.controller.splashHandlers.ISplashUser;
+import eu.kalafatic.evolution.controller.splashHandlers.EvolutionSplashHandler.GSHf;
 import eu.kalafatic.evolution.view.provider.ProjectManager;
-
-
-import eu.kalafatic.utils.preferences.ECorePreferences;
+import eu.kalafatic.utils.constants.FCoreImageConstants;
 
 
 
@@ -374,8 +374,8 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 			try {
 				final Tray tray = window.getShell().getDisplay().getSystemTray();
 				trayItem = new TrayItem(tray, SWT.NONE);
-				//trayItem.setImage(FCoreImageConstants.GEMINI_IMG);
-				trayItem.setToolTipText("Gemini");
+				trayItem.setImage(FCoreImageConstants.GEMINI_IMG);
+				trayItem.setToolTipText("Evolution");
 
 				tip = new ToolTip(window.getShell(), SWT.BALLOON | SWT.ICON_INFORMATION);
 				tip.setAutoHide(true);
@@ -569,4 +569,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 			}
 			return display;
 		}
+
+
+		
 }
