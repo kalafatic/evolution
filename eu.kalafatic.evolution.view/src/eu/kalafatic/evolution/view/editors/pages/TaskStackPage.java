@@ -124,16 +124,60 @@ public class TaskStackPage extends SharedScrolledComposite {
         if (isUpdating || orchestrator == null || body == null || body.isDisposed()) return;
         isUpdating = true;
 
-        taskStackGroup.clear();
-        taskRows.clear();
-
-        for (Task task : orchestrator.getTasks()) {
-            taskStackGroup.createTaskRow(task);
+        List<Task> tasks = orchestrator.getTasks();
+        boolean needsFullRefresh = tasks.size() != taskRows.size();
+        if (!needsFullRefresh) {
+            for (int i = 0; i < tasks.size(); i++) {
+                if (tasks.get(i) != taskRows.get(i).task) {
+                    needsFullRefresh = true;
+                    break;
+                }
+            }
         }
 
-        taskStackGroup.layout();
-        body.layout(true, true);
-        reflow(true);
+        if (needsFullRefresh) {
+            taskStackGroup.clear();
+            taskRows.clear();
+
+            for (Task task : tasks) {
+                taskStackGroup.createTaskRow(task);
+            }
+
+            taskStackGroup.layout();
+            body.layout(true, true);
+            reflow(true);
+        } else {
+            for (TaskRow row : taskRows) {
+                if (row.selectedCheck != null && !row.selectedCheck.isDisposed()) {
+                    if (row.selectedCheck.getSelection() != row.task.isSelected()) {
+                        row.selectedCheck.setSelection(row.task.isSelected());
+                    }
+                }
+                if (row.nameText != null && !row.nameText.isDisposed()) {
+                    if (!row.nameText.isFocusControl()) {
+                        String name = row.task.getName() != null ? row.task.getName() : "";
+                        if (!row.nameText.getText().equals(name)) {
+                            row.nameText.setText(name);
+                        }
+                    }
+                }
+                if (row.timeText != null && !row.timeText.isDisposed()) {
+                    if (!row.timeText.isFocusControl()) {
+                        String time = row.task.getScheduledTime() != null ? row.task.getScheduledTime() : "";
+                        if (!row.timeText.getText().equals(time)) {
+                            row.timeText.setText(time);
+                        }
+                    }
+                }
+                if (row.statusLabel != null && !row.statusLabel.isDisposed()) {
+                    String status = row.task.getStatus() != null ? row.task.getStatus().toString() : "";
+                    if (!row.statusLabel.getText().equals(status)) {
+                        row.statusLabel.setText(status);
+                        taskStackGroup.updateStatusColor(row.statusLabel, row.task.getStatus());
+                    }
+                }
+            }
+        }
 
         isUpdating = false;
     }
