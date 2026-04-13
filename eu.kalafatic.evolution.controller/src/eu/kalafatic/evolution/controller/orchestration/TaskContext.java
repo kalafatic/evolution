@@ -25,6 +25,7 @@ public class TaskContext {
     private final List<InputListener> inputListeners = new CopyOnWriteArrayList<>();
     private final List<TokenRequestListener> tokenRequestListeners = new CopyOnWriteArrayList<>();
     private final List<String> instructionFiles = new CopyOnWriteArrayList<>();
+    private String currentTaskName = "Orchestration";
     private CompletableFuture<Boolean> approvalFuture;
     private CompletableFuture<String> inputFuture;
     private volatile boolean paused = false;
@@ -61,6 +62,14 @@ public class TaskContext {
 
     public File getProjectRoot() {
         return projectRoot;
+    }
+
+    public String getCurrentTaskName() {
+        return currentTaskName;
+    }
+
+    public void setCurrentTaskName(String currentTaskName) {
+        this.currentTaskName = currentTaskName;
     }
 
     public void log(String message) {

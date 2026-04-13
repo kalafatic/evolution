@@ -174,7 +174,7 @@ public abstract class BaseAiAgent implements IAgent {
             prompt = DataScrubber.scrub(prompt);
         }
 
-        context.log("Agent [" + id + " (" + type + ")]: Processing task - " + taskDescription);
+        context.log("Evo-" + type + "-" + context.getCurrentTaskName() + ": Processing task");
 
         // Routing via LlmRouter
         float temperature = 0.7f;
