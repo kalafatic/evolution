@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
+import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
 import eu.kalafatic.evolution.controller.agents.ArchitectAgent;
 import eu.kalafatic.evolution.controller.agents.FileAgent;
 import eu.kalafatic.evolution.controller.agents.GeneralAgent;
@@ -33,12 +34,14 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
 public class EvolutionOrchestrator implements IOrchestrator {
 
     private static final int MAX_RETRIES = 3;
+    private final AnalyticAgent analyticAgent = new AnalyticAgent();
     private final PlannerAgent planner = new PlannerAgent();
     private final List<IAgent> availableAgents = new ArrayList<>();
     private final ReviewerAgent reviewer = new ReviewerAgent();
 
     public EvolutionOrchestrator() {
         // Initialize default agents
+        availableAgents.add(analyticAgent);
         availableAgents.add(new ArchitectAgent());
         availableAgents.add(new JavaDevAgent());
         availableAgents.add(new TesterAgent());
@@ -72,9 +75,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
             context.log("Evo: Starting request - " + request);
             context.appendSharedMemory("Initial user request: " + request);
 
-            // 1. Planning
+            // 1. Analytic Phase
+            String analyzedRequest = analyzeAndClarify(request, context);
+
+            // 2. Planning
             OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Planning...");
-            List<Task> originalPlannedTasks = planner.plan(request, context);
+            List<Task> originalPlannedTasks = planner.plan(analyzedRequest, context);
             OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Finished");
             context.getOrchestrator().getTasks().clear();
             context.getOrchestrator().getTasks().addAll(originalPlannedTasks);
@@ -324,6 +330,42 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
         // Default to agent reasoning
         return agent.process(taskName, context, lastFeedback);
+    }
+
+    private String analyzeAndClarify(String request, TaskContext context) throws Exception {
+        OrchestrationStatusManager.getInstance().updateAgentStatus("Analytic", "Analyzing request...");
+        try {
+            JSONObject analysis = analyticAgent.analyze(request, context);
+            context.log("Evo: Analytic Agent identified category: " + analysis.optString("category"));
+
+            if (analysis.optBoolean("isAmbiguous", false)) {
+                String question = analysis.optString("clarificationQuestion", "The request is ambiguous. Can you please provide more details?");
+                context.log("Evo: Request is ambiguous. Asking for clarification...");
+
+                String clarification = context.requestInput(question).get();
+                if (clarification == null || clarification.trim().isEmpty()) {
+                    context.log("Evo: No clarification provided. Proceeding with original request.");
+                    return request;
+                }
+
+                context.log("Evo: Received clarification: " + clarification);
+                context.appendSharedMemory("User Clarification: " + clarification);
+
+                // Recursively analyze with the clarification
+                return analyzeAndClarify(request + "\nClarification: " + clarification, context);
+            }
+
+            String refined = analysis.optString("refinedPrompt", request);
+            if (!refined.equals(request)) {
+                context.log("Evo: Analytic Agent refined the prompt for better planning.");
+            }
+            return refined;
+        } catch (Exception e) {
+            context.log("Evo Analytic Warning: " + e.getMessage() + ". Proceeding with original request.");
+            return request;
+        } finally {
+            OrchestrationStatusManager.getInstance().updateAgentStatus("Analytic", "Idle");
+        }
     }
 
     private IAgent findAgentForTask(Task task, TaskContext context) {
