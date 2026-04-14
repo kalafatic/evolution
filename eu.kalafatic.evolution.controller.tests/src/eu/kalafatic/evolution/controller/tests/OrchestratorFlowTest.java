@@ -97,6 +97,38 @@ public class OrchestratorFlowTest {
         assertEquals(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE, orchestrator.getTasks().get(1).getStatus());
     }
 
+    @Test
+    public void testClarificationWait() throws Exception {
+        EvolutionOrchestrator engine = new EvolutionOrchestrator();
+        TaskContext context = new TaskContext(orchestrator, tempDir);
+
+        // Inject mocks
+        injectMocksIntoOrchestrator(engine, mockOllama);
+
+        // Mock Planner Response
+        String planResponse = "[{\"id\": \"t1\", \"name\": \"Say Hello\", \"taskType\": \"llm\"}]";
+
+        // Mock sequence: Analytic -> Planner -> Clarification Request -> Follow-up Response -> Evaluation
+        mockOllama.setResponseSequence(new String[] {
+            "{\"category\":\"CHAT\", \"isAmbiguous\":false}",
+            planResponse,
+            "CLARIFY: What do you mean by hello?",
+            "Hello verified",
+            "{\"success\": true}"
+        });
+
+        // Mock User Input for Clarification
+        context.addInputListener(message -> {
+            context.provideInput("I mean Hi");
+        });
+
+        // Execute
+        String result = engine.execute("Hello", context);
+
+        assertNotNull(result);
+        assertTrue(result.contains("Hello verified"));
+    }
+
     private void injectMocksIntoOrchestrator(EvolutionOrchestrator engine, ILlmProvider mock) throws Exception {
         // Orchestrator has planner (PlannerAgent), reviewer (ReviewerAgent), and availableAgents (List<IAgent>)
         Field plannerField = EvolutionOrchestrator.class.getDeclaredField("planner");

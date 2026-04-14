@@ -46,7 +46,9 @@ public class ReviewerAgent extends BaseAiAgent {
         }
 
         try {
-            return new JSONObject(reviewResult.substring(start, end + 1));
+            JSONObject evaluation = new JSONObject(reviewResult.substring(start, end + 1));
+            context.log("Reviewer: Evaluation for '" + taskDescription + "': success=" + evaluation.optBoolean("success") + ", comment=" + evaluation.optString("comment"));
+            return evaluation;
         } catch (org.json.JSONException e) {
             context.log("Reviewer: Warning - Failed to parse AI response as JSON object. Assuming success.");
             JSONObject fallback = new JSONObject();

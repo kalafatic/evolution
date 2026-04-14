@@ -213,6 +213,17 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 String result = performAction(task, agent, context, lastFeedback);
                 task.setResponse(result);
 
+                // Handle Clarification/Proposal stall
+                if (result != null && (result.contains("CLARIFY") || result.contains("[PROPOSAL:"))) {
+                    context.log("Evo-Orchestrator-" + task.getName() + ": Agent requested clarification/proposal. Pausing execution.");
+                    String clarification = context.requestInput(result).get();
+                    if (clarification != null) {
+                        lastFeedback = "User Response: " + clarification;
+                        retry--; // Retry with the new information
+                        continue;
+                    }
+                }
+
                 // Evaluation
                 JSONObject evaluation = reviewer.evaluate(result, task.getName(), context);
                 if (evaluation.optBoolean("success", false)) {
@@ -223,6 +234,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     task.setFeedback("Retry " + retry + ": " + lastFeedback);
                 }
             } catch (Exception e) {
+                context.log("Evo-Orchestrator-" + task.getName() + ": Error during execution: " + e.getMessage());
                 lastFeedback = "Exception: " + e.getMessage();
                 task.setFeedback("Retry " + retry + " Exception: " + e.getMessage());
             }
@@ -266,7 +278,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             FileTool fileTool = new FileTool();
 
             // Robust path extraction from task name
-            String path = taskName.replaceFirst("(?i)^(Write|Create|Generate|Update|Modify|Delete)(\\s+file)?\\s+", "").trim();
+            String path = taskName.replaceFirst("(?i)^(.+:\\s*)?(Write|Create|Generate|Update|Modify|Delete)(\\s+file)?\\s+", "").trim();
 
             // Strip quotes if present
             if ((path.startsWith("'") && path.endsWith("'")) || (path.startsWith("\"") && path.endsWith("\""))) {

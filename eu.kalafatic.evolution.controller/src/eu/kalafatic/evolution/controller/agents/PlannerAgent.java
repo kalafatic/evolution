@@ -46,7 +46,8 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "- 'git': For version control actions.\n" +
                 "- 'maven': For building or testing.\n" +
                 "- 'approval': Explicitly pause for user input.\n\n" +
-                "Output MUST be a valid JSON array of objects. Schema:\n" +
+                "Output MUST be a valid JSON array of objects. Ensure no duplicate keys are present. All fields are REQUIRED.\n" +
+                "Schema:\n" +
                 "[ { \"id\": \"unique_id\", \"name\": \"[Agent]: [Action]\", \"description\": \"Detailed instructions for the agent\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"approval\", \"approvalRequired\": boolean, \"loopToTaskId\": \"id_to_jump_to\"|\"none\" } ]\n" +
                 "EXAMPLES:\n" +
                 "- Greeting: [ { \"id\": \"t1\", \"name\": \"General: Respond to greeting\", \"description\": \"Politely acknowledge user.\", \"taskType\": \"llm\", \"approvalRequired\": false } ]\n" +
