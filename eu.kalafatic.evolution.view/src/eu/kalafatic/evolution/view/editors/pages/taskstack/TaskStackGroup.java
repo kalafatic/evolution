@@ -89,7 +89,7 @@ public class TaskStackGroup extends AEvoGroup {
         page.registerTaskRow(task, check, nameText, timeText, statusLabel);
     }
 
-    private void updateStatusColor(Label label, TaskStatus status) {
+    public void updateStatusColor(Label label, TaskStatus status) {
         switch (status) {
             case PENDING: label.setForeground(label.getDisplay().getSystemColor(SWT.COLOR_BLACK)); break;
             case RUNNING: label.setForeground(label.getDisplay().getSystemColor(SWT.COLOR_BLUE)); break;
