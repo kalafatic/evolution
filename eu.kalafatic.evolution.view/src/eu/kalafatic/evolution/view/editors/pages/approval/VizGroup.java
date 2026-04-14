@@ -32,7 +32,7 @@ public class VizGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent, ApprovalPage page) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Network Visualization", 1, true);
         GridData gd = new GridData(GridData.FILL_BOTH);
-        gd.heightHint = 264;
+        gd.heightHint = 400;
         group.setLayoutData(gd);
 
         // Access the section to add toolbar buttons
@@ -69,7 +69,7 @@ public class VizGroup extends AEvoGroup {
         browserContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         try {
-		browser = SWTFactory.createBrowser(browserContainer,264);
+		browser = SWTFactory.createBrowser(browserContainer,400);
           
             page.setupBrowserListeners(browser);
         } catch (Exception e) {

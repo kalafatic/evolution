@@ -18,9 +18,14 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import java.io.File;
+import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -89,7 +94,7 @@ public class AiFlowPage extends Composite {
 		vizScrolled.setContent(browserContainer);
 
 		this.browser = new Browser(browserContainer, SWT.NONE);
-		GridData browserGD = new GridData(SWT.LEFT, SWT.TOP, false, false);
+		GridData browserGD = new GridData(GridData.FILL_BOTH);
 		browserGD.widthHint = browserWidth;
 		browserGD.heightHint = browserHeight;
 		browser.setLayoutData(browserGD);
@@ -128,6 +133,16 @@ public class AiFlowPage extends Composite {
 			}
 		});
 
+		vizScrolled.addControlListener(new org.eclipse.swt.events.ControlAdapter() {
+			@Override
+			public void controlResized(org.eclipse.swt.events.ControlEvent e) {
+				org.eclipse.swt.graphics.Rectangle r = vizScrolled.getClientArea();
+				if (r.width > browserWidth) browserWidth = r.width;
+				if (r.height > browserHeight) browserHeight = r.height;
+				updateScrolledContent();
+			}
+		});
+
 		setOrchestrator(orchestrator);
 		browser.setText(getHtmlTemplate());
 		updateScrolledContent();
@@ -161,14 +176,13 @@ public class AiFlowPage extends Composite {
 		Display.getDefault().asyncExec(() -> {
 			if (browser == null || browser.isDisposed()) return;
 
+			String json = getModelAsJson();
+			if (json.equals(lastJson) && isLoaded) return; // No change, avoid update
+
 			if (!isLoaded) {
-				// Avoid redundant setText
 				browser.setText(getHtmlTemplate());
 				return;
 			}
-
-			String json = getModelAsJson();
-			if (json.equals(lastJson)) return; // No change, avoid update
 
 			try {
 				// If updateGraph is not defined, the template was lost (e.g. after reload)
@@ -177,19 +191,11 @@ public class AiFlowPage extends Composite {
 					browser.execute("updateGraph(" + json + ");");
 					lastJson = json;
 				} else {
-					isLoaded = false;
+					// Fallback if template lost
 					browser.setText(getHtmlTemplate());
 				}
 			} catch (Exception e) {
 				// Edge-based browser may throw exception if not fully initialized
-				isLoaded = false;
-				try {
-					if (browser.getText().isEmpty()) {
-						browser.setText(getHtmlTemplate());
-					}
-				} catch (Exception e2) {
-					browser.setText(getHtmlTemplate());
-				}
 			}
 		});
 	}
@@ -233,6 +239,25 @@ public class AiFlowPage extends Composite {
 			root.put("session", sessionObj);
 		}
 
+		// Darwin variants visualization data
+		try {
+			String projectRoot = orchestrator.getFileConfig() != null ? orchestrator.getFileConfig().getLocalPath() : null;
+			if (projectRoot != null && new File(projectRoot).exists()) {
+				IterationMemoryService memoryService = new IterationMemoryService(new File(projectRoot));
+				List<IterationRecord> records = memoryService.getRecords();
+				JSONArray variantsArr = new JSONArray();
+				for (IterationRecord rec : records) {
+					JSONObject varObj = new JSONObject();
+					varObj.put("strategy", rec.getStrategy());
+					varObj.put("branch", rec.getBranch());
+					varObj.put("score", rec.getScore());
+					varObj.put("result", rec.getResult());
+					variantsArr.put(varObj);
+				}
+				root.put("variants", variantsArr);
+			}
+		} catch (Exception e) {}
+
 		return root.toString();
 	}
 
@@ -257,7 +282,7 @@ public class AiFlowPage extends Composite {
 	private String getHtmlTemplate() {
 		return "<!DOCTYPE html><html><head><style>"
 				+ "body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; overflow: hidden; }"
-				+ "#canvas { width: 100vw; height: 100vh; }"
+				+ "#canvas { width: 100%; height: 100%; }"
 				+ ".node { fill: #fff; stroke: #cbd5e1; stroke-width: 1px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }"
 				+ ".node:hover { stroke: #94a3b8; stroke-width: 2px; transform: translateY(-2px); }"
 				+ ".task.DONE { fill: #f0fdf4; stroke: #22c55e; }"
@@ -274,10 +299,14 @@ public class AiFlowPage extends Composite {
 				+ ".loop-text.active { fill: #ffffff; }"
 				+ ".loop-link { stroke: #94a3b8; stroke-width: 2px; fill: none; marker-end: url(#loop-arrow); }"
 				+ ".loop-link.active { stroke: #3b82f6; stroke-width: 3.5px; }"
+				+ ".variant-node { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.5px; }"
+				+ ".variant-node.SUCCESS { fill: #dcfce7; stroke: #22c55e; }"
+				+ ".variant-node.FAIL { fill: #fee2e2; stroke: #ef4444; }"
+				+ ".variant-link { stroke: #94a3b8; stroke-width: 1px; stroke-dasharray: 2; }"
 				+ "@keyframes pulse { 0% { stroke-opacity: 1; stroke-width: 3px; } 50% { stroke-opacity: 0.4; stroke-width: 8px; } 100% { stroke-opacity: 1; stroke-width: 3px; } }"
 				+ ".loop-node.active { animation: pulse 2s infinite ease-in-out; }"
 				+ "</style></head><body>"
-				+ "<svg id='canvas' viewBox='0 0 660 530'><defs>"
+				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs>"
 				+ "<marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker>"
 				+ "<marker id='loop-arrow' markerWidth='6' markerHeight='4' refX='6' refY='2' orient='auto'><polygon points='0 0, 6 2, 0 4' fill='#94a3b8'/></marker>"
 				+ "</defs>"
@@ -333,21 +362,23 @@ public class AiFlowPage extends Composite {
 				+ "    text.textContent = n.name.length > 20 ? n.name.substring(0, 17) + '...' : n.name;"
 				+ "    g.appendChild(text);" + "    viewport.appendChild(g);" + "  });"
 				+ "  if (data.session) {"
-				+ "    updateLoopDiagram(data.session.phase);"
+				+ "    updateLoopDiagram(data.session.phase, data.variants);"
 				+ "  } else {"
-				+ "    updateLoopDiagram('IDLE');"
+				+ "    updateLoopDiagram('IDLE', data.variants);"
 				+ "  }"
 				+ "}"
-				+ "function updateLoopDiagram(activePhase) {"
+				+ "function updateLoopDiagram(activePhase, variants) {"
 				+ "  var loopContainer = document.getElementById('loop-diagram');"
 				+ "  loopContainer.innerHTML = '';"
 				+ "  var phases = ['OBSERVE', 'ANALYZE', 'PLAN', 'VALIDATE', 'EXECUTE', 'TEST', 'EVALUATE', 'COMMIT', 'PR', 'FEEDBACK', 'REFINE', 'LEARN'];"
 				+ "  var radius = 75;"
 				+ "  var centerX = 0, centerY = 0;"
+				+ "  var planX, planY;"
 				+ "  phases.forEach(function(p, i) {"
 				+ "    var angle = (i / phases.length) * 2 * Math.PI - Math.PI / 2;"
 				+ "    var x = centerX + radius * Math.cos(angle);"
 				+ "    var y = centerY + radius * Math.sin(angle);"
+				+ "    if (p === 'PLAN') { planX = x; planY = y; }"
 				+ "    var isActive = p === activePhase;"
 				+ "    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');"
 				+ "    var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');"
@@ -370,6 +401,25 @@ public class AiFlowPage extends Composite {
 				+ "    path.className.baseVal = 'loop-link' + (isActive ? ' active' : '');"
 				+ "    loopContainer.appendChild(path);"
 				+ "  });"
+				+ "  if (variants && variants.length > 0) {"
+				+ "    variants.forEach(function(v, idx) {"
+				+ "      var vAngle = (idx - (variants.length-1)/2) * 0.4;"
+				+ "      var vx = planX + 50 * Math.cos(vAngle);"
+				+ "      var vy = planY + 50 * Math.sin(vAngle);"
+				+ "      var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');"
+				+ "      vLine.setAttribute('x1', planX); vLine.setAttribute('y1', planY);"
+				+ "      vLine.setAttribute('x2', vx); vLine.setAttribute('y2', vy);"
+				+ "      vLine.className.baseVal = 'variant-link';"
+				+ "      loopContainer.appendChild(vLine);"
+				+ "      var vCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');"
+				+ "      vCircle.setAttribute('cx', vx); vCircle.setAttribute('cy', vy); vCircle.setAttribute('r', 10);"
+				+ "      vCircle.className.baseVal = 'variant-node ' + v.result;"
+				+ "      var title = document.createElementNS('http://www.w3.org/2000/svg', 'title');"
+				+ "      title.textContent = v.strategy + ' (Score: ' + v.score + ')';"
+				+ "      vCircle.appendChild(title);"
+				+ "      loopContainer.appendChild(vCircle);"
+				+ "    });"
+				+ "  }"
 				+ "}"
 				+ "</script></body></html>";
 	}

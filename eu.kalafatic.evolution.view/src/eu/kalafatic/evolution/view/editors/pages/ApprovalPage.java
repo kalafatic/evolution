@@ -19,9 +19,14 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
+import java.io.File;
+import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -150,17 +155,13 @@ public class ApprovalPage extends SharedScrolledComposite {
 	private void refreshBrowser() {
 		if (vizGroup.getBrowser() == null || vizGroup.getBrowser().isDisposed()) return;
 
+		String json = getModelAsJson();
+		if (json.equals(lastJson) && isLoaded) return;
+
 		if (!isLoaded) {
-			// If not loaded and not in the middle of loading something, trigger load
-			String currentText = vizGroup.getBrowser().getText();
-			if (currentText == null || currentText.isEmpty() || currentText.equals("about:blank")) {
-				vizGroup.getBrowser().setText(getHtmlTemplate());
-			}
+			vizGroup.getBrowser().setText(getHtmlTemplate());
 			return;
 		}
-
-		String json = getModelAsJson();
-		if (json.equals(lastJson)) return;
 
 		try {
 			Object result = vizGroup.getBrowser().evaluate("return typeof updateGraph !== 'undefined';");
@@ -171,7 +172,6 @@ public class ApprovalPage extends SharedScrolledComposite {
 			} else {
 				if (initRetries < MAX_INIT_RETRIES) {
 					initRetries++;
-					isLoaded = false;
 					vizGroup.getBrowser().setText(getHtmlTemplate());
 				}
 			}
@@ -226,6 +226,25 @@ public class ApprovalPage extends SharedScrolledComposite {
 			else sessionObj.put("phase", "IDLE");
 			root.put("session", sessionObj);
 		}
+
+		try {
+			String projectRoot = orchestrator.getFileConfig() != null ? orchestrator.getFileConfig().getLocalPath() : null;
+			if (projectRoot != null && new File(projectRoot).exists()) {
+				IterationMemoryService memoryService = new IterationMemoryService(new File(projectRoot));
+				List<IterationRecord> records = memoryService.getRecords();
+				JSONArray variantsArr = new JSONArray();
+				for (IterationRecord rec : records) {
+					JSONObject varObj = new JSONObject();
+					varObj.put("strategy", rec.getStrategy());
+					varObj.put("branch", rec.getBranch());
+					varObj.put("score", rec.getScore());
+					varObj.put("result", rec.getResult());
+					variantsArr.put(varObj);
+				}
+				root.put("variants", variantsArr);
+			}
+		} catch (Exception e) {}
+
 		return root.toString();
 	}
 
@@ -256,27 +275,31 @@ public class ApprovalPage extends SharedScrolledComposite {
 				+ ".loop-text.active { fill: #ffffff; }"
 				+ ".loop-link { stroke: #94a3b8; stroke-width: 2px; fill: none; marker-end: url(#loop-arrow); }"
 				+ ".loop-link.active { stroke: #3b82f6; stroke-width: 3.5px; }"
+				+ ".variant-node { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.5px; }"
+				+ ".variant-node.SUCCESS { fill: #dcfce7; stroke: #22c55e; }"
+				+ ".variant-node.FAIL { fill: #fee2e2; stroke: #ef4444; }"
+				+ ".variant-link { stroke: #94a3b8; stroke-width: 1px; stroke-dasharray: 2; }"
 				+ "@keyframes pulse { 0% { stroke-opacity: 1; stroke-width: 3px; } 50% { stroke-opacity: 0.4; stroke-width: 8px; } 100% { stroke-opacity: 1; stroke-width: 3px; } }"
 				+ ".loop-node.active { animation: pulse 2s infinite ease-in-out; }"
 				+ "</style></head><body>"
 				+ "<div class='session-info' id='info'>AI Network Structure</div>"
-				+ "<svg id='canvas' viewBox='0 0 800 400'><defs>"
+				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs>"
 				+ "<marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker>"
 				+ "<marker id='loop-arrow' markerWidth='6' markerHeight='4' refX='6' refY='2' orient='auto'><polygon points='0 0, 6 2, 0 4' fill='#94a3b8'/></marker>"
 				+ "</defs>"
-				+ "<rect class='loop-bg' x='10' y='10' width='160' height='160' />"
-				+ "<g id='loop-diagram' transform='translate(90, 90)'></g>"
-				+ "<g id='viewport' transform='translate(200, 20)'></g></svg>"
+				+ "<rect class='loop-bg' x='10' y='10' width='220' height='220' />"
+				+ "<g id='loop-diagram' transform='translate(120, 120)'></g>"
+				+ "<g id='viewport' transform='translate(280, 20)'></g></svg>"
 				+ "<script>"
 				+ "var viewport = document.getElementById('viewport');"
 				+ "var currentZoom = 1.0;"
 				+ "function applyZoom(factor) {"
 				+ "  currentZoom *= factor;"
-				+ "  viewport.setAttribute('transform', 'translate(200, 20) scale(' + currentZoom + ')');"
+				+ "  viewport.setAttribute('transform', 'translate(280, 20) scale(' + currentZoom + ')');"
 				+ "}"
 				+ "function resetZoom() {"
 				+ "  currentZoom = 1.0;"
-				+ "  viewport.setAttribute('transform', 'translate(200, 20)');"
+				+ "  viewport.setAttribute('transform', 'translate(280, 20)');"
 				+ "}"
 				+ "function updateGraph(data) {"
 				+ "  viewport.innerHTML = '';"
@@ -329,25 +352,27 @@ public class ApprovalPage extends SharedScrolledComposite {
 				+ "  });"
 				+ "  if (data.session) {"
 				+ "    document.getElementById('info').textContent = 'Session: ' + data.session.id + ' (' + data.session.status + ')';"
-				+ "    updateLoopDiagram(data.session.phase);"
+				+ "    updateLoopDiagram(data.session.phase, data.variants);"
 				+ "  } else {"
-				+ "    updateLoopDiagram('IDLE');"
+				+ "    updateLoopDiagram('IDLE', data.variants);"
 				+ "  }"
 				+ "}"
-				+ "function updateLoopDiagram(activePhase) {"
+				+ "function updateLoopDiagram(activePhase, variants) {"
 				+ "  var loopContainer = document.getElementById('loop-diagram');"
 				+ "  loopContainer.innerHTML = '';"
 				+ "  var phases = ['OBSERVE', 'ANALYZE', 'PLAN', 'VALIDATE', 'EXECUTE', 'TEST', 'EVALUATE', 'COMMIT', 'PR', 'FEEDBACK', 'REFINE', 'LEARN'];"
-				+ "  var radius = 60;"
+				+ "  var radius = 75;"
 				+ "  var centerX = 0, centerY = 0;"
+				+ "  var planX, planY;"
 				+ "  phases.forEach(function(p, i) {"
 				+ "    var angle = (i / phases.length) * 2 * Math.PI - Math.PI / 2;"
 				+ "    var x = centerX + radius * Math.cos(angle);"
 				+ "    var y = centerY + radius * Math.sin(angle);"
+				+ "    if (p === 'PLAN') { planX = x; planY = y; }"
 				+ "    var isActive = p === activePhase;"
 				+ "    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');"
 				+ "    var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');"
-				+ "    circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', 18);"
+				+ "    circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', 22);"
 				+ "    circle.className.baseVal = 'loop-node' + (isActive ? ' active' : '');"
 				+ "    g.appendChild(circle);"
 				+ "    var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');"
@@ -366,6 +391,25 @@ public class ApprovalPage extends SharedScrolledComposite {
 				+ "    path.className.baseVal = 'loop-link' + (isActive ? ' active' : '');"
 				+ "    loopContainer.appendChild(path);"
 				+ "  });"
+				+ "  if (variants && variants.length > 0) {"
+				+ "    variants.forEach(function(v, idx) {"
+				+ "      var vAngle = (idx - (variants.length-1)/2) * 0.4;"
+				+ "      var vx = planX + 50 * Math.cos(vAngle);"
+				+ "      var vy = planY + 50 * Math.sin(vAngle);"
+				+ "      var vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');"
+				+ "      vLine.setAttribute('x1', planX); vLine.setAttribute('y1', planY);"
+				+ "      vLine.setAttribute('x2', vx); vLine.setAttribute('y2', vy);"
+				+ "      vLine.className.baseVal = 'variant-link';"
+				+ "      loopContainer.appendChild(vLine);"
+				+ "      var vCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');"
+				+ "      vCircle.setAttribute('cx', vx); vCircle.setAttribute('cy', vy); vCircle.setAttribute('r', 10);"
+				+ "      vCircle.className.baseVal = 'variant-node ' + v.result;"
+				+ "      var title = document.createElementNS('http://www.w3.org/2000/svg', 'title');"
+				+ "      title.textContent = v.strategy + ' (Score: ' + v.score + ')';"
+				+ "      vCircle.appendChild(title);"
+				+ "      loopContainer.appendChild(vCircle);"
+				+ "    });"
+				+ "  }"
 				+ "}"
 				+ "</script></body></html>";
 	}

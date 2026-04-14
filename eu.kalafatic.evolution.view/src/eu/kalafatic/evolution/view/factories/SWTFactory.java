@@ -340,8 +340,7 @@ public class SWTFactory {
 	public static Browser createBrowser(Composite parent, int height) {
 		Browser browser = new Browser(parent, SWT.NONE);
 
-		GridData gd = new GridData();
-		// gd.widthHint = 20;
+		GridData gd = new GridData(GridData.FILL_BOTH);
 		gd.heightHint = height;
 		browser.setLayoutData(gd);
 
