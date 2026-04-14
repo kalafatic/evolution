@@ -632,4 +632,27 @@ public interface Orchestrator extends EObject {
 	 */
 	EList<AIProvider> getAiProviders();
 
+	/**
+	 * Returns the value of the '<em><b>Darwin Mode</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Darwin Mode</em>' attribute.
+	 * @see #setDarwinMode(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_DarwinMode()
+	 * @model default="false"
+	 * @generated
+	 */
+	boolean isDarwinMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isDarwinMode <em>Darwin Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Darwin Mode</em>' attribute.
+	 * @see #isDarwinMode()
+	 * @generated
+	 */
+	void setDarwinMode(boolean value);
+
 } // Orchestrator
