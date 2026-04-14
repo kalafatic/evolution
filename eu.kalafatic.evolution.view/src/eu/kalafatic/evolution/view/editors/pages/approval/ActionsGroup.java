@@ -37,6 +37,13 @@ public class ActionsGroup extends AEvoGroup {
             @Override public void widgetSelected(SelectionEvent e) { page.handleApprove(); }
         });
 
+        Button approveAllBtn = toolkit.createButton(group, "Approve All (Auto)", SWT.PUSH);
+        approveAllBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        approveAllBtn.setToolTipText("Automatically approve all remaining tasks in the current loop");
+        approveAllBtn.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) { page.handleApproveAll(); }
+        });
+
         Button rejectBtn = toolkit.createButton(group, "Reject & Abort", SWT.PUSH);
         rejectBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         rejectBtn.addSelectionListener(new SelectionAdapter() {

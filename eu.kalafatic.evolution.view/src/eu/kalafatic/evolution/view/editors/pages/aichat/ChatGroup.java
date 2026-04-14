@@ -217,6 +217,10 @@ public class ChatGroup extends AEvoGroup {
             else if (senderLower.contains("-quality-")) agentType = "quality";
             else if (senderLower.contains("-observability-")) agentType = "observability";
             else if (senderLower.contains("-orchestrator-")) agentType = "orchestrator";
+
+            if (content.toLowerCase().contains("waiting for user") || content.toLowerCase().contains("guidance?")) {
+		agentType = "waiting";
+            }
         } else if (text.startsWith("Evolution: ")) {
             sender = "Evo";
             content = text.substring(11);
