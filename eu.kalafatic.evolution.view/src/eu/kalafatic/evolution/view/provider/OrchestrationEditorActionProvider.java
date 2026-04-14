@@ -38,6 +38,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
     private Action removeAction;
     private Action rateTaskAction;
     private Action startSelfDevAction;
+    private Action compareWithEachOtherAction;
 
     @Override
     public void init(ICommonActionExtensionSite aSite) {
@@ -129,6 +130,28 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
             }
         };
 
+        compareWithEachOtherAction = new Action("Compare with each other") {
+            @Override
+            public void run() {
+                ISelection selection = getContext().getSelection();
+                if (selection instanceof IStructuredSelection) {
+                    IStructuredSelection ssel = (IStructuredSelection) selection;
+                    if (ssel.size() == 2) {
+                        Object first = ssel.toArray()[0];
+                        Object second = ssel.toArray()[1];
+                        if (first instanceof IFile && second instanceof IFile) {
+                            org.eclipse.compare.CompareConfiguration config = new org.eclipse.compare.CompareConfiguration();
+                            config.setLeftLabel(((IFile) first).getName());
+                            config.setRightLabel(((IFile) second).getName());
+                            eu.kalafatic.evolution.view.editors.compare.ResourceCompareInput input =
+                                new eu.kalafatic.evolution.view.editors.compare.ResourceCompareInput(config, first, second);
+                            org.eclipse.compare.CompareUI.openCompareEditor(input);
+                        }
+                    }
+                }
+            }
+        };
+
         startSelfDevAction = new Action("Start Self-Dev Session") {
             @Override
             public void run() {
@@ -160,6 +183,13 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
             }
             if (firstElement instanceof Orchestrator) {
                 menu.appendToGroup(ICommonMenuConstants.GROUP_OPEN, startSelfDevAction);
+            }
+            if (((IStructuredSelection) selection).size() == 2) {
+                Object first = ((IStructuredSelection) selection).toArray()[0];
+                Object second = ((IStructuredSelection) selection).toArray()[1];
+                if (first instanceof IFile && second instanceof IFile) {
+                    menu.appendToGroup(ICommonMenuConstants.GROUP_OPEN, compareWithEachOtherAction);
+                }
             }
         }
         menu.appendToGroup(ICommonMenuConstants.GROUP_EDIT, removeAction);
