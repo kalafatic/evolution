@@ -73,6 +73,24 @@ public class ChatMgmtGroup extends AEvoGroup {
                 page.createNewThread();
             }
         });
+
+        Button byDateButton = SWTFactory.createButton(group, "By Date");
+        byDateButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.selectThreadByDate();
+            }
+        });
+    }
+
+    public void setThreadSelection(String threadId) {
+        if (threadCombo.isDisposed()) return;
+        for (int i = 0; i < threadCombo.getItemCount(); i++) {
+            if (threadCombo.getItem(i).equals(threadId)) {
+                threadCombo.select(i);
+                return;
+            }
+        }
     }
 
     public void updateThreadCombo(String[] threads, String current) {

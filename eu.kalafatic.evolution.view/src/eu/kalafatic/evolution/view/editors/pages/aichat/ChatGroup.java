@@ -24,6 +24,9 @@ import org.eclipse.ui.forms.widgets.Section;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.model.orchestration.ChatMessage;
+import eu.kalafatic.evolution.model.orchestration.ChatThread;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -34,46 +37,11 @@ public class ChatGroup extends AEvoGroup {
     private Browser browser;
     private AiChatPage page;
     private boolean isLoaded = false;
-    private List<ChatMessage> messages = new ArrayList<>();
+    private ChatThread currentThread;
     private EditMessageCallback editCallback;
 
     public interface EditMessageCallback {
         void onEditMessage(int index, String oldText);
-    }
-
-    private static class ChatMessage {
-        int index;
-        String sender;
-        String text;
-        String color;
-        boolean isBold;
-        boolean isItalic;
-        String agentType;
-        String timestamp;
-
-        ChatMessage(int index, String sender, String text, String color, boolean isBold, boolean isItalic, String agentType, String timestamp) {
-            this.index = index;
-            this.sender = sender;
-            this.text = text;
-            this.color = color;
-            this.isBold = isBold;
-            this.isItalic = isItalic;
-            this.agentType = agentType;
-            this.timestamp = timestamp;
-        }
-
-        JSONObject toJsonObject() {
-            JSONObject obj = new JSONObject();
-            obj.put("index", index);
-            obj.put("sender", sender);
-            obj.put("text", text);
-            obj.put("color", color);
-            obj.put("isBold", isBold);
-            obj.put("isItalic", isItalic);
-            obj.put("agentType", agentType != null ? agentType : "ai");
-            obj.put("timestamp", timestamp != null ? timestamp : "");
-            return obj;
-        }
     }
 
     public ChatGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Font chatFont, AiChatPage page) {
@@ -206,7 +174,8 @@ public class ChatGroup extends AEvoGroup {
         this.editCallback = callback;
     }
 
-    public void appendText(String text, org.eclipse.swt.graphics.Color color, int style) {    	
+    public void appendText(String text, org.eclipse.swt.graphics.Color color, int style) {
+        if (currentThread == null) return;
     	if (color == null) {
     		color = Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
 		}
@@ -287,7 +256,16 @@ public class ChatGroup extends AEvoGroup {
 			boolean isItalic = (style & SWT.ITALIC) != 0;
 			String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
 
-			messages.add(new ChatMessage(messages.size(), sender, content, hexColor, isBold, isItalic, agentType, timestamp));
+            ChatMessage msg = OrchestrationFactory.eINSTANCE.createChatMessage();
+            msg.setIndex(currentThread.getMessages().size());
+            msg.setSender(sender);
+            msg.setText(content);
+            msg.setColor(hexColor);
+            msg.setIsBold(isBold);
+            msg.setIsItalic(isItalic);
+            msg.setAgentType(agentType);
+            msg.setTimestamp(timestamp);
+			currentThread.getMessages().add(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -295,8 +273,8 @@ public class ChatGroup extends AEvoGroup {
     }
 
 	public void updateMessage(int index, String newText) {
-        if (index >= 0 && index < messages.size()) {
-            messages.get(index).text = newText;
+        if (currentThread != null && index >= 0 && index < currentThread.getMessages().size()) {
+            currentThread.getMessages().get(index).setText(newText);
             refreshBrowser();
         }
     }
@@ -309,42 +287,84 @@ public class ChatGroup extends AEvoGroup {
     private void refreshBrowser() {
         if (!isLoaded || browser.isDisposed()) return;
         JSONArray array = new JSONArray();
-        for (ChatMessage m : messages) {
-            array.put(m.toJsonObject());
+        if (currentThread != null) {
+            for (ChatMessage m : currentThread.getMessages()) {
+                array.put(toJsonObject(m));
+            }
         }
         String json = array.toString();
         // Pass the JSON object directly to the JS function
         browser.execute("updateMessages(" + json + ");");
     }
 
+    private JSONObject toJsonObject(ChatMessage m) {
+        JSONObject obj = new JSONObject();
+        obj.put("index", m.getIndex());
+        obj.put("sender", m.getSender());
+        obj.put("text", m.getText());
+        obj.put("color", m.getColor());
+        obj.put("isBold", m.isIsBold());
+        obj.put("isItalic", m.isIsItalic());
+        obj.put("agentType", m.getAgentType() != null ? m.getAgentType() : "ai");
+        obj.put("timestamp", m.getTimestamp() != null ? m.getTimestamp() : "");
+        return obj;
+    }
+
     public void clear() {
-        messages.clear();
+        if (currentThread != null) {
+            currentThread.getMessages().clear();
+        }
         refreshBrowser();
     }
 
     public String getText() {
+        if (currentThread == null) return "";
         StringBuilder sb = new StringBuilder();
-        for (ChatMessage m : messages) {
-            sb.append(m.sender).append(": ").append(m.text).append("\n\n");
+        for (ChatMessage m : currentThread.getMessages()) {
+            sb.append(m.getSender()).append(": ").append(m.getText()).append("\n\n");
         }
         return sb.toString();
     }
 
+    public void setThread(ChatThread thread) {
+        this.currentThread = thread;
+        refreshBrowser();
+    }
+
     public void setText(String text) {
-        clear();
-        if (text == null || text.isEmpty()) return;
+        if (currentThread == null) return;
+        currentThread.getMessages().clear();
+        if (text == null || text.isEmpty()) {
+            refreshBrowser();
+            return;
+        }
         String[] lines = text.split("\n\n");
         for (String line : lines) {
             String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+            ChatMessage msg = OrchestrationFactory.eINSTANCE.createChatMessage();
+            msg.setIndex(currentThread.getMessages().size());
             if (line.contains(": ")) {
                 int colon = line.indexOf(": ");
                 String sender = line.substring(0, colon);
                 String content = line.substring(colon + 2);
                 String agentType = sender.toLowerCase().contains("you") ? "user" : "ai";
-                messages.add(new ChatMessage(messages.size(), sender, content, "#000000", false, false, agentType, timestamp));
+                msg.setSender(sender);
+                msg.setText(content);
+                msg.setColor("#000000");
+                msg.setIsBold(false);
+                msg.setIsItalic(false);
+                msg.setAgentType(agentType);
+                msg.setTimestamp(timestamp);
             } else {
-                messages.add(new ChatMessage(messages.size(), "System", line, "#666666", false, true, "ai", timestamp));
+                msg.setSender("System");
+                msg.setText(line);
+                msg.setColor("#666666");
+                msg.setIsBold(false);
+                msg.setIsItalic(true);
+                msg.setAgentType("ai");
+                msg.setTimestamp(timestamp);
             }
+            currentThread.getMessages().add(msg);
         }
         refreshBrowser();
     }

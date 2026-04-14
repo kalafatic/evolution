@@ -2,6 +2,7 @@
  */
 package eu.kalafatic.evolution.model.orchestration;
 
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 
 /**
@@ -111,5 +112,17 @@ public interface AiChat extends EObject {
 	 * @generated
 	 */
 	void setProxyUrl(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Threads</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.ChatThread}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Threads</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAiChat_Threads()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<ChatThread> getThreads();
 
 } // AiChat
