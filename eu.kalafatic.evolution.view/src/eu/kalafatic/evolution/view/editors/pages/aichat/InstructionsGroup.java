@@ -46,15 +46,17 @@ public class InstructionsGroup extends AEvoGroup {
         attachmentArea.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Composite composite = SWTFactory.createComposite(group, 6);
-        sendButton = toolkit.createButton(composite, "▶️ Start Orchestration", SWT.PUSH);
+        sendButton = toolkit.createButton(composite, "▶️ Send", SWT.PUSH);
         GridData sendGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
-        sendGd.widthHint = 132;
-        sendGd.heightHint = 23;
+        sendGd.widthHint = 50;
+        sendGd.heightHint = 25;
         sendButton.setLayoutData(sendGd);
+        sendButton.setBackground(lightGreen);
         sendButton.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
         sendButton.setToolTipText("Start a classic, iterative or autonomous iterative self-development session to improve the codebase.");
 
         pauseButton = toolkit.createButton(composite, "⏸️ Pause", SWT.PUSH);
+        pauseButton.setLayoutData(sendGd);
         pauseButton.setEnabled(false);
         pauseButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -64,6 +66,7 @@ public class InstructionsGroup extends AEvoGroup {
         });
 
         stopButton = toolkit.createButton(composite, "⏹️ Stop", SWT.PUSH);
+        stopButton.setLayoutData(sendGd);
         stopButton.setEnabled(false);
         stopButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -92,7 +95,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        attachButton = toolkit.createButton(composite, "\ud83d\udcce", SWT.PUSH);
+        attachButton = toolkit.createButton(composite, "\ud83d\udcce" + "Attach MD", SWT.PUSH);
         attachButton.setToolTipText("Add External Instructions (.md)");
         attachButton.addSelectionListener(new SelectionAdapter() {
             @Override

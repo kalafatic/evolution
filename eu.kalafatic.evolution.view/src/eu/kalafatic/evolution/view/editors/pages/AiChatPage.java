@@ -80,6 +80,7 @@ public class AiChatPage extends SharedScrolledComposite {
 
 	private Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote;
 	private Font chatFont, bannerFont;
+	private Color lightGreen;
 
 	public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -115,6 +116,7 @@ public class AiChatPage extends SharedScrolledComposite {
 		colorLocal = display.getSystemColor(SWT.COLOR_GREEN);
 		colorHybrid = display.getSystemColor(SWT.COLOR_CYAN);
 		colorRemote = display.getSystemColor(SWT.COLOR_MAGENTA);
+		lightGreen = new Color(Display.getDefault(), 220, 255, 220);
 
 		Font defaultFont = JFaceResources.getDefaultFont();
 		FontData[] fontData = defaultFont.getFontData();
@@ -235,6 +237,7 @@ public class AiChatPage extends SharedScrolledComposite {
 
 		modeIndicatorLabel.setText(mode.getName().toUpperCase() + " MODE ACTIVE - " + modelName.toUpperCase());
 		modeIndicatorLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
+		modeIndicatorLabel.setBackground(lightGreen);
 		switch (mode) {
 		case LOCAL: modeIndicatorLabel.setBackground(colorLocal); break;
 		case HYBRID: modeIndicatorLabel.setBackground(colorHybrid); break;
