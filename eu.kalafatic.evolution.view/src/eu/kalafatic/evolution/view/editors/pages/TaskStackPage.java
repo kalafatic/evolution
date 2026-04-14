@@ -5,11 +5,8 @@ import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 
@@ -20,8 +17,11 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.taskstack.*;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TaskStackPage extends SharedScrolledComposite {
 
@@ -34,23 +34,7 @@ public class TaskStackPage extends SharedScrolledComposite {
     private GlobalActionsGroup globalActionsGroup;
     private TaskStackGroup taskStackGroup;
 
-    private List<TaskRow> taskRows = new ArrayList<>();
-
-    public class TaskRow {
-        public Task task;
-        public Button selectedCheck;
-        public Text nameText;
-        public Text timeText;
-        public Label statusLabel;
-
-        TaskRow(Task task, Button selectedCheck, Text nameText, Text timeText, Label statusLabel) {
-            this.task = task;
-            this.selectedCheck = selectedCheck;
-            this.nameText = nameText;
-            this.timeText = timeText;
-            this.statusLabel = statusLabel;
-        }
-    }
+    private static final int MAX_PARALLEL_PLANS = 3;
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -59,9 +43,7 @@ public class TaskStackPage extends SharedScrolledComposite {
             if (!isUpdating) {
                 Display.getDefault().asyncExec(() -> {
                     if (!isDisposed()) {
-                        if (notification.getEventType() == Notification.ADD || notification.getEventType() == Notification.REMOVE) {
-                            updateUIFromModel();
-                        }
+                        updateUIFromModel();
                     }
                 });
             }
@@ -89,23 +71,47 @@ public class TaskStackPage extends SharedScrolledComposite {
     }
 
     private void startTimer() {
-        Display.getDefault().timerExec(60000, new Runnable() {
+        Display.getDefault().timerExec(10000, new Runnable() {
             @Override
             public void run() {
                 if (isDisposed()) return;
                 checkScheduledTasks();
-                Display.getDefault().timerExec(60000, this);
+                checkParallelQueue();
+                Display.getDefault().timerExec(10000, this);
             }
         });
     }
 
     private void checkScheduledTasks() {
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm");
-        String now = sdf.format(new java.util.Date());
-        for (TaskRow row : taskRows) {
-            if (row.task.getStatus() == TaskStatus.PENDING && now.equals(row.task.getScheduledTime())) {
-                runTask(row.task);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
+        String now = sdf.format(new Date());
+        boolean changed = false;
+        for (Task plan : orchestrator.getTasks()) {
+            if (plan.getStatus() == TaskStatus.PENDING && plan.getScheduledTime() != null) {
+                if (now.compareTo(plan.getScheduledTime()) >= 0) {
+                    if (!plan.isSelected()) {
+                        plan.setSelected(true);
+                        changed = true;
+                    }
+                }
             }
+        }
+        if (changed) updateUIFromModel();
+    }
+
+    private void checkParallelQueue() {
+        if (!globalActionsGroup.isParallel()) return;
+
+        long runningCount = orchestrator.getTasks().stream()
+                .filter(t -> t.getStatus() == TaskStatus.RUNNING)
+                .count();
+
+        if (runningCount < MAX_PARALLEL_PLANS) {
+            orchestrator.getTasks().stream()
+                .filter(Task::isSelected)
+                .filter(t -> t.getStatus() == TaskStatus.PENDING)
+                .findFirst()
+                .ifPresent(this::runPlan);
         }
     }
 
@@ -123,127 +129,118 @@ public class TaskStackPage extends SharedScrolledComposite {
     public void updateUIFromModel() {
         if (isUpdating || orchestrator == null || body == null || body.isDisposed()) return;
         isUpdating = true;
-
-        List<Task> tasks = orchestrator.getTasks();
-        boolean needsFullRefresh = tasks.size() != taskRows.size();
-        if (!needsFullRefresh) {
-            for (int i = 0; i < tasks.size(); i++) {
-                if (tasks.get(i) != taskRows.get(i).task) {
-                    needsFullRefresh = true;
-                    break;
-                }
-            }
-        }
-
-        if (needsFullRefresh) {
-            taskStackGroup.clear();
-            taskRows.clear();
-
-            for (Task task : tasks) {
-                taskStackGroup.createTaskRow(task);
-            }
-
-            taskStackGroup.layout();
-            body.layout(true, true);
-            reflow(true);
-        } else {
-            for (TaskRow row : taskRows) {
-                if (row.selectedCheck != null && !row.selectedCheck.isDisposed()) {
-                    if (row.selectedCheck.getSelection() != row.task.isSelected()) {
-                        row.selectedCheck.setSelection(row.task.isSelected());
-                    }
-                }
-                if (row.nameText != null && !row.nameText.isDisposed()) {
-                    if (!row.nameText.isFocusControl()) {
-                        String name = row.task.getName() != null ? row.task.getName() : "";
-                        if (!row.nameText.getText().equals(name)) {
-                            row.nameText.setText(name);
-                        }
-                    }
-                }
-                if (row.timeText != null && !row.timeText.isDisposed()) {
-                    if (!row.timeText.isFocusControl()) {
-                        String time = row.task.getScheduledTime() != null ? row.task.getScheduledTime() : "";
-                        if (!row.timeText.getText().equals(time)) {
-                            row.timeText.setText(time);
-                        }
-                    }
-                }
-                if (row.statusLabel != null && !row.statusLabel.isDisposed()) {
-                    String status = row.task.getStatus() != null ? row.task.getStatus().toString() : "";
-                    if (!row.statusLabel.getText().equals(status)) {
-                        row.statusLabel.setText(status);
-                        taskStackGroup.updateStatusColor(row.statusLabel, row.task.getStatus());
-                    }
-                }
-            }
-        }
-
+        taskStackGroup.refreshUI();
         isUpdating = false;
     }
 
-    public void registerTaskRow(Task task, Button check, Text nameText, Text timeText, Label statusLabel) {
-        taskRows.add(new TaskRow(task, check, nameText, timeText, statusLabel));
-    }
-
-    public void registerTaskRowCheck(Task task, Button check) {
-    }
-
     public void selectAll(boolean select) {
-        for (TaskRow row : taskRows) {
-            row.selectedCheck.setSelection(select);
-            row.task.setSelected(select);
+        for (Task task : orchestrator.getTasks()) {
+            task.setSelected(select);
         }
-        editor.setDirty(true);
+        updateUIFromModel();
+        setDirty(true);
     }
 
-    public void addNewTask() {
-        Task newTask = OrchestrationFactory.eINSTANCE.createTask();
-        newTask.setName("New Prompt Idea");
-        newTask.setStatus(TaskStatus.PENDING);
-        newTask.setSelected(true);
-        orchestrator.getTasks().add(newTask);
-        editor.setDirty(true);
+    public void addNewPlan() {
+        Task newPlan = OrchestrationFactory.eINSTANCE.createTask();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
+        String timestamp = sdf.format(new Date());
+        newPlan.setId("P-" + timestamp);
+        newPlan.setName("New Plan Thread");
+        newPlan.setStatus(TaskStatus.PENDING);
+        newPlan.setSelected(true);
+        orchestrator.getTasks().add(newPlan);
+        setDirty(true);
+    }
+
+    public void addNewTaskToSelectedPlan() {
+        Task selectedPlan = null;
+        for (Task plan : orchestrator.getTasks()) {
+            if (plan.isSelected()) {
+                selectedPlan = plan;
+                break;
+            }
+        }
+        if (selectedPlan == null && !orchestrator.getTasks().isEmpty()) {
+            selectedPlan = orchestrator.getTasks().get(0);
+        }
+
+        if (selectedPlan != null) {
+            Task newTask = OrchestrationFactory.eINSTANCE.createTask();
+            newTask.setName("New Sub-Task");
+            newTask.setStatus(TaskStatus.PENDING);
+            selectedPlan.getSubTasks().add(newTask);
+            setDirty(true);
+        }
+    }
+
+    public void clearDoneTasks() {
+        List<Task> toRemove = orchestrator.getTasks().stream()
+                .filter(t -> t.getStatus() == TaskStatus.DONE)
+                .collect(Collectors.toList());
+        orchestrator.getTasks().removeAll(toRemove);
+        setDirty(true);
     }
 
     public void executeSelected() {
-        boolean parallel = globalActionsGroup.isParallel();
-        List<Task> selectedTasks = new ArrayList<>();
-        for (TaskRow row : taskRows) {
-            if (row.selectedCheck.getSelection()) {
-                selectedTasks.add(row.task);
+        List<Task> selectedPlans = orchestrator.getTasks().stream()
+                .filter(Task::isSelected)
+                .filter(t -> t.getStatus() == TaskStatus.PENDING)
+                .collect(Collectors.toList());
+
+        if (selectedPlans.isEmpty()) return;
+
+        if (globalActionsGroup.isParallel()) {
+            for (Task plan : selectedPlans) {
+                long running = orchestrator.getTasks().stream().filter(t -> t.getStatus() == TaskStatus.RUNNING).count();
+                if (running < MAX_PARALLEL_PLANS) {
+                    runPlan(plan);
+                }
             }
-        }
-        if (selectedTasks.isEmpty()) return;
-        if (parallel) {
-            for (Task t : selectedTasks) runTask(t);
         } else {
-            runTasksSequentially(selectedTasks, 0);
+            runPlansSequentially(selectedPlans, 0);
         }
     }
 
-    private void runTasksSequentially(List<Task> tasks, int index) {
-        if (index >= tasks.size()) return;
-        Task t = tasks.get(index);
-        t.setStatus(TaskStatus.RUNNING);
+    private void runPlansSequentially(List<Task> plans, int index) {
+        if (index >= plans.size()) return;
+        Task plan = plans.get(index);
+        plan.setStatus(TaskStatus.RUNNING);
         updateUIFromModel();
-        Display.getDefault().timerExec(1500, () -> {
-            if (!isDisposed()) {
-                t.setStatus(TaskStatus.DONE);
-                updateUIFromModel();
-                runTasksSequentially(tasks, index + 1);
-            }
+
+        executePlanTasks(plan, 0, () -> {
+            plan.setStatus(TaskStatus.DONE);
+            updateUIFromModel();
+            Display.getDefault().asyncExec(() -> runPlansSequentially(plans, index + 1));
         });
     }
 
-    private void runTask(Task t) {
-        t.setStatus(TaskStatus.RUNNING);
+    private void runPlan(Task plan) {
+        plan.setStatus(TaskStatus.RUNNING);
         updateUIFromModel();
+        executePlanTasks(plan, 0, () -> {
+            plan.setStatus(TaskStatus.DONE);
+            updateUIFromModel();
+            Display.getDefault().asyncExec(this::checkParallelQueue);
+        });
+    }
+
+    private void executePlanTasks(Task plan, int taskIndex, Runnable onComplete) {
+        if (taskIndex >= plan.getSubTasks().size()) {
+            onComplete.run();
+            return;
+        }
+
+        Task task = plan.getSubTasks().get(taskIndex);
+        task.setStatus(TaskStatus.RUNNING);
+        updateUIFromModel();
+
+        // Simulate execution
         Display.getDefault().timerExec(2000, () -> {
-            if (!isDisposed()) {
-                t.setStatus(TaskStatus.DONE);
-                updateUIFromModel();
-            }
+            if (isDisposed()) return;
+            task.setStatus(TaskStatus.DONE);
+            updateUIFromModel();
+            executePlanTasks(plan, taskIndex + 1, onComplete);
         });
     }
 
@@ -257,4 +254,8 @@ public class TaskStackPage extends SharedScrolledComposite {
         if (toolkit != null) toolkit.dispose();
         super.dispose();
     }
+
+    // Compatibility methods
+    public void registerTaskRow(Task task, org.eclipse.swt.widgets.Button check, org.eclipse.swt.widgets.Text nameText, org.eclipse.swt.widgets.Text timeText, org.eclipse.swt.widgets.Label statusLabel) {}
+    public void registerTaskRowCheck(Task task, org.eclipse.swt.widgets.Button check) {}
 }
