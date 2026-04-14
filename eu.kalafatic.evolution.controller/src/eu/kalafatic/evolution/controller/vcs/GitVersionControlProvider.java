@@ -52,6 +52,14 @@ public class GitVersionControlProvider implements VersionControlProvider {
     }
 
     @Override
+    public String getFileContent(File workingDir, String commitId, String filePath) throws Exception {
+        if (commitId == null || commitId.isEmpty() || "HEAD".equals(commitId)) {
+            return shell.execute("git show HEAD:" + quote(filePath), workingDir, null);
+        }
+        return shell.execute("git show " + quote(commitId) + ":" + quote(filePath), workingDir, null);
+    }
+
+    @Override
     public List<String> getChangedFiles(File workingDir, String commitId) throws Exception {
         if (commitId == null || commitId.isEmpty() || "HEAD".equals(commitId)) {
             if (isHeadValid(workingDir)) {

@@ -3,10 +3,14 @@ package eu.kalafatic.evolution.view.editors;
 import java.io.IOException;
 import java.util.Collections;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.util.URI;
@@ -46,6 +50,8 @@ import eu.kalafatic.evolution.view.editors.pages.ContextPage;
 import eu.kalafatic.evolution.view.editors.pages.GraphPage;
 import eu.kalafatic.evolution.view.editors.pages.IterationPage;
 import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
+import eu.kalafatic.evolution.view.editors.compare.ResourceCompareInput.StringElement;
+import eu.kalafatic.evolution.view.editors.pages.ComparePage;
 import eu.kalafatic.evolution.view.editors.pages.PeerReviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PreviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
@@ -71,6 +77,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private TaskStackPage taskStackPage;
     private ContextPage contextPage;
     private PeerReviewPage peerReviewPage;
+    private ComparePage comparePage;
 
     private Orchestrator orchestrator;
     private TaskContext currentContext;
@@ -131,6 +138,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 peerReviewPage = PeerReviewPageFactory.createPeerReviewPage(this, orchestrator);
                 taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
+                comparePage = ComparePageFactory.createComparePage(this, orchestrator);
             } else {
                 Composite placeholder = new Composite(getContainer(), SWT.NONE);
                 placeholder.setLayout(new FillLayout());
@@ -299,6 +307,37 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (peerReviewPage != null) peerReviewPage.refreshUI();
         if (mcpSettingsPage != null) mcpSettingsPage.updateMcpInfo();
         if (contextPage != null) contextPage.refreshUI();
+        refreshComparePage();
+    }
+
+    private void refreshComparePage() {
+        if (comparePage == null || orchestrator == null || getEditorInput() == null) return;
+        if (!(getEditorInput() instanceof IFileEditorInput)) return;
+
+        IFile file = ((IFileEditorInput) getEditorInput()).getFile();
+
+        Job job = new Job("Fetching Git content") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                java.io.File workingDir = file.getProject().getLocation().toFile();
+                String relativePath = file.getProjectRelativePath().toString();
+                try {
+                    eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider vcs = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+                    String headContent = vcs.getFileContent(workingDir, "HEAD", relativePath);
+                    if (headContent != null) {
+                        Display.getDefault().asyncExec(() -> {
+                            if (!comparePage.isDisposed()) {
+                                comparePage.setInput(file, new StringElement(headContent, file.getName(), file.getFileExtension()));
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    // Probably not a git repo or file not in git
+                }
+                return Status.OK_STATUS;
+            }
+        };
+        job.schedule();
     }
 
     public void showApprovalPage() {
@@ -330,6 +369,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
         Control control = getControl(newPageIndex);
         if (control == previewPage && previewPage != null) {
             previewPage.sortWords();
+        } else if (control == comparePage && comparePage != null) {
+            refreshComparePage();
         }
     }
 
