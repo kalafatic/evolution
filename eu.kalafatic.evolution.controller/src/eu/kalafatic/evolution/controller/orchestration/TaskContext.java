@@ -29,6 +29,7 @@ public class TaskContext {
     private CompletableFuture<Boolean> approvalFuture;
     private CompletableFuture<String> inputFuture;
     private volatile boolean paused = false;
+    private volatile boolean autoApprove = false;
     private final Object pauseLock = new Object();
 
     public interface LogListener {
@@ -146,6 +147,14 @@ public class TaskContext {
                 pauseLock.notifyAll();
             }
         }
+    }
+
+    public boolean isAutoApprove() {
+        return autoApprove;
+    }
+
+    public void setAutoApprove(boolean autoApprove) {
+        this.autoApprove = autoApprove;
     }
 
     public void checkPause() {

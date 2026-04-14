@@ -83,6 +83,10 @@
             --tool-bg: #f8fafc;
             --tool-border: #e2e8f0;
             --tool-text: #475569;
+
+            --waiting-bg: #fff7ed;
+            --waiting-border: #f97316;
+            --waiting-text: #9a3412;
         }
 
         body { 
@@ -161,6 +165,7 @@
         .message.orchestrator .bubble { background: var(--orchestrator-bg); border-color: var(--orchestrator-border); color: var(--orchestrator-text); border-bottom-left-radius: 4px; }
         .message.final-response .bubble { background: var(--final-response-bg); border-color: var(--final-response-border); color: var(--final-response-text); border-bottom-left-radius: 4px; border-width: 2px; }
         .message.tool .bubble { background: var(--tool-bg); border-color: var(--tool-border); color: var(--tool-text); border-bottom-left-radius: 4px; }
+        .message.waiting .bubble { background: var(--waiting-bg); border-color: var(--waiting-border); color: var(--waiting-text); border-bottom-left-radius: 4px; border-style: dashed; border-width: 2px; }
 
         .message.ai .bubble { 
             border-bottom-left-radius: 4px;
@@ -243,7 +248,7 @@
             analytic: '🔍', general: '🧠', terminal: '📟', file: '📂',
             maven: '📦', git: '🌿', structure: '🌳', websearch: '🌐',
             quality: '✨', observability: '📊', orchestrator: '🎼',
-            'final-response': '✅'
+            'final-response': '✅', waiting: '⏳'
         };
 
         function formatText(text) {

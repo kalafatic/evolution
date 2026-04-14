@@ -77,7 +77,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	private ApprovalGroup approvalGroup;
 	private InputGroup inputGroup;
 
-	private Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote;
+	private Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote, colorWaiting;
 	private Font chatFont, bannerFont;
 	private Color lightGreen;
 
@@ -95,6 +95,7 @@ public class AiChatPage extends SharedScrolledComposite {
 			public void widgetDisposed(DisposeEvent e) {
 				if (chatFont != null && !chatFont.isDisposed()) chatFont.dispose();
 				if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
+				if (colorWaiting != null && !colorWaiting.isDisposed()) colorWaiting.dispose();
 				if (toolkit != null) toolkit.dispose();
 			}
 		});
@@ -115,6 +116,7 @@ public class AiChatPage extends SharedScrolledComposite {
 		colorLocal = display.getSystemColor(SWT.COLOR_GREEN);
 		colorHybrid = display.getSystemColor(SWT.COLOR_CYAN);
 		colorRemote = display.getSystemColor(SWT.COLOR_MAGENTA);
+		colorWaiting = new Color(display, 255, 140, 0); // Dark Orange
 		lightGreen = new Color(Display.getDefault(), 220, 255, 220);
 
 		Font defaultFont = JFaceResources.getDefaultFont();
@@ -298,9 +300,17 @@ public class AiChatPage extends SharedScrolledComposite {
 				this.currentContext = context;
 				Display.getDefault().asyncExec(() -> editor.setCurrentContext(context));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
+					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
+						modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
+						modeIndicatorLabel.setBackground(colorWaiting);
+					}
 					approvalGroup.show(message); updateScrolledContent();
 				}));
 				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
+					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
+						modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
+						modeIndicatorLabel.setBackground(colorWaiting);
+					}
 					inputGroup.show(message); updateScrolledContent();
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
@@ -467,9 +477,17 @@ public class AiChatPage extends SharedScrolledComposite {
 				this.currentContext = context;
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) processLogEntry(log); }));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
+					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
+						modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
+						modeIndicatorLabel.setBackground(colorWaiting);
+					}
 					approvalGroup.show(message); updateScrolledContent();
 				}));
 				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
+					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
+						modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
+						modeIndicatorLabel.setBackground(colorWaiting);
+					}
 					inputGroup.show(message); updateScrolledContent();
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
@@ -585,7 +603,12 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	public void provideApproval(boolean approved) {
-		if (currentContext != null) { currentContext.provideApproval(approved); approvalGroup.hide(); updateScrolledContent(); }
+		if (currentContext != null) {
+			currentContext.provideApproval(approved);
+			approvalGroup.hide();
+			updateModeDisplay();
+			updateScrolledContent();
+		}
 	}
 
 	public void handleReview() {
@@ -593,7 +616,12 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	public void provideInput(String input) {
-		if (currentContext != null) { currentContext.provideInput(input); inputGroup.hide(); updateScrolledContent(); }
+		if (currentContext != null) {
+			currentContext.provideInput(input);
+			inputGroup.hide();
+			updateModeDisplay();
+			updateScrolledContent();
+		}
 	}
 
 	private void processLogEntry(String log) {

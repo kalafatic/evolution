@@ -99,7 +99,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
             if (requiresPlanApproval) {
                 // Pause for Plan Approval
                 context.log("Evo-Orchestrator-Planning: Plan generated. Waiting for user review and approval...");
-                Boolean planApproved = context.requestApproval(TaskContext.PLAN_APPROVAL_MESSAGE).get();
+
+                Boolean planApproved = true;
+                if (!context.isAutoApprove()) {
+                    planApproved = context.requestApproval(TaskContext.PLAN_APPROVAL_MESSAGE).get();
+                } else {
+			context.log("Evo-Orchestrator-Planning: Auto-approval enabled. Skipping manual approval.");
+                }
+
                 if (planApproved == null || !planApproved) {
                     context.log("Evo-Orchestrator-Planning: Plan rejected by user.");
                     throw new Exception("Orchestration plan rejected by user.");
@@ -124,8 +131,15 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 // Check for User Approval
                 if (task.isApprovalRequired() || "approval".equalsIgnoreCase(task.getType())) {
                     task.setStatus(TaskStatus.WAITING_FOR_APPROVAL);
-                    context.log("Evo-Orchestrator-" + task.getName() + ": Waiting for user approval");
-                    Boolean approved = context.requestApproval("Approve task: " + task.getName() + "?").get();
+
+                    Boolean approved = true;
+                    if (!context.isAutoApprove()) {
+                        context.log("Evo-Orchestrator-" + task.getName() + ": Waiting for user approval");
+                        approved = context.requestApproval("Approve task: " + task.getName() + "?").get();
+                    } else {
+                        context.log("Evo-Orchestrator-" + task.getName() + ": Auto-approving task.");
+                    }
+
                     if (approved == null || !approved) {
                         task.setStatus(TaskStatus.FAILED);
                         task.setFeedback("Rejected by user.");
@@ -262,7 +276,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
             task.setResultSummary(path);
             if (taskName.toLowerCase().startsWith("delete")) {
                 context.log("Evo-Orchestrator-" + taskName + ": File deletion request for " + path);
-                Boolean approved = context.requestApproval("[DELETE] Approve deletion of file: " + path + "?").get();
+                Boolean approved = true;
+                if (!context.isAutoApprove()) {
+			approved = context.requestApproval("[DELETE] Approve deletion of file: " + path + "?").get();
+                }
                 if (approved == null || !approved) {
                     throw new Exception("File deletion rejected by user: " + path);
                 }
@@ -291,7 +308,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     if (newLen < existingLen * 0.8) {
                         double deletionPercent = (1.0 - (double)newLen / existingLen) * 100;
                         context.log("Evo-Orchestrator-" + taskName + ": Significant deletion detected (" + String.format("%.1f", deletionPercent) + "%) for " + path);
-                        Boolean approved = context.requestApproval("[Significant deletion] Content of " + path + " will be reduced by " + String.format("%.1f", deletionPercent) + "%. Approve?").get();
+                        Boolean approved = true;
+                        if (!context.isAutoApprove()) {
+				approved = context.requestApproval("[Significant deletion] Content of " + path + " will be reduced by " + String.format("%.1f", deletionPercent) + "%. Approve?").get();
+                        }
                         if (approved == null || !approved) {
                             throw new Exception("Significant content reduction rejected by user for: " + path);
                         }
@@ -314,7 +334,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
         } else if ("git".equalsIgnoreCase(taskType)) {
             if (taskName.toLowerCase().matches(".*\\b(pr|pull request)\\b.*")) {
                 context.log("Evo-Orchestrator-" + taskName + ": Requesting approval for PR");
-                Boolean approved = context.requestApproval("[PR] Approve Pull Request creation? Task: " + taskName).get();
+                Boolean approved = true;
+                if (!context.isAutoApprove()) {
+                    approved = context.requestApproval("[PR] Approve Pull Request creation? Task: " + taskName).get();
+                }
                 if (approved == null || !approved) {
                     throw new Exception("PR rejected by user: " + taskName);
                 }
@@ -323,7 +346,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
             return gitTool.execute(taskName, context.getProjectRoot(), context);
         } else if ("shell".equalsIgnoreCase(taskType)) {
             context.log("Evo-Orchestrator-" + taskName + ": Requesting approval for command");
-            Boolean approved = context.requestApproval("Approve terminal command: " + taskName + "?").get();
+            Boolean approved = true;
+            if (!context.isAutoApprove()) {
+		approved = context.requestApproval("Approve terminal command: " + taskName + "?").get();
+            }
             if (approved == null || !approved) {
                 throw new Exception("Terminal command rejected by user: " + taskName);
             }
