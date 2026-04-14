@@ -286,6 +286,14 @@
             text = text.replace(/\bCREATE\b/g, '<a onclick="event.stopPropagation(); JavaHandler(\'create\', \'-1\', \'\')">CREATE</a>');
             text = text.replace(/\bCLARIFY\b/g, '<a onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">CLARIFY</a>');
 
+            // Specific phrase links
+            text = text.replace(/could you tell me a bit more about what you(?:’|'|&#039;)re trying to accomplish\?/g, '<a onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">$&</a>');
+            text = text.replace(/Are you looking for a simple example to get started/g, '<a onclick="event.stopPropagation(); JavaHandler(\'helloworld\', \'-1\', \'\')">$&</a>');
+            text = text.replace(/are you working on a more complex project that requires a specific file structure\?/g, '<a onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">$&</a>');
+
+            // General proposal link [PROPOSAL: Label | Request]
+            text = text.replace(/\[PROPOSAL:\s*(.*?)\s*\|\s*(.*?)\s*\]/g, '<a onclick="event.stopPropagation(); JavaHandler(\'executeProposal\', \'-1\', \'$2\')"><b>$1</b></a>');
+
             text = text.replace(/___CODE_BLOCK_(\d+)___/g, function(match, index) {
                 const code = blocks[parseInt(index)];
                 return '<pre><code>' + escapeHtml(code) + '</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.1);border:none;color:white;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;" onclick="event.stopPropagation(); JavaHandler(\'copy\', \'-1\', \'' + escapeJs(code) + '\')">Copy</button></pre>';

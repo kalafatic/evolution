@@ -63,7 +63,16 @@ public abstract class BaseAiAgent implements IAgent {
      * @return Footer instructions.
      */
     protected String getFooterInstructions() {
-        return "Based on the context and the task, provide your response.";
+        return "Based on the context and the task, provide your response.\n" +
+               "If you need user clarification to proceed with a plan or an action, explicitly ask and suggest options.\n" +
+               "Use keywords like 'CREATE' (to suggest proceeding) or 'CLARIFY' (to request more info).\n" +
+               "You can also use these specific phrases to help the user:\n" +
+               "- 'could you tell me a bit more about what you’re trying to accomplish?'\n" +
+               "- 'Are you looking for a simple example to get started'\n" +
+               "- 'are you working on a more complex project that requires a specific file structure?'\n" +
+               "Additionally, you can offer general one-click solutions using the format: [PROPOSAL: Action Label | Explicit Request Text]\n" +
+               "Example: 'I can help you with that. [PROPOSAL: Create a test class | Create a JUnit 5 test class for the current Main.java file]'.\n" +
+               "If you receive the request 'Execute the simplest working solution.', proceed immediately with a minimal, functional implementation of the goal previously discussed.";
     }
 
     protected String buildPrompt(String taskDescription, TaskContext context, String lastFeedback) {

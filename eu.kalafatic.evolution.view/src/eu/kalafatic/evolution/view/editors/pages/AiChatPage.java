@@ -277,6 +277,11 @@ public class AiChatPage extends SharedScrolledComposite {
 		instructionsGroup.resetBackground();
 		String request = instructionsGroup.getRequest();
 		if (request.isEmpty()) return;
+		if (currentContext != null && currentContext.isWaitingForInput()) {
+			provideInput(request);
+			instructionsGroup.setRequest("");
+			return;
+		}
 		if (currentThread == null) initializeThreads();
 		if (orchestrator != null && (orchestrator.isIterativeMode() || orchestrator.isSelfIterativeMode())) {
 			startSelfDevAction(request); return;
@@ -314,6 +319,7 @@ public class AiChatPage extends SharedScrolledComposite {
 						modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
 						modeIndicatorLabel.setBackground(colorWaiting);
 					}
+					handleClarify();
 					inputGroup.show(message); updateScrolledContent();
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
@@ -333,6 +339,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				}));
 				String result = evolutionOrchestrator.execute(request, context);
 				Display.getDefault().asyncExec(() -> {
+					instructionsGroup.resetBackground();
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
@@ -369,6 +376,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	public void handleStop() {
+		instructionsGroup.resetBackground();
 		if (orchestrationThread != null && orchestrationThread.isAlive()) {
 			if (currentContext != null) currentContext.setPaused(false);
 			orchestrationThread.interrupt();
@@ -461,6 +469,11 @@ public class AiChatPage extends SharedScrolledComposite {
 	private void startSelfDevAction(String request) {
 		instructionsGroup.resetBackground();
 		if (request == null || request.isEmpty()) request = "Analyze the project and suggest improvements.";
+		if (currentContext != null && currentContext.isWaitingForInput()) {
+			provideInput(request);
+			instructionsGroup.setRequest("");
+			return;
+		}
 		final String finalRequest = request;
 		if (orchestrator != null) {
 			if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
@@ -492,6 +505,7 @@ public class AiChatPage extends SharedScrolledComposite {
 						modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
 						modeIndicatorLabel.setBackground(colorWaiting);
 					}
+					handleClarify();
 					inputGroup.show(message); updateScrolledContent();
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
@@ -506,6 +520,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context);
 				supervisor.startSession();
 				Display.getDefault().asyncExec(() -> {
+					instructionsGroup.resetBackground();
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
@@ -623,7 +638,17 @@ public class AiChatPage extends SharedScrolledComposite {
 		instructionsGroup.focusAndHighlight(colorLightOrange);
 	}
 
+	public void handleSimpleSolution() {
+		handleExecuteProposal("Execute the simplest working solution.");
+	}
+
+	public void handleExecuteProposal(String request) {
+		instructionsGroup.setRequest(request);
+		handleSend();
+	}
+
 	public void provideInput(String input) {
+		instructionsGroup.resetBackground();
 		if (currentContext != null) {
 			currentContext.provideInput(input);
 			inputGroup.hide();
