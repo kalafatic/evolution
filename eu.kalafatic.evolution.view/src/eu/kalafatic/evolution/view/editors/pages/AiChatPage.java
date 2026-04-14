@@ -339,6 +339,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				}));
 				String result = evolutionOrchestrator.execute(request, context);
 				Display.getDefault().asyncExec(() -> {
+					instructionsGroup.resetBackground();
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
@@ -519,6 +520,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context);
 				supervisor.startSession();
 				Display.getDefault().asyncExec(() -> {
+					instructionsGroup.resetBackground();
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
@@ -636,8 +638,8 @@ public class AiChatPage extends SharedScrolledComposite {
 		instructionsGroup.focusAndHighlight(colorLightOrange);
 	}
 
-	public void handleHelloWorld() {
-		handleExecuteProposal("Create a simple Hello World java class.");
+	public void handleSimpleSolution() {
+		handleExecuteProposal("Execute the simplest working solution.");
 	}
 
 	public void handleExecuteProposal(String request) {

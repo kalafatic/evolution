@@ -139,7 +139,7 @@ public class ChatGroup extends AEvoGroup {
                             page.handleClarify();
                             break;
                         case "helloworld":
-                            page.handleHelloWorld();
+                            page.handleSimpleSolution();
                             break;
                         case "executeProposal":
                             page.handleExecuteProposal(text);
