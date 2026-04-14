@@ -62,6 +62,18 @@ public class BestPracticesInjectionTest {
         assertTrue("Prompt should contain SELF DEVELOPMENT CONTEXT", prompt.contains("--- SELF DEVELOPMENT CONTEXT ---"));
     }
 
+    @Test
+    public void testIterativeContextContent() throws Exception {
+        orchestrator.setIterativeMode(true);
+        TestAgent agent = new TestAgent();
+        String prompt = agent.getPrompt("test task", context);
+
+        assertTrue("Prompt should contain OBSERVE", prompt.contains("OBSERVE"));
+        assertTrue("Prompt should contain ANALYZE", prompt.contains("ANALYZE"));
+        assertTrue("Prompt should contain PLAN", prompt.contains("PLAN"));
+        assertTrue("Prompt should contain TEST", prompt.contains("TEST"));
+    }
+
     private static class TestAgent extends BaseAiAgent {
         public TestAgent() {
             super("test", "Test");

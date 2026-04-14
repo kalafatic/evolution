@@ -213,6 +213,17 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 String result = performAction(task, agent, context, lastFeedback);
                 task.setResponse(result);
 
+                // Handle Clarification/Proposal stall
+                if (result != null && (result.contains("CLARIFY") || result.contains("[PROPOSAL:"))) {
+                    context.log("Evo-Orchestrator-" + task.getName() + ": Agent requested clarification/proposal. Pausing execution.");
+                    String clarification = context.requestInput(result).get();
+                    if (clarification != null) {
+                        lastFeedback = "User Response: " + clarification;
+                        retry--; // Retry with the new information
+                        continue;
+                    }
+                }
+
                 // Evaluation
                 JSONObject evaluation = reviewer.evaluate(result, task.getName(), context);
                 if (evaluation.optBoolean("success", false)) {

@@ -26,7 +26,8 @@ public class AnalyticAgent extends BaseAiAgent {
                 "   - Example of clear: 'Create a Java class named Hello in src/main/java that prints \"Hi\"'.\n" +
                 "4. MISSING INFORMATION: List specific details needed to proceed.\n\n" +
                 "OUTPUT FORMAT:\n" +
-                "You MUST output a valid JSON object with the following keys:\n" +
+                "You MUST output a valid JSON object. Ensure no duplicate keys are present. All fields are REQUIRED.\n" +
+                "Schema:\n" +
                 "{\n" +
                 "  \"category\": \"CODING\"|\"RESEARCH\"|\"TOOL_USE\"|\"CHAT\",\n" +
                 "  \"objective\": \"Brief summary of the goal\",\n" +
