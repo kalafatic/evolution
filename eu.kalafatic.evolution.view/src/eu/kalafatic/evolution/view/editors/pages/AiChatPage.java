@@ -637,11 +637,16 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	public void handleHelloWorld() {
-		instructionsGroup.setRequest("Create a simple Hello World java class.");
+		handleExecuteProposal("Create a simple Hello World java class.");
+	}
+
+	public void handleExecuteProposal(String request) {
+		instructionsGroup.setRequest(request);
 		handleSend();
 	}
 
 	public void provideInput(String input) {
+		instructionsGroup.resetBackground();
 		if (currentContext != null) {
 			currentContext.provideInput(input);
 			inputGroup.hide();

@@ -69,7 +69,9 @@ public abstract class BaseAiAgent implements IAgent {
                "You can also use these specific phrases to help the user:\n" +
                "- 'could you tell me a bit more about what you’re trying to accomplish?'\n" +
                "- 'Are you looking for a simple example to get started'\n" +
-               "- 'are you working on a more complex project that requires a specific file structure?'";
+               "- 'are you working on a more complex project that requires a specific file structure?'\n" +
+               "Additionally, you can offer general one-click solutions using the format: [PROPOSAL: Action Label | Explicit Request Text]\n" +
+               "Example: 'I can help you with that. [PROPOSAL: Create a test class | Create a JUnit 5 test class for the current Main.java file]'.";
     }
 
     protected String buildPrompt(String taskDescription, TaskContext context, String lastFeedback) {
