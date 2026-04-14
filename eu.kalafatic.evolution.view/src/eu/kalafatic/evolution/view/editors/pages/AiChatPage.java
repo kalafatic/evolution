@@ -338,10 +338,20 @@ public class AiChatPage extends SharedScrolledComposite {
 					}
 				}));
 				String result = evolutionOrchestrator.execute(request, context);
+				String summary = context.getOrchestrator().getTasks().stream()
+						.filter(t -> t.getResultSummary() != null && !t.getResultSummary().isEmpty())
+						.map(t -> "- " + t.getResultSummary())
+						.collect(Collectors.joining("\n"));
+
 				Display.getDefault().asyncExec(() -> {
 					instructionsGroup.resetBackground();
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
+
+						if (!summary.isEmpty()) {
+							chatGroup.appendText("\n\nResult Summary: " + summary, colorUser, SWT.NORMAL);
+						}
+
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 						chatGroup.appendText("Final Response: " + result, colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
@@ -519,10 +529,20 @@ public class AiChatPage extends SharedScrolledComposite {
 				orchestrator.setSelfDevSession(session);
 				SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context);
 				supervisor.startSession();
+				String summary = context.getOrchestrator().getTasks().stream()
+						.filter(t -> t.getResultSummary() != null && !t.getResultSummary().isEmpty())
+						.map(t -> "- " + t.getResultSummary())
+						.collect(Collectors.joining("\n"));
+
 				Display.getDefault().asyncExec(() -> {
 					instructionsGroup.resetBackground();
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
+
+						if (!summary.isEmpty()) {
+							chatGroup.appendText("\n\nResult Summary: " + summary, colorUser, SWT.NORMAL);
+						}
+
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 						chatGroup.appendText("Final Response: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
