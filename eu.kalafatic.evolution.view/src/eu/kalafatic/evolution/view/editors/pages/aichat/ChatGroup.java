@@ -231,9 +231,14 @@ public class ChatGroup extends AEvoGroup {
             else if (senderLower.contains("-quality-")) agentType = "quality";
             else if (senderLower.contains("-observability-")) agentType = "observability";
             else if (senderLower.contains("-orchestrator-")) agentType = "orchestrator";
+            else if (senderLower.contains("-darwinengine-")) agentType = "darwin";
+
+            if (content.toLowerCase().startsWith("[darwin]")) {
+                agentType = "darwin";
+            }
 
             if (content.toLowerCase().contains("waiting for user") || content.toLowerCase().contains("guidance?")) {
-		agentType = "waiting";
+                agentType = "waiting";
             }
         } else if (text.startsWith("Evolution: ")) {
             sender = "Evo";

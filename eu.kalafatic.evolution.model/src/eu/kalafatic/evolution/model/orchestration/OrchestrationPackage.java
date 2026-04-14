@@ -583,13 +583,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__AI_PROVIDERS = 27;
 
 	/**
+	 * The feature id for the '<em><b>Darwin Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__DARWIN_MODE = 28;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 28;
+	int ORCHESTRATOR_FEATURE_COUNT = 29;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -3264,6 +3273,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getOrchestrator_SelfIterativeMode();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isDarwinMode <em>Darwin Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Darwin Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isDarwinMode()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_DarwinMode();
+
+	/**
 	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiProviders <em>Ai Providers</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5458,6 +5478,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute ORCHESTRATOR__SELF_ITERATIVE_MODE = eINSTANCE.getOrchestrator_SelfIterativeMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Darwin Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__DARWIN_MODE = eINSTANCE.getOrchestrator_DarwinMode();
 
 		/**
 		 * The meta object literal for the '<em><b>Ai Providers</b></em>' containment reference list feature.
