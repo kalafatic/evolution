@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
@@ -145,6 +146,19 @@ public class InstructionsGroup extends AEvoGroup {
 
     public String getRequest() { return requestText.getText().trim(); }
     public void setRequest(String text) { requestText.setText(text); }
+
+    public void focusAndHighlight(Color color) {
+        if (requestText != null && !requestText.isDisposed()) {
+            requestText.setFocus();
+            requestText.setBackground(color);
+        }
+    }
+
+    public void resetBackground() {
+        if (requestText != null && !requestText.isDisposed()) {
+            requestText.setBackground(null);
+        }
+    }
     public boolean isIterative() { return iterativeCheck.getSelection(); }
     public boolean isSelfIterative() { return selfIterativeCheck.getSelection(); }
 

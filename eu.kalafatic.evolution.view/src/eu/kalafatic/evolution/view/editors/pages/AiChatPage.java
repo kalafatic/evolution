@@ -77,7 +77,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	private ApprovalGroup approvalGroup;
 	private InputGroup inputGroup;
 
-	private Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote, colorWaiting;
+	private Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote, colorWaiting, colorLightOrange;
 	private Font chatFont, bannerFont;
 	private Color lightGreen;
 
@@ -96,6 +96,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				if (chatFont != null && !chatFont.isDisposed()) chatFont.dispose();
 				if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
 				if (colorWaiting != null && !colorWaiting.isDisposed()) colorWaiting.dispose();
+				if (colorLightOrange != null && !colorLightOrange.isDisposed()) colorLightOrange.dispose();
 				if (toolkit != null) toolkit.dispose();
 			}
 		});
@@ -117,6 +118,7 @@ public class AiChatPage extends SharedScrolledComposite {
 		colorHybrid = display.getSystemColor(SWT.COLOR_CYAN);
 		colorRemote = display.getSystemColor(SWT.COLOR_MAGENTA);
 		colorWaiting = new Color(display, 255, 140, 0); // Dark Orange
+		colorLightOrange = new Color(display, 255, 224, 189);
 		lightGreen = new Color(Display.getDefault(), 220, 255, 220);
 
 		Font defaultFont = JFaceResources.getDefaultFont();
@@ -272,6 +274,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	public void handleSend() {
+		instructionsGroup.resetBackground();
 		String request = instructionsGroup.getRequest();
 		if (request.isEmpty()) return;
 		if (currentThread == null) initializeThreads();
@@ -456,6 +459,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	private void startSelfDevAction(String request) {
+		instructionsGroup.resetBackground();
 		if (request == null || request.isEmpty()) request = "Analyze the project and suggest improvements.";
 		final String finalRequest = request;
 		if (orchestrator != null) {
@@ -613,6 +617,10 @@ public class AiChatPage extends SharedScrolledComposite {
 
 	public void handleReview() {
 		editor.showApprovalPage();
+	}
+
+	public void handleClarify() {
+		instructionsGroup.focusAndHighlight(colorLightOrange);
 	}
 
 	public void provideInput(String input) {

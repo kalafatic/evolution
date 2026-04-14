@@ -175,6 +175,13 @@
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
 
+        .bubble a {
+            color: inherit;
+            text-decoration: underline;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
         /* Hover Actions */
         .actions { 
             display: flex; flex-direction: row; gap: 4px;
@@ -274,6 +281,10 @@
             });
 
             text = escapeHtml(text);
+
+            // Create/Clarify links
+            text = text.replace(/\bCREATE\b/g, '<a onclick="event.stopPropagation(); JavaHandler(\'create\', \'-1\', \'\')">CREATE</a>');
+            text = text.replace(/\bCLARIFY\b/g, '<a onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">CLARIFY</a>');
 
             text = text.replace(/___CODE_BLOCK_(\d+)___/g, function(match, index) {
                 const code = blocks[parseInt(index)];
