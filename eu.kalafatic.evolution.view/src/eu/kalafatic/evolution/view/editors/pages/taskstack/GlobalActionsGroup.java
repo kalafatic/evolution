@@ -32,7 +32,7 @@ public class GlobalActionsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Global Actions", 4, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Global Actions", 6, true);
 
         Button selectAllBtn = SWTFactory.createButton(group, "Select All");
         selectAllBtn.addSelectionListener(new SelectionAdapter() {
@@ -53,11 +53,11 @@ public class GlobalActionsGroup extends AEvoGroup {
         SWTFactory.createLabel(group, "Mode:");
         executionModeCombo = SWTFactory.createCombo(group);
         executionModeCombo.add("Sequential");
-        executionModeCombo.add("Parallel");
-        executionModeCombo.select(0);
+        executionModeCombo.add("Parallel (Max 3)");
+        executionModeCombo.select(1);
 
         Composite compositeRemote = new Composite(parent, SWT.BORDER);
-        compositeRemote.setLayout(new GridLayout(3, false));
+        compositeRemote.setLayout(new GridLayout(4, false));
         compositeRemote.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Button executeBtn = SWTFactory.createButton(compositeRemote, "Execute Selected", 150);
@@ -68,16 +68,32 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        Button addTaskBtn = SWTFactory.createButton(compositeRemote, "Add New Task Idea", 150);
+        Button addPlanBtn = SWTFactory.createButton(compositeRemote, "Add Plan (Thread)", 150);
+        addPlanBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.addNewPlan();
+            }
+        });
+
+        Button addTaskBtn = SWTFactory.createButton(compositeRemote, "Add Task to Plan", 150);
         addTaskBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.addNewTask();
+                page.addNewTaskToSelectedPlan();
+            }
+        });
+
+        Button clearBtn = SWTFactory.createButton(compositeRemote, "Clear Done", 150);
+        clearBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.clearDoneTasks();
             }
         });
     }
 
     public boolean isParallel() {
-        return "Parallel".equals(executionModeCombo.getText());
+        return executionModeCombo.getText().startsWith("Parallel");
     }
 }
