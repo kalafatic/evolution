@@ -327,7 +327,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                     if (headContent != null) {
                         Display.getDefault().asyncExec(() -> {
                             if (!comparePage.isDisposed()) {
-                                comparePage.setInput(file, new StringElement(headContent, file.getName(), file.getFileExtension()));
+                                comparePage.setInput(file, new StringElement(headContent, file.getName(), file.getFileExtension()), "Local File", "Git HEAD");
                             }
                         });
                     }
