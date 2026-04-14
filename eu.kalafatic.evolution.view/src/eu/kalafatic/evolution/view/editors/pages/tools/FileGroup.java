@@ -6,6 +6,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -46,7 +47,7 @@ public class FileGroup extends AToolGroup {
         SWTFactory.createLabel(group, "");
 
         Composite btnComp = toolkit.createComposite(group);
-        btnComp.setLayout(new RowLayout());
+        btnComp.setLayout(new GridLayout(5, false));
         GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
         btnComp.setLayoutData(btnGd);
 
