@@ -324,7 +324,7 @@ public class AiChatPage extends SharedScrolledComposite {
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
-						chatGroup.appendText("Evo: " + result, colorEvolution, SWT.BOLD);
+						chatGroup.appendText("Final Response: " + result, colorEvolution, SWT.BOLD);
 						threads.put(currentThread, chatGroup.getText());
 						threadStyles.put(currentThread, chatGroup.getStyleRanges());
 						satisfactionGroup.setVisible(true); updateScrolledContent();
@@ -445,7 +445,7 @@ public class AiChatPage extends SharedScrolledComposite {
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
-						chatGroup.appendText("Evo: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
+						chatGroup.appendText("Final Response: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						satisfactionGroup.setVisible(true); updateScrolledContent();
 					}

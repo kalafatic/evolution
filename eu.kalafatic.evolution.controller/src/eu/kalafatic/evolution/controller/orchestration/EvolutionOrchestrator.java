@@ -59,7 +59,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
     @Override
     public String executeTask(Task task, TaskContext context) throws Exception {
-        context.log("Evo: Executing single task: " + task.getName());
+        context.setCurrentTaskName(task.getName());
+        context.log("Evo-Orchestrator-" + task.getName() + ": Executing single task");
         boolean success = executeTaskWithRetries(task, context);
         if (!success) {
             task.setStatus(TaskStatus.FAILED);
@@ -72,7 +73,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
     @Override
     public String execute(String request, TaskContext context) throws Exception {
         try {
-            context.log("Evo: Starting request - " + request);
+            context.setCurrentTaskName("Initialization");
+            context.log("Evo-Orchestrator-Initialization: Starting request - " + request);
             context.appendSharedMemory("Initial user request: " + request);
 
             // 1. Analytic Phase
@@ -96,15 +98,15 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             if (requiresPlanApproval) {
                 // Pause for Plan Approval
-                context.log("Evo: Plan generated. Waiting for user review and approval...");
+                context.log("Evo-Orchestrator-Planning: Plan generated. Waiting for user review and approval...");
                 Boolean planApproved = context.requestApproval(TaskContext.PLAN_APPROVAL_MESSAGE).get();
                 if (planApproved == null || !planApproved) {
-                    context.log("Evo: Plan rejected by user.");
+                    context.log("Evo-Orchestrator-Planning: Plan rejected by user.");
                     throw new Exception("Orchestration plan rejected by user.");
                 }
-                context.log("Evo: Plan approved. Starting execution...");
+                context.log("Evo-Orchestrator-Planning: Plan approved. Starting execution...");
             } else {
-                context.log("Evo: Low severity plan generated. Skipping manual approval and starting execution...");
+                context.log("Evo-Orchestrator-Planning: Low severity plan generated. Skipping manual approval and starting execution...");
             }
 
             // Reload tasks from model in case the user modified them during approval
@@ -117,11 +119,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 context.checkPause();
                 if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
                 Task task = tasks.get(i);
+                context.setCurrentTaskName(task.getName());
 
                 // Check for User Approval
                 if (task.isApprovalRequired() || "approval".equalsIgnoreCase(task.getType())) {
                     task.setStatus(TaskStatus.WAITING_FOR_APPROVAL);
-                    context.log("Evo: Waiting for user approval for task: " + task.getName());
+                    context.log("Evo-Orchestrator-" + task.getName() + ": Waiting for user approval");
                     Boolean approved = context.requestApproval("Approve task: " + task.getName() + "?").get();
                     if (approved == null || !approved) {
                         task.setStatus(TaskStatus.FAILED);
@@ -162,7 +165,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
 
                     if (loopTargetIndex != -1) {
-                        context.log("Evo: Looping back to task ID: " + loopToId);
+                        context.log("Evo-Orchestrator-" + task.getName() + ": Looping back to task ID: " + loopToId);
                         i = loopTargetIndex - 1; // -1 because the for loop will increment i
                     }
                 }
@@ -171,7 +174,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             updateStatus(context, 1.0, "Completed");
             return lastResult != null && !lastResult.isEmpty() ? lastResult : "Orchestration successful.";
         } catch (Exception e) {
-            context.log("Evo Error: " + e.getMessage());
+            context.log("Evo-Orchestrator-Error: " + e.getMessage());
             throw e;
         } finally {
             OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Idle");
@@ -189,7 +192,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
         for (int retry = 1; retry <= MAX_RETRIES; retry++) {
             context.checkPause();
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            context.log("Evo: Executing " + task.getName() + " (Attempt " + retry + ")");
+            context.log("Evo-Orchestrator-" + task.getName() + ": Attempt " + retry);
 
             try {
                 // Execute action (either via tool or reasoning)
@@ -211,22 +214,22 @@ public class EvolutionOrchestrator implements IOrchestrator {
             }
 
             if (retry == MAX_RETRIES) {
-                context.log("Evo: Task " + task.getName() + " failed after " + MAX_RETRIES + " retries.");
+                context.log("Evo-Orchestrator-" + task.getName() + ": Failed after " + MAX_RETRIES + " retries");
                 try {
                     String guidance = context.requestInput("Task [" + task.getName() + "] failed consistently. Guidance? (retry/skip/hint)").get();
                     if (guidance != null) {
                         if ("retry".equalsIgnoreCase(guidance.trim())) {
                             retry = 0; // Reset loop to try again
                             lastFeedback = null;
-                            context.log("Evo: User requested retry for task: " + task.getName());
+                            context.log("Evo-Orchestrator-" + task.getName() + ": User requested retry");
                         } else if ("skip".equalsIgnoreCase(guidance.trim())) {
-                            context.log("Evo: User requested to skip task: " + task.getName());
+                            context.log("Evo-Orchestrator-" + task.getName() + ": User requested to skip task");
                             task.setFeedback("Skipped by user.");
                             return true;
                         } else {
                             // Treat as hint for one more attempt
                             lastFeedback = "User Hint: " + guidance;
-                            context.log("Evo: Applying user hint for one last attempt: " + guidance);
+                            context.log("Evo-Orchestrator-" + task.getName() + ": Applying user hint: " + guidance);
                             retry = MAX_RETRIES - 1;
                         }
                     }
@@ -258,7 +261,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             task.setResultSummary(path);
             if (taskName.toLowerCase().startsWith("delete")) {
-                context.log("Evo: Detected file deletion request for " + path);
+                context.log("Evo-Orchestrator-" + taskName + ": File deletion request for " + path);
                 Boolean approved = context.requestApproval("[DELETE] Approve deletion of file: " + path + "?").get();
                 if (approved == null || !approved) {
                     throw new Exception("File deletion rejected by user: " + path);
@@ -266,17 +269,17 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 try {
                     String existingContent = fileTool.execute("READ " + path, context.getProjectRoot(), context);
                     task.setRationale(existingContent);
-                    context.log("Evo: Read existing content for " + path + " to capture rationale.");
+                    context.log("Evo-Orchestrator-" + taskName + ": Capture rationale from " + path);
                 } catch (Exception e) {
-                    context.log("Evo: Could not read " + path + " (might be a new file).");
+                    context.log("Evo-Orchestrator-" + taskName + ": Could not read " + path);
                 }
                 return fileTool.execute("DELETE " + path, context.getProjectRoot(), context);
             }
 
             // JavaDev/Architect will generate content first
-            context.log("Evo: Agent " + agent.getType() + " is processing content for " + path);
+            context.log("Evo-Orchestrator-" + taskName + ": " + agent.getType() + " agent processing " + path);
             String content = agent.process(processInput, context, lastFeedback);
-            context.log("Evo: Agent generated " + content.length() + " characters for " + path);
+            context.log("Evo-Orchestrator-" + taskName + ": Agent generated " + content.length() + " chars for " + path);
 
             // Check for significant deletions
             try {
@@ -287,7 +290,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     int newLen = content.length();
                     if (newLen < existingLen * 0.8) {
                         double deletionPercent = (1.0 - (double)newLen / existingLen) * 100;
-                        context.log("Evo: Significant text deletion detected (" + String.format("%.1f", deletionPercent) + "%) for " + path);
+                        context.log("Evo-Orchestrator-" + taskName + ": Significant deletion detected (" + String.format("%.1f", deletionPercent) + "%) for " + path);
                         Boolean approved = context.requestApproval("[Significant deletion] Content of " + path + " will be reduced by " + String.format("%.1f", deletionPercent) + "%. Approve?").get();
                         if (approved == null || !approved) {
                             throw new Exception("Significant content reduction rejected by user for: " + path);
@@ -303,14 +306,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
             // Normalize path: replace backslashes with forward slashes
             path = path.replace("\\", "/");
             String writeResult = fileTool.execute("WRITE " + path + "\n" + content, context.getProjectRoot(), context);
-            context.log("Evo: FileTool result for " + path + ": " + writeResult);
+            context.log("Evo-Orchestrator-" + taskName + ": File write result - " + writeResult);
             return writeResult + "\nCONTENT:\n" + content;
         } else if ("maven".equalsIgnoreCase(taskType)) {
             MavenTool mavenTool = new MavenTool();
             return mavenTool.execute(taskName, context.getProjectRoot(), context);
         } else if ("git".equalsIgnoreCase(taskType)) {
             if (taskName.toLowerCase().matches(".*\\b(pr|pull request)\\b.*")) {
-                context.log("Evo: Requesting approval for Pull Request action: " + taskName);
+                context.log("Evo-Orchestrator-" + taskName + ": Requesting approval for PR");
                 Boolean approved = context.requestApproval("[PR] Approve Pull Request creation? Task: " + taskName).get();
                 if (approved == null || !approved) {
                     throw new Exception("PR rejected by user: " + taskName);
@@ -319,7 +322,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             GitTool gitTool = new GitTool();
             return gitTool.execute(taskName, context.getProjectRoot(), context);
         } else if ("shell".equalsIgnoreCase(taskType)) {
-            context.log("Evo: Requesting approval for terminal command: " + taskName);
+            context.log("Evo-Orchestrator-" + taskName + ": Requesting approval for command");
             Boolean approved = context.requestApproval("Approve terminal command: " + taskName + "?").get();
             if (approved == null || !approved) {
                 throw new Exception("Terminal command rejected by user: " + taskName);
@@ -336,19 +339,19 @@ public class EvolutionOrchestrator implements IOrchestrator {
         OrchestrationStatusManager.getInstance().updateAgentStatus("Analytic", "Analyzing request...");
         try {
             JSONObject analysis = analyticAgent.analyze(request, context);
-            context.log("Evo: Analytic Agent identified category: " + analysis.optString("category"));
+            context.log("Evo-Orchestrator-Analysis: Identified category - " + analysis.optString("category"));
 
             if (analysis.optBoolean("isAmbiguous", false)) {
                 String question = analysis.optString("clarificationQuestion", "The request is ambiguous. Can you please provide more details?");
-                context.log("Evo: Request is ambiguous. Asking for clarification...");
+                context.log("Evo-Orchestrator-Analysis: Request is ambiguous. Asking for clarification...");
 
                 String clarification = context.requestInput(question).get();
                 if (clarification == null || clarification.trim().isEmpty()) {
-                    context.log("Evo: No clarification provided. Proceeding with original request.");
+                    context.log("Evo-Orchestrator-Analysis: No clarification provided.");
                     return request;
                 }
 
-                context.log("Evo: Received clarification: " + clarification);
+                context.log("Evo-Orchestrator-Analysis: Received clarification: " + clarification);
                 context.appendSharedMemory("User Clarification: " + clarification);
 
                 // Recursively analyze with the clarification
@@ -357,11 +360,11 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             String refined = analysis.optString("refinedPrompt", request);
             if (!refined.equals(request)) {
-                context.log("Evo: Analytic Agent refined the prompt for better planning.");
+                context.log("Evo-Orchestrator-Analysis: Refined prompt for planning.");
             }
             return refined;
         } catch (Exception e) {
-            context.log("Evo Analytic Warning: " + e.getMessage() + ". Proceeding with original request.");
+            context.log("Evo-Orchestrator-Analysis-Warning: " + e.getMessage());
             return request;
         } finally {
             OrchestrationStatusManager.getInstance().updateAgentStatus("Analytic", "Idle");

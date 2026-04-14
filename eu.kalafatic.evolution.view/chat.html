@@ -32,6 +32,54 @@
             --reviewer-border: #fecdd3;
             --reviewer-text: #9f1239;
 
+            --analytic-bg: #fef2f2;
+            --analytic-border: #fee2e2;
+            --analytic-text: #991b1b;
+
+            --general-bg: #fdf4ff;
+            --general-border: #fae8ff;
+            --general-text: #86198f;
+
+            --terminal-bg: #f1f5f9;
+            --terminal-border: #e2e8f0;
+            --terminal-text: #334155;
+
+            --file-bg: #ecfdf5;
+            --file-border: #d1fae5;
+            --file-text: #065f46;
+
+            --maven-bg: #fff7ed;
+            --maven-border: #ffedd5;
+            --maven-text: #9a3412;
+
+            --git-bg: #eff6ff;
+            --git-border: #dbeafe;
+            --git-text: #1e40af;
+
+            --structure-bg: #f0f9ff;
+            --structure-border: #e0f2fe;
+            --structure-text: #075985;
+
+            --websearch-bg: #f5f3ff;
+            --websearch-border: #ede9fe;
+            --websearch-text: #5b21b6;
+
+            --quality-bg: #fdf2f8;
+            --quality-border: #fce7f3;
+            --quality-text: #9d174d;
+
+            --observability-bg: #fff7ed;
+            --observability-border: #ffedd5;
+            --observability-text: #9a3412;
+
+            --orchestrator-bg: #f8fafc;
+            --orchestrator-border: #cbd5e1;
+            --orchestrator-text: #1e293b;
+
+            --final-response-bg: #f0fdf4;
+            --final-response-border: #22c55e;
+            --final-response-text: #166534;
+
             --tool-bg: #f8fafc;
             --tool-border: #e2e8f0;
             --tool-text: #475569;
@@ -100,6 +148,18 @@
         .message.javadev .bubble { background: var(--javadev-bg); border-color: var(--javadev-border); color: var(--javadev-text); border-bottom-left-radius: 4px; }
         .message.tester .bubble { background: var(--tester-bg); border-color: var(--tester-border); color: var(--tester-text); border-bottom-left-radius: 4px; }
         .message.reviewer .bubble { background: var(--reviewer-bg); border-color: var(--reviewer-border); color: var(--reviewer-text); border-bottom-left-radius: 4px; }
+        .message.analytic .bubble { background: var(--analytic-bg); border-color: var(--analytic-border); color: var(--analytic-text); border-bottom-left-radius: 4px; }
+        .message.general .bubble { background: var(--general-bg); border-color: var(--general-border); color: var(--general-text); border-bottom-left-radius: 4px; }
+        .message.terminal .bubble { background: var(--terminal-bg); border-color: var(--terminal-border); color: var(--terminal-text); border-bottom-left-radius: 4px; }
+        .message.file .bubble { background: var(--file-bg); border-color: var(--file-border); color: var(--file-text); border-bottom-left-radius: 4px; }
+        .message.maven .bubble { background: var(--maven-bg); border-color: var(--maven-border); color: var(--maven-text); border-bottom-left-radius: 4px; }
+        .message.git .bubble { background: var(--git-bg); border-color: var(--git-border); color: var(--git-text); border-bottom-left-radius: 4px; }
+        .message.structure .bubble { background: var(--structure-bg); border-color: var(--structure-border); color: var(--structure-text); border-bottom-left-radius: 4px; }
+        .message.websearch .bubble { background: var(--websearch-bg); border-color: var(--websearch-border); color: var(--websearch-text); border-bottom-left-radius: 4px; }
+        .message.quality .bubble { background: var(--quality-bg); border-color: var(--quality-border); color: var(--quality-text); border-bottom-left-radius: 4px; }
+        .message.observability .bubble { background: var(--observability-bg); border-color: var(--observability-border); color: var(--observability-text); border-bottom-left-radius: 4px; }
+        .message.orchestrator .bubble { background: var(--orchestrator-bg); border-color: var(--orchestrator-border); color: var(--orchestrator-text); border-bottom-left-radius: 4px; }
+        .message.final-response .bubble { background: var(--final-response-bg); border-color: var(--final-response-border); color: var(--final-response-text); border-bottom-left-radius: 4px; border-width: 2px; }
         .message.tool .bubble { background: var(--tool-bg); border-color: var(--tool-border); color: var(--tool-text); border-bottom-left-radius: 4px; }
 
         .message.ai .bubble { 
@@ -179,7 +239,11 @@
     <script>
         const icons = {
             user: '👤', ai: '🤖', planner: '📋', architect: '📐',
-            javadev: '💻', tester: '🧪', reviewer: '⚖️', tool: '⚙️'
+            javadev: '💻', tester: '🧪', reviewer: '⚖️', tool: '⚙️',
+            analytic: '🔍', general: '🧠', terminal: '📟', file: '📂',
+            maven: '📦', git: '🌿', structure: '🌳', websearch: '🌐',
+            quality: '✨', observability: '📊', orchestrator: '🎼',
+            'final-response': '✅'
         };
 
         function formatText(text) {

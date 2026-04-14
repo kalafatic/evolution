@@ -222,6 +222,32 @@ public class ChatGroup extends AEvoGroup {
             sender = "User [SELF-DEV]";
             content = text.substring(17);
             agentType = "user";
+        } else if (text.startsWith("Final Response: ")) {
+            sender = "Final Response";
+            content = text.substring(16);
+            agentType = "final-response";
+        } else if (text.startsWith("Evo-") && text.contains(": ")) {
+            int colon = text.indexOf(": ");
+            sender = text.substring(0, colon);
+            content = text.substring(colon + 2).trim();
+
+            String senderLower = sender.toLowerCase();
+            if (senderLower.contains("-planner-")) agentType = "planner";
+            else if (senderLower.contains("-architect-")) agentType = "architect";
+            else if (senderLower.contains("-javadev-")) agentType = "javadev";
+            else if (senderLower.contains("-tester-")) agentType = "tester";
+            else if (senderLower.contains("-reviewer-")) agentType = "reviewer";
+            else if (senderLower.contains("-analytic-") || senderLower.contains("-analysis-")) agentType = "analytic";
+            else if (senderLower.contains("-general-")) agentType = "general";
+            else if (senderLower.contains("-terminal-")) agentType = "terminal";
+            else if (senderLower.contains("-file-")) agentType = "file";
+            else if (senderLower.contains("-maven-")) agentType = "maven";
+            else if (senderLower.contains("-git-")) agentType = "git";
+            else if (senderLower.contains("-structure-")) agentType = "structure";
+            else if (senderLower.contains("-websearch-")) agentType = "websearch";
+            else if (senderLower.contains("-quality-")) agentType = "quality";
+            else if (senderLower.contains("-observability-")) agentType = "observability";
+            else if (senderLower.contains("-orchestrator-")) agentType = "orchestrator";
         } else if (text.startsWith("Evolution: ")) {
             sender = "Evo";
             content = text.substring(11);
