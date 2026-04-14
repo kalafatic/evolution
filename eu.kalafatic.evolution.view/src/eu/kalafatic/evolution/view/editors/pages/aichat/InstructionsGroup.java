@@ -48,7 +48,7 @@ public class InstructionsGroup extends AEvoGroup {
         Composite composite = SWTFactory.createComposite(group, 6);
         sendButton = toolkit.createButton(composite, "▶️ Send", SWT.PUSH);
         GridData sendGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
-        sendGd.widthHint = 50;
+        sendGd.widthHint = 60;
         sendGd.heightHint = 25;
         sendButton.setLayoutData(sendGd);
         sendButton.setBackground(lightGreen);
