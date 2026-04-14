@@ -38,9 +38,9 @@ import org.eclipse.swt.widgets.Display;
 import eu.kalafatic.utils.constants.FConstants;
 import eu.kalafatic.utils.log.Log;
 import eu.kalafatic.utils.preferences.ECorePreferences;
-import javafx.application.Platform;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
+//import javafx.application.Platform;
+//import javafx.scene.media.Media;
+//import javafx.scene.media.MediaPlayer;
 
 /**
  * The Class class SoundPlayer.
@@ -75,7 +75,7 @@ public class SoundPlayer implements LineListener {
 //	/** The media locator. */
 //	private MediaLocator mediaLocator;
 	
-	private MediaPlayer mediaPlayer;
+	//private Object mediaPlayer;
 	
 	/** The INSTANCE. */
 	private static SoundPlayer INSTANCE;
@@ -221,7 +221,7 @@ public class SoundPlayer implements LineListener {
 				} finally {
 					try {
 						playing.set(false);
-						ais.close();
+						if (ais != null) ais.close();
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -260,24 +260,24 @@ public class SoundPlayer implements LineListener {
 	
 
 	private void playMP3(final URL clipURL) {
-	    FxInit.init();
+	    //FxInit.init();
 
-	    Platform.runLater(() -> {
-	        try {
-	            Media media = new Media(clipURL.toExternalForm());
-	            mediaPlayer = new MediaPlayer(media);
-
-	            mediaPlayer.setOnEndOfMedia(() -> {
-	                mediaPlayer.stop();
-	                mediaPlayer.dispose();
-	            });
-
-	            mediaPlayer.play();
-
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
-	    });
+	    //Platform.runLater(() -> {
+	    //    try {
+	    //        Media media = new Media(clipURL.toExternalForm());
+	    //        mediaPlayer = new MediaPlayer(media);
+        //
+	    //        mediaPlayer.setOnEndOfMedia(() -> {
+	    //            mediaPlayer.stop();
+	    //            mediaPlayer.dispose();
+	    //        });
+        //
+	    //        mediaPlayer.play();
+        //
+	    //    } catch (Exception e) {
+	    //        e.printStackTrace();
+	    //    }
+	    //});
 	}
 
 	// ---------------------------------------------------------------

@@ -283,6 +283,24 @@ public interface OrchestrationFactory extends EFactory {
 	ReviewSession createReviewSession();
 
 	/**
+	 * Returns a new object of class '<em>Chat Thread</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Chat Thread</em>'.
+	 * @generated
+	 */
+	ChatThread createChatThread();
+
+	/**
+	 * Returns a new object of class '<em>Chat Message</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Chat Message</em>'.
+	 * @generated
+	 */
+	ChatMessage createChatMessage();
+
+	/**
 	 * Returns the package supported by this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

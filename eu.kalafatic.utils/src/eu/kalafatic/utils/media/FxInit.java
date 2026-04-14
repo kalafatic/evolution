@@ -1,14 +1,14 @@
 package eu.kalafatic.utils.media;
 
 
-import javafx.application.Platform;
+//import javafx.application.Platform;
 
 public class FxInit {
 	 private static boolean initialized = false;
 
 	    public static synchronized void init() {
 	        if (!initialized) {
-	            Platform.startup(() -> {});
+	            //Platform.startup(() -> {});
 	            initialized = true;
 	        }
 	    }

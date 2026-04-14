@@ -10,7 +10,7 @@
  ******************************************************************************/
 package eu.kalafatic.utils.p2;
 
-import org.eclipse.equinox.p2.engine.query.UserVisibleRootQuery;
+//import org.eclipse.equinox.p2.engine.query.UserVisibleRootQuery;
 import org.eclipse.equinox.p2.query.QueryUtil;
 import org.eclipse.equinox.p2.ui.Policy;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -54,7 +54,7 @@ public class CloudPolicy extends Policy {
 		if (prefs.getBoolean(PreferenceConstants.INSTALLED_SHOW_ALL_BUNDLES)) {
 			setVisibleAvailableIUQuery(QueryUtil.ALL_UNITS);
 		} else {
-			setVisibleAvailableIUQuery(new UserVisibleRootQuery());
+			//setVisibleAvailableIUQuery(new UserVisibleRootQuery());
 		}
 
 	}

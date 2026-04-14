@@ -2,8 +2,6 @@ package eu.kalafatic.evolution.view.editors.pages;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
@@ -16,7 +14,6 @@ import org.eclipse.jface.fieldassist.IContentProposalProvider;
 import org.eclipse.jface.fieldassist.IControlContentAdapter;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
@@ -44,15 +41,19 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
+import eu.kalafatic.evolution.model.orchestration.ChatThread;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import eu.kalafatic.evolution.view.editors.pages.aichat.*;
 import eu.kalafatic.evolution.view.dialogs.ProjectSetupWizardDialog;
 import org.eclipse.jface.window.Window;
+import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import eu.kalafatic.evolution.controller.manager.EnvironmentSuggestionService;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AiChatPage extends SharedScrolledComposite {
 	private MultiPageEditor editor;
@@ -61,9 +62,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	private Label modeIndicatorLabel;
 	private TaskContext currentContext;
 	private OllamaService ollamaService;
-	private Map<String, String> threads = new HashMap<>();
-	private Map<String, StyleRange[]> threadStyles = new HashMap<>();
-	private String currentThread = "Default";
+	private ChatThread currentThread;
 	private Composite content;
 	private FormToolkit toolkit;
 	private long lastStatusUpdate = 0;
@@ -157,8 +156,7 @@ public class AiChatPage extends SharedScrolledComposite {
 		approvalGroup = new ApprovalGroup(content, editor, orchestrator, this);
 		inputGroup = new InputGroup(content, editor, orchestrator, this);
 
-		threads.put(currentThread, "");
-		threadStyles.put(currentThread, new StyleRange[0]);
+		initializeThreads();
 
 		Runnable timer = new Runnable() {
 			public void run() {
@@ -274,6 +272,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	public void handleSend() {
 		String request = instructionsGroup.getRequest();
 		if (request.isEmpty()) return;
+		if (currentThread == null) initializeThreads();
 		if (orchestrator != null && (orchestrator.isIterativeMode() || orchestrator.isSelfIterativeMode())) {
 			startSelfDevAction(request); return;
 		}
@@ -287,8 +286,6 @@ public class AiChatPage extends SharedScrolledComposite {
 		if (!chatGroup.getText().isEmpty()) chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 		chatGroup.appendText("You: " + request, colorUser, SWT.BOLD);
 		chatGroup.appendText("\n\nEvo: Initializing orchestration...", colorEvolution, SWT.ITALIC);
-		threads.put(currentThread, chatGroup.getText());
-		threadStyles.put(currentThread, chatGroup.getStyleRanges());
 		instructionsGroup.setRequest("");
 		instructionsGroup.setOrchestrationRunning(true);
 		chatGroup.setThinking(true);
@@ -318,8 +315,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> {
 					if (!chatGroup.isDisposed()) {
 						processLogEntry(log);
-						threads.put(currentThread, chatGroup.getText());
-						threadStyles.put(currentThread, chatGroup.getStyleRanges());
+						editor.setDirty(true);
 					}
 				}));
 				String result = evolutionOrchestrator.execute(request, context);
@@ -328,8 +324,7 @@ public class AiChatPage extends SharedScrolledComposite {
 						chatGroup.setThinking(false);
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 						chatGroup.appendText("Final Response: " + result, colorEvolution, SWT.BOLD);
-						threads.put(currentThread, chatGroup.getText());
-						threadStyles.put(currentThread, chatGroup.getStyleRanges());
+						editor.setDirty(true);
 						satisfactionGroup.setVisible(true); updateScrolledContent();
 					}
 				});
@@ -339,8 +334,6 @@ public class AiChatPage extends SharedScrolledComposite {
 						chatGroup.setThinking(false);
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 						chatGroup.appendText("Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD);
-						threads.put(currentThread, chatGroup.getText());
-						threadStyles.put(currentThread, chatGroup.getStyleRanges());
 					}
 				});
 			} finally {
@@ -375,35 +368,81 @@ public class AiChatPage extends SharedScrolledComposite {
 		return null;
 	}
 
+	private void initializeThreads() {
+		if (orchestrator.getAiChat() == null) {
+			orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+		}
+		List<ChatThread> threadList = orchestrator.getAiChat().getThreads();
+		if (threadList.isEmpty()) {
+			ChatThread defaultThread = OrchestrationFactory.eINSTANCE.createChatThread();
+			defaultThread.setId("Default");
+			threadList.add(defaultThread);
+		}
+		currentThread = threadList.get(0);
+		chatGroup.setThread(currentThread);
+		updateThreadCombo();
+	}
+
+	private void updateThreadCombo() {
+		String[] ids = orchestrator.getAiChat().getThreads().stream()
+				.map(ChatThread::getId).toArray(String[]::new);
+		chatMgmtGroup.updateThreadCombo(ids, currentThread.getId());
+	}
+
 	public void createNewThread() {
-		InputDialog dlg = new InputDialog(getShell(), "New Chat Thread", "Enter thread name:", "Thread " + (threads.size() + 1), null);
+		InputDialog dlg = new InputDialog(getShell(), "New Chat Thread", "Enter thread description:", "task", null);
 		if (dlg.open() == Window.OK) {
-			String name = dlg.getValue();
-			if (name != null && !name.trim().isEmpty() && !threads.containsKey(name)) {
-				threads.put(currentThread, chatGroup.getText());
-				threadStyles.put(currentThread, chatGroup.getStyleRanges());
-				currentThread = name;
-				threads.put(currentThread, "");
-				threadStyles.put(currentThread, new StyleRange[0]);
-				chatMgmtGroup.updateThreadCombo(threads.keySet().toArray(new String[0]), currentThread);
-				chatGroup.clear();
+			String taskName = dlg.getValue();
+			if (taskName != null && !taskName.trim().isEmpty()) {
+				String dateStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"));
+				String id = dateStr + "_" + taskName.trim();
+
+				ChatThread newThread = OrchestrationFactory.eINSTANCE.createChatThread();
+				newThread.setId(id);
+				orchestrator.getAiChat().getThreads().add(newThread);
+				currentThread = newThread;
+				chatGroup.setThread(currentThread);
+				updateThreadCombo();
+				editor.setDirty(true);
 			}
 		}
 	}
 
-	public void switchThread(String name) {
-		threads.put(currentThread, chatGroup.getText());
-		threadStyles.put(currentThread, chatGroup.getStyleRanges());
-		currentThread = name;
-		chatGroup.setText(threads.getOrDefault(currentThread, ""));
-		chatGroup.setStyleRanges(threadStyles.getOrDefault(currentThread, new StyleRange[0]));
-		chatGroup.setSelection(chatGroup.getText().length());
+	public void switchThread(String threadId) {
+		orchestrator.getAiChat().getThreads().stream()
+				.filter(t -> t.getId().equals(threadId))
+				.findFirst()
+				.ifPresent(t -> {
+					currentThread = t;
+					chatGroup.setThread(currentThread);
+				});
+	}
+
+	public void selectThreadByDate() {
+		List<ChatThread> sortedThreads = orchestrator.getAiChat().getThreads().stream()
+				.sorted((t1, t2) -> t2.getId().compareTo(t1.getId()))
+				.collect(Collectors.toList());
+
+		if (sortedThreads.isEmpty()) return;
+
+		String[] items = sortedThreads.stream().map(ChatThread::getId).toArray(String[]::new);
+		LabelProvider lp = new LabelProvider();
+		ElementListSelectionDialog dialog = new ElementListSelectionDialog(getShell(), lp);
+		dialog.setElements(items);
+		dialog.setTitle("Select Thread by Date");
+		dialog.setMessage("Select a thread to load (sorted by date):");
+		if (dialog.open() == Window.OK) {
+			String selected = (String) dialog.getFirstResult();
+			if (selected != null) {
+				chatMgmtGroup.setThreadSelection(selected);
+				switchThread(selected);
+			}
+		}
 	}
 
 	public void cleanChat() {
 		chatGroup.clear();
-		threads.put(currentThread, "");
-		threadStyles.put(currentThread, new StyleRange[0]);
+		editor.setDirty(true);
 	}
 
 	private void startSelfDevAction(String request) {
@@ -573,12 +612,13 @@ public class AiChatPage extends SharedScrolledComposite {
 			else if (log.contains("Agent [") && log.contains("Reviewer")) { color = colorReviewer; style = SWT.BOLD; }
 			else if (log.startsWith("Orchestrator Error:") || log.contains("Exception:")) { color = colorError; style = SWT.BOLD; }
 			chatGroup.appendText("\n" + log, color, style);
+			editor.setDirty(true);
 		});
 		
 		
 	}
 
-	public String getCurrentThreadName() { return currentThread; }
+	public String getCurrentThreadName() { return currentThread != null ? currentThread.getId() : "Default"; }
 
 	public MultiPageEditor getEditor() { return editor; }
 

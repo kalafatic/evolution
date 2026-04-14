@@ -3,14 +3,24 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.ChatThread;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 
+import java.util.Collection;
+
 import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.common.notify.NotificationChain;
+
+import org.eclipse.emf.common.util.EList;
 
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.InternalEList;
 
 /**
  * <!-- begin-user-doc -->
@@ -108,6 +118,16 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	 * @ordered
 	 */
 	protected String proxyUrl = PROXY_URL_EDEFAULT;
+
+	/**
+	 * The cached value of the '{@link #getThreads() <em>Threads</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getThreads()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<ChatThread> threads;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -226,6 +246,33 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	 * @generated
 	 */
 	@Override
+	public EList<ChatThread> getThreads() {
+		if (threads == null) {
+			threads = new EObjectContainmentEList<ChatThread>(ChatThread.class, this, OrchestrationPackage.AI_CHAT__THREADS);
+		}
+		return threads;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
+		switch (featureID) {
+			case OrchestrationPackage.AI_CHAT__THREADS:
+				return ((InternalEList<?>)getThreads()).basicRemove(otherEnd, msgs);
+		}
+		return super.eInverseRemove(otherEnd, featureID, msgs);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.AI_CHAT__URL:
@@ -236,6 +283,8 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 				return getPrompt();
 			case OrchestrationPackage.AI_CHAT__PROXY_URL:
 				return getProxyUrl();
+			case OrchestrationPackage.AI_CHAT__THREADS:
+				return getThreads();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -245,6 +294,7 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
@@ -259,6 +309,10 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 				return;
 			case OrchestrationPackage.AI_CHAT__PROXY_URL:
 				setProxyUrl((String)newValue);
+				return;
+			case OrchestrationPackage.AI_CHAT__THREADS:
+				getThreads().clear();
+				getThreads().addAll((Collection<? extends ChatThread>)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -284,6 +338,9 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 			case OrchestrationPackage.AI_CHAT__PROXY_URL:
 				setProxyUrl(PROXY_URL_EDEFAULT);
 				return;
+			case OrchestrationPackage.AI_CHAT__THREADS:
+				getThreads().clear();
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -304,6 +361,8 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 				return PROMPT_EDEFAULT == null ? prompt != null : !PROMPT_EDEFAULT.equals(prompt);
 			case OrchestrationPackage.AI_CHAT__PROXY_URL:
 				return PROXY_URL_EDEFAULT == null ? proxyUrl != null : !PROXY_URL_EDEFAULT.equals(proxyUrl);
+			case OrchestrationPackage.AI_CHAT__THREADS:
+				return threads != null && !threads.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}
