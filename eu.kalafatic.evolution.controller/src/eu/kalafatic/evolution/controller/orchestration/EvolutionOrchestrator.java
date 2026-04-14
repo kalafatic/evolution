@@ -223,6 +223,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     task.setFeedback("Retry " + retry + ": " + lastFeedback);
                 }
             } catch (Exception e) {
+                context.log("Evo-Orchestrator-" + task.getName() + ": Error during execution: " + e.getMessage());
                 lastFeedback = "Exception: " + e.getMessage();
                 task.setFeedback("Retry " + retry + " Exception: " + e.getMessage());
             }
@@ -266,7 +267,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             FileTool fileTool = new FileTool();
 
             // Robust path extraction from task name
-            String path = taskName.replaceFirst("(?i)^(Write|Create|Generate|Update|Modify|Delete)(\\s+file)?\\s+", "").trim();
+            String path = taskName.replaceFirst("(?i)^(.+:\\s*)?(Write|Create|Generate|Update|Modify|Delete)(\\s+file)?\\s+", "").trim();
 
             // Strip quotes if present
             if ((path.startsWith("'") && path.endsWith("'")) || (path.startsWith("\"") && path.endsWith("\""))) {

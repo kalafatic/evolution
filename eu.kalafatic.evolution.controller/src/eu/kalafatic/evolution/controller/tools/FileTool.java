@@ -26,6 +26,8 @@ public class FileTool implements ITool {
             String pathPart = command.substring(5, newlineIndex).trim();
             String contentPart = command.substring(newlineIndex + 1);
 
+            context.log("Tool [FileTool]: Writing to " + pathPart);
+
             if (pathPart.contains("..") || pathPart.startsWith("/") || pathPart.contains(":")) {
                 throw new Exception("Security Violation: Path traversal attempt or absolute path detected: " + pathPart);
             }
@@ -43,6 +45,7 @@ public class FileTool implements ITool {
             return "SUCCESS: Wrote file " + pathPart;
         } else if (command.startsWith("READ")) {
             String pathPart = command.substring(4).trim();
+            context.log("Tool [FileTool]: Reading from " + pathPart);
             if (pathPart.contains("..") || pathPart.startsWith("/") || pathPart.contains(":")) {
                 throw new Exception("Security Violation: Path traversal attempt or absolute path detected: " + pathPart);
             }
@@ -57,6 +60,7 @@ public class FileTool implements ITool {
             return content;
         } else if (command.startsWith("DELETE")) {
             String pathPart = command.substring(6).trim();
+            context.log("Tool [FileTool]: Deleting " + pathPart);
             if (pathPart.contains("..") || pathPart.startsWith("/") || pathPart.contains(":")) {
                 throw new Exception("Security Violation: Path traversal attempt or absolute path detected: " + pathPart);
             }
@@ -72,6 +76,7 @@ public class FileTool implements ITool {
             return "SUCCESS: File did not exist " + pathPart;
         } else if (command.startsWith("MKDIR")) {
             String pathPart = command.substring(5).trim();
+            context.log("Tool [FileTool]: Creating directory " + pathPart);
             if (pathPart.contains("..") || pathPart.startsWith("/") || pathPart.contains(":")) {
                 throw new Exception("Security Violation: Path traversal attempt or absolute path detected: " + pathPart);
             }
