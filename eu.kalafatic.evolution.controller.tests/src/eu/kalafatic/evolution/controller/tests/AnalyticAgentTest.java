@@ -67,6 +67,30 @@ public class AnalyticAgentTest {
         assertTrue(analysis.getString("refinedPrompt").contains("Main.java"));
     }
 
+    @Test
+    public void testSimplestSolutionDirective() throws Exception {
+        AnalyticAgent agent = new AnalyticAgent();
+        injectMockLlm(agent, mockLlm);
+
+        String response = "{\n" +
+                "  \"category\": \"CODING\",\n" +
+                "  \"objective\": \"Reconstruct Java creation goal\",\n" +
+                "  \"isAmbiguous\": false,\n" +
+                "  \"missingInformation\": [],\n" +
+                "  \"clarificationQuestion\": \"\",\n" +
+                "  \"refinedPrompt\": \"Create a simple HelloWorld Java class in src/Main.java\"\n" +
+                "}";
+        mockLlm.setResponse(response);
+
+        // This simulates what the orchestrator does: it appends shared memory and passes the new request
+        orchestrator.setSharedMemory("Initial user request: create java example");
+
+        JSONObject analysis = agent.analyze("Execute the simplest working solution.", context);
+        assertFalse("Should not be ambiguous when simplest solution is requested", analysis.getBoolean("isAmbiguous"));
+        assertEquals("CODING", analysis.getString("category"));
+        assertTrue(analysis.getString("refinedPrompt").contains("src/Main.java"));
+    }
+
     private void injectMockLlm(AnalyticAgent agent, ILlmProvider mock) throws Exception {
         Field serviceField = AnalyticAgent.class.getSuperclass().getDeclaredField("aiService");
         serviceField.setAccessible(true);

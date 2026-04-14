@@ -32,10 +32,11 @@ public class AnalyticAgent extends BaseAiAgent {
                 "  \"objective\": \"Brief summary of the goal\",\n" +
                 "  \"isAmbiguous\": boolean,\n" +
                 "  \"missingInformation\": [\"list\", \"of\", \"missing\", \"details\"],\n" +
-                "  \"clarificationQuestion\": \"A polite question to ask the user. Use phrases like 'could you tell me a bit more about what you’re trying to accomplish?' or 'are you working on a more complex project that requires a specific file structure?' if applicable.\",\n" +
+                "  \"clarificationQuestion\": \"A polite question to ask the user if the request is ambiguous.\",\n" +
                 "  \"refinedPrompt\": \"An improved version of the prompt based on your analysis (if not ambiguous)\"\n" +
                 "}\n\n" +
-                "If the request is clear, set isAmbiguous to false and missingInformation to an empty array.";
+                "If the request is clear, set isAmbiguous to false and missingInformation to an empty array.\n" +
+                "If the user says 'Execute the simplest working solution.', set isAmbiguous to false and use the refinedPrompt to reconstruct the original goal from shared memory.";
     }
 
     public JSONObject analyze(String prompt, TaskContext context) throws Exception {

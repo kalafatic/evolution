@@ -32,7 +32,8 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "DO NOT treat it as CONVERSATIONAL.\n" +
                 "- Instead, create a task to provide thoughts, suggestions, and ask for clarification.\n" +
                 "- Task name example: 'General: Clarify operational request'.\n" +
-                "- Description should include: 'Analyze the ambiguous operational request. Provide suggestions on what the user might want (e.g., file extension, location, initial content) and ask for explicit approval/clarification before proceeding.'\n\n" +
+                "- Description should include: 'Analyze the ambiguous operational request. Provide suggestions on what the user might want (e.g., file extension, location, initial content) and ask for explicit approval/clarification before proceeding.'\n" +
+                "- IMPORTANT: If the user explicitly asks to 'Execute the simplest working solution.', IGNORE the ambiguity and immediately plan the minimal functional tasks to achieve the goal based on shared memory.\n\n" +
                 "STRATEGY:\n" +
                 "- For CONVERSATIONAL requests, create a single 'llm' task and set 'approvalRequired' to false.\n" +
                 "- For INFORMATIONAL requests, use agents to gather data. 'approvalRequired' should generally be false.\n" +
