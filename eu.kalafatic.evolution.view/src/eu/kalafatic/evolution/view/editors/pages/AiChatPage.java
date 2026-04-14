@@ -623,6 +623,11 @@ public class AiChatPage extends SharedScrolledComposite {
 		instructionsGroup.focusAndHighlight(colorLightOrange);
 	}
 
+	public void handleHelloWorld() {
+		instructionsGroup.setRequest("Create a simple Hello World java class.");
+		handleSend();
+	}
+
 	public void provideInput(String input) {
 		if (currentContext != null) {
 			currentContext.provideInput(input);

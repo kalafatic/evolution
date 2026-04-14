@@ -138,6 +138,9 @@ public class ChatGroup extends AEvoGroup {
                         case "clarify":
                             page.handleClarify();
                             break;
+                        case "helloworld":
+                            page.handleHelloWorld();
+                            break;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
