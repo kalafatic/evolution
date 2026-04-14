@@ -132,7 +132,11 @@ public class ChatGroup extends AEvoGroup {
                             handleCopy(text);
                             break;
                         case "approve":
+                        case "create":
                             page.provideApproval(true);
+                            break;
+                        case "clarify":
+                            page.handleClarify();
                             break;
                     }
                 } catch (Exception e) {
