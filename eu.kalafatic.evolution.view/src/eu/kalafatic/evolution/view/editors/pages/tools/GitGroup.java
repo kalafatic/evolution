@@ -1,9 +1,12 @@
 package eu.kalafatic.evolution.view.editors.pages.tools;
 
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
@@ -18,6 +21,7 @@ import java.io.File;
 
 public class GitGroup extends AToolGroup {
     private Text gitRepoText, gitBranchText, gitLocalPathText;
+    private Text branchNameText, commitMsgText;
 
     public GitGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
         super(editor, orchestrator, successColor);
@@ -38,8 +42,52 @@ public class GitGroup extends AToolGroup {
         gitLocalPathText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, gitLocalPathText);
 
+        SWTFactory.createLabel(group, "Branch Name:");
+        branchNameText = SWTFactory.createText(group);
         SWTFactory.createLabel(group, "");
-        Button testBtn = SWTFactory.createButton(group, "Test Git");
+
+        SWTFactory.createLabel(group, "Commit Msg:");
+        commitMsgText = SWTFactory.createText(group);
+        SWTFactory.createLabel(group, "");
+
+        Composite btnComp = toolkit.createComposite(group);
+        btnComp.setLayout(new RowLayout());
+        GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
+        btnComp.setLayoutData(btnGd);
+
+        Button branchBtn = SWTFactory.createButton(btnComp, "New Branch");
+        branchBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("BRANCH " + branchNameText.getText(), "git");
+            }
+        });
+
+        Button commitBtn = SWTFactory.createButton(btnComp, "Commit");
+        commitBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("COMMIT " + commitMsgText.getText(), "git");
+            }
+        });
+
+        Button pullBtn = SWTFactory.createButton(btnComp, "Pull");
+        pullBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("PULL", "git");
+            }
+        });
+
+        Button pushBtn = SWTFactory.createButton(btnComp, "Push");
+        pushBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("PUSH", "git");
+            }
+        });
+
+        Button testBtn = SWTFactory.createButton(btnComp, "Test Git");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

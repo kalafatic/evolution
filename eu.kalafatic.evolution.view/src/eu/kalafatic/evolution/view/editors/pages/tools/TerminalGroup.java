@@ -45,32 +45,11 @@ public class TerminalGroup extends AToolGroup {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.keyCode == SWT.CR || e.keyCode == SWT.KEYPAD_CR) {
-                    executeCommand(inputText.getText());
+                    executeCommand(inputText.getText(), "shell");
                     inputText.setText("");
                 }
             }
         });
-    }
-
-    private void executeCommand(String command) {
-        if (command == null || command.trim().isEmpty()) return;
-
-        appendOutput("> " + command + "\n");
-
-        new Thread(() -> {
-            try {
-                ShellTool shell = new ShellTool();
-                File workingDir = null;
-                if (editor.getEditorInput() instanceof org.eclipse.ui.IFileEditorInput) {
-                    workingDir = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput()).getFile().getProject()
-                            .getLocation().toFile();
-                }
-                String output = shell.execute(command, workingDir, null);
-                appendOutput(output + "\n");
-            } catch (Exception e) {
-                appendOutput("Error: " + e.getMessage() + "\n");
-            }
-        }).start();
     }
 
     private void appendOutput(String text) {
