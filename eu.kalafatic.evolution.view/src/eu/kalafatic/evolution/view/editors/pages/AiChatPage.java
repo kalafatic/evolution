@@ -277,6 +277,11 @@ public class AiChatPage extends SharedScrolledComposite {
 		instructionsGroup.resetBackground();
 		String request = instructionsGroup.getRequest();
 		if (request.isEmpty()) return;
+		if (currentContext != null && currentContext.isWaitingForInput()) {
+			provideInput(request);
+			instructionsGroup.setRequest("");
+			return;
+		}
 		if (currentThread == null) initializeThreads();
 		if (orchestrator != null && (orchestrator.isIterativeMode() || orchestrator.isSelfIterativeMode())) {
 			startSelfDevAction(request); return;
@@ -314,6 +319,7 @@ public class AiChatPage extends SharedScrolledComposite {
 						modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
 						modeIndicatorLabel.setBackground(colorWaiting);
 					}
+					handleClarify();
 					inputGroup.show(message); updateScrolledContent();
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
@@ -369,6 +375,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	public void handleStop() {
+		instructionsGroup.resetBackground();
 		if (orchestrationThread != null && orchestrationThread.isAlive()) {
 			if (currentContext != null) currentContext.setPaused(false);
 			orchestrationThread.interrupt();
@@ -461,6 +468,11 @@ public class AiChatPage extends SharedScrolledComposite {
 	private void startSelfDevAction(String request) {
 		instructionsGroup.resetBackground();
 		if (request == null || request.isEmpty()) request = "Analyze the project and suggest improvements.";
+		if (currentContext != null && currentContext.isWaitingForInput()) {
+			provideInput(request);
+			instructionsGroup.setRequest("");
+			return;
+		}
 		final String finalRequest = request;
 		if (orchestrator != null) {
 			if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
@@ -492,6 +504,7 @@ public class AiChatPage extends SharedScrolledComposite {
 						modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
 						modeIndicatorLabel.setBackground(colorWaiting);
 					}
+					handleClarify();
 					inputGroup.show(message); updateScrolledContent();
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {

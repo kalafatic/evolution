@@ -133,7 +133,12 @@ public class TaskContext {
     public void provideInput(String input) {
         if (inputFuture != null) {
             inputFuture.complete(input);
+            inputFuture = null;
         }
+    }
+
+    public boolean isWaitingForInput() {
+        return inputFuture != null && !inputFuture.isDone();
     }
 
     public boolean isPaused() {
