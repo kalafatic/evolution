@@ -205,6 +205,10 @@ public class ChatGroup extends AEvoGroup {
             sender = "Final Response";
             content = text.substring(16);
             agentType = "final-response";
+        } else if (text.startsWith("Result Summary: ")) {
+            sender = "Result Summary";
+            content = text.substring(16);
+            agentType = "result-summary";
         } else if (text.startsWith("Evo-") && text.contains(": ")) {
             int colon = text.indexOf(": ");
             sender = text.substring(0, colon);

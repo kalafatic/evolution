@@ -273,8 +273,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 path = path.substring(1, path.length() - 1);
             }
 
-            task.setResultSummary(path);
             if (taskName.toLowerCase().startsWith("delete")) {
+                task.setResultSummary("I deleted the file: " + path);
                 context.log("Evo-Orchestrator-" + taskName + ": File deletion request for " + path);
                 Boolean approved = true;
                 if (!context.isAutoApprove()) {
@@ -326,11 +326,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
             // Normalize path: replace backslashes with forward slashes
             path = path.replace("\\", "/");
             String writeResult = fileTool.execute("WRITE " + path + "\n" + content, context.getProjectRoot(), context);
+            task.setResultSummary("I created/updated the file: " + path + ". It can be opened and verified in the project explorer.");
             context.log("Evo-Orchestrator-" + taskName + ": File write result - " + writeResult);
             return writeResult + "\nCONTENT:\n" + content;
         } else if ("maven".equalsIgnoreCase(taskType)) {
             MavenTool mavenTool = new MavenTool();
-            return mavenTool.execute(taskName, context.getProjectRoot(), context);
+            String res = mavenTool.execute(taskName, context.getProjectRoot(), context);
+            task.setResultSummary("Maven: " + taskName + " executed. Result: " + (res.length() > 50 ? res.substring(0, 47) + "..." : res));
+            return res;
         } else if ("git".equalsIgnoreCase(taskType)) {
             if (taskName.toLowerCase().matches(".*\\b(pr|pull request)\\b.*")) {
                 context.log("Evo-Orchestrator-" + taskName + ": Requesting approval for PR");
@@ -343,7 +346,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 }
             }
             GitTool gitTool = new GitTool();
-            return gitTool.execute(taskName, context.getProjectRoot(), context);
+            String res = gitTool.execute(taskName, context.getProjectRoot(), context);
+            task.setResultSummary("Git: " + taskName + " executed.");
+            return res;
         } else if ("shell".equalsIgnoreCase(taskType)) {
             context.log("Evo-Orchestrator-" + taskName + ": Requesting approval for command");
             Boolean approved = true;
@@ -354,7 +359,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 throw new Exception("Terminal command rejected by user: " + taskName);
             }
             ShellTool shellTool = new ShellTool();
-            return shellTool.execute(taskName, context.getProjectRoot(), context);
+            String res = shellTool.execute(taskName, context.getProjectRoot(), context);
+            task.setResultSummary("Shell: " + taskName + " executed.");
+            return res;
         }
 
         // Default to agent reasoning
