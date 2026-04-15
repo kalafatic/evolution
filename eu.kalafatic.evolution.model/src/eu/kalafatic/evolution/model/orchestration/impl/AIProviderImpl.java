@@ -32,6 +32,9 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getState <em>State</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getStateDescription <em>State Description</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getRating <em>Rating</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getRatingAnalyze <em>Rating Analyze</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getRatingChat <em>Rating Chat</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AIProviderImpl#getRatingProgramming <em>Rating Programming</em>}</li>
  * </ul>
  *
  * @generated
@@ -276,6 +279,135 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * @ordered
 	 */
 	protected int rating = RATING_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getRatingAnalyze() <em>Rating Analyze</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRatingAnalyze()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int RATING_ANALYZE_EDEFAULT = 0;
+
+	/**
+	 * The cached value of the '{@link #getRatingAnalyze() <em>Rating Analyze</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRatingAnalyze()
+	 * @generated
+	 * @ordered
+	 */
+	protected int ratingAnalyze = RATING_ANALYZE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getRatingChat() <em>Rating Chat</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRatingChat()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int RATING_CHAT_EDEFAULT = 0;
+
+	/**
+	 * The cached value of the '{@link #getRatingChat() <em>Rating Chat</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRatingChat()
+	 * @generated
+	 * @ordered
+	 */
+	protected int ratingChat = RATING_CHAT_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getRatingProgramming() <em>Rating Programming</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRatingProgramming()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int RATING_PROGRAMMING_EDEFAULT = 0;
+
+	/**
+	 * The cached value of the '{@link #getRatingProgramming() <em>Rating Programming</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRatingProgramming()
+	 * @generated
+	 * @ordered
+	 */
+	protected int ratingProgramming = RATING_PROGRAMMING_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getRatingAnalyze() {
+		return ratingAnalyze;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRatingAnalyze(int newRatingAnalyze) {
+		int oldRatingAnalyze = ratingAnalyze;
+		ratingAnalyze = newRatingAnalyze;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING_ANALYZE, oldRatingAnalyze, ratingAnalyze));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getRatingChat() {
+		return ratingChat;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRatingChat(int newRatingChat) {
+		int oldRatingChat = ratingChat;
+		ratingChat = newRatingChat;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING_CHAT, oldRatingChat, ratingChat));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getRatingProgramming() {
+		return ratingProgramming;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRatingProgramming(int newRatingProgramming) {
+		int oldRatingProgramming = ratingProgramming;
+		ratingProgramming = newRatingProgramming;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING_PROGRAMMING, oldRatingProgramming, ratingProgramming));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -604,6 +736,12 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 				return getStateDescription();
 			case OrchestrationPackage.AI_PROVIDER__RATING:
 				return getRating();
+			case OrchestrationPackage.AI_PROVIDER__RATING_ANALYZE:
+				return getRatingAnalyze();
+			case OrchestrationPackage.AI_PROVIDER__RATING_CHAT:
+				return getRatingChat();
+			case OrchestrationPackage.AI_PROVIDER__RATING_PROGRAMMING:
+				return getRatingProgramming();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -651,6 +789,15 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 				return;
 			case OrchestrationPackage.AI_PROVIDER__RATING:
 				setRating((Integer)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__RATING_ANALYZE:
+				setRatingAnalyze((Integer)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__RATING_CHAT:
+				setRatingChat((Integer)newValue);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__RATING_PROGRAMMING:
+				setRatingProgramming((Integer)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -700,6 +847,15 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 			case OrchestrationPackage.AI_PROVIDER__RATING:
 				setRating(RATING_EDEFAULT);
 				return;
+			case OrchestrationPackage.AI_PROVIDER__RATING_ANALYZE:
+				setRatingAnalyze(RATING_ANALYZE_EDEFAULT);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__RATING_CHAT:
+				setRatingChat(RATING_CHAT_EDEFAULT);
+				return;
+			case OrchestrationPackage.AI_PROVIDER__RATING_PROGRAMMING:
+				setRatingProgramming(RATING_PROGRAMMING_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -736,6 +892,12 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 				return STATE_DESCRIPTION_EDEFAULT == null ? stateDescription != null : !STATE_DESCRIPTION_EDEFAULT.equals(stateDescription);
 			case OrchestrationPackage.AI_PROVIDER__RATING:
 				return rating != RATING_EDEFAULT;
+			case OrchestrationPackage.AI_PROVIDER__RATING_ANALYZE:
+				return ratingAnalyze != RATING_ANALYZE_EDEFAULT;
+			case OrchestrationPackage.AI_PROVIDER__RATING_CHAT:
+				return ratingChat != RATING_CHAT_EDEFAULT;
+			case OrchestrationPackage.AI_PROVIDER__RATING_PROGRAMMING:
+				return ratingProgramming != RATING_PROGRAMMING_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -774,6 +936,12 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 		result.append(stateDescription);
 		result.append(", rating: ");
 		result.append(rating);
+		result.append(", ratingAnalyze: ");
+		result.append(ratingAnalyze);
+		result.append(", ratingChat: ");
+		result.append(ratingChat);
+		result.append(", ratingProgramming: ");
+		result.append(ratingProgramming);
 		result.append(')');
 		return result.toString();
 	}

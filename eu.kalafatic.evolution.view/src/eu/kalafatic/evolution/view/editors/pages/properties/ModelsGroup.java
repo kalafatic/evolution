@@ -52,6 +52,9 @@ public class ModelsGroup extends AEvoGroup {
         public String pathOrUrl;
         public String token;
         public int rating;
+        public int ratingAnalyze;
+        public int ratingChat;
+        public int ratingProgramming;
         public eu.kalafatic.evolution.model.orchestration.AIProvider provider;
 
         public ModelItem(ModelState state, String name, boolean local, String pathOrUrl, String token) {
@@ -86,8 +89,16 @@ public class ModelsGroup extends AEvoGroup {
         tableViewer.setContentProvider(ArrayContentProvider.getInstance());
 
         Composite buttonBar = toolkit.createComposite(group);
-        buttonBar.setLayout(new GridLayout(5, false));
+        buttonBar.setLayout(new GridLayout(6, false));
         buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
+
+        Button testButton = toolkit.createButton(buttonBar, "Test Model", SWT.PUSH);
+        testButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleTestModel();
+            }
+        });
 
         Button addButton = toolkit.createButton(buttonBar, "Add", SWT.PUSH);
         addButton.addSelectionListener(new SelectionAdapter() {
@@ -145,8 +156,8 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void createColumns() {
-        String[] titles = { "State", "Name", "Local", "Path/URL", "Token", "Rating" };
-        int[] bounds = { 60, 150, 60, 250, 80, 60 };
+        String[] titles = { "State", "Name", "Local", "Path/URL", "Token", "Rating (A/CH/P)" };
+        int[] bounds = { 60, 150, 60, 250, 80, 120 };
 
         // State
         TableViewerColumn colState = createTableViewerColumn(titles[0], bounds[0]);
@@ -243,7 +254,8 @@ public class ModelsGroup extends AEvoGroup {
         colRating.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return String.valueOf(((ModelItem) element).rating);
+                ModelItem item = (ModelItem) element;
+                return String.format("%d (A:%d/CH:%d/P:%d)", item.rating, item.ratingAnalyze, item.ratingChat, item.ratingProgramming);
             }
             @Override
             public Color getBackground(Object element) {
@@ -427,6 +439,52 @@ public class ModelsGroup extends AEvoGroup {
         }
     }
 
+    private void handleTestModel() {
+        IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
+        if (selection.isEmpty()) return;
+        ModelItem item = (ModelItem) selection.getFirstElement();
+        if (item.provider == null) {
+            MessageDialog.openWarning(group.getShell(), "Test Model", "Only custom or local models with provider entries can be tested.");
+            return;
+        }
+
+        final eu.kalafatic.evolution.model.orchestration.AIProvider provider = item.provider;
+
+        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Testing Model: " + provider.getName()) {
+            @Override
+            protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                try {
+                    eu.kalafatic.evolution.controller.services.ModelEvaluationService service =
+                            new eu.kalafatic.evolution.controller.services.ModelEvaluationService();
+
+                    File projectRoot = null;
+                    if (editor.getEditorInput() instanceof org.eclipse.ui.IFileEditorInput) {
+                        projectRoot = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput()).getFile().getProject().getLocation().toFile();
+                    }
+
+                    TaskContext context = new TaskContext(orchestrator, projectRoot);
+                    service.evaluateModel(orchestrator, provider, context);
+
+                    Display.getDefault().asyncExec(() -> {
+                        refreshUI();
+                        editor.setDirty(true);
+                        MessageDialog.openInformation(group.getShell(), "Test Complete",
+                                "Evaluation finished for " + provider.getName() + ".\n" +
+                                "Overall: " + provider.getRating() + "\n" +
+                                "A: " + provider.getRatingAnalyze() + " CH: " + provider.getRatingChat() + " P: " + provider.getRatingProgramming());
+                    });
+                    return org.eclipse.core.runtime.Status.OK_STATUS;
+                } catch (Exception e) {
+                    Display.getDefault().asyncExec(() -> {
+                        MessageDialog.openError(group.getShell(), "Test Error", "Failed to evaluate model: " + e.getMessage());
+                    });
+                    return org.eclipse.core.runtime.Status.CANCEL_STATUS;
+                }
+            }
+        };
+        job.schedule();
+    }
+
     private void handleRemoveModel() {
         IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
         if (selection.isEmpty()) return;
@@ -495,6 +553,9 @@ public class ModelsGroup extends AEvoGroup {
             ModelItem item = new ModelItem(state, p.getName(), false, p.getUrl(), token);
             item.stateDescription = p.getStateDescription();
             item.rating = p.getRating();
+            item.ratingAnalyze = p.getRatingAnalyze();
+            item.ratingChat = p.getRatingChat();
+            item.ratingProgramming = p.getRatingProgramming();
             item.provider = p;
             newItems.add(item);
         }
