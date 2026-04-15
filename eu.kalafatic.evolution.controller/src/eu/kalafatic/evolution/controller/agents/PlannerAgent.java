@@ -59,6 +59,20 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
     public List<Task> plan(String request, TaskContext context) throws Exception {
         context.log("Planner: Decomposing request - " + request);
 
+        // Step 3: Minimal Planner Guard
+        if (!request.toLowerCase().matches(".*\\b(create|write|fix|generate|modify|delete|run|execute|add|implement)\\b.*")) {
+            context.log("Planner: Request does not clearly contain an action. Returning clarification task.");
+            List<Task> fallbackTasks = new ArrayList<>();
+            Task t = OrchestrationFactory.eINSTANCE.createTask();
+            t.setId("task0");
+            t.setName("General: Ask for clarification");
+            t.setDescription("What do you want me to do?");
+            t.setType("llm");
+            t.setApprovalRequired(false);
+            fallbackTasks.add(t);
+            return fallbackTasks;
+        }
+
         // Use structured prompt building to include shared memory/history in planning
         String fullPrompt = buildPrompt(request, context, null);
 

@@ -34,6 +34,7 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
 public class EvolutionOrchestrator implements IOrchestrator {
 
     private static final int MAX_RETRIES = 3;
+    private IntentGate intentGate = new IntentGate();
     private AnalyticAgent analyticAgent = new AnalyticAgent();
     private PlannerAgent planner = new PlannerAgent();
     private ReviewerAgent reviewer = new ReviewerAgent();
@@ -76,6 +77,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
             context.setCurrentTaskName("Initialization");
             context.log("Evo-Orchestrator-Initialization: Starting request - " + request);
             context.appendSharedMemory("Initial user request: " + request);
+
+            // 0. Intent Gate
+            context.log("Evo-Orchestrator-IntentGate: Classifying intent...");
+            String intentResponse = intentGate.process(request, context);
+            if (intentResponse != null) {
+                context.log("Evo-Orchestrator-IntentGate: Classified as non-ACTION. Returning direct response.");
+                return intentResponse;
+            }
 
             // 1. Analytic Phase
             String analyzedRequest = analyzeAndClarify(request, context);
