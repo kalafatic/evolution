@@ -21,24 +21,19 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are a workflow planner for an agentic system (Jules). " +
-                "Your first step is to analyze the request needs and severity.\n\n" +
-                "CATEGORIZATION:\n" +
-                "- CONVERSATIONAL: Greetings, simple questions, or small talk. (Low Severity)\n" +
-                "- INFORMATIONAL: Requests for system status, project overview, or explanations. (Medium Severity)\n" +
-                "- OPERATIONAL: Requests that modify files, run builds, or execute shell commands. (High Severity)\n\n" +
-                "AMBIGUITY HANDLING (The 'Jules' way):\n" +
-                "- If a request is OPERATIONAL but lacks enough detail (e.g., 'create file a' without content or location), " +
-                "DO NOT treat it as CONVERSATIONAL.\n" +
-                "- Instead, create a task to provide thoughts, suggestions, and ask for clarification.\n" +
-                "- Task name example: 'General: Clarify operational request'.\n" +
-                "- Description should include: 'Analyze the ambiguous operational request. Provide suggestions on what the user might want (e.g., file extension, location, initial content) and ask for explicit approval/clarification before proceeding.'\n" +
-                "- IMPORTANT: If the user explicitly asks to 'Execute the simplest working solution.', IGNORE the ambiguity and immediately plan the minimal functional tasks to achieve the goal based on shared memory.\n\n" +
+        return "You are a workflow planner for an agentic system (Jules).\n" +
+                "IMPORTANT: You only receive requests that have been classified as ACTION_REQUEST.\n\n" +
+                "PLANNING RULES:\n" +
+                "- NEVER invent domain data (e.g. if user says 'create file', don't assume a filename if not provided).\n" +
+                "- ONLY use explicit user input or shared memory.\n" +
+                "- If critical data is missing (e.g. filename, command), create a SINGLE clarification task instead of multiple operational steps.\n" +
+                "- Task names must start with agent types (e.g., 'Architect: Analyze', 'JavaDev: Implement').\n\n" +
+                "AMBIGUITY HANDLING:\n" +
+                "- If the request is too vague to plan (e.g. 'create something'), return a task with name 'General: Request Clarification' and description asking ONE specific question.\n" +
+                "- If the user says 'Execute the simplest working solution.', use shared memory to determine the path.\n\n" +
                 "STRATEGY:\n" +
-                "- For CONVERSATIONAL requests, create a single 'llm' task and set 'approvalRequired' to false.\n" +
-                "- For INFORMATIONAL requests, use agents to gather data. 'approvalRequired' should generally be false.\n" +
-                "- For OPERATIONAL requests, decompose into specialized tasks. 'approvalRequired' should be true for tasks that change state.\n" +
-                "- Prefer using explicit agent names in task titles (e.g., 'Architect: Analyze project', 'JavaDev: Implement feature').\n\n" +
+                "- Decompose operational requests into specialized tasks.\n" +
+                "- 'approvalRequired' should be true for any task modifying files or running commands.\n\n" +
                 "Available task types:\n" +
                 "- 'llm': For reasoning, planning, clarification, or general text generation.\n" +
                 "- 'file': For writing or creating files. Task name: 'Write <path/to/file>'.\n" +
@@ -59,14 +54,15 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
     public List<Task> plan(String request, TaskContext context) throws Exception {
         context.log("Planner: Decomposing request - " + request);
 
-        // Step 3: Minimal Planner Guard
-        if (!request.toLowerCase().matches(".*\\b(create|write|fix|generate|modify|delete|run|execute|add|implement)\\b.*")) {
-            context.log("Planner: Request does not clearly contain an action. Returning clarification task.");
+        // Step 3: Minimal Planner Guard (Updated for IntentGate Architecture)
+        // This is a fail-safe in case the IntentGate incorrectly passed a non-actionable request.
+        if (!request.toLowerCase().matches(".*\\b(create|write|fix|generate|modify|delete|run|execute|add|implement|test|build|check)\\b.*")) {
+            context.log("Planner: Safety Guard - Request does not clearly contain an action. Returning clarification task.");
             List<Task> fallbackTasks = new ArrayList<>();
             Task t = OrchestrationFactory.eINSTANCE.createTask();
             t.setId("task0");
             t.setName("General: Ask for clarification");
-            t.setDescription("What do you want me to do?");
+            t.setDescription("I understand you want to take an action, but I need a more specific verb (e.g., create, fix, run) to proceed.");
             t.setType("llm");
             t.setApprovalRequired(false);
             fallbackTasks.add(t);
