@@ -1110,6 +1110,36 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getAIProvider_RatingAnalyze() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(12);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_RatingChat() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(13);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getAIProvider_RatingProgramming() {
+		return (EAttribute)aiProviderEClass.getEStructuralFeatures().get(14);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getGit() {
 		return gitEClass;
 	}
@@ -2674,6 +2704,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(aiProviderEClass, AI_PROVIDER__STATE);
 		createEAttribute(aiProviderEClass, AI_PROVIDER__STATE_DESCRIPTION);
 		createEAttribute(aiProviderEClass, AI_PROVIDER__RATING);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__RATING_ANALYZE);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__RATING_CHAT);
+		createEAttribute(aiProviderEClass, AI_PROVIDER__RATING_PROGRAMMING);
 
 		gitEClass = createEClass(GIT);
 		createEAttribute(gitEClass, GIT__REPOSITORY_URL);
@@ -2959,6 +2992,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getAIProvider_State(), ecorePackage.getEString(), "state", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAIProvider_StateDescription(), ecorePackage.getEString(), "stateDescription", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAIProvider_Rating(), ecorePackage.getEInt(), "rating", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_RatingAnalyze(), ecorePackage.getEInt(), "ratingAnalyze", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_RatingChat(), ecorePackage.getEInt(), "ratingChat", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAIProvider_RatingProgramming(), ecorePackage.getEInt(), "ratingProgramming", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(gitEClass, Git.class, "Git", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getGit_RepositoryUrl(), ecorePackage.getEString(), "repositoryUrl", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

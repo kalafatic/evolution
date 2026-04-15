@@ -728,13 +728,40 @@ public interface OrchestrationPackage extends EPackage {
 	int AI_PROVIDER__RATING = 11;
 
 	/**
+	 * The feature id for the '<em><b>Rating Analyze</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AI_PROVIDER__RATING_ANALYZE = 12;
+
+	/**
+	 * The feature id for the '<em><b>Rating Chat</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AI_PROVIDER__RATING_CHAT = 13;
+
+	/**
+	 * The feature id for the '<em><b>Rating Programming</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AI_PROVIDER__RATING_PROGRAMMING = 14;
+
+	/**
 	 * The number of structural features of the '<em>AI Provider</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AI_PROVIDER_FEATURE_COUNT = 12;
+	int AI_PROVIDER_FEATURE_COUNT = 15;
 
 	/**
 	 * The number of operations of the '<em>AI Provider</em>' class.
@@ -3437,6 +3464,39 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getAIProvider_Rating();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingAnalyze <em>Rating Analyze</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rating Analyze</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingAnalyze()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_RatingAnalyze();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingChat <em>Rating Chat</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rating Chat</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingChat()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_RatingChat();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingProgramming <em>Rating Programming</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Rating Programming</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingProgramming()
+	 * @see #getAIProvider()
+	 * @generated
+	 */
+	EAttribute getAIProvider_RatingProgramming();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Git <em>Git</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5600,6 +5660,30 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute AI_PROVIDER__RATING = eINSTANCE.getAIProvider_Rating();
+
+		/**
+		 * The meta object literal for the '<em><b>Rating Analyze</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__RATING_ANALYZE = eINSTANCE.getAIProvider_RatingAnalyze();
+
+		/**
+		 * The meta object literal for the '<em><b>Rating Chat</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__RATING_CHAT = eINSTANCE.getAIProvider_RatingChat();
+
+		/**
+		 * The meta object literal for the '<em><b>Rating Programming</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AI_PROVIDER__RATING_PROGRAMMING = eINSTANCE.getAIProvider_RatingProgramming();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl <em>Git</em>}' class.

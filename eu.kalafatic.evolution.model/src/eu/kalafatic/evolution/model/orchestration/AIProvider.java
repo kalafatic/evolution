@@ -25,6 +25,9 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getState <em>State</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getStateDescription <em>State Description</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRating <em>Rating</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingAnalyze <em>Rating Analyze</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingChat <em>Rating Chat</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingProgramming <em>Rating Programming</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAIProvider()
@@ -295,5 +298,71 @@ public interface AIProvider extends EObject {
 	 * @generated
 	 */
 	void setRating(int value);
+
+	/**
+	 * Returns the value of the '<em><b>Rating Analyze</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Rating Analyze</em>' attribute.
+	 * @see #setRatingAnalyze(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAIProvider_RatingAnalyze()
+	 * @model
+	 * @generated
+	 */
+	int getRatingAnalyze();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingAnalyze <em>Rating Analyze</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Rating Analyze</em>' attribute.
+	 * @see #getRatingAnalyze()
+	 * @generated
+	 */
+	void setRatingAnalyze(int value);
+
+	/**
+	 * Returns the value of the '<em><b>Rating Chat</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Rating Chat</em>' attribute.
+	 * @see #setRatingChat(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAIProvider_RatingChat()
+	 * @model
+	 * @generated
+	 */
+	int getRatingChat();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingChat <em>Rating Chat</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Rating Chat</em>' attribute.
+	 * @see #getRatingChat()
+	 * @generated
+	 */
+	void setRatingChat(int value);
+
+	/**
+	 * Returns the value of the '<em><b>Rating Programming</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Rating Programming</em>' attribute.
+	 * @see #setRatingProgramming(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAIProvider_RatingProgramming()
+	 * @model
+	 * @generated
+	 */
+	int getRatingProgramming();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.AIProvider#getRatingProgramming <em>Rating Programming</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Rating Programming</em>' attribute.
+	 * @see #getRatingProgramming()
+	 * @generated
+	 */
+	void setRatingProgramming(int value);
 
 } // AIProvider
