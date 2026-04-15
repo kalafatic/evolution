@@ -105,7 +105,6 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
             task.setLoopToTaskId(obj.optString("loopToTaskId", "none"));
             tasks.add(task);
         }
-        context.log("Planner: Generated " + tasks.size() + " tasks.");
         return tasks;
     }
 }

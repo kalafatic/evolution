@@ -88,7 +88,7 @@
             --tool-border: #e2e8f0;
             --tool-text: #475569;
 
-            --waiting-bg: #fff7ed;
+            --waiting-bg: #ffedd5;
             --waiting-border: #f97316;
             --waiting-text: #9a3412;
         }
@@ -193,6 +193,7 @@
             opacity: 0; transition: opacity 0.2s;
         }
         .message:hover .actions { opacity: 1; }
+        .message.waiting .actions { opacity: 1; }
 
         .action-btn {
             background: white; border: 1px solid var(--border); border-radius: 4px;

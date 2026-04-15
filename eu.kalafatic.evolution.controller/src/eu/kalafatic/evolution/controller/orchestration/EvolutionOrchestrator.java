@@ -98,7 +98,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             if (requiresPlanApproval) {
                 // Pause for Plan Approval
-                context.log("Evo-Orchestrator-Planning: Plan generated. Waiting for user review and approval...");
+                StringBuilder planSummary = new StringBuilder();
+                planSummary.append("Evo-Orchestrator-Planning: Plan generated. Waiting for user review and approval...\n\n### Proposed Plan:\n");
+                for (int i = 0; i < originalPlannedTasks.size(); i++) {
+                    Task t = originalPlannedTasks.get(i);
+                    planSummary.append((i + 1)).append(". [").append(t.getType()).append("] ").append(t.getName()).append("\n");
+                }
+                context.log(planSummary.toString());
 
                 Boolean planApproved = true;
                 if (!context.isAutoApprove()) {
@@ -134,7 +140,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                     Boolean approved = true;
                     if (!context.isAutoApprove()) {
-                        context.log("Evo-Orchestrator-" + task.getName() + ": Waiting for user approval");
+                        context.log("Evo-Orchestrator-" + task.getName() + ": Waiting for user approval...");
                         approved = context.requestApproval("Approve task: " + task.getName() + "?").get();
                     } else {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Auto-approving task.");
@@ -242,7 +248,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             if (retry == MAX_RETRIES) {
                 context.log("Evo-Orchestrator-" + task.getName() + ": Failed after " + MAX_RETRIES + " retries");
                 try {
-                    String guidance = context.requestInput("Task [" + task.getName() + "] failed consistently. Guidance? (retry/skip/hint)").get();
+                    String guidance = context.requestInput("Evo-Orchestrator-" + task.getName() + ": Task failed consistently. Waiting for user guidance (retry/skip/hint)...").get();
                     if (guidance != null) {
                         if ("retry".equalsIgnoreCase(guidance.trim())) {
                             retry = 0; // Reset loop to try again
@@ -290,7 +296,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             if (taskName.toLowerCase().startsWith("delete")) {
                 task.setResultSummary("I deleted the file: [FILE:" + path + "]");
-                context.log("Evo-Orchestrator-" + taskName + ": File deletion request for " + path);
+                context.log("Evo-Orchestrator-" + taskName + ": File deletion request for " + path + ". Waiting for user approval...");
                 Boolean approved = true;
                 if (!context.isAutoApprove()) {
 			approved = context.requestApproval("[DELETE] Approve deletion of file: " + path + "?").get();
@@ -322,7 +328,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     int newLen = content.length();
                     if (newLen < existingLen * 0.8) {
                         double deletionPercent = (1.0 - (double)newLen / existingLen) * 100;
-                        context.log("Evo-Orchestrator-" + taskName + ": Significant deletion detected (" + String.format("%.1f", deletionPercent) + "%) for " + path);
+                        context.log("Evo-Orchestrator-" + taskName + ": Significant deletion detected (" + String.format("%.1f", deletionPercent) + "%) for " + path + ". Waiting for user approval...");
                         Boolean approved = true;
                         if (!context.isAutoApprove()) {
 				approved = context.requestApproval("[Significant deletion] Content of " + path + " will be reduced by " + String.format("%.1f", deletionPercent) + "%. Approve?").get();
@@ -351,7 +357,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             return res;
         } else if ("git".equalsIgnoreCase(taskType)) {
             if (taskName.toLowerCase().matches(".*\\b(pr|pull request)\\b.*")) {
-                context.log("Evo-Orchestrator-" + taskName + ": Requesting approval for PR");
+                context.log("Evo-Orchestrator-" + taskName + ": Waiting for user approval for PR...");
                 Boolean approved = true;
                 if (!context.isAutoApprove()) {
                     approved = context.requestApproval("[PR] Approve Pull Request creation? Task: " + taskName).get();
@@ -365,7 +371,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             task.setResultSummary("Git: " + taskName + " executed.");
             return res;
         } else if ("shell".equalsIgnoreCase(taskType)) {
-            context.log("Evo-Orchestrator-" + taskName + ": Requesting approval for command");
+            context.log("Evo-Orchestrator-" + taskName + ": Waiting for user approval for command...");
             Boolean approved = true;
             if (!context.isAutoApprove()) {
 		approved = context.requestApproval("Approve terminal command: " + taskName + "?").get();
@@ -391,7 +397,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             if (analysis.optBoolean("isAmbiguous", false)) {
                 String question = analysis.optString("clarificationQuestion", "The request is ambiguous. Can you please provide more details?");
-                context.log("Evo-Orchestrator-Analysis: Request is ambiguous. Asking for clarification...");
+                context.log("Evo-Orchestrator-Analysis: Request is ambiguous. Waiting for user clarification...");
 
                 String clarification = context.requestInput(question).get();
                 if (clarification == null || clarification.trim().isEmpty()) {
