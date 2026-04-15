@@ -21,7 +21,7 @@ public class ArchitectAgent extends BaseAiAgent {
                "1. Analyze technical requirements and constraints.\n" +
                "2. Propose necessary agents (e.g., JavaDev, Tester, Reviewer) and tools (e.g., Maven, Git) required for the task.\n" +
                "3. Define a clear project structure or execution strategy.\n" +
-               "If the request is simple (like a greeting), just acknowledge it as a low-severity conversation.\n" +
+               "If the request is a simple greeting (e.g., 'hi', 'hello'), just acknowledge it politely and briefly. DO NOT trigger architecture or project planning logic for greetings.\n" +
                "If you need to create a project structure, output file paths and detailed descriptions of each component.";
     }
 }

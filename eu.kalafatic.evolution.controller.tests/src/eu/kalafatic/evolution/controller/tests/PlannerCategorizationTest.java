@@ -59,6 +59,21 @@ public class PlannerCategorizationTest {
         assertTrue(tasks.get(0).getName().contains("Clarify"));
     }
 
+    @Test
+    public void testGreetingPlanning() throws Exception {
+        PlannerAgent planner = new PlannerAgent();
+        injectMockLlm(planner, mockLlm);
+
+        String greetingResponse = "[ { \"id\": \"t1\", \"name\": \"General: Respond to greeting\", \"description\": \"Politely acknowledge user.\", \"taskType\": \"llm\", \"approvalRequired\": false } ]";
+        mockLlm.setResponse(greetingResponse);
+
+        List<Task> tasks = planner.plan("hi", context);
+
+        assertEquals(1, tasks.size());
+        assertEquals("llm", tasks.get(0).getType());
+        assertEquals("General: Respond to greeting", tasks.get(0).getName());
+    }
+
     private void injectMockLlm(PlannerAgent agent, ILlmProvider mock) throws Exception {
         Field serviceField = PlannerAgent.class.getSuperclass().getDeclaredField("aiService");
         serviceField.setAccessible(true);

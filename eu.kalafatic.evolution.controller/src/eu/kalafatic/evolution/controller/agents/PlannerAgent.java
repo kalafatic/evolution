@@ -20,11 +20,16 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
     }
 
     @Override
+    protected String getFooterInstructions() {
+        return "You MUST output a valid JSON array of objects. Do not include any conversational preamble or follow-up text outside the JSON structure.";
+    }
+
+    @Override
     protected String getAgentInstructions() {
         return "You are a workflow planner for an agentic system (Jules). " +
                 "Your first step is to analyze the request needs and severity.\n\n" +
                 "CATEGORIZATION:\n" +
-                "- CONVERSATIONAL: Greetings, simple questions, or small talk. (Low Severity)\n" +
+                "- CONVERSATIONAL: Greetings, simple questions, or small talk. (Low Severity). Simple greetings like 'hi' or 'hello' MUST be categorized as CONVERSATIONAL.\n" +
                 "- INFORMATIONAL: Requests for system status, project overview, or explanations. (Medium Severity)\n" +
                 "- OPERATIONAL: Requests that modify files, run builds, or execute shell commands. (High Severity)\n\n" +
                 "AMBIGUITY HANDLING (The 'Jules' way):\n" +
@@ -35,7 +40,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "- Description should include: 'Analyze the ambiguous operational request. Provide suggestions on what the user might want (e.g., file extension, location, initial content) and ask for explicit approval/clarification before proceeding.'\n" +
                 "- IMPORTANT: If the user explicitly asks to 'Execute the simplest working solution.', IGNORE the ambiguity and immediately plan the minimal functional tasks to achieve the goal based on shared memory.\n\n" +
                 "STRATEGY:\n" +
-                "- For CONVERSATIONAL requests, create a single 'llm' task and set 'approvalRequired' to false.\n" +
+                "- For CONVERSATIONAL requests, create exactly ONE 'llm' task and set 'approvalRequired' to false.\n" +
                 "- For INFORMATIONAL requests, use agents to gather data. 'approvalRequired' should generally be false.\n" +
                 "- For OPERATIONAL requests, decompose into specialized tasks. 'approvalRequired' should be true for tasks that change state.\n" +
                 "- Prefer using explicit agent names in task titles (e.g., 'Architect: Analyze project', 'JavaDev: Implement feature').\n\n" +
@@ -51,7 +56,6 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "[ { \"id\": \"unique_id\", \"name\": \"[Agent]: [Action]\", \"description\": \"Detailed instructions for the agent\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"approval\", \"approvalRequired\": boolean, \"loopToTaskId\": \"id_to_jump_to\"|\"none\" } ]\n" +
                 "EXAMPLES:\n" +
                 "- Greeting: [ { \"id\": \"t1\", \"name\": \"General: Respond to greeting\", \"description\": \"Politely acknowledge user.\", \"taskType\": \"llm\", \"approvalRequired\": false } ]\n" +
-                "- Ambiguous 'create file a': [ { \"id\": \"t1\", \"name\": \"General: Clarify file creation\", \"description\": \"Ask where 'a' should be created, what its extension is, and what content it should have. Provide suggestions.\", \"taskType\": \"llm\", \"approvalRequired\": false } ]\n" +
                 "- Detailed request: [ { \"id\": \"t1\", \"name\": \"JavaDev: Create Main.java\", \"description\": \"Write a basic Hello World class to src/Main.java\", \"taskType\": \"file\", \"approvalRequired\": true } ]\n";
     }
 

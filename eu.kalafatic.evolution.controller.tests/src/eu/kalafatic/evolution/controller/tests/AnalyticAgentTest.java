@@ -91,6 +91,26 @@ public class AnalyticAgentTest {
         assertTrue(analysis.getString("refinedPrompt").contains("src/Main.java"));
     }
 
+    @Test
+    public void testGreetingRequest() throws Exception {
+        AnalyticAgent agent = new AnalyticAgent();
+        injectMockLlm(agent, mockLlm);
+
+        String response = "{\n" +
+                "  \"category\": \"CHAT\",\n" +
+                "  \"objective\": \"Greet user\",\n" +
+                "  \"isAmbiguous\": false,\n" +
+                "  \"missingInformation\": [],\n" +
+                "  \"clarificationQuestion\": \"\",\n" +
+                "  \"refinedPrompt\": \"hi\"\n" +
+                "}";
+        mockLlm.setResponse(response);
+
+        JSONObject analysis = agent.analyze("hi", context);
+        assertFalse(analysis.getBoolean("isAmbiguous"));
+        assertEquals("CHAT", analysis.getString("category"));
+    }
+
     private void injectMockLlm(AnalyticAgent agent, ILlmProvider mock) throws Exception {
         Field serviceField = AnalyticAgent.class.getSuperclass().getDeclaredField("aiService");
         serviceField.setAccessible(true);
