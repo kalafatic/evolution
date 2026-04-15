@@ -87,8 +87,11 @@ public abstract class ALog implements ILog {
 		IWorkbenchWindow workbenchWindow;
 
 		try {
+			if (!PlatformUI.isWorkbenchRunning()) {
+				return;
+			}
 			workbenchWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-		} catch (SWTException e) {
+		} catch (Throwable e) {
 			// e.printStackTrace();
 			return;
 		}

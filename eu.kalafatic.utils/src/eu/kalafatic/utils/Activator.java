@@ -83,13 +83,19 @@ public class Activator extends AbstractUIPlugin {
 	 */
 	@Override
 	public void start(BundleContext context) throws Exception {
-		super.start(context);
-		plugin = this;
-		bundleContext = context;
+		try {
+			super.start(context);
+			plugin = this;
+			bundleContext = context;
 
-		PreferenceInitializer.setUp();
+			PreferenceInitializer.setUp();
 
-		registerP2Policy(bundleContext);
+			registerP2Policy(bundleContext);
+		} catch (Throwable e) {
+			System.err.println("CRITICAL ERROR: Failed to start eu.kalafatic.utils activator");
+			e.printStackTrace();
+			throw e;
+		}
 	}
 
 	// ---------------------------------------------------------------

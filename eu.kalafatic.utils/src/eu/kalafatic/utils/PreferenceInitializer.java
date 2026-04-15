@@ -67,10 +67,16 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 			setUpInterfaces();
 
 			Preferences preferences = Platform.getPreferencesService().getRootNode().node(Activator.PLUGIN_ID);
+			if (preferences == null) {
+				return;
+			}
 
 			boolean set = preferences.getBoolean(ECorePreferences.SET.getName(), (Boolean) ECorePreferences.SET.getDef());
 
-			preferences.put(ECorePreferences.APP_ID.getName(), getClientID());
+			String clientId = getClientID();
+			if (clientId != null) {
+				preferences.put(ECorePreferences.APP_ID.getName(), clientId);
+			}
 			preferences.flush();
 
 			if (set) {
@@ -84,18 +90,33 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 			preferences.put(ECorePreferences.APP_NAME.getName(), (String) ECorePreferences.APP_NAME.getDef());
 
 			// SYSTEM
-			preferences.put(ECorePreferences.CPU_NAME.getName(), WinRegistryUtils.getFromRegistry(FCMDConstants.GET_CPU_NAME, FCMDConstants.REGSTR_TOKEN));
-			preferences.put(ECorePreferences.CPU_SPEED.getName(), WinRegistryUtils.getFromRegistry(FCMDConstants.GET_CPU_SPEED, FCMDConstants.REGDWORD_TOKEN));
+			String cpuName = WinRegistryUtils.getFromRegistry(FCMDConstants.GET_CPU_NAME, FCMDConstants.REGSTR_TOKEN);
+			if (cpuName != null) {
+				preferences.put(ECorePreferences.CPU_NAME.getName(), cpuName);
+			}
+			String cpuSpeed = WinRegistryUtils.getFromRegistry(FCMDConstants.GET_CPU_SPEED, FCMDConstants.REGDWORD_TOKEN);
+			if (cpuSpeed != null) {
+				preferences.put(ECorePreferences.CPU_SPEED.getName(), cpuSpeed);
+			}
 
 			// OS
-			preferences.put(ECorePreferences.OS_NAME.getName(), OSUtils.INSTANCE.getOSName());
-			preferences.put(ECorePreferences.OS_ARCH.getName(), OSUtils.INSTANCE.getOSArch());
+			String osName = OSUtils.INSTANCE.getOSName();
+			if (osName != null) {
+				preferences.put(ECorePreferences.OS_NAME.getName(), osName);
+			}
+			String osArch = OSUtils.INSTANCE.getOSArch();
+			if (osArch != null) {
+				preferences.put(ECorePreferences.OS_ARCH.getName(), osArch);
+			}
 
 			// BASIC ASSOCIATION
 			// AppPreferences.getInstance().putPreference("extensions", ".torrent", "torrentfile=" + programPath);
 
 			// JAVA
-			preferences.put(ECorePreferences.JAVA_VERSION.getName(), JavaUtils.INSTANCE.getJavaVersion());
+			String javaVersion = JavaUtils.INSTANCE.getJavaVersion();
+			if (javaVersion != null) {
+				preferences.put(ECorePreferences.JAVA_VERSION.getName(), javaVersion);
+			}
 
 			// LOCATIONS
 			preferences.put(ECorePreferences.WORKSPACE_LOC.getName(), (String) ECorePreferences.WORKSPACE_LOC.getDef());
@@ -281,7 +302,14 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 	 * @return the client id
 	 */
 	private static String getClientID() {
-		String version = Platform.getProduct().getProperty("version");
+		String version = "2.6.1";
+		try {
+			if (Platform.getProduct() != null) {
+				version = Platform.getProduct().getProperty("version");
+			}
+		} catch (Throwable e) {
+		}
+
 		if (version == null || "".equals(version.trim())) {
 			version = "2.6.1";
 		}
