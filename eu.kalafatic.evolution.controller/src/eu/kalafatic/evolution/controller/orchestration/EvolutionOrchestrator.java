@@ -286,7 +286,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             }
 
             if (taskName.toLowerCase().startsWith("delete")) {
-                task.setResultSummary("I deleted the file: " + path);
+                task.setResultSummary("I deleted the file: [FILE:" + path + "]");
                 context.log("Evo-Orchestrator-" + taskName + ": File deletion request for " + path);
                 Boolean approved = true;
                 if (!context.isAutoApprove()) {
@@ -338,7 +338,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             // Normalize path: replace backslashes with forward slashes
             path = path.replace("\\", "/");
             String writeResult = fileTool.execute("WRITE " + path + "\n" + content, context.getProjectRoot(), context);
-            task.setResultSummary("I created/updated the file: " + path + ". It can be opened and verified in the project explorer.");
+            task.setResultSummary("I created/updated the file: [FILE:" + path + "]. It can be opened and verified in the project explorer.");
             context.log("Evo-Orchestrator-" + taskName + ": File write result - " + writeResult);
             return writeResult + "\nCONTENT:\n" + content;
         } else if ("maven".equalsIgnoreCase(taskType)) {

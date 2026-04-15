@@ -144,6 +144,9 @@ public class ChatGroup extends AEvoGroup {
                         case "executeProposal":
                             page.handleExecuteProposal(text);
                             break;
+                        case "openDiff":
+                            page.handleOpenDiff(text);
+                            break;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

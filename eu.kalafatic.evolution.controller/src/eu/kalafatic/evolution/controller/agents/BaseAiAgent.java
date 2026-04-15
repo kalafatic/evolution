@@ -68,7 +68,9 @@ public abstract class BaseAiAgent implements IAgent {
                "If you need user clarification to proceed with a plan or an action, explicitly ask and suggest options.\n" +
                "Use keywords like 'CREATE' (to suggest proceeding) or 'CLARIFY' (to request more info).\n" +
                "Additionally, you can offer general one-click solutions using the format: [PROPOSAL: Action Label | Explicit Request Text]\n" +
-               "Example: 'I can help you with that. [PROPOSAL: Create a test class | Create a JUnit 5 test class for the current Main.java file]'.";
+               "Example: 'I can help you with that. [PROPOSAL: Create a test class | Create a JUnit 5 test class for the current Main.java file]'.\n\n" +
+               "You can also link to specific files in your response using the format: [FILE:path/to/file]\n" +
+               "Example: 'I have updated the logic in [FILE:src/Main.java].'";
     }
 
     protected String buildPrompt(String taskDescription, TaskContext context, String lastFeedback) {

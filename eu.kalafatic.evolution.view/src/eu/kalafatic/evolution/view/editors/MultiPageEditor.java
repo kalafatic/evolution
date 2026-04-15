@@ -315,7 +315,16 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (!(getEditorInput() instanceof IFileEditorInput)) return;
 
         IFile file = ((IFileEditorInput) getEditorInput()).getFile();
+        updateComparePage(file);
+    }
 
+    public void showComparePage(IFile file) {
+        if (comparePage == null) return;
+        updateComparePage(file);
+        setActivePageByControl(comparePage);
+    }
+
+    private void updateComparePage(IFile file) {
         Job job = new Job("Fetching Git content") {
             @Override
             protected IStatus run(IProgressMonitor monitor) {
