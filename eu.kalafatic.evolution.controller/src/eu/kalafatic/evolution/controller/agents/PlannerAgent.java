@@ -20,6 +20,11 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
     }
 
     @Override
+    protected String getFooterInstructions() {
+        return "You MUST output a valid JSON array of objects. Do not include any conversational preamble or follow-up text outside the JSON structure.";
+    }
+
+    @Override
     protected String getAgentInstructions() {
         return "You are a workflow planner for an agentic system (Jules).\n" +
                 "IMPORTANT: You only receive requests that have been classified as ACTION_REQUEST.\n\n" +
@@ -46,7 +51,6 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "[ { \"id\": \"unique_id\", \"name\": \"[Agent]: [Action]\", \"description\": \"Detailed instructions for the agent\", \"taskType\": \"llm\"|\"file\"|\"git\"|\"maven\"|\"approval\", \"approvalRequired\": boolean, \"loopToTaskId\": \"id_to_jump_to\"|\"none\" } ]\n" +
                 "EXAMPLES:\n" +
                 "- Greeting: [ { \"id\": \"t1\", \"name\": \"General: Respond to greeting\", \"description\": \"Politely acknowledge user.\", \"taskType\": \"llm\", \"approvalRequired\": false } ]\n" +
-                "- Ambiguous 'create file a': [ { \"id\": \"t1\", \"name\": \"General: Clarify file creation\", \"description\": \"Ask where 'a' should be created, what its extension is, and what content it should have. Provide suggestions.\", \"taskType\": \"llm\", \"approvalRequired\": false } ]\n" +
                 "- Detailed request: [ { \"id\": \"t1\", \"name\": \"JavaDev: Create Main.java\", \"description\": \"Write a basic Hello World class to src/Main.java\", \"taskType\": \"file\", \"approvalRequired\": true } ]\n";
     }
 
