@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.view.editors.pages;
 import java.io.File;
 import java.io.FileWriter;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.dialogs.InputDialog;
@@ -656,6 +657,18 @@ public class AiChatPage extends SharedScrolledComposite {
 
 	public void handleClarify() {
 		instructionsGroup.focusAndHighlight(colorLightOrange);
+	}
+
+	public void handleOpenDiff(String path) {
+		if (path == null || path.isEmpty()) return;
+		File projectRoot = getProjectRoot();
+		File file = new File(projectRoot, path);
+		if (file.exists()) {
+			IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
+			if (iFile != null) {
+				editor.showComparePage(iFile);
+			}
+		}
 	}
 
 	public void handleSimpleSolution() {
