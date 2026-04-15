@@ -42,23 +42,34 @@ public final class FConstants {
 
 	public static final Preferences PREFERENCES = Platform.getPreferencesService().getRootNode().node(Plugin.PLUGIN_PREFERENCE_SCOPE).node(Activator.PLUGIN_ID);
 
-	/** The Constant EQUINOX_BUNDLE. */
-	public static EquinoxBundle EQUINOX_BUNDLE = (EquinoxBundle) Activator.getDefault().getBundle();
-
-	/** The Constant GENERATION. */
-	public static Generation GENERATION = (Generation) EQUINOX_BUNDLE.getModule().getCurrentRevision().getRevisionInfo();
-
-	/** The Constant BUNDLE_FILE. */
-	public static BundleFile BUNDLE_FILE = GENERATION.getBundleFile();
-
 	/** The Constant SOUNDS_LOC. */
-	public static final String SOUNDS_LOC = BUNDLE_FILE.toString().concat(File.separator).concat("sounds");
+	public static final String SOUNDS_LOC = getBundleFilePath("sounds");
 
 	/** The Constant ICONS_LOC. */
-	public static final String ICONS_LOC = BUNDLE_FILE.toString().concat(File.separator).concat("icons");
+	public static final String ICONS_LOC = getBundleFilePath("icons");
 
 	/** The Constant CERT_LOC. */
-	public static final String CERT_LOC = BUNDLE_FILE.toString().concat(File.separator).concat("certificates");
+	public static final String CERT_LOC = getBundleFilePath("certificates");
+
+	private static String getBundleFilePath(String subDir) {
+		try {
+			Activator activator = Activator.getDefault();
+			if (activator != null) {
+				EquinoxBundle bundle = (EquinoxBundle) activator.getBundle();
+				if (bundle != null) {
+					Generation generation = (Generation) bundle.getModule().getCurrentRevision().getRevisionInfo();
+					if (generation != null) {
+						BundleFile bundleFile = generation.getBundleFile();
+						if (bundleFile != null) {
+							return bundleFile.toString().concat(File.separator).concat(subDir);
+						}
+					}
+				}
+			}
+		} catch (Throwable e) {
+		}
+		return subDir;
+	}
 
 	/** The Constant INTERFACES. */
 	public static final List<NetInterface> INTERFACES = new ArrayList<NetInterface>();

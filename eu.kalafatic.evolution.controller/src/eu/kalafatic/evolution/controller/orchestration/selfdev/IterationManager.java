@@ -41,7 +41,50 @@ public class IterationManager {
     }
 
     public EvaluationResult run() throws Exception {
-        context.log("[ITERATION] Starting iteration: " + iteration.getId());
+        if (context.getOrchestrator().isDarwinMode()) {
+            return runDarwin();
+        } else {
+            return runIterative();
+        }
+    }
+
+    private EvaluationResult runIterative() throws Exception {
+        context.log("[ITERATION] Starting iterative iteration: " + iteration.getId());
+        iteration.setStatus(IterationStatus.RUNNING);
+        iteration.setPhase("PLAN");
+
+        String goal = context.getOrchestrator().getSelfDevSession() != null ?
+                     context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
+
+        try {
+            List<Task> tasks = planner.generateTasks(context, goal);
+            iteration.setPhase("EXECUTE");
+            boolean success = executor.executeTasks(tasks);
+
+            iteration.setPhase("TEST");
+            EvaluationResult result = evaluator.evaluate();
+            iteration.setEvaluationResult(result);
+
+            iteration.setPhase("EVALUATE");
+            if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
+                iteration.setPhase("COMMIT");
+                gitManager.commit("Self-Development Iteration " + iteration.getId());
+                iteration.setStatus(IterationStatus.DONE);
+            } else {
+                gitManager.rollback();
+                iteration.setStatus(IterationStatus.FAILED);
+            }
+            return result;
+        } catch (Exception e) {
+            context.log("[ITERATION] Error in iterative iteration: " + e.getMessage());
+            gitManager.rollback();
+            iteration.setStatus(IterationStatus.FAILED);
+            throw e;
+        }
+    }
+
+    private EvaluationResult runDarwin() throws Exception {
+        context.log("[ITERATION] Starting Darwin iteration: " + iteration.getId());
         iteration.setStatus(IterationStatus.RUNNING);
         iteration.setPhase("OBSERVE");
 
@@ -78,7 +121,11 @@ public class IterationManager {
             // Save records for ALL variants to memory
             for (BranchVariant v : variants) {
                 IterationRecord rec = new IterationRecord();
-                rec.setIteration(context.getOrchestrator().getSelfDevSession().getIterations().size());
+                int iterCount = 0;
+                if (context.getOrchestrator().getSelfDevSession() != null) {
+                    iterCount = context.getOrchestrator().getSelfDevSession().getIterations().size();
+                }
+                rec.setIteration(iterCount);
                 rec.setGoal(goal);
                 rec.setStrategy(v.getStrategy());
                 rec.setBranch(v.getBranchName());
@@ -128,7 +175,9 @@ public class IterationManager {
 
                 iteration.setPhase("FEEDBACK");
                 try {
-                    context.requestApproval("Darwin evolved branch " + bestVariant.getBranchName() + " merged. Please review.").get();
+                    if (!context.isAutoApprove()) {
+                        context.requestApproval("Darwin evolved branch " + bestVariant.getBranchName() + " merged. Please review.").get();
+                    }
                 } catch (Exception e) {}
 
                 iteration.setPhase("REFINE");
@@ -154,7 +203,10 @@ public class IterationManager {
             return result;
 
         } catch (Exception e) {
-            context.log("[ITERATION] Error in iteration: " + e.getMessage());
+            context.log("[ITERATION] Error in iteration: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()));
+            java.io.StringWriter sw = new java.io.StringWriter();
+            e.printStackTrace(new java.io.PrintWriter(sw));
+            context.log(sw.toString());
             gitManager.forceCheckout(originalBranch);
             try { gitManager.deleteBranch(snapshotBranch); } catch (Exception ex) {}
             gitManager.rollback();

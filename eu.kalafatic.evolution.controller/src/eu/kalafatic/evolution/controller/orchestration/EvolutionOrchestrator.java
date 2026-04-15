@@ -34,10 +34,10 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
 public class EvolutionOrchestrator implements IOrchestrator {
 
     private static final int MAX_RETRIES = 3;
-    private final AnalyticAgent analyticAgent = new AnalyticAgent();
-    private final PlannerAgent planner = new PlannerAgent();
+    private AnalyticAgent analyticAgent = new AnalyticAgent();
+    private PlannerAgent planner = new PlannerAgent();
+    private ReviewerAgent reviewer = new ReviewerAgent();
     private final List<IAgent> availableAgents = new ArrayList<>();
-    private final ReviewerAgent reviewer = new ReviewerAgent();
 
     public EvolutionOrchestrator() {
         // Initialize default agents
@@ -284,6 +284,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
             if ((path.startsWith("'") && path.endsWith("'")) || (path.startsWith("\"") && path.endsWith("\""))) {
                 path = path.substring(1, path.length() - 1);
             }
+
+            // Refine path: strip trailing descriptive suffixes (e.g., "with hi", "containing class X")
+            path = path.split("(?i)\\s+(with|to|for|using|based|containing|in|at)\\s+")[0];
 
             if (taskName.toLowerCase().startsWith("delete")) {
                 task.setResultSummary("I deleted the file: " + path);

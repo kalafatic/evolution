@@ -18,8 +18,8 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 public class DarwinEngine extends BaseAiAgent {
     private final TaskContext context;
     private final GitManager gitManager;
-    private final TaskExecutor executor;
-    private final Evaluator evaluator;
+    private TaskExecutor executor;
+    private Evaluator evaluator;
     private final IterationMemoryService memoryService;
 
     public DarwinEngine(TaskContext context, IterationMemoryService memoryService) {
@@ -29,6 +29,14 @@ public class DarwinEngine extends BaseAiAgent {
         this.executor = new TaskExecutor(context);
         this.evaluator = new Evaluator(context.getProjectRoot(), context);
         this.memoryService = memoryService;
+    }
+
+    public void setExecutor(TaskExecutor executor) {
+        this.executor = executor;
+    }
+
+    public void setEvaluator(Evaluator evaluator) {
+        this.evaluator = evaluator;
     }
 
     @Override

@@ -256,18 +256,17 @@ public enum ECorePreferences implements IPreference {
 	;
 
 	private static List<Object[]> locales;
-	private static String[] langs = { "cs", "en", "de", "zh", "ru", "ru" };
+	private static String[] langs = { "cs", "en", "de", "zh", "ru", "es" };
 
 	private List<Object[]> getLocale() {
 		if (locales == null) {
 			locales = new ArrayList<Object[]>();
-			int i = 0;
-			locales.add(new Object[] { langs[i++], FCoreImageConstants.CS_IMG });
-			locales.add(new Object[] { langs[i++], FCoreImageConstants.EN_IMG });
-			locales.add(new Object[] { langs[i++], FCoreImageConstants.DE_IMG });
-			locales.add(new Object[] { langs[i++], FCoreImageConstants.ZH_IMG });
-			locales.add(new Object[] { langs[i++], FCoreImageConstants.RU_IMG });
-			locales.add(new Object[] { langs[i++], FCoreImageConstants.ES_IMG });
+			locales.add(new Object[] { langs[0], FCoreImageConstants.CS_IMG });
+			locales.add(new Object[] { langs[1], FCoreImageConstants.EN_IMG });
+			locales.add(new Object[] { langs[2], FCoreImageConstants.DE_IMG });
+			locales.add(new Object[] { langs[3], FCoreImageConstants.ZH_IMG });
+			locales.add(new Object[] { langs[4], FCoreImageConstants.RU_IMG });
+			locales.add(new Object[] { langs[5], FCoreImageConstants.ES_IMG });
 		}
 		return locales;
 	}
@@ -298,16 +297,6 @@ public enum ECorePreferences implements IPreference {
 		this.name = name;
 		this.value = value;
 		this.def = def;
-
-		if (name.equals("Languages")) {
-			Display.getDefault().asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					ECorePreferences.LANGUAGES.value = getLocale();
-					ECorePreferences.LANGUAGES.def = getLocale();
-				}
-			});
-		}
 	}
 
 	// ---------------------------------------------------------------
@@ -340,6 +329,9 @@ public enum ECorePreferences implements IPreference {
 	 */
 	@Override
 	public Object getValue() {
+		if (this == LANGUAGES && (value == null || (value instanceof List && ((List<?>) value).isEmpty()))) {
+			value = getLocale();
+		}
 		return value;
 	}
 
@@ -361,6 +353,9 @@ public enum ECorePreferences implements IPreference {
 	 */
 	@Override
 	public Object getDef() {
+		if (this == LANGUAGES && (def == null || (def instanceof List && ((List<?>) def).isEmpty()))) {
+			def = getLocale();
+		}
 		return def;
 	}
 
