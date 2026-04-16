@@ -55,6 +55,7 @@ import eu.kalafatic.evolution.view.editors.pages.ComparePage;
 import eu.kalafatic.evolution.view.editors.pages.PeerReviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PreviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
+import eu.kalafatic.evolution.view.editors.pages.ServerPage;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
 import eu.kalafatic.evolution.view.editors.pages.TestsPage;
 import eu.kalafatic.evolution.view.editors.pages.ToolsPage;
@@ -78,6 +79,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private ContextPage contextPage;
     private PeerReviewPage peerReviewPage;
     private ComparePage comparePage;
+    private ServerPage serverPage;
 
     private Orchestrator orchestrator;
     private TaskContext currentContext;
@@ -139,6 +141,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
                 comparePage = ComparePageFactory.createComparePage(this, orchestrator);
+                serverPage = ServerPageFactory.createServerPage(this, orchestrator);
             } else {
                 Composite placeholder = new Composite(getContainer(), SWT.NONE);
                 placeholder.setLayout(new FillLayout());
@@ -279,6 +282,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (peerReviewPage != null) peerReviewPage.setOrchestrator(orchestrator);
         if (taskStackPage != null) taskStackPage.setOrchestrator(orchestrator);
         if (contextPage != null) contextPage.setOrchestrator(orchestrator);
+        if (serverPage != null) serverPage.setOrchestrator(orchestrator);
     }
 
     public void reloadModel() {
@@ -307,6 +311,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (peerReviewPage != null) peerReviewPage.refreshUI();
         if (mcpSettingsPage != null) mcpSettingsPage.updateMcpInfo();
         if (contextPage != null) contextPage.refreshUI();
+        if (serverPage != null) serverPage.updateUIFromModel();
         refreshComparePage();
     }
 

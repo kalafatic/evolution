@@ -301,6 +301,33 @@ public interface OrchestrationFactory extends EFactory {
 	ChatMessage createChatMessage();
 
 	/**
+	 * Returns a new object of class '<em>Server Settings</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Server Settings</em>'.
+	 * @generated
+	 */
+	ServerSettings createServerSettings();
+
+	/**
+	 * Returns a new object of class '<em>Server Session</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Server Session</em>'.
+	 * @generated
+	 */
+	ServerSession createServerSession();
+
+	/**
+	 * Returns a new object of class '<em>Monitoring Data</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Monitoring Data</em>'.
+	 * @generated
+	 */
+	MonitoringData createMonitoringData();
+
+	/**
 	 * Returns the package supported by this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

@@ -34,12 +34,16 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.MonitoringData;
 import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
 import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
+import eu.kalafatic.evolution.model.orchestration.ServerSession;
+import eu.kalafatic.evolution.model.orchestration.ServerSettings;
+import eu.kalafatic.evolution.model.orchestration.SessionType;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.model.orchestration.Test;
@@ -129,6 +133,9 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.REVIEW_SESSION: return createReviewSession();
 			case OrchestrationPackage.CHAT_THREAD: return createChatThread();
 			case OrchestrationPackage.CHAT_MESSAGE: return createChatMessage();
+			case OrchestrationPackage.SERVER_SETTINGS: return createServerSettings();
+			case OrchestrationPackage.SERVER_SESSION: return createServerSession();
+			case OrchestrationPackage.MONITORING_DATA: return createMonitoringData();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -162,6 +169,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createTestStatusFromString(eDataType, initialValue);
 			case OrchestrationPackage.REVIEW_DECISION:
 				return createReviewDecisionFromString(eDataType, initialValue);
+			case OrchestrationPackage.SESSION_TYPE:
+				return createSessionTypeFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -195,6 +204,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertTestStatusToString(eDataType, instanceValue);
 			case OrchestrationPackage.REVIEW_DECISION:
 				return convertReviewDecisionToString(eDataType, instanceValue);
+			case OrchestrationPackage.SESSION_TYPE:
+				return convertSessionTypeToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -739,6 +750,59 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 */
 	public String convertReviewDecisionToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public SessionType createSessionTypeFromString(EDataType eDataType, String initialValue) {
+		SessionType result = SessionType.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertSessionTypeToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ServerSettings createServerSettings() {
+		ServerSettingsImpl serverSettings = new ServerSettingsImpl();
+		return serverSettings;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ServerSession createServerSession() {
+		ServerSessionImpl serverSession = new ServerSessionImpl();
+		return serverSession;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public MonitoringData createMonitoringData() {
+		MonitoringDataImpl monitoringData = new MonitoringDataImpl();
+		return monitoringData;
 	}
 
 	/**
