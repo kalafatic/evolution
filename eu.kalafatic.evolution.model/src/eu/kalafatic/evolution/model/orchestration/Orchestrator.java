@@ -656,4 +656,50 @@ public interface Orchestrator extends EObject {
 	 */
 	EList<AIProvider> getAiProviders();
 
+	/**
+	 * Returns the value of the '<em><b>Server Settings</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Server Settings</em>' containment reference.
+	 * @see #setServerSettings(ServerSettings)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_ServerSettings()
+	 * @model containment="true"
+	 * @generated
+	 */
+	ServerSettings getServerSettings();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getServerSettings <em>Server Settings</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Server Settings</em>' containment reference.
+	 * @see #getServerSettings()
+	 * @generated
+	 */
+	void setServerSettings(ServerSettings value);
+
+	/**
+	 * Returns the value of the '<em><b>Server Sessions</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.ServerSession}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Server Sessions</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_ServerSessions()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<ServerSession> getServerSessions();
+
+	/**
+	 * Returns the value of the '<em><b>Monitoring History</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.MonitoringData}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Monitoring History</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_MonitoringHistory()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<MonitoringData> getMonitoringHistory();
+
 } // Orchestrator

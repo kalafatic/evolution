@@ -3,16 +3,30 @@ package eu.kalafatic.evolution.controller.orchestration;
 import fi.iki.elonen.NanoHTTPD;
 import org.json.JSONObject;
 import org.json.JSONArray;
+
+import eu.kalafatic.evolution.model.orchestration.MonitoringData;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.ServerSession;
+import eu.kalafatic.evolution.model.orchestration.SessionType;
+
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Embedded REST server for remote control.
  */
 public class EvolutionServer extends NanoHTTPD {
+
+    private final Map<String, ServerSession> activeSessions = new ConcurrentHashMap<>();
 
     public EvolutionServer(int port) {
         super(port);
@@ -27,8 +41,14 @@ public class EvolutionServer extends NanoHTTPD {
         String uri = session.getUri();
         Method method = session.getMethod();
 
+        trackHttpSession(session);
+
         try {
-            if (Method.POST.equals(method) && "/task".equals(uri)) {
+            if (Method.GET.equals(method) && "/server/status".equals(uri)) {
+                return handleGetServerStatus();
+            } else if (Method.POST.equals(method) && "/server/session/ui".equals(uri)) {
+                return handleRegisterUiSession(session);
+            } else if (Method.POST.equals(method) && "/task".equals(uri)) {
                 return handleCreateTask(session);
             } else if (Method.GET.equals(method) && uri.startsWith("/task/")) {
                 String taskId = uri.substring(6);
@@ -188,6 +208,85 @@ public class EvolutionServer extends NanoHTTPD {
         } catch (IOException e) {
             return false;
         }
+    }
+
+    private void trackHttpSession(IHTTPSession session) {
+        String clientIp = session.getRemoteIpAddress();
+        // Use IP as part of session tracking if no token is provided
+        String sessionId = "http-" + clientIp;
+        ServerSession s = activeSessions.get(sessionId);
+        if (s == null) {
+            s = OrchestrationFactory.eINSTANCE.createServerSession();
+            s.setId(sessionId);
+            s.setType(SessionType.HTTPD);
+            s.setStartTime(System.currentTimeMillis());
+            s.setClientIp(clientIp);
+            activeSessions.put(sessionId, s);
+        }
+        s.setLastActivity(System.currentTimeMillis());
+    }
+
+    private Response handleRegisterUiSession(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = new JSONObject(postData != null ? postData : "{}");
+
+        String id = json.optString("id", "ui-" + UUID.randomUUID().toString());
+        ServerSession s = OrchestrationFactory.eINSTANCE.createServerSession();
+        s.setId(id);
+        s.setType(SessionType.UI);
+        s.setStartTime(System.currentTimeMillis());
+        s.setLastActivity(System.currentTimeMillis());
+        s.setClientIp(session.getRemoteIpAddress());
+        activeSessions.put(id, s);
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json",
+            new JSONObject().put("id", id).toString());
+    }
+
+    private Response handleGetServerStatus() {
+        JSONObject status = new JSONObject();
+
+        // Monitoring Data
+        OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+        double cpuLoad = osBean.getSystemLoadAverage(); // Simple load avg
+        long freeMem = Runtime.getRuntime().freeMemory();
+        long totalMem = Runtime.getRuntime().totalMemory();
+
+        JSONObject monitoring = new JSONObject();
+        monitoring.put("cpuUsage", cpuLoad);
+        monitoring.put("memoryUsage", totalMem - freeMem);
+        monitoring.put("totalMemory", totalMem);
+        monitoring.put("timestamp", System.currentTimeMillis());
+        status.put("monitoring", monitoring);
+
+        // Sessions
+        JSONArray sessions = new JSONArray();
+        long now = System.currentTimeMillis();
+        List<String> toRemove = new ArrayList<>();
+
+        for (ServerSession s : activeSessions.values()) {
+            // Cleanup sessions inactive for > 1 hour
+            if (now - s.getLastActivity() > 3600000) {
+                toRemove.add(s.getId());
+                continue;
+            }
+
+            sessions.put(new JSONObject()
+                .put("id", s.getId())
+                .put("type", s.getType().getName())
+                .put("startTime", s.getStartTime())
+                .put("lastActivity", s.getLastActivity())
+                .put("clientIp", s.getClientIp()));
+        }
+
+        for (String id : toRemove) activeSessions.remove(id);
+
+        status.put("sessions", sessions);
+        status.put("port", getListeningPort());
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", status.toString());
     }
 
     public static void main(String[] args) {

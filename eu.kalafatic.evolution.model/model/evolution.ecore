@@ -88,6 +88,35 @@
         defaultValueLiteral="false"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="aiProviders" upperBound="-1"
         eType="#//AIProvider" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="serverSettings" eType="#//ServerSettings"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="serverSessions" upperBound="-1"
+        eType="#//ServerSession" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="monitoringHistory" upperBound="-1"
+        eType="#//MonitoringData" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ServerSettings">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="port" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="8080"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="autoStart" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ServerSession">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="#//SessionType"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="startTime" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lastActivity" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="clientIp" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="MonitoringData">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="timestamp" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="cpuUsage" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDouble"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="memoryUsage" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="totalMemory" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="SessionType">
+    <eLiterals name="HTTPD"/>
+    <eLiterals name="UI" value="1"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="AIProvider">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
