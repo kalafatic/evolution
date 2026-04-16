@@ -39,7 +39,7 @@ public class InputGroup extends AEvoGroup {
         group.setVisible(false);
         ((GridData) group.getLayoutData()).exclude = true;
 
-        promptLabel = new Label(group, SWT.NONE);
+        promptLabel = new Label(group, SWT.WRAP);
         promptLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         inputText = new Text(group, SWT.BORDER);

@@ -270,7 +270,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                 // Handle Clarification/Proposal stall
                 if (result != null && (result.contains("CLARIFY") || result.contains("[PROPOSAL:"))) {
-                    context.log("Evo-Orchestrator-" + task.getName() + ": Agent requested clarification/proposal. Pausing execution.");
+                    context.log("Evo-Orchestrator-" + task.getName() + ": Agent requested clarification/proposal: " + result);
                     String clarification = context.requestInput(result).get();
                     if (clarification != null) {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Received clarification: " + clarification);
@@ -367,6 +367,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
             // JavaDev/Architect will generate content first
             context.log("Evo-Orchestrator-" + taskName + ": " + agent.getType() + " agent processing " + path);
             String content = agent.process(processInput, context, lastFeedback);
+
+            // If the agent returned a clarification or proposal instead of file content, return it now
+            if (content != null && (content.contains("CLARIFY") || content.contains("[PROPOSAL:"))) {
+                return content;
+            }
+
             context.log("Evo-Orchestrator-" + taskName + ": Agent generated " + content.length() + " chars for " + path);
 
             // Check for significant deletions
@@ -447,7 +453,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             if (analysis.optBoolean("isAmbiguous", false)) {
                 String question = analysis.optString("clarificationQuestion", "The request is ambiguous. Can you please provide more details?");
-                context.log("Evo-Orchestrator-Analysis: Request is ambiguous. Waiting for user clarification...");
+                context.log("Evo-Orchestrator-Analysis: Request is ambiguous. Question: " + question);
 
                 String clarification = context.requestInput(question).get();
                 if (clarification == null || clarification.trim().isEmpty()) {
