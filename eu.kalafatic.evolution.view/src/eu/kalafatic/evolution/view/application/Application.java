@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.view.application;
 import java.io.File;
 
 import org.eclipse.core.runtime.Platform;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionServer;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
 import org.eclipse.osgi.service.datalocation.Location;
@@ -19,6 +20,40 @@ public class Application implements IApplication {
 	
 	@Override
 	public Object start(IApplicationContext context) throws Exception {
+		String[] args = (String[]) context.getArguments().get(IApplicationContext.APPLICATION_ARGS);
+		boolean serverOnly = false;
+		int port = 8080;
+		for (int i = 0; i < args.length; i++) {
+			if ("--server".equals(args[i])) {
+				serverOnly = true;
+			} else if ("--port".equals(args[i]) && i + 1 < args.length) {
+				port = Integer.parseInt(args[++i]);
+			}
+		}
+
+		final int finalPort = port;
+		if (serverOnly) {
+			System.out.println("Starting Evolution in SERVER-ONLY mode on port " + finalPort + "...");
+			EvolutionServer server = new EvolutionServer(finalPort);
+			server.startServer();
+			System.out.println("Server is running. Press Ctrl+C to stop.");
+			while (true) {
+				Thread.sleep(1000);
+			}
+		}
+
+		// Start server in background for UI mode
+		new Thread(() -> {
+			try {
+				System.out.println("Starting Evolution background server on port " + finalPort + "...");
+				EvolutionServer server = new EvolutionServer(finalPort);
+				server.startServer();
+				System.out.println("Evolution background server started on port " + finalPort);
+			} catch (Exception e) {
+				System.err.println("Failed to start background server: " + e.getMessage());
+			}
+		}).start();
+
 		Display display = PlatformUI.createDisplay();
 		try {
 			if (!checkWorkspace(display)) {

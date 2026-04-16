@@ -39,6 +39,7 @@ public class ChatGroup extends AEvoGroup {
     private boolean isLoaded = false;
     private ChatThread currentThread;
     private EditMessageCallback editCallback;
+    private int logCount = 0;
 
     public interface EditMessageCallback {
         void onEditMessage(int index, String oldText);
@@ -399,4 +400,8 @@ public class ChatGroup extends AEvoGroup {
     public void setStyleRanges(StyleRange[] ranges) { }
     public void setSelection(int offset) { }
     public boolean isDisposed() { return browser.isDisposed(); }
+
+    public int getLogCount() { return logCount; }
+    public void incrementLogCount() { logCount++; }
+    public void resetLogCount() { logCount = 0; }
 }

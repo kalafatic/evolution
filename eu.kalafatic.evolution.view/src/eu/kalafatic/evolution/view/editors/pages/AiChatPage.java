@@ -34,7 +34,10 @@ import eu.kalafatic.evolution.controller.manager.NeuronService;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
+import eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
+import eu.kalafatic.evolution.controller.orchestration.TaskResult;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevSupervisor;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
@@ -300,62 +303,79 @@ public class AiChatPage extends SharedScrolledComposite {
 		instructionsGroup.setRequest("");
 		instructionsGroup.setOrchestrationRunning(true);
 		chatGroup.setThinking(true);
+		chatGroup.resetLogCount();
+
+		TaskRequest taskRequest = new TaskRequest(request, getProjectRoot());
+		taskRequest.getContext().put("orchestrator", orchestrator);
+
 		orchestrationThread = new Thread(() -> {
 			try {
-				EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
-				File projectRoot = getProjectRoot();
-				TaskContext context = new TaskContext(orchestrator, projectRoot);
-				context.setThreadId(getCurrentThreadName());
-				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
-				this.currentContext = context;
-				Display.getDefault().asyncExec(() -> editor.setCurrentContext(context));
-				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
-					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-						modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
-						modeIndicatorLabel.setBackground(colorWaiting);
-					}
-					approvalGroup.show(message); updateScrolledContent();
-				}));
-				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
-					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-						modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
-						modeIndicatorLabel.setBackground(colorWaiting);
-					}
-					handleClarify();
-					inputGroup.show(message); updateScrolledContent();
-				}));
-				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
-					String token = requestToken(provider);
-					if (token != null) {
-					    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().updateToken(orchestrator, provider, token);
-					    aiSettingsGroup.setRemoteToken(token);
-					    syncModelWithUI();
-					    future.complete(token);
-					} else future.completeExceptionally(new Exception("Token request cancelled by user."));
-				}));
-				context.addLogListener(log -> Display.getDefault().asyncExec(() -> {
-					if (!chatGroup.isDisposed()) {
-						processLogEntry(log);
-						editor.setDirty(true);
-					}
-				}));
-				String result = evolutionOrchestrator.execute(request, context);
-				String summary = context.getOrchestrator().getTasks().stream()
-						.filter(t -> t.getResultSummary() != null && !t.getResultSummary().isEmpty())
-						.map(t -> "- " + t.getResultSummary())
-						.collect(Collectors.joining("\n"));
+				TaskResult result = OrchestratorServiceImpl.getInstance().execute(taskRequest);
+				String taskId = result.getId();
 
+				// Monitor logs and result
+				while (result.getStatus() == TaskResult.Status.RUNNING || result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL || result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
+				    if (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
+				        final String msg = result.getWaitingMessage();
+				        Display.getDefault().asyncExec(() -> {
+				            if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
+				                modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
+				                modeIndicatorLabel.setBackground(colorWaiting);
+				            }
+				            approvalGroup.show(msg); updateScrolledContent();
+				        });
+				        while (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
+				            Thread.sleep(1000);
+				            result = OrchestratorServiceImpl.getInstance().getTaskResult(taskId);
+				        }
+				        Display.getDefault().asyncExec(() -> { updateModeDisplay(); approvalGroup.hide(); });
+				    }
+
+				    if (result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
+				        final String msg = result.getWaitingMessage();
+				        Display.getDefault().asyncExec(() -> {
+				            if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
+				                modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
+				                modeIndicatorLabel.setBackground(colorWaiting);
+				            }
+				            handleClarify();
+				            inputGroup.show(msg); updateScrolledContent();
+				        });
+				        while (result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
+				            Thread.sleep(1000);
+				            result = OrchestratorServiceImpl.getInstance().getTaskResult(taskId);
+				        }
+				        Display.getDefault().asyncExec(() -> { updateModeDisplay(); inputGroup.hide(); });
+				    }
+
+				    Thread.sleep(500);
+				    TaskResult latest = OrchestratorServiceImpl.getInstance().getTaskResult(taskId);
+				    if (latest == null) break;
+
+				    final List<String> newLogs = latest.getLogs().subList(chatGroup.getLogCount(), latest.getLogs().size());
+				    if (!newLogs.isEmpty()) {
+				        Display.getDefault().asyncExec(() -> {
+				            for (String log : newLogs) {
+				                processLogEntry(log);
+				                chatGroup.incrementLogCount();
+				            }
+				        });
+				    }
+				    result = latest;
+				}
+
+				final TaskResult finalResult = result;
 				Display.getDefault().asyncExec(() -> {
 					instructionsGroup.resetBackground();
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 
-						if (!summary.isEmpty()) {
-							chatGroup.appendText("\n\nResult Summary: " + summary, colorUser, SWT.NORMAL);
+						if (!finalResult.getFileChanges().isEmpty()) {
+							chatGroup.appendText("\n\nResult Summary:\n" + String.join("\n", finalResult.getFileChanges()), colorUser, SWT.NORMAL);
 						}
 
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
-						chatGroup.appendText("Final Response: " + result, colorEvolution, SWT.BOLD);
+						chatGroup.appendText("Final Response: " + finalResult.getResponse(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						satisfactionGroup.setVisible(true); updateScrolledContent();
 					}
@@ -645,6 +665,11 @@ public class AiChatPage extends SharedScrolledComposite {
 	}
 
 	public void provideApproval(boolean approved) {
+		if (orchestrationThread != null) {
+			// We find the current task ID from the service (simplified, assuming one active task)
+			// In a real multi-tenant scenario, we'd need to track which taskId belongs to this page
+			OrchestratorServiceImpl.getInstance().provideApproval(orchestrator.getId(), approved);
+		}
 		if (currentContext != null) {
 			currentContext.provideApproval(approved);
 			approvalGroup.hide();
@@ -684,6 +709,9 @@ public class AiChatPage extends SharedScrolledComposite {
 
 	public void provideInput(String input) {
 		instructionsGroup.resetBackground();
+		if (orchestrationThread != null) {
+			OrchestratorServiceImpl.getInstance().provideInput(orchestrator.getId(), input);
+		}
 		if (currentContext != null) {
 			currentContext.provideInput(input);
 			inputGroup.hide();
