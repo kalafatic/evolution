@@ -10,6 +10,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.forms.widgets.FormToolkit;
@@ -60,8 +61,14 @@ public class SessionsGroup extends AToolGroup {
         viewer.setContentProvider(ArrayContentProvider.getInstance());
         viewer.setLabelProvider(new SessionLabelProvider());
         
-      if (orchestrator == null) return;
-        viewer.setInput(orchestrator.getServerSessions());
+     
+        
+        Display.getDefault().asyncExec(() -> {
+            if (!viewer.getControl().isDisposed()) {
+            	 if (orchestrator == null) return;
+                  viewer.setInput(orchestrator.getServerSessions());
+            }
+        });
     }
 
     @Override

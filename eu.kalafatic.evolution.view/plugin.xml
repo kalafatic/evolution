@@ -696,11 +696,11 @@
          point="org.eclipse.ui.splashHandlers">
       <splashHandlerProductBinding
             productId="eu.kalafatic.evolution.view.product"
-            splashId="eu.kalafatic.evolution.view.splashHandlers.EvoSplashHandler">
+            splashId="eu.kalafatic.evolution.controller.splashHandlers.EvolutionSplashHandler">
       </splashHandlerProductBinding>
       <splashHandler
-            class="eu.kalafatic.evolution.view.splashHandlers.EvoSplashHandler"
-            id="eu.kalafatic.evolution.view.splashHandlers.EvoSplashHandler">
+            class="eu.kalafatic.evolution.controller.splashHandlers.EvolutionSplashHandler"
+            id="eu.kalafatic.evolution.controller.splashHandlers.EvolutionSplashHandler">
       </splashHandler>
    </extension>
    

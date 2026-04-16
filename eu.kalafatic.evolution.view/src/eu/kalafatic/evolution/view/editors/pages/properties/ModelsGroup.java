@@ -90,12 +90,18 @@ public class ModelsGroup extends AEvoGroup {
 
         createButtons(toolkit);
         
-        load();
+        
 
         group.addDisposeListener(e -> {
             if (lightGreen != null && !lightGreen.isDisposed()) lightGreen.dispose();
             if (lightRed != null && !lightRed.isDisposed()) lightRed.dispose();
             if (lightOrange != null && !lightOrange.isDisposed()) lightOrange.dispose();
+        });
+        
+        Display.getDefault().asyncExec(() -> {
+            if (!viewer.getControl().isDisposed()) {
+            	load();
+            }
         });
     }
 
