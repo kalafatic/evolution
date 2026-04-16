@@ -136,6 +136,9 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AIProvider/state"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AIProvider/stateDescription"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AIProvider/rating"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AIProvider/ratingAnalyze"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AIProvider/ratingChat"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AIProvider/ratingProgramming"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Git">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Git/repositoryUrl"/>
@@ -176,6 +179,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/token"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/prompt"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/proxyUrl"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//AiChat/threads"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//NeuronAI">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NeuronAI/url"/>
@@ -287,6 +291,20 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ReviewSession/changeSet"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ReviewSession/comments"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ReviewSession/decision"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//ChatThread">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatThread/id"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ChatThread/messages"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//ChatMessage">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/index"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/sender"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/text"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/color"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/isBold"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/isItalic"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/agentType"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/timestamp"/>
     </genClasses>
   </genPackages>
 </genmodel:GenModel>

@@ -15,7 +15,7 @@ public class AnalyticAgent extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are a Specialized Analytic Agent for an AI Orchestration system (Jules).\n" +
+        return "You are a Specialized Analytic Agent for an AI Orchestration system (Evo).\n" +
                 "Your goal is to deeply analyze the user's prompt BEFORE any planning or execution happens.\n\n" +
                 "ANALYSIS CRITERIA:\n" +
                 "1. CATEGORY: Determine if the request is CODING (writing/fixing code), RESEARCH (gathering info/analyzing files), " +

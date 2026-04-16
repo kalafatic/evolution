@@ -3,6 +3,7 @@
 package eu.kalafatic.evolution.model.orchestration;
 
 import org.eclipse.emf.common.util.EList;
+
 import org.eclipse.emf.ecore.EObject;
 
 /**
@@ -18,6 +19,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getToken <em>Token</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPrompt <em>Prompt</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getProxyUrl <em>Proxy Url</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getThreads <em>Threads</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAiChat()

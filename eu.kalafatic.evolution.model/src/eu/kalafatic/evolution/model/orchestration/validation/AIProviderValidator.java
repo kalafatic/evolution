@@ -26,4 +26,7 @@ public interface AIProviderValidator {
 	boolean validateState(String value);
 	boolean validateStateDescription(String value);
 	boolean validateRating(int value);
+	boolean validateRatingAnalyze(int value);
+	boolean validateRatingChat(int value);
+	boolean validateRatingProgramming(int value);
 }

@@ -583,22 +583,13 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__AI_PROVIDERS = 27;
 
 	/**
-	 * The feature id for the '<em><b>Darwin Mode</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ORCHESTRATOR__DARWIN_MODE = 28;
-
-	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 29;
+	int ORCHESTRATOR_FEATURE_COUNT = 28;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -3300,17 +3291,6 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getOrchestrator_SelfIterativeMode();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isDarwinMode <em>Darwin Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Darwin Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isDarwinMode()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_DarwinMode();
-
-	/**
 	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiProviders <em>Ai Providers</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -4857,96 +4837,6 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getReviewSession_Decision();
 
 	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Task Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
-	 * @generated
-	 */
-	EEnum getTaskStatus();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Command Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
-	 * @generated
-	 */
-	EEnum getCommandStatus();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Execution Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
-	 * @generated
-	 */
-	EEnum getExecutionMode();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Neuron Type</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
-	 * @generated
-	 */
-	EEnum getNeuronType();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Ai Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
-	 * @generated
-	 */
-	EEnum getAiMode();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Self Dev Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevStatus
-	 * @generated
-	 */
-	EEnum getSelfDevStatus();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Iteration Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.IterationStatus
-	 * @generated
-	 */
-	EEnum getIterationStatus();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Self Dev Decision</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevDecision
-	 * @generated
-	 */
-	EEnum getSelfDevDecision();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Test Status</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
-	 * @generated
-	 */
-	EEnum getTestStatus();
-
-	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChatThread <em>Chat Thread</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5075,6 +4965,96 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getChatMessage_Timestamp();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Task Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
+	 * @generated
+	 */
+	EEnum getTaskStatus();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Command Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
+	 * @generated
+	 */
+	EEnum getCommandStatus();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Execution Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+	 * @generated
+	 */
+	EEnum getExecutionMode();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Neuron Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+	 * @generated
+	 */
+	EEnum getNeuronType();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Ai Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
+	 * @generated
+	 */
+	EEnum getAiMode();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Self Dev Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevStatus
+	 * @generated
+	 */
+	EEnum getSelfDevStatus();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Iteration Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.IterationStatus
+	 * @generated
+	 */
+	EEnum getIterationStatus();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Self Dev Decision</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SelfDevDecision
+	 * @generated
+	 */
+	EEnum getSelfDevDecision();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Test Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
+	 * @generated
+	 */
+	EEnum getTestStatus();
 
 	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}'.
@@ -5538,14 +5518,6 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute ORCHESTRATOR__SELF_ITERATIVE_MODE = eINSTANCE.getOrchestrator_SelfIterativeMode();
-
-		/**
-		 * The meta object literal for the '<em><b>Darwin Mode</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ORCHESTRATOR__DARWIN_MODE = eINSTANCE.getOrchestrator_DarwinMode();
 
 		/**
 		 * The meta object literal for the '<em><b>Ai Providers</b></em>' containment reference list feature.
@@ -6746,96 +6718,6 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute REVIEW_SESSION__DECISION = eINSTANCE.getReviewSession_Decision();
 
 		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
-		 * @generated
-		 */
-		EEnum TASK_STATUS = eINSTANCE.getTaskStatus();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
-		 * @generated
-		 */
-		EEnum COMMAND_STATUS = eINSTANCE.getCommandStatus();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
-		 * @generated
-		 */
-		EEnum EXECUTION_MODE = eINSTANCE.getExecutionMode();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
-		 * @generated
-		 */
-		EEnum NEURON_TYPE = eINSTANCE.getNeuronType();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.AiMode
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
-		 * @generated
-		 */
-		EEnum AI_MODE = eINSTANCE.getAiMode();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.SelfDevStatus
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
-		 * @generated
-		 */
-		EEnum SELF_DEV_STATUS = eINSTANCE.getSelfDevStatus();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.IterationStatus
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
-		 * @generated
-		 */
-		EEnum ITERATION_STATUS = eINSTANCE.getIterationStatus();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.SelfDevDecision
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
-		 * @generated
-		 */
-		EEnum SELF_DEV_DECISION = eINSTANCE.getSelfDevDecision();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
-		 * @generated
-		 */
-		EEnum TEST_STATUS = eINSTANCE.getTestStatus();
-
-		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatThreadImpl <em>Chat Thread</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -6934,6 +6816,96 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_MESSAGE__TIMESTAMP = eINSTANCE.getChatMessage_Timestamp();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.TaskStatus
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
+		 * @generated
+		 */
+		EEnum TASK_STATUS = eINSTANCE.getTaskStatus();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.CommandStatus
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
+		 * @generated
+		 */
+		EEnum COMMAND_STATUS = eINSTANCE.getCommandStatus();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.ExecutionMode
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
+		 * @generated
+		 */
+		EEnum EXECUTION_MODE = eINSTANCE.getExecutionMode();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.NeuronType
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
+		 * @generated
+		 */
+		EEnum NEURON_TYPE = eINSTANCE.getNeuronType();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.AiMode
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
+		 * @generated
+		 */
+		EEnum AI_MODE = eINSTANCE.getAiMode();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.SelfDevStatus
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
+		 * @generated
+		 */
+		EEnum SELF_DEV_STATUS = eINSTANCE.getSelfDevStatus();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.IterationStatus
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
+		 * @generated
+		 */
+		EEnum ITERATION_STATUS = eINSTANCE.getIterationStatus();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.SelfDevDecision
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
+		 * @generated
+		 */
+		EEnum SELF_DEV_DECISION = eINSTANCE.getSelfDevDecision();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.TestStatus
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
+		 * @generated
+		 */
+		EEnum TEST_STATUS = eINSTANCE.getTestStatus();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.

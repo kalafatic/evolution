@@ -6,10 +6,10 @@ import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
-import eu.kalafatic.evolution.model.orchestration.ChatMessage;
-import eu.kalafatic.evolution.model.orchestration.ChatThread;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.ChangeSet;
+import eu.kalafatic.evolution.model.orchestration.ChatMessage;
+import eu.kalafatic.evolution.model.orchestration.ChatThread;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
 import eu.kalafatic.evolution.model.orchestration.Comment;
@@ -72,41 +72,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@Override
-	public EAttribute getOrchestrator_DarwinMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(28);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass chatThreadEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass chatMessageEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass agentEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getAiChat_Threads() {
-		return (EReference)aiChatEClass.getEStructuralFeatures().get(4);
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -303,6 +269,20 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EClass reviewSessionEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass chatThreadEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass chatMessageEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1470,6 +1450,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EReference getAiChat_Threads() {
+		return (EReference)aiChatEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getNeuronAI() {
 		return neuronAIEClass;
 	}
@@ -2390,106 +2380,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EEnum getTaskStatus() {
-		return taskStatusEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getCommandStatus() {
-		return commandStatusEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getExecutionMode() {
-		return executionModeEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getNeuronType() {
-		return neuronTypeEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getAiMode() {
-		return aiModeEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getSelfDevStatus() {
-		return selfDevStatusEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getIterationStatus() {
-		return iterationStatusEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getSelfDevDecision() {
-		return selfDevDecisionEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getTestStatus() {
-		return testStatusEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getReviewDecision() {
-		return reviewDecisionEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public EClass getChatThread() {
 		return chatThreadEClass;
 	}
@@ -2610,6 +2500,106 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EEnum getTaskStatus() {
+		return taskStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getCommandStatus() {
+		return commandStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getExecutionMode() {
+		return executionModeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getNeuronType() {
+		return neuronTypeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getAiMode() {
+		return aiModeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getSelfDevStatus() {
+		return selfDevStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getIterationStatus() {
+		return iterationStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getSelfDevDecision() {
+		return selfDevDecisionEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getTestStatus() {
+		return testStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getReviewDecision() {
+		return reviewDecisionEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public OrchestrationFactory getOrchestrationFactory() {
 		return (OrchestrationFactory)getEFactoryInstance();
 	}
@@ -2688,7 +2678,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__ECLIPSE);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__ITERATIVE_MODE);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__SELF_ITERATIVE_MODE);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__DARWIN_MODE);
 		createEReference(orchestratorEClass, ORCHESTRATOR__AI_PROVIDERS);
 
 		aiProviderEClass = createEClass(AI_PROVIDER);
@@ -2976,7 +2965,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_Eclipse(), this.getEclipse(), null, "eclipse", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_DarwinMode(), ecorePackage.getEBoolean(), "darwinMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_AiProviders(), this.getAIProvider(), null, "aiProviders", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(aiProviderEClass, AIProvider.class, "AIProvider", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);

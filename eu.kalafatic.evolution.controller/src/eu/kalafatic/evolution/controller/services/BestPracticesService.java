@@ -40,7 +40,7 @@ public class BestPracticesService {
 
         roleDefaults.put("planner", "# PLANNER Best Practices\n\n" +
                 "- Decompose user requests into atomic, actionable tasks.\n" +
-                "- Handle ambiguity by generating a clarification task (the 'Jules' way).\n" +
+                "- Handle ambiguity by generating a clarification task (the 'Evo' way).\n" +
                 "- Assign specific agent roles (JavaDev, Tester, etc.) to tasks for better accuracy.\n" +
                 "- Use 'loopToTaskId' for iterative fix-test-improve cycles.");
 

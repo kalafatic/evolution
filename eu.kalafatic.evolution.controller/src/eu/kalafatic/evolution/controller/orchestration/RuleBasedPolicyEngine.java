@@ -25,7 +25,7 @@ public class RuleBasedPolicyEngine implements IPolicyEngine {
 
         switch (intent) {
             case "GREETING":
-                return "Hello! I'm Jules, your AI software engineer. How can I help you today?";
+                return "Hello! I'm Evo, your AI software engineer. How can I help you today?";
             case "CHIT_CHAT":
                 return "I'm doing well, thank you! Ready to help with any coding or technical tasks.";
             case "QUESTION":

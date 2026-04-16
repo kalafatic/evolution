@@ -7,6 +7,8 @@ import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.ChangeSet;
+import eu.kalafatic.evolution.model.orchestration.ChatMessage;
+import eu.kalafatic.evolution.model.orchestration.ChatThread;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.Comment;
 import eu.kalafatic.evolution.model.orchestration.Database;
@@ -215,6 +217,14 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 			@Override
 			public Adapter caseReviewSession(ReviewSession object) {
 				return createReviewSessionAdapter();
+			}
+			@Override
+			public Adapter caseChatThread(ChatThread object) {
+				return createChatThreadAdapter();
+			}
+			@Override
+			public Adapter caseChatMessage(ChatMessage object) {
+				return createChatMessageAdapter();
 			}
 			@Override
 			public Adapter defaultCase(EObject object) {
@@ -653,6 +663,34 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createReviewSessionAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.ChatThread <em>Chat Thread</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatThread
+	 * @generated
+	 */
+	public Adapter createChatThreadAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage <em>Chat Message</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatMessage
+	 * @generated
+	 */
+	public Adapter createChatMessageAdapter() {
 		return null;
 	}
 
