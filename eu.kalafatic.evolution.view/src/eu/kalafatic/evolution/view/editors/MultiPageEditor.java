@@ -21,6 +21,7 @@ import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -88,6 +89,10 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private Resource resource;
     private EditorResourceChangeListener resourceListener;
     private EditorSelectionListener selectionListener;
+    
+    private Color lightGreen, lightRed, lightOrange;
+    
+    private boolean refreshScheduled = false;
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -100,12 +105,18 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 notification.getEventType() == Notification.REMOVE) {
                 setDirty(true);
             }
+                       
+            if (!refreshScheduled) {
+                refreshScheduled = true;
 
-            Display.getDefault().asyncExec(() -> {
-                if (!getContainer().isDisposed()) {
-                    refreshPages();
-                }
-            });
+                Display.getDefault().asyncExec(() -> {
+                    refreshScheduled = false;
+
+                    if (!getContainer().isDisposed()) {
+                        refreshPages();
+                    }
+                });
+            }
         }
     };
 
@@ -120,6 +131,11 @@ public class MultiPageEditor extends MultiPageEditorPart {
     protected void createPages() {
         loadModel();
         try {
+        	
+        	this.lightGreen = new Color(Display.getDefault(), 220, 255, 220);
+            this.lightRed = new Color(Display.getDefault(), 255, 220, 220);
+            this.lightOrange = new Color(Display.getDefault(), 255, 240, 200);
+            
             if (orchestrator != null) {
                 aiChatPage = AiChatPageFactory.createAiChatPage(this, orchestrator);
 
@@ -412,4 +428,28 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void setPageText(int index, String text) {
         super.setPageText(index, text);
     }
+
+	public Color getLightGreen() {
+		return lightGreen;
+	}
+
+	public void setLightGreen(Color lightGreen) {
+		this.lightGreen = lightGreen;
+	}
+
+	public Color getLightRed() {
+		return lightRed;
+	}
+
+	public void setLightRed(Color lightRed) {
+		this.lightRed = lightRed;
+	}
+
+	public Color getLightOrange() {
+		return lightOrange;
+	}
+
+	public void setLightOrange(Color lightOrange) {
+		this.lightOrange = lightOrange;
+	}
 }

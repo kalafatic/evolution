@@ -26,6 +26,7 @@ import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.IterationStatus;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
+import eu.kalafatic.evolution.model.orchestration.MonitoringData;
 import eu.kalafatic.evolution.model.orchestration.NetworkRule;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.NeuronType;
@@ -33,7 +34,6 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.MonitoringData;
 import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
 import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.Rule;
@@ -76,30 +76,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@Override
-	public EReference getOrchestrator_ServerSettings() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(29);
-	}
+	private EClass agentEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@Override
-	public EReference getOrchestrator_ServerSessions() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(30);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_MonitoringHistory() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(31);
-	}
+	private EClass orchestratorEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -121,184 +105,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EClass monitoringDataEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EEnum sessionTypeEEnum = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EAttribute orchestrator_DarwinModeEAttribute = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getServerSettings() {
-		return serverSettingsEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getServerSettings_Port() {
-		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getServerSettings_AutoStart() {
-		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getServerSession() {
-		return serverSessionEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getServerSession_Id() {
-		return (EAttribute)serverSessionEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getServerSession_Type() {
-		return (EAttribute)serverSessionEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getServerSession_StartTime() {
-		return (EAttribute)serverSessionEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getServerSession_LastActivity() {
-		return (EAttribute)serverSessionEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getServerSession_ClientIp() {
-		return (EAttribute)serverSessionEClass.getEStructuralFeatures().get(4);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getMonitoringData() {
-		return monitoringDataEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getMonitoringData_Timestamp() {
-		return (EAttribute)monitoringDataEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getMonitoringData_CpuUsage() {
-		return (EAttribute)monitoringDataEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getMonitoringData_MemoryUsage() {
-		return (EAttribute)monitoringDataEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getMonitoringData_TotalMemory() {
-		return (EAttribute)monitoringDataEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getSessionType() {
-		return sessionTypeEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass agentEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass orchestratorEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -509,6 +315,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EEnum taskStatusEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum sessionTypeEEnum = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1169,6 +982,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getOrchestrator_DarwinMode() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(27);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EReference getOrchestrator_AiProviders() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(28);
 	}
@@ -1179,8 +1002,168 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EAttribute getOrchestrator_DarwinMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(27);
+	public EReference getOrchestrator_ServerSettings() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(29);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_ServerSessions() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(30);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_MonitoringHistory() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(31);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getServerSettings() {
+		return serverSettingsEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSettings_Port() {
+		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSettings_AutoStart() {
+		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getServerSession() {
+		return serverSessionEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSession_Id() {
+		return (EAttribute)serverSessionEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSession_Type() {
+		return (EAttribute)serverSessionEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSession_StartTime() {
+		return (EAttribute)serverSessionEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSession_LastActivity() {
+		return (EAttribute)serverSessionEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSession_ClientIp() {
+		return (EAttribute)serverSessionEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getMonitoringData() {
+		return monitoringDataEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getMonitoringData_Timestamp() {
+		return (EAttribute)monitoringDataEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getMonitoringData_CpuUsage() {
+		return (EAttribute)monitoringDataEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getMonitoringData_MemoryUsage() {
+		return (EAttribute)monitoringDataEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getMonitoringData_TotalMemory() {
+		return (EAttribute)monitoringDataEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -2739,6 +2722,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EEnum getSessionType() {
+		return sessionTypeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EEnum getCommandStatus() {
 		return commandStatusEEnum;
 	}
@@ -2912,6 +2905,23 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__SERVER_SETTINGS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__SERVER_SESSIONS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__MONITORING_HISTORY);
+
+		serverSettingsEClass = createEClass(SERVER_SETTINGS);
+		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORT);
+		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__AUTO_START);
+
+		serverSessionEClass = createEClass(SERVER_SESSION);
+		createEAttribute(serverSessionEClass, SERVER_SESSION__ID);
+		createEAttribute(serverSessionEClass, SERVER_SESSION__TYPE);
+		createEAttribute(serverSessionEClass, SERVER_SESSION__START_TIME);
+		createEAttribute(serverSessionEClass, SERVER_SESSION__LAST_ACTIVITY);
+		createEAttribute(serverSessionEClass, SERVER_SESSION__CLIENT_IP);
+
+		monitoringDataEClass = createEClass(MONITORING_DATA);
+		createEAttribute(monitoringDataEClass, MONITORING_DATA__TIMESTAMP);
+		createEAttribute(monitoringDataEClass, MONITORING_DATA__CPU_USAGE);
+		createEAttribute(monitoringDataEClass, MONITORING_DATA__MEMORY_USAGE);
+		createEAttribute(monitoringDataEClass, MONITORING_DATA__TOTAL_MEMORY);
 
 		aiProviderEClass = createEClass(AI_PROVIDER);
 		createEAttribute(aiProviderEClass, AI_PROVIDER__NAME);
@@ -3096,26 +3106,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__AGENT_TYPE);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__TIMESTAMP);
 
-		serverSettingsEClass = createEClass(SERVER_SETTINGS);
-		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORT);
-		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__AUTO_START);
-
-		serverSessionEClass = createEClass(SERVER_SESSION);
-		createEAttribute(serverSessionEClass, SERVER_SESSION__ID);
-		createEAttribute(serverSessionEClass, SERVER_SESSION__TYPE);
-		createEAttribute(serverSessionEClass, SERVER_SESSION__START_TIME);
-		createEAttribute(serverSessionEClass, SERVER_SESSION__LAST_ACTIVITY);
-		createEAttribute(serverSessionEClass, SERVER_SESSION__CLIENT_IP);
-
-		monitoringDataEClass = createEClass(MONITORING_DATA);
-		createEAttribute(monitoringDataEClass, MONITORING_DATA__TIMESTAMP);
-		createEAttribute(monitoringDataEClass, MONITORING_DATA__CPU_USAGE);
-		createEAttribute(monitoringDataEClass, MONITORING_DATA__MEMORY_USAGE);
-		createEAttribute(monitoringDataEClass, MONITORING_DATA__TOTAL_MEMORY);
-
 		// Create enums
-		sessionTypeEEnum = createEEnum(SESSION_TYPE);
 		taskStatusEEnum = createEEnum(TASK_STATUS);
+		sessionTypeEEnum = createEEnum(SESSION_TYPE);
 		commandStatusEEnum = createEEnum(COMMAND_STATUS);
 		executionModeEEnum = createEEnum(EXECUTION_MODE);
 		neuronTypeEEnum = createEEnum(NEURON_TYPE);
@@ -3221,6 +3214,23 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_ServerSettings(), this.getServerSettings(), null, "serverSettings", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_ServerSessions(), this.getServerSession(), null, "serverSessions", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_MonitoringHistory(), this.getMonitoringData(), null, "monitoringHistory", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(serverSettingsEClass, ServerSettings.class, "ServerSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getServerSettings_Port(), ecorePackage.getEInt(), "port", "8080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSettings_AutoStart(), ecorePackage.getEBoolean(), "autoStart", "true", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(serverSessionEClass, ServerSession.class, "ServerSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getServerSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSession_Type(), this.getSessionType(), "type", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSession_StartTime(), ecorePackage.getELong(), "startTime", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSession_LastActivity(), ecorePackage.getELong(), "lastActivity", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSession_ClientIp(), ecorePackage.getEString(), "clientIp", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(monitoringDataEClass, MonitoringData.class, "MonitoringData", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getMonitoringData_Timestamp(), ecorePackage.getELong(), "timestamp", null, 0, 1, MonitoringData.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getMonitoringData_CpuUsage(), ecorePackage.getEDouble(), "cpuUsage", null, 0, 1, MonitoringData.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getMonitoringData_MemoryUsage(), ecorePackage.getELong(), "memoryUsage", null, 0, 1, MonitoringData.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getMonitoringData_TotalMemory(), ecorePackage.getELong(), "totalMemory", null, 0, 1, MonitoringData.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(aiProviderEClass, AIProvider.class, "AIProvider", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getAIProvider_Name(), ecorePackage.getEString(), "name", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -3413,6 +3423,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.FAILED);
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.WAITING_FOR_APPROVAL);
 
+		initEEnum(sessionTypeEEnum, SessionType.class, "SessionType");
+		addEEnumLiteral(sessionTypeEEnum, SessionType.HTTPD);
+		addEEnumLiteral(sessionTypeEEnum, SessionType.UI);
+
 		initEEnum(commandStatusEEnum, CommandStatus.class, "CommandStatus");
 		addEEnumLiteral(commandStatusEEnum, CommandStatus.PENDING);
 		addEEnumLiteral(commandStatusEEnum, CommandStatus.RUNNING);
@@ -3464,27 +3478,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.APPROVED);
 		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.REJECTED);
 		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.CHANGES_REQUESTED);
-
-		initEClass(serverSettingsEClass, ServerSettings.class, "ServerSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getServerSettings_Port(), ecorePackage.getEInt(), "port", "8080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getServerSettings_AutoStart(), ecorePackage.getEBoolean(), "autoStart", "true", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(serverSessionEClass, ServerSession.class, "ServerSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getServerSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getServerSession_Type(), this.getSessionType(), "type", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getServerSession_StartTime(), ecorePackage.getELong(), "startTime", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getServerSession_LastActivity(), ecorePackage.getELong(), "lastActivity", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getServerSession_ClientIp(), ecorePackage.getEString(), "clientIp", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(monitoringDataEClass, MonitoringData.class, "MonitoringData", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getMonitoringData_Timestamp(), ecorePackage.getELong(), "timestamp", null, 0, 1, MonitoringData.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getMonitoringData_CpuUsage(), ecorePackage.getEDouble(), "cpuUsage", null, 0, 1, MonitoringData.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getMonitoringData_MemoryUsage(), ecorePackage.getELong(), "memoryUsage", null, 0, 1, MonitoringData.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getMonitoringData_TotalMemory(), ecorePackage.getELong(), "totalMemory", null, 0, 1, MonitoringData.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEEnum(sessionTypeEEnum, SessionType.class, "SessionType");
-		addEEnumLiteral(sessionTypeEEnum, SessionType.HTTPD);
-		addEEnumLiteral(sessionTypeEEnum, SessionType.UI);
 
 		// Create resource
 		createResource(eNS_URI);

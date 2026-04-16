@@ -49,6 +49,33 @@ public interface OrchestrationFactory extends EFactory {
 	Orchestrator createOrchestrator();
 
 	/**
+	 * Returns a new object of class '<em>Server Settings</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Server Settings</em>'.
+	 * @generated
+	 */
+	ServerSettings createServerSettings();
+
+	/**
+	 * Returns a new object of class '<em>Server Session</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Server Session</em>'.
+	 * @generated
+	 */
+	ServerSession createServerSession();
+
+	/**
+	 * Returns a new object of class '<em>Monitoring Data</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Monitoring Data</em>'.
+	 * @generated
+	 */
+	MonitoringData createMonitoringData();
+
+	/**
 	 * Returns a new object of class '<em>AI Provider</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -299,33 +326,6 @@ public interface OrchestrationFactory extends EFactory {
 	 * @generated
 	 */
 	ChatMessage createChatMessage();
-
-	/**
-	 * Returns a new object of class '<em>Server Settings</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Server Settings</em>'.
-	 * @generated
-	 */
-	ServerSettings createServerSettings();
-
-	/**
-	 * Returns a new object of class '<em>Server Session</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Server Session</em>'.
-	 * @generated
-	 */
-	ServerSession createServerSession();
-
-	/**
-	 * Returns a new object of class '<em>Monitoring Data</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Monitoring Data</em>'.
-	 * @generated
-	 */
-	MonitoringData createMonitoringData();
 
 	/**
 	 * Returns the package supported by this factory.

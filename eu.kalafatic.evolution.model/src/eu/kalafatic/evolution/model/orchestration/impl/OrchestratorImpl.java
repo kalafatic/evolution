@@ -12,11 +12,14 @@ import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
+import eu.kalafatic.evolution.model.orchestration.MonitoringData;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
+import eu.kalafatic.evolution.model.orchestration.ServerSession;
+import eu.kalafatic.evolution.model.orchestration.ServerSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
 
@@ -73,6 +76,9 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#isSelfIterativeMode <em>Self Iterative Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#isDarwinMode <em>Darwin Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAiProviders <em>Ai Providers</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getServerSettings <em>Server Settings</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getServerSessions <em>Server Sessions</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMonitoringHistory <em>Monitoring History</em>}</li>
  * </ul>
  *
  * @generated
@@ -516,7 +522,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected eu.kalafatic.evolution.model.orchestration.ServerSettings serverSettings;
+	protected ServerSettings serverSettings;
 
 	/**
 	 * The cached value of the '{@link #getServerSessions() <em>Server Sessions</em>}' containment reference list.
@@ -526,7 +532,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<eu.kalafatic.evolution.model.orchestration.ServerSession> serverSessions;
+	protected EList<ServerSession> serverSessions;
 
 	/**
 	 * The cached value of the '{@link #getMonitoringHistory() <em>Monitoring History</em>}' containment reference list.
@@ -536,101 +542,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<eu.kalafatic.evolution.model.orchestration.MonitoringData> monitoringHistory;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public eu.kalafatic.evolution.model.orchestration.ServerSettings getServerSettings() {
-		return serverSettings;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetServerSettings(eu.kalafatic.evolution.model.orchestration.ServerSettings newServerSettings, NotificationChain msgs) {
-		eu.kalafatic.evolution.model.orchestration.ServerSettings oldServerSettings = serverSettings;
-		serverSettings = newServerSettings;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS, oldServerSettings, newServerSettings);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setServerSettings(eu.kalafatic.evolution.model.orchestration.ServerSettings newServerSettings) {
-		if (newServerSettings != serverSettings) {
-			NotificationChain msgs = null;
-			if (serverSettings != null)
-				msgs = ((InternalEObject)serverSettings).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS, null, msgs);
-			if (newServerSettings != null)
-				msgs = ((InternalEObject)newServerSettings).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS, null, msgs);
-			msgs = basicSetServerSettings(newServerSettings, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS, newServerSettings, newServerSettings));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EList<eu.kalafatic.evolution.model.orchestration.ServerSession> getServerSessions() {
-		if (serverSessions == null) {
-			serverSessions = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.ServerSession>(eu.kalafatic.evolution.model.orchestration.ServerSession.class, this, OrchestrationPackage.ORCHESTRATOR__SERVER_SESSIONS);
-		}
-		return serverSessions;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EList<eu.kalafatic.evolution.model.orchestration.MonitoringData> getMonitoringHistory() {
-		if (monitoringHistory == null) {
-			monitoringHistory = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.MonitoringData>(eu.kalafatic.evolution.model.orchestration.MonitoringData.class, this, OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY);
-		}
-		return monitoringHistory;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isDarwinMode() {
-		return darwinMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setDarwinMode(boolean newDarwinMode) {
-		boolean oldDarwinMode = darwinMode;
-		darwinMode = newDarwinMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE, oldDarwinMode, darwinMode));
-	}
+	protected EList<MonitoringData> monitoringHistory;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1490,11 +1402,105 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
+	public boolean isDarwinMode() {
+		return darwinMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setDarwinMode(boolean newDarwinMode) {
+		boolean oldDarwinMode = darwinMode;
+		darwinMode = newDarwinMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE, oldDarwinMode, darwinMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EList<AIProvider> getAiProviders() {
 		if (aiProviders == null) {
 			aiProviders = new EObjectContainmentEList<AIProvider>(AIProvider.class, this, OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS);
 		}
 		return aiProviders;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ServerSettings getServerSettings() {
+		return serverSettings;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetServerSettings(ServerSettings newServerSettings, NotificationChain msgs) {
+		ServerSettings oldServerSettings = serverSettings;
+		serverSettings = newServerSettings;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS, oldServerSettings, newServerSettings);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setServerSettings(ServerSettings newServerSettings) {
+		if (newServerSettings != serverSettings) {
+			NotificationChain msgs = null;
+			if (serverSettings != null)
+				msgs = ((InternalEObject)serverSettings).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS, null, msgs);
+			if (newServerSettings != null)
+				msgs = ((InternalEObject)newServerSettings).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS, null, msgs);
+			msgs = basicSetServerSettings(newServerSettings, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS, newServerSettings, newServerSettings));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<ServerSession> getServerSessions() {
+		if (serverSessions == null) {
+			serverSessions = new EObjectContainmentEList<ServerSession>(ServerSession.class, this, OrchestrationPackage.ORCHESTRATOR__SERVER_SESSIONS);
+		}
+		return serverSessions;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<MonitoringData> getMonitoringHistory() {
+		if (monitoringHistory == null) {
+			monitoringHistory = new EObjectContainmentEList<MonitoringData>(MonitoringData.class, this, OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY);
+		}
+		return monitoringHistory;
 	}
 
 	/**
@@ -1722,15 +1728,15 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				getAiProviders().addAll((Collection<? extends AIProvider>)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS:
-				setServerSettings((eu.kalafatic.evolution.model.orchestration.ServerSettings)newValue);
+				setServerSettings((ServerSettings)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__SERVER_SESSIONS:
 				getServerSessions().clear();
-				getServerSessions().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.ServerSession>)newValue);
+				getServerSessions().addAll((Collection<? extends ServerSession>)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				getMonitoringHistory().clear();
-				getMonitoringHistory().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.MonitoringData>)newValue);
+				getMonitoringHistory().addAll((Collection<? extends MonitoringData>)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -1832,7 +1838,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				getAiProviders().clear();
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS:
-				setServerSettings((eu.kalafatic.evolution.model.orchestration.ServerSettings)null);
+				setServerSettings((ServerSettings)null);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__SERVER_SESSIONS:
 				getServerSessions().clear();

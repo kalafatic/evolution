@@ -38,7 +38,7 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class ModelsGroup extends AEvoGroup {
 
-    private TableViewer tableViewer;
+    private TableViewer viewer;
     private List<ModelItem> modelItems = new ArrayList<>();
     
 
@@ -78,75 +78,19 @@ public class ModelsGroup extends AEvoGroup {
         group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         ((GridData)group.getLayoutData()).heightHint = 250;
 
-        tableViewer = new TableViewer(group, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
-        Table table = tableViewer.getTable();
+        viewer = new TableViewer(group, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
+        Table table = viewer.getTable();
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
         table.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         createColumns();
 
-        tableViewer.setContentProvider(ArrayContentProvider.getInstance());
+        viewer.setContentProvider(ArrayContentProvider.getInstance());
 
-        Composite buttonBar = toolkit.createComposite(group);
-        buttonBar.setLayout(new GridLayout(6, false));
-        buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
-
-        Button testButton = toolkit.createButton(buttonBar, "Test Model", SWT.PUSH);
-        testButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleTestModel();
-            }
-        });
-
-        Button addButton = toolkit.createButton(buttonBar, "Add", SWT.PUSH);
-        addButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleAddModel();
-            }
-        });
-
-        Button downloadButton = toolkit.createButton(buttonBar, "Download", SWT.PUSH);
-        downloadButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleDownloadModel();
-            }
-        });
-
-        Button editButton = toolkit.createButton(buttonBar, "Edit", SWT.PUSH);
-        editButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleEditModel();
-            }
-        });
-
-        Button removeButton = toolkit.createButton(buttonBar, "Remove", SWT.PUSH);
-        removeButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleRemoveModel();
-            }
-        });
-
-        Button saveButton = toolkit.createButton(buttonBar, "Save to Model", SWT.PUSH);
-        saveButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                editor.doSave(null);
-            }
-        });
-
-        Button reloadButton = toolkit.createButton(buttonBar, "Reload", SWT.PUSH);
-        reloadButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                refreshUI();
-            }
-        });
+        createButtons(toolkit);
+        
+        load();
 
         group.addDisposeListener(e -> {
             if (lightGreen != null && !lightGreen.isDisposed()) lightGreen.dispose();
@@ -155,8 +99,70 @@ public class ModelsGroup extends AEvoGroup {
         });
     }
 
+	public void createButtons(FormToolkit toolkit) {
+		Composite buttonBar = toolkit.createComposite(group);
+        buttonBar.setLayout(new GridLayout(7, false));
+        buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
+        
+        Button reloadButton = SWTFactory.createButton(buttonBar, "Reload");
+        reloadButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                refreshUI();
+            }
+        });
+
+        Button testButton = SWTFactory.createButton(buttonBar, "Test Model");
+        testButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleTestModel();
+            }
+        });
+
+        Button addButton = SWTFactory.createButton(buttonBar, "Add");
+        addButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleAddModel();
+            }
+        });
+
+        Button downloadButton = SWTFactory.createButton(buttonBar, "Download");
+        downloadButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleDownloadModel();
+            }
+        });
+
+        Button editButton = SWTFactory.createButton(buttonBar, "Edit");
+        editButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleEditModel();
+            }
+        });
+
+        Button removeButton = SWTFactory.createButton(buttonBar, "Remove");
+        removeButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleRemoveModel();
+            }
+        });
+
+        Button saveButton = SWTFactory.createButton(buttonBar, "Save to Model");
+        saveButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                editor.doSave(null);
+            }
+        });
+	}
+
     private void createColumns() {
-        String[] titles = { "State", "Name", "Local", "Path/URL", "Token", "Rating (A/CH/P)" };
+        String[] titles = { "State", "Name", "Type", "Path/URL", "Token", "Rating (A/CH/P)" };
         int[] bounds = { 60, 150, 60, 250, 80, 120 };
 
         // State
@@ -179,7 +185,7 @@ public class ModelsGroup extends AEvoGroup {
                 return null;
             }
         });
-        org.eclipse.jface.viewers.ColumnViewerToolTipSupport.enableFor(tableViewer);
+        org.eclipse.jface.viewers.ColumnViewerToolTipSupport.enableFor(viewer);
 
         // Token
         TableViewerColumn colToken = createTableViewerColumn(titles[4], bounds[4]);
@@ -221,7 +227,7 @@ public class ModelsGroup extends AEvoGroup {
         colLocal.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return String.valueOf(((ModelItem) element).local);
+                return (((ModelItem) element).local) ? "Local" : "Remote";
             }
             @Override
             public Color getBackground(Object element) {
@@ -272,24 +278,24 @@ public class ModelsGroup extends AEvoGroup {
 
     private void setupSorting(TableViewerColumn colName, TableViewerColumn colState, TableViewerColumn colRating) {
         ModelComparator comparator = new ModelComparator();
-        tableViewer.setComparator(comparator);
+        viewer.setComparator(comparator);
 
         colName.getColumn().addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) {
                 comparator.setColumn(0);
-                tableViewer.refresh();
+                viewer.refresh();
             }
         });
         colState.getColumn().addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) {
                 comparator.setColumn(1);
-                tableViewer.refresh();
+                viewer.refresh();
             }
         });
         colRating.getColumn().addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) {
                 comparator.setColumn(2);
-                tableViewer.refresh();
+                viewer.refresh();
             }
         });
     }
@@ -332,7 +338,7 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private TableViewerColumn createTableViewerColumn(String title, int bound) {
-        TableViewerColumn viewerColumn = new TableViewerColumn(tableViewer, SWT.NONE);
+        TableViewerColumn viewerColumn = new TableViewerColumn(viewer, SWT.NONE);
         viewerColumn.getColumn().setText(title);
         viewerColumn.getColumn().setWidth(bound);
         viewerColumn.getColumn().setResizable(true);
@@ -406,7 +412,7 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleEditModel() {
-        IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
+        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
         if (selection.isEmpty()) return;
         ModelItem item = (ModelItem) selection.getFirstElement();
         if (item.local) {
@@ -440,7 +446,7 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleTestModel() {
-        IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
+        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
         if (selection.isEmpty()) return;
         ModelItem item = (ModelItem) selection.getFirstElement();
         if (item.provider == null) {
@@ -486,7 +492,7 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleRemoveModel() {
-        IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
+        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
         if (selection.isEmpty()) return;
         ModelItem item = (ModelItem) selection.getFirstElement();
 
@@ -538,8 +544,13 @@ public class ModelsGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (orchestrator == null) return;
+        
+        if (viewer == null || viewer.getControl().isDisposed()) return;
+	      viewer.refresh(); // ✅ safe        
+    }
 
-        final List<ModelItem> newItems = new ArrayList<>();
+	public void load() {
+		final List<ModelItem> newItems = new ArrayList<>();
         eu.kalafatic.evolution.controller.security.TokenSecurityService security =
                 eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance();
 
@@ -574,7 +585,7 @@ public class ModelsGroup extends AEvoGroup {
         }
 
         this.modelItems = newItems;
-        tableViewer.setInput(modelItems);
+        viewer.setInput(modelItems);
 
         // Load Local Models (asynchronously)
         String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
@@ -607,23 +618,23 @@ public class ModelsGroup extends AEvoGroup {
                 }
 
                 Display.getDefault().asyncExec(() -> {
-                    if (tableViewer.getTable().isDisposed()) return;
+                    if (viewer.getTable().isDisposed()) return;
                     // Check if we are still dealing with the same list to avoid race conditions
                     if (this.modelItems == newItems) {
                         newItems.addAll(localItems);
-                        tableViewer.refresh();
+                        viewer.refresh();
                     }
                 });
             } catch (Exception e) {
                 // If it fails, maybe Ollama is offline
                 Display.getDefault().asyncExec(() -> {
-                    if (tableViewer.getTable().isDisposed()) return;
+                    if (viewer.getTable().isDisposed()) return;
                     if (this.modelItems == newItems) {
                         newItems.add(new ModelItem(ModelState.ERR, "Ollama", true, ollamaUrl, null));
-                        tableViewer.refresh();
+                        viewer.refresh();
                     }
                 });
             }
         });
-    }
+	}
 }

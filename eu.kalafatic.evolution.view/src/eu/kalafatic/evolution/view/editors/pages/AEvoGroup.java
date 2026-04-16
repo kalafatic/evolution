@@ -12,6 +12,7 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
  * Abstract superclass for UI groups in Evolution Editor pages.
  */
 public abstract class AEvoGroup {
+
     protected Composite group;
     protected MultiPageEditor editor;
     protected Orchestrator orchestrator;
@@ -22,9 +23,9 @@ public abstract class AEvoGroup {
         this.editor = editor;
         this.orchestrator = orchestrator;
         
-        this.lightGreen = new Color(Display.getDefault(), 220, 255, 220);
-        this.lightRed = new Color(Display.getDefault(), 255, 220, 220);
-        this.lightOrange = new Color(Display.getDefault(), 255, 240, 200);
+        this.lightGreen = editor.getLightGreen();
+        this.lightRed = editor.getLightRed();
+        this.lightOrange = editor.getLightOrange();
     }
 
     /**

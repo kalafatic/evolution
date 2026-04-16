@@ -62,7 +62,28 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Reference eclipse : Eclipse
     Attribute iterativeMode : EBoolean
     Attribute selfIterativeMode : EBoolean
+    Attribute darwinMode : EBoolean
     Reference aiProviders : AIProvider<<0..*>>
+    Reference serverSettings : ServerSettings
+    Reference serverSessions : ServerSession<<0..*>>
+    Reference monitoringHistory : MonitoringData<<0..*>>
+
+  Class ServerSettings
+    Attribute port : EInt
+    Attribute autoStart : EBoolean
+
+  Class ServerSession
+    Attribute id : EString
+    Attribute type : SessionType
+    Attribute startTime : ELong
+    Attribute lastActivity : ELong
+    Attribute clientIp : EString
+
+  Class MonitoringData
+    Attribute timestamp : ELong
+    Attribute cpuUsage : EDouble
+    Attribute memoryUsage : ELong
+    Attribute totalMemory : ELong
 
   Class AIProvider
     Attribute name : EString
@@ -253,6 +274,10 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Literal DONE = 2
     Literal FAILED = 3
     Literal WAITING_FOR_APPROVAL = 4
+
+  Enum SessionType
+    Literal HTTPD = 0
+    Literal UI = 1
 
   Enum CommandStatus
     Literal PENDING = 0

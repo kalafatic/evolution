@@ -59,12 +59,16 @@ public class SessionsGroup extends AToolGroup {
         viewer = new TableViewer(table);
         viewer.setContentProvider(ArrayContentProvider.getInstance());
         viewer.setLabelProvider(new SessionLabelProvider());
+        
+      if (orchestrator == null) return;
+        viewer.setInput(orchestrator.getServerSessions());
     }
 
     @Override
     protected void refreshUI() {
-        if (orchestrator == null) return;
-        viewer.setInput(orchestrator.getServerSessions());
+    	 if (viewer == null || viewer.getControl().isDisposed()) return;
+    	    viewer.refresh(); // ✅ safe
+    	
     }
 
     @Override

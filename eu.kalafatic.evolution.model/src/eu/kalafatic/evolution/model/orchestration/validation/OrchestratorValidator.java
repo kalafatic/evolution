@@ -14,9 +14,12 @@ import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
+import eu.kalafatic.evolution.model.orchestration.MonitoringData;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
+import eu.kalafatic.evolution.model.orchestration.ServerSession;
+import eu.kalafatic.evolution.model.orchestration.ServerSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
 
@@ -58,5 +61,9 @@ public interface OrchestratorValidator {
 	boolean validateEclipse(Eclipse value);
 	boolean validateIterativeMode(boolean value);
 	boolean validateSelfIterativeMode(boolean value);
+	boolean validateDarwinMode(boolean value);
 	boolean validateAiProviders(EList<AIProvider> value);
+	boolean validateServerSettings(ServerSettings value);
+	boolean validateServerSessions(EList<ServerSession> value);
+	boolean validateMonitoringHistory(EList<MonitoringData> value);
 }

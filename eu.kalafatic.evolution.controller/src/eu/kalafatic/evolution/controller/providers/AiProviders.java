@@ -37,23 +37,6 @@ public class AiProviders {
                 "gemini-1.5-pro"
         ));
 
-        PROVIDERS.put("mistral", new ProviderConfig(
-                "mistral",
-                "https://api.mistral.ai/v1/chat/completions",
-                "YOUR_API_KEY",
-                "openai",
-                false,
-                "mistral-large-latest"
-        ));
-
-        PROVIDERS.put("cohere", new ProviderConfig(
-                "cohere",
-                "https://api.cohere.ai/v1/chat",
-                "YOUR_API_KEY",
-                "cohere",
-                false,
-                "command-r-plus"
-        ));
 
         PROVIDERS.put("deepseek", new ProviderConfig(
                 "deepseek",
@@ -72,33 +55,7 @@ public class AiProviders {
                 false,
                 "llama-3.1-70b-versatile"
         ));
-
-        PROVIDERS.put("openrouter", new ProviderConfig(
-                "openrouter",
-                "https://openrouter.ai/api/v1/chat/completions",
-                "YOUR_API_KEY",
-                "openai",
-                false,
-                "meta-llama/llama-3.1-405b"
-        ));
-
-        PROVIDERS.put("perplexity", new ProviderConfig(
-                "perplexity",
-                "https://api.perplexity.ai/chat/completions",
-                "YOUR_API_KEY",
-                "openai",
-                false,
-                "llama-3.1-sonar-large-128k-online"
-        ));
-
-        PROVIDERS.put("xai", new ProviderConfig(
-                "xai",
-                "https://api.x.ai/v1/chat/completions",
-                "YOUR_API_KEY",
-                "openai",
-                false,
-                "grok-beta"
-        ));
+       
 
         // LOCAL example (important for your architecture)
         PROVIDERS.put("ollama", new ProviderConfig(

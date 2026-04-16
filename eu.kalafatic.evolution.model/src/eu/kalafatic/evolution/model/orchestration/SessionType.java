@@ -205,5 +205,5 @@ public enum SessionType implements Enumerator {
 	public String toString() {
 		return literal;
 	}
-
+	
 } //SessionType

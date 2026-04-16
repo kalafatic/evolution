@@ -14,6 +14,10 @@
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/FAILED"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/WAITING_FOR_APPROVAL"/>
     </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//SessionType">
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SessionType/HTTPD"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SessionType/UI"/>
+    </genEnums>
     <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//CommandStatus">
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//CommandStatus/PENDING"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//CommandStatus/RUNNING"/>
@@ -121,7 +125,28 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/eclipse"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/iterativeMode"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/selfIterativeMode"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/darwinMode"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/aiProviders"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/serverSettings"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/serverSessions"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/monitoringHistory"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//ServerSettings">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/port"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/autoStart"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//ServerSession">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSession/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSession/type"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSession/startTime"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSession/lastActivity"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSession/clientIp"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//MonitoringData">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//MonitoringData/timestamp"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//MonitoringData/cpuUsage"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//MonitoringData/memoryUsage"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//MonitoringData/totalMemory"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//AIProvider">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AIProvider/name"/>

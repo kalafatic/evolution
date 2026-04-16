@@ -29,8 +29,38 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat Management", 5, false);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat Management", 7, false);
+       
+        
+        Button newThreadButton = SWTFactory.createButton(group, "New Thread");
+        newThreadButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.createNewThread();
+            }
+        });
 
+
+        SWTFactory.createLabel(group, "Select Thread:");
+        threadCombo = SWTFactory.createCombo(group);
+        threadCombo.add(page.getCurrentThreadName());
+        threadCombo.select(0);
+        threadCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.switchThread(threadCombo.getText());
+            }
+        });
+
+       
+        Button byDateButton = SWTFactory.createButton(group, "By Date");
+        byDateButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.selectThreadByDate();
+            }
+        });
+        
         Button cleanButton = SWTFactory.createButton(group, "Clean");
         cleanButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -52,33 +82,6 @@ public class ChatMgmtGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.copyConversationToClipboard();
-            }
-        });
-
-        SWTFactory.createLabel(group, "Select Thread:");
-        threadCombo = SWTFactory.createCombo(group);
-        threadCombo.add(page.getCurrentThreadName());
-        threadCombo.select(0);
-        threadCombo.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.switchThread(threadCombo.getText());
-            }
-        });
-
-        Button newThreadButton = SWTFactory.createButton(group, "New Thread");
-        newThreadButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.createNewThread();
-            }
-        });
-
-        Button byDateButton = SWTFactory.createButton(group, "By Date");
-        byDateButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.selectThreadByDate();
             }
         });
     }
