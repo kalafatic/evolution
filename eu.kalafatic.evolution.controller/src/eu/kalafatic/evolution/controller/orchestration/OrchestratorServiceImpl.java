@@ -44,6 +44,12 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     }
                 }
 
+                // Override model if provided in request
+                String requestedModel = (String) request.getContext().get("model");
+                if (requestedModel != null && !requestedModel.isEmpty()) {
+                    orchModel.getOllama().setModel(requestedModel);
+                }
+
                 TaskContext context = new TaskContext(orchModel, request.getProjectRoot());
                 context.setThreadId(taskId);
                 contexts.put(taskId, context);
@@ -64,13 +70,27 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
                 // Git Integration: Branching
                 GitTool gitTool = new GitTool();
-                String branchName = "evo-" + taskId.substring(0, 8);
+                String requestedBranch = (String) request.getContext().get("branch");
+                String branchName = (requestedBranch != null && !requestedBranch.isEmpty()) ?
+                                     requestedBranch : "evo-" + taskId.substring(0, 8);
+
                 try {
-                    context.log("GIT: Creating branch " + branchName);
                     eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
-                    shell.execute("git checkout -b " + branchName, request.getProjectRoot(), context);
+
+                    if (requestedBranch != null && !requestedBranch.isEmpty()) {
+                        context.log("GIT: Checking out existing branch " + branchName);
+                        try {
+                            shell.execute("git checkout " + branchName, request.getProjectRoot(), context);
+                        } catch (Exception e) {
+                            context.log("GIT: Branch " + branchName + " not found, creating it.");
+                            shell.execute("git checkout -b " + branchName, request.getProjectRoot(), context);
+                        }
+                    } else {
+                        context.log("GIT: Creating new branch " + branchName);
+                        shell.execute("git checkout -b " + branchName, request.getProjectRoot(), context);
+                    }
                 } catch (Exception e) {
-                    context.log("GIT WARNING: Could not create branch: " + e.getMessage());
+                    context.log("GIT WARNING: Could not manage branch: " + e.getMessage());
                 }
 
                 String response = orchestrator.execute(request.getPrompt(), context);
