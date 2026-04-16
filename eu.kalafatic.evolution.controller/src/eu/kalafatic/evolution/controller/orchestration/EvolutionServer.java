@@ -16,6 +16,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
+import eu.kalafatic.evolution.controller.manager.OllamaModel;
+import eu.kalafatic.evolution.controller.tools.GitTool;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.nio.file.Files;
@@ -73,6 +75,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleListFiles(session);
             } else if (Method.POST.equals(method) && "/workspace/applyPatch".equals(uri)) {
                 return handleApplyPatch(session);
+            } else if (Method.GET.equals(method) && "/git/branches".equals(uri)) {
+                return handleGetGitBranches(session);
             }
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
@@ -91,6 +95,13 @@ public class EvolutionServer extends NanoHTTPD {
         TaskRequest request = new TaskRequest();
         request.setPrompt(json.getString("prompt"));
         request.setProjectRoot(new File(json.optString("projectRoot", System.getProperty("user.dir"))));
+
+        if (json.has("model")) {
+            request.getContext().put("model", json.getString("model"));
+        }
+        if (json.has("branch")) {
+            request.getContext().put("branch", json.getString("branch"));
+        }
 
         TaskResult result = OrchestratorServiceImpl.getInstance().execute(request);
         return newFixedLengthResponse(Response.Status.OK, "application/json",
@@ -286,11 +297,22 @@ public class EvolutionServer extends NanoHTTPD {
         // Ollama Status
         JSONObject ollamaStatus = new JSONObject();
         String ollamaUrl = "http://localhost:11434"; // Default
-        OllamaService ollama = new OllamaService(ollamaUrl, "llama3.2:3b");
+
+        // Try to get available models to avoid hardcoded default if it's missing
+        OllamaService ollama = new OllamaService(ollamaUrl, null);
         boolean ollamaOnline = ollama.ping();
         ollamaStatus.put("online", ollamaOnline);
         ollamaStatus.put("url", ollamaUrl);
         ollamaStatus.put("version", ollamaOnline ? ollama.getVersion() : "N/A");
+
+        JSONArray modelsArray = new JSONArray();
+        if (ollamaOnline) {
+            List<OllamaModel> models = ollama.loadModels();
+            for (OllamaModel m : models) {
+                modelsArray.put(new JSONObject().put("name", m.getName()).put("size", m.getSize()));
+            }
+        }
+        ollamaStatus.put("models", modelsArray);
         status.put("ollama", ollamaStatus);
 
         // Sessions
@@ -319,6 +341,22 @@ public class EvolutionServer extends NanoHTTPD {
         status.put("port", getListeningPort());
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", status.toString());
+    }
+
+    private Response handleGetGitBranches(IHTTPSession session) {
+        String rootParam = session.getParms().get("root");
+        File root = new File(rootParam != null ? rootParam : System.getProperty("user.dir"));
+
+        if (!isPathSafe(root)) {
+            return newFixedLengthResponse(Response.Status.FORBIDDEN, "application/json",
+                new JSONObject().put("error", "Access denied: Root directory is outside allowed scope.").toString());
+        }
+
+        GitTool gitTool = new GitTool();
+        List<String> branches = gitTool.getBranches(root);
+        JSONArray array = new JSONArray(branches);
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
     }
 
     public static void main(String[] args) {

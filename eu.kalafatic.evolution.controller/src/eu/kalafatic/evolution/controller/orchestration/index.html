@@ -40,9 +40,12 @@
         }
 
         #header {
-            height: 60px; background: white; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; padding: 0 20px; justify-content: space-between;
+            height: auto; min-height: 60px; background: white; border-bottom: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 10px 20px;
         }
+
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
+        .header-bottom { display: flex; gap: 15px; align-items: center; width: 100%; font-size: 13px; }
 
         .server-badges { display: flex; gap: 10px; }
 
@@ -91,10 +94,31 @@
 
     <div id="main-content">
         <div id="header">
-            <div style="font-weight: bold;">Current Task: New Orchestration</div>
-            <div class="server-badges">
-                <div id="ollama-status" class="status-badge">OLLAMA ...</div>
-                <div class="status-badge status-online">SERVER ONLINE</div>
+            <div class="header-top">
+                <div style="font-weight: bold;">Current Task: New Orchestration</div>
+                <div class="server-badges">
+                    <div id="ollama-status" class="status-badge">OLLAMA ...</div>
+                    <div class="status-badge status-online">SERVER ONLINE</div>
+                </div>
+            </div>
+            <div class="header-bottom">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label for="model-select">🤖 Model:</label>
+                    <select id="model-select" style="padding: 4px; border-radius: 4px; border: 1px solid var(--border); min-width: 120px;">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label for="branch-select">🌿 Branch:</label>
+                    <select id="branch-select" style="padding: 4px; border-radius: 4px; border: 1px solid var(--border); min-width: 120px;">
+                        <option value="">Auto-create</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px; margin-left: auto;">
+                    <label for="root-input">📁 Root:</label>
+                    <input type="text" id="root-input" placeholder="Project Root Path" style="padding: 4px; border-radius: 4px; border: 1px solid var(--border); width: 200px;">
+                    <button onclick="refreshBranches()" style="padding: 4px 8px; font-size: 12px; border-radius: 4px; background: #e2e8f0; border: none; cursor: pointer;">Refresh</button>
+                </div>
             </div>
         </div>
 
@@ -127,14 +151,23 @@
             const text = userInput.value.trim();
             if (!text) return;
 
-            appendMessage('user', text);
+            const model = document.getElementById('model-select').value;
+            const branch = document.getElementById('branch-select').value;
+            const root = document.getElementById('root-input').value;
+
+            appendMessage('user', text + (branch ? ` [Branch: ${branch}]` : ''));
             userInput.value = '';
 
             try {
+                const payload = { prompt: text };
+                if (model) payload.model = model;
+                if (branch) payload.branch = branch;
+                if (root) payload.projectRoot = root;
+
                 const response = await fetch('/task', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: text })
+                    body: JSON.stringify(payload)
                 });
                 const data = await response.json();
                 currentTaskId = data.id;
@@ -148,11 +181,33 @@
             try {
                 const response = await fetch('/server/status');
                 const data = await response.json();
+
+                // Update Badge
                 const ollamaBadge = document.getElementById('ollama-status');
                 if (data.ollama && data.ollama.online) {
                     ollamaBadge.innerText = 'OLLAMA ONLINE';
                     ollamaBadge.style.background = '#dcfce7';
                     ollamaBadge.style.color = '#166534';
+
+                    // Update Model Selection if empty or "Loading..."
+                    const modelSelect = document.getElementById('model-select');
+                    if (data.ollama.models && data.ollama.models.length > 0) {
+                        const currentVal = modelSelect.value;
+                        if (!currentVal || modelSelect.options[0].text === 'Loading...') {
+                            modelSelect.innerHTML = '';
+                            data.ollama.models.forEach(m => {
+                                const opt = document.createElement('option');
+                                opt.value = m.name;
+                                opt.text = m.name;
+                                modelSelect.appendChild(opt);
+                            });
+                            if (currentVal && Array.from(modelSelect.options).some(o => o.value === currentVal)) {
+                                modelSelect.value = currentVal;
+                            }
+                        }
+                    } else if (modelSelect.options[0].text === 'Loading...') {
+                        modelSelect.innerHTML = '<option value="">No models found</option>';
+                    }
                 } else {
                     ollamaBadge.innerText = 'OLLAMA OFFLINE';
                     ollamaBadge.style.background = '#fee2e2';
@@ -162,8 +217,37 @@
                 console.error('Failed to poll server status:', err);
             }
         }
+
+        async function refreshBranches() {
+            const root = document.getElementById('root-input').value;
+            const branchSelect = document.getElementById('branch-select');
+            branchSelect.innerHTML = '<option value="">Loading...</option>';
+
+            try {
+                let url = '/git/branches';
+                if (root) url += '?root=' + encodeURIComponent(root);
+
+                const response = await fetch(url);
+                const branches = await response.json();
+
+                branchSelect.innerHTML = '<option value="">Auto-create / Default</option>';
+                if (Array.isArray(branches)) {
+                    branches.forEach(b => {
+                        const opt = document.createElement('option');
+                        opt.value = b;
+                        opt.text = b;
+                        branchSelect.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to fetch branches:', err);
+                branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+            }
+        }
+
         setInterval(pollServerStatus, 5000);
         pollServerStatus();
+        refreshBranches();
 
         async function pollTask(id) {
             const interval = setInterval(async () => {
