@@ -42,6 +42,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getEclipse <em>Eclipse</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isIterativeMode <em>Iterative Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isSelfIterativeMode <em>Self Iterative Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isDarwinMode <em>Darwin Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getAiProviders <em>Ai Providers</em>}</li>
  * </ul>
  *
@@ -619,6 +620,29 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	void setSelfIterativeMode(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Darwin Mode</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Darwin Mode</em>' attribute.
+	 * @see #setDarwinMode(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_DarwinMode()
+	 * @model default="false"
+	 * @generated
+	 */
+	boolean isDarwinMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isDarwinMode <em>Darwin Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Darwin Mode</em>' attribute.
+	 * @see #isDarwinMode()
+	 * @generated
+	 */
+	void setDarwinMode(boolean value);
 
 	/**
 	 * Returns the value of the '<em><b>Ai Providers</b></em>' containment reference list.
