@@ -26,7 +26,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are a workflow planner for an agentic system (Jules).\n" +
+        return "You are a workflow planner for an agentic system (Evo).\n" +
                 "IMPORTANT: You only receive requests that have been classified as ACTION_REQUEST.\n\n" +
                 "PLANNING RULES:\n" +
                 "- NEVER invent domain data (e.g. if user says 'create file', don't assume a filename if not provided).\n" +

@@ -478,26 +478,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
 
 	/**
-	 * The default value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isDarwinMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final boolean DARWIN_MODE_EDEFAULT = false;
-
-	/**
-	 * The cached value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isDarwinMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean darwinMode = DARWIN_MODE_EDEFAULT;
-
-	/**
 	 * The cached value of the '{@link #getAiProviders() <em>Ai Providers</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -506,29 +486,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected EList<AIProvider> aiProviders;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isDarwinMode() {
-		return darwinMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setDarwinMode(boolean newDarwinMode) {
-		boolean oldDarwinMode = darwinMode;
-		darwinMode = newDarwinMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE, oldDarwinMode, darwinMode));
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1499,8 +1456,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return isIterativeMode();
 			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
 				return isSelfIterativeMode();
-			case OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE:
-				return isDarwinMode();
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
 				return getAiProviders();
 		}
@@ -1600,9 +1555,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
 				setSelfIterativeMode((Boolean)newValue);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE:
-				setDarwinMode((Boolean)newValue);
-				return;
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
 				getAiProviders().clear();
 				getAiProviders().addAll((Collection<? extends AIProvider>)newValue);
@@ -1700,9 +1652,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
 				setSelfIterativeMode(SELF_ITERATIVE_MODE_EDEFAULT);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE:
-				setDarwinMode(DARWIN_MODE_EDEFAULT);
-				return;
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
 				getAiProviders().clear();
 				return;
@@ -1772,8 +1721,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return iterativeMode != ITERATIVE_MODE_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
 				return selfIterativeMode != SELF_ITERATIVE_MODE_EDEFAULT;
-			case OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE:
-				return darwinMode != DARWIN_MODE_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
 				return aiProviders != null && !aiProviders.isEmpty();
 		}
@@ -1816,8 +1763,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		result.append(iterativeMode);
 		result.append(", selfIterativeMode: ");
 		result.append(selfIterativeMode);
-		result.append(", darwinMode: ");
-		result.append(darwinMode);
 		result.append(')');
 		return result.toString();
 	}

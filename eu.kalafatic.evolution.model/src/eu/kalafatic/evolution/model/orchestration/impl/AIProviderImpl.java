@@ -345,75 +345,6 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@Override
-	public int getRatingAnalyze() {
-		return ratingAnalyze;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setRatingAnalyze(int newRatingAnalyze) {
-		int oldRatingAnalyze = ratingAnalyze;
-		ratingAnalyze = newRatingAnalyze;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING_ANALYZE, oldRatingAnalyze, ratingAnalyze));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public int getRatingChat() {
-		return ratingChat;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setRatingChat(int newRatingChat) {
-		int oldRatingChat = ratingChat;
-		ratingChat = newRatingChat;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING_CHAT, oldRatingChat, ratingChat));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public int getRatingProgramming() {
-		return ratingProgramming;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setRatingProgramming(int newRatingProgramming) {
-		int oldRatingProgramming = ratingProgramming;
-		ratingProgramming = newRatingProgramming;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING_PROGRAMMING, oldRatingProgramming, ratingProgramming));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	protected AIProviderImpl() {
 		super();
 	}
@@ -702,6 +633,75 @@ public class AIProviderImpl extends MinimalEObjectImpl.Container implements AIPr
 		rating = newRating;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING, oldRating, rating));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getRatingAnalyze() {
+		return ratingAnalyze;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRatingAnalyze(int newRatingAnalyze) {
+		int oldRatingAnalyze = ratingAnalyze;
+		ratingAnalyze = newRatingAnalyze;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING_ANALYZE, oldRatingAnalyze, ratingAnalyze));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getRatingChat() {
+		return ratingChat;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRatingChat(int newRatingChat) {
+		int oldRatingChat = ratingChat;
+		ratingChat = newRatingChat;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING_CHAT, oldRatingChat, ratingChat));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getRatingProgramming() {
+		return ratingProgramming;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRatingProgramming(int newRatingProgramming) {
+		int oldRatingProgramming = ratingProgramming;
+		ratingProgramming = newRatingProgramming;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_PROVIDER__RATING_PROGRAMMING, oldRatingProgramming, ratingProgramming));
 	}
 
 	/**

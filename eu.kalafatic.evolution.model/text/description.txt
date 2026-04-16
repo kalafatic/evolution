@@ -77,6 +77,9 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute state : EString
     Attribute stateDescription : EString
     Attribute rating : EInt
+    Attribute ratingAnalyze : EInt
+    Attribute ratingChat : EInt
+    Attribute ratingProgramming : EInt
 
   Class Git
     Attribute repositoryUrl : EString
@@ -117,6 +120,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute token : EString
     Attribute prompt : EString
     Attribute proxyUrl : EString
+    Reference threads : ChatThread<<0..*>>
 
   Class NeuronAI
     Attribute url : EString
@@ -228,6 +232,20 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Reference changeSet : ChangeSet
     Reference comments : Comment<<0..*>>
     Attribute decision : ReviewDecision
+
+  Class ChatThread
+    Attribute id : EString
+    Reference messages : ChatMessage<<0..*>>
+
+  Class ChatMessage
+    Attribute index : EInt
+    Attribute sender : EString
+    Attribute text : EString
+    Attribute color : EString
+    Attribute isBold : EBoolean
+    Attribute isItalic : EBoolean
+    Attribute agentType : EString
+    Attribute timestamp : EString
 
   Enum TaskStatus
     Literal PENDING = 0

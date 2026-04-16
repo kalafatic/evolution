@@ -6,10 +6,10 @@ import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
-import eu.kalafatic.evolution.model.orchestration.ChatMessage;
-import eu.kalafatic.evolution.model.orchestration.ChatThread;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.ChangeSet;
+import eu.kalafatic.evolution.model.orchestration.ChatMessage;
+import eu.kalafatic.evolution.model.orchestration.ChatThread;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
 import eu.kalafatic.evolution.model.orchestration.Comment;
@@ -132,28 +132,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public ChatThread createChatThread() {
-		ChatThreadImpl chatThread = new ChatThreadImpl();
-		return chatThread;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public ChatMessage createChatMessage() {
-		ChatMessageImpl chatMessage = new ChatMessageImpl();
-		return chatMessage;
 	}
 
 	/**
@@ -539,6 +517,28 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public ReviewSession createReviewSession() {
 		ReviewSessionImpl reviewSession = new ReviewSessionImpl();
 		return reviewSession;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ChatThread createChatThread() {
+		ChatThreadImpl chatThread = new ChatThreadImpl();
+		return chatThread;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ChatMessage createChatMessage() {
+		ChatMessageImpl chatMessage = new ChatMessageImpl();
+		return chatMessage;
 	}
 
 	/**
