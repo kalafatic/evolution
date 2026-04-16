@@ -7,6 +7,7 @@ import org.json.JSONObject;
 
 /**
  * Structured conversation state to maintain persistent intent across turns.
+ * Supports thread-scoped storage in shared memory.
  */
 public class ConversationState {
     private String goal = "";
@@ -75,5 +76,39 @@ public class ConversationState {
             // Log error and return empty state
         }
         return state;
+    }
+
+    /**
+     * Loads the state for a specific thread from shared memory.
+     */
+    public static ConversationState load(String sharedMemory, String threadId) {
+        if (sharedMemory == null || sharedMemory.isEmpty()) return new ConversationState();
+        try {
+            JSONObject allStates = new JSONObject(sharedMemory);
+            if (allStates.has(threadId)) {
+                return fromJSON(allStates.getJSONObject(threadId).toString());
+            }
+        } catch (Exception e) {
+            // If sharedMemory is not a JSON object, it might be the old raw format
+            // In that case, we return an empty state or try to parse it if it looks like JSON
+            if (sharedMemory.trim().startsWith("{")) {
+                return fromJSON(sharedMemory);
+            }
+        }
+        return new ConversationState();
+    }
+
+    /**
+     * Saves the current state for a specific thread into shared memory.
+     */
+    public static String save(String sharedMemory, String threadId, ConversationState state) {
+        JSONObject allStates;
+        try {
+            allStates = new JSONObject(sharedMemory);
+        } catch (Exception e) {
+            allStates = new JSONObject();
+        }
+        allStates.put(threadId, state.toJSON());
+        return allStates.toString();
     }
 }

@@ -13,7 +13,7 @@ public class LlmIntentClassifier implements IIntentClassifier {
     @Override
     public JSONObject classify(String input, TaskContext context) throws Exception {
         Orchestrator orchestrator = context.getOrchestrator();
-        ConversationState state = ConversationState.fromJSON(context.getSharedMemory());
+        ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
 
         StringBuilder sb = new StringBuilder();
         sb.append("You are an Intent Gate for an AI Orchestration system.\n");

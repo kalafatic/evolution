@@ -79,7 +79,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             context.log("Evo-Orchestrator-Initialization: Starting request - " + request);
 
             // 1. Manage Conversation State
-            ConversationState state = ConversationState.fromJSON(context.getSharedMemory());
+            ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
             state.addMessage("User: " + request);
 
             // 2. Intent Gate + Policy Engine
@@ -92,7 +92,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             if (policyResponse != null) {
                 context.log("Evo-Orchestrator-Policy: Action blocked or handled directly.");
                 state.addMessage("Evo: " + policyResponse);
-                context.getOrchestrator().setSharedMemory(state.toJSON().toString());
+                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
                 return policyResponse;
             }
 
@@ -103,7 +103,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             } else if (state.getGoal().isEmpty()) {
                 state.setGoal(request);
             }
-            context.getOrchestrator().setSharedMemory(state.toJSON().toString());
+            context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
 
             // 4. Continuation Logic
             if ("continue".equals(intent) && !context.getOrchestrator().getTasks().isEmpty()) {
@@ -238,7 +238,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
             }
 
             updateStatus(context, 1.0, "Completed");
-            return lastResult != null && !lastResult.isEmpty() ? lastResult : "Orchestration successful.";
+            String finalResponse = lastResult != null && !lastResult.isEmpty() ? lastResult : "Orchestration successful.";
+            state.addMessage("Evo: " + finalResponse);
+            context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
+            return finalResponse;
         } catch (Exception e) {
             context.log("Evo-Orchestrator-Error: " + e.getMessage());
             throw e;
