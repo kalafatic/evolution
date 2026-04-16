@@ -305,6 +305,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
 				File projectRoot = getProjectRoot();
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
+				context.setThreadId(getCurrentThreadName());
 				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
 				this.currentContext = context;
 				Display.getDefault().asyncExec(() -> editor.setCurrentContext(context));
@@ -501,6 +502,7 @@ public class AiChatPage extends SharedScrolledComposite {
 			try {
 				File projectRoot = getProjectRoot();
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
+				context.setThreadId(getCurrentThreadName());
 				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
 				this.currentContext = context;
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) processLogEntry(log); }));

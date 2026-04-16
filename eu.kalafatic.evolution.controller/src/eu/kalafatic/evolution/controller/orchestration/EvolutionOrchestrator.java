@@ -77,28 +77,61 @@ public class EvolutionOrchestrator implements IOrchestrator {
         try {
             context.setCurrentTaskName("Initialization");
             context.log("Evo-Orchestrator-Initialization: Starting request - " + request);
-            context.appendSharedMemory("Initial user request: " + request);
 
-            // 0. Intent Gate + Policy Engine
+            // 1. Manage Conversation State
+            ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
+            state.addMessage("User: " + request);
+
+            // 2. Intent Gate + Policy Engine
             context.log("Evo-Orchestrator-IntentGate: Classifying intent...");
             JSONObject classification = intentClassifier.classify(request, context);
-            context.log("Evo-Orchestrator-IntentGate: Intent - " + classification.optString("intent") + " (conf: " + classification.optDouble("confidence") + ")");
+            String intent = classification.optString("intent", "unclear");
+            context.log("Evo-Orchestrator-IntentGate: Intent - " + intent + " (conf: " + classification.optDouble("confidence") + ")");
 
             String policyResponse = policyEngine.evaluate(classification, request, context);
             if (policyResponse != null) {
                 context.log("Evo-Orchestrator-Policy: Action blocked or handled directly.");
+                state.addMessage("Evo: " + policyResponse);
+                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
                 return policyResponse;
             }
 
-            // 1. Analytic Phase
+            // 3. Goal Update
+            String goalUpdate = classification.optString("goal_update");
+            if ("new".equals(intent) && goalUpdate != null && !goalUpdate.isEmpty()) {
+                state.setGoal(goalUpdate);
+            } else if (state.getGoal().isEmpty()) {
+                state.setGoal(request);
+            }
+            context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
+
+            // 4. Continuation Logic
+            if ("continue".equals(intent) && !context.getOrchestrator().getTasks().isEmpty()) {
+                boolean allDone = context.getOrchestrator().getTasks().stream().allMatch(t -> t.getStatus() == TaskStatus.DONE);
+                if (!allDone) {
+                    context.log("Evo-Orchestrator-Continuation: Context suggests continuing current tasks.");
+                    // In a real system, we'd find the next PENDING task.
+                    // For this simple version, we'll allow the loop below to handle it.
+                }
+            }
+
+            // 5. Analytic Phase
             String analyzedRequest = analyzeAndClarify(request, context);
 
-            // 2. Planning
-            OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Planning...");
-            List<Task> originalPlannedTasks = planner.plan(analyzedRequest, context);
-            OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Finished");
-            context.getOrchestrator().getTasks().clear();
-            context.getOrchestrator().getTasks().addAll(originalPlannedTasks);
+            // 6. Planning (only if new or if context requires a new plan)
+            boolean allDone = context.getOrchestrator().getTasks().stream().allMatch(t -> t.getStatus() == TaskStatus.DONE);
+            boolean shouldReplan = "new".equals(intent) || context.getOrchestrator().getTasks().isEmpty() || allDone;
+            List<Task> originalPlannedTasks;
+            if (shouldReplan) {
+                OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Planning...");
+                originalPlannedTasks = planner.plan(analyzedRequest, context);
+                OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Finished");
+                context.getOrchestrator().getTasks().clear();
+                context.getOrchestrator().getTasks().addAll(originalPlannedTasks);
+            } else {
+                context.log("Evo-Orchestrator-Planning: Continuing with existing plan.");
+                originalPlannedTasks = new ArrayList<>(context.getOrchestrator().getTasks());
+            }
 
             // Determine if Plan Approval is needed based on task severity
             boolean requiresPlanApproval = false;
@@ -205,7 +238,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
             }
 
             updateStatus(context, 1.0, "Completed");
-            return lastResult != null && !lastResult.isEmpty() ? lastResult : "Orchestration successful.";
+            String finalResponse = lastResult != null && !lastResult.isEmpty() ? lastResult : "Orchestration successful.";
+            state.addMessage("Evo: " + finalResponse);
+            context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
+            return finalResponse;
         } catch (Exception e) {
             context.log("Evo-Orchestrator-Error: " + e.getMessage());
             throw e;
