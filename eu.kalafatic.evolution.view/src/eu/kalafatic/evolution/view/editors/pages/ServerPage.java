@@ -1,8 +1,11 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
@@ -10,6 +13,7 @@ import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.controller.orchestration.ServerManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.SessionType;
@@ -33,6 +37,10 @@ public class ServerPage extends SharedScrolledComposite {
 
     private FormToolkit toolkit;
     private Color successColor;
+    private Color colorWaiting;
+    private Color lightGreen;
+    private Font bannerFont;
+    private org.eclipse.swt.widgets.Label modeIndicatorLabel;
 
     private SettingsGroup settingsGroup;
     private SessionsGroup sessionsGroup;
@@ -47,7 +55,19 @@ public class ServerPage extends SharedScrolledComposite {
         this.setExpandHorizontal(true);
         this.setExpandVertical(true);
         this.toolkit = new FormToolkit(parent.getDisplay());
+        initResources();
         createControl();
+    }
+
+    private void initResources() {
+        Display display = Display.getCurrent();
+        colorWaiting = new Color(display, 255, 140, 0); // Dark Orange
+        lightGreen = new Color(display, 220, 255, 220);
+
+        Font bannerDefault = JFaceResources.getBannerFont();
+        FontData[] bannerData = bannerDefault.getFontData();
+        for (FontData fd : bannerData) fd.setStyle(SWT.BOLD);
+        bannerFont = new Font(display, bannerData);
     }
 
     private void createControl() {
@@ -56,7 +76,12 @@ public class ServerPage extends SharedScrolledComposite {
 
         successColor = new Color(getDisplay(), 200, 240, 200);
 
-        settingsGroup = new SettingsGroup(toolkit, comp, editor, orchestrator, successColor);
+        modeIndicatorLabel = new org.eclipse.swt.widgets.Label(comp, SWT.CENTER);
+        modeIndicatorLabel.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.layout.GridData.FILL_HORIZONTAL));
+        modeIndicatorLabel.setFont(bannerFont);
+        updateBanner();
+
+        settingsGroup = new SettingsGroup(toolkit, comp, editor, orchestrator, successColor, () -> Display.getDefault().asyncExec(() -> updateBanner()));
         sessionsGroup = new SessionsGroup(toolkit, comp, editor, orchestrator, successColor);
         clientsGroup = new ClientsGroup(toolkit, comp, editor, orchestrator, successColor);
         resourcesGroup = new ResourcesGroup(toolkit, comp, editor, orchestrator, successColor);
@@ -129,6 +154,7 @@ public class ServerPage extends SharedScrolledComposite {
 
                     Display.getDefault().asyncExec(() -> {
                         if (isDisposed() || orchestrator == null) return;
+                        updateBanner();
 
                         // Update Monitoring History
                         MonitoringData data = OrchestrationFactory.eINSTANCE.createMonitoringData();
@@ -173,9 +199,25 @@ public class ServerPage extends SharedScrolledComposite {
         updateUIFromModel();
     }
 
+    private void updateBanner() {
+        if (modeIndicatorLabel == null || modeIndicatorLabel.isDisposed()) return;
+        boolean running = ServerManager.getInstance().isRunning();
+        int port = ServerManager.getInstance().getPort();
+        if (running) {
+            modeIndicatorLabel.setText("SERVER RUNNING ON PORT " + port);
+            modeIndicatorLabel.setBackground(lightGreen);
+        } else {
+            modeIndicatorLabel.setText("SERVER STOPPED");
+            modeIndicatorLabel.setBackground(colorWaiting);
+        }
+    }
+
     @Override
     public void dispose() {
         if (successColor != null && !successColor.isDisposed()) successColor.dispose();
+        if (colorWaiting != null && !colorWaiting.isDisposed()) colorWaiting.dispose();
+        if (lightGreen != null && !lightGreen.isDisposed()) lightGreen.dispose();
+        if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
         if (toolkit != null) toolkit.dispose();
         super.dispose();
     }

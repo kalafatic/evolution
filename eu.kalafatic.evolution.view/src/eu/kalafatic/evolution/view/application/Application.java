@@ -3,7 +3,7 @@ package eu.kalafatic.evolution.view.application;
 import java.io.File;
 
 import org.eclipse.core.runtime.Platform;
-import eu.kalafatic.evolution.controller.orchestration.EvolutionServer;
+import eu.kalafatic.evolution.controller.orchestration.ServerManager;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
 import org.eclipse.osgi.service.datalocation.Location;
@@ -34,8 +34,7 @@ public class Application implements IApplication {
 		final int finalPort = port;
 		if (serverOnly) {
 			System.out.println("Starting Evolution in SERVER-ONLY mode on port " + finalPort + "...");
-			EvolutionServer server = new EvolutionServer(finalPort);
-			server.startServer();
+			ServerManager.getInstance().start(finalPort);
 			System.out.println("Server is running. Press Ctrl+C to stop.");
 			while (true) {
 				Thread.sleep(1000);
@@ -46,8 +45,7 @@ public class Application implements IApplication {
 		new Thread(() -> {
 			try {
 				System.out.println("Starting Evolution background server on port " + finalPort + "...");
-				EvolutionServer server = new EvolutionServer(finalPort);
-				server.startServer();
+				ServerManager.getInstance().start(finalPort);
 				System.out.println("Evolution background server started on port " + finalPort);
 			} catch (Exception e) {
 				System.err.println("Failed to start background server: " + e.getMessage());

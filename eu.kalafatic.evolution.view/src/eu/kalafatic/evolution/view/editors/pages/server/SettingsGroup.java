@@ -2,6 +2,8 @@ package eu.kalafatic.evolution.view.editors.pages.server;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -11,6 +13,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 
+import eu.kalafatic.evolution.controller.orchestration.ServerManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
@@ -21,9 +24,11 @@ public class SettingsGroup extends AToolGroup {
 
     private Text portText;
     private Button autoStartCheck;
+    private Runnable onStateChange;
 
-    public SettingsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
+    public SettingsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor, Runnable onStateChange) {
         super(editor, orchestrator, successColor);
+        this.onStateChange = onStateChange;
         createControl(toolkit, parent);
     }
 
@@ -42,6 +47,45 @@ public class SettingsGroup extends AToolGroup {
 
         toolkit.createLabel(group, "Auto-start with UI:");
         autoStartCheck = toolkit.createButton(group, "", SWT.CHECK);
+
+        Composite btnComp = toolkit.createComposite(group);
+        btnComp.setLayout(new GridLayout(3, false));
+        btnComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+
+        Button startBtn = toolkit.createButton(btnComp, "Start", SWT.PUSH);
+        startBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                try {
+                    ServerManager.getInstance().start(Integer.parseInt(portText.getText()));
+                    if (onStateChange != null) onStateChange.run();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        Button stopBtn = toolkit.createButton(btnComp, "Stop", SWT.PUSH);
+        stopBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                ServerManager.getInstance().stop();
+                if (onStateChange != null) onStateChange.run();
+            }
+        });
+
+        Button restartBtn = toolkit.createButton(btnComp, "Restart", SWT.PUSH);
+        restartBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                try {
+                    ServerManager.getInstance().restart();
+                    if (onStateChange != null) onStateChange.run();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
     }
 
     @Override
