@@ -9,8 +9,12 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.SessionType;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.nio.file.Files;
@@ -20,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Embedded REST server for remote control.
@@ -44,7 +49,9 @@ public class EvolutionServer extends NanoHTTPD {
         trackHttpSession(session);
 
         try {
-            if (Method.GET.equals(method) && "/server/status".equals(uri)) {
+            if (Method.GET.equals(method) && ("/".equals(uri) || "/index.html".equals(uri))) {
+                return handleGetIndex();
+            } else if (Method.GET.equals(method) && "/server/status".equals(uri)) {
                 return handleGetServerStatus();
             } else if (Method.POST.equals(method) && "/server/session/ui".equals(uri)) {
                 return handleRegisterUiSession(session);
@@ -243,6 +250,20 @@ public class EvolutionServer extends NanoHTTPD {
 
         return newFixedLengthResponse(Response.Status.OK, "application/json",
             new JSONObject().put("id", id).toString());
+    }
+
+    private Response handleGetIndex() {
+        try (InputStream is = getClass().getResourceAsStream("index.html")) {
+            if (is == null) {
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "index.html not found");
+            }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                String content = reader.lines().collect(Collectors.joining("\n"));
+                return newFixedLengthResponse(Response.Status.OK, "text/html", content);
+            }
+        } catch (IOException e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
+        }
     }
 
     private Response handleGetServerStatus() {
