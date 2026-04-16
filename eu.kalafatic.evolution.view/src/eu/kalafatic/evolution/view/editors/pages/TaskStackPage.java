@@ -130,6 +130,9 @@ public class TaskStackPage extends SharedScrolledComposite {
         if (isUpdating || orchestrator == null || body == null || body.isDisposed()) return;
         isUpdating = true;
         taskStackGroup.refreshUI();
+        body.layout(true, true);
+        this.setMinSize(body.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+        this.reflow(true);
         isUpdating = false;
     }
 

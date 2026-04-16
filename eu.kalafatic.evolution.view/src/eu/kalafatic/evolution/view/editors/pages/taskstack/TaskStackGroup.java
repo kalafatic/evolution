@@ -52,7 +52,7 @@ public class TaskStackGroup extends AEvoGroup {
     }
 
     private void createControl(Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Task/Prompt Stack", 1, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Task/Prompt Stack", 1, true, true);
         group.setLayout(new GridLayout(1, false));
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 400;

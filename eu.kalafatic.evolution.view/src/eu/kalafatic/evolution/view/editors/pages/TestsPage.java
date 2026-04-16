@@ -141,7 +141,9 @@ public class TestsPage extends Composite {
 		addBtn.addSelectionListener(new SelectionAdapter() {
 			@Override public void widgetSelected(SelectionEvent e) { addNewTest(); }
 		});
-		testsContent.layout(true, true); testsScrolled.reflow(true);
+		testsContent.layout(true, true);
+		testsScrolled.setMinSize(testsContent.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+		testsScrolled.reflow(true);
 		isUpdating = false;
 	}
 
