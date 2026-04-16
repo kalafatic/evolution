@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Jules - Evolution AI</title>
+    <title>Evolution AI</title>
     <style>
         :root {
             --bg-canvas: #f1f5f9;
@@ -44,6 +44,8 @@
             display: flex; align-items: center; padding: 0 20px; justify-content: space-between;
         }
 
+        .server-badges { display: flex; gap: 10px; }
+
         #chat-area {
             flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px;
         }
@@ -76,7 +78,7 @@
 </head>
 <body>
     <div id="sidebar">
-        <h1>🧬 Jules</h1>
+        <h1>🧬 Evolution</h1>
         <div class="nav-item active"><span>💬</span> Chat</div>
         <div class="nav-item"><span>📂</span> Workspace</div>
         <div class="nav-item"><span>⚖️</span> Review</div>
@@ -90,17 +92,20 @@
     <div id="main-content">
         <div id="header">
             <div style="font-weight: bold;">Current Task: New Orchestration</div>
-            <div class="status-badge status-online">SERVER ONLINE</div>
+            <div class="server-badges">
+                <div id="ollama-status" class="status-badge">OLLAMA ...</div>
+                <div class="status-badge status-online">SERVER ONLINE</div>
+            </div>
         </div>
 
-        <div id="chat-area" id="messages">
+        <div id="chat-area">
             <div class="message ai">
-                Hello! I am Jules, your Evolution AI assistant. How can I help you with your project today?
+                Hello! I am Evo, your Evolution AI assistant. How can I help you with your project today?
             </div>
         </div>
 
         <div id="input-area">
-            <input type="text" id="user-input" placeholder="Ask Jules something..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <input type="text" id="user-input" placeholder="Ask Evo something..." onkeypress="if(event.key==='Enter') sendMessage()">
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
@@ -138,6 +143,27 @@
                 appendMessage('ai', 'Error: ' + err.message);
             }
         }
+
+        async function pollServerStatus() {
+            try {
+                const response = await fetch('/server/status');
+                const data = await response.json();
+                const ollamaBadge = document.getElementById('ollama-status');
+                if (data.ollama && data.ollama.online) {
+                    ollamaBadge.innerText = 'OLLAMA ONLINE';
+                    ollamaBadge.style.background = '#dcfce7';
+                    ollamaBadge.style.color = '#166534';
+                } else {
+                    ollamaBadge.innerText = 'OLLAMA OFFLINE';
+                    ollamaBadge.style.background = '#fee2e2';
+                    ollamaBadge.style.color = '#991b1b';
+                }
+            } catch (err) {
+                console.error('Failed to poll server status:', err);
+            }
+        }
+        setInterval(pollServerStatus, 5000);
+        pollServerStatus();
 
         async function pollTask(id) {
             const interval = setInterval(async () => {

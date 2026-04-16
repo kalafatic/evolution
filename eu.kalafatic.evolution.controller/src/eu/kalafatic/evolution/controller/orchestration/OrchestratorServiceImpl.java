@@ -36,6 +36,12 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 if (orchModel == null) {
                     orchModel = OrchestrationFactory.eINSTANCE.createOrchestrator();
                     orchModel.setId(taskId);
+                    // Default Ollama configuration if not present
+                    if (orchModel.getOllama() == null) {
+                        orchModel.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
+                        orchModel.getOllama().setUrl("http://localhost:11434");
+                        orchModel.getOllama().setModel("llama3.2:3b");
+                    }
                 }
 
                 TaskContext context = new TaskContext(orchModel, request.getProjectRoot());
