@@ -13,35 +13,25 @@ public class RuleBasedPolicyEngine implements IPolicyEngine {
 
     @Override
     public String evaluate(JSONObject classification, String input, TaskContext context) throws Exception {
-        String intent = classification.optString("intent", "AMBIGUOUS");
+        String intent = classification.optString("intent", "unclear").trim().toLowerCase();
         double confidence = classification.optDouble("confidence", 0.0);
+        boolean needsClarification = classification.optBoolean("needs_clarification", false);
 
-        if (confidence < CONFIDENCE_THRESHOLD) {
-            return "CLARIFY: Your request is a bit unclear. Could you please specify what you'd like me to do?";
+        if (confidence < CONFIDENCE_THRESHOLD || "unclear".equals(intent) || needsClarification) {
+            return "CLARIFY: " + classification.optString("reason", "I'm not sure I understand your request. Could you please provide more details?");
         }
 
-        Orchestrator orchestrator = context.getOrchestrator();
-        String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
-
-        switch (intent) {
-            case "GREETING":
+        if ("new".equals(intent) || "continue".equals(intent)) {
+            // Check if it's just a simple greeting disguised as 'continue' when no goal exists
+            ConversationState state = ConversationState.fromJSON(context.getSharedMemory());
+            if (state.getGoal().isEmpty() && (input.toLowerCase().contains("hi") || input.toLowerCase().contains("hello"))) {
                 return "Hello! I'm Jules, your AI software engineer. How can I help you today?";
-            case "CHIT_CHAT":
-                return "I'm doing well, thank you! Ready to help with any coding or technical tasks.";
-            case "QUESTION":
-                String qPrompt = "Answer this question directly and concisely: \"" + input + "\"";
-                return llmRouter.sendRequest(orchestrator, qPrompt, 0.7f, proxyUrl, context);
-            case "AMBIGUOUS":
-                return "CLARIFY: I'm not sure I follow. Could you provide more details about the action you want me to take?";
-            case "SYSTEM_COMMAND":
-                return "SYSTEM: Command recognized. For now, please use the UI buttons for most control actions.";
-            case "ACTION_REQUEST":
-                if (classification.optBoolean("requires_action", false)) {
-                    return null; // Allow planning
-                }
-                return "CLARIFY: You mentioned an action, but I need more specifics to create a plan.";
-            default:
-                return "CLARIFY: I'm not sure how to handle that. Can you rephrase your request?";
+            }
+
+            // Allow planning or execution continuation
+            return null;
         }
+
+        return "CLARIFY: I'm not sure how to handle that. Can you rephrase your request?";
     }
 }
