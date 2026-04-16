@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import eu.kalafatic.evolution.controller.manager.OllamaService;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.nio.file.Files;
@@ -281,6 +282,16 @@ public class EvolutionServer extends NanoHTTPD {
         monitoring.put("totalMemory", totalMem);
         monitoring.put("timestamp", System.currentTimeMillis());
         status.put("monitoring", monitoring);
+
+        // Ollama Status
+        JSONObject ollamaStatus = new JSONObject();
+        String ollamaUrl = "http://localhost:11434"; // Default
+        OllamaService ollama = new OllamaService(ollamaUrl, "llama3.2:3b");
+        boolean ollamaOnline = ollama.ping();
+        ollamaStatus.put("online", ollamaOnline);
+        ollamaStatus.put("url", ollamaUrl);
+        ollamaStatus.put("version", ollamaOnline ? ollama.getVersion() : "N/A");
+        status.put("ollama", ollamaStatus);
 
         // Sessions
         JSONArray sessions = new JSONArray();

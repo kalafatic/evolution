@@ -25,7 +25,7 @@ public class RuleBasedPolicyEngine implements IPolicyEngine {
             // Check if it's just a simple greeting disguised as 'continue' when no goal exists
             ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
             if (state.getGoal().isEmpty() && (input.toLowerCase().contains("hi") || input.toLowerCase().contains("hello"))) {
-                return "Hello! I'm Jules, your AI software engineer. How can I help you today?";
+                return "Hello! I'm Evo, your AI software engineer. How can I help you today?";
             }
 
             // Allow planning or execution continuation
