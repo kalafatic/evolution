@@ -273,6 +273,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     context.log("Evo-Orchestrator-" + task.getName() + ": Agent requested clarification/proposal. Pausing execution.");
                     String clarification = context.requestInput(result).get();
                     if (clarification != null) {
+                        context.log("Evo-Orchestrator-" + task.getName() + ": Received clarification: " + clarification);
                         lastFeedback = "User Response: " + clarification;
                         retry--; // Retry with the new information
                         continue;
