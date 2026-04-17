@@ -134,6 +134,10 @@ public class IterationManager {
                 rec.setErrorMessage(v.getErrorMessage());
                 rec.setChangedFiles(v.getChangedFiles());
                 rec.setTimestamp(System.currentTimeMillis());
+                rec.setExpectedImpact(v.getExpectedImpact());
+                rec.setRiskLevel(v.getRiskLevel());
+                rec.setComplexity(v.getComplexity());
+                rec.setReasoning(v.getReasoning());
                 memoryService.saveRecord(rec);
             }
 
