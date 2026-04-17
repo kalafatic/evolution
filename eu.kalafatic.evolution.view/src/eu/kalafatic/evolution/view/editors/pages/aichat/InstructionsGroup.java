@@ -63,18 +63,26 @@ public class InstructionsGroup extends AEvoGroup {
         attachmentArea.setLayout(new org.eclipse.swt.layout.RowLayout(SWT.HORIZONTAL));
         attachmentArea.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        Composite composite = SWTFactory.createComposite(group, 8);
+        Composite composite = toolkit.createComposite(group);
+        org.eclipse.swt.layout.GridLayout compLayout = new org.eclipse.swt.layout.GridLayout(9, false);
+        compLayout.marginHeight = 0; compLayout.marginWidth = 0;
+        composite.setLayout(compLayout);
+        composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
         sendButton = toolkit.createButton(composite, "▶️ Send", SWT.PUSH);
         GridData sendGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
-        sendGd.widthHint = 60;
-        sendGd.heightHint = 25;
+        sendGd.widthHint = 70;
+        sendGd.heightHint = 28;
         sendButton.setLayoutData(sendGd);
         sendButton.setBackground(lightGreen);
         sendButton.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
         sendButton.setToolTipText("Start a classic, iterative or autonomous iterative self-development session to improve the codebase.");
 
         pauseButton = toolkit.createButton(composite, "⏸️ Pause", SWT.PUSH);
-        pauseButton.setLayoutData(sendGd);
+        GridData actionGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
+        actionGd.widthHint = 70;
+        actionGd.heightHint = 28;
+        pauseButton.setLayoutData(actionGd);
         pauseButton.setEnabled(false);
         pauseButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -84,7 +92,7 @@ public class InstructionsGroup extends AEvoGroup {
         });
 
         stopButton = toolkit.createButton(composite, "⏹️ Stop", SWT.PUSH);
-        stopButton.setLayoutData(sendGd);
+        stopButton.setLayoutData(actionGd);
         stopButton.setEnabled(false);
         stopButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -213,6 +221,8 @@ public class InstructionsGroup extends AEvoGroup {
     }
     public boolean isIterative() { return iterativeCheck.getSelection(); }
     public boolean isSelfIterative() { return selfIterativeCheck.getSelection(); }
+    public boolean isAutoApprove() { return autoApproveCheck.getSelection(); }
+    public int getMaxIterations() { return maxIterationsSpinner.getSelection(); }
 
     public void setOrchestrationRunning(boolean running) {
         sendButton.setEnabled(!running);

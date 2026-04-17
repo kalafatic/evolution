@@ -188,6 +188,10 @@
             cursor: pointer;
         }
 
+        .link-go { color: #16a34a !important; text-decoration: underline !important; }
+        .link-clarify { color: #d97706 !important; text-decoration: underline !important; }
+        .link-problem { color: #dc2626 !important; text-decoration: underline !important; font-weight: bold; }
+
         /* Hover Actions */
         .actions { 
             display: flex; flex-direction: row; gap: 4px;
@@ -292,11 +296,11 @@
             text = escapeHtml(text);
 
             // Create/Clarify links
-            text = text.replace(/\bCREATE\b/g, '<a onclick="event.stopPropagation(); JavaHandler(\'create\', \'-1\', \'\')">CREATE</a>');
-            text = text.replace(/\bCLARIFY\b/g, '<a onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">CLARIFY</a>');
+            text = text.replace(/\bCREATE\b/g, '<a class="link-go" onclick="event.stopPropagation(); JavaHandler(\'create\', \'-1\', \'\')">CREATE</a>');
+            text = text.replace(/\bCLARIFY\b/g, '<a class="link-clarify" onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">CLARIFY</a>');
 
             // Specific phrase links
-            text = text.replace(/could you tell me a bit more about what you(?:’|'|&#039;)re trying to accomplish\?/g, '<a onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">$&</a>');
+            text = text.replace(/could you tell me a bit more about what you(?:’|'|&#039;)re trying to accomplish\?/g, '<a class="link-clarify" onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">$&</a>');
             text = text.replace(/Are you looking for a simple example to get started/g, '<a class="link-go" onclick="event.stopPropagation(); JavaHandler(\'helloworld\', \'-1\', \'\')">$&</a>');
             text = text.replace(/are you working on a more complex project that requires a specific file structure\?/g, '<a class="link-clarify" onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">$&</a>');
 
@@ -307,7 +311,7 @@
             });
 
             // General proposal link [PROPOSAL: Label | Request]
-            text = text.replace(/\[PROPOSAL:\s*(.*?)\s*\|\s*(.*?)\s*\]/g, '<a onclick="event.stopPropagation(); JavaHandler(\'executeProposal\', \'-1\', \'$2\')"><b>$1</b></a>');
+            text = text.replace(/\[PROPOSAL:\s*(.*?)\s*\|\s*(.*?)\s*\]/g, '<a class="link-go" onclick="event.stopPropagation(); JavaHandler(\'executeProposal\', \'-1\', \'$2\')"><b>$1</b></a>');
 
             // File link [FILE: path]
             text = text.replace(/\[FILE:\s*(.*?)\s*\]/g, '<a onclick="event.stopPropagation(); JavaHandler(\'openDiff\', \'-1\', \'$1\')"><b>$1</b></a>');

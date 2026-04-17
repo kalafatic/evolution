@@ -164,11 +164,17 @@ public class TaskContext {
     }
 
     public boolean isAutoApprove() {
+        if (orchestrator != null) {
+            return orchestrator.isAutoApprove();
+        }
         return autoApprove;
     }
 
     public void setAutoApprove(boolean autoApprove) {
         this.autoApprove = autoApprove;
+        if (orchestrator != null) {
+            orchestrator.setAutoApprove(autoApprove);
+        }
     }
 
     public void checkPause() {

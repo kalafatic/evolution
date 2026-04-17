@@ -43,7 +43,12 @@ public class SelfDevSupervisor {
         RestartManager restartManager = new RestartManager(context);
 
         try {
-            for (int i = 1; i <= session.getMaxIterations(); i++) {
+            int maxIter = session.getMaxIterations();
+            if (context.getOrchestrator() != null && context.getOrchestrator().getPreferredMaxIterations() > 0) {
+                maxIter = context.getOrchestrator().getPreferredMaxIterations();
+            }
+
+            for (int i = 1; i <= maxIter; i++) {
                 if (session.getStatus() != SelfDevStatus.RUNNING) {
                     context.log("[SUPERVISOR] Session status changed. Stopping.");
                     break;

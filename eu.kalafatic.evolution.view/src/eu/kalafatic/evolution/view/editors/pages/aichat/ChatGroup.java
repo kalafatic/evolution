@@ -401,6 +401,8 @@ public class ChatGroup extends AEvoGroup {
     public void setSelection(int offset) { }
     public boolean isDisposed() { return browser.isDisposed(); }
 
+    public Composite getControl() { return group; }
+
     public int getLogCount() { return logCount; }
     public void incrementLogCount() { logCount++; }
     public void resetLogCount() { logCount = 0; }
