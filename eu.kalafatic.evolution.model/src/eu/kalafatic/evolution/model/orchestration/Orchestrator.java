@@ -47,6 +47,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getServerSettings <em>Server Settings</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getServerSessions <em>Server Sessions</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMonitoringHistory <em>Monitoring History</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isGitAutomation <em>Git Automation</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator()
@@ -748,5 +749,28 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	void setPreferredMaxIterations(int value);
+
+	/**
+	 * Returns the value of the '<em><b>Git Automation</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Git Automation</em>' attribute.
+	 * @see #setGitAutomation(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_GitAutomation()
+	 * @model default="false"
+	 * @generated
+	 */
+	boolean isGitAutomation();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isGitAutomation <em>Git Automation</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Git Automation</em>' attribute.
+	 * @see #isGitAutomation()
+	 * @generated
+	 */
+	void setGitAutomation(boolean value);
 
 } // Orchestrator

@@ -68,48 +68,47 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     result.setWaitingMessage(msg);
                 });
 
-                // Git Integration: Branching (Disabled by default)
-                /*
-                GitTool gitTool = new GitTool();
-                String requestedBranch = (String) request.getContext().get("branch");
-                String branchName = (requestedBranch != null && !requestedBranch.isEmpty()) ?
-                                     requestedBranch : "evo-" + taskId.substring(0, 8);
+                // Git Integration: Branching
+                if (orchModel.isGitAutomation()) {
+                    GitTool gitTool = new GitTool();
+                    String requestedBranch = (String) request.getContext().get("branch");
+                    String branchName = (requestedBranch != null && !requestedBranch.isEmpty()) ?
+                                         requestedBranch : "evo-" + taskId.substring(0, 8);
 
-                try {
-                    eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
+                    try {
+                        eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
 
-                    if (requestedBranch != null && !requestedBranch.isEmpty()) {
-                        context.log("GIT: Checking out existing branch " + branchName);
-                        try {
-                            shell.execute("git checkout " + branchName, request.getProjectRoot(), context);
-                        } catch (Exception e) {
-                            context.log("GIT: Branch " + branchName + " not found, creating it.");
+                        if (requestedBranch != null && !requestedBranch.isEmpty()) {
+                            context.log("GIT: Checking out existing branch " + branchName);
+                            try {
+                                shell.execute("git checkout " + branchName, request.getProjectRoot(), context);
+                            } catch (Exception e) {
+                                context.log("GIT: Branch " + branchName + " not found, creating it.");
+                                shell.execute("git checkout -b " + branchName, request.getProjectRoot(), context);
+                            }
+                        } else {
+                            context.log("GIT: Creating new branch " + branchName);
                             shell.execute("git checkout -b " + branchName, request.getProjectRoot(), context);
                         }
-                    } else {
-                        context.log("GIT: Creating new branch " + branchName);
-                        shell.execute("git checkout -b " + branchName, request.getProjectRoot(), context);
+                    } catch (Exception e) {
+                        context.log("GIT WARNING: Could not manage branch: " + e.getMessage());
                     }
-                } catch (Exception e) {
-                    context.log("GIT WARNING: Could not manage branch: " + e.getMessage());
                 }
-                */
 
                 String response = orchestrator.execute(request.getPrompt(), context);
 
                 result.setResponse(response);
 
-                // Git Integration: Commit (Disabled by default)
-                /*
-                if (result.getStatus() == TaskResult.Status.SUCCESS) {
+                // Git Integration: Commit
+                if (orchModel.isGitAutomation() && result.getStatus() == TaskResult.Status.SUCCESS) {
                     try {
                         context.log("GIT: Committing changes");
+                        GitTool gitTool = new GitTool();
                         gitTool.execute("add commit", request.getProjectRoot(), context);
                     } catch (Exception e) {
                         context.log("GIT WARNING: Could not commit changes: " + e.getMessage());
                     }
                 }
-                */
                 result.setStatus(TaskResult.Status.SUCCESS);
 
                 // Capture file changes (simplified for now)

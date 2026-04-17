@@ -22,7 +22,7 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class InstructionsGroup extends AEvoGroup {
     private StyledText requestText;
-    private Button iterativeCheck, selfIterativeCheck, autoApproveCheck;
+    private Button iterativeCheck, selfIterativeCheck, autoApproveCheck, gitAutomationCheck;
     private org.eclipse.swt.widgets.Spinner maxIterationsSpinner;
     private Button sendButton, pauseButton, stopButton, attachButton;
     private Composite attachmentArea;
@@ -130,6 +130,15 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
+        gitAutomationCheck = toolkit.createButton(composite, "Git Automation", SWT.CHECK);
+        gitAutomationCheck.setToolTipText("Automatically create branches and commit changes.");
+        gitAutomationCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.syncModelWithUI();
+            }
+        });
+
         toolkit.createLabel(composite, "Max Iterations:");
         maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(composite, SWT.BORDER);
         maxIterationsSpinner.setMinimum(1);
@@ -190,6 +199,7 @@ public class InstructionsGroup extends AEvoGroup {
             iterativeCheck.setSelection(orchestrator.isIterativeMode());
             selfIterativeCheck.setSelection(orchestrator.isSelfIterativeMode());
             autoApproveCheck.setSelection(orchestrator.isAutoApprove());
+            gitAutomationCheck.setSelection(orchestrator.isGitAutomation());
             maxIterationsSpinner.setSelection(orchestrator.getPreferredMaxIterations());
         }
     }
@@ -200,6 +210,7 @@ public class InstructionsGroup extends AEvoGroup {
             orchestrator.setIterativeMode(iterativeCheck.getSelection());
             orchestrator.setSelfIterativeMode(selfIterativeCheck.getSelection());
             orchestrator.setAutoApprove(autoApproveCheck.getSelection());
+            orchestrator.setGitAutomation(gitAutomationCheck.getSelection());
             orchestrator.setPreferredMaxIterations(maxIterationsSpinner.getSelection());
         }
     }

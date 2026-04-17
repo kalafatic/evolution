@@ -585,6 +585,26 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected int preferredMaxIterations = PREFERRED_MAX_ITERATIONS_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isGitAutomation()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean GIT_AUTOMATION_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isGitAutomation()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean gitAutomation = GIT_AUTOMATION_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -628,6 +648,29 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		preferredMaxIterations = newPreferredMaxIterations;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS, oldPreferredMaxIterations, preferredMaxIterations));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isGitAutomation() {
+		return gitAutomation;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGitAutomation(boolean newGitAutomation) {
+		boolean oldGitAutomation = gitAutomation;
+		gitAutomation = newGitAutomation;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION, oldGitAutomation, gitAutomation));
 	}
 
 	/**
@@ -1713,6 +1756,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return isAutoApprove();
 			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
 				return getPreferredMaxIterations();
+			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
+				return isGitAutomation();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1834,6 +1879,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
 				setPreferredMaxIterations((Integer)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
+				setGitAutomation((Boolean)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1948,6 +1996,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
 				setPreferredMaxIterations(PREFERRED_MAX_ITERATIONS_EDEFAULT);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
+				setGitAutomation(GIT_AUTOMATION_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -2028,6 +2079,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return autoApprove != AUTO_APPROVE_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
 				return preferredMaxIterations != PREFERRED_MAX_ITERATIONS_EDEFAULT;
+			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
+				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -2074,6 +2127,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		result.append(autoApprove);
 		result.append(", preferredMaxIterations: ");
 		result.append(preferredMaxIterations);
+		result.append(", gitAutomation: ");
+		result.append(gitAutomation);
 		result.append(')');
 		return result.toString();
 	}
