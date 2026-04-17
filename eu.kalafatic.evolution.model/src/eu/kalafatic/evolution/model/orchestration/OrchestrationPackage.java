@@ -637,13 +637,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__PREFERRED_MAX_ITERATIONS = 33;
 
 	/**
+	 * The feature id for the '<em><b>Git Automation</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__GIT_AUTOMATION = 34;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 34;
+	int ORCHESTRATOR_FEATURE_COUNT = 35;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -3615,6 +3624,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getOrchestrator_PreferredMaxIterations();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isGitAutomation <em>Git Automation</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Git Automation</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isGitAutomation()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_GitAutomation();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings <em>Server Settings</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -6048,6 +6068,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute ORCHESTRATOR__PREFERRED_MAX_ITERATIONS = eINSTANCE.getOrchestrator_PreferredMaxIterations();
+
+		/**
+		 * The meta object literal for the '<em><b>Git Automation</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__GIT_AUTOMATION = eINSTANCE.getOrchestrator_GitAutomation();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl <em>Server Settings</em>}' class.
