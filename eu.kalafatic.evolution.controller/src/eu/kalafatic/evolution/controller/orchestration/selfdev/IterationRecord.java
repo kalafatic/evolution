@@ -13,6 +13,10 @@ public class IterationRecord {
     private int attempt;
     private double score;
     private long timestamp;
+    private String expectedImpact;
+    private String riskLevel;
+    private String complexity;
+    private String reasoning;
 
     public int getIteration() { return iteration; }
     public void setIteration(int iteration) { this.iteration = iteration; }
@@ -43,4 +47,16 @@ public class IterationRecord {
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+    public String getExpectedImpact() { return expectedImpact; }
+    public void setExpectedImpact(String expectedImpact) { this.expectedImpact = expectedImpact; }
+
+    public String getRiskLevel() { return riskLevel; }
+    public void setRiskLevel(String riskLevel) { this.riskLevel = riskLevel; }
+
+    public String getComplexity() { return complexity; }
+    public void setComplexity(String complexity) { this.complexity = complexity; }
+
+    public String getReasoning() { return reasoning; }
+    public void setReasoning(String reasoning) { this.reasoning = reasoning; }
 }

@@ -88,4 +88,69 @@ public class IterationMemoryService {
     public Map<String, List<IterationRecord>> getErrorIndex() {
         return errorIndex;
     }
+
+    public String getHistoryAnalysis() {
+        if (records.isEmpty()) {
+            return "No previous iteration history available.";
+        }
+
+        StringBuilder analysis = new StringBuilder();
+        analysis.append("History Analysis:\n");
+
+        List<IterationRecord> successful = records.stream()
+                .filter(r -> "SUCCESS".equals(r.getResult()))
+                .collect(Collectors.toList());
+
+        List<IterationRecord> failed = records.stream()
+                .filter(r -> "FAIL".equals(r.getResult()))
+                .collect(Collectors.toList());
+
+        if (!successful.isEmpty()) {
+            analysis.append("- Successful Strategies:\n");
+            successful.stream().map(IterationRecord::getStrategy).distinct().forEach(s -> analysis.append("  * ").append(s).append("\n"));
+        }
+
+        if (!failed.isEmpty()) {
+            analysis.append("- Failed Strategies (Avoid these):\n");
+            failed.stream().map(IterationRecord::getStrategy).distinct().forEach(s -> analysis.append("  * ").append(s).append("\n"));
+
+            analysis.append("- Common Errors:\n");
+            failed.stream().map(IterationRecord::getErrorMessage)
+                .filter(e -> e != null && !e.isEmpty())
+                .map(this::normalizeError)
+                .distinct()
+                .forEach(e -> analysis.append("  * ").append(e).append("\n"));
+        }
+
+        Map<String, PatternStats> stats = getPatternStats();
+        if (!stats.isEmpty()) {
+            analysis.append("- Pattern Success Rates:\n");
+            stats.forEach((p, s) -> analysis.append("  * ").append(p).append(": ")
+                .append(String.format("%.1f%% (%d/%d)", s.getSuccessRate() * 100, s.successCount, s.totalCount())).append("\n"));
+        }
+
+        return analysis.toString();
+    }
+
+    public Map<String, PatternStats> getPatternStats() {
+        Map<String, PatternStats> stats = new HashMap<>();
+        for (IterationRecord r : records) {
+            if (r.getStrategy() == null) continue;
+            String pattern = r.getStrategy().toLowerCase().split(" ")[0]; // Very simple pattern extraction
+            PatternStats s = stats.computeIfAbsent(pattern, k -> new PatternStats());
+            if ("SUCCESS".equals(r.getResult())) s.successCount++;
+            else s.failureCount++;
+        }
+        return stats;
+    }
+
+    public static class PatternStats {
+        public int successCount;
+        public int failureCount;
+        public double getSuccessRate() {
+            int total = totalCount();
+            return total == 0 ? 0 : (double) successCount / total;
+        }
+        public int totalCount() { return successCount + failureCount; }
+    }
 }
