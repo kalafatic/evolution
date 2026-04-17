@@ -158,7 +158,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				}
 			});
 		});
-		instructionsGroup = new InstructionsGroup(toolkit, content, this, orchestrator);
+		instructionsGroup = new InstructionsGroup(toolkit, chatGroup.getControl(), this, orchestrator, true);
 		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
 		satisfactionGroup = new SatisfactionGroup(content, editor, orchestrator, this);
 		approvalGroup = new ApprovalGroup(content, editor, orchestrator, this);
@@ -270,6 +270,8 @@ public class AiChatPage extends SharedScrolledComposite {
 
 		orchestrator.setIterativeMode(instructionsGroup.isIterative());
 		orchestrator.setSelfIterativeMode(instructionsGroup.isSelfIterative());
+		orchestrator.setAutoApprove(instructionsGroup.isAutoApprove());
+		orchestrator.setPreferredMaxIterations(instructionsGroup.getMaxIterations());
 		if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
 		orchestrator.getAiChat().setUrl(aiSettingsGroup.getRemoteUrl());
 		editor.setDirty(true);
@@ -352,14 +354,21 @@ public class AiChatPage extends SharedScrolledComposite {
 				    TaskResult latest = OrchestratorServiceImpl.getInstance().getTaskResult(taskId);
 				    if (latest == null) break;
 
-				    final List<String> newLogs = latest.getLogs().subList(chatGroup.getLogCount(), latest.getLogs().size());
-				    if (!newLogs.isEmpty()) {
-				        Display.getDefault().asyncExec(() -> {
-				            for (String log : newLogs) {
-				                processLogEntry(log);
-				                chatGroup.incrementLogCount();
-				            }
-				        });
+				    int fromIndex = chatGroup.getLogCount();
+				    int toIndex = latest.getLogs().size();
+				    if (fromIndex < toIndex) {
+				        final List<String> newLogs = latest.getLogs().subList(fromIndex, toIndex);
+				        if (!newLogs.isEmpty()) {
+				            Display.getDefault().asyncExec(() -> {
+				                for (String log : newLogs) {
+				                    processLogEntry(log);
+				                    chatGroup.incrementLogCount();
+				                }
+				            });
+				        }
+				    } else if (fromIndex > toIndex) {
+				        // In case of sync issues, reset count to avoid crash
+				        Display.getDefault().asyncExec(() -> chatGroup.resetLogCount());
 				    }
 				    result = latest;
 				}
@@ -765,6 +774,10 @@ public class AiChatPage extends SharedScrolledComposite {
 				allProposals.add("/refactor ");
 				allProposals.add("/explain ");
 				allProposals.add("/apply best practices");
+				allProposals.add("/generate javadoc");
+				allProposals.add("/optimize imports");
+				allProposals.add("/find security vulnerabilities");
+				allProposals.add("/help");
 			}
 
 			// Neuron Proposals
