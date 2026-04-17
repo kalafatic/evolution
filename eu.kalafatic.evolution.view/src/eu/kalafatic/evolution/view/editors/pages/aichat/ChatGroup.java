@@ -209,6 +209,13 @@ public class ChatGroup extends AEvoGroup {
             sender = "Final Response";
             content = text.substring(16);
             agentType = "final-response";
+            if (content.contains("CLARIFY:")) {
+                agentType = "waiting";
+            }
+        } else if (text.startsWith("Error: ")) {
+            sender = "Error";
+            content = text.substring(7);
+            agentType = "error";
         } else if (text.startsWith("Result Summary: ")) {
             sender = "Result Summary";
             content = text.substring(16);
@@ -241,7 +248,11 @@ public class ChatGroup extends AEvoGroup {
                 agentType = "darwin";
             }
 
-            if (content.toLowerCase().contains("waiting for user") || content.toLowerCase().contains("guidance?")) {
+            if (content.toLowerCase().contains("waiting for user") ||
+                content.toLowerCase().contains("guidance?") ||
+                content.contains("CLARIFY") ||
+                content.contains("[PROPOSAL:") ||
+                content.toLowerCase().contains("ambiguous")) {
                 agentType = "waiting";
             }
         } else if (text.startsWith("Evolution: ")) {

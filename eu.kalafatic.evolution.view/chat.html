@@ -76,9 +76,9 @@
             --orchestrator-border: #cbd5e1;
             --orchestrator-text: #1e293b;
 
-            --final-response-bg: #f0fdf4;
-            --final-response-border: #22c55e;
-            --final-response-text: #166534;
+            --final-response-bg: #dcfce7; /* Light Green */
+            --final-response-border: #15803d;
+            --final-response-text: #14532d;
 
             --result-summary-bg: #eff6ff;
             --result-summary-border: #3b82f6;
@@ -88,9 +88,13 @@
             --tool-border: #e2e8f0;
             --tool-text: #475569;
 
-            --waiting-bg: #ffedd5;
+            --waiting-bg: #ffedd5; /* Light Orange */
             --waiting-border: #f97316;
             --waiting-text: #9a3412;
+
+            --error-bg: #fee2e2; /* Light Red */
+            --error-border: #dc2626;
+            --error-text: #991b1b;
         }
 
         body { 
@@ -168,10 +172,32 @@
         .message.quality .bubble { background: var(--quality-bg); border-color: var(--quality-border); color: var(--quality-text); border-bottom-left-radius: 4px; }
         .message.observability .bubble { background: var(--observability-bg); border-color: var(--observability-border); color: var(--observability-text); border-bottom-left-radius: 4px; }
         .message.orchestrator .bubble { background: var(--orchestrator-bg); border-color: var(--orchestrator-border); color: var(--orchestrator-text); border-bottom-left-radius: 4px; }
-        .message.final-response .bubble { background: var(--final-response-bg); border-color: var(--final-response-border); color: var(--final-response-text); border-bottom-left-radius: 4px; border-width: 2px; }
+        .message.final-response .bubble {
+            background: var(--final-response-bg);
+            border-color: var(--final-response-border);
+            color: var(--final-response-text);
+            border-bottom-left-radius: 4px;
+            border-width: 3px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
         .message.result-summary .bubble { background: var(--result-summary-bg); border-color: var(--result-summary-border); color: var(--result-summary-text); border-bottom-left-radius: 4px; border-width: 1px; }
         .message.tool .bubble { background: var(--tool-bg); border-color: var(--tool-border); color: var(--tool-text); border-bottom-left-radius: 4px; }
-        .message.waiting .bubble { background: var(--waiting-bg); border-color: var(--waiting-border); color: var(--waiting-text); border-bottom-left-radius: 4px; border-style: dashed; border-width: 2px; }
+        .message.waiting .bubble {
+            background: var(--waiting-bg);
+            border-color: var(--waiting-border);
+            color: var(--waiting-text);
+            border-bottom-left-radius: 4px;
+            border-style: solid;
+            border-width: 3px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .message.error .bubble {
+            background: var(--error-bg);
+            border-color: var(--error-border);
+            color: var(--error-text);
+            border-bottom-left-radius: 4px;
+            border-width: 2px;
+        }
 
         .message.ai .bubble { 
             border-bottom-left-radius: 4px;
@@ -268,7 +294,7 @@
             analytic: '🔍', general: '🧠', terminal: '📟', file: '📂',
             maven: '📦', git: '🌿', structure: '🌳', websearch: '🌐',
             quality: '✨', observability: '📊', orchestrator: '🎼',
-            'final-response': '✅', 'result-summary': 'ℹ️', waiting: '⏳'
+            'final-response': '✅', 'result-summary': 'ℹ️', waiting: '❓', error: '❌'
         };
 
         function formatText(text) {

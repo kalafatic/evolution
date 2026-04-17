@@ -68,7 +68,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     result.setWaitingMessage(msg);
                 });
 
-                // Git Integration: Branching
+                // Git Integration: Branching (Disabled by default)
+                /*
                 GitTool gitTool = new GitTool();
                 String requestedBranch = (String) request.getContext().get("branch");
                 String branchName = (requestedBranch != null && !requestedBranch.isEmpty()) ?
@@ -92,12 +93,14 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 } catch (Exception e) {
                     context.log("GIT WARNING: Could not manage branch: " + e.getMessage());
                 }
+                */
 
                 String response = orchestrator.execute(request.getPrompt(), context);
 
                 result.setResponse(response);
 
-                // Git Integration: Commit
+                // Git Integration: Commit (Disabled by default)
+                /*
                 if (result.getStatus() == TaskResult.Status.SUCCESS) {
                     try {
                         context.log("GIT: Committing changes");
@@ -106,6 +109,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                         context.log("GIT WARNING: Could not commit changes: " + e.getMessage());
                     }
                 }
+                */
                 result.setStatus(TaskResult.Status.SUCCESS);
 
                 // Capture file changes (simplified for now)

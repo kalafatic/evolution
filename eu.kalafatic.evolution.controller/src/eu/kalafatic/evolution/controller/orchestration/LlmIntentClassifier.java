@@ -24,13 +24,12 @@ public class LlmIntentClassifier implements IIntentClassifier {
         sb.append("--- END STATE ---\n\n");
 
         sb.append("CLASSIFICATION CATEGORIES:\n");
-        sb.append("- 'new': User clearly changed the goal or explicitly requested a new action unrelated to the current goal.\n");
-        sb.append("- 'continue': User is continuing, providing info for, or acknowledging the current task/goal.\n");
+        sb.append("- 'new': User explicitly requested a new action unrelated to the current goal.\n");
+        sb.append("- 'continue': User is continuing, providing info for, or acknowledging the current task/goal. Also used for confirming or responding to AI's previous clarification or proposal.\n");
         sb.append("- 'chat': General conversation, greetings (e.g. 'hi', 'hello'), or non-actionable polite remarks.\n");
         sb.append("- 'unclear': Insufficient info or highly ambiguous intent that doesn't fit the above.\n\n");
 
         sb.append("RULES:\n");
-        sb.append("- Be biased toward 'continue' if the input could reasonably be part of the current goal.\n");
         sb.append("- 'hi', 'hello' should be 'chat'.\n");
         sb.append("- 'ok', 'yes', 'proceed' are 'continue' if a task is active.\n");
         sb.append("- If input is 'new', suggest a NEW 'goal_update'.\n\n");
