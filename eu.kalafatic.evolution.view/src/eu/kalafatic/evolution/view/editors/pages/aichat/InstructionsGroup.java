@@ -22,20 +22,37 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class InstructionsGroup extends AEvoGroup {
     private StyledText requestText;
-    private Button iterativeCheck, selfIterativeCheck;
+    private Button iterativeCheck, selfIterativeCheck, autoApproveCheck;
+    private org.eclipse.swt.widgets.Spinner maxIterationsSpinner;
     private Button sendButton, pauseButton, stopButton, attachButton;
     private Composite attachmentArea;
     private List<String> instructionFiles = new ArrayList<>();
     private AiChatPage page;
 
     public InstructionsGroup(FormToolkit toolkit, Composite parent, AiChatPage page, Orchestrator orchestrator) {
-        super(page.getEditor(), orchestrator);
-        this.page = page;
-        createControl(toolkit, parent);
+        this(toolkit, parent, page, orchestrator, false);
     }
 
-    private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Instructions", 1, true);
+    public InstructionsGroup(FormToolkit toolkit, Composite parent, AiChatPage page, Orchestrator orchestrator, boolean nested) {
+        super(page.getEditor(), orchestrator);
+        this.page = page;
+        createControl(toolkit, parent, nested);
+    }
+
+    private void createControl(FormToolkit toolkit, Composite parent, boolean nested) {
+        if (nested) {
+            group = toolkit.createComposite(parent);
+            org.eclipse.swt.layout.GridLayout layout = new org.eclipse.swt.layout.GridLayout(1, false);
+            layout.marginHeight = 5; layout.marginWidth = 5; layout.verticalSpacing = 5;
+            group.setLayout(layout);
+            group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+            // Add a separator line
+            org.eclipse.swt.widgets.Label separator = toolkit.createLabel(group, "", org.eclipse.swt.SWT.SEPARATOR | org.eclipse.swt.SWT.HORIZONTAL);
+            separator.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        } else {
+            group = SWTFactory.createExpandableGroup(toolkit, parent, "Instructions", 1, true);
+        }
         requestText = new StyledText(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         page.setupContextAssist(requestText);
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
@@ -46,7 +63,7 @@ public class InstructionsGroup extends AEvoGroup {
         attachmentArea.setLayout(new org.eclipse.swt.layout.RowLayout(SWT.HORIZONTAL));
         attachmentArea.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        Composite composite = SWTFactory.createComposite(group, 6);
+        Composite composite = SWTFactory.createComposite(group, 8);
         sendButton = toolkit.createButton(composite, "▶️ Send", SWT.PUSH);
         GridData sendGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
         sendGd.widthHint = 60;
@@ -96,6 +113,27 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
+        autoApproveCheck = toolkit.createButton(composite, "Auto-Approve", SWT.CHECK);
+        autoApproveCheck.setToolTipText("Automatically approve plans and file deletions.");
+        autoApproveCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.syncModelWithUI();
+            }
+        });
+
+        toolkit.createLabel(composite, "Max Iterations:");
+        maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(composite, SWT.BORDER);
+        maxIterationsSpinner.setMinimum(1);
+        maxIterationsSpinner.setMaximum(100);
+        maxIterationsSpinner.setIncrement(1);
+        maxIterationsSpinner.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.syncModelWithUI();
+            }
+        });
+
         attachButton = toolkit.createButton(composite, "\ud83d\udcce" + "Attach MD", SWT.PUSH);
         attachButton.setToolTipText("Add External Instructions (.md)");
         attachButton.addSelectionListener(new SelectionAdapter() {
@@ -119,6 +157,7 @@ public class InstructionsGroup extends AEvoGroup {
 
         sendButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) {
+                updateModel();
                 page.handleSend();
             }
         });
@@ -129,6 +168,7 @@ public class InstructionsGroup extends AEvoGroup {
                 if (e.keyCode == SWT.CR || e.keyCode == SWT.KEYPAD_CR) {
                     if ((e.stateMask & SWT.MODIFIER_MASK) == 0) {
                         e.doit = false;
+                        updateModel();
                         page.handleSend();
                     }
                 }
@@ -141,6 +181,18 @@ public class InstructionsGroup extends AEvoGroup {
         if (orchestrator != null) {
             iterativeCheck.setSelection(orchestrator.isIterativeMode());
             selfIterativeCheck.setSelection(orchestrator.isSelfIterativeMode());
+            autoApproveCheck.setSelection(orchestrator.isAutoApprove());
+            maxIterationsSpinner.setSelection(orchestrator.getPreferredMaxIterations());
+        }
+    }
+
+    @Override
+    public void updateModel() {
+        if (orchestrator != null) {
+            orchestrator.setIterativeMode(iterativeCheck.getSelection());
+            orchestrator.setSelfIterativeMode(selfIterativeCheck.getSelection());
+            orchestrator.setAutoApprove(autoApproveCheck.getSelection());
+            orchestrator.setPreferredMaxIterations(maxIterationsSpinner.getSelection());
         }
     }
 

@@ -271,6 +271,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 // Handle Clarification/Proposal stall
                 if (result != null && (result.contains("CLARIFY") || result.contains("[PROPOSAL:"))) {
                     context.log("Evo-Orchestrator-" + task.getName() + ": Agent requested clarification/proposal: " + result);
+
+                    if (context.isAutoApprove()) {
+                        context.log("Evo-Orchestrator-" + task.getName() + ": Auto-approval enabled. Skipping agent prompt in headless mode.");
+                        return true;
+                    }
+
                     String clarification = context.requestInput(result).get();
                     if (clarification != null) {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Received clarification: " + clarification);
@@ -298,6 +304,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
             if (retry == MAX_RETRIES) {
                 context.log("Evo-Orchestrator-" + task.getName() + ": Failed after " + MAX_RETRIES + " retries");
                 try {
+                    if (context.isAutoApprove()) {
+                        context.log("Evo-Orchestrator-" + task.getName() + ": Auto-approval enabled. Skipping failure guidance, failing task.");
+                        return false;
+                    }
                     String guidance = context.requestInput("Evo-Orchestrator-" + task.getName() + ": Task failed consistently. Waiting for user guidance (retry/skip/hint)...").get();
                     if (guidance != null) {
                         if ("retry".equalsIgnoreCase(guidance.trim())) {
@@ -454,6 +464,11 @@ public class EvolutionOrchestrator implements IOrchestrator {
             if (analysis.optBoolean("isAmbiguous", false)) {
                 String question = analysis.optString("clarificationQuestion", "The request is ambiguous. Can you please provide more details?");
                 context.log("Evo-Orchestrator-Analysis: Request is ambiguous. Question: " + question);
+
+                if (context.isAutoApprove()) {
+                    context.log("Evo-Orchestrator-Analysis: Auto-approval enabled. Skipping clarification in headless mode.");
+                    return request;
+                }
 
                 String clarification = context.requestInput(question).get();
                 if (clarification == null || clarification.trim().isEmpty()) {

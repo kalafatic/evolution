@@ -705,4 +705,48 @@ public interface Orchestrator extends EObject {
 	 */
 	EList<MonitoringData> getMonitoringHistory();
 
+	/**
+	 * Returns the value of the '<em><b>Auto Approve</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Auto Approve</em>' attribute.
+	 * @see #setAutoApprove(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_AutoApprove()
+	 * @model
+	 * @generated
+	 */
+	boolean isAutoApprove();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isAutoApprove <em>Auto Approve</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Auto Approve</em>' attribute.
+	 * @see #isAutoApprove()
+	 * @generated
+	 */
+	void setAutoApprove(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Preferred Max Iterations</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Preferred Max Iterations</em>' attribute.
+	 * @see #setPreferredMaxIterations(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_PreferredMaxIterations()
+	 * @model
+	 * @generated
+	 */
+	int getPreferredMaxIterations();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getPreferredMaxIterations <em>Preferred Max Iterations</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Preferred Max Iterations</em>' attribute.
+	 * @see #getPreferredMaxIterations()
+	 * @generated
+	 */
+	void setPreferredMaxIterations(int value);
+
 } // Orchestrator
