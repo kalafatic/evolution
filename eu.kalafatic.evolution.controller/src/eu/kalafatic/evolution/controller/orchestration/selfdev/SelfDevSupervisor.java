@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import org.json.JSONObject;
+import eu.kalafatic.evolution.controller.orchestration.LlmIntentClassifier;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -14,7 +15,8 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 public class SelfDevSupervisor {
     private final SelfDevSession session;
     private final TaskContext context;
-    private final AnalyticAgent analyticAgent = new AnalyticAgent();
+    protected final AnalyticAgent analyticAgent = new AnalyticAgent();
+    protected final LlmIntentClassifier intentClassifier = new LlmIntentClassifier();
     private static final int MAX_FAILURES = 3;
 
     public SelfDevSupervisor(SelfDevSession session, TaskContext context) {
@@ -29,6 +31,21 @@ public class SelfDevSupervisor {
         try {
             String initialRequest = session.getInitialRequest();
             if (initialRequest != null && !initialRequest.isEmpty()) {
+                // Intent Gate first
+                JSONObject classification;
+                try {
+                    classification = analyzeIntent(initialRequest);
+                } catch (Exception e) {
+                    context.log("[SUPERVISOR] Intent Gate error: " + e.getMessage());
+                    classification = new JSONObject().put("intent", "new");
+                }
+
+                if ("chat".equals(classification.optString("intent"))) {
+                    context.log("[SUPERVISOR] Request classified as chat. Stopping session.");
+                    session.setStatus(SelfDevStatus.COMPLETED);
+                    return;
+                }
+
                 String refinedRequest = analyzeAndClarify(initialRequest);
                 session.setInitialRequest(refinedRequest);
             }
@@ -54,7 +71,7 @@ public class SelfDevSupervisor {
                     break;
                 }
 
-                context.log("[SUPERVISOR] Starting Iteration " + i + " of " + session.getMaxIterations());
+                context.log("[SUPERVISOR] Starting Iteration " + i + " of " + maxIter);
                 Iteration iteration = OrchestrationFactory.eINSTANCE.createIteration();
                 iteration.setId("iteration-" + i);
                 iteration.setBranchName("selfdev/" + session.getId() + "/" + iteration.getId());
@@ -92,6 +109,10 @@ public class SelfDevSupervisor {
             context.log("[SUPERVISOR] Critical failure in session: " + e.getMessage());
             session.setStatus(SelfDevStatus.FAILED);
         }
+    }
+
+    protected JSONObject analyzeIntent(String request) throws Exception {
+        return intentClassifier.classify(request, context);
     }
 
     private String analyzeAndClarify(String request) throws Exception {
