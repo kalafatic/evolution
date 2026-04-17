@@ -99,6 +99,11 @@ public class SelfDevSupervisor {
                 String question = analysis.optString("clarificationQuestion", "The request is ambiguous. Can you please provide more details?");
                 context.log("[SUPERVISOR] Request is ambiguous. Asking for clarification...");
 
+                if (context.isAutoApprove()) {
+                    context.log("Evo-Supervisor: Auto-approval enabled. Skipping clarification in headless mode.");
+                    return request;
+                }
+
                 String clarification = context.requestInput(question).get();
                 if (clarification == null || clarification.trim().isEmpty()) {
                     context.log("[SUPERVISOR] No clarification provided. Proceeding with original request.");

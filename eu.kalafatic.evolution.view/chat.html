@@ -297,8 +297,14 @@
 
             // Specific phrase links
             text = text.replace(/could you tell me a bit more about what you(?:’|'|&#039;)re trying to accomplish\?/g, '<a onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">$&</a>');
-            text = text.replace(/Are you looking for a simple example to get started/g, '<a onclick="event.stopPropagation(); JavaHandler(\'helloworld\', \'-1\', \'\')">$&</a>');
-            text = text.replace(/are you working on a more complex project that requires a specific file structure\?/g, '<a onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">$&</a>');
+            text = text.replace(/Are you looking for a simple example to get started/g, '<a class="link-go" onclick="event.stopPropagation(); JavaHandler(\'helloworld\', \'-1\', \'\')">$&</a>');
+            text = text.replace(/are you working on a more complex project that requires a specific file structure\?/g, '<a class="link-clarify" onclick="event.stopPropagation(); JavaHandler(\'clarify\', \'-1\', \'\')">$&</a>');
+
+            // Problem patterns
+            const problemPatterns = [/server not running/gi, /model not active/gi, /connection lost/gi, /connection refused/gi, /error during execution/gi, /exception:/gi, /failed/gi];
+            problemPatterns.forEach(pattern => {
+                text = text.replace(pattern, '<a class="link-problem">$&</a>');
+            });
 
             // General proposal link [PROPOSAL: Label | Request]
             text = text.replace(/\[PROPOSAL:\s*(.*?)\s*\|\s*(.*?)\s*\]/g, '<a onclick="event.stopPropagation(); JavaHandler(\'executeProposal\', \'-1\', \'$2\')"><b>$1</b></a>');

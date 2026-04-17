@@ -1032,6 +1032,26 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getOrchestrator_AutoApprove() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(32);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getOrchestrator_PreferredMaxIterations() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(33);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getServerSettings() {
 		return serverSettingsEClass;
 	}
@@ -2905,6 +2925,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__SERVER_SETTINGS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__SERVER_SESSIONS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__MONITORING_HISTORY);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__AUTO_APPROVE);
+		createEAttribute(orchestratorEClass, ORCHESTRATOR__PREFERRED_MAX_ITERATIONS);
 
 		serverSettingsEClass = createEClass(SERVER_SETTINGS);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORT);
@@ -3214,6 +3236,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_ServerSettings(), this.getServerSettings(), null, "serverSettings", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_ServerSessions(), this.getServerSession(), null, "serverSessions", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_MonitoringHistory(), this.getMonitoringData(), null, "monitoringHistory", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_AutoApprove(), ecorePackage.getEBoolean(), "autoApprove", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrchestrator_PreferredMaxIterations(), ecorePackage.getEInt(), "preferredMaxIterations", "5", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSettingsEClass, ServerSettings.class, "ServerSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getServerSettings_Port(), ecorePackage.getEInt(), "port", "8080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

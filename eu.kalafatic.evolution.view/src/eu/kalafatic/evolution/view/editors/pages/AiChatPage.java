@@ -753,10 +753,29 @@ public class AiChatPage extends SharedScrolledComposite {
 			String prefix = contents.substring(0, position);
 			int lastSpace = prefix.lastIndexOf(' '); if (lastSpace != -1) prefix = prefix.substring(lastSpace + 1);
 			String finalPrefix = prefix;
-			String[] proposals = NeuronService.getInstance().getProposals(orchestrator, finalPrefix);
-			IContentProposal[] result = new IContentProposal[proposals.length];
-			for (int i = 0; i < proposals.length; i++) {
-				final String proposal = proposals[i];
+
+			List<String> allProposals = new java.util.ArrayList<>();
+
+			// Magic Commands
+			if (contents.startsWith("/")) {
+				allProposals.add("/create class ");
+				allProposals.add("/create test for ");
+				allProposals.add("/fix all warnings");
+				allProposals.add("/analyze project structure");
+				allProposals.add("/refactor ");
+				allProposals.add("/explain ");
+				allProposals.add("/apply best practices");
+			}
+
+			// Neuron Proposals
+			String[] neuronProposals = NeuronService.getInstance().getProposals(orchestrator, finalPrefix);
+			for (String p : neuronProposals) {
+				if (!allProposals.contains(p)) allProposals.add(p);
+			}
+
+			IContentProposal[] result = new IContentProposal[allProposals.size()];
+			for (int i = 0; i < allProposals.size(); i++) {
+				final String proposal = allProposals.get(i);
 				result[i] = new IContentProposal() {
 					@Override public String getContent() { return proposal; }
 					@Override public int getCursorPosition() { return proposal.length(); }

@@ -545,6 +545,92 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected EList<MonitoringData> monitoringHistory;
 
 	/**
+	 * The default value of the '{@link #isAutoApprove() <em>Auto Approve</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isAutoApprove()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean AUTO_APPROVE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isAutoApprove() <em>Auto Approve</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isAutoApprove()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean autoApprove = AUTO_APPROVE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getPreferredMaxIterations() <em>Preferred Max Iterations</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPreferredMaxIterations()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int PREFERRED_MAX_ITERATIONS_EDEFAULT = 5;
+
+	/**
+	 * The cached value of the '{@link #getPreferredMaxIterations() <em>Preferred Max Iterations</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPreferredMaxIterations()
+	 * @generated
+	 * @ordered
+	 */
+	protected int preferredMaxIterations = PREFERRED_MAX_ITERATIONS_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isAutoApprove() {
+		return autoApprove;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAutoApprove(boolean newAutoApprove) {
+		boolean oldAutoApprove = autoApprove;
+		autoApprove = newAutoApprove;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE, oldAutoApprove, autoApprove));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getPreferredMaxIterations() {
+		return preferredMaxIterations;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPreferredMaxIterations(int newPreferredMaxIterations) {
+		int oldPreferredMaxIterations = preferredMaxIterations;
+		preferredMaxIterations = newPreferredMaxIterations;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS, oldPreferredMaxIterations, preferredMaxIterations));
+	}
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -1623,6 +1709,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getServerSessions();
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				return getMonitoringHistory();
+			case OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE:
+				return isAutoApprove();
+			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
+				return getPreferredMaxIterations();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1738,6 +1828,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				getMonitoringHistory().clear();
 				getMonitoringHistory().addAll((Collection<? extends MonitoringData>)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE:
+				setAutoApprove((Boolean)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
+				setPreferredMaxIterations((Integer)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1846,6 +1942,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				getMonitoringHistory().clear();
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE:
+				setAutoApprove(AUTO_APPROVE_EDEFAULT);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
+				setPreferredMaxIterations(PREFERRED_MAX_ITERATIONS_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1922,6 +2024,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return serverSessions != null && !serverSessions.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				return monitoringHistory != null && !monitoringHistory.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE:
+				return autoApprove != AUTO_APPROVE_EDEFAULT;
+			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
+				return preferredMaxIterations != PREFERRED_MAX_ITERATIONS_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1964,6 +2070,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		result.append(selfIterativeMode);
 		result.append(", darwinMode: ");
 		result.append(darwinMode);
+		result.append(", autoApprove: ");
+		result.append(autoApprove);
+		result.append(", preferredMaxIterations: ");
+		result.append(preferredMaxIterations);
 		result.append(')');
 		return result.toString();
 	}

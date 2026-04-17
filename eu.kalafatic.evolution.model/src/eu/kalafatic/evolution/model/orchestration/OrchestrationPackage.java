@@ -619,13 +619,31 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__MONITORING_HISTORY = 31;
 
 	/**
+	 * The feature id for the '<em><b>Auto Approve</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__AUTO_APPROVE = 32;
+
+	/**
+	 * The feature id for the '<em><b>Preferred Max Iterations</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__PREFERRED_MAX_ITERATIONS = 33;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 32;
+	int ORCHESTRATOR_FEATURE_COUNT = 34;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -3575,6 +3593,28 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_MonitoringHistory();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isAutoApprove <em>Auto Approve</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Auto Approve</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isAutoApprove()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_AutoApprove();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getPreferredMaxIterations <em>Preferred Max Iterations</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Preferred Max Iterations</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getPreferredMaxIterations()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_PreferredMaxIterations();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings <em>Server Settings</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5992,6 +6032,22 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EReference ORCHESTRATOR__MONITORING_HISTORY = eINSTANCE.getOrchestrator_MonitoringHistory();
+
+		/**
+		 * The meta object literal for the '<em><b>Auto Approve</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__AUTO_APPROVE = eINSTANCE.getOrchestrator_AutoApprove();
+
+		/**
+		 * The meta object literal for the '<em><b>Preferred Max Iterations</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__PREFERRED_MAX_ITERATIONS = eINSTANCE.getOrchestrator_PreferredMaxIterations();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl <em>Server Settings</em>}' class.
