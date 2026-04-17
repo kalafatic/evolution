@@ -133,11 +133,12 @@
         .sender {
             font-size: 11px; font-weight: 700; color: #64748b;
             text-transform: uppercase; letter-spacing: 0.05em;
+            user-select: none;
         }
         .user .sender { color: #2563eb; }
 
-        .timestamp { font-size: 10px; color: #94a3b8; }
-        .icon { font-size: 14px; }
+        .timestamp { font-size: 10px; color: #94a3b8; user-select: none; }
+        .icon { font-size: 14px; user-select: none; }
 
         /* Bubbles */
         .bubble { 
@@ -191,6 +192,7 @@
         .actions { 
             display: flex; flex-direction: row; gap: 4px;
             opacity: 0; transition: opacity 0.2s;
+            user-select: none;
         }
         .message:hover .actions { opacity: 1; }
         .message.waiting .actions { opacity: 1; }
@@ -200,6 +202,7 @@
             width: 24px; height: 24px; display: flex; align-items: center;
             justify-content: center; cursor: pointer; color: #64748b; transition: all 0.2s;
             font-size: 12px;
+            user-select: none;
         }
         .action-btn:hover { background: #f1f5f9; color: #2563eb; border-color: #cbd5e1; }
         .action-btn.approve { color: #16a34a; }
@@ -305,7 +308,7 @@
 
             text = text.replace(/___CODE_BLOCK_(\d+)___/g, function(match, index) {
                 const code = blocks[parseInt(index)];
-                return '<pre><code>' + escapeHtml(code) + '</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.1);border:none;color:white;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;" onclick="event.stopPropagation(); JavaHandler(\'copy\', \'-1\', \'' + escapeJs(code) + '\')">Copy</button></pre>';
+                return '<pre><code>' + escapeHtml(code) + '</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.1);border:none;color:white;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;user-select:none;" onclick="event.stopPropagation(); JavaHandler(\'copy\', \'-1\', \'' + escapeJs(code) + '\')">Copy</button></pre>';
             });
 
             // Headers
@@ -347,10 +350,18 @@
 
         function selectAll() {
             let text = '';
-            document.querySelectorAll('.bubble-content').forEach(m => {
-                text += m.innerText + '\n\n';
+            document.querySelectorAll('.message').forEach(m => {
+                const sender = m.querySelector('.sender').innerText;
+                const timestamp = m.querySelector('.timestamp').innerText;
+                const bubble = m.querySelector('.bubble-content');
+
+                // Clone the bubble to remove non-text elements like copy buttons
+                const clone = bubble.cloneNode(true);
+                clone.querySelectorAll('.copy-btn').forEach(btn => btn.remove());
+
+                text += sender + ' [' + timestamp + ']: ' + clone.innerText + '\n\n';
             });
-            JavaHandler('copy', '-1', text);
+            JavaHandler('copy', '-1', text.trim());
         }
 
         function toggleAll() {
