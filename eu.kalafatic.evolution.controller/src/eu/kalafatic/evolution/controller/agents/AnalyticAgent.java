@@ -24,6 +24,7 @@ public class AnalyticAgent extends BaseAiAgent {
                 "3. AMBIGUITY: Is the request clear enough to execute? \n" +
                 "   - Example of ambiguous: 'fix the bug' (which bug? where?), 'create file' (what name? what content?).\n" +
                 "   - Example of clear: 'Create a Java class named Hello in src/main/java that prints \"Hi\"'.\n" +
+                "   - If 'create file' or similar is requested without details, YOUR clarificationQuestion MUST specifically ask: 'Where should the file/directory be created? What is the name, extension, and purpose?'.\n" +
                 "   - NOTE: Simple greetings (e.g., 'hi', 'hello', 'good morning') are NEVER ambiguous. Categorize them as CHAT.\n" +
                 "4. MISSING INFORMATION: List specific details needed to proceed.\n\n" +
                 "OUTPUT FORMAT:\n" +
