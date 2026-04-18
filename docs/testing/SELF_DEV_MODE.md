@@ -26,3 +26,4 @@ Autonomous self-modification mode. The `SelfDevSupervisor` manages a multi-itera
 ## Reference Tests
 - `eu.kalafatic.evolution.controller.tests.DarwinEvolutionTest` (covers the underlying Darwin loop used by Self-Dev)
 - `eu.kalafatic.evolution.controller.tests.ScenarioTest.testScenario4_PromptEvoIterative`
+- `eu.kalafatic.evolution.controller.tests.ModeRouterTest.testExplicitSelfDevMode`

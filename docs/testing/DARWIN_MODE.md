@@ -25,3 +25,4 @@ Competitive evolutionary solving. The `DarwinEngine` generates multiple competin
 ## Reference Tests
 - `eu.kalafatic.evolution.controller.tests.DarwinEvolutionTest`
 - `eu.kalafatic.evolution.controller.tests.ScenarioTest.testScenario3_PromptEvo`
+- `eu.kalafatic.evolution.controller.tests.ModeRouterTest.testExplicitDarwinMode`
