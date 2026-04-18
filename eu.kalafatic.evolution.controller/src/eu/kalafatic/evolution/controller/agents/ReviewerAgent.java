@@ -2,6 +2,8 @@ package eu.kalafatic.evolution.controller.agents;
 
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
@@ -32,7 +34,11 @@ public class ReviewerAgent extends BaseAiAgent {
     }
 
     public JSONObject evaluate(String taskOutput, String taskDescription, TaskContext context) throws Exception {
-        String reviewResult = process("Evaluation of output: " + taskOutput + " for task: " + taskDescription, context, null);
+        String modeInfo = "";
+        if (context.getPlatformMode() != null && context.getPlatformMode().isAllowSelfModify()) {
+            modeInfo = "\nSTRICT EVALUATION: System is in Self-Modification mode. Ensure the change improves system health and stability.\n";
+        }
+        String reviewResult = process("Evaluation of output: " + taskOutput + " for task: " + taskDescription + modeInfo, context, null);
 
         int start = reviewResult.indexOf("{");
         int end = reviewResult.lastIndexOf("}");

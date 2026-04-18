@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.List;
+import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
@@ -42,7 +44,12 @@ public class IterationManager {
     }
 
     public EvaluationResult run() throws Exception {
-        if (context.getOrchestrator().isDarwinMode()) {
+        PlatformMode mode = context.getPlatformMode();
+        if (mode != null && mode.getType() == PlatformType.DARWIN_MODE) {
+            return runDarwin();
+        } else if (mode != null && mode.getType() == PlatformType.SELF_DEV_MODE) {
+            return runDarwin(); // Self-dev uses Darwin loop
+        } else if (context.getOrchestrator().isDarwinMode()) {
             return runDarwin();
         } else {
             return runIterative();
@@ -143,6 +150,36 @@ public class IterationManager {
                         .distinct()
                         .collect(Collectors.toList());
                     variant.setChangedFiles(changed);
+
+                    // Safety Check for SELF_DEV_MODE
+                    if (context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
+                        for (Task t : tasks) {
+                            if ("file".equalsIgnoreCase(t.getType())) {
+                                String taskName = t.getName().toLowerCase();
+                                // Block build config changes unless allowSelfModify is explicitly true (it is for SELF_DEV by default)
+                                if (taskName.contains("pom.xml") && !context.getPlatformMode().isAllowSelfModify()) {
+                                    context.log("[DARWIN] Safety: blocked modification of build config in self-dev mode.");
+                                    throw new Exception("Safety Violation: Self-modification of build config is restricted.");
+                                }
+
+                                // Enforcement of allowed directories/modules
+                                List<String> allowedPaths = context.getPlatformMode().getAllowedPaths();
+                                if (allowedPaths != null && !allowedPaths.isEmpty()) {
+                                    boolean isPathAllowed = false;
+                                    for (String allowed : allowedPaths) {
+                                        if (taskName.contains(allowed.toLowerCase())) {
+                                            isPathAllowed = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!isPathAllowed) {
+                                        context.log("[DARWIN] Safety: Blocked modification outside allowed directories. Task: " + t.getName());
+                                        throw new Exception("Safety Violation: Modification of path outside allowed directories is restricted in SELF_DEV mode.");
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     // CRITICAL: Commit changes to the variant branch so they are not lost
                     if (success) {

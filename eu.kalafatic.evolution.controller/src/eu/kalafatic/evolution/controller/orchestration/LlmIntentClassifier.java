@@ -21,6 +21,9 @@ public class LlmIntentClassifier implements IIntentClassifier {
 
         sb.append("--- CURRENT STATE ---\n");
         sb.append(state.toJSON().toString(2)).append("\n");
+        if (context.getPlatformMode() != null) {
+            sb.append("Active Mode: ").append(context.getPlatformMode().getType()).append("\n");
+        }
         sb.append("--- END STATE ---\n\n");
 
         sb.append("CLASSIFICATION CATEGORIES:\n");
