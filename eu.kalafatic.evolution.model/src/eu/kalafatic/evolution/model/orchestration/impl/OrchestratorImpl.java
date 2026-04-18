@@ -1,11 +1,9 @@
-/**
- */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.AIProvider;
-import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
+import eu.kalafatic.evolution.model.orchestration.Compiler;
 import eu.kalafatic.evolution.model.orchestration.Database;
 import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
@@ -14,7 +12,6 @@ import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
-import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
@@ -22,6 +19,12 @@ import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
+import eu.kalafatic.evolution.model.orchestration.LogElement;
+import eu.kalafatic.evolution.model.orchestration.NetInterface;
+import eu.kalafatic.evolution.model.orchestration.SyncObject;
+import eu.kalafatic.evolution.model.orchestration.ComboData;
+import eu.kalafatic.evolution.model.orchestration.PlatformMode;
+import eu.kalafatic.evolution.model.orchestration.TaskContext;
 
 import java.util.Collection;
 
@@ -79,6 +82,15 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getServerSettings <em>Server Settings</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getServerSessions <em>Server Sessions</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMonitoringHistory <em>Monitoring History</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#isAutoApprove <em>Auto Approve</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getPreferredMaxIterations <em>Preferred Max Iterations</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#isGitAutomation <em>Git Automation</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getLogs <em>Logs</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getNetInterfaces <em>Net Interfaces</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getSyncObjects <em>Sync Objects</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getComboConfigs <em>Combo Configs</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getActivePlatformMode <em>Active Platform Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getContexts <em>Contexts</em>}</li>
  * </ul>
  *
  * @generated
@@ -132,7 +144,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Agent> agents;
+	protected EList<eu.kalafatic.evolution.model.orchestration.Agent> agents;
 
 	/**
 	 * The cached value of the '{@link #getTasks() <em>Tasks</em>}' containment reference list.
@@ -192,7 +204,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected eu.kalafatic.evolution.model.orchestration.Compiler compiler;
+	protected Compiler compiler;
 
 	/**
 	 * The cached value of the '{@link #getOllama() <em>Ollama</em>}' containment reference.
@@ -202,7 +214,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected Ollama ollama;
+	protected eu.kalafatic.evolution.model.orchestration.Ollama ollama;
 
 	/**
 	 * The cached value of the '{@link #getAiChat() <em>Ai Chat</em>}' containment reference.
@@ -222,7 +234,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected NeuronAI neuronAI;
+	protected eu.kalafatic.evolution.model.orchestration.NeuronAI neuronAI;
 
 	/**
 	 * The default value of the '{@link #getRemoteModel() <em>Remote Model</em>}' attribute.
@@ -605,73 +617,64 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected boolean gitAutomation = GIT_AUTOMATION_EDEFAULT;
 
 	/**
+	 * The cached value of the '{@link #getLogs() <em>Logs</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @see #getLogs()
 	 * @generated
+	 * @ordered
 	 */
-	@Override
-	public boolean isAutoApprove() {
-		return autoApprove;
-	}
+	protected EList<LogElement> logs;
 
 	/**
+	 * The cached value of the '{@link #getNetInterfaces() <em>Net Interfaces</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @see #getNetInterfaces()
 	 * @generated
+	 * @ordered
 	 */
-	@Override
-	public void setAutoApprove(boolean newAutoApprove) {
-		boolean oldAutoApprove = autoApprove;
-		autoApprove = newAutoApprove;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE, oldAutoApprove, autoApprove));
-	}
+	protected EList<NetInterface> netInterfaces;
 
 	/**
+	 * The cached value of the '{@link #getSyncObjects() <em>Sync Objects</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @see #getSyncObjects()
 	 * @generated
+	 * @ordered
 	 */
-	@Override
-	public int getPreferredMaxIterations() {
-		return preferredMaxIterations;
-	}
+	protected EList<SyncObject> syncObjects;
 
 	/**
+	 * The cached value of the '{@link #getComboConfigs() <em>Combo Configs</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @see #getComboConfigs()
 	 * @generated
+	 * @ordered
 	 */
-	@Override
-	public void setPreferredMaxIterations(int newPreferredMaxIterations) {
-		int oldPreferredMaxIterations = preferredMaxIterations;
-		preferredMaxIterations = newPreferredMaxIterations;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS, oldPreferredMaxIterations, preferredMaxIterations));
-	}
+	protected EList<ComboData> comboConfigs;
 
 	/**
+	 * The cached value of the '{@link #getActivePlatformMode() <em>Active Platform Mode</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @see #getActivePlatformMode()
 	 * @generated
+	 * @ordered
 	 */
-	@Override
-	public boolean isGitAutomation() {
-		return gitAutomation;
-	}
+	protected PlatformMode activePlatformMode;
 
 	/**
+	 * The cached value of the '{@link #getContexts() <em>Contexts</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @see #getContexts()
 	 * @generated
+	 * @ordered
 	 */
-	@Override
-	public void setGitAutomation(boolean newGitAutomation) {
-		boolean oldGitAutomation = gitAutomation;
-		gitAutomation = newGitAutomation;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION, oldGitAutomation, gitAutomation));
-	}
+	protected EList<TaskContext> contexts;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -744,9 +747,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public EList<Agent> getAgents() {
+	public EList<eu.kalafatic.evolution.model.orchestration.Agent> getAgents() {
 		if (agents == null) {
-			agents = new EObjectContainmentEList<Agent>(Agent.class, this, OrchestrationPackage.ORCHESTRATOR__AGENTS);
+			agents = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.Agent>(eu.kalafatic.evolution.model.orchestration.Agent.class, this, OrchestrationPackage.ORCHESTRATOR__AGENTS);
 		}
 		return agents;
 	}
@@ -918,7 +921,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public eu.kalafatic.evolution.model.orchestration.Compiler getCompiler() {
+	public Compiler getCompiler() {
 		return compiler;
 	}
 
@@ -927,8 +930,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetCompiler(eu.kalafatic.evolution.model.orchestration.Compiler newCompiler, NotificationChain msgs) {
-		eu.kalafatic.evolution.model.orchestration.Compiler oldCompiler = compiler;
+	public NotificationChain basicSetCompiler(Compiler newCompiler, NotificationChain msgs) {
+		Compiler oldCompiler = compiler;
 		compiler = newCompiler;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__COMPILER, oldCompiler, newCompiler);
@@ -943,7 +946,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public void setCompiler(eu.kalafatic.evolution.model.orchestration.Compiler newCompiler) {
+	public void setCompiler(Compiler newCompiler) {
 		if (newCompiler != compiler) {
 			NotificationChain msgs = null;
 			if (compiler != null)
@@ -963,7 +966,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public Ollama getOllama() {
+	public eu.kalafatic.evolution.model.orchestration.Ollama getOllama() {
 		return ollama;
 	}
 
@@ -972,8 +975,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetOllama(Ollama newOllama, NotificationChain msgs) {
-		Ollama oldOllama = ollama;
+	public NotificationChain basicSetOllama(eu.kalafatic.evolution.model.orchestration.Ollama newOllama, NotificationChain msgs) {
+		eu.kalafatic.evolution.model.orchestration.Ollama oldOllama = ollama;
 		ollama = newOllama;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__OLLAMA, oldOllama, newOllama);
@@ -988,7 +991,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public void setOllama(Ollama newOllama) {
+	public void setOllama(eu.kalafatic.evolution.model.orchestration.Ollama newOllama) {
 		if (newOllama != ollama) {
 			NotificationChain msgs = null;
 			if (ollama != null)
@@ -1053,7 +1056,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public NeuronAI getNeuronAI() {
+	public eu.kalafatic.evolution.model.orchestration.NeuronAI getNeuronAI() {
 		return neuronAI;
 	}
 
@@ -1062,8 +1065,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetNeuronAI(NeuronAI newNeuronAI, NotificationChain msgs) {
-		NeuronAI oldNeuronAI = neuronAI;
+	public NotificationChain basicSetNeuronAI(eu.kalafatic.evolution.model.orchestration.NeuronAI newNeuronAI, NotificationChain msgs) {
+		eu.kalafatic.evolution.model.orchestration.NeuronAI oldNeuronAI = neuronAI;
 		neuronAI = newNeuronAI;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__NEURON_AI, oldNeuronAI, newNeuronAI);
@@ -1078,7 +1081,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public void setNeuronAI(NeuronAI newNeuronAI) {
+	public void setNeuronAI(eu.kalafatic.evolution.model.orchestration.NeuronAI newNeuronAI) {
 		if (newNeuronAI != neuronAI) {
 			NotificationChain msgs = null;
 			if (neuronAI != null)
@@ -1638,6 +1641,185 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
+	public boolean isAutoApprove() {
+		return autoApprove;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAutoApprove(boolean newAutoApprove) {
+		boolean oldAutoApprove = autoApprove;
+		autoApprove = newAutoApprove;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE, oldAutoApprove, autoApprove));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getPreferredMaxIterations() {
+		return preferredMaxIterations;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPreferredMaxIterations(int newPreferredMaxIterations) {
+		int oldPreferredMaxIterations = preferredMaxIterations;
+		preferredMaxIterations = newPreferredMaxIterations;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS, oldPreferredMaxIterations, preferredMaxIterations));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isGitAutomation() {
+		return gitAutomation;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGitAutomation(boolean newGitAutomation) {
+		boolean oldGitAutomation = gitAutomation;
+		gitAutomation = newGitAutomation;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION, oldGitAutomation, gitAutomation));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<LogElement> getLogs() {
+		if (logs == null) {
+			logs = new EObjectContainmentEList<LogElement>(LogElement.class, this, OrchestrationPackage.ORCHESTRATOR__LOGS);
+		}
+		return logs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<NetInterface> getNetInterfaces() {
+		if (netInterfaces == null) {
+			netInterfaces = new EObjectContainmentEList<NetInterface>(NetInterface.class, this, OrchestrationPackage.ORCHESTRATOR__NET_INTERFACES);
+		}
+		return netInterfaces;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<SyncObject> getSyncObjects() {
+		if (syncObjects == null) {
+			syncObjects = new EObjectContainmentEList<SyncObject>(SyncObject.class, this, OrchestrationPackage.ORCHESTRATOR__SYNC_OBJECTS);
+		}
+		return syncObjects;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<ComboData> getComboConfigs() {
+		if (comboConfigs == null) {
+			comboConfigs = new EObjectContainmentEList<ComboData>(ComboData.class, this, OrchestrationPackage.ORCHESTRATOR__COMBO_CONFIGS);
+		}
+		return comboConfigs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public PlatformMode getActivePlatformMode() {
+		return activePlatformMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetActivePlatformMode(PlatformMode newActivePlatformMode, NotificationChain msgs) {
+		PlatformMode oldActivePlatformMode = activePlatformMode;
+		activePlatformMode = newActivePlatformMode;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ACTIVE_PLATFORM_MODE, oldActivePlatformMode, newActivePlatformMode);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setActivePlatformMode(PlatformMode newActivePlatformMode) {
+		if (newActivePlatformMode != activePlatformMode) {
+			NotificationChain msgs = null;
+			if (activePlatformMode != null)
+				msgs = ((InternalEObject)activePlatformMode).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__ACTIVE_PLATFORM_MODE, null, msgs);
+			if (newActivePlatformMode != null)
+				msgs = ((InternalEObject)newActivePlatformMode).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__ACTIVE_PLATFORM_MODE, null, msgs);
+			msgs = basicSetActivePlatformMode(newActivePlatformMode, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ACTIVE_PLATFORM_MODE, newActivePlatformMode, newActivePlatformMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<TaskContext> getContexts() {
+		if (contexts == null) {
+			contexts = new EObjectContainmentEList<TaskContext>(TaskContext.class, this, OrchestrationPackage.ORCHESTRATOR__CONTEXTS);
+		}
+		return contexts;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
@@ -1676,6 +1858,18 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return ((InternalEList<?>)getServerSessions()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				return ((InternalEList<?>)getMonitoringHistory()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__LOGS:
+				return ((InternalEList<?>)getLogs()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__NET_INTERFACES:
+				return ((InternalEList<?>)getNetInterfaces()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__SYNC_OBJECTS:
+				return ((InternalEList<?>)getSyncObjects()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__COMBO_CONFIGS:
+				return ((InternalEList<?>)getComboConfigs()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__ACTIVE_PLATFORM_MODE:
+				return basicSetActivePlatformMode(null, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__CONTEXTS:
+				return ((InternalEList<?>)getContexts()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1758,6 +1952,18 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getPreferredMaxIterations();
 			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
 				return isGitAutomation();
+			case OrchestrationPackage.ORCHESTRATOR__LOGS:
+				return getLogs();
+			case OrchestrationPackage.ORCHESTRATOR__NET_INTERFACES:
+				return getNetInterfaces();
+			case OrchestrationPackage.ORCHESTRATOR__SYNC_OBJECTS:
+				return getSyncObjects();
+			case OrchestrationPackage.ORCHESTRATOR__COMBO_CONFIGS:
+				return getComboConfigs();
+			case OrchestrationPackage.ORCHESTRATOR__ACTIVE_PLATFORM_MODE:
+				return getActivePlatformMode();
+			case OrchestrationPackage.ORCHESTRATOR__CONTEXTS:
+				return getContexts();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1779,7 +1985,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
 				getAgents().clear();
-				getAgents().addAll((Collection<? extends Agent>)newValue);
+				getAgents().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.Agent>)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__TASKS:
 				getTasks().clear();
@@ -1799,16 +2005,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				setLlm((LLM)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__COMPILER:
-				setCompiler((eu.kalafatic.evolution.model.orchestration.Compiler)newValue);
+				setCompiler((Compiler)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__OLLAMA:
-				setOllama((Ollama)newValue);
+				setOllama((eu.kalafatic.evolution.model.orchestration.Ollama)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
 				setAiChat((AiChat)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
-				setNeuronAI((NeuronAI)newValue);
+				setNeuronAI((eu.kalafatic.evolution.model.orchestration.NeuronAI)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
 				setRemoteModel((String)newValue);
@@ -1882,6 +2088,29 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
 				setGitAutomation((Boolean)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__LOGS:
+				getLogs().clear();
+				getLogs().addAll((Collection<? extends LogElement>)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__NET_INTERFACES:
+				getNetInterfaces().clear();
+				getNetInterfaces().addAll((Collection<? extends NetInterface>)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__SYNC_OBJECTS:
+				getSyncObjects().clear();
+				getSyncObjects().addAll((Collection<? extends SyncObject>)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__COMBO_CONFIGS:
+				getComboConfigs().clear();
+				getComboConfigs().addAll((Collection<? extends ComboData>)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__ACTIVE_PLATFORM_MODE:
+				setActivePlatformMode((PlatformMode)newValue);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__CONTEXTS:
+				getContexts().clear();
+				getContexts().addAll((Collection<? extends TaskContext>)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1919,16 +2148,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				setLlm((LLM)null);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__COMPILER:
-				setCompiler((eu.kalafatic.evolution.model.orchestration.Compiler)null);
+				setCompiler((Compiler)null);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__OLLAMA:
-				setOllama((Ollama)null);
+				setOllama((eu.kalafatic.evolution.model.orchestration.Ollama)null);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__AI_CHAT:
 				setAiChat((AiChat)null);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__NEURON_AI:
-				setNeuronAI((NeuronAI)null);
+				setNeuronAI((eu.kalafatic.evolution.model.orchestration.NeuronAI)null);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__REMOTE_MODEL:
 				setRemoteModel(REMOTE_MODEL_EDEFAULT);
@@ -1998,6 +2227,24 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
 				setGitAutomation(GIT_AUTOMATION_EDEFAULT);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__LOGS:
+				getLogs().clear();
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__NET_INTERFACES:
+				getNetInterfaces().clear();
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__SYNC_OBJECTS:
+				getSyncObjects().clear();
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__COMBO_CONFIGS:
+				getComboConfigs().clear();
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__ACTIVE_PLATFORM_MODE:
+				setActivePlatformMode((PlatformMode)null);
+				return;
+			case OrchestrationPackage.ORCHESTRATOR__CONTEXTS:
+				getContexts().clear();
 				return;
 		}
 		super.eUnset(featureID);
@@ -2081,6 +2328,18 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return preferredMaxIterations != PREFERRED_MAX_ITERATIONS_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
 				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
+			case OrchestrationPackage.ORCHESTRATOR__LOGS:
+				return logs != null && !logs.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__NET_INTERFACES:
+				return netInterfaces != null && !netInterfaces.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__SYNC_OBJECTS:
+				return syncObjects != null && !syncObjects.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__COMBO_CONFIGS:
+				return comboConfigs != null && !comboConfigs.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__ACTIVE_PLATFORM_MODE:
+				return activePlatformMode != null;
+			case OrchestrationPackage.ORCHESTRATOR__CONTEXTS:
+				return contexts != null && !contexts.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}

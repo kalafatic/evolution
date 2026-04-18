@@ -1,6 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PlatformMode;
+import eu.kalafatic.evolution.model.orchestration.PlatformType;
+import eu.kalafatic.evolution.model.orchestration.AutonomyLevel;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 
 /**
  * Routes execution based on detected or assigned PlatformMode.
@@ -43,19 +47,38 @@ public class ModeRouter {
     }
 
     private PlatformMode createSimpleChatMode() {
-        return new PlatformMode(PlatformType.SIMPLE_CHAT, AutonomyLevel.LOW, 1, false);
+        PlatformMode mode = OrchestrationFactory.eINSTANCE.createPlatformMode();
+        mode.setType(PlatformType.SIMPLE_CHAT);
+        mode.setAutonomyLevel(AutonomyLevel.LOW);
+        mode.setIterationLimit(1);
+        mode.setAllowSelfModify(false);
+        return mode;
     }
 
     private PlatformMode createAssistedCodingMode() {
-        return new PlatformMode(PlatformType.ASSISTED_CODING, AutonomyLevel.LOW, 2, false);
+        PlatformMode mode = OrchestrationFactory.eINSTANCE.createPlatformMode();
+        mode.setType(PlatformType.ASSISTED_CODING);
+        mode.setAutonomyLevel(AutonomyLevel.LOW);
+        mode.setIterationLimit(2);
+        mode.setAllowSelfModify(false);
+        return mode;
     }
 
     private PlatformMode createDarwinMode() {
-        return new PlatformMode(PlatformType.DARWIN_MODE, AutonomyLevel.MEDIUM, 3, false);
+        PlatformMode mode = OrchestrationFactory.eINSTANCE.createPlatformMode();
+        mode.setType(PlatformType.DARWIN_MODE);
+        mode.setAutonomyLevel(AutonomyLevel.MEDIUM);
+        mode.setIterationLimit(3);
+        mode.setAllowSelfModify(false);
+        return mode;
     }
 
     private PlatformMode createSelfDevMode() {
-        PlatformMode mode = new PlatformMode(PlatformType.SELF_DEV_MODE, AutonomyLevel.HIGH, 5, true);
+        PlatformMode mode = OrchestrationFactory.eINSTANCE.createPlatformMode();
+        mode.setType(PlatformType.SELF_DEV_MODE);
+        mode.setAutonomyLevel(AutonomyLevel.HIGH);
+        mode.setIterationLimit(5);
+        mode.setAllowSelfModify(true);
         // Restrict self-modification to a defined set of modules/directories for safety.
         // For Evo, we allow most things but can exclude core infrastructure if needed.
         mode.getAllowedPaths().add("eu.kalafatic.evolution.controller/src");

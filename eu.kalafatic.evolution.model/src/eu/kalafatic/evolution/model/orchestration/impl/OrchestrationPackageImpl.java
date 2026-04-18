@@ -79,6 +79,66 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
+	public EReference getOrchestrator_Logs() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(35);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_NetInterfaces() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(36);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_SyncObjects() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(37);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_ComboConfigs() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(38);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_ActivePlatformMode() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(39);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_Contexts() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(40);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass taskEClass = null;
 
 	/**
@@ -395,6 +455,76 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EEnum reviewDecisionEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass logElementEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass netInterfaceEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass syncObjectEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass comboElementEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass comboDataEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum syncTypeEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum platformTypeEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum autonomyLevelEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass platformModeEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass taskContextEClass = null;
 
 	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
@@ -2851,6 +2981,436 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EClass getLogElement() {
+		return logElementEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getLogElement_Type() {
+		return (EAttribute)logElementEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getLogElement_Date() {
+		return (EAttribute)logElementEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getLogElement_Name() {
+		return (EAttribute)logElementEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getLogElement_Msg() {
+		return (EAttribute)logElementEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getLogElement_Trace() {
+		return (EAttribute)logElementEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getNetInterface() {
+		return netInterfaceEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetInterface_Name() {
+		return (EAttribute)netInterfaceEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetInterface_DisplayName() {
+		return (EAttribute)netInterfaceEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetInterface_Mac() {
+		return (EAttribute)netInterfaceEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetInterface_Address() {
+		return (EAttribute)netInterfaceEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetInterface_Up() {
+		return (EAttribute)netInterfaceEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetInterface_Virtual() {
+		return (EAttribute)netInterfaceEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetInterface_Multicast() {
+		return (EAttribute)netInterfaceEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getSyncObject() {
+		return syncObjectEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSyncObject_Name() {
+		return (EAttribute)syncObjectEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSyncObject_Data() {
+		return (EAttribute)syncObjectEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSyncObject_Type() {
+		return (EAttribute)syncObjectEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSyncObject_Flags() {
+		return (EAttribute)syncObjectEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSyncObject_Notes() {
+		return (EAttribute)syncObjectEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getComboElement() {
+		return comboElementEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComboElement_Index() {
+		return (EAttribute)comboElementEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComboElement_Value() {
+		return (EAttribute)comboElementEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComboElement_Literal() {
+		return (EAttribute)comboElementEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getComboData() {
+		return comboDataEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getComboData_Data() {
+		return (EReference)comboDataEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getComboData_DefaultSelection() {
+		return (EAttribute)comboDataEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getSyncType() {
+		return syncTypeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getPlatformType() {
+		return platformTypeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getAutonomyLevel() {
+		return autonomyLevelEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getPlatformMode() {
+		return platformModeEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getPlatformMode_Type() {
+		return (EAttribute)platformModeEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getPlatformMode_AutonomyLevel() {
+		return (EAttribute)platformModeEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getPlatformMode_IterationLimit() {
+		return (EAttribute)platformModeEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getPlatformMode_AllowSelfModify() {
+		return (EAttribute)platformModeEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getPlatformMode_AllowedPaths() {
+		return (EAttribute)platformModeEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getTaskContext() {
+		return taskContextEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTaskContext_CurrentTaskName() {
+		return (EAttribute)taskContextEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTaskContext_ThreadId() {
+		return (EAttribute)taskContextEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTaskContext_Paused() {
+		return (EAttribute)taskContextEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTaskContext_AutoApprove() {
+		return (EAttribute)taskContextEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getTaskContext_PlatformMode() {
+		return (EReference)taskContextEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTaskContext_InstructionFiles() {
+		return (EAttribute)taskContextEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public OrchestrationFactory getOrchestrationFactory() {
 		return (OrchestrationFactory)getEFactoryInstance();
 	}
@@ -2937,6 +3497,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__AUTO_APPROVE);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__PREFERRED_MAX_ITERATIONS);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__GIT_AUTOMATION);
+		createEReference(orchestratorEClass, ORCHESTRATOR__LOGS);
+		createEReference(orchestratorEClass, ORCHESTRATOR__NET_INTERFACES);
+		createEReference(orchestratorEClass, ORCHESTRATOR__SYNC_OBJECTS);
+		createEReference(orchestratorEClass, ORCHESTRATOR__COMBO_CONFIGS);
+		createEReference(orchestratorEClass, ORCHESTRATOR__ACTIVE_PLATFORM_MODE);
+		createEReference(orchestratorEClass, ORCHESTRATOR__CONTEXTS);
 
 		serverSettingsEClass = createEClass(SERVER_SETTINGS);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORT);
@@ -3150,6 +3716,57 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		selfDevDecisionEEnum = createEEnum(SELF_DEV_DECISION);
 		testStatusEEnum = createEEnum(TEST_STATUS);
 		reviewDecisionEEnum = createEEnum(REVIEW_DECISION);
+
+		logElementEClass = createEClass(LOG_ELEMENT);
+		createEAttribute(logElementEClass, LOG_ELEMENT__TYPE);
+		createEAttribute(logElementEClass, LOG_ELEMENT__DATE);
+		createEAttribute(logElementEClass, LOG_ELEMENT__NAME);
+		createEAttribute(logElementEClass, LOG_ELEMENT__MSG);
+		createEAttribute(logElementEClass, LOG_ELEMENT__TRACE);
+
+		netInterfaceEClass = createEClass(NET_INTERFACE);
+		createEAttribute(netInterfaceEClass, NET_INTERFACE__NAME);
+		createEAttribute(netInterfaceEClass, NET_INTERFACE__DISPLAY_NAME);
+		createEAttribute(netInterfaceEClass, NET_INTERFACE__MAC);
+		createEAttribute(netInterfaceEClass, NET_INTERFACE__ADDRESS);
+		createEAttribute(netInterfaceEClass, NET_INTERFACE__UP);
+		createEAttribute(netInterfaceEClass, NET_INTERFACE__VIRTUAL);
+		createEAttribute(netInterfaceEClass, NET_INTERFACE__MULTICAST);
+
+		syncObjectEClass = createEClass(SYNC_OBJECT);
+		createEAttribute(syncObjectEClass, SYNC_OBJECT__NAME);
+		createEAttribute(syncObjectEClass, SYNC_OBJECT__DATA);
+		createEAttribute(syncObjectEClass, SYNC_OBJECT__TYPE);
+		createEAttribute(syncObjectEClass, SYNC_OBJECT__FLAGS);
+		createEAttribute(syncObjectEClass, SYNC_OBJECT__NOTES);
+
+		comboElementEClass = createEClass(COMBO_ELEMENT);
+		createEAttribute(comboElementEClass, COMBO_ELEMENT__INDEX);
+		createEAttribute(comboElementEClass, COMBO_ELEMENT__VALUE);
+		createEAttribute(comboElementEClass, COMBO_ELEMENT__LITERAL);
+
+		comboDataEClass = createEClass(COMBO_DATA);
+		createEReference(comboDataEClass, COMBO_DATA__DATA);
+		createEAttribute(comboDataEClass, COMBO_DATA__DEFAULT_SELECTION);
+
+		syncTypeEEnum = createEEnum(SYNC_TYPE);
+		platformTypeEEnum = createEEnum(PLATFORM_TYPE);
+		autonomyLevelEEnum = createEEnum(AUTONOMY_LEVEL);
+
+		platformModeEClass = createEClass(PLATFORM_MODE);
+		createEAttribute(platformModeEClass, PLATFORM_MODE__TYPE);
+		createEAttribute(platformModeEClass, PLATFORM_MODE__AUTONOMY_LEVEL);
+		createEAttribute(platformModeEClass, PLATFORM_MODE__ITERATION_LIMIT);
+		createEAttribute(platformModeEClass, PLATFORM_MODE__ALLOW_SELF_MODIFY);
+		createEAttribute(platformModeEClass, PLATFORM_MODE__ALLOWED_PATHS);
+
+		taskContextEClass = createEClass(TASK_CONTEXT);
+		createEAttribute(taskContextEClass, TASK_CONTEXT__CURRENT_TASK_NAME);
+		createEAttribute(taskContextEClass, TASK_CONTEXT__THREAD_ID);
+		createEAttribute(taskContextEClass, TASK_CONTEXT__PAUSED);
+		createEAttribute(taskContextEClass, TASK_CONTEXT__AUTO_APPROVE);
+		createEReference(taskContextEClass, TASK_CONTEXT__PLATFORM_MODE);
+		createEAttribute(taskContextEClass, TASK_CONTEXT__INSTRUCTION_FILES);
 	}
 
 	/**
@@ -3249,6 +3866,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getOrchestrator_AutoApprove(), ecorePackage.getEBoolean(), "autoApprove", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_PreferredMaxIterations(), ecorePackage.getEInt(), "preferredMaxIterations", "5", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_Logs(), this.getLogElement(), null, "logs", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_NetInterfaces(), this.getNetInterface(), null, "netInterfaces", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_SyncObjects(), this.getSyncObject(), null, "syncObjects", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_ComboConfigs(), this.getComboData(), null, "comboConfigs", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_ActivePlatformMode(), this.getPlatformMode(), null, "activePlatformMode", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_Contexts(), this.getTaskContext(), null, "contexts", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSettingsEClass, ServerSettings.class, "ServerSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getServerSettings_Port(), ecorePackage.getEInt(), "port", "8080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -3283,6 +3906,43 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getAIProvider_RatingAnalyze(), ecorePackage.getEInt(), "ratingAnalyze", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAIProvider_RatingChat(), ecorePackage.getEInt(), "ratingChat", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAIProvider_RatingProgramming(), ecorePackage.getEInt(), "ratingProgramming", null, 0, 1, AIProvider.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(logElementEClass, eu.kalafatic.evolution.model.orchestration.LogElement.class, "LogElement", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getLogElement_Type(), ecorePackage.getEString(), "type", null, 0, 1, eu.kalafatic.evolution.model.orchestration.LogElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getLogElement_Date(), ecorePackage.getEString(), "date", null, 0, 1, eu.kalafatic.evolution.model.orchestration.LogElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getLogElement_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.LogElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getLogElement_Msg(), ecorePackage.getEString(), "msg", null, 0, 1, eu.kalafatic.evolution.model.orchestration.LogElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getLogElement_Trace(), ecorePackage.getEString(), "trace", null, 0, 1, eu.kalafatic.evolution.model.orchestration.LogElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(netInterfaceEClass, eu.kalafatic.evolution.model.orchestration.NetInterface.class, "NetInterface", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getNetInterface_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.NetInterface.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetInterface_DisplayName(), ecorePackage.getEString(), "displayName", null, 0, 1, eu.kalafatic.evolution.model.orchestration.NetInterface.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetInterface_Mac(), ecorePackage.getEString(), "mac", null, 0, 1, eu.kalafatic.evolution.model.orchestration.NetInterface.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetInterface_Address(), ecorePackage.getEString(), "address", null, 0, -1, eu.kalafatic.evolution.model.orchestration.NetInterface.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetInterface_Up(), ecorePackage.getEBoolean(), "up", null, 0, 1, eu.kalafatic.evolution.model.orchestration.NetInterface.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetInterface_Virtual(), ecorePackage.getEBoolean(), "virtual", null, 0, 1, eu.kalafatic.evolution.model.orchestration.NetInterface.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetInterface_Multicast(), ecorePackage.getEBoolean(), "multicast", null, 0, 1, eu.kalafatic.evolution.model.orchestration.NetInterface.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(syncObjectEClass, eu.kalafatic.evolution.model.orchestration.SyncObject.class, "SyncObject", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getSyncObject_Name(), ecorePackage.getEString(), "name", null, 0, 1, eu.kalafatic.evolution.model.orchestration.SyncObject.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSyncObject_Data(), ecorePackage.getEJavaObject(), "data", null, 0, 1, eu.kalafatic.evolution.model.orchestration.SyncObject.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSyncObject_Type(), this.getSyncType(), "type", null, 0, 1, eu.kalafatic.evolution.model.orchestration.SyncObject.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSyncObject_Flags(), ecorePackage.getEInt(), "flags", null, 0, 1, eu.kalafatic.evolution.model.orchestration.SyncObject.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSyncObject_Notes(), ecorePackage.getEString(), "notes", null, 0, -1, eu.kalafatic.evolution.model.orchestration.SyncObject.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(comboElementEClass, eu.kalafatic.evolution.model.orchestration.ComboElement.class, "ComboElement", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getComboElement_Index(), ecorePackage.getEInt(), "index", null, 0, 1, eu.kalafatic.evolution.model.orchestration.ComboElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getComboElement_Value(), ecorePackage.getEJavaObject(), "value", null, 0, 1, eu.kalafatic.evolution.model.orchestration.ComboElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getComboElement_Literal(), ecorePackage.getEString(), "literal", null, 0, 1, eu.kalafatic.evolution.model.orchestration.ComboElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(comboDataEClass, eu.kalafatic.evolution.model.orchestration.ComboData.class, "ComboData", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEReference(getComboData_Data(), this.getComboElement(), null, "data", null, 0, -1, eu.kalafatic.evolution.model.orchestration.ComboData.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getComboData_DefaultSelection(), ecorePackage.getEInt(), "defaultSelection", null, 0, 1, eu.kalafatic.evolution.model.orchestration.ComboData.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEEnum(syncTypeEEnum, eu.kalafatic.evolution.model.orchestration.SyncType.class, "SyncType");
+		addEEnumLiteral(syncTypeEEnum, eu.kalafatic.evolution.model.orchestration.SyncType.DEF);
+		addEEnumLiteral(syncTypeEEnum, eu.kalafatic.evolution.model.orchestration.SyncType.FILE);
+		addEEnumLiteral(syncTypeEEnum, eu.kalafatic.evolution.model.orchestration.SyncType.DB);
 
 		initEClass(gitEClass, Git.class, "Git", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getGit_RepositoryUrl(), ecorePackage.getEString(), "repositoryUrl", null, 0, 1, Git.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -3513,6 +4173,32 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.APPROVED);
 		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.REJECTED);
 		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.CHANGES_REQUESTED);
+
+		initEEnum(platformTypeEEnum, eu.kalafatic.evolution.model.orchestration.PlatformType.class, "PlatformType");
+		addEEnumLiteral(platformTypeEEnum, eu.kalafatic.evolution.model.orchestration.PlatformType.SIMPLE_CHAT);
+		addEEnumLiteral(platformTypeEEnum, eu.kalafatic.evolution.model.orchestration.PlatformType.ASSISTED_CODING);
+		addEEnumLiteral(platformTypeEEnum, eu.kalafatic.evolution.model.orchestration.PlatformType.DARWIN_MODE);
+		addEEnumLiteral(platformTypeEEnum, eu.kalafatic.evolution.model.orchestration.PlatformType.SELF_DEV_MODE);
+
+		initEEnum(autonomyLevelEEnum, eu.kalafatic.evolution.model.orchestration.AutonomyLevel.class, "AutonomyLevel");
+		addEEnumLiteral(autonomyLevelEEnum, eu.kalafatic.evolution.model.orchestration.AutonomyLevel.LOW);
+		addEEnumLiteral(autonomyLevelEEnum, eu.kalafatic.evolution.model.orchestration.AutonomyLevel.MEDIUM);
+		addEEnumLiteral(autonomyLevelEEnum, eu.kalafatic.evolution.model.orchestration.AutonomyLevel.HIGH);
+
+		initEClass(platformModeEClass, eu.kalafatic.evolution.model.orchestration.PlatformMode.class, "PlatformMode", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getPlatformMode_Type(), this.getPlatformType(), "type", null, 0, 1, eu.kalafatic.evolution.model.orchestration.PlatformMode.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getPlatformMode_AutonomyLevel(), this.getAutonomyLevel(), "autonomyLevel", null, 0, 1, eu.kalafatic.evolution.model.orchestration.PlatformMode.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getPlatformMode_IterationLimit(), ecorePackage.getEInt(), "iterationLimit", null, 0, 1, eu.kalafatic.evolution.model.orchestration.PlatformMode.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getPlatformMode_AllowSelfModify(), ecorePackage.getEBoolean(), "allowSelfModify", null, 0, 1, eu.kalafatic.evolution.model.orchestration.PlatformMode.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getPlatformMode_AllowedPaths(), ecorePackage.getEString(), "allowedPaths", null, 0, -1, eu.kalafatic.evolution.model.orchestration.PlatformMode.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(taskContextEClass, eu.kalafatic.evolution.model.orchestration.TaskContext.class, "TaskContext", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getTaskContext_CurrentTaskName(), ecorePackage.getEString(), "currentTaskName", null, 0, 1, eu.kalafatic.evolution.model.orchestration.TaskContext.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTaskContext_ThreadId(), ecorePackage.getEString(), "threadId", null, 0, 1, eu.kalafatic.evolution.model.orchestration.TaskContext.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTaskContext_Paused(), ecorePackage.getEBoolean(), "paused", null, 0, 1, eu.kalafatic.evolution.model.orchestration.TaskContext.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTaskContext_AutoApprove(), ecorePackage.getEBoolean(), "autoApprove", null, 0, 1, eu.kalafatic.evolution.model.orchestration.TaskContext.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getTaskContext_PlatformMode(), this.getPlatformMode(), null, "platformMode", null, 0, 1, eu.kalafatic.evolution.model.orchestration.TaskContext.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTaskContext_InstructionFiles(), ecorePackage.getEString(), "instructionFiles", null, 0, -1, eu.kalafatic.evolution.model.orchestration.TaskContext.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Create resource
 		createResource(eNS_URI);

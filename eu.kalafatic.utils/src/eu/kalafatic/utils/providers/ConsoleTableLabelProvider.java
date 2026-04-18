@@ -19,7 +19,7 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 
 import eu.kalafatic.utils.constants.FUIConstants;
-import eu.kalafatic.utils.model.LogElement;
+import eu.kalafatic.evolution.model.orchestration.LogElement;
 
 /**
  * The Class class ConsoleTableLabelProvider.

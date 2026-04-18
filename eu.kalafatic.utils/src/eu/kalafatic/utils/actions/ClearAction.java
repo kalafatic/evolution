@@ -18,7 +18,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.widgets.Display;
 
-import eu.kalafatic.utils.model.LogElement;
+import eu.kalafatic.evolution.model.orchestration.LogElement;
 
 /**
  * The Class class ClearAction.

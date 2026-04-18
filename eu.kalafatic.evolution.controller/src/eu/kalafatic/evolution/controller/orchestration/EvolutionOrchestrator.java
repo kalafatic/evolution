@@ -1,5 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
+import eu.kalafatic.evolution.model.orchestration.PlatformMode;
+import eu.kalafatic.evolution.model.orchestration.PlatformType;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

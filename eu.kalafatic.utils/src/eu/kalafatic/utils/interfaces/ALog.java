@@ -20,7 +20,7 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 
 import eu.kalafatic.utils.lib.EView;
-import eu.kalafatic.utils.model.LogElement;
+import eu.kalafatic.evolution.model.orchestration.LogElement;
 import eu.kalafatic.utils.preferences.ECorePreferences;
 import eu.kalafatic.utils.views.ConsoleView;
 

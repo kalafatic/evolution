@@ -28,7 +28,7 @@ import eu.kalafatic.utils.constants.FConstants;
 import eu.kalafatic.utils.dialogs.DialogUtils;
 import eu.kalafatic.utils.factories.GUIFactory;
 import eu.kalafatic.utils.factories.SectionFactory;
-import eu.kalafatic.utils.model.NetInterface;
+import eu.kalafatic.evolution.model.orchestration.NetInterface;
 import eu.kalafatic.utils.net.NetUtils;
 
 /**

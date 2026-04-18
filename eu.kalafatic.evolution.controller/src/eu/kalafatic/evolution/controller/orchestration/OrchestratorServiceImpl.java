@@ -1,5 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
+import eu.kalafatic.evolution.model.orchestration.PlatformMode;
+import eu.kalafatic.evolution.model.orchestration.PlatformType;
+
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;

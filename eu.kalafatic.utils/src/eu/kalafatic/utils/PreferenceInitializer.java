@@ -28,7 +28,8 @@ import eu.kalafatic.utils.constants.FCMDConstants;
 import eu.kalafatic.utils.constants.FConstants;
 import eu.kalafatic.utils.convert.ConvertUtils;
 import eu.kalafatic.utils.log.Log;
-import eu.kalafatic.utils.model.NetInterface;
+import eu.kalafatic.evolution.model.orchestration.NetInterface;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.utils.os.OSUtils;
 import eu.kalafatic.utils.p2.PreferenceConstants;
 import eu.kalafatic.utils.preferences.ECorePreferences;
@@ -261,7 +262,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 			while (e.hasMoreElements()) {
 				NetworkInterface ni = (NetworkInterface) e.nextElement();
 
-				NetInterface netInterface = new NetInterface();
+				NetInterface netInterface = OrchestrationFactory.eINSTANCE.createNetInterface();
 				netInterface.setName(ni.getName());
 				netInterface.setDisplayName(ni.getDisplayName());
 

@@ -20,7 +20,7 @@ import eu.kalafatic.utils.constants.FTextConstants;
 import eu.kalafatic.utils.interfaces.ALog;
 import eu.kalafatic.utils.interfaces.IPreference;
 import eu.kalafatic.utils.lib.ELogEvent;
-import eu.kalafatic.utils.model.LogElement;
+import eu.kalafatic.evolution.model.orchestration.LogElement;
 import eu.kalafatic.utils.preferences.ECorePreferences;
 
 /**

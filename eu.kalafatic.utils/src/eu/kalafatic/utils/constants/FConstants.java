@@ -24,8 +24,8 @@ import org.eclipse.osgi.storage.bundlefile.BundleFile;
 import org.osgi.service.prefs.Preferences;
 
 import eu.kalafatic.utils.Activator;
-import eu.kalafatic.utils.model.LogElement;
-import eu.kalafatic.utils.model.NetInterface;
+import eu.kalafatic.evolution.model.orchestration.LogElement;
+import eu.kalafatic.evolution.model.orchestration.NetInterface;
 
 /**
  * The Class class FConstants.

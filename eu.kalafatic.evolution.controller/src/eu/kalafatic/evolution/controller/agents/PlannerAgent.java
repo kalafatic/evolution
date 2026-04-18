@@ -6,8 +6,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.IPlanner;
-import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
-import eu.kalafatic.evolution.controller.orchestration.PlatformType;
+import eu.kalafatic.evolution.model.orchestration.PlatformMode;
+import eu.kalafatic.evolution.model.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Task;

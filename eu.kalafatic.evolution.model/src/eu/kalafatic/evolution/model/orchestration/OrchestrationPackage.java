@@ -646,13 +646,67 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__GIT_AUTOMATION = 34;
 
 	/**
+	 * The feature id for the '<em><b>Logs</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__LOGS = 35;
+
+	/**
+	 * The feature id for the '<em><b>Net Interfaces</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__NET_INTERFACES = 36;
+
+	/**
+	 * The feature id for the '<em><b>Sync Objects</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__SYNC_OBJECTS = 37;
+
+	/**
+	 * The feature id for the '<em><b>Combo Configs</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__COMBO_CONFIGS = 38;
+
+	/**
+	 * The feature id for the '<em><b>Active Platform Mode</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__ACTIVE_PLATFORM_MODE = 39;
+
+	/**
+	 * The feature id for the '<em><b>Contexts</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__CONTEXTS = 40;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 35;
+	int ORCHESTRATOR_FEATURE_COUNT = 41;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -2856,6 +2910,344 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_MESSAGE_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.LogElementImpl <em>Log Element</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.LogElementImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLogElement()
+	 * @generated
+	 */
+	int LOG_ELEMENT = 35;
+
+	/**
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LOG_ELEMENT__TYPE = 0;
+
+	/**
+	 * The feature id for the '<em><b>Date</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LOG_ELEMENT__DATE = 1;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LOG_ELEMENT__NAME = 2;
+
+	/**
+	 * The feature id for the '<em><b>Msg</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LOG_ELEMENT__MSG = 3;
+
+	/**
+	 * The feature id for the '<em><b>Trace</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LOG_ELEMENT__TRACE = 4;
+
+	/**
+	 * The number of structural features of the '<em>Log Element</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LOG_ELEMENT_FEATURE_COUNT = 5;
+
+	/**
+	 * The number of operations of the '<em>Log Element</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LOG_ELEMENT_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetInterfaceImpl <em>Net Interface</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.NetInterfaceImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetInterface()
+	 * @generated
+	 */
+	int NET_INTERFACE = 36;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NET_INTERFACE__NAME = 0;
+
+	/**
+	 * The feature id for the '<em><b>Display Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NET_INTERFACE__DISPLAY_NAME = 1;
+
+	/**
+	 * The feature id for the '<em><b>Mac</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NET_INTERFACE__MAC = 2;
+
+	/**
+	 * The feature id for the '<em><b>Address</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NET_INTERFACE__ADDRESS = 3;
+
+	/**
+	 * The feature id for the '<em><b>Up</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NET_INTERFACE__UP = 4;
+
+	/**
+	 * The feature id for the '<em><b>Virtual</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NET_INTERFACE__VIRTUAL = 5;
+
+	/**
+	 * The feature id for the '<em><b>Multicast</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NET_INTERFACE__MULTICAST = 6;
+
+	/**
+	 * The number of structural features of the '<em>Net Interface</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NET_INTERFACE_FEATURE_COUNT = 7;
+
+	/**
+	 * The number of operations of the '<em>Net Interface</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NET_INTERFACE_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SyncObjectImpl <em>Sync Object</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SyncObjectImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSyncObject()
+	 * @generated
+	 */
+	int SYNC_OBJECT = 37;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SYNC_OBJECT__NAME = 0;
+
+	/**
+	 * The feature id for the '<em><b>Data</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SYNC_OBJECT__DATA = 1;
+
+	/**
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SYNC_OBJECT__TYPE = 2;
+
+	/**
+	 * The feature id for the '<em><b>Flags</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SYNC_OBJECT__FLAGS = 3;
+
+	/**
+	 * The feature id for the '<em><b>Notes</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SYNC_OBJECT__NOTES = 4;
+
+	/**
+	 * The number of structural features of the '<em>Sync Object</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SYNC_OBJECT_FEATURE_COUNT = 5;
+
+	/**
+	 * The number of operations of the '<em>Sync Object</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SYNC_OBJECT_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ComboElementImpl <em>Combo Element</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ComboElementImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComboElement()
+	 * @generated
+	 */
+	int COMBO_ELEMENT = 38;
+
+	/**
+	 * The feature id for the '<em><b>Index</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMBO_ELEMENT__INDEX = 0;
+
+	/**
+	 * The feature id for the '<em><b>Value</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMBO_ELEMENT__VALUE = 1;
+
+	/**
+	 * The feature id for the '<em><b>Literal</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMBO_ELEMENT__LITERAL = 2;
+
+	/**
+	 * The number of structural features of the '<em>Combo Element</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMBO_ELEMENT_FEATURE_COUNT = 3;
+
+	/**
+	 * The number of operations of the '<em>Combo Element</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMBO_ELEMENT_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ComboDataImpl <em>Combo Data</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ComboDataImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComboData()
+	 * @generated
+	 */
+	int COMBO_DATA = 39;
+
+	/**
+	 * The feature id for the '<em><b>Data</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMBO_DATA__DATA = 0;
+
+	/**
+	 * The feature id for the '<em><b>Default Selection</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMBO_DATA__DEFAULT_SELECTION = 1;
+
+	/**
+	 * The number of structural features of the '<em>Combo Data</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMBO_DATA_FEATURE_COUNT = 2;
+
+	/**
+	 * The number of operations of the '<em>Combo Data</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int COMBO_DATA_OPERATION_COUNT = 0;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2863,7 +3255,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
 	 * @generated
 	 */
-	int TASK_STATUS = 35;
+	int TASK_STATUS = 40;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SessionType <em>Session Type</em>}' enum.
@@ -2873,7 +3265,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionType()
 	 * @generated
 	 */
-	int SESSION_TYPE = 36;
+	int SESSION_TYPE = 41;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
@@ -2883,7 +3275,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
 	 * @generated
 	 */
-	int COMMAND_STATUS = 37;
+	int COMMAND_STATUS = 42;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
@@ -2893,7 +3285,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
 	 * @generated
 	 */
-	int EXECUTION_MODE = 38;
+	int EXECUTION_MODE = 43;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
@@ -2903,7 +3295,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
 	 * @generated
 	 */
-	int NEURON_TYPE = 39;
+	int NEURON_TYPE = 44;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
@@ -2913,7 +3305,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
 	 * @generated
 	 */
-	int AI_MODE = 40;
+	int AI_MODE = 45;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
@@ -2923,7 +3315,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
 	 * @generated
 	 */
-	int SELF_DEV_STATUS = 41;
+	int SELF_DEV_STATUS = 46;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
@@ -2933,7 +3325,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
 	 * @generated
 	 */
-	int ITERATION_STATUS = 42;
+	int ITERATION_STATUS = 47;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
@@ -2943,7 +3335,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
 	 * @generated
 	 */
-	int SELF_DEV_DECISION = 43;
+	int SELF_DEV_DECISION = 48;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
@@ -2953,7 +3345,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
 	 * @generated
 	 */
-	int TEST_STATUS = 44;
+	int TEST_STATUS = 49;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
@@ -2963,7 +3355,192 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
 	 * @generated
 	 */
-	int REVIEW_DECISION = 45;
+	int REVIEW_DECISION = 50;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SyncType <em>Sync Type</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.SyncType
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSyncType()
+	 * @generated
+	 */
+	int SYNC_TYPE = 51;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.PlatformType <em>Platform Type</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.PlatformType
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getPlatformType()
+	 * @generated
+	 */
+	int PLATFORM_TYPE = 52;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AutonomyLevel <em>Autonomy Level</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.AutonomyLevel
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAutonomyLevel()
+	 * @generated
+	 */
+	int AUTONOMY_LEVEL = 53;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PlatformModeImpl <em>Platform Mode</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.PlatformModeImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getPlatformMode()
+	 * @generated
+	 */
+	int PLATFORM_MODE = 54;
+
+	/**
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PLATFORM_MODE__TYPE = 0;
+
+	/**
+	 * The feature id for the '<em><b>Autonomy Level</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PLATFORM_MODE__AUTONOMY_LEVEL = 1;
+
+	/**
+	 * The feature id for the '<em><b>Iteration Limit</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PLATFORM_MODE__ITERATION_LIMIT = 2;
+
+	/**
+	 * The feature id for the '<em><b>Allow Self Modify</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PLATFORM_MODE__ALLOW_SELF_MODIFY = 3;
+
+	/**
+	 * The feature id for the '<em><b>Allowed Paths</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PLATFORM_MODE__ALLOWED_PATHS = 4;
+
+	/**
+	 * The number of structural features of the '<em>Platform Mode</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PLATFORM_MODE_FEATURE_COUNT = 5;
+
+	/**
+	 * The number of operations of the '<em>Platform Mode</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PLATFORM_MODE_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TaskContextImpl <em>Task Context</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.TaskContextImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskContext()
+	 * @generated
+	 */
+	int TASK_CONTEXT = 55;
+
+	/**
+	 * The feature id for the '<em><b>Current Task Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK_CONTEXT__CURRENT_TASK_NAME = 0;
+
+	/**
+	 * The feature id for the '<em><b>Thread Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK_CONTEXT__THREAD_ID = 1;
+
+	/**
+	 * The feature id for the '<em><b>Paused</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK_CONTEXT__PAUSED = 2;
+
+	/**
+	 * The feature id for the '<em><b>Auto Approve</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK_CONTEXT__AUTO_APPROVE = 3;
+
+	/**
+	 * The feature id for the '<em><b>Platform Mode</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK_CONTEXT__PLATFORM_MODE = 4;
+
+	/**
+	 * The feature id for the '<em><b>Instruction Files</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK_CONTEXT__INSTRUCTION_FILES = 5;
+
+	/**
+	 * The number of structural features of the '<em>Task Context</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK_CONTEXT_FEATURE_COUNT = 6;
+
+	/**
+	 * The number of operations of the '<em>Task Context</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK_CONTEXT_OPERATION_COUNT = 0;
 
 
 	/**
@@ -3635,6 +4212,72 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getOrchestrator_GitAutomation();
 
 	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getLogs <em>Logs</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Logs</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getLogs()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_Logs();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getNetInterfaces <em>Net Interfaces</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Net Interfaces</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getNetInterfaces()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_NetInterfaces();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSyncObjects <em>Sync Objects</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Sync Objects</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getSyncObjects()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_SyncObjects();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getComboConfigs <em>Combo Configs</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Combo Configs</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getComboConfigs()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_ComboConfigs();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getActivePlatformMode <em>Active Platform Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Active Platform Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getActivePlatformMode()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_ActivePlatformMode();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getContexts <em>Contexts</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Contexts</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getContexts()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_Contexts();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings <em>Server Settings</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3959,6 +4602,469 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getAIProvider_RatingProgramming();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.LogElement <em>Log Element</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Log Element</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.LogElement
+	 * @generated
+	 */
+	EClass getLogElement();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.LogElement#getType <em>Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.LogElement#getType()
+	 * @see #getLogElement()
+	 * @generated
+	 */
+	EAttribute getLogElement_Type();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.LogElement#getDate <em>Date</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Date</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.LogElement#getDate()
+	 * @see #getLogElement()
+	 * @generated
+	 */
+	EAttribute getLogElement_Date();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.LogElement#getName <em>Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.LogElement#getName()
+	 * @see #getLogElement()
+	 * @generated
+	 */
+	EAttribute getLogElement_Name();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.LogElement#getMsg <em>Msg</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Msg</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.LogElement#getMsg()
+	 * @see #getLogElement()
+	 * @generated
+	 */
+	EAttribute getLogElement_Msg();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.LogElement#getTrace <em>Trace</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Trace</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.LogElement#getTrace()
+	 * @see #getLogElement()
+	 * @generated
+	 */
+	EAttribute getLogElement_Trace();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.NetInterface <em>Net Interface</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Net Interface</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetInterface
+	 * @generated
+	 */
+	EClass getNetInterface();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetInterface#getName <em>Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetInterface#getName()
+	 * @see #getNetInterface()
+	 * @generated
+	 */
+	EAttribute getNetInterface_Name();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetInterface#getDisplayName <em>Display Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Display Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetInterface#getDisplayName()
+	 * @see #getNetInterface()
+	 * @generated
+	 */
+	EAttribute getNetInterface_DisplayName();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetInterface#getMac <em>Mac</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Mac</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetInterface#getMac()
+	 * @see #getNetInterface()
+	 * @generated
+	 */
+	EAttribute getNetInterface_Mac();
+
+	/**
+	 * Returns the meta object for the attribute list '{@link eu.kalafatic.evolution.model.orchestration.NetInterface#getAddress <em>Address</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute list '<em>Address</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetInterface#getAddress()
+	 * @see #getNetInterface()
+	 * @generated
+	 */
+	EAttribute getNetInterface_Address();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetInterface#isUp <em>Up</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Up</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetInterface#isUp()
+	 * @see #getNetInterface()
+	 * @generated
+	 */
+	EAttribute getNetInterface_Up();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetInterface#isVirtual <em>Virtual</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Virtual</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetInterface#isVirtual()
+	 * @see #getNetInterface()
+	 * @generated
+	 */
+	EAttribute getNetInterface_Virtual();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetInterface#isMulticast <em>Multicast</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Multicast</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetInterface#isMulticast()
+	 * @see #getNetInterface()
+	 * @generated
+	 */
+	EAttribute getNetInterface_Multicast();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SyncObject <em>Sync Object</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Sync Object</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SyncObject
+	 * @generated
+	 */
+	EClass getSyncObject();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SyncObject#getName <em>Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SyncObject#getName()
+	 * @see #getSyncObject()
+	 * @generated
+	 */
+	EAttribute getSyncObject_Name();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SyncObject#getData <em>Data</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Data</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SyncObject#getData()
+	 * @see #getSyncObject()
+	 * @generated
+	 */
+	EAttribute getSyncObject_Data();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SyncObject#getType <em>Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SyncObject#getType()
+	 * @see #getSyncObject()
+	 * @generated
+	 */
+	EAttribute getSyncObject_Type();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SyncObject#getFlags <em>Flags</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Flags</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SyncObject#getFlags()
+	 * @see #getSyncObject()
+	 * @generated
+	 */
+	EAttribute getSyncObject_Flags();
+
+	/**
+	 * Returns the meta object for the attribute list '{@link eu.kalafatic.evolution.model.orchestration.SyncObject#getNotes <em>Notes</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute list '<em>Notes</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SyncObject#getNotes()
+	 * @see #getSyncObject()
+	 * @generated
+	 */
+	EAttribute getSyncObject_Notes();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ComboElement <em>Combo Element</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Combo Element</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ComboElement
+	 * @generated
+	 */
+	EClass getComboElement();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ComboElement#getIndex <em>Index</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Index</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ComboElement#getIndex()
+	 * @see #getComboElement()
+	 * @generated
+	 */
+	EAttribute getComboElement_Index();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ComboElement#getValue <em>Value</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Value</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ComboElement#getValue()
+	 * @see #getComboElement()
+	 * @generated
+	 */
+	EAttribute getComboElement_Value();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ComboElement#getLiteral <em>Literal</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Literal</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ComboElement#getLiteral()
+	 * @see #getComboElement()
+	 * @generated
+	 */
+	EAttribute getComboElement_Literal();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ComboData <em>Combo Data</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Combo Data</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ComboData
+	 * @generated
+	 */
+	EClass getComboData();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.ComboData#getData <em>Data</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Data</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ComboData#getData()
+	 * @see #getComboData()
+	 * @generated
+	 */
+	EReference getComboData_Data();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ComboData#getDefaultSelection <em>Default Selection</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Default Selection</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ComboData#getDefaultSelection()
+	 * @see #getComboData()
+	 * @generated
+	 */
+	EAttribute getComboData_DefaultSelection();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.SyncType <em>Sync Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Sync Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SyncType
+	 * @generated
+	 */
+	EEnum getSyncType();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.PlatformType <em>Platform Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Platform Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PlatformType
+	 * @generated
+	 */
+	EEnum getPlatformType();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.AutonomyLevel <em>Autonomy Level</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Autonomy Level</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AutonomyLevel
+	 * @generated
+	 */
+	EEnum getAutonomyLevel();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.PlatformMode <em>Platform Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Platform Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PlatformMode
+	 * @generated
+	 */
+	EClass getPlatformMode();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.PlatformMode#getType <em>Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PlatformMode#getType()
+	 * @see #getPlatformMode()
+	 * @generated
+	 */
+	EAttribute getPlatformMode_Type();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.PlatformMode#getAutonomyLevel <em>Autonomy Level</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Autonomy Level</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PlatformMode#getAutonomyLevel()
+	 * @see #getPlatformMode()
+	 * @generated
+	 */
+	EAttribute getPlatformMode_AutonomyLevel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.PlatformMode#getIterationLimit <em>Iteration Limit</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Iteration Limit</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PlatformMode#getIterationLimit()
+	 * @see #getPlatformMode()
+	 * @generated
+	 */
+	EAttribute getPlatformMode_IterationLimit();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.PlatformMode#isAllowSelfModify <em>Allow Self Modify</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Allow Self Modify</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PlatformMode#isAllowSelfModify()
+	 * @see #getPlatformMode()
+	 * @generated
+	 */
+	EAttribute getPlatformMode_AllowSelfModify();
+
+	/**
+	 * Returns the meta object for the attribute list '{@link eu.kalafatic.evolution.model.orchestration.PlatformMode#getAllowedPaths <em>Allowed Paths</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute list '<em>Allowed Paths</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PlatformMode#getAllowedPaths()
+	 * @see #getPlatformMode()
+	 * @generated
+	 */
+	EAttribute getPlatformMode_AllowedPaths();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.TaskContext <em>Task Context</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Task Context</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskContext
+	 * @generated
+	 */
+	EClass getTaskContext();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.TaskContext#getCurrentTaskName <em>Current Task Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Current Task Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskContext#getCurrentTaskName()
+	 * @see #getTaskContext()
+	 * @generated
+	 */
+	EAttribute getTaskContext_CurrentTaskName();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.TaskContext#getThreadId <em>Thread Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Thread Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskContext#getThreadId()
+	 * @see #getTaskContext()
+	 * @generated
+	 */
+	EAttribute getTaskContext_ThreadId();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.TaskContext#isPaused <em>Paused</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Paused</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskContext#isPaused()
+	 * @see #getTaskContext()
+	 * @generated
+	 */
+	EAttribute getTaskContext_Paused();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.TaskContext#isAutoApprove <em>Auto Approve</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Auto Approve</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskContext#isAutoApprove()
+	 * @see #getTaskContext()
+	 * @generated
+	 */
+	EAttribute getTaskContext_AutoApprove();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.TaskContext#getPlatformMode <em>Platform Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Platform Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskContext#getPlatformMode()
+	 * @see #getTaskContext()
+	 * @generated
+	 */
+	EReference getTaskContext_PlatformMode();
+
+	/**
+	 * Returns the meta object for the attribute list '{@link eu.kalafatic.evolution.model.orchestration.TaskContext#getInstructionFiles <em>Instruction Files</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute list '<em>Instruction Files</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.TaskContext#getInstructionFiles()
+	 * @see #getTaskContext()
+	 * @generated
+	 */
+	EAttribute getTaskContext_InstructionFiles();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Git <em>Git</em>}'.
@@ -6078,6 +7184,54 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute ORCHESTRATOR__GIT_AUTOMATION = eINSTANCE.getOrchestrator_GitAutomation();
 
 		/**
+		 * The meta object literal for the '<em><b>Logs</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__LOGS = eINSTANCE.getOrchestrator_Logs();
+
+		/**
+		 * The meta object literal for the '<em><b>Net Interfaces</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__NET_INTERFACES = eINSTANCE.getOrchestrator_NetInterfaces();
+
+		/**
+		 * The meta object literal for the '<em><b>Sync Objects</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__SYNC_OBJECTS = eINSTANCE.getOrchestrator_SyncObjects();
+
+		/**
+		 * The meta object literal for the '<em><b>Combo Configs</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__COMBO_CONFIGS = eINSTANCE.getOrchestrator_ComboConfigs();
+
+		/**
+		 * The meta object literal for the '<em><b>Active Platform Mode</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__ACTIVE_PLATFORM_MODE = eINSTANCE.getOrchestrator_ActivePlatformMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Contexts</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__CONTEXTS = eINSTANCE.getOrchestrator_Contexts();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl <em>Server Settings</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -6324,6 +7478,370 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute AI_PROVIDER__RATING_PROGRAMMING = eINSTANCE.getAIProvider_RatingProgramming();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.LogElementImpl <em>Log Element</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.LogElementImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLogElement()
+		 * @generated
+		 */
+		EClass LOG_ELEMENT = eINSTANCE.getLogElement();
+
+		/**
+		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute LOG_ELEMENT__TYPE = eINSTANCE.getLogElement_Type();
+
+		/**
+		 * The meta object literal for the '<em><b>Date</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute LOG_ELEMENT__DATE = eINSTANCE.getLogElement_Date();
+
+		/**
+		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute LOG_ELEMENT__NAME = eINSTANCE.getLogElement_Name();
+
+		/**
+		 * The meta object literal for the '<em><b>Msg</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute LOG_ELEMENT__MSG = eINSTANCE.getLogElement_Msg();
+
+		/**
+		 * The meta object literal for the '<em><b>Trace</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute LOG_ELEMENT__TRACE = eINSTANCE.getLogElement_Trace();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetInterfaceImpl <em>Net Interface</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.NetInterfaceImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetInterface()
+		 * @generated
+		 */
+		EClass NET_INTERFACE = eINSTANCE.getNetInterface();
+
+		/**
+		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NET_INTERFACE__NAME = eINSTANCE.getNetInterface_Name();
+
+		/**
+		 * The meta object literal for the '<em><b>Display Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NET_INTERFACE__DISPLAY_NAME = eINSTANCE.getNetInterface_DisplayName();
+
+		/**
+		 * The meta object literal for the '<em><b>Mac</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NET_INTERFACE__MAC = eINSTANCE.getNetInterface_Mac();
+
+		/**
+		 * The meta object literal for the '<em><b>Address</b></em>' attribute list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NET_INTERFACE__ADDRESS = eINSTANCE.getNetInterface_Address();
+
+		/**
+		 * The meta object literal for the '<em><b>Up</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NET_INTERFACE__UP = eINSTANCE.getNetInterface_Up();
+
+		/**
+		 * The meta object literal for the '<em><b>Virtual</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NET_INTERFACE__VIRTUAL = eINSTANCE.getNetInterface_Virtual();
+
+		/**
+		 * The meta object literal for the '<em><b>Multicast</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NET_INTERFACE__MULTICAST = eINSTANCE.getNetInterface_Multicast();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SyncObjectImpl <em>Sync Object</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.SyncObjectImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSyncObject()
+		 * @generated
+		 */
+		EClass SYNC_OBJECT = eINSTANCE.getSyncObject();
+
+		/**
+		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SYNC_OBJECT__NAME = eINSTANCE.getSyncObject_Name();
+
+		/**
+		 * The meta object literal for the '<em><b>Data</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SYNC_OBJECT__DATA = eINSTANCE.getSyncObject_Data();
+
+		/**
+		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SYNC_OBJECT__TYPE = eINSTANCE.getSyncObject_Type();
+
+		/**
+		 * The meta object literal for the '<em><b>Flags</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SYNC_OBJECT__FLAGS = eINSTANCE.getSyncObject_Flags();
+
+		/**
+		 * The meta object literal for the '<em><b>Notes</b></em>' attribute list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SYNC_OBJECT__NOTES = eINSTANCE.getSyncObject_Notes();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ComboElementImpl <em>Combo Element</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.ComboElementImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComboElement()
+		 * @generated
+		 */
+		EClass COMBO_ELEMENT = eINSTANCE.getComboElement();
+
+		/**
+		 * The meta object literal for the '<em><b>Index</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMBO_ELEMENT__INDEX = eINSTANCE.getComboElement_Index();
+
+		/**
+		 * The meta object literal for the '<em><b>Value</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMBO_ELEMENT__VALUE = eINSTANCE.getComboElement_Value();
+
+		/**
+		 * The meta object literal for the '<em><b>Literal</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMBO_ELEMENT__LITERAL = eINSTANCE.getComboElement_Literal();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ComboDataImpl <em>Combo Data</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.ComboDataImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComboData()
+		 * @generated
+		 */
+		EClass COMBO_DATA = eINSTANCE.getComboData();
+
+		/**
+		 * The meta object literal for the '<em><b>Data</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference COMBO_DATA__DATA = eINSTANCE.getComboData_Data();
+
+		/**
+		 * The meta object literal for the '<em><b>Default Selection</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute COMBO_DATA__DEFAULT_SELECTION = eINSTANCE.getComboData_DefaultSelection();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.SyncType <em>Sync Type</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.SyncType
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSyncType()
+		 * @generated
+		 */
+		EEnum SYNC_TYPE = eINSTANCE.getSyncType();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.PlatformType <em>Platform Type</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.PlatformType
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getPlatformType()
+		 * @generated
+		 */
+		EEnum PLATFORM_TYPE = eINSTANCE.getPlatformType();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.AutonomyLevel <em>Autonomy Level</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.AutonomyLevel
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAutonomyLevel()
+		 * @generated
+		 */
+		EEnum AUTONOMY_LEVEL = eINSTANCE.getAutonomyLevel();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PlatformModeImpl <em>Platform Mode</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.PlatformModeImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getPlatformMode()
+		 * @generated
+		 */
+		EClass PLATFORM_MODE = eINSTANCE.getPlatformMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PLATFORM_MODE__TYPE = eINSTANCE.getPlatformMode_Type();
+
+		/**
+		 * The meta object literal for the '<em><b>Autonomy Level</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PLATFORM_MODE__AUTONOMY_LEVEL = eINSTANCE.getPlatformMode_AutonomyLevel();
+
+		/**
+		 * The meta object literal for the '<em><b>Iteration Limit</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PLATFORM_MODE__ITERATION_LIMIT = eINSTANCE.getPlatformMode_IterationLimit();
+
+		/**
+		 * The meta object literal for the '<em><b>Allow Self Modify</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PLATFORM_MODE__ALLOW_SELF_MODIFY = eINSTANCE.getPlatformMode_AllowSelfModify();
+
+		/**
+		 * The meta object literal for the '<em><b>Allowed Paths</b></em>' attribute list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PLATFORM_MODE__ALLOWED_PATHS = eINSTANCE.getPlatformMode_AllowedPaths();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TaskContextImpl <em>Task Context</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.TaskContextImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskContext()
+		 * @generated
+		 */
+		EClass TASK_CONTEXT = eINSTANCE.getTaskContext();
+
+		/**
+		 * The meta object literal for the '<em><b>Current Task Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK_CONTEXT__CURRENT_TASK_NAME = eINSTANCE.getTaskContext_CurrentTaskName();
+
+		/**
+		 * The meta object literal for the '<em><b>Thread Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK_CONTEXT__THREAD_ID = eINSTANCE.getTaskContext_ThreadId();
+
+		/**
+		 * The meta object literal for the '<em><b>Paused</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK_CONTEXT__PAUSED = eINSTANCE.getTaskContext_Paused();
+
+		/**
+		 * The meta object literal for the '<em><b>Auto Approve</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK_CONTEXT__AUTO_APPROVE = eINSTANCE.getTaskContext_AutoApprove();
+
+		/**
+		 * The meta object literal for the '<em><b>Platform Mode</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference TASK_CONTEXT__PLATFORM_MODE = eINSTANCE.getTaskContext_PlatformMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Instruction Files</b></em>' attribute list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK_CONTEXT__INSTRUCTION_FILES = eINSTANCE.getTaskContext_InstructionFiles();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl <em>Git</em>}' class.

@@ -48,6 +48,16 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.model.orchestration.TestStatus;
+import eu.kalafatic.evolution.model.orchestration.LogElement;
+import eu.kalafatic.evolution.model.orchestration.NetInterface;
+import eu.kalafatic.evolution.model.orchestration.SyncObject;
+import eu.kalafatic.evolution.model.orchestration.SyncType;
+import eu.kalafatic.evolution.model.orchestration.ComboElement;
+import eu.kalafatic.evolution.model.orchestration.ComboData;
+import eu.kalafatic.evolution.model.orchestration.PlatformMode;
+import eu.kalafatic.evolution.model.orchestration.PlatformType;
+import eu.kalafatic.evolution.model.orchestration.AutonomyLevel;
+import eu.kalafatic.evolution.model.orchestration.TaskContext;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EDataType;
@@ -134,6 +144,13 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.FILE_CHANGE: return createFileChange();
 			case OrchestrationPackage.CHANGE_SET: return createChangeSet();
 			case OrchestrationPackage.REVIEW_SESSION: return createReviewSession();
+			case OrchestrationPackage.LOG_ELEMENT: return createLogElement();
+			case OrchestrationPackage.NET_INTERFACE: return createNetInterface();
+			case OrchestrationPackage.SYNC_OBJECT: return createSyncObject();
+			case OrchestrationPackage.COMBO_ELEMENT: return createComboElement();
+			case OrchestrationPackage.COMBO_DATA: return createComboData();
+			case OrchestrationPackage.PLATFORM_MODE: return createPlatformMode();
+			case OrchestrationPackage.TASK_CONTEXT: return createTaskContext();
 			case OrchestrationPackage.CHAT_THREAD: return createChatThread();
 			case OrchestrationPackage.CHAT_MESSAGE: return createChatMessage();
 			default:
@@ -171,6 +188,12 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createTestStatusFromString(eDataType, initialValue);
 			case OrchestrationPackage.REVIEW_DECISION:
 				return createReviewDecisionFromString(eDataType, initialValue);
+			case OrchestrationPackage.SYNC_TYPE:
+				return createSyncTypeFromString(eDataType, initialValue);
+			case OrchestrationPackage.PLATFORM_TYPE:
+				return createPlatformTypeFromString(eDataType, initialValue);
+			case OrchestrationPackage.AUTONOMY_LEVEL:
+				return createAutonomyLevelFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -206,9 +229,75 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertTestStatusToString(eDataType, instanceValue);
 			case OrchestrationPackage.REVIEW_DECISION:
 				return convertReviewDecisionToString(eDataType, instanceValue);
+			case OrchestrationPackage.SYNC_TYPE:
+				return convertSyncTypeToString(eDataType, instanceValue);
+			case OrchestrationPackage.PLATFORM_TYPE:
+				return convertPlatformTypeToString(eDataType, instanceValue);
+			case OrchestrationPackage.AUTONOMY_LEVEL:
+				return convertAutonomyLevelToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public PlatformType createPlatformTypeFromString(EDataType eDataType, String initialValue) {
+		PlatformType result = PlatformType.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertPlatformTypeToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public AutonomyLevel createAutonomyLevelFromString(EDataType eDataType, String initialValue) {
+		AutonomyLevel result = AutonomyLevel.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertAutonomyLevelToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public SyncType createSyncTypeFromString(EDataType eDataType, String initialValue) {
+		SyncType result = SyncType.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertSyncTypeToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
 	}
 
 	/**
@@ -561,6 +650,83 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public ReviewSession createReviewSession() {
 		ReviewSessionImpl reviewSession = new ReviewSessionImpl();
 		return reviewSession;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public LogElement createLogElement() {
+		LogElementImpl logElement = new LogElementImpl();
+		return logElement;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public NetInterface createNetInterface() {
+		NetInterfaceImpl netInterface = new NetInterfaceImpl();
+		return netInterface;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public SyncObject createSyncObject() {
+		SyncObjectImpl syncObject = new SyncObjectImpl();
+		return syncObject;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ComboElement createComboElement() {
+		ComboElementImpl comboElement = new ComboElementImpl();
+		return comboElement;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public ComboData createComboData() {
+		ComboDataImpl comboData = new ComboDataImpl();
+		return comboData;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public PlatformMode createPlatformMode() {
+		PlatformModeImpl platformMode = new PlatformModeImpl();
+		return platformMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public TaskContext createTaskContext() {
+		TaskContextImpl taskContext = new TaskContextImpl();
+		return taskContext;
 	}
 
 	/**

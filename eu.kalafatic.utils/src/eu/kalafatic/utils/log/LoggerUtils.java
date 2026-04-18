@@ -33,7 +33,8 @@ import org.eclipse.core.runtime.Path;
 import eu.kalafatic.utils.constants.FConstants;
 import eu.kalafatic.utils.interfaces.ILog;
 import eu.kalafatic.utils.lib.ELogType;
-import eu.kalafatic.utils.model.LogElement;
+import eu.kalafatic.evolution.model.orchestration.LogElement;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.utils.preferences.ECorePreferences;
 
 /**
@@ -191,7 +192,7 @@ public class LoggerUtils {
 	public void initPool() {
 		try {
 			while (FConstants.LOGS.size() < ILog.MAX_LOGS) {
-				FConstants.LOGS.add(new LogElement());
+				FConstants.LOGS.add(OrchestrationFactory.eINSTANCE.createLogElement());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -213,7 +214,7 @@ public class LoggerUtils {
 			logElement = FConstants.LOGS.remove(FConstants.LOGS.size() - 1);
 
 			if (logElement == null) {
-				logElement = new LogElement();
+				logElement = OrchestrationFactory.eINSTANCE.createLogElement();
 			}
 			FConstants.LOGS.add(0, logElement);
 

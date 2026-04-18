@@ -773,4 +773,86 @@ public interface Orchestrator extends EObject {
 	 */
 	void setGitAutomation(boolean value);
 
+	/**
+	 * Returns the value of the '<em><b>Logs</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.LogElement}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Logs</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_Logs()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<LogElement> getLogs();
+
+	/**
+	 * Returns the value of the '<em><b>Net Interfaces</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.NetInterface}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Net Interfaces</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_NetInterfaces()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<NetInterface> getNetInterfaces();
+
+	/**
+	 * Returns the value of the '<em><b>Sync Objects</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.SyncObject}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Sync Objects</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_SyncObjects()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<SyncObject> getSyncObjects();
+
+	/**
+	 * Returns the value of the '<em><b>Combo Configs</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.ComboData}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Combo Configs</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_ComboConfigs()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<ComboData> getComboConfigs();
+
+	/**
+	 * Returns the value of the '<em><b>Active Platform Mode</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Active Platform Mode</em>' containment reference.
+	 * @see #setActivePlatformMode(PlatformMode)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_ActivePlatformMode()
+	 * @model containment="true"
+	 * @generated
+	 */
+	PlatformMode getActivePlatformMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getActivePlatformMode <em>Active Platform Mode</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Active Platform Mode</em>' containment reference.
+	 * @see #getActivePlatformMode()
+	 * @generated
+	 */
+	void setActivePlatformMode(PlatformMode value);
+
+	/**
+	 * Returns the value of the '<em><b>Contexts</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.TaskContext}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Contexts</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_Contexts()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<TaskContext> getContexts();
+
 } // Orchestrator

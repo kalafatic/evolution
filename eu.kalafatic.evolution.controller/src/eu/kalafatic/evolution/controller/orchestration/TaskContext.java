@@ -9,6 +9,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PlatformMode;
+import eu.kalafatic.evolution.model.orchestration.PlatformType;
+import eu.kalafatic.evolution.model.orchestration.AutonomyLevel;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.utils.log.Log;
 
 /**
@@ -24,15 +28,21 @@ public class TaskContext {
     private final List<ApprovalListener> approvalListeners = new CopyOnWriteArrayList<>();
     private final List<InputListener> inputListeners = new CopyOnWriteArrayList<>();
     private final List<TokenRequestListener> tokenRequestListeners = new CopyOnWriteArrayList<>();
-    private final List<String> instructionFiles = new CopyOnWriteArrayList<>();
-    private String currentTaskName = "Orchestration";
-    private String threadId = "Default";
+
+    private final eu.kalafatic.evolution.model.orchestration.TaskContext modelContext;
+
     private CompletableFuture<Boolean> approvalFuture;
     private CompletableFuture<String> inputFuture;
-    private volatile boolean paused = false;
-    private volatile boolean autoApprove = false;
-    private PlatformMode platformMode = new PlatformMode();
     private final Object pauseLock = new Object();
+
+    private PlatformMode createDefaultPlatformMode() {
+        PlatformMode mode = OrchestrationFactory.eINSTANCE.createPlatformMode();
+        mode.setType(PlatformType.SIMPLE_CHAT);
+        mode.setAutonomyLevel(AutonomyLevel.LOW);
+        mode.setIterationLimit(1);
+        mode.setAllowSelfModify(false);
+        return mode;
+    }
 
     public interface LogListener {
         void onLog(String message);
@@ -53,10 +63,17 @@ public class TaskContext {
     public TaskContext(Orchestrator orchestrator, File projectRoot) {
         this.orchestrator = orchestrator;
         this.projectRoot = projectRoot;
+        this.modelContext = OrchestrationFactory.eINSTANCE.createTaskContext();
+        this.modelContext.setPlatformMode(createDefaultPlatformMode());
+        this.modelContext.setThreadId("Default");
+        this.modelContext.setCurrentTaskName("Orchestration");
+        if (orchestrator != null) {
+            orchestrator.getContexts().add(this.modelContext);
+        }
     }
 
     public List<String> getInstructionFiles() {
-        return instructionFiles;
+        return modelContext.getInstructionFiles();
     }
 
     public Orchestrator getOrchestrator() {
@@ -68,19 +85,19 @@ public class TaskContext {
     }
 
     public String getCurrentTaskName() {
-        return currentTaskName;
+        return modelContext.getCurrentTaskName();
     }
 
     public void setCurrentTaskName(String currentTaskName) {
-        this.currentTaskName = currentTaskName;
+        modelContext.setCurrentTaskName(currentTaskName);
     }
 
     public String getThreadId() {
-        return threadId;
+        return modelContext.getThreadId();
     }
 
     public void setThreadId(String threadId) {
-        this.threadId = threadId;
+        modelContext.setThreadId(threadId);
     }
 
     public void log(String message) {
@@ -152,11 +169,11 @@ public class TaskContext {
     }
 
     public boolean isPaused() {
-        return paused;
+        return modelContext.isPaused();
     }
 
     public void setPaused(boolean paused) {
-        this.paused = paused;
+        modelContext.setPaused(paused);
         if (!paused) {
             synchronized (pauseLock) {
                 pauseLock.notifyAll();
@@ -168,20 +185,20 @@ public class TaskContext {
         if (orchestrator != null) {
             return orchestrator.isAutoApprove();
         }
-        return autoApprove;
+        return modelContext.isAutoApprove();
     }
 
     public void setAutoApprove(boolean autoApprove) {
-        this.autoApprove = autoApprove;
+        modelContext.setAutoApprove(autoApprove);
         if (orchestrator != null) {
             orchestrator.setAutoApprove(autoApprove);
         }
     }
 
     public void checkPause() {
-        if (paused) {
+        if (isPaused()) {
             synchronized (pauseLock) {
-                while (paused) {
+                while (isPaused()) {
                     try {
                         pauseLock.wait();
                     } catch (InterruptedException e) {
@@ -232,10 +249,14 @@ public class TaskContext {
     }
 
     public PlatformMode getPlatformMode() {
-        return platformMode;
+        return modelContext.getPlatformMode();
     }
 
     public void setPlatformMode(PlatformMode platformMode) {
-        this.platformMode = platformMode;
+        modelContext.setPlatformMode(platformMode);
+    }
+
+    public eu.kalafatic.evolution.model.orchestration.TaskContext getModelContext() {
+        return modelContext;
     }
 }

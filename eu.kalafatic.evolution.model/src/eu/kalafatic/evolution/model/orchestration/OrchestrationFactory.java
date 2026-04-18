@@ -310,6 +310,69 @@ public interface OrchestrationFactory extends EFactory {
 	ReviewSession createReviewSession();
 
 	/**
+	 * Returns a new object of class '<em>Log Element</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Log Element</em>'.
+	 * @generated
+	 */
+	LogElement createLogElement();
+
+	/**
+	 * Returns a new object of class '<em>Net Interface</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Net Interface</em>'.
+	 * @generated
+	 */
+	NetInterface createNetInterface();
+
+	/**
+	 * Returns a new object of class '<em>Sync Object</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Sync Object</em>'.
+	 * @generated
+	 */
+	SyncObject createSyncObject();
+
+	/**
+	 * Returns a new object of class '<em>Combo Element</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Combo Element</em>'.
+	 * @generated
+	 */
+	ComboElement createComboElement();
+
+	/**
+	 * Returns a new object of class '<em>Combo Data</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Combo Data</em>'.
+	 * @generated
+	 */
+	ComboData createComboData();
+
+	/**
+	 * Returns a new object of class '<em>Platform Mode</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Platform Mode</em>'.
+	 * @generated
+	 */
+	PlatformMode createPlatformMode();
+
+	/**
+	 * Returns a new object of class '<em>Task Context</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Task Context</em>'.
+	 * @generated
+	 */
+	TaskContext createTaskContext();
+
+	/**
 	 * Returns a new object of class '<em>Chat Thread</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

@@ -77,7 +77,7 @@ import eu.kalafatic.utils.constants.FTextConstants;
 import eu.kalafatic.utils.constants.FUIConstants;
 import eu.kalafatic.utils.hack.ImageCombo;
 import eu.kalafatic.utils.log.Log;
-import eu.kalafatic.utils.model.ComboData;
+import eu.kalafatic.evolution.model.orchestration.ComboData;
 import eu.kalafatic.utils.preferences.ECorePreferences;
 import eu.kalafatic.utils.time.DateUtils;
 
@@ -1120,7 +1120,7 @@ public class GUIFactory {
 		Combo combo = createCombo(parent, name, style);
 		combo.setData("comboData", comboData);
 		combo.setItems(comboData.getItems());
-		combo.select(comboData.defaultSelection);
+		combo.select(comboData.getDefaultSelection());
 		return combo;
 	}
 
