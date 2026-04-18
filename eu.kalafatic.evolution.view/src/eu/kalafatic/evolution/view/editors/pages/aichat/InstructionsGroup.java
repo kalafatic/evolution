@@ -15,7 +15,10 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
@@ -195,23 +198,34 @@ public class InstructionsGroup extends AEvoGroup {
 
     @Override
     protected void refreshUI() {
-        if (orchestrator != null) {
-            iterativeCheck.setSelection(orchestrator.isIterativeMode());
-            selfIterativeCheck.setSelection(orchestrator.isSelfIterativeMode());
-            autoApproveCheck.setSelection(orchestrator.isAutoApprove());
-            gitAutomationCheck.setSelection(orchestrator.isGitAutomation());
-            maxIterationsSpinner.setSelection(orchestrator.getPreferredMaxIterations());
+        if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
+        	
+        	PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
+        	
+            iterativeCheck.setSelection(promptInstructions.isIterativeMode());
+            selfIterativeCheck.setSelection(promptInstructions.isSelfIterativeMode());
+            autoApproveCheck.setSelection(promptInstructions.isAutoApprove());
+            gitAutomationCheck.setSelection(promptInstructions.isGitAutomation());
+            maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
         }
     }
 
     @Override
     public void updateModel() {
         if (orchestrator != null) {
-            orchestrator.setIterativeMode(iterativeCheck.getSelection());
-            orchestrator.setSelfIterativeMode(selfIterativeCheck.getSelection());
-            orchestrator.setAutoApprove(autoApproveCheck.getSelection());
-            orchestrator.setGitAutomation(gitAutomationCheck.getSelection());
-            orchestrator.setPreferredMaxIterations(maxIterationsSpinner.getSelection());
+        	if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        	
+        	PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
+        	
+        	if (promptInstructions == null) {
+        		promptInstructions = OrchestrationFactory.eINSTANCE.createPromptInstructions();
+        		orchestrator.getAiChat().setPromptInstructions(promptInstructions);
+        	}        	
+        	promptInstructions.setIterativeMode(iterativeCheck.getSelection());
+        	promptInstructions.setSelfIterativeMode(selfIterativeCheck.getSelection());
+            promptInstructions.setAutoApprove(autoApproveCheck.getSelection());
+            promptInstructions.setGitAutomation(gitAutomationCheck.getSelection());
+            promptInstructions.setPreferredMaxIterations(maxIterationsSpinner.getSelection());
         }
     }
 
@@ -234,6 +248,7 @@ public class InstructionsGroup extends AEvoGroup {
     public boolean isSelfIterative() { return selfIterativeCheck.getSelection(); }
     public boolean isAutoApprove() { return autoApproveCheck.getSelection(); }
     public int getMaxIterations() { return maxIterationsSpinner.getSelection(); }
+    public boolean isGitAutomationCheck() { return gitAutomationCheck.getSelection(); }
 
     public void setOrchestrationRunning(boolean running) {
         sendButton.setEnabled(!running);

@@ -47,6 +47,7 @@ import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.ChatThread;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import eu.kalafatic.evolution.view.editors.pages.aichat.*;
@@ -267,12 +268,23 @@ public class AiChatPage extends SharedScrolledComposite {
 
 		eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
 		    .updateToken(orchestrator, remoteModel, aiSettingsGroup.getRemoteToken());
-
-		orchestrator.setIterativeMode(instructionsGroup.isIterative());
-		orchestrator.setSelfIterativeMode(instructionsGroup.isSelfIterative());
-		orchestrator.setAutoApprove(instructionsGroup.isAutoApprove());
-		orchestrator.setPreferredMaxIterations(instructionsGroup.getMaxIterations());
-		if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+		
+		if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());		
+    	
+    	PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
+    	
+    	if (promptInstructions == null) {
+    		promptInstructions = OrchestrationFactory.eINSTANCE.createPromptInstructions();
+    		orchestrator.getAiChat().setPromptInstructions(promptInstructions);
+    	}        	
+          
+        promptInstructions.setIterativeMode(instructionsGroup.isIterative());
+        promptInstructions.setSelfIterativeMode(instructionsGroup.isSelfIterative());
+        promptInstructions.setAutoApprove(instructionsGroup.isAutoApprove());
+        promptInstructions.setPreferredMaxIterations(instructionsGroup.getMaxIterations());
+        promptInstructions.setGitAutomation(instructionsGroup.isGitAutomationCheck());
+		
+		
 		orchestrator.getAiChat().setUrl(aiSettingsGroup.getRemoteUrl());
 		editor.setDirty(true);
 		updateModeDisplay();
@@ -289,9 +301,16 @@ public class AiChatPage extends SharedScrolledComposite {
 			return;
 		}
 		if (currentThread == null) initializeThreads();
-		if (orchestrator != null && (orchestrator.isIterativeMode() || orchestrator.isSelfIterativeMode())) {
-			startSelfDevAction(request); return;
+	
+		if (orchestrator != null && orchestrator.getAiChat() != null ) {
+			PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
+			
+			if (promptInstructions != null && promptInstructions.isSelfIterativeMode()) {
+				startSelfDevAction(request); 
+				return;
+			}			
 		}
+		
 		if (orchestrator != null) {
 			if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
 			if (orchestrator.getLlm() == null) orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());

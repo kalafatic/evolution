@@ -61,8 +61,8 @@ public class SelfDevSupervisor {
 
         try {
             int maxIter = session.getMaxIterations();
-            if (context.getOrchestrator() != null && context.getOrchestrator().getPreferredMaxIterations() > 0) {
-                maxIter = context.getOrchestrator().getPreferredMaxIterations();
+            if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations() > 0) {
+                maxIter = context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations();
             }
 
             for (int i = 1; i <= maxIter; i++) {

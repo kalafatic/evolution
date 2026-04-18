@@ -34,6 +34,7 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
 import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.Rule;
@@ -64,16 +65,6 @@ import org.eclipse.emf.ecore.impl.EPackageImpl;
  * @generated
  */
 public class OrchestrationPackageImpl extends EPackageImpl implements OrchestrationPackage {
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_GitAutomation() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(34);
-	}
-
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -318,6 +309,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EClass chatMessageEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass promptInstructionsEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -851,6 +849,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
 	public EAttribute getOrchestrator_AiMode() {
 		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(13);
 	}
@@ -971,7 +970,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EAttribute getOrchestrator_IterativeMode() {
+	public EAttribute getOrchestrator_DarwinMode() {
 		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(25);
 	}
 
@@ -981,28 +980,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EAttribute getOrchestrator_SelfIterativeMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(26);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_DarwinMode() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(27);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public EReference getOrchestrator_AiProviders() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(28);
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(26);
 	}
 
 	/**
@@ -1012,7 +991,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 */
 	@Override
 	public EReference getOrchestrator_ServerSettings() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(29);
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(27);
 	}
 
 	/**
@@ -1022,7 +1001,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 */
 	@Override
 	public EReference getOrchestrator_ServerSessions() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(30);
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(28);
 	}
 
 	/**
@@ -1032,27 +1011,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 */
 	@Override
 	public EReference getOrchestrator_MonitoringHistory() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(31);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_AutoApprove() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(32);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_PreferredMaxIterations() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(33);
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(29);
 	}
 
 	/**
@@ -1083,6 +1042,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getServerSettings_AutoStart() {
 		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSettings_GitAutomation() {
+		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -1693,6 +1662,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EReference getAiChat_Threads() {
 		return (EReference)aiChatEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getAiChat_PromptInstructions() {
+		return (EReference)aiChatEClass.getEStructuralFeatures().get(5);
 	}
 
 	/**
@@ -2741,6 +2720,66 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EClass getPromptInstructions() {
+		return promptInstructionsEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getPromptInstructions_AutoApprove() {
+		return (EAttribute)promptInstructionsEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getPromptInstructions_GitAutomation() {
+		return (EAttribute)promptInstructionsEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getPromptInstructions_PreferredMaxIterations() {
+		return (EAttribute)promptInstructionsEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getPromptInstructions_IterativeMode() {
+		return (EAttribute)promptInstructionsEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getPromptInstructions_SelfIterativeMode() {
+		return (EAttribute)promptInstructionsEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EEnum getTaskStatus() {
 		return taskStatusEEnum;
 	}
@@ -2927,20 +2966,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__FILE_CONFIG);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__SHARED_MEMORY);
 		createEReference(orchestratorEClass, ORCHESTRATOR__ECLIPSE);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__ITERATIVE_MODE);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__SELF_ITERATIVE_MODE);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__DARWIN_MODE);
 		createEReference(orchestratorEClass, ORCHESTRATOR__AI_PROVIDERS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__SERVER_SETTINGS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__SERVER_SESSIONS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__MONITORING_HISTORY);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__AUTO_APPROVE);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__PREFERRED_MAX_ITERATIONS);
-		createEAttribute(orchestratorEClass, ORCHESTRATOR__GIT_AUTOMATION);
 
 		serverSettingsEClass = createEClass(SERVER_SETTINGS);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORT);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__AUTO_START);
+		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__GIT_AUTOMATION);
 
 		serverSessionEClass = createEClass(SERVER_SESSION);
 		createEAttribute(serverSessionEClass, SERVER_SESSION__ID);
@@ -3012,6 +3047,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(aiChatEClass, AI_CHAT__PROMPT);
 		createEAttribute(aiChatEClass, AI_CHAT__PROXY_URL);
 		createEReference(aiChatEClass, AI_CHAT__THREADS);
+		createEReference(aiChatEClass, AI_CHAT__PROMPT_INSTRUCTIONS);
 
 		neuronAIEClass = createEClass(NEURON_AI);
 		createEAttribute(neuronAIEClass, NEURON_AI__URL);
@@ -3138,6 +3174,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__AGENT_TYPE);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__TIMESTAMP);
 
+		promptInstructionsEClass = createEClass(PROMPT_INSTRUCTIONS);
+		createEAttribute(promptInstructionsEClass, PROMPT_INSTRUCTIONS__AUTO_APPROVE);
+		createEAttribute(promptInstructionsEClass, PROMPT_INSTRUCTIONS__GIT_AUTOMATION);
+		createEAttribute(promptInstructionsEClass, PROMPT_INSTRUCTIONS__PREFERRED_MAX_ITERATIONS);
+		createEAttribute(promptInstructionsEClass, PROMPT_INSTRUCTIONS__ITERATIVE_MODE);
+		createEAttribute(promptInstructionsEClass, PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE);
+
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
 		sessionTypeEEnum = createEEnum(SESSION_TYPE);
@@ -3239,20 +3282,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_FileConfig(), this.getFileConfig(), null, "fileConfig", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_SharedMemory(), ecorePackage.getEString(), "sharedMemory", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_Eclipse(), this.getEclipse(), null, "eclipse", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_DarwinMode(), ecorePackage.getEBoolean(), "darwinMode", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_AiProviders(), this.getAIProvider(), null, "aiProviders", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_ServerSettings(), this.getServerSettings(), null, "serverSettings", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_ServerSessions(), this.getServerSession(), null, "serverSessions", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_MonitoringHistory(), this.getMonitoringData(), null, "monitoringHistory", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_AutoApprove(), ecorePackage.getEBoolean(), "autoApprove", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_PreferredMaxIterations(), ecorePackage.getEInt(), "preferredMaxIterations", "5", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrchestrator_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", "false", 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSettingsEClass, ServerSettings.class, "ServerSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getServerSettings_Port(), ecorePackage.getEInt(), "port", "8080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSettings_Port(), ecorePackage.getEInt(), "port", "88080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getServerSettings_AutoStart(), ecorePackage.getEBoolean(), "autoStart", "true", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSettings_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", "false", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSessionEClass, ServerSession.class, "ServerSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getServerSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -3324,6 +3363,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getAiChat_Prompt(), ecorePackage.getEString(), "prompt", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAiChat_ProxyUrl(), ecorePackage.getEString(), "proxyUrl", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getAiChat_Threads(), this.getChatThread(), null, "threads", null, 0, -1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getAiChat_PromptInstructions(), this.getPromptInstructions(), null, "promptInstructions", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(neuronAIEClass, NeuronAI.class, "NeuronAI", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getNeuronAI_Url(), ecorePackage.getEString(), "url", null, 0, 1, NeuronAI.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -3449,6 +3489,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getChatMessage_IsItalic(), ecorePackage.getEBoolean(), "isItalic", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatMessage_AgentType(), ecorePackage.getEString(), "agentType", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatMessage_Timestamp(), ecorePackage.getEString(), "timestamp", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(promptInstructionsEClass, PromptInstructions.class, "PromptInstructions", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getPromptInstructions_AutoApprove(), ecorePackage.getEBoolean(), "autoApprove", null, 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getPromptInstructions_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", null, 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getPromptInstructions_PreferredMaxIterations(), ecorePackage.getEInt(), "preferredMaxIterations", "4", 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, !IS_ORDERED);
+		initEAttribute(getPromptInstructions_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getPromptInstructions_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Initialize enums and add enum literals
 		initEEnum(taskStatusEEnum, TaskStatus.class, "TaskStatus");

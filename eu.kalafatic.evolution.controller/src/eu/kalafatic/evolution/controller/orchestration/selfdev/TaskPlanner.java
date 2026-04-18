@@ -55,9 +55,9 @@ public class TaskPlanner extends BaseAiAgent {
         if (context.getOrchestrator().getSelfDevSession() != null) {
             initialRequest = context.getOrchestrator().getSelfDevSession().getInitialRequest();
         }
-
-        boolean isIterative = context.getOrchestrator().isIterativeMode();
-        boolean isSelfIterative = context.getOrchestrator().isSelfIterativeMode();
+       
+        boolean isIterative = context.getOrchestrator().getAiChat().getPromptInstructions().isIterativeMode();
+        boolean isSelfIterative = context.getOrchestrator().getAiChat().getPromptInstructions().isSelfIterativeMode();
 
         String prompt;
         if (isIterative && initialRequest != null && !initialRequest.isEmpty() && !"Analyze the project and suggest improvements.".equals(initialRequest)) {

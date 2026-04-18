@@ -24,7 +24,7 @@ import eu.kalafatic.utils.preferences.ECorePreferences;
 import eu.kalafatic.utils.ui.ImageUtils;
 
 /**
- * The Class class GeminiSplashHandler.
+ * The Class class EvolutionSplashHandler.
  * @author Petr Kalafatic
  * @project Gemini
  * @version 3.0.0

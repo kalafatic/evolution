@@ -556,31 +556,13 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__ECLIPSE = 24;
 
 	/**
-	 * The feature id for the '<em><b>Iterative Mode</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ORCHESTRATOR__ITERATIVE_MODE = 25;
-
-	/**
-	 * The feature id for the '<em><b>Self Iterative Mode</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ORCHESTRATOR__SELF_ITERATIVE_MODE = 26;
-
-	/**
 	 * The feature id for the '<em><b>Darwin Mode</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__DARWIN_MODE = 27;
+	int ORCHESTRATOR__DARWIN_MODE = 25;
 
 	/**
 	 * The feature id for the '<em><b>Ai Providers</b></em>' containment reference list.
@@ -589,7 +571,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__AI_PROVIDERS = 28;
+	int ORCHESTRATOR__AI_PROVIDERS = 26;
 
 	/**
 	 * The feature id for the '<em><b>Server Settings</b></em>' containment reference.
@@ -598,7 +580,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__SERVER_SETTINGS = 29;
+	int ORCHESTRATOR__SERVER_SETTINGS = 27;
 
 	/**
 	 * The feature id for the '<em><b>Server Sessions</b></em>' containment reference list.
@@ -607,7 +589,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__SERVER_SESSIONS = 30;
+	int ORCHESTRATOR__SERVER_SESSIONS = 28;
 
 	/**
 	 * The feature id for the '<em><b>Monitoring History</b></em>' containment reference list.
@@ -616,34 +598,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR__MONITORING_HISTORY = 31;
-
-	/**
-	 * The feature id for the '<em><b>Auto Approve</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ORCHESTRATOR__AUTO_APPROVE = 32;
-
-	/**
-	 * The feature id for the '<em><b>Preferred Max Iterations</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ORCHESTRATOR__PREFERRED_MAX_ITERATIONS = 33;
-
-	/**
-	 * The feature id for the '<em><b>Git Automation</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ORCHESTRATOR__GIT_AUTOMATION = 34;
+	int ORCHESTRATOR__MONITORING_HISTORY = 29;
 
 	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
@@ -652,7 +607,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 35;
+	int ORCHESTRATOR_FEATURE_COUNT = 30;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -692,13 +647,22 @@ public interface OrchestrationPackage extends EPackage {
 	int SERVER_SETTINGS__AUTO_START = 1;
 
 	/**
+	 * The feature id for the '<em><b>Git Automation</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SERVER_SETTINGS__GIT_AUTOMATION = 2;
+
+	/**
 	 * The number of structural features of the '<em>Server Settings</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int SERVER_SETTINGS_FEATURE_COUNT = 2;
+	int SERVER_SETTINGS_FEATURE_COUNT = 3;
 
 	/**
 	 * The number of operations of the '<em>Server Settings</em>' class.
@@ -1431,13 +1395,22 @@ public interface OrchestrationPackage extends EPackage {
 	int AI_CHAT__THREADS = 4;
 
 	/**
+	 * The feature id for the '<em><b>Prompt Instructions</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AI_CHAT__PROMPT_INSTRUCTIONS = 5;
+
+	/**
 	 * The number of structural features of the '<em>Ai Chat</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AI_CHAT_FEATURE_COUNT = 5;
+	int AI_CHAT_FEATURE_COUNT = 6;
 
 	/**
 	 * The number of operations of the '<em>Ai Chat</em>' class.
@@ -2856,6 +2829,79 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_MESSAGE_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl <em>Prompt Instructions</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getPromptInstructions()
+	 * @generated
+	 */
+	int PROMPT_INSTRUCTIONS = 35;
+
+	/**
+	 * The feature id for the '<em><b>Auto Approve</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PROMPT_INSTRUCTIONS__AUTO_APPROVE = 0;
+
+	/**
+	 * The feature id for the '<em><b>Git Automation</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PROMPT_INSTRUCTIONS__GIT_AUTOMATION = 1;
+
+	/**
+	 * The feature id for the '<em><b>Preferred Max Iterations</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PROMPT_INSTRUCTIONS__PREFERRED_MAX_ITERATIONS = 2;
+
+	/**
+	 * The feature id for the '<em><b>Iterative Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PROMPT_INSTRUCTIONS__ITERATIVE_MODE = 3;
+
+	/**
+	 * The feature id for the '<em><b>Self Iterative Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE = 4;
+
+	/**
+	 * The number of structural features of the '<em>Prompt Instructions</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PROMPT_INSTRUCTIONS_FEATURE_COUNT = 5;
+
+	/**
+	 * The number of operations of the '<em>Prompt Instructions</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PROMPT_INSTRUCTIONS_OPERATION_COUNT = 0;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2863,7 +2909,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
 	 * @generated
 	 */
-	int TASK_STATUS = 35;
+	int TASK_STATUS = 36;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SessionType <em>Session Type</em>}' enum.
@@ -2873,7 +2919,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionType()
 	 * @generated
 	 */
-	int SESSION_TYPE = 36;
+	int SESSION_TYPE = 37;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
@@ -2883,7 +2929,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
 	 * @generated
 	 */
-	int COMMAND_STATUS = 37;
+	int COMMAND_STATUS = 38;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
@@ -2893,7 +2939,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
 	 * @generated
 	 */
-	int EXECUTION_MODE = 38;
+	int EXECUTION_MODE = 39;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
@@ -2903,7 +2949,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
 	 * @generated
 	 */
-	int NEURON_TYPE = 39;
+	int NEURON_TYPE = 40;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
@@ -2913,7 +2959,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
 	 * @generated
 	 */
-	int AI_MODE = 40;
+	int AI_MODE = 41;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
@@ -2923,7 +2969,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
 	 * @generated
 	 */
-	int SELF_DEV_STATUS = 41;
+	int SELF_DEV_STATUS = 42;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
@@ -2933,7 +2979,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
 	 * @generated
 	 */
-	int ITERATION_STATUS = 42;
+	int ITERATION_STATUS = 43;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
@@ -2943,7 +2989,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
 	 * @generated
 	 */
-	int SELF_DEV_DECISION = 43;
+	int SELF_DEV_DECISION = 44;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
@@ -2953,7 +2999,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
 	 * @generated
 	 */
-	int TEST_STATUS = 44;
+	int TEST_STATUS = 45;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
@@ -2963,7 +3009,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
 	 * @generated
 	 */
-	int REVIEW_DECISION = 45;
+	int REVIEW_DECISION = 46;
 
 
 	/**
@@ -3525,28 +3571,6 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_Eclipse();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isIterativeMode <em>Iterative Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Iterative Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isIterativeMode()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_IterativeMode();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isSelfIterativeMode <em>Self Iterative Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Self Iterative Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isSelfIterativeMode()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_SelfIterativeMode();
-
-	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isDarwinMode <em>Darwin Mode</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3602,39 +3626,6 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_MonitoringHistory();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isAutoApprove <em>Auto Approve</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Auto Approve</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isAutoApprove()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_AutoApprove();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getPreferredMaxIterations <em>Preferred Max Iterations</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Preferred Max Iterations</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getPreferredMaxIterations()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_PreferredMaxIterations();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#isGitAutomation <em>Git Automation</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Git Automation</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#isGitAutomation()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EAttribute getOrchestrator_GitAutomation();
-
-	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings <em>Server Settings</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3665,6 +3656,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getServerSettings_AutoStart();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isGitAutomation <em>Git Automation</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Git Automation</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ServerSettings#isGitAutomation()
+	 * @see #getServerSettings()
+	 * @generated
+	 */
+	EAttribute getServerSettings_GitAutomation();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSession <em>Server Session</em>}'.
@@ -4326,6 +4328,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getAiChat_Threads();
+
+	/**
+	 * Returns the meta object for the reference '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions <em>Prompt Instructions</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the reference '<em>Prompt Instructions</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions()
+	 * @see #getAiChat()
+	 * @generated
+	 */
+	EReference getAiChat_PromptInstructions();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.NeuronAI <em>Neuron AI</em>}'.
@@ -5451,6 +5464,71 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getChatMessage_Timestamp();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions <em>Prompt Instructions</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Prompt Instructions</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PromptInstructions
+	 * @generated
+	 */
+	EClass getPromptInstructions();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isAutoApprove <em>Auto Approve</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Auto Approve</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PromptInstructions#isAutoApprove()
+	 * @see #getPromptInstructions()
+	 * @generated
+	 */
+	EAttribute getPromptInstructions_AutoApprove();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isGitAutomation <em>Git Automation</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Git Automation</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PromptInstructions#isGitAutomation()
+	 * @see #getPromptInstructions()
+	 * @generated
+	 */
+	EAttribute getPromptInstructions_GitAutomation();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#getPreferredMaxIterations <em>Preferred Max Iterations</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Preferred Max Iterations</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PromptInstructions#getPreferredMaxIterations()
+	 * @see #getPromptInstructions()
+	 * @generated
+	 */
+	EAttribute getPromptInstructions_PreferredMaxIterations();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isIterativeMode <em>Iterative Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Iterative Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PromptInstructions#isIterativeMode()
+	 * @see #getPromptInstructions()
+	 * @generated
+	 */
+	EAttribute getPromptInstructions_IterativeMode();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isSelfIterativeMode <em>Self Iterative Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Self Iterative Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PromptInstructions#isSelfIterativeMode()
+	 * @see #getPromptInstructions()
+	 * @generated
+	 */
+	EAttribute getPromptInstructions_SelfIterativeMode();
+
+	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5998,22 +6076,6 @@ public interface OrchestrationPackage extends EPackage {
 		EReference ORCHESTRATOR__ECLIPSE = eINSTANCE.getOrchestrator_Eclipse();
 
 		/**
-		 * The meta object literal for the '<em><b>Iterative Mode</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ORCHESTRATOR__ITERATIVE_MODE = eINSTANCE.getOrchestrator_IterativeMode();
-
-		/**
-		 * The meta object literal for the '<em><b>Self Iterative Mode</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ORCHESTRATOR__SELF_ITERATIVE_MODE = eINSTANCE.getOrchestrator_SelfIterativeMode();
-
-		/**
 		 * The meta object literal for the '<em><b>Darwin Mode</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -6054,30 +6116,6 @@ public interface OrchestrationPackage extends EPackage {
 		EReference ORCHESTRATOR__MONITORING_HISTORY = eINSTANCE.getOrchestrator_MonitoringHistory();
 
 		/**
-		 * The meta object literal for the '<em><b>Auto Approve</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ORCHESTRATOR__AUTO_APPROVE = eINSTANCE.getOrchestrator_AutoApprove();
-
-		/**
-		 * The meta object literal for the '<em><b>Preferred Max Iterations</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ORCHESTRATOR__PREFERRED_MAX_ITERATIONS = eINSTANCE.getOrchestrator_PreferredMaxIterations();
-
-		/**
-		 * The meta object literal for the '<em><b>Git Automation</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute ORCHESTRATOR__GIT_AUTOMATION = eINSTANCE.getOrchestrator_GitAutomation();
-
-		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl <em>Server Settings</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -6102,6 +6140,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute SERVER_SETTINGS__AUTO_START = eINSTANCE.getServerSettings_AutoStart();
+
+		/**
+		 * The meta object literal for the '<em><b>Git Automation</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SERVER_SETTINGS__GIT_AUTOMATION = eINSTANCE.getServerSettings_GitAutomation();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSessionImpl <em>Server Session</em>}' class.
@@ -6610,6 +6656,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EReference AI_CHAT__THREADS = eINSTANCE.getAiChat_Threads();
+
+		/**
+		 * The meta object literal for the '<em><b>Prompt Instructions</b></em>' reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference AI_CHAT__PROMPT_INSTRUCTIONS = eINSTANCE.getAiChat_PromptInstructions();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NeuronAIImpl <em>Neuron AI</em>}' class.
@@ -7484,6 +7538,56 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_MESSAGE__TIMESTAMP = eINSTANCE.getChatMessage_Timestamp();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl <em>Prompt Instructions</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getPromptInstructions()
+		 * @generated
+		 */
+		EClass PROMPT_INSTRUCTIONS = eINSTANCE.getPromptInstructions();
+
+		/**
+		 * The meta object literal for the '<em><b>Auto Approve</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PROMPT_INSTRUCTIONS__AUTO_APPROVE = eINSTANCE.getPromptInstructions_AutoApprove();
+
+		/**
+		 * The meta object literal for the '<em><b>Git Automation</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PROMPT_INSTRUCTIONS__GIT_AUTOMATION = eINSTANCE.getPromptInstructions_GitAutomation();
+
+		/**
+		 * The meta object literal for the '<em><b>Preferred Max Iterations</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PROMPT_INSTRUCTIONS__PREFERRED_MAX_ITERATIONS = eINSTANCE.getPromptInstructions_PreferredMaxIterations();
+
+		/**
+		 * The meta object literal for the '<em><b>Iterative Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PROMPT_INSTRUCTIONS__ITERATIVE_MODE = eINSTANCE.getPromptInstructions_IterativeMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Self Iterative Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE = eINSTANCE.getPromptInstructions_SelfIterativeMode();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.

@@ -72,8 +72,6 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getFileConfig <em>File Config</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getSharedMemory <em>Shared Memory</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getEclipse <em>Eclipse</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#isIterativeMode <em>Iterative Mode</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#isSelfIterativeMode <em>Self Iterative Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#isDarwinMode <em>Darwin Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getAiProviders <em>Ai Providers</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getServerSettings <em>Server Settings</em>}</li>
@@ -445,46 +443,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected Eclipse eclipse;
 
 	/**
-	 * The default value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isIterativeMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
-
-	/**
-	 * The cached value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isIterativeMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean iterativeMode = ITERATIVE_MODE_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isSelfIterativeMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final boolean SELF_ITERATIVE_MODE_EDEFAULT = false;
-
-	/**
-	 * The cached value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isSelfIterativeMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
-
-	/**
 	 * The default value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -543,135 +501,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected EList<MonitoringData> monitoringHistory;
-
-	/**
-	 * The default value of the '{@link #isAutoApprove() <em>Auto Approve</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isAutoApprove()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final boolean AUTO_APPROVE_EDEFAULT = false;
-
-	/**
-	 * The cached value of the '{@link #isAutoApprove() <em>Auto Approve</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isAutoApprove()
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean autoApprove = AUTO_APPROVE_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #getPreferredMaxIterations() <em>Preferred Max Iterations</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getPreferredMaxIterations()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final int PREFERRED_MAX_ITERATIONS_EDEFAULT = 5;
-
-	/**
-	 * The cached value of the '{@link #getPreferredMaxIterations() <em>Preferred Max Iterations</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getPreferredMaxIterations()
-	 * @generated
-	 * @ordered
-	 */
-	protected int preferredMaxIterations = PREFERRED_MAX_ITERATIONS_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isGitAutomation()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final boolean GIT_AUTOMATION_EDEFAULT = false;
-
-	/**
-	 * The cached value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isGitAutomation()
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean gitAutomation = GIT_AUTOMATION_EDEFAULT;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isAutoApprove() {
-		return autoApprove;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setAutoApprove(boolean newAutoApprove) {
-		boolean oldAutoApprove = autoApprove;
-		autoApprove = newAutoApprove;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE, oldAutoApprove, autoApprove));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public int getPreferredMaxIterations() {
-		return preferredMaxIterations;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setPreferredMaxIterations(int newPreferredMaxIterations) {
-		int oldPreferredMaxIterations = preferredMaxIterations;
-		preferredMaxIterations = newPreferredMaxIterations;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS, oldPreferredMaxIterations, preferredMaxIterations));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isGitAutomation() {
-		return gitAutomation;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setGitAutomation(boolean newGitAutomation) {
-		boolean oldGitAutomation = gitAutomation;
-		gitAutomation = newGitAutomation;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION, oldGitAutomation, gitAutomation));
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1485,52 +1314,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public boolean isIterativeMode() {
-		return iterativeMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setIterativeMode(boolean newIterativeMode) {
-		boolean oldIterativeMode = iterativeMode;
-		iterativeMode = newIterativeMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE, oldIterativeMode, iterativeMode));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isSelfIterativeMode() {
-		return selfIterativeMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setSelfIterativeMode(boolean newSelfIterativeMode) {
-		boolean oldSelfIterativeMode = selfIterativeMode;
-		selfIterativeMode = newSelfIterativeMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public boolean isDarwinMode() {
 		return darwinMode;
 	}
@@ -1738,10 +1521,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getSharedMemory();
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				return getEclipse();
-			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
-				return isIterativeMode();
-			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
-				return isSelfIterativeMode();
 			case OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE:
 				return isDarwinMode();
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
@@ -1752,12 +1531,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getServerSessions();
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				return getMonitoringHistory();
-			case OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE:
-				return isAutoApprove();
-			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
-				return getPreferredMaxIterations();
-			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
-				return isGitAutomation();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1849,12 +1622,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				setEclipse((Eclipse)newValue);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
-				setIterativeMode((Boolean)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
-				setSelfIterativeMode((Boolean)newValue);
-				return;
 			case OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE:
 				setDarwinMode((Boolean)newValue);
 				return;
@@ -1872,15 +1639,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				getMonitoringHistory().clear();
 				getMonitoringHistory().addAll((Collection<? extends MonitoringData>)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE:
-				setAutoApprove((Boolean)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
-				setPreferredMaxIterations((Integer)newValue);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
-				setGitAutomation((Boolean)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -1969,12 +1727,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				setEclipse((Eclipse)null);
 				return;
-			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
-				setIterativeMode(ITERATIVE_MODE_EDEFAULT);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
-				setSelfIterativeMode(SELF_ITERATIVE_MODE_EDEFAULT);
-				return;
 			case OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE:
 				setDarwinMode(DARWIN_MODE_EDEFAULT);
 				return;
@@ -1989,15 +1741,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				getMonitoringHistory().clear();
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE:
-				setAutoApprove(AUTO_APPROVE_EDEFAULT);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
-				setPreferredMaxIterations(PREFERRED_MAX_ITERATIONS_EDEFAULT);
-				return;
-			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
-				setGitAutomation(GIT_AUTOMATION_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -2061,10 +1804,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return SHARED_MEMORY_EDEFAULT == null ? sharedMemory != null : !SHARED_MEMORY_EDEFAULT.equals(sharedMemory);
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
 				return eclipse != null;
-			case OrchestrationPackage.ORCHESTRATOR__ITERATIVE_MODE:
-				return iterativeMode != ITERATIVE_MODE_EDEFAULT;
-			case OrchestrationPackage.ORCHESTRATOR__SELF_ITERATIVE_MODE:
-				return selfIterativeMode != SELF_ITERATIVE_MODE_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE:
 				return darwinMode != DARWIN_MODE_EDEFAULT;
 			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
@@ -2075,12 +1814,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return serverSessions != null && !serverSessions.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				return monitoringHistory != null && !monitoringHistory.isEmpty();
-			case OrchestrationPackage.ORCHESTRATOR__AUTO_APPROVE:
-				return autoApprove != AUTO_APPROVE_EDEFAULT;
-			case OrchestrationPackage.ORCHESTRATOR__PREFERRED_MAX_ITERATIONS:
-				return preferredMaxIterations != PREFERRED_MAX_ITERATIONS_EDEFAULT;
-			case OrchestrationPackage.ORCHESTRATOR__GIT_AUTOMATION:
-				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -2117,18 +1850,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		result.append(offlineMode);
 		result.append(", sharedMemory: ");
 		result.append(sharedMemory);
-		result.append(", iterativeMode: ");
-		result.append(iterativeMode);
-		result.append(", selfIterativeMode: ");
-		result.append(selfIterativeMode);
 		result.append(", darwinMode: ");
 		result.append(darwinMode);
-		result.append(", autoApprove: ");
-		result.append(autoApprove);
-		result.append(", preferredMaxIterations: ");
-		result.append(preferredMaxIterations);
-		result.append(", gitAutomation: ");
-		result.append(gitAutomation);
 		result.append(')');
 		return result.toString();
 	}

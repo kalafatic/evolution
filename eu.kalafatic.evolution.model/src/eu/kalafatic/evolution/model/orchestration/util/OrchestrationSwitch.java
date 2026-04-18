@@ -29,6 +29,7 @@ import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
@@ -311,6 +312,12 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 			case OrchestrationPackage.CHAT_MESSAGE: {
 				ChatMessage chatMessage = (ChatMessage)theEObject;
 				T result = caseChatMessage(chatMessage);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.PROMPT_INSTRUCTIONS: {
+				PromptInstructions promptInstructions = (PromptInstructions)theEObject;
+				T result = casePromptInstructions(promptInstructions);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -840,6 +847,21 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseChatMessage(ChatMessage object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Prompt Instructions</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Prompt Instructions</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T casePromptInstructions(PromptInstructions object) {
 		return null;
 	}
 

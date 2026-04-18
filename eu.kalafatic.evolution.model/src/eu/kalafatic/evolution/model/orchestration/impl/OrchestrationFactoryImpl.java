@@ -35,6 +35,7 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
 import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
@@ -136,6 +137,7 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.REVIEW_SESSION: return createReviewSession();
 			case OrchestrationPackage.CHAT_THREAD: return createChatThread();
 			case OrchestrationPackage.CHAT_MESSAGE: return createChatMessage();
+			case OrchestrationPackage.PROMPT_INSTRUCTIONS: return createPromptInstructions();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -583,6 +585,17 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public ChatMessage createChatMessage() {
 		ChatMessageImpl chatMessage = new ChatMessageImpl();
 		return chatMessage;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public PromptInstructions createPromptInstructions() {
+		PromptInstructionsImpl promptInstructions = new PromptInstructionsImpl();
+		return promptInstructions;
 	}
 
 	/**

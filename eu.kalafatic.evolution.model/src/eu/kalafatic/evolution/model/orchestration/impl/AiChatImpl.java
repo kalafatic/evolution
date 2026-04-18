@@ -6,6 +6,7 @@ import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.ChatThread;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import java.util.Collection;
 
 import org.eclipse.emf.common.notify.Notification;
@@ -35,6 +36,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl#getPrompt <em>Prompt</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl#getProxyUrl <em>Proxy Url</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl#getThreads <em>Threads</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.AiChatImpl#getPromptInstructions <em>Prompt Instructions</em>}</li>
  * </ul>
  *
  * @generated
@@ -129,6 +131,16 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	 * @ordered
 	 */
 	protected EList<ChatThread> threads;
+
+	/**
+	 * The cached value of the '{@link #getPromptInstructions() <em>Prompt Instructions</em>}' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPromptInstructions()
+	 * @generated
+	 * @ordered
+	 */
+	protected PromptInstructions promptInstructions;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -260,6 +272,46 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	 * @generated
 	 */
 	@Override
+	public PromptInstructions getPromptInstructions() {
+		if (promptInstructions != null && promptInstructions.eIsProxy()) {
+			InternalEObject oldPromptInstructions = (InternalEObject)promptInstructions;
+			promptInstructions = (PromptInstructions)eResolveProxy(oldPromptInstructions);
+			if (promptInstructions != oldPromptInstructions) {
+				if (eNotificationRequired())
+					eNotify(new ENotificationImpl(this, Notification.RESOLVE, OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS, oldPromptInstructions, promptInstructions));
+			}
+		}
+		return promptInstructions;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public PromptInstructions basicGetPromptInstructions() {
+		return promptInstructions;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPromptInstructions(PromptInstructions newPromptInstructions) {
+		PromptInstructions oldPromptInstructions = promptInstructions;
+		promptInstructions = newPromptInstructions;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS, oldPromptInstructions, promptInstructions));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.AI_CHAT__THREADS:
@@ -286,6 +338,9 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 				return getProxyUrl();
 			case OrchestrationPackage.AI_CHAT__THREADS:
 				return getThreads();
+			case OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS:
+				if (resolve) return getPromptInstructions();
+				return basicGetPromptInstructions();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -315,6 +370,9 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 				getThreads().clear();
 				getThreads().addAll((Collection<? extends ChatThread>)newValue);
 				return;
+			case OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS:
+				setPromptInstructions((PromptInstructions)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -342,6 +400,9 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 			case OrchestrationPackage.AI_CHAT__THREADS:
 				getThreads().clear();
 				return;
+			case OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS:
+				setPromptInstructions((PromptInstructions)null);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -364,6 +425,8 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 				return PROXY_URL_EDEFAULT == null ? proxyUrl != null : !PROXY_URL_EDEFAULT.equals(proxyUrl);
 			case OrchestrationPackage.AI_CHAT__THREADS:
 				return threads != null && !threads.isEmpty();
+			case OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS:
+				return promptInstructions != null;
 		}
 		return super.eIsSet(featureID);
 	}

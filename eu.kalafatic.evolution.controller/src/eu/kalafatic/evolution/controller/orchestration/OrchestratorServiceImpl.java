@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
@@ -33,16 +34,30 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
                 // We might need a real Orchestrator EMF object here if the system depends on it
                 Orchestrator orchModel = (Orchestrator) request.getContext().get("orchestrator");
+                PromptInstructions promptInstructions = null;
+                
                 if (orchModel == null) {
                     orchModel = OrchestrationFactory.eINSTANCE.createOrchestrator();
                     orchModel.setId(taskId);
+                    
+                    if (orchModel.getAiChat() == null) orchModel.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+                	
+                	promptInstructions = orchModel.getAiChat().getPromptInstructions();
+                	
+                	if (promptInstructions == null) {
+                		promptInstructions = OrchestrationFactory.eINSTANCE.createPromptInstructions();
+                		orchModel.getAiChat().setPromptInstructions(promptInstructions);
+                	}        	
+                    
                     // Default Ollama configuration if not present
                     if (orchModel.getOllama() == null) {
                         orchModel.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
                         orchModel.getOllama().setUrl("http://localhost:11434");
                         orchModel.getOllama().setModel("llama3.2:3b");
                     }
-                }
+                } else {
+					promptInstructions = orchModel.getAiChat().getPromptInstructions();
+				}
 
                 // Override model if provided in request
                 String requestedModel = (String) request.getContext().get("model");
@@ -76,7 +91,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 });
 
                 // Git Integration: Branching
-                if (orchModel.isGitAutomation()) {
+                if (promptInstructions.isGitAutomation()) {
                     GitTool gitTool = new GitTool();
                     String requestedBranch = (String) request.getContext().get("branch");
                     String branchName = (requestedBranch != null && !requestedBranch.isEmpty()) ?
@@ -107,7 +122,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 result.setResponse(response);
 
                 // Git Integration: Commit
-                if (orchModel.isGitAutomation() && result.getStatus() == TaskResult.Status.SUCCESS) {
+                if (promptInstructions.isGitAutomation() && result.getStatus() == TaskResult.Status.SUCCESS) {
                     try {
                         context.log("GIT: Committing changes");
                         GitTool gitTool = new GitTool();

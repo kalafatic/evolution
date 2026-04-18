@@ -80,10 +80,6 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="sharedMemory" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="eclipse" eType="#//Eclipse"
         containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="iterativeMode" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
-        defaultValueLiteral="false"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="selfIterativeMode" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
-        defaultValueLiteral="false"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="darwinMode" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="false"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="aiProviders" upperBound="-1"
@@ -97,7 +93,7 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ServerSettings">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="port" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
-        defaultValueLiteral="8080"/>
+        defaultValueLiteral="88080"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="autoStart" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="gitAutomation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
@@ -198,6 +194,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="proxyUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="threads" upperBound="-1"
         eType="#//ChatThread" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="promptInstructions" eType="#//PromptInstructions"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="NeuronAI">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="url" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -374,5 +371,16 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="isItalic" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="agentType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="timestamp" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PromptInstructions">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="autoApprove" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="gitAutomation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="preferredMaxIterations"
+        ordered="false" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="4"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="iterativeMode" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="selfIterativeMode" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
   </eClassifiers>
 </ecore:EPackage>

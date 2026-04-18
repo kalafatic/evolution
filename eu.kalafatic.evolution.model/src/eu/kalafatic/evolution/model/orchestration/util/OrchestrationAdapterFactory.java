@@ -29,6 +29,7 @@ import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.SecretRule;
@@ -240,6 +241,10 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 			@Override
 			public Adapter caseChatMessage(ChatMessage object) {
 				return createChatMessageAdapter();
+			}
+			@Override
+			public Adapter casePromptInstructions(PromptInstructions object) {
+				return createPromptInstructionsAdapter();
 			}
 			@Override
 			public Adapter defaultCase(EObject object) {
@@ -748,6 +753,20 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createChatMessageAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions <em>Prompt Instructions</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.PromptInstructions
+	 * @generated
+	 */
+	public Adapter createPromptInstructionsAdapter() {
 		return null;
 	}
 

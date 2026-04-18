@@ -8,7 +8,10 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.utils.log.Log;
 
 /**
@@ -165,16 +168,17 @@ public class TaskContext {
     }
 
     public boolean isAutoApprove() {
-        if (orchestrator != null) {
-            return orchestrator.isAutoApprove();
+        if (orchestrator != null && orchestrator.getAiChat() != null &&orchestrator.getAiChat().getPromptInstructions() != null) {
+        	
+            return orchestrator.getAiChat().getPromptInstructions().isAutoApprove();
         }
         return autoApprove;
     }
 
     public void setAutoApprove(boolean autoApprove) {
         this.autoApprove = autoApprove;
-        if (orchestrator != null) {
-            orchestrator.setAutoApprove(autoApprove);
+        if (orchestrator != null && orchestrator.getAiChat() != null &&orchestrator.getAiChat().getPromptInstructions() != null) {
+        	orchestrator.getAiChat().getPromptInstructions().setAutoApprove(autoApprove);
         }
     }
 

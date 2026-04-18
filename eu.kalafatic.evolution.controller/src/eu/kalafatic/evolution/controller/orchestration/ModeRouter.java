@@ -30,10 +30,10 @@ public class ModeRouter {
             if (orchestrator.isDarwinMode()) {
                 return createDarwinMode();
             }
-            if (orchestrator.isSelfIterativeMode()) {
+            if (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
                 return createSelfDevMode();
             }
-            if (orchestrator.isIterativeMode()) {
+            if (orchestrator.getAiChat().getPromptInstructions().isIterativeMode()) {
                 return createAssistedCodingMode();
             }
         }

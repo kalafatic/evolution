@@ -328,6 +328,15 @@ public interface OrchestrationFactory extends EFactory {
 	ChatMessage createChatMessage();
 
 	/**
+	 * Returns a new object of class '<em>Prompt Instructions</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Prompt Instructions</em>'.
+	 * @generated
+	 */
+	PromptInstructions createPromptInstructions();
+
+	/**
 	 * Returns the package supported by this factory.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

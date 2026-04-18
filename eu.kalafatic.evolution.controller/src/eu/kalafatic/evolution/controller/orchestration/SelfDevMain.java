@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 
 /**
  * CLI entry point for Standalone SELF_DEV mode.
@@ -36,8 +37,21 @@ public class SelfDevMain {
         try {
             // Setup minimal Orchestrator context
             Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
-            orchestrator.setSelfIterativeMode(true);
-            orchestrator.setAutoApprove(true);
+            
+            if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+            
+            PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
+        	
+        	if (promptInstructions == null) {
+        		promptInstructions = OrchestrationFactory.eINSTANCE.createPromptInstructions();
+        		orchestrator.getAiChat().setPromptInstructions(promptInstructions);
+        	}        
+        	
+           
+        	
+        	
+            promptInstructions.setSelfIterativeMode(true);
+            promptInstructions.setAutoApprove(true);
 
             TaskContext context = new TaskContext(orchestrator, variantDir);
             context.setAutoApprove(true);

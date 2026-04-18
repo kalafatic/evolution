@@ -20,6 +20,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPrompt <em>Prompt</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getProxyUrl <em>Proxy Url</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getThreads <em>Threads</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions <em>Prompt Instructions</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAiChat()
@@ -126,5 +127,27 @@ public interface AiChat extends EObject {
 	 * @generated
 	 */
 	EList<ChatThread> getThreads();
+
+	/**
+	 * Returns the value of the '<em><b>Prompt Instructions</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Prompt Instructions</em>' reference.
+	 * @see #setPromptInstructions(PromptInstructions)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAiChat_PromptInstructions()
+	 * @model
+	 * @generated
+	 */
+	PromptInstructions getPromptInstructions();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions <em>Prompt Instructions</em>}' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Prompt Instructions</em>' reference.
+	 * @see #getPromptInstructions()
+	 * @generated
+	 */
+	void setPromptInstructions(PromptInstructions value);
 
 } // AiChat

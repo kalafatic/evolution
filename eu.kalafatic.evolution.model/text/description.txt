@@ -60,8 +60,6 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Reference fileConfig : FileConfig
     Attribute sharedMemory : EString
     Reference eclipse : Eclipse
-    Attribute iterativeMode : EBoolean
-    Attribute selfIterativeMode : EBoolean
     Attribute darwinMode : EBoolean
     Reference aiProviders : AIProvider<<0..*>>
     Reference serverSettings : ServerSettings
@@ -71,6 +69,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
   Class ServerSettings
     Attribute port : EInt
     Attribute autoStart : EBoolean
+    Attribute gitAutomation : EBoolean
 
   Class ServerSession
     Attribute id : EString
@@ -142,6 +141,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute prompt : EString
     Attribute proxyUrl : EString
     Reference threads : ChatThread<<0..*>>
+    Reference promptInstructions : PromptInstructions
 
   Class NeuronAI
     Attribute url : EString
@@ -267,6 +267,13 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute isItalic : EBoolean
     Attribute agentType : EString
     Attribute timestamp : EString
+
+  Class PromptInstructions
+    Attribute autoApprove : EBoolean
+    Attribute gitAutomation : EBoolean
+    Attribute preferredMaxIterations : EInt
+    Attribute iterativeMode : EBoolean
+    Attribute selfIterativeMode : EBoolean
 
   Enum TaskStatus
     Literal PENDING = 0

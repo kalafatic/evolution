@@ -123,8 +123,6 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/fileConfig"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/sharedMemory"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/eclipse"/>
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/iterativeMode"/>
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/selfIterativeMode"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/darwinMode"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/aiProviders"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/serverSettings"/>
@@ -134,6 +132,7 @@
     <genClasses ecoreClass="evolution.ecore#//ServerSettings">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/port"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/autoStart"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/gitAutomation"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//ServerSession">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSession/id"/>
@@ -205,6 +204,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/prompt"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/proxyUrl"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//AiChat/threads"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference evolution.ecore#//AiChat/promptInstructions"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//NeuronAI">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NeuronAI/url"/>
@@ -330,6 +330,13 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/isItalic"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/agentType"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/timestamp"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//PromptInstructions">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//PromptInstructions/autoApprove"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//PromptInstructions/gitAutomation"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//PromptInstructions/preferredMaxIterations"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//PromptInstructions/iterativeMode"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//PromptInstructions/selfIterativeMode"/>
     </genClasses>
   </genPackages>
 </genmodel:GenModel>

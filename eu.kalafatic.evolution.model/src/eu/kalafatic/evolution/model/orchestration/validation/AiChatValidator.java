@@ -6,6 +6,7 @@ package eu.kalafatic.evolution.model.orchestration.validation;
 
 import eu.kalafatic.evolution.model.orchestration.ChatThread;
 
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import org.eclipse.emf.common.util.EList;
 
 /**
@@ -22,4 +23,6 @@ public interface AiChatValidator {
 	boolean validatePrompt(String value);
 	boolean validateProxyUrl(String value);
 	boolean validateThreads(EList<ChatThread> value);
+
+	boolean validatePromptInstructions(PromptInstructions value);
 }

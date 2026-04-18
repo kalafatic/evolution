@@ -22,6 +22,7 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  * <ul>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#getPort <em>Port</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isAutoStart <em>Auto Start</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isGitAutomation <em>Git Automation</em>}</li>
  * </ul>
  *
  * @generated
@@ -35,7 +36,7 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int PORT_EDEFAULT = 8080;
+	protected static final int PORT_EDEFAULT = 88080;
 
 	/**
 	 * The cached value of the '{@link #getPort() <em>Port</em>}' attribute.
@@ -66,6 +67,26 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected boolean autoStart = AUTO_START_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isGitAutomation()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean GIT_AUTOMATION_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isGitAutomation()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean gitAutomation = GIT_AUTOMATION_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -138,12 +159,37 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 */
 	@Override
+	public boolean isGitAutomation() {
+		return gitAutomation;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGitAutomation(boolean newGitAutomation) {
+		boolean oldGitAutomation = gitAutomation;
+		gitAutomation = newGitAutomation;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__GIT_AUTOMATION, oldGitAutomation, gitAutomation));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.SERVER_SETTINGS__PORT:
 				return getPort();
 			case OrchestrationPackage.SERVER_SETTINGS__AUTO_START:
 				return isAutoStart();
+			case OrchestrationPackage.SERVER_SETTINGS__GIT_AUTOMATION:
+				return isGitAutomation();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -161,6 +207,9 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return;
 			case OrchestrationPackage.SERVER_SETTINGS__AUTO_START:
 				setAutoStart((Boolean)newValue);
+				return;
+			case OrchestrationPackage.SERVER_SETTINGS__GIT_AUTOMATION:
+				setGitAutomation((Boolean)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -180,6 +229,9 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 			case OrchestrationPackage.SERVER_SETTINGS__AUTO_START:
 				setAutoStart(AUTO_START_EDEFAULT);
 				return;
+			case OrchestrationPackage.SERVER_SETTINGS__GIT_AUTOMATION:
+				setGitAutomation(GIT_AUTOMATION_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -196,6 +248,8 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return port != PORT_EDEFAULT;
 			case OrchestrationPackage.SERVER_SETTINGS__AUTO_START:
 				return autoStart != AUTO_START_EDEFAULT;
+			case OrchestrationPackage.SERVER_SETTINGS__GIT_AUTOMATION:
+				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -214,6 +268,8 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 		result.append(port);
 		result.append(", autoStart: ");
 		result.append(autoStart);
+		result.append(", gitAutomation: ");
+		result.append(gitAutomation);
 		result.append(')');
 		return result.toString();
 	}
