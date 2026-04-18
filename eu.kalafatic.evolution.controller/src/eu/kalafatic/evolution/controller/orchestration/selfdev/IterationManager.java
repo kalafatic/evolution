@@ -49,6 +49,40 @@ public class IterationManager {
         }
     }
 
+    private Trajectory computeTrajectory(StateSnapshot current) {
+        List<IterationRecord> pastRecords = memoryService.getRecords();
+        if (pastRecords.isEmpty()) return null;
+
+        // Simplified trajectory: compare with last record
+        IterationRecord last = pastRecords.get(pastRecords.size() - 1);
+        Trajectory t = new Trajectory();
+
+        // Build Trend
+        if ("SUCCESS".equals(last.getResult())) {
+            t.buildTrend = (current.build.status == StateSnapshot.BuildStatus.SUCCESS) ? Trajectory.Trend.SAME : Trajectory.Trend.WORSE;
+        } else {
+            t.buildTrend = (current.build.status == StateSnapshot.BuildStatus.SUCCESS) ? Trajectory.Trend.IMPROVING : Trajectory.Trend.SAME;
+        }
+
+        // Test Trend (very basic)
+        double lastPassRate = last.getScore(); // IterationRecord score often correlates with pass rate
+        double currentPassRate = (double) current.tests.passed / Math.max(1, current.tests.total);
+        if (currentPassRate > lastPassRate) t.testTrend = Trajectory.Trend.IMPROVING;
+        else if (currentPassRate < lastPassRate) t.testTrend = Trajectory.Trend.WORSE;
+        else t.testTrend = Trajectory.Trend.SAME;
+
+        // Failure Change
+        if (current.build.status == StateSnapshot.BuildStatus.SUCCESS && "FAIL".equals(last.getResult())) {
+            t.failureChange = Trajectory.Change.RESOLVED;
+        } else if (current.build.status == StateSnapshot.BuildStatus.FAIL && "SUCCESS".equals(last.getResult())) {
+            t.failureChange = Trajectory.Change.NEW;
+        } else {
+            t.failureChange = Trajectory.Change.SAME;
+        }
+
+        return t;
+    }
+
     private EvaluationResult runIterative() throws Exception {
         context.log("[ITERATION] Starting iterative iteration: " + iteration.getId());
         iteration.setStatus(IterationStatus.RUNNING);
@@ -178,17 +212,17 @@ public class IterationManager {
             // Darwinian Branch Strategy
             iteration.setPhase("ANALYZE");
 
-            // Use last error from memory if available
-            String lastError = null;
-            List<IterationRecord> pastRecords = memoryService.getRecords();
-            if (!pastRecords.isEmpty()) {
-                IterationRecord last = pastRecords.get(pastRecords.size() - 1);
-                if ("FAIL".equals(last.getResult())) {
-                    lastError = last.getErrorMessage();
-                }
-            }
+            // SHARED STATE CONTRACT (MANDATORY)
+            Evaluator.Evaluation initialEval = evaluator.evaluateWithSnapshot();
+            StateSnapshot snapshot = initialEval.snapshot;
 
-            List<BranchVariant> variants = darwinEngine.generateVariants(goal, lastError);
+            // TRAJECTORY AWARENESS (LIGHTWEIGHT)
+            Trajectory trajectory = computeTrajectory(snapshot);
+
+            // FAILURE FINGERPRINTING (ANTI-LOOP)
+            FailureMemory failureMemory = memoryService.getFailureMemory();
+
+            List<BranchVariant> variants = darwinEngine.generateVariants(goal, snapshot, failureMemory, trajectory);
 
             iteration.setPhase("PLAN");
             // Ensure we start variants from the snapshot
