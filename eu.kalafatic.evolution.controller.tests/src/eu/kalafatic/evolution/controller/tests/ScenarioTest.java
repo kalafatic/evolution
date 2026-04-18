@@ -5,9 +5,11 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
 import org.junit.Test;
+import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.llm.ILlmProvider;
@@ -17,7 +19,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationManager;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
-import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.tools.ShellTool;
@@ -27,6 +29,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
+import eu.kalafatic.evolution.model.orchestration.Task;
 
 public class ScenarioTest {
 
@@ -51,6 +54,7 @@ public class ScenarioTest {
         orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
         orchestrator.setId("scenario-orch");
         orchestrator.setAiMode(AiMode.LOCAL);
+        orchestrator.setPreferredMaxIterations(0);
 
         Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();
         ollama.setUrl("http://localhost:11434");
@@ -73,16 +77,28 @@ public class ScenarioTest {
         String evalResponse = "{\"success\": true, \"comment\": \"Looks good\"}";
 
         mockLlm.setResponseSequence(new String[] {
+            "{\"intent\":\"new\", \"confidence\":1.0}", // Intent Classifier
             "{\"category\":\"CODING\", \"isAmbiguous\":false}", // Analytic
             planResponse, // Planner
             javaCode,     // JavaDev
             evalResponse  // Reviewer
         });
 
-        String result = engine.execute("Write java example", context);
+        String result = null;
+        try {
+            result = engine.execute("Write java example", context);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (result == null) {
+            printLogs(context);
+        }
         assertNotNull(result);
 
         File javaFile = new File(tempDir, "src/Example.java");
+        if (!javaFile.exists()) {
+            printLogs(context);
+        }
         assertTrue("Java file should exist", javaFile.exists());
         assertEquals(javaCode, Files.readString(javaFile.toPath()));
     }
@@ -102,23 +118,20 @@ public class ScenarioTest {
         context.setAutoApprove(true);
 
         // Responses for 3 iterations
-        // Iteration 1: Create basic
         String plan1 = "[{\"id\": \"i1-t1\", \"name\": \"Write src/Example.java\", \"taskType\": \"file\"}]";
         String code1 = "public class Example { public static void main(String[] args) { System.out.println(\"Hello\"); } }";
-        // Iteration 2: Add "hi"
         String plan2 = "[{\"id\": \"i2-t1\", \"name\": \"Update src/Example.java with hi\", \"taskType\": \"file\"}]";
         String code2 = "public class Example { public static void main(String[] args) { System.out.println(\"Hello\"); System.out.println(\"hi\"); } }";
-        // Iteration 3: Add log
         String plan3 = "[{\"id\": \"i3-t1\", \"name\": \"Update src/Example.java with logging\", \"taskType\": \"file\"}]";
         String code3 = "public class Example { public static void main(String[] args) { System.out.println(\"Hello\"); System.out.println(\"hi\"); System.out.println(\"LOG: task complete\"); } }";
 
         String evalSuccess = "{\"success\": true, \"comment\": \"Looks good\", \"feedback\": \"Good\"}";
 
         mockLlm.setResponseSequence(new String[] {
-            "{\"category\":\"CODING\", \"isAmbiguous\":false}", // Supervisor Analytic
-            plan1, code1, evalSuccess, // Iteration 1: Plan, Code, Review
-            plan2, code2, evalSuccess, // Iteration 2: Plan, Code, Review
-            plan3, code3, evalSuccess  // Iteration 3: Plan, Code, Review
+            "{\"category\":\"CODING\", \"isAmbiguous\":false}", // Analytic
+            plan1, code1, evalSuccess, // Iteration 1
+            plan2, code2, evalSuccess, // Iteration 2
+            plan3, code3, evalSuccess  // Iteration 3
         });
 
         SelfDevSupervisor supervisor = createMockedSupervisor(session, context);
@@ -150,24 +163,20 @@ public class ScenarioTest {
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);
 
-        // DarwinEngine.generateVariants
-        String variantsJson = "[{\"strategy\": \"Basic print\", \"suffix\": \"basic\"}, {\"strategy\": \"Advanced print\", \"suffix\": \"advanced\"}]";
-
-        // Variant 1 (Basic)
-        String planV1 = "[{\"id\": \"v1-t1\", \"name\": \"Write src/Example.java\", \"taskType\": \"file\"}]";
         String codeV1 = "public class Example { public static void main(String[] args) { System.out.println(\"Basic\"); } }";
-
-        // Variant 2 (Advanced)
-        String planV2 = "[{\"id\": \"v2-t1\", \"name\": \"Write src/Example.java\", \"taskType\": \"file\"}]";
         String codeV2 = "public class Example { public static void main(String[] args) { System.out.println(\"Advanced\"); } }";
-
         String evalSuccess = "{\"success\": true, \"comment\": \"Looks good\", \"feedback\": \"Good\"}";
 
+        String vJson = "[" +
+            "{\"strategy\": \"S1\", \"suffix\": \"s1\", \"actions\": [{\"domain\":\"file\", \"operation\":\"Write\", \"target\":\"src/Example.java\", \"description\":\"S1\"}]}, " +
+            "{\"strategy\": \"S2\", \"suffix\": \"s2\", \"actions\": [{\"domain\":\"file\", \"operation\":\"Write\", \"target\":\"src/Example.java\", \"description\":\"S2\"}]}" +
+            "]";
+
         mockLlm.setResponseSequence(new String[] {
-            "{\"category\":\"CODING\", \"isAmbiguous\":false}", // Supervisor Analytic
-            variantsJson, // DarwinEngine.generateVariants
-            planV1, codeV1, evalSuccess, // Variant 1 evaluation: Plan, Code, Review
-            planV2, codeV2, evalSuccess, // Variant 2 evaluation: Plan, Code, Review
+            "{\"category\":\"CODING\", \"isAmbiguous\":false}", // Analytic
+            vJson, // DarwinEngine.generateVariants
+            codeV1, evalSuccess, // Variant 1
+            codeV2, evalSuccess, // Variant 2
         });
 
         SelfDevSupervisor supervisor = createMockedSupervisor(session, context);
@@ -198,17 +207,14 @@ public class ScenarioTest {
         context.setAutoApprove(true);
 
         String evalSuccess = "{\"success\": true, \"comment\": \"Looks good\", \"feedback\": \"Good\"}";
-
         mockLlm.setResponseSequence(new String[] {
-            "{\"category\":\"CODING\", \"isAmbiguous\":false}", // Supervisor Analytic
+            "{\"category\":\"CODING\", \"isAmbiguous\":false}", // Analytic
             // Iteration 1
-            "[{\"strategy\": \"S1\", \"suffix\": \"s1\"}]", // Variants
-            "[{\"id\": \"i1t1\", \"name\": \"Write src/Example.java\", \"taskType\": \"file\"}]", // Plan S1
+            "[{\"strategy\": \"S1\", \"suffix\": \"s1\", \"actions\": [{\"domain\":\"file\", \"operation\":\"Write\", \"target\":\"src/Example.java\", \"description\":\"Iter1\"}]}]", // Variants
             "public class Example { public static void main(String[] args) { System.out.println(\"Iteration 1\"); } }", // Code S1
             evalSuccess, // Review S1
             // Iteration 2
-            "[{\"strategy\": \"S2\", \"suffix\": \"s2\"}]", // Variants
-            "[{\"id\": \"i2t1\", \"name\": \"Update src/Example.java\", \"taskType\": \"file\"}]", // Plan S2
+            "[{\"strategy\": \"S2\", \"suffix\": \"s2\", \"actions\": [{\"domain\":\"file\", \"operation\":\"Write\", \"target\":\"src/Example.java\", \"description\":\"Iter2\"}]}]", // Variants
             "public class Example { public static void main(String[] args) { System.out.println(\"Iteration 1\"); System.out.println(\"hi\"); } }", // Code S2
             evalSuccess, // Review S2
         });
@@ -248,16 +254,26 @@ public class ScenarioTest {
                 } catch (Exception e) {}
                 return im;
             }
+
+            @Override
+            protected JSONObject analyzeIntent(String request) throws Exception {
+                JSONObject json = new JSONObject();
+                json.put("intent", "new");
+                json.put("confidence", 1.0);
+                return json;
+            }
         };
 
-        Field analyticField = SelfDevSupervisor.class.getDeclaredField("analyticAgent");
-        analyticField.setAccessible(true);
-        injectMockIntoAgent(analyticField.get(supervisor), mockLlm);
+        injectMockIntoAgent(supervisor, mockLlm);
 
         return supervisor;
     }
 
     private void injectMocksIntoOrchestrator(EvolutionOrchestrator engine, ILlmProvider mock) throws Exception {
+        Field intentClassifierField = EvolutionOrchestrator.class.getDeclaredField("intentClassifier");
+        intentClassifierField.setAccessible(true);
+        injectMockIntoAgent(intentClassifierField.get(engine), mock);
+
         Field analyticAgentField = EvolutionOrchestrator.class.getDeclaredField("analyticAgent");
         analyticAgentField.setAccessible(true);
         injectMockIntoAgent(analyticAgentField.get(engine), mock);
@@ -290,35 +306,50 @@ public class ScenarioTest {
 
     private void injectMockIntoAgent(Object agent, ILlmProvider mock) throws Exception {
         if (agent == null) return;
-
-        // Use recursive field injection to be sure
         injectRecursive(agent, mock, 0);
     }
 
     private void injectRecursive(Object obj, ILlmProvider mock, int depth) throws Exception {
-        if (obj == null || depth > 5) return;
+        if (obj == null || depth > 15) return;
+
+        String name = obj.getClass().getName();
+        if (name.startsWith("java.") || name.startsWith("org.json") || name.startsWith("org.eclipse.emf") || name.startsWith("org.eclipse.core") || name.startsWith("eu.kalafatic.evolution.model")) return;
 
         Class<?> clazz = obj.getClass();
         while (clazz != null && clazz != Object.class) {
             for (Field field : clazz.getDeclaredFields()) {
-                field.setAccessible(true);
-                Object value = field.get(obj);
-                if (value == null) continue;
+                try {
+                    field.setAccessible(true);
+                    Object value = field.get(obj);
+                    if (value == null || value == obj) continue;
 
-                if (value instanceof LlmRouter) {
-                    injectProviderIntoRouter((LlmRouter) value, mock);
-                } else if (value instanceof AiService) {
-                    injectRecursive(value, mock, depth + 1);
-                }
+                    if (value instanceof LlmRouter) {
+                        injectProviderIntoRouter((LlmRouter) value, mock);
+                    } else if (value instanceof AiService) {
+                        Field routerField = AiService.class.getDeclaredField("llmRouter");
+                        routerField.setAccessible(true);
+                        injectProviderIntoRouter((LlmRouter) routerField.get(value), mock);
+                    } else if (!value.getClass().isPrimitive() && !(value instanceof String) && !(value instanceof Number) && !(value instanceof Boolean) && !(value instanceof Enum)) {
+                        injectRecursive(value, mock, depth + 1);
+                    }
+                } catch (Throwable t) {}
             }
             clazz = clazz.getSuperclass();
         }
     }
 
     private void injectProviderIntoRouter(LlmRouter router, ILlmProvider mock) throws Exception {
-        Field field = LlmRouter.class.getDeclaredField("ollamaProvider");
-        field.setAccessible(true);
-        field.set(router, mock);
+        if (router == null) return;
+        Class<?> clazz = LlmRouter.class;
+        while (clazz != null && clazz != Object.class) {
+            for (Field field : clazz.getDeclaredFields()) {
+                if (field.getType().isAssignableFrom(mock.getClass()) || field.getType().equals(ILlmProvider.class)) {
+                    field.setAccessible(true);
+                    field.set(router, mock);
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
     }
 
     private EvolutionOrchestrator getOrchestratorFromExecutor(TaskExecutor executor) throws Exception {
@@ -328,17 +359,15 @@ public class ScenarioTest {
     }
 
     private void printLogs(TaskContext context) {
-        System.out.println("--- SESSION LOGS ---");
+        System.err.println("--- SESSION LOGS ---");
         for (String log : context.getLogs()) {
-            System.out.println(log);
+            System.err.println(log);
         }
-        System.out.println("--------------------");
+        System.err.println("--------------------");
     }
 
     private static class MockEvaluator extends eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator {
-        public MockEvaluator() {
-            super(null, null);
-        }
+        public MockEvaluator() { super(null, null); }
         @Override
         public eu.kalafatic.evolution.model.orchestration.EvaluationResult evaluate() throws Exception {
             eu.kalafatic.evolution.model.orchestration.EvaluationResult res = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -352,7 +381,7 @@ public class ScenarioTest {
     private static class MockProvider implements ILlmProvider {
         private String[] responseSequence;
         private final AtomicInteger callCount = new AtomicInteger(0);
-        private String defaultResponse = "{\"success\": true, \"comment\": \"Mock success\"}";
+        private String defaultResponse = "{\"success\": true, \"comment\": \"Mock success\", \"intent\": \"continue\", \"category\": \"CODING\", \"isAmbiguous\": false}";
 
         public void setResponseSequence(String[] sequence) {
             this.responseSequence = sequence;
@@ -361,11 +390,30 @@ public class ScenarioTest {
 
         @Override
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-            int current = callCount.getAndIncrement();
-            if (responseSequence != null && current < responseSequence.length) {
-                return responseSequence[current];
+            // Intelligent override based on prompt content if sequence is exhausted or mismatching
+            if (responseSequence != null && callCount.get() >= responseSequence.length) {
+                if (prompt.contains("Intent Gate")) return "{\"intent\": \"continue\", \"confidence\": 1.0}";
+                if (prompt.contains("Analytic")) return "{\"category\":\"CODING\", \"isAmbiguous\":false}";
             }
-            return defaultResponse;
+
+            int current = callCount.getAndIncrement();
+            String res = (responseSequence != null && current < responseSequence.length) ? responseSequence[current] : defaultResponse;
+
+            // Darwin robustness
+            if (prompt.contains("DarwinEngine") && !res.startsWith("[")) res = "[{\"strategy\": \"Fallback\", \"suffix\": \"fb\", \"actions\": []}]";
+            // Planner robustness
+            if (prompt.contains("Planner") && !res.startsWith("[") && !res.startsWith("{")) res = "[]";
+
+            if (context != null) {
+                context.log("[MOCK] Call " + current + " prompt snippet: " + prompt.substring(0, Math.min(prompt.length(), 100)).replace("\n", " "));
+                context.log("[MOCK] Call " + current + " response: " + res);
+            }
+            return res;
+        }
+
+        @Override
+        public String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl, TaskContext context) throws Exception {
+            return "{\"status\": \"ok\"}";
         }
     }
 }

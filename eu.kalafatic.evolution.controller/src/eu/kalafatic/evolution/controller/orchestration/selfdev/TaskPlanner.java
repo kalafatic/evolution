@@ -21,6 +21,35 @@ public class TaskPlanner extends BaseAiAgent {
         return "You are acting as a Task Planner Agent for self-development workflows.";
     }
 
+    public List<Task> generateTasksFromVariant(TaskContext context, BranchVariant variant) throws Exception {
+        if (variant.getActions() == null || variant.getActions().isEmpty()) {
+            return generateTasks(context, variant.getStrategy());
+        }
+
+        context.log("[PLANNER] Generating tasks from structured variant actions...");
+        List<Task> tasks = new ArrayList<>();
+        OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
+
+        for (BranchVariant.Action action : variant.getActions()) {
+            Task task = factory.createTask();
+            task.setId("sd-task-" + System.currentTimeMillis() + "-" + tasks.size());
+            task.setName(action.getOperation() + " " + action.getTarget());
+
+            String type = "llm";
+            if ("file".equalsIgnoreCase(action.getDomain())) type = "file";
+            else if ("build".equalsIgnoreCase(action.getDomain())) type = "maven";
+            else if ("structure".equalsIgnoreCase(action.getDomain())) type = "structure";
+            else if ("test".equalsIgnoreCase(action.getDomain())) type = "maven"; // usually 'mvn test'
+
+            task.setType(type);
+            task.setDescription(action.getDescription());
+            task.setRationale("Darwin Strategy: " + variant.getStrategy());
+            task.setPriority(1);
+            tasks.add(task);
+        }
+        return tasks;
+    }
+
     public List<Task> generateTasks(TaskContext context, String strategy) throws Exception {
         String initialRequest = null;
         if (context.getOrchestrator().getSelfDevSession() != null) {

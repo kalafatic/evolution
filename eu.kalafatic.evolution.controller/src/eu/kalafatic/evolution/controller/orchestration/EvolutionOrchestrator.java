@@ -84,7 +84,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             // 2. Intent Gate + Policy Engine
             context.log("Evo-Orchestrator-IntentGate: Classifying intent...");
-            JSONObject classification = intentClassifier.classify(request, context);
+            JSONObject classification;
+            try {
+                classification = intentClassifier.classify(request, context);
+            } catch (Exception e) {
+                context.log("Evo-Orchestrator-IntentGate: Classifier error, falling back to 'new'. Error: " + e.getMessage());
+                classification = new JSONObject();
+                classification.put("intent", "new");
+            }
             String intent = classification.optString("intent", "unclear");
             context.log("Evo-Orchestrator-IntentGate: Intent - " + intent + " (conf: " + classification.optDouble("confidence") + ")");
 

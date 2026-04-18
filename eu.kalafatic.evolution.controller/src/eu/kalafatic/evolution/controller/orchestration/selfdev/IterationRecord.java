@@ -6,6 +6,8 @@ public class IterationRecord {
     private int iteration;
     private String goal;
     private String strategy;
+    private List<BranchVariant.Action> actions;
+    private BranchVariant.ExpectedEffect expectedEffect;
     private String branch;
     private List<String> changedFiles;
     private String result; // SUCCESS / FAIL
@@ -22,6 +24,12 @@ public class IterationRecord {
 
     public String getStrategy() { return strategy; }
     public void setStrategy(String strategy) { this.strategy = strategy; }
+
+    public List<BranchVariant.Action> getActions() { return actions; }
+    public void setActions(List<BranchVariant.Action> actions) { this.actions = actions; }
+
+    public BranchVariant.ExpectedEffect getExpectedEffect() { return expectedEffect; }
+    public void setExpectedEffect(BranchVariant.ExpectedEffect expectedEffect) { this.expectedEffect = expectedEffect; }
 
     public String getBranch() { return branch; }
     public void setBranch(String branch) { this.branch = branch; }

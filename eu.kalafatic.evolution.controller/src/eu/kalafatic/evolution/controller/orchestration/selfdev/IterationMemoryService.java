@@ -88,4 +88,45 @@ public class IterationMemoryService {
     public Map<String, List<IterationRecord>> getErrorIndex() {
         return errorIndex;
     }
+
+    public String getHistoryAnalysis() {
+        if (records == null || records.isEmpty()) return "No previous iteration history available.";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Analysis of ").append(records.size()).append(" recent variants:\n");
+
+        // Analyze trends
+        long successfulCount = records.stream().filter(r -> "SUCCESS".equals(r.getResult())).count();
+        double successRate = (double) successfulCount / records.size();
+        sb.append("- Overall Success Rate: ").append(String.format("%.1f%%", successRate * 100)).append("\n");
+
+        // Recurring Failures
+        Map<String, Long> failurePatterns = records.stream()
+                .filter(r -> "FAIL".equals(r.getResult()))
+                .collect(Collectors.groupingBy(r -> r.getStrategy(), Collectors.counting()));
+
+        List<Map.Entry<String, Long>> frequentFailures = failurePatterns.entrySet().stream()
+                .filter(e -> e.getValue() >= 2)
+                .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                .limit(3)
+                .collect(Collectors.toList());
+
+        if (!frequentFailures.isEmpty()) {
+            sb.append("- RECURRING FAILURE PATTERNS (CRITICAL: AVOID THESE):\n");
+            for (Map.Entry<String, Long> e : frequentFailures) {
+                sb.append("  * Pattern: '").append(e.getKey()).append("' (failed ").append(e.getValue()).append(" times)\n");
+            }
+        }
+
+        // Recent Trajectory (last 5)
+        sb.append("- Recent Trajectory: ");
+        int lastN = Math.min(5, records.size());
+        List<IterationRecord> recent = records.subList(records.size() - lastN, records.size());
+        for (IterationRecord r : recent) {
+            sb.append("SUCCESS".equals(r.getResult()) ? "📈" : "📉");
+        }
+        sb.append("\n");
+
+        return sb.toString();
+    }
 }

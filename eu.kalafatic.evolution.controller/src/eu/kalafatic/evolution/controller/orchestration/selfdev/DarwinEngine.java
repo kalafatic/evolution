@@ -41,53 +41,85 @@ public class DarwinEngine extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are a Darwinian Evolution Engine for software development.\n" +
-               "Your goal is to suggest 2-3 different strategies to solve a problem based on past experience and the current goal.";
+        return "You are an AI operating inside a general-purpose iterative development system.\n" +
+               "Your task is to IMPROVE decision quality and system intelligence by reasoning over STATE and FEEDBACK — not by generating isolated code.\n\n" +
+               "PRIMARY OBJECTIVE:\n" +
+               "→ Do not think in terms of 'code generation'.\n" +
+               "→ Think in terms of: STATE TRANSITIONS, SYSTEM IMPROVEMENT, LONG-TERM EFFECTS.\n" +
+               "→ Each iteration must improve the system state, not just produce code.\n\n" +
+               "STATE MODEL:\n" +
+               "→ Analyze relationships between elements (files, modules, tests, failures, dependencies).\n" +
+               "→ Identify weak points (failures, instability, complexity).\n" +
+               "→ Propose actions that improve overall system health.\n\n" +
+               "ITERATION STRATEGY (DARWINIAN):\n" +
+               "→ Generate 2–3 DIFFERENT candidate state transitions.\n" +
+               "→ Each candidate must represent a distinct strategy and target a meaningful system improvement (e.g., fix failing tests, reduce complexity, refactor risky code).\n" +
+               "→ Avoid cosmetic changes, repeated failed approaches, or low-impact modifications.\n\n" +
+               "LEARNING FROM HISTORY:\n" +
+               "→ Identify what improved the system and what caused regressions.\n" +
+               "→ Prefer strategies with proven success; increase exploration if no recent improvement occurred.\n\n" +
+               "EVALUATION THINKING:\n" +
+               "→ For each candidate, estimate short_term_impact, long_term_impact, risk (0.0-1.0), and reversibility (0.0-1.0).";
+    }
+
+    @Override
+    protected String getFooterInstructions() {
+        return "Output MUST be a valid JSON array of 2-3 objects. Each object is a structured PROPOSAL for a state transition.\n" +
+               "Schema:\n" +
+               "[\n" +
+               "  {\n" +
+               "    \"strategy\": \"<high-level intent>\",\n" +
+               "    \"suffix\": \"<short string for branch name>\",\n" +
+               "    \"actions\": [\n" +
+               "      {\n" +
+               "        \"domain\": \"file | test | build | structure\",\n" +
+               "        \"operation\": \"<operation name, e.g. WRITE, DELETE, MKDIR, TEST, BUILD, ANALYZE>\",\n" +
+               "        \"target\": \"<file/module/test path>\",\n" +
+               "        \"description\": \"<detailed instruction of what will be done in this specific step>\"\n" +
+               "      }\n" +
+               "    ],\n" +
+               "    \"expected_effect\": {\n" +
+               "      \"short_term\": \"...\",\n" +
+               "      \"long_term\": \"...\",\n" +
+               "      \"risk\": 0.0-1.0,\n" +
+               "      \"reversibility\": 0.0-1.0\n" +
+               "    }\n" +
+               "  }\n" +
+               "]";
     }
 
     public List<BranchVariant> generateVariants(String goal, String lastError) throws Exception {
         context.log("[DARWIN] Generating variants for goal: " + goal);
 
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("Current Goal: ").append(goal).append("\n");
+        StringBuilder state = new StringBuilder();
+        state.append("Current Goal: ").append(goal).append("\n");
+        state.append("\n--- SYSTEM STATE ---\n");
+        state.append("Modules:\n");
+        state.append("- eu.kalafatic.evolution.model (EMF model)\n");
+        state.append("- eu.kalafatic.evolution.controller (Core logic, agents, tools)\n");
+        state.append("- eu.kalafatic.evolution.view (Eclipse RCP UI)\n");
+        state.append("- eu.kalafatic.utils (Utility bundle)\n");
+        state.append("Build System: Maven (Tycho)\n");
+        state.append("Target Platform: Java 21, Eclipse 2025-12\n");
 
-        List<IterationRecord> allRecords = memoryService.getRecords();
-        if (!allRecords.isEmpty()) {
-            prompt.append("\n--- ITERATION HISTORY ---\n");
-
-            List<IterationRecord> failed = allRecords.stream()
-                .filter(r -> "FAIL".equals(r.getResult()))
-                .collect(Collectors.toList());
-            if (!failed.isEmpty()) {
-                prompt.append("FAILED STRATEGIES (DO NOT REPEAT THESE):\n");
-                for (IterationRecord r : failed) {
-                    prompt.append("- Strategy: ").append(r.getStrategy())
-                          .append(" | Error: ").append(r.getErrorMessage()).append("\n");
-                }
-            }
-
-            List<IterationRecord> successful = allRecords.stream()
-                .filter(r -> "SUCCESS".equals(r.getResult()))
-                .collect(Collectors.toList());
-            if (!successful.isEmpty()) {
-                prompt.append("\nSUCCESSFUL PATTERNS (REUSE OR LEARN FROM THESE):\n");
-                for (IterationRecord r : successful) {
-                    prompt.append("- Goal: ").append(r.getGoal())
-                          .append(" | Strategy: ").append(r.getStrategy()).append("\n");
-                }
-            }
-            prompt.append("--- END HISTORY ---\n");
-        }
+        state.append("\n--- LEARNING FROM HISTORY & TRAJECTORY ---\n");
+        String history = memoryService.getHistoryAnalysis();
+        context.log("[DARWIN] History Analysis: " + history);
+        state.append(history).append("\n");
 
         if (lastError != null) {
-            prompt.append("\nURGENT: Last attempt failed with error: ").append(lastError).append("\n");
+            state.append("\nURGENT: Last attempt failed with error: ").append(lastError).append("\n");
         }
 
-        prompt.append("\nBased on the history and the current goal, generate 2-3 DIFFERENT strategies to achieve the goal.\n");
-        prompt.append("Output MUST be a valid JSON array of objects with 'strategy' (description) and 'suffix' (short string for branch name).\n");
-        prompt.append("Example: [{\"strategy\": \"Use pattern X\", \"suffix\": \"pattern-x\"}]\n");
+        String fullPrompt = buildPrompt(state.toString(), context, null);
+        context.log("[DARWIN] Built prompt, sending request...");
+        String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
+        context.log("[DARWIN] Raw AI response: " + response);
 
-        String response = aiService.sendRequest(context.getOrchestrator(), buildPrompt(prompt.toString(), context, null), context);
+        if (response == null || response.trim().isEmpty()) {
+            context.log("[DARWIN] ERROR: Received empty AI response for variants");
+            throw new Exception("Empty AI response for variants");
+        }
 
         int start = response.indexOf("[");
         int end = response.lastIndexOf("]");
@@ -98,9 +130,35 @@ public class DarwinEngine extends BaseAiAgent {
         for (int i = 0; i < array.length(); i++) {
             JSONObject obj = array.getJSONObject(i);
             BranchVariant v = new BranchVariant();
+            v.setStrategy(obj.getString("strategy"));
             String suffix = obj.getString("suffix");
             v.setBranchName("exp/" + sanitize(goal) + "/" + suffix);
-            v.setStrategy(obj.getString("strategy"));
+
+            // Parse Actions
+            JSONArray actionsArr = obj.optJSONArray("actions");
+            if (actionsArr != null) {
+                for (int j = 0; j < actionsArr.length(); j++) {
+                    JSONObject aObj = actionsArr.getJSONObject(j);
+                    BranchVariant.Action action = new BranchVariant.Action();
+                    action.setDomain(aObj.optString("domain"));
+                    action.setOperation(aObj.optString("operation"));
+                    action.setTarget(aObj.optString("target"));
+                    action.setDescription(aObj.optString("description"));
+                    v.getActions().add(action);
+                }
+            }
+
+            // Parse Expected Effect
+            JSONObject effectObj = obj.optJSONObject("expected_effect");
+            if (effectObj != null) {
+                BranchVariant.ExpectedEffect effect = new BranchVariant.ExpectedEffect();
+                effect.setShortTerm(effectObj.optString("short_term"));
+                effect.setLongTerm(effectObj.optString("long_term"));
+                effect.setRisk(effectObj.optDouble("risk", 0.5));
+                effect.setReversibility(effectObj.optDouble("reversibility", 1.0));
+                v.setExpectedEffect(effect);
+            }
+
             variants.add(v);
         }
         return variants;
@@ -108,63 +166,5 @@ public class DarwinEngine extends BaseAiAgent {
 
     private String sanitize(String s) {
         return s.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").substring(0, Math.min(s.length(), 20));
-    }
-
-    public BranchVariant evaluateVariants(List<BranchVariant> variants, TaskPlanner planner, Iteration iteration) throws Exception {
-        String baseBranch = gitManager.getCurrentBranch();
-        BranchVariant bestVariant = null;
-        double bestScore = -1.0;
-
-        for (BranchVariant variant : variants) {
-            context.log("[DARWIN] Evaluating variant: " + variant.getStrategy() + " on branch " + variant.getBranchName());
-            try {
-                gitManager.createBranch(variant.getBranchName());
-
-                List<Task> tasks = planner.generateTasks(context, variant.getStrategy());
-                if (tasks.isEmpty()) {
-                    context.log("[DARWIN] No tasks for variant " + variant.getBranchName());
-                    variant.setScore(0.0);
-                } else {
-                    boolean success = executor.executeTasks(tasks);
-
-                    // Capture changed files
-                    List<String> changed = tasks.stream()
-                        .filter(t -> "file".equalsIgnoreCase(t.getType()))
-                        .map(Task::getResultSummary)
-                        .filter(path -> path != null && !path.isEmpty())
-                        .distinct()
-                        .collect(Collectors.toList());
-                    variant.setChangedFiles(changed);
-
-                    // CRITICAL: Commit changes to the variant branch so they are not lost
-                    if (success) {
-                        gitManager.commit("Darwin Variant Strategy: " + variant.getStrategy());
-                    }
-
-                    EvaluationResult result = evaluator.evaluate();
-
-                    variant.setSuccess(result.isSuccess());
-                    if (!result.isSuccess()) {
-                        variant.setErrorMessage(result.getErrors().toString());
-                    }
-
-                    // Simple scoring: testsPassed ? 1.0 : 0.0
-                    double score = result.isSuccess() ? 1.0 : 0.0;
-                    variant.setScore(score);
-
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestVariant = variant;
-                    }
-                }
-            } catch (Exception e) {
-                context.log("[DARWIN] Error evaluating variant " + variant.getBranchName() + ": " + e.getMessage());
-                variant.setScore(0.0);
-            } finally {
-                gitManager.forceCheckout(baseBranch);
-            }
-        }
-
-        return bestVariant;
     }
 }
