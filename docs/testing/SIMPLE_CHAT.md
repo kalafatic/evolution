@@ -21,3 +21,4 @@ Direct interaction with the AI without triggering background orchestration or co
 
 ## Reference Tests
 - `eu.kalafatic.evolution.controller.tests.ScenarioTest.testScenario1_SimplePrompt`
+- `eu.kalafatic.evolution.controller.tests.ModeRouterTest.testExplicitChatMode`

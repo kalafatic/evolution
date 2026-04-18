@@ -44,6 +44,10 @@ public class EvolutionServer extends NanoHTTPD {
         start(30000, false);
     }
 
+    public void stopServer() {
+        stop();
+    }
+
     @Override
     public Response serve(IHTTPSession session) {
         String uri = session.getUri();

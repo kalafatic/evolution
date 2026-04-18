@@ -24,3 +24,4 @@ Guided multi-step tasks where the user maintains control over the plan and execu
 
 ## Reference Tests
 - `eu.kalafatic.evolution.controller.tests.ScenarioTest.testScenario2_PromptIterative`
+- `eu.kalafatic.evolution.controller.tests.ModeRouterTest.testExplicitAssistedMode`
