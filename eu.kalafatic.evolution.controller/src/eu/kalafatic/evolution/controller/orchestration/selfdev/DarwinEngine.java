@@ -21,14 +21,16 @@ public class DarwinEngine extends BaseAiAgent {
     private TaskExecutor executor;
     private Evaluator evaluator;
     private final IterationMemoryService memoryService;
+    private final SystemStateSignalProvider stateProvider;
 
-    public DarwinEngine(TaskContext context, IterationMemoryService memoryService) {
+    public DarwinEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
         super("DarwinEngine", "DarwinEngine");
         this.context = context;
         this.gitManager = new GitManager(context.getProjectRoot(), context);
         this.executor = new TaskExecutor(context);
         this.evaluator = new Evaluator(context.getProjectRoot(), context);
         this.memoryService = memoryService;
+        this.stateProvider = stateProvider;
     }
 
     public void setExecutor(TaskExecutor executor) {
@@ -93,14 +95,13 @@ public class DarwinEngine extends BaseAiAgent {
 
         StringBuilder state = new StringBuilder();
         state.append("Current Goal: ").append(goal).append("\n");
-        state.append("\n--- SYSTEM STATE ---\n");
-        state.append("Modules:\n");
-        state.append("- eu.kalafatic.evolution.model (EMF model)\n");
-        state.append("- eu.kalafatic.evolution.controller (Core logic, agents, tools)\n");
-        state.append("- eu.kalafatic.evolution.view (Eclipse RCP UI)\n");
-        state.append("- eu.kalafatic.utils (Utility bundle)\n");
-        state.append("Build System: Maven (Tycho)\n");
-        state.append("Target Platform: Java 21, Eclipse 2025-12\n");
+
+        if (stateProvider != null) {
+            state.append(stateProvider.getSystemStateSignal());
+        } else {
+            state.append("\n--- SYSTEM STATE ---\n");
+            state.append("General Purpose Iterative Environment\n");
+        }
 
         state.append("\n--- LEARNING FROM HISTORY & TRAJECTORY ---\n");
         String history = memoryService.getHistoryAnalysis();
