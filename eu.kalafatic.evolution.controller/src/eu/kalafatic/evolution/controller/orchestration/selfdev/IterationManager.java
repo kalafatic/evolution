@@ -37,7 +37,8 @@ public class IterationManager {
         this.executor = executor;
         this.evaluator = new Evaluator(context.getProjectRoot(), context);
         this.memoryService = memoryService;
-        this.darwinEngine = new DarwinEngine(context, memoryService);
+        SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(context.getProjectRoot(), context);
+        this.darwinEngine = new DarwinEngine(context, memoryService, stateProvider);
     }
 
     public EvaluationResult run() throws Exception {
