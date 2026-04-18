@@ -29,7 +29,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
         executor.submit(() -> {
             try {
-                EvolutionOrchestrator orchestrator = new EvolutionOrchestrator();
+                EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
 
                 // We might need a real Orchestrator EMF object here if the system depends on it
                 Orchestrator orchModel = (Orchestrator) request.getContext().get("orchestrator");
@@ -52,6 +52,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
                 TaskContext context = new TaskContext(orchModel, request.getProjectRoot());
                 context.setThreadId(taskId);
+
+                // Mode Routing
+                ModeRouter modeRouter = new ModeRouter();
+                PlatformMode mode = modeRouter.route(request.getPrompt(), orchModel);
+                context.setPlatformMode(mode);
+                context.log("Platform Mode: " + mode.getType() + " (Autonomy: " + mode.getAutonomyLevel() + ")");
+
                 contexts.put(taskId, context);
 
                 context.addLogListener(log -> {
@@ -95,7 +102,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     }
                 }
 
-                String response = orchestrator.execute(request.getPrompt(), context);
+                String response = evolutionOrchestrator.execute(request.getPrompt(), context);
 
                 result.setResponse(response);
 

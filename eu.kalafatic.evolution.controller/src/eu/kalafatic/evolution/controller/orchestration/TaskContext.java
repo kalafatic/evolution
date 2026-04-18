@@ -31,6 +31,7 @@ public class TaskContext {
     private CompletableFuture<String> inputFuture;
     private volatile boolean paused = false;
     private volatile boolean autoApprove = false;
+    private PlatformMode platformMode = new PlatformMode();
     private final Object pauseLock = new Object();
 
     public interface LogListener {
@@ -228,5 +229,13 @@ public class TaskContext {
         } else {
             orchestrator.setSharedMemory(current + "\n" + content);
         }
+    }
+
+    public PlatformMode getPlatformMode() {
+        return platformMode;
+    }
+
+    public void setPlatformMode(PlatformMode platformMode) {
+        this.platformMode = platformMode;
     }
 }

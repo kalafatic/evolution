@@ -9,6 +9,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
+import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
@@ -143,7 +145,20 @@ public class DarwinEngine extends BaseAiAgent {
         context.log("[DARWIN] History Analysis: " + history);
         state.append(history).append("\n");
 
-        String fullPrompt = buildPrompt(state.toString(), context, null);
+        // Adjust instructions based on PlatformMode
+        PlatformMode mode = context.getPlatformMode();
+        String modeInfo = "";
+        if (mode != null) {
+            if (mode.getType() == PlatformType.ASSISTED_CODING) {
+                modeInfo = "\nPLATFORM MODE: ASSISTED_CODING. Generate only 1 or 2 very safe, conservative variants.\n";
+            } else if (mode.getType() == PlatformType.DARWIN_MODE) {
+                modeInfo = "\nPLATFORM MODE: DARWIN_MODE. Generate 2-3 competing variants.\n";
+            } else if (mode.getType() == PlatformType.SELF_DEV_MODE) {
+                modeInfo = "\nPLATFORM MODE: SELF_DEV_MODE. System self-improvement mode. Focus on structural health.\n";
+            }
+        }
+
+        String fullPrompt = buildPrompt(state.toString() + modeInfo, context, null);
         context.log("[DARWIN] Built prompt, sending request...");
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("[DARWIN] Raw AI response: " + response);

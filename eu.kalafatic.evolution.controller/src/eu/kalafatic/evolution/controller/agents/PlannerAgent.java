@@ -6,6 +6,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.IPlanner;
+import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Task;
@@ -75,8 +77,17 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
             return fallbackTasks;
         }
 
+        // Adjust instructions based on PlatformMode
+        PlatformMode mode = context.getPlatformMode();
+        String modeInstructions = "";
+        if (mode.getType() == PlatformType.ASSISTED_CODING) {
+            modeInstructions = "\nPLATFORM MODE: ASSISTED_CODING. Keep the plan very simple (1-2 tasks max). Focus on the most direct solution.\n";
+        } else if (mode.getType() == PlatformType.DARWIN_MODE) {
+            modeInstructions = "\nPLATFORM MODE: DARWIN_MODE. Provide a comprehensive multi-step plan for evaluation.\n";
+        }
+
         // Use structured prompt building to include shared memory/history in planning
-        String fullPrompt = buildPrompt(request, context, null);
+        String fullPrompt = buildPrompt(request + modeInstructions, context, null);
 
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("Planner: Received response from AI: " + (response.length() > 100 ? response.substring(0, 100) + "..." : response));

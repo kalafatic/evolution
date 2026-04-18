@@ -82,7 +82,26 @@ public class EvolutionOrchestrator implements IOrchestrator {
             ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
             state.addMessage("User: " + request);
 
-            // 2. Intent Gate + Policy Engine
+            // 2. Mode Routing (Internal Guard)
+            if (context.getPlatformMode() == null) {
+                ModeRouter router = new ModeRouter();
+                context.setPlatformMode(router.route(request, context.getOrchestrator()));
+            }
+
+            // SIMPLE_CHAT Mode: Direct response bypass
+            if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
+                context.log("Evo-Orchestrator-Mode: SIMPLE_CHAT detected. Bypassing orchestration loop.");
+                GeneralAgent chatAgent = (GeneralAgent) availableAgents.stream()
+                        .filter(a -> a instanceof GeneralAgent)
+                        .findFirst()
+                        .orElse(new GeneralAgent());
+                String response = chatAgent.process(request, context, null);
+                state.addMessage("Evo: " + response);
+                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
+                return response;
+            }
+
+            // 3. Intent Gate + Policy Engine
             context.log("Evo-Orchestrator-IntentGate: Classifying intent...");
             JSONObject classification;
             try {
@@ -180,8 +199,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             // 2. Execution Loop
             int taskCount = tasks.size();
+            int iterationLimit = context.getPlatformMode().getIterationLimit();
             String lastResult = "";
             for (int i = 0; i < taskCount; i++) {
+                if (i >= iterationLimit && context.getPlatformMode().getType() != PlatformType.SELF_DEV_MODE) {
+                    context.log("Evo-Orchestrator-Mode: Iteration limit reached for " + context.getPlatformMode().getType() + " mode.");
+                    break;
+                }
+
                 context.checkPause();
                 if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
                 Task task = tasks.get(i);
