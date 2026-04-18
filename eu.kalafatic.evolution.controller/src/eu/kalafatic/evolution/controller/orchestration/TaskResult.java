@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Result of an orchestration task.
@@ -14,7 +15,7 @@ public class TaskResult {
     private String id;
     private Status status;
     private String response;
-    private List<String> logs = new ArrayList<>();
+    private List<String> logs = new CopyOnWriteArrayList<>();
     private List<String> fileChanges = new ArrayList<>();
     private String error;
     private String waitingMessage;
