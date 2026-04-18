@@ -9,8 +9,10 @@ import java.util.concurrent.TimeUnit;
 public class ProcessRunner {
 
     public boolean runBuild(File variantDir) {
-        System.out.println("[BUILD] Running mvn clean package -DskipTests in " + variantDir.getAbsolutePath());
-        ProcessBuilder pb = new ProcessBuilder("mvn", "clean", "package", "-DskipTests");
+        String os = System.getProperty("os.name").toLowerCase();
+        String mvnCmd = os.contains("win") ? "mvn.cmd" : "mvn";
+        System.out.println("[BUILD] Running " + mvnCmd + " clean package -DskipTests in " + variantDir.getAbsolutePath());
+        ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "package", "-DskipTests");
         pb.directory(variantDir);
         pb.inheritIO();
         try {
