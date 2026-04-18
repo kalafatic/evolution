@@ -36,6 +36,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     private static final int MAX_RETRIES = 3;
     private IIntentClassifier intentClassifier = new LlmIntentClassifier();
     private IPolicyEngine policyEngine = new RuleBasedPolicyEngine();
+    private ContextAssistant contextAssistant = new ContextAssistant();
     private AnalyticAgent analyticAgent = new AnalyticAgent();
     private PlannerAgent planner = new PlannerAgent();
     private ReviewerAgent reviewer = new ReviewerAgent();
@@ -82,10 +83,55 @@ public class EvolutionOrchestrator implements IOrchestrator {
             ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
             state.addMessage("User: " + request);
 
-            // 2. Mode Routing (Internal Guard)
+            // 2. Context Assist Layer + Mode Routing (Internal Guard)
             if (context.getPlatformMode() == null) {
+                ContextAssistResult assistResult = contextAssistant.analyze(request, context);
+
+                // SAFETY RULE: SELF_DEV_MODE confirmation (Always confirm explicitly)
+                if (assistResult.getMode() == PlatformType.SELF_DEV_MODE) {
+                    Boolean confirmed = true;
+                    if (!context.isAutoApprove()) {
+                        confirmed = context.requestApproval("You are asking the system to modify itself. Proceed?").get();
+                    }
+                    if (confirmed == null || !confirmed) {
+                        assistResult.setMode(PlatformType.SIMPLE_CHAT);
+                    } else {
+                        // If confirmed, and no other missing info, we can treat it as HIGH confidence
+                        if (assistResult.getMissingInfo() == null || assistResult.getMissingInfo().isEmpty()) {
+                            assistResult.setConfidence(ConfidenceLevel.HIGH);
+                        }
+                    }
+                }
+
+                // Handle confidence and missing info
+                if (assistResult.getConfidence() != ConfidenceLevel.HIGH) {
+                    StringBuilder clarificationMsg = new StringBuilder();
+                    if (assistResult.getMissingInfo() != null && !assistResult.getMissingInfo().isEmpty()) {
+                        clarificationMsg.append("To help you better, I need a bit more information:\n");
+                        for (String info : assistResult.getMissingInfo()) {
+                            clarificationMsg.append("- ").append(info).append("\n");
+                        }
+                    } else if (assistResult.getMode() == null) {
+                        clarificationMsg.append("I'm not entirely sure how to help. Do you want quick chat, coding help, or an iterative solution search?");
+                    }
+
+                    if (assistResult.getSuggestedSteps() != null && !assistResult.getSuggestedSteps().isEmpty()) {
+                        clarificationMsg.append("\nFor best results:\n");
+                        for (String step : assistResult.getSuggestedSteps()) {
+                            clarificationMsg.append("- ").append(step).append("\n");
+                        }
+                    }
+
+                    if (clarificationMsg.length() > 0 && !context.isAutoApprove()) {
+                        String clarification = context.requestInput(clarificationMsg.toString()).get();
+                        if (clarification != null && !clarification.isEmpty()) {
+                            return execute(request + "\nClarification: " + clarification, context);
+                        }
+                    }
+                }
+
                 ModeRouter router = new ModeRouter();
-                context.setPlatformMode(router.route(request, context.getOrchestrator()));
+                context.setPlatformMode(router.route(request, context.getOrchestrator(), assistResult));
             }
 
             // SIMPLE_CHAT Mode: Direct response bypass

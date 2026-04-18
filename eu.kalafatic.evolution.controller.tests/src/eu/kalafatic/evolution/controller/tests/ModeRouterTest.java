@@ -55,7 +55,13 @@ public class ModeRouterTest {
 
     @Test
     public void testModelMappingSelfIterative() {
-        orchestrator.setSelfIterativeMode(true);
+        if (orchestrator.getAiChat() == null) {
+            orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        }
+        if (orchestrator.getAiChat().getPromptInstructions() == null) {
+            orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        }
+        orchestrator.getAiChat().getPromptInstructions().setSelfIterativeMode(true);
         PlatformMode mode = router.route("Iterate", orchestrator);
         assertEquals(PlatformType.SELF_DEV_MODE, mode.getType());
     }

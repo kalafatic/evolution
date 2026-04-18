@@ -11,6 +11,13 @@ public class ModeRouter {
      * Detects or assigns PlatformMode based on user input and orchestrator state.
      */
     public PlatformMode route(String prompt, Orchestrator orchestrator) {
+        return route(prompt, orchestrator, null);
+    }
+
+    /**
+     * Detects or assigns PlatformMode based on user input, orchestrator state, and optional context assist result.
+     */
+    public PlatformMode route(String prompt, Orchestrator orchestrator, ContextAssistResult assistResult) {
         if (prompt == null) prompt = "";
         String lowerPrompt = prompt.toLowerCase();
 
@@ -23,6 +30,16 @@ public class ModeRouter {
             return createDarwinMode();
         } else if (lowerPrompt.contains("mode: self-dev")) {
             return createSelfDevMode();
+        }
+
+        // 1b. High confidence context assist result
+        if (assistResult != null && assistResult.getConfidence() == ConfidenceLevel.HIGH) {
+            switch (assistResult.getMode()) {
+                case SIMPLE_CHAT: return createSimpleChatMode();
+                case ASSISTED_CODING: return createAssistedCodingMode();
+                case DARWIN_MODE: return createDarwinMode();
+                case SELF_DEV_MODE: return createSelfDevMode();
+            }
         }
 
         // 2. Map from existing model flags

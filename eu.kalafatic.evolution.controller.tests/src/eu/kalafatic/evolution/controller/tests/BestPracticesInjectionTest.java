@@ -26,8 +26,8 @@ public class BestPracticesInjectionTest {
 
     @Test
     public void testIterativeLoopInjection() throws Exception {
-        orchestrator.setIterativeMode(true);
-        orchestrator.setSelfIterativeMode(false);
+        orchestrator.getAiChat().getPromptInstructions().setIterativeMode(true);
+        orchestrator.getAiChat().getPromptInstructions().setSelfIterativeMode(false);
 
         TestAgent agent = new TestAgent();
         String prompt = agent.getPrompt("test task", context);
@@ -39,8 +39,8 @@ public class BestPracticesInjectionTest {
 
     @Test
     public void testSelfDevelopmentInjection() throws Exception {
-        orchestrator.setIterativeMode(false);
-        orchestrator.setSelfIterativeMode(true);
+        orchestrator.getAiChat().getPromptInstructions().setIterativeMode(false);
+        orchestrator.getAiChat().getPromptInstructions().setSelfIterativeMode(true);
 
         TestAgent agent = new TestAgent();
         String prompt = agent.getPrompt("test task", context);
@@ -52,8 +52,8 @@ public class BestPracticesInjectionTest {
 
     @Test
     public void testBothInjections() throws Exception {
-        orchestrator.setIterativeMode(true);
-        orchestrator.setSelfIterativeMode(true);
+        orchestrator.getAiChat().getPromptInstructions().setIterativeMode(true);
+        orchestrator.getAiChat().getPromptInstructions().setSelfIterativeMode(true);
 
         TestAgent agent = new TestAgent();
         String prompt = agent.getPrompt("test task", context);
@@ -64,7 +64,7 @@ public class BestPracticesInjectionTest {
 
     @Test
     public void testIterativeContextContent() throws Exception {
-        orchestrator.setIterativeMode(true);
+        orchestrator.getAiChat().getPromptInstructions().setIterativeMode(true);
         TestAgent agent = new TestAgent();
         String prompt = agent.getPrompt("test task", context);
 
