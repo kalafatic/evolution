@@ -17,6 +17,7 @@ public class IterationMemoryService {
     private final ObjectMapper mapper;
     private final List<IterationRecord> records = new ArrayList<>();
     private final Map<String, List<IterationRecord>> errorIndex = new HashMap<>();
+    private final FailureMemory failureMemory = new FailureMemory();
 
     public IterationMemoryService(File projectRoot) {
         this.memoryDir = new File(projectRoot, "orchestrator/memory");
@@ -48,13 +49,28 @@ public class IterationMemoryService {
         if (record.getErrorMessage() != null && !record.getErrorMessage().isEmpty()) {
             String normalizedError = normalizeError(record.getErrorMessage());
             errorIndex.computeIfAbsent(normalizedError, k -> new ArrayList<>()).add(record);
+            failureMemory.addFingerprint(normalizedError);
         }
     }
 
     private String normalizeError(String errorMessage) {
-        // Simple normalization: first line or exception name
+        if (errorMessage == null || errorMessage.isEmpty()) return "Unknown";
         String firstLine = errorMessage.split("\n")[0];
-        return firstLine.replaceAll("@[a-f0-9]+", "").trim();
+        String type = "Unknown";
+        if (firstLine.contains("Compilation") || firstLine.contains("COMPILATION ERROR")) type = "compiler";
+        else if (firstLine.contains("Test") || firstLine.contains("There are test failures")) type = "test";
+        else if (firstLine.contains("Exception") || firstLine.contains("Error")) type = "runtime";
+
+        // Try to find a location
+        String location = "Global";
+        java.util.regex.Pattern locPattern = java.util.regex.Pattern.compile("([a-zA-Z0-9_]+\\.java:[0-9]+)");
+        java.util.regex.Matcher locMatcher = locPattern.matcher(errorMessage);
+        if (locMatcher.find()) {
+            location = locMatcher.group(1);
+        }
+
+        String cause = firstLine.replaceAll("@[a-f0-9]+", "").trim();
+        return type + "@" + location + ":" + cause;
     }
 
     public void saveRecord(IterationRecord record) {
@@ -87,6 +103,10 @@ public class IterationMemoryService {
 
     public Map<String, List<IterationRecord>> getErrorIndex() {
         return errorIndex;
+    }
+
+    public FailureMemory getFailureMemory() {
+        return failureMemory;
     }
 
     public String getHistoryAnalysis() {

@@ -50,18 +50,26 @@ public class DarwinEngine extends BaseAiAgent {
                "→ Think in terms of: STATE TRANSITIONS, SYSTEM IMPROVEMENT, LONG-TERM EFFECTS.\n" +
                "→ Each iteration must improve the system state, not just produce code.\n\n" +
                "STATE MODEL:\n" +
+               "→ Use the provided StateSnapshot (build, tests, coverage) to inform decisions.\n" +
                "→ Analyze relationships between elements (files, modules, tests, failures, dependencies).\n" +
                "→ Identify weak points (failures, instability, complexity).\n" +
                "→ Propose actions that improve overall system health.\n\n" +
+               "FAILURE FINGERPRINTING & ANTI-LOOP:\n" +
+               "→ Avoid repeating actions that lead to the same failure fingerprints.\n" +
+               "→ If a failure is REPEATING (count >= 2), you MUST change your strategy.\n\n" +
+               "HYPOTHESIS-DRIVEN VARIANTS:\n" +
+               "→ Every variant MUST include a hypothesis: a causal explanation of why the proposed changes will lead to the expected effects.\n" +
+               "→ Expected effects must be measurable outcomes (e.g., 'build success', 'test X passes').\n\n" +
+               "TRAJECTORY AWARENESS:\n" +
+               "→ Consider the build/test trends. Prefer variants that improve ANY dimension.\n\n" +
+               "PRIORITY LOGIC:\n" +
+               "→ IF build == FAIL → focus on build fixes.\n" +
+               "→ ELSE IF tests failing → focus on test fixes.\n" +
+               "→ ELSE → refinement.\n\n" +
                "ITERATION STRATEGY (DARWINIAN):\n" +
                "→ Generate 2–3 DIFFERENT candidate state transitions.\n" +
-               "→ Each candidate must represent a distinct strategy and target a meaningful system improvement (e.g., fix failing tests, reduce complexity, refactor risky code).\n" +
-               "→ Avoid cosmetic changes, repeated failed approaches, or low-impact modifications.\n\n" +
-               "LEARNING FROM HISTORY:\n" +
-               "→ Identify what improved the system and what caused regressions.\n" +
-               "→ Prefer strategies with proven success; increase exploration if no recent improvement occurred.\n\n" +
-               "EVALUATION THINKING:\n" +
-               "→ For each candidate, estimate short_term_impact, long_term_impact, risk (0.0-1.0), and reversibility (0.0-1.0).";
+               "→ Each candidate must represent a distinct strategy and target a meaningful system improvement.\n" +
+               "→ Avoid cosmetic changes, repeated failed approaches, or low-impact modifications.";
     }
 
     @Override
@@ -70,6 +78,7 @@ public class DarwinEngine extends BaseAiAgent {
                "Schema:\n" +
                "[\n" +
                "  {\n" +
+               "    \"id\": \"string-id\",\n" +
                "    \"strategy\": \"<high-level intent>\",\n" +
                "    \"suffix\": \"<short string for branch name>\",\n" +
                "    \"actions\": [\n" +
@@ -80,6 +89,10 @@ public class DarwinEngine extends BaseAiAgent {
                "        \"description\": \"<detailed instruction of what will be done in this specific step>\"\n" +
                "      }\n" +
                "    ],\n" +
+               "    \"hypothesis\": {\n" +
+               "      \"description\": \"<causal explanation of why this will work>\",\n" +
+               "      \"expected_effects\": [\"<measurable outcome 1>\", \"<measurable outcome 2>\"]\n" +
+               "    },\n" +
                "    \"expected_effect\": {\n" +
                "      \"short_term\": \"...\",\n" +
                "      \"long_term\": \"...\",\n" +
@@ -90,27 +103,45 @@ public class DarwinEngine extends BaseAiAgent {
                "]";
     }
 
-    public List<BranchVariant> generateVariants(String goal, String lastError) throws Exception {
+    public List<BranchVariant> generateVariants(String goal, StateSnapshot snapshot, FailureMemory failureMemory, Trajectory trajectory) throws Exception {
         context.log("[DARWIN] Generating variants for goal: " + goal);
 
         StringBuilder state = new StringBuilder();
         state.append("Current Goal: ").append(goal).append("\n");
 
-        if (stateProvider != null) {
-            state.append(stateProvider.getSystemStateSignal());
-        } else {
-            state.append("\n--- SYSTEM STATE ---\n");
-            state.append("General Purpose Iterative Environment\n");
+        if (snapshot != null) {
+            state.append("\n--- CURRENT STATE SNAPSHOT ---\n");
+            state.append("Build Status: ").append(snapshot.build.status).append("\n");
+            state.append("Build Errors: ").append(snapshot.build.errorCount).append(" (").append(snapshot.build.errorTypes).append(")\n");
+            state.append("Tests: ").append(snapshot.tests.passed).append("/").append(snapshot.tests.total).append(" passed\n");
+            if (!snapshot.tests.failingTests.isEmpty()) {
+                state.append("Failing Tests: ").append(snapshot.tests.failingTests).append("\n");
+            }
         }
 
-        state.append("\n--- LEARNING FROM HISTORY & TRAJECTORY ---\n");
+        if (trajectory != null) {
+            state.append("\n--- TRAJECTORY ---\n");
+            state.append("Build Trend: ").append(trajectory.buildTrend).append("\n");
+            state.append("Test Trend: ").append(trajectory.testTrend).append("\n");
+            state.append("Failure Change: ").append(trajectory.failureChange).append("\n");
+        }
+
+        if (failureMemory != null && !failureMemory.getFingerprints().isEmpty()) {
+            state.append("\n--- FAILURE MEMORY (ANTI-LOOP) ---\n");
+            failureMemory.getFingerprints().forEach((fp, count) -> {
+                if (count >= 2) state.append("REPEATING FAILURE: ");
+                state.append(fp).append(" (").append(count).append(" occurrences)\n");
+            });
+        }
+
+        if (stateProvider != null) {
+            state.append(stateProvider.getSystemStateSignal());
+        }
+
+        state.append("\n--- LEARNING FROM HISTORY ---\n");
         String history = memoryService.getHistoryAnalysis();
         context.log("[DARWIN] History Analysis: " + history);
         state.append(history).append("\n");
-
-        if (lastError != null) {
-            state.append("\nURGENT: Last attempt failed with error: ").append(lastError).append("\n");
-        }
 
         String fullPrompt = buildPrompt(state.toString(), context, null);
         context.log("[DARWIN] Built prompt, sending request...");
@@ -131,6 +162,7 @@ public class DarwinEngine extends BaseAiAgent {
         for (int i = 0; i < array.length(); i++) {
             JSONObject obj = array.getJSONObject(i);
             BranchVariant v = new BranchVariant();
+            v.setId(obj.optString("id", "v" + i));
             v.setStrategy(obj.getString("strategy"));
             String suffix = obj.getString("suffix");
             v.setBranchName("exp/" + sanitize(goal) + "/" + suffix);
@@ -147,6 +179,20 @@ public class DarwinEngine extends BaseAiAgent {
                     action.setDescription(aObj.optString("description"));
                     v.getActions().add(action);
                 }
+            }
+
+            // Parse Hypothesis
+            JSONObject hypObj = obj.optJSONObject("hypothesis");
+            if (hypObj != null) {
+                BranchVariant.Hypothesis hyp = new BranchVariant.Hypothesis();
+                hyp.setDescription(hypObj.optString("description"));
+                JSONArray effectsArr = hypObj.optJSONArray("expected_effects");
+                if (effectsArr != null) {
+                    for (int j = 0; j < effectsArr.length(); j++) {
+                        hyp.getExpectedEffects().add(effectsArr.getString(j));
+                    }
+                }
+                v.setHypothesis(hyp);
             }
 
             // Parse Expected Effect

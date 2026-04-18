@@ -168,8 +168,10 @@ public class DarwinEvolutionTest {
 
                     Field evalField = IterationManager.class.getDeclaredField("evaluator");
                     evalField.setAccessible(true);
-                    evalField.set(im, new MockEvaluator());
-                } catch (Exception e) {}
+                    evalField.set(im, new MockEvaluator(context));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 return im;
             }
         };
@@ -217,7 +219,7 @@ public class DarwinEvolutionTest {
         TaskExecutor executor = new TaskExecutor(context);
         injectMocksIntoOrchestrator(getOrchestratorFromExecutor(executor), mock);
         de.setExecutor(executor);
-        de.setEvaluator(new MockEvaluator());
+        de.setEvaluator(new MockEvaluator(context));
     }
 
     private void injectMockIntoAgent(Object agent, ILlmProvider mock) throws Exception {
@@ -265,7 +267,7 @@ public class DarwinEvolutionTest {
     }
 
     private static class MockEvaluator extends eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator {
-        public MockEvaluator() { super(null, null); }
+        public MockEvaluator(TaskContext context) { super(new File("."), context); }
         @Override
         public eu.kalafatic.evolution.model.orchestration.EvaluationResult evaluate() throws Exception {
             eu.kalafatic.evolution.model.orchestration.EvaluationResult res = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -273,6 +275,15 @@ public class DarwinEvolutionTest {
             res.setDecision(eu.kalafatic.evolution.model.orchestration.SelfDevDecision.CONTINUE);
             res.setTestPassRate(1.0);
             return res;
+        }
+
+        @Override
+        public Evaluation evaluateWithSnapshot() throws Exception {
+            Evaluation eval = new Evaluation();
+            eval.result = evaluate();
+            eval.snapshot = new eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot();
+            eval.snapshot.build.status = eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot.BuildStatus.SUCCESS;
+            return eval;
         }
     }
 

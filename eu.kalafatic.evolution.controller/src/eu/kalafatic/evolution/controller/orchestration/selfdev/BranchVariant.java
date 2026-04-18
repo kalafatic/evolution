@@ -4,14 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BranchVariant {
+    private String id;
     private String branchName;
     private List<String> changedFiles = new ArrayList<>();
     private String strategy; // description of approach
     private List<Action> actions = new ArrayList<>();
     private ExpectedEffect expectedEffect;
+    private Hypothesis hypothesis;
     private double score;
     private boolean success;
     private String errorMessage;
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
     public String getBranchName() { return branchName; }
     public void setBranchName(String branchName) { this.branchName = branchName; }
@@ -36,6 +41,9 @@ public class BranchVariant {
 
     public ExpectedEffect getExpectedEffect() { return expectedEffect; }
     public void setExpectedEffect(ExpectedEffect expectedEffect) { this.expectedEffect = expectedEffect; }
+
+    public Hypothesis getHypothesis() { return hypothesis; }
+    public void setHypothesis(Hypothesis hypothesis) { this.hypothesis = hypothesis; }
 
     public static class Action {
         private String domain;
@@ -67,5 +75,15 @@ public class BranchVariant {
         public void setRisk(double risk) { this.risk = risk; }
         public double getReversibility() { return reversibility; }
         public void setReversibility(double reversibility) { this.reversibility = reversibility; }
+    }
+
+    public static class Hypothesis {
+        private String description;
+        private List<String> expectedEffects = new ArrayList<>();
+
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+        public List<String> getExpectedEffects() { return expectedEffects; }
+        public void setExpectedEffects(List<String> expectedEffects) { this.expectedEffects = expectedEffects; }
     }
 }
