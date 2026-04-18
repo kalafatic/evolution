@@ -376,7 +376,7 @@ public class AiChatPage extends SharedScrolledComposite {
 				    int fromIndex = chatGroup.getLogCount();
 				    int toIndex = latest.getLogs().size();
 				    if (fromIndex < toIndex) {
-				        final List<String> newLogs = latest.getLogs().subList(fromIndex, toIndex);
+				        final List<String> newLogs = new java.util.ArrayList<>(latest.getLogs().subList(fromIndex, toIndex));
 				        if (!newLogs.isEmpty()) {
 				            Display.getDefault().asyncExec(() -> {
 				                for (String log : newLogs) {
