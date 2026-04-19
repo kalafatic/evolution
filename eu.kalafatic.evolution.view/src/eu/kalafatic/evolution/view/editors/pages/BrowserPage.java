@@ -101,7 +101,7 @@ public class BrowserPage extends Composite {
         if (orchestrator.getServerSettings()!=null) {
 			createNewTab("localhost:" + orchestrator.getServerSettings().getPort());			
 		} else {
-			createNewTab("localhost:8080");
+			createNewTab("localhost:48080");
 		}
         // Listeners
         goButton.addSelectionListener(new SelectionAdapter() {
