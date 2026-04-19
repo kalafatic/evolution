@@ -66,20 +66,18 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 }
 
                 TaskContext context = new TaskContext(orchModel, request.getProjectRoot());
-                context.setThreadId(taskId);
-
-                // Context Assist Layer + Mode Routing (Handled by EvolutionOrchestrator.execute)
-                // However, for initialization and status logging, we do a quick route here.
-                ModeRouter modeRouter = new ModeRouter();
-                PlatformMode mode = modeRouter.route(request.getPrompt(), orchModel);
-                context.setPlatformMode(mode);
-                context.log("Platform Mode: " + mode.getType() + " (Autonomy: " + mode.getAutonomyLevel() + ")");
-
-                contexts.put(taskId, context);
+                String threadId = (String) request.getContext().get("threadId");
+                if (threadId != null && !threadId.isEmpty()) {
+			context.setThreadId(threadId);
+                } else {
+			context.setThreadId(taskId);
+                }
 
                 context.addLogListener(log -> {
                     result.getLogs().add(log);
                 });
+
+                contexts.put(taskId, context);
 
                 context.addApprovalListener(msg -> {
                     result.setStatus(TaskResult.Status.WAITING_FOR_APPROVAL);

@@ -131,11 +131,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 }
 
                 ModeRouter router = new ModeRouter();
-                context.setPlatformMode(router.route(request, context.getOrchestrator(), assistResult));
+                PlatformMode mode = router.route(request, context.getOrchestrator(), assistResult);
+                context.setPlatformMode(mode);
+                context.log("Platform Mode: " + mode.getType() + " (Autonomy: " + mode.getAutonomyLevel() + ")");
             }
 
             // SIMPLE_CHAT Mode: Direct response bypass
-            if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
+            if (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
                 context.log("Evo-Orchestrator-Mode: SIMPLE_CHAT detected. Bypassing orchestration loop.");
                 GeneralAgent chatAgent = (GeneralAgent) availableAgents.stream()
                         .filter(a -> a instanceof GeneralAgent)
