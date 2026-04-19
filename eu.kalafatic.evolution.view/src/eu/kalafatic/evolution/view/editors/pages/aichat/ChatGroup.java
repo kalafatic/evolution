@@ -115,6 +115,66 @@ public class ChatGroup extends AEvoGroup {
         browser.setText(html);
     }
 
+    private void refreshGitStatus() {
+        if (orchestrator == null || page == null) return;
+        File projectRoot = page.getProjectRoot();
+        if (projectRoot == null) return;
+
+        new Thread(() -> {
+            try {
+                eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider gitProvider = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+                List<String> changedFiles = gitProvider.getChangedFiles(projectRoot, "HEAD");
+                JSONArray array = new JSONArray(changedFiles);
+                Display.getDefault().asyncExec(() -> {
+                    if (browser != null && !browser.isDisposed()) {
+                        browser.execute("updateChanges(" + array.toString() + ");");
+                    }
+                });
+            } catch (Exception e) {
+                // Ignore git errors in background refresh
+            }
+        }).start();
+    }
+
+    private void commitGitChanges(String message) {
+        if (page == null) return;
+        File projectRoot = page.getProjectRoot();
+        if (projectRoot == null) return;
+
+        new Thread(() -> {
+            try {
+                eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider gitProvider = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+                gitProvider.commitChanges(projectRoot, message);
+                refreshGitStatus();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private void fetchDiff(String filePath) {
+        if (page == null) return;
+        File projectRoot = page.getProjectRoot();
+        if (projectRoot == null) return;
+
+        new Thread(() -> {
+            try {
+                eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider gitProvider = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+                String diff = gitProvider.getFileDiff(projectRoot, "HEAD", filePath);
+                Display.getDefault().asyncExec(() -> {
+                    if (browser != null && !browser.isDisposed()) {
+                        JSONObject json = new JSONObject();
+                        json.put("path", filePath);
+                        json.put("diff", diff);
+                        browser.execute("showDiff(" + json.toString() + ");");
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
     private void setupJavaScriptBridges() {
         new BrowserFunction(browser, "JavaHandler") {
             @Override
@@ -147,6 +207,15 @@ public class ChatGroup extends AEvoGroup {
                             break;
                         case "openDiff":
                             page.handleOpenDiff(text);
+                            break;
+                        case "getDiff":
+                            fetchDiff(text);
+                            break;
+                        case "refreshGit":
+                            refreshGitStatus();
+                            break;
+                        case "commitGit":
+                            commitGitChanges(text);
                             break;
                     }
                 } catch (Exception e) {
@@ -324,6 +393,7 @@ public class ChatGroup extends AEvoGroup {
 
     private void refreshBrowser() {
         if (!isLoaded || browser.isDisposed()) return;
+        refreshGitStatus();
         JSONArray array = new JSONArray();
         if (currentThread != null) {
             for (ChatMessage m : currentThread.getMessages()) {

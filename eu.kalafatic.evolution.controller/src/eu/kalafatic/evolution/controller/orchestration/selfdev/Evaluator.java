@@ -32,7 +32,7 @@ public class Evaluator {
     }
 
     public Evaluation evaluateWithSnapshot() throws Exception {
-        context.log("[EVALUATOR] Starting evaluation...");
+        if (context != null) context.log("[EVALUATOR] Starting evaluation...");
         EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
         StateSnapshot snapshot = new StateSnapshot();
 
@@ -58,7 +58,7 @@ public class Evaluator {
                 snapshot.tests.failingTests = parseFailingTestNames(output);
 
                 if (passRate < 1.0) {
-                    context.log("[EVALUATOR] Tests failed despite build success. Rolling back.");
+                    if (context != null) context.log("[EVALUATOR] Tests failed despite build success. Rolling back.");
                     result.setDecision(SelfDevDecision.ROLLBACK);
                     result.getErrors().add("Tests failed (Pass rate: " + passRate + ")");
                 } else {
@@ -77,7 +77,7 @@ public class Evaluator {
             result.getErrors().add("Evaluation exception: " + e.getMessage());
         }
 
-        context.log("[EVALUATOR] Evaluation finished. Success: " + result.isSuccess() + ", Decision: " + result.getDecision());
+        if (context != null) context.log("[EVALUATOR] Evaluation finished. Success: " + result.isSuccess() + ", Decision: " + result.getDecision());
         Evaluation eval = new Evaluation();
         eval.result = result;
         eval.snapshot = snapshot;

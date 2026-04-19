@@ -47,11 +47,13 @@ public class ModeRouter {
             if (orchestrator.isDarwinMode()) {
                 return createDarwinMode();
             }
-            if (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
-                return createSelfDevMode();
-            }
-            if (orchestrator.getAiChat().getPromptInstructions().isIterativeMode()) {
-                return createAssistedCodingMode();
+            if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
+                if (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
+                    return createSelfDevMode();
+                }
+                if (orchestrator.getAiChat().getPromptInstructions().isIterativeMode()) {
+                    return createAssistedCodingMode();
+                }
             }
         }
 

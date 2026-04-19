@@ -54,7 +54,10 @@ public class ScenarioTest {
         orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
         orchestrator.setId("scenario-orch");
         orchestrator.setAiMode(AiMode.LOCAL);
-        orchestrator.setPreferredMaxIterations(0);
+
+        if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        if (orchestrator.getAiChat().getPromptInstructions() == null) orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        orchestrator.getAiChat().getPromptInstructions().setPreferredMaxIterations(0);
 
         Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();
         ollama.setUrl("http://localhost:11434");
@@ -67,12 +70,21 @@ public class ScenarioTest {
     @Test
     public void testScenario1_SimplePrompt() throws Exception {
         EvolutionOrchestrator engine = new EvolutionOrchestrator();
+
+        if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        if (orchestrator.getAiChat().getPromptInstructions() == null) orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        orchestrator.getAiChat().getPromptInstructions().setIterativeMode(false);
+        orchestrator.getAiChat().getPromptInstructions().setSelfIterativeMode(false);
+
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);
+        context.setPlatformMode(new eu.kalafatic.evolution.controller.orchestration.PlatformMode(
+            eu.kalafatic.evolution.controller.orchestration.PlatformType.ASSISTED_CODING,
+            eu.kalafatic.evolution.controller.orchestration.AutonomyLevel.LOW, 2, false));
 
         injectMocksIntoOrchestrator(engine, mockLlm);
 
-        String planResponse = "[{\"id\": \"t1\", \"name\": \"Write src/Example.java\", \"taskType\": \"file\"}]";
+        String planResponse = "[{\"id\": \"t1\", \"name\": \"Write Example.java\", \"taskType\": \"file\"}]";
         String javaCode = "public class Example { public static void main(String[] args) { System.out.println(\"Hello\"); } }";
         String evalResponse = "{\"success\": true, \"comment\": \"Looks good\"}";
 
@@ -95,7 +107,7 @@ public class ScenarioTest {
         }
         assertNotNull(result);
 
-        File javaFile = new File(tempDir, "src/Example.java");
+        File javaFile = new File(tempDir, "Example.java");
         if (!javaFile.exists()) {
             printLogs(context);
         }
@@ -106,7 +118,7 @@ public class ScenarioTest {
     @Test
     public void testScenario2_PromptIterative() throws Exception {
         orchestrator.setDarwinMode(false);
-        orchestrator.setIterativeMode(true);
+        orchestrator.getAiChat().getPromptInstructions().setIterativeMode(true);
 
         SelfDevSession session = OrchestrationFactory.eINSTANCE.createSelfDevSession();
         session.setId("iterative-session");
@@ -195,7 +207,7 @@ public class ScenarioTest {
     @Test
     public void testScenario4_PromptEvoIterative() throws Exception {
         orchestrator.setDarwinMode(true);
-        orchestrator.setIterativeMode(true);
+        orchestrator.getAiChat().getPromptInstructions().setIterativeMode(true);
 
         SelfDevSession session = OrchestrationFactory.eINSTANCE.createSelfDevSession();
         session.setId("evo-iter-session");
@@ -367,14 +379,24 @@ public class ScenarioTest {
     }
 
     private static class MockEvaluator extends eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator {
-        public MockEvaluator() { super(null, null); }
+        public MockEvaluator() { super(new File("."), null); }
         @Override
         public eu.kalafatic.evolution.model.orchestration.EvaluationResult evaluate() throws Exception {
+            return evaluateWithSnapshot().result;
+        }
+
+        @Override
+        public Evaluation evaluateWithSnapshot() throws Exception {
             eu.kalafatic.evolution.model.orchestration.EvaluationResult res = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createEvaluationResult();
             res.setSuccess(true);
             res.setDecision(eu.kalafatic.evolution.model.orchestration.SelfDevDecision.CONTINUE);
             res.setTestPassRate(1.0);
-            return res;
+
+            Evaluation eval = new Evaluation();
+            eval.result = res;
+            eval.snapshot = new eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot();
+            eval.snapshot.build.status = eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot.BuildStatus.SUCCESS;
+            return eval;
         }
     }
 

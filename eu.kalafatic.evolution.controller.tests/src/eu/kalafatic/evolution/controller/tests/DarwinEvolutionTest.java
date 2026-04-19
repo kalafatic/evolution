@@ -51,7 +51,10 @@ public class DarwinEvolutionTest {
         orchestrator.setId("darwin-orch");
         orchestrator.setAiMode(AiMode.LOCAL);
         orchestrator.setDarwinMode(true);
-        orchestrator.setPreferredMaxIterations(1);
+
+        if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        if (orchestrator.getAiChat().getPromptInstructions() == null) orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        orchestrator.getAiChat().getPromptInstructions().setPreferredMaxIterations(1);
 
         Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();
         ollama.setUrl("http://localhost:11434");
@@ -105,7 +108,7 @@ public class DarwinEvolutionTest {
         session.setMaxIterations(2);
         session.setInitialRequest("Refactor code");
         orchestrator.setSelfDevSession(session);
-        orchestrator.setPreferredMaxIterations(2);
+        orchestrator.getAiChat().getPromptInstructions().setPreferredMaxIterations(2);
 
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);

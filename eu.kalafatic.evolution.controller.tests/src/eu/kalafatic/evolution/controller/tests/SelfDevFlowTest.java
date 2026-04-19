@@ -56,6 +56,10 @@ public class SelfDevFlowTest {
         ollama.setModel("llama3");
         orchestrator.setOllama(ollama);
 
+        if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        if (orchestrator.getAiChat().getPromptInstructions() == null) orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        orchestrator.getAiChat().getPromptInstructions().setPreferredMaxIterations(-1);
+
         mockLlm = new MockProvider();
     }
 
@@ -87,12 +91,7 @@ public class SelfDevFlowTest {
         EvolutionOrchestrator evoOrch = (EvolutionOrchestrator) orchField.get(executor);
         injectMocksIntoOrchestrator(evoOrch, mockLlm);
 
-        SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
-            @Override
-            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration) {
-                return new IterationManager(iteration, context, planner, executor);
-            }
-        };
+        SelfDevSupervisor supervisor = createMockedSupervisor(session, context, planner, executor, true);
 
         supervisor.startSession();
 
@@ -135,12 +134,7 @@ public class SelfDevFlowTest {
         orchField.setAccessible(true);
         injectMocksIntoOrchestrator((EvolutionOrchestrator) orchField.get(executor), mockLlm);
 
-        SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
-            @Override
-            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration) {
-                return new IterationManager(iteration, context, planner, executor);
-            }
-        };
+        SelfDevSupervisor supervisor = createMockedSupervisor(session, context, planner, executor, false);
 
         supervisor.startSession();
 
@@ -157,7 +151,10 @@ public class SelfDevFlowTest {
         String customRequest = "Add a new C++ class for Arduino";
         session.setInitialRequest(customRequest);
         orchestrator.setSelfDevSession(session);
-        orchestrator.setIterativeMode(true);
+
+        if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        if (orchestrator.getAiChat().getPromptInstructions() == null) orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        orchestrator.getAiChat().getPromptInstructions().setIterativeMode(true);
 
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.addApprovalListener(message -> context.provideApproval(true));
@@ -180,12 +177,7 @@ public class SelfDevFlowTest {
         orchField.setAccessible(true);
         injectMocksIntoOrchestrator((EvolutionOrchestrator) orchField.get(executor), mockLlm);
 
-        SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
-            @Override
-            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration) {
-                return new IterationManager(iteration, context, planner, executor);
-            }
-        };
+        SelfDevSupervisor supervisor = createMockedSupervisor(session, context, planner, executor, true);
 
         supervisor.startSession();
 
@@ -211,6 +203,10 @@ public class SelfDevFlowTest {
         session.setId("session-max-failures");
         session.setMaxIterations(5);
 
+        if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        if (orchestrator.getAiChat().getPromptInstructions() == null) orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        orchestrator.getAiChat().getPromptInstructions().setPreferredMaxIterations(5);
+
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.addApprovalListener(message -> context.provideApproval(true));
 
@@ -232,12 +228,7 @@ public class SelfDevFlowTest {
         orchField.setAccessible(true);
         injectMocksIntoOrchestrator((EvolutionOrchestrator) orchField.get(executor), mockLlm);
 
-        SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
-            @Override
-            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration) {
-                return new IterationManager(iteration, context, planner, executor);
-            }
-        };
+        SelfDevSupervisor supervisor = createMockedSupervisor(session, context, planner, executor, false);
 
         supervisor.startSession();
 
@@ -250,6 +241,23 @@ public class SelfDevFlowTest {
         for (String log : context.getLogs()) {
             System.out.println("  " + log);
         }
+    }
+
+    private SelfDevSupervisor createMockedSupervisor(SelfDevSession session, TaskContext context, TaskPlanner planner, TaskExecutor executor, boolean iterationSuccess) {
+        return new SelfDevSupervisor(session, context) {
+            @Override
+            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration) {
+                IterationManager im = new IterationManager(iteration, context, planner, executor);
+                try {
+                    Field evalField = IterationManager.class.getDeclaredField("evaluator");
+                    evalField.setAccessible(true);
+                    MockEvaluator mockEval = new MockEvaluator();
+                    mockEval.setSuccess(iterationSuccess);
+                    evalField.set(im, mockEval);
+                } catch (Exception e) {}
+                return im;
+            }
+        };
     }
 
     private void injectMocksIntoOrchestrator(EvolutionOrchestrator engine, ILlmProvider mock) throws Exception {
@@ -309,11 +317,44 @@ public class SelfDevFlowTest {
 
         @Override
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+            // Intelligent defaults for infrastructure calls
+            if (prompt.contains("Intent Gate") || prompt.contains("IntentClassifier") || prompt.contains("Intent Classifier")) return "{\"intent\": \"new\", \"confidence\": 1.0}";
+            if (prompt.contains("Analytic Agent") || prompt.contains("AnalyticAgent") || prompt.contains("Analytic Phase")) return "{\"category\": \"CODING\", \"isAmbiguous\": false}";
+
             int current = callCount.getAndIncrement();
             if (responseSequence != null && current < responseSequence.length) {
                 return responseSequence[current];
             }
             return defaultResponse;
+        }
+
+        @Override
+        public String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl, TaskContext context) throws Exception {
+            return "{\"status\": \"ok\"}";
+        }
+    }
+
+    private static class MockEvaluator extends eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator {
+        private boolean success = true;
+        public MockEvaluator() { super(new File("."), null); }
+        public void setSuccess(boolean success) { this.success = success; }
+        @Override
+        public eu.kalafatic.evolution.model.orchestration.EvaluationResult evaluate() throws Exception {
+            return evaluateWithSnapshot().result;
+        }
+
+        @Override
+        public Evaluation evaluateWithSnapshot() throws Exception {
+            eu.kalafatic.evolution.model.orchestration.EvaluationResult res = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createEvaluationResult();
+            res.setSuccess(success);
+            res.setDecision(success ? eu.kalafatic.evolution.model.orchestration.SelfDevDecision.CONTINUE : eu.kalafatic.evolution.model.orchestration.SelfDevDecision.ROLLBACK);
+            res.setTestPassRate(success ? 1.0 : 0.0);
+
+            Evaluation eval = new Evaluation();
+            eval.result = res;
+            eval.snapshot = new eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot();
+            eval.snapshot.build.status = success ? eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot.BuildStatus.SUCCESS : eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot.BuildStatus.FAIL;
+            return eval;
         }
     }
 }
