@@ -43,7 +43,7 @@ public class SettingsGroup extends AToolGroup {
         section.setClient(group);
 
         toolkit.createLabel(group, "Server Port:");
-        portText = toolkit.createText(group, "88080");
+        portText = toolkit.createText(group, "8080");
         portText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         toolkit.createLabel(group, "Auto-start with UI:");

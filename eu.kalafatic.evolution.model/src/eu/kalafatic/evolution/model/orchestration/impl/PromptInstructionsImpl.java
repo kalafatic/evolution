@@ -78,7 +78,7 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int PREFERRED_MAX_ITERATIONS_EDEFAULT = 4;
+	protected static final int PREFERRED_MAX_ITERATIONS_EDEFAULT = -1;
 
 	/**
 	 * The cached value of the '{@link #getPreferredMaxIterations() <em>Preferred Max Iterations</em>}' attribute.

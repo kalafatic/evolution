@@ -48,7 +48,8 @@ public class Application implements IApplication {
 				ServerManager.getInstance().start(finalPort);
 				System.out.println("Evolution background server started on port " + finalPort);
 			} catch (Exception e) {
-				System.err.println("Failed to start background server: " + e.getMessage());
+				System.err.println("Failed to start background server on port " + finalPort + ": " + e.getMessage());
+				e.printStackTrace();
 			}
 		}).start();
 

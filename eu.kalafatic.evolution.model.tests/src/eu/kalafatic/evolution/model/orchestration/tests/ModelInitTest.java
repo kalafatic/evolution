@@ -29,14 +29,20 @@ public class ModelInitTest extends TestCase {
 
     public void testIterativeModes() {
         eu.kalafatic.evolution.model.orchestration.Orchestrator orchestrator = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOrchestrator();
-        assertFalse(orchestrator.isIterativeMode());
-        assertFalse(orchestrator.isSelfIterativeMode());
+        eu.kalafatic.evolution.model.orchestration.AiChat aiChat = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAiChat();
+        orchestrator.setAiChat(aiChat);
 
-        orchestrator.setIterativeMode(true);
-        assertTrue(orchestrator.isIterativeMode());
+        eu.kalafatic.evolution.model.orchestration.PromptInstructions instructions = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createPromptInstructions();
+        aiChat.setPromptInstructions(instructions);
 
-        orchestrator.setSelfIterativeMode(true);
-        assertTrue(orchestrator.isSelfIterativeMode());
+        assertFalse(instructions.isIterativeMode());
+        assertFalse(instructions.isSelfIterativeMode());
+
+        instructions.setIterativeMode(true);
+        assertTrue(instructions.isIterativeMode());
+
+        instructions.setSelfIterativeMode(true);
+        assertTrue(instructions.isSelfIterativeMode());
     }
 
     public void testInitialRequest() {

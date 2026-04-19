@@ -36,7 +36,7 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int PORT_EDEFAULT = 88080;
+	protected static final int PORT_EDEFAULT = 8080;
 
 	/**
 	 * The cached value of the '{@link #getPort() <em>Port</em>}' attribute.

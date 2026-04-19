@@ -71,13 +71,13 @@ public interface PromptInstructions extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Preferred Max Iterations</b></em>' attribute.
-	 * The default value is <code>"4"</code>.
+	 * The default value is <code>"-1"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Preferred Max Iterations</em>' attribute.
 	 * @see #setPreferredMaxIterations(int)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getPromptInstructions_PreferredMaxIterations()
-	 * @model default="4" ordered="false"
+	 * @model default="-1" ordered="false"
 	 * @generated
 	 */
 	int getPreferredMaxIterations();
