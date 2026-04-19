@@ -136,7 +136,7 @@ public class ServerPage extends SharedScrolledComposite {
         if (orchestrator == null) return;
         new Thread(() -> {
             try {
-                int port = orchestrator.getServerSettings() != null ? orchestrator.getServerSettings().getPort() : 8080;
+                int port = orchestrator.getServerSettings() != null ? orchestrator.getServerSettings().getPort() : 48080;
                 URL url = new URL("http://localhost:" + port + "/server/status");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");

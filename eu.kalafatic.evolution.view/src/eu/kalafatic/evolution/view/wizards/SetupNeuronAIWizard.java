@@ -80,7 +80,7 @@ public class SetupNeuronAIWizard extends Wizard implements INewWizard {
             new Label(container, SWT.NONE).setText("URL:");
             urlText = new Text(container, SWT.BORDER);
             urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-            String currentUrl = (orchestrator != null && orchestrator.getNeuronAI() != null) ? orchestrator.getNeuronAI().getUrl() : "http://localhost:8080/neuron";
+            String currentUrl = (orchestrator != null && orchestrator.getNeuronAI() != null) ? orchestrator.getNeuronAI().getUrl() : "http://localhost:48080/neuron";
             urlText.setText(currentUrl);
 
             new Label(container, SWT.NONE).setText("Model:");

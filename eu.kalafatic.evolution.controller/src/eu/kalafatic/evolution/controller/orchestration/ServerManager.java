@@ -8,7 +8,7 @@ import java.io.IOException;
 public class ServerManager {
     private static ServerManager instance;
     private EvolutionServer server;
-    private int currentPort = 8080;
+    private int currentPort = 48080;
 
     private ServerManager() {}
 

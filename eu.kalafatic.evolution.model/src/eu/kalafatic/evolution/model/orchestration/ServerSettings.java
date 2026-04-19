@@ -25,13 +25,13 @@ import org.eclipse.emf.ecore.EObject;
 public interface ServerSettings extends EObject {
 	/**
 	 * Returns the value of the '<em><b>Port</b></em>' attribute.
-	 * The default value is <code>"8080"</code>.
+	 * The default value is <code>"48080"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Port</em>' attribute.
 	 * @see #setPort(int)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_Port()
-	 * @model default="8080"
+	 * @model default="48080"
 	 * @generated
 	 */
 	int getPort();

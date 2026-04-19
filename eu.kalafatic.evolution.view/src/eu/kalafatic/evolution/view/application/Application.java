@@ -22,7 +22,7 @@ public class Application implements IApplication {
 	public Object start(IApplicationContext context) throws Exception {
 		String[] args = (String[]) context.getArguments().get(IApplicationContext.APPLICATION_ARGS);
 		boolean serverOnly = false;
-		int port = 8080;
+		int port = 48080;
 		for (int i = 0; i < args.length; i++) {
 			if ("--server".equals(args[i])) {
 				serverOnly = true;

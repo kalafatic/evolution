@@ -15,7 +15,7 @@ To start the headless server:
 ```bash
 ./scripts/start-headless.sh [PORT]
 ```
-- **Default Port:** 8080
+- **Default Port:** 48080
 - **Dependencies:** The script automatically resolves core EMF and OSGi dependencies from the Tycho cache.
 
 ### API Interaction
@@ -23,12 +23,12 @@ Once the server is running, you can interact with it via REST:
 
 **Check Server Status:**
 ```bash
-curl http://localhost:8080/server/status
+curl http://localhost:48080/server/status
 ```
 
 **Create an Orchestration Task:**
 ```bash
-curl -X POST http://localhost:8080/task -d '{"prompt": "mode: chat - Summarize the project structure", "projectRoot": "."}'
+curl -X POST http://localhost:48080/task -d '{"prompt": "mode: chat - Summarize the project structure", "projectRoot": "."}'
 ```
 
 ## Testing

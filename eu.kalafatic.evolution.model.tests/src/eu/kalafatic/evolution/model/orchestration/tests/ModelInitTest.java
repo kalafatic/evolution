@@ -53,4 +53,5 @@ public class ModelInitTest extends TestCase {
         session.setInitialRequest(request);
         assertEquals(request, session.getInitialRequest());
     }
+
 }
