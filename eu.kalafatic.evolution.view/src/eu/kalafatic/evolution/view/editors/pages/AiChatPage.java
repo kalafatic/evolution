@@ -218,9 +218,9 @@ public class AiChatPage extends SharedScrolledComposite {
 			try {
 				eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
 				shell.execute("git init", getProjectRoot(), null);
-				processLogEntry("Evo: Git repository initialized successfully.");
+				Display.getDefault().asyncExec(() -> processLogEntry("Evo: Git repository initialized successfully."));
 			} catch (Exception e) {
-				processLogEntry("Error initializing git: " + e.getMessage());
+				Display.getDefault().asyncExec(() -> processLogEntry("Error initializing git: " + e.getMessage()));
 			}
 		}).start();
 	}
@@ -328,15 +328,22 @@ public class AiChatPage extends SharedScrolledComposite {
 
 		TaskRequest taskRequest = new TaskRequest(request, getProjectRoot());
 		taskRequest.getContext().put("orchestrator", orchestrator);
+		taskRequest.getContext().put("threadId", getCurrentThreadName());
 
 		orchestrationThread = new Thread(() -> {
 			try {
 				TaskResult result = OrchestratorServiceImpl.getInstance().execute(taskRequest);
 				String taskId = result.getId();
+				int lastProcessedIndex = 0;
+				boolean approvalShown = false;
+				boolean inputShown = false;
 
 				// Monitor logs and result
-				while (result.getStatus() == TaskResult.Status.RUNNING || result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL || result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
-				    if (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
+				while (result.getStatus() == TaskResult.Status.RUNNING ||
+				       result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL ||
+				       result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
+
+				    if (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL && !approvalShown) {
 				        final String msg = result.getWaitingMessage();
 				        Display.getDefault().asyncExec(() -> {
 				            if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
@@ -345,14 +352,13 @@ public class AiChatPage extends SharedScrolledComposite {
 				            }
 				            approvalGroup.show(msg); updateScrolledContent();
 				        });
-				        while (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
-				            Thread.sleep(1000);
-				            result = OrchestratorServiceImpl.getInstance().getTaskResult(taskId);
-				        }
-				        Display.getDefault().asyncExec(() -> { updateModeDisplay(); approvalGroup.hide(); });
+				        approvalShown = true;
+				    } else if (result.getStatus() != TaskResult.Status.WAITING_FOR_APPROVAL && approvalShown) {
+					Display.getDefault().asyncExec(() -> { updateModeDisplay(); approvalGroup.hide(); });
+					approvalShown = false;
 				    }
 
-				    if (result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
+				    if (result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT && !inputShown) {
 				        final String msg = result.getWaitingMessage();
 				        Display.getDefault().asyncExec(() -> {
 				            if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
@@ -362,21 +368,17 @@ public class AiChatPage extends SharedScrolledComposite {
 				            handleClarify();
 				            inputGroup.show(msg); updateScrolledContent();
 				        });
-				        while (result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
-				            Thread.sleep(1000);
-				            result = OrchestratorServiceImpl.getInstance().getTaskResult(taskId);
-				        }
-				        Display.getDefault().asyncExec(() -> { updateModeDisplay(); inputGroup.hide(); });
+				        inputShown = true;
+				    } else if (result.getStatus() != TaskResult.Status.WAITING_FOR_INPUT && inputShown) {
+					Display.getDefault().asyncExec(() -> { updateModeDisplay(); inputGroup.hide(); });
+					inputShown = false;
 				    }
 
-				    Thread.sleep(500);
-				    TaskResult latest = OrchestratorServiceImpl.getInstance().getTaskResult(taskId);
-				    if (latest == null) break;
-
-				    int fromIndex = chatGroup.getLogCount();
-				    int toIndex = latest.getLogs().size();
-				    if (fromIndex < toIndex) {
-				        final List<String> newLogs = new java.util.ArrayList<>(latest.getLogs().subList(fromIndex, toIndex));
+				    // Poll logs
+				    int toIndex = result.getLogs().size();
+				    if (lastProcessedIndex < toIndex) {
+				        final List<String> newLogs = new java.util.ArrayList<>(result.getLogs().subList(lastProcessedIndex, toIndex));
+				        lastProcessedIndex = toIndex; // Update immediately to avoid duplicate processing
 				        if (!newLogs.isEmpty()) {
 				            Display.getDefault().asyncExec(() -> {
 				                for (String log : newLogs) {
@@ -385,11 +387,25 @@ public class AiChatPage extends SharedScrolledComposite {
 				                }
 				            });
 				        }
-				    } else if (fromIndex > toIndex) {
-				        // In case of sync issues, reset count to avoid crash
-				        Display.getDefault().asyncExec(() -> chatGroup.resetLogCount());
 				    }
-				    result = latest;
+
+				    Thread.sleep(500);
+				    result = OrchestratorServiceImpl.getInstance().getTaskResult(taskId);
+				    if (result == null) break;
+				}
+
+				// Final log drain
+				if (result != null) {
+					int toIndex = result.getLogs().size();
+					if (lastProcessedIndex < toIndex) {
+						final List<String> newLogs = new java.util.ArrayList<>(result.getLogs().subList(lastProcessedIndex, toIndex));
+						Display.getDefault().asyncExec(() -> {
+							for (String log : newLogs) {
+								processLogEntry(log);
+								chatGroup.incrementLogCount();
+							}
+						});
+					}
 				}
 
 				final TaskResult finalResult = result;
@@ -751,23 +767,17 @@ public class AiChatPage extends SharedScrolledComposite {
 	private void processLogEntry(String log) {
 		if (log == null || log.isEmpty()) return;
 		
-		Display.getDefault().asyncExec(() -> {
-		    Color color = Display.getDefault().getSystemColor(SWT.COLOR_GREEN);
-
-
-		    int style = SWT.NORMAL;
-			if (log.startsWith("Evo:") || log.startsWith("Orchestrator:")) { color = colorEvolution; style = SWT.ITALIC; }
-			else if (log.contains("Agent [") && log.contains("Planner")) { color = colorPlanner; style = SWT.BOLD; }
-			else if (log.contains("Agent [") && log.contains("Architect")) { color = colorArchitect; style = SWT.BOLD; }
-			else if (log.contains("Agent [") && log.contains("JavaDev")) { color = colorJavaDev; style = SWT.BOLD; }
-			else if (log.contains("Agent [") && log.contains("Tester")) { color = colorTester; style = SWT.BOLD; }
-			else if (log.contains("Agent [") && log.contains("Reviewer")) { color = colorReviewer; style = SWT.BOLD; }
-			else if (log.startsWith("Orchestrator Error:") || log.contains("Exception:")) { color = colorError; style = SWT.BOLD; }
-			chatGroup.appendText("\n" + log, color, style);
-			editor.setDirty(true);
-		});
-		
-		
+		Color color = Display.getDefault().getSystemColor(SWT.COLOR_GREEN);
+		int style = SWT.NORMAL;
+		if (log.startsWith("Evo:") || log.startsWith("Orchestrator:")) { color = colorEvolution; style = SWT.ITALIC; }
+		else if (log.contains("Agent [") && log.contains("Planner")) { color = colorPlanner; style = SWT.BOLD; }
+		else if (log.contains("Agent [") && log.contains("Architect")) { color = colorArchitect; style = SWT.BOLD; }
+		else if (log.contains("Agent [") && log.contains("JavaDev")) { color = colorJavaDev; style = SWT.BOLD; }
+		else if (log.contains("Agent [") && log.contains("Tester")) { color = colorTester; style = SWT.BOLD; }
+		else if (log.contains("Agent [") && log.contains("Reviewer")) { color = colorReviewer; style = SWT.BOLD; }
+		else if (log.startsWith("Orchestrator Error:") || log.contains("Exception:")) { color = colorError; style = SWT.BOLD; }
+		chatGroup.appendText("\n" + log, color, style);
+		editor.setDirty(true);
 	}
 
 	public String getCurrentThreadName() { return currentThread != null ? currentThread.getId() : "Default"; }

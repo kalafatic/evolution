@@ -34,7 +34,7 @@ public class TaskContext {
     private CompletableFuture<String> inputFuture;
     private volatile boolean paused = false;
     private volatile boolean autoApprove = false;
-    private PlatformMode platformMode = new PlatformMode();
+    private PlatformMode platformMode = null;
     private final Object pauseLock = new Object();
 
     public interface LogListener {
