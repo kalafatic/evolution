@@ -30,6 +30,7 @@ public class TaskStackPage extends SharedScrolledComposite {
     private FormToolkit toolkit;
     private Composite body;
     private boolean isUpdating = false;
+    private boolean runInUi = false;
 
     private GlobalActionsGroup globalActionsGroup;
     private TaskStackGroup taskStackGroup;
@@ -171,6 +172,15 @@ public class TaskStackPage extends SharedScrolledComposite {
                 testPlan.setStatus(TaskStatus.PENDING);
                 testPlan.setSelected(true);
 
+                String description = switch(mode) {
+                    case "SIMPLE_CHAT" -> "Explain the purpose of this project.";
+                    case "ASSISTED_CODING" -> "Add a new utility method to stringify JSON in eu.kalafatic.utils.";
+                    case "DARWIN_MODE" -> "Optimize the EvolutionOrchestrator performance.";
+                    case "SELF_DEV_MODE" -> "Improve the TaskStackPage UI with better execution controls.";
+                    default -> "";
+                };
+                testPlan.setDescription(description);
+
                 String[] subtaskNames = switch(mode) {
                     case "SIMPLE_CHAT" -> new String[]{"Intent Analysis (Skip Loop)", "Direct Agent Dispatch", "Response Generation"};
                     case "ASSISTED_CODING" -> new String[]{"Plan Generation", "User Approval Wait", "Atomic Task Execution", "Result Verification"};
@@ -256,12 +266,36 @@ public class TaskStackPage extends SharedScrolledComposite {
     }
 
     private void runPlan(Task plan) {
+        if (runInUi) {
+            editor.runTaskInChat(plan);
+            return;
+        }
+
         plan.setStatus(TaskStatus.RUNNING);
         updateUIFromModel();
         executePlanTasks(plan, 0, () -> {
             plan.setStatus(TaskStatus.DONE);
+            plan.setResultSummary("Plan executed successfully.");
             updateUIFromModel();
             Display.getDefault().asyncExec(this::checkParallelQueue);
+        });
+    }
+
+    public void runSingleTask(Task task) {
+        if (runInUi) {
+            editor.runTaskInChat(task);
+            return;
+        }
+
+        task.setStatus(TaskStatus.RUNNING);
+        updateUIFromModel();
+
+        // Simulate execution
+        Display.getDefault().timerExec(2000, () -> {
+            if (isDisposed()) return;
+            task.setStatus(TaskStatus.DONE);
+            task.setResultSummary("Task executed successfully.");
+            updateUIFromModel();
         });
     }
 
@@ -279,9 +313,18 @@ public class TaskStackPage extends SharedScrolledComposite {
         Display.getDefault().timerExec(2000, () -> {
             if (isDisposed()) return;
             task.setStatus(TaskStatus.DONE);
+            task.setResultSummary("Sub-Task " + (taskIndex + 1) + " done.");
             updateUIFromModel();
             executePlanTasks(plan, taskIndex + 1, onComplete);
         });
+    }
+
+    public boolean isRunInUi() {
+        return runInUi;
+    }
+
+    public void setRunInUi(boolean runInUi) {
+        this.runInUi = runInUi;
     }
 
     public void setDirty(boolean dirty) {

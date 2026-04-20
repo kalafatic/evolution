@@ -38,6 +38,7 @@ import org.eclipse.ui.part.MultiPageEditorPart;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
+import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -376,6 +377,23 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     public void showAiChatPage() {
         setActivePageByControl(aiChatPage);
+    }
+
+    public void runTaskInChat(Task task) {
+        if (aiChatPage != null) {
+            showAiChatPage();
+            aiChatPage.runTask(task);
+        }
+    }
+
+    public void openTaskResult(Task task) {
+        if (aiChatPage != null) {
+            showAiChatPage();
+            // If the task has an ID, we could try to switch to that thread
+            if (task.getId() != null) {
+                aiChatPage.switchThread(task.getId());
+            }
+        }
     }
 
     private void setActivePageByControl(Control control) {

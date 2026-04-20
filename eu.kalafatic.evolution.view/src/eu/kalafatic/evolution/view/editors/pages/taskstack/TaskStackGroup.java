@@ -86,6 +86,28 @@ public class TaskStackGroup extends AEvoGroup {
 
         treeViewer.setInput(orchestrator);
         treeViewer.expandAll();
+
+        tree.addMouseListener(new org.eclipse.swt.events.MouseAdapter() {
+            @Override
+            public void mouseDown(org.eclipse.swt.events.MouseEvent e) {
+                org.eclipse.swt.widgets.TreeItem item = tree.getItem(new org.eclipse.swt.graphics.Point(e.x, e.y));
+                if (item != null) {
+                    Task task = (Task) item.getData();
+                    int column = -1;
+                    for (int i = 0; i < tree.getColumnCount(); i++) {
+                        if (item.getBounds(i).contains(e.x, e.y)) {
+                            column = i;
+                            break;
+                        }
+                    }
+                    if (column == 0) { // Run
+                        page.runSingleTask(task);
+                    } else if (column == 5) { // Result
+                        editor.openTaskResult(task);
+                    }
+                }
+            }
+        });
     }
 
     private void createColumns() {
@@ -148,6 +170,22 @@ public class TaskStackGroup extends AEvoGroup {
             @Override
             public org.eclipse.swt.graphics.Color getForeground(Object element) {
                 return getStatusColor(((Task) element).getStatus());
+            }
+        });
+
+        // Result Column
+        TreeViewerColumn resultCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        resultCol.getColumn().setText("Result");
+        resultCol.getColumn().setWidth(250);
+        resultCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                String res = ((Task) element).getResultSummary();
+                return res != null ? res : "";
+            }
+            @Override
+            public org.eclipse.swt.graphics.Color getForeground(Object element) {
+                return treeViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_BLUE);
             }
         });
     }
