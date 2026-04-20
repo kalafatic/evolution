@@ -34,8 +34,10 @@ public class TaskStackPage extends SharedScrolledComposite {
 
     private GlobalActionsGroup globalActionsGroup;
     private TaskStackGroup taskStackGroup;
+    private java.util.Map<Task, Long> autoExecuteTimes = new java.util.HashMap<>();
 
     private static final int MAX_PARALLEL_PLANS = 3;
+    private static final int AUTO_EXECUTION_DELAY_MS = 600000; // 10 minutes
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -68,6 +70,65 @@ public class TaskStackPage extends SharedScrolledComposite {
         taskStackGroup = new TaskStackGroup(toolkit, body, editor, orchestrator, this);
 
         setOrchestrator(orchestrator);
+        startTimer();
+    }
+
+    private void startTimer() {
+        Display.getDefault().timerExec(1000, new Runnable() {
+            @Override
+            public void run() {
+                if (isDisposed()) return;
+                checkAutoExecution();
+                updateUIFromModel();
+                Display.getDefault().timerExec(1000, this);
+            }
+        });
+    }
+
+    private void checkAutoExecution() {
+        long now = System.currentTimeMillis();
+
+        // Count currently running tasks
+        long runningCount = orchestrator.getTasks().stream()
+                .filter(t -> t.getStatus() == TaskStatus.RUNNING)
+                .count();
+
+        for (Task task : orchestrator.getTasks()) {
+            if (task.getStatus() == TaskStatus.PENDING) {
+                Long execTime = autoExecuteTimes.get(task);
+                if (execTime == null) {
+                    autoExecuteTimes.put(task, now + AUTO_EXECUTION_DELAY_MS);
+                } else if (now >= execTime) {
+                    // Try to start it
+                    if (globalActionsGroup.isParallel()) {
+                        if (runningCount < MAX_PARALLEL_PLANS) {
+                            autoExecuteTimes.remove(task);
+                            runPlan(task);
+                            runningCount++; // Increment local count to prevent over-starting
+                        }
+                    } else {
+                        if (runningCount == 0) {
+                            autoExecuteTimes.remove(task);
+                            runPlan(task);
+                            runningCount++;
+                        }
+                    }
+                }
+            } else {
+                autoExecuteTimes.remove(task);
+            }
+        }
+    }
+
+    public String getCountdown(Task task) {
+        if (task.getStatus() != TaskStatus.PENDING) return "";
+        Long execTime = autoExecuteTimes.get(task);
+        if (execTime == null) return "";
+        long remaining = execTime - System.currentTimeMillis();
+        if (remaining <= 0) return "00:00";
+        long seconds = (remaining / 1000) % 60;
+        long minutes = (remaining / 1000) / 60;
+        return String.format("%02d:%02d", minutes, seconds);
     }
 
 
