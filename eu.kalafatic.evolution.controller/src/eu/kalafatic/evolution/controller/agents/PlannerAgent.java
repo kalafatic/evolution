@@ -88,8 +88,10 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
 
         // Use structured prompt building to include shared memory/history in planning
         String fullPrompt = buildPrompt(request + modeInstructions, context, null);
+        context.log("Evo-Planner-Thinking: " + fullPrompt);
 
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
+        context.log("Evo-Planner-Response: " + response);
         context.log("Planner: Received response from AI: " + (response.length() > 100 ? response.substring(0, 100) + "..." : response));
 
         // Extracting JSON logic

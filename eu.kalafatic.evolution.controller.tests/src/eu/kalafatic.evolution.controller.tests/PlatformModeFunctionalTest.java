@@ -55,9 +55,9 @@ public class PlatformModeFunctionalTest {
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setPlatformMode(new PlatformMode(PlatformType.SIMPLE_CHAT, AutonomyLevel.LOW, 1, false));
 
-        mockLlm.setResponse("Hello! I am in chat mode.");
+        mockLlm.setResponse("The project is a Tycho-based RCP application. I am in chat mode.");
 
-        String result = engine.execute("Hello", context);
+        String result = engine.execute("Tell me about the project", context);
         assertNotNull(result);
         assertTrue(result.contains("chat mode"));
         assertTrue(context.getLogs().stream().anyMatch(l -> l.contains("SIMPLE_CHAT detected")));

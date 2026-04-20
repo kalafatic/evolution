@@ -159,9 +159,9 @@ public class DarwinEngine extends BaseAiAgent {
         }
 
         String fullPrompt = buildPrompt(state.toString() + modeInfo, context, null);
-        context.log("[DARWIN] Built prompt, sending request...");
+        context.log("Evo-DarwinEngine-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
-        context.log("[DARWIN] Raw AI response: " + response);
+        context.log("Evo-DarwinEngine-Response: " + response);
 
         if (response == null || response.trim().isEmpty()) {
             context.log("[DARWIN] ERROR: Received empty AI response for variants");

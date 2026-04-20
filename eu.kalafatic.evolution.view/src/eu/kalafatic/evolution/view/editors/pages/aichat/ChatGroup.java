@@ -314,6 +314,9 @@ public class ChatGroup extends AEvoGroup {
             else if (senderLower.contains("-orchestrator-")) agentType = "orchestrator";
             else if (senderLower.contains("-darwinengine-")) agentType = "darwin";
 
+            if (senderLower.contains("-thinking")) agentType = "thinking";
+            else if (senderLower.contains("-response")) agentType = "response";
+
             if (content.toLowerCase().startsWith("[darwin]")) {
                 agentType = "darwin";
             }
@@ -333,6 +336,15 @@ public class ChatGroup extends AEvoGroup {
             sender = "Evo";
             content = text.substring(5);
             agentType = "ai";
+        } else if (text.startsWith("User Interaction: ")) {
+            sender = "User Interaction";
+            content = text.substring(18);
+            agentType = "user";
+        } else if (text.startsWith("LlmRouter: ") || text.startsWith("LlmRouter-")) {
+            int colon = text.indexOf(": ");
+            sender = text.substring(0, colon);
+            content = text.substring(colon + 2);
+            agentType = "orchestrator";
         } else if (text.contains("Agent [")) {
             int start = text.indexOf("Agent [");
             int end = text.indexOf("]", start);

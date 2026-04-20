@@ -49,7 +49,9 @@ public class AnalyticAgent extends BaseAiAgent {
 
     public JSONObject analyze(String prompt, TaskContext context) throws Exception {
         String fullPrompt = buildPrompt(prompt, context, null);
+        context.log("Evo-Analytic-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
+        context.log("Evo-Analytic-Response: " + response);
 
         String cleaned = cleanResponse(response);
         int start = cleaned.indexOf("{");

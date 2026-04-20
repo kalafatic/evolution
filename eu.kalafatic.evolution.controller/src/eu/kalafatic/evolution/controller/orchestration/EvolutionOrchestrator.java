@@ -132,8 +132,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                     if (clarificationMsg.length() > 0 && !context.isAutoApprove() && assistResult.getMode() != PlatformType.SIMPLE_CHAT) {
                         context.log("Evo-Orchestrator: Asking for clarification...\n" + clarificationMsg.toString());
+                        context.log("Evo-Orchestrator-Waiting: Waiting for user clarification...");
                         String clarification = context.requestInput(clarificationMsg.toString()).get();
                         if (clarification != null && !clarification.isEmpty()) {
+                            context.log("Evo-Orchestrator-Clarification: User provided - " + clarification);
                             return execute(request + "\nClarification: " + clarification, context);
                         }
                     }
@@ -172,6 +174,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             context.log("Evo-Orchestrator-IntentGate: Intent - " + intent + " (conf: " + classification.optDouble("confidence") + ")");
 
             String policyResponse = policyEngine.evaluate(classification, request, context);
+            context.log("Evo-Orchestrator-Policy: Decision - " + (policyResponse == null ? "PROCEED" : "HANDLE DIRECTLY/BLOCK"));
             if (policyResponse != null) {
                 context.log("Evo-Orchestrator-Policy: Action blocked or handled directly.");
                 state.addMessage("Evo: " + policyResponse);
@@ -237,7 +240,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                 Boolean planApproved = true;
                 if (!context.isAutoApprove()) {
+                    context.log("Evo-Orchestrator-Waiting: Waiting for plan approval...");
                     planApproved = context.requestApproval(TaskContext.PLAN_APPROVAL_MESSAGE).get();
+                    context.log("Evo-Orchestrator-Approval: Plan " + (planApproved != null && planApproved ? "APPROVED" : "REJECTED"));
                 } else {
 			context.log("Evo-Orchestrator-Planning: Auto-approval enabled. Skipping manual approval.");
                 }
@@ -276,7 +281,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     Boolean approved = true;
                     if (!context.isAutoApprove()) {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Waiting for user approval...");
+                        context.log("Evo-Orchestrator-Waiting: Waiting for task approval...");
                         approved = context.requestApproval("Approve task: " + task.getName() + "?").get();
+                        context.log("Evo-Orchestrator-Approval: Task " + task.getName() + " " + (approved != null && approved ? "APPROVED" : "REJECTED"));
                     } else {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Auto-approving task.");
                     }
@@ -366,6 +373,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                         return true;
                     }
 
+                    context.log("Evo-Orchestrator-Waiting: Waiting for agent-requested clarification...");
                     String clarification = context.requestInput(result).get();
                     if (clarification != null) {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Received clarification: " + clarification);
@@ -397,6 +405,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Auto-approval enabled. Skipping failure guidance, failing task.");
                         return false;
                     }
+                    context.log("Evo-Orchestrator-Waiting: Waiting for failure guidance...");
                     String guidance = context.requestInput("Evo-Orchestrator-" + task.getName() + ": Task failed consistently. Waiting for user guidance (retry/skip/hint)...").get();
                     if (guidance != null) {
                         if ("retry".equalsIgnoreCase(guidance.trim())) {
@@ -448,7 +457,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 context.log("Evo-Orchestrator-" + taskName + ": File deletion request for " + path + ". Waiting for user approval...");
                 Boolean approved = true;
                 if (!context.isAutoApprove()) {
-			approved = context.requestApproval("[DELETE] Approve deletion of file: " + path + "?").get();
+                    context.log("Evo-Orchestrator-Waiting: Waiting for file deletion approval: " + path);
+                    approved = context.requestApproval("[DELETE] Approve deletion of file: " + path + "?").get();
+                    context.log("Evo-Orchestrator-Approval: Deletion of " + path + " " + (approved != null && approved ? "APPROVED" : "REJECTED"));
                 }
                 if (approved == null || !approved) {
                     throw new Exception("File deletion rejected by user: " + path);
@@ -486,7 +497,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
                         context.log("Evo-Orchestrator-" + taskName + ": Significant deletion detected (" + String.format("%.1f", deletionPercent) + "%) for " + path + ". Waiting for user approval...");
                         Boolean approved = true;
                         if (!context.isAutoApprove()) {
-				approved = context.requestApproval("[Significant deletion] Content of " + path + " will be reduced by " + String.format("%.1f", deletionPercent) + "%. Approve?").get();
+                            context.log("Evo-Orchestrator-Waiting: Waiting for significant deletion approval: " + path);
+                            approved = context.requestApproval("[Significant deletion] Content of " + path + " will be reduced by " + String.format("%.1f", deletionPercent) + "%. Approve?").get();
+                            context.log("Evo-Orchestrator-Approval: Significant deletion of " + path + " " + (approved != null && approved ? "APPROVED" : "REJECTED"));
                         }
                         if (approved == null || !approved) {
                             throw new Exception("Significant content reduction rejected by user for: " + path);
@@ -515,7 +528,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 context.log("Evo-Orchestrator-" + taskName + ": Waiting for user approval for PR...");
                 Boolean approved = true;
                 if (!context.isAutoApprove()) {
+                    context.log("Evo-Orchestrator-Waiting: Waiting for PR approval...");
                     approved = context.requestApproval("[PR] Approve Pull Request creation? Task: " + taskName).get();
+                    context.log("Evo-Orchestrator-Approval: PR " + (approved != null && approved ? "APPROVED" : "REJECTED"));
                 }
                 if (approved == null || !approved) {
                     throw new Exception("PR rejected by user: " + taskName);
@@ -529,7 +544,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
             context.log("Evo-Orchestrator-" + taskName + ": Waiting for user approval for command...");
             Boolean approved = true;
             if (!context.isAutoApprove()) {
-		approved = context.requestApproval("Approve terminal command: " + taskName + "?").get();
+                context.log("Evo-Orchestrator-Waiting: Waiting for shell command approval: " + taskName);
+                approved = context.requestApproval("Approve terminal command: " + taskName + "?").get();
+                context.log("Evo-Orchestrator-Approval: Shell command " + taskName + " " + (approved != null && approved ? "APPROVED" : "REJECTED"));
             }
             if (approved == null || !approved) {
                 throw new Exception("Terminal command rejected by user: " + taskName);
@@ -559,6 +576,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     return request;
                 }
 
+                context.log("Evo-Orchestrator-Waiting: Waiting for user clarification...");
                 String clarification = context.requestInput(question).get();
                 if (clarification == null || clarification.trim().isEmpty()) {
                     context.log("Evo-Orchestrator-Analysis: No clarification provided.");

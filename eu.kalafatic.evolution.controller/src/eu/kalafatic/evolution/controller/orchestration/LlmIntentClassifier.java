@@ -48,9 +48,11 @@ public class LlmIntentClassifier implements IIntentClassifier {
         sb.append("Input: \"").append(input).append("\"");
 
         String prompt = sb.toString();
+        context.log("Evo-IntentClassifier-Thinking: " + prompt);
 
         String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
         String response = llmRouter.sendRequest(orchestrator, prompt, 0.0f, proxyUrl, context);
+        context.log("Evo-IntentClassifier-Response: " + response);
 
         return new JSONObject(cleanResponse(response));
     }
