@@ -34,8 +34,10 @@ public class TaskStackPage extends SharedScrolledComposite {
 
     private GlobalActionsGroup globalActionsGroup;
     private TaskStackGroup taskStackGroup;
+    private java.util.Map<Task, Long> autoExecuteTimes = new java.util.HashMap<>();
 
     private static final int MAX_PARALLEL_PLANS = 3;
+    private static final int AUTO_EXECUTION_DELAY_MS = 600000; // 10 minutes
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -72,48 +74,63 @@ public class TaskStackPage extends SharedScrolledComposite {
     }
 
     private void startTimer() {
-        Display.getDefault().timerExec(10000, new Runnable() {
+        Display.getDefault().timerExec(1000, new Runnable() {
             @Override
             public void run() {
                 if (isDisposed()) return;
-                checkScheduledTasks();
-                Display.getDefault().timerExec(10000, this);
+                checkAutoExecution();
+                updateUIFromModel();
+                Display.getDefault().timerExec(1000, this);
             }
         });
     }
 
-    private void checkScheduledTasks() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
-        String now = sdf.format(new Date());
-        boolean changed = false;
-        for (Task plan : orchestrator.getTasks()) {
-            if (plan.getStatus() == TaskStatus.PENDING && plan.getScheduledTime() != null) {
-                if (now.compareTo(plan.getScheduledTime()) >= 0) {
-                    if (!plan.isSelected()) {
-                        plan.setSelected(true);
-                        changed = true;
-                    }
-                }
-            }
-        }
-        if (changed) updateUIFromModel();
-    }
+    private void checkAutoExecution() {
+        long now = System.currentTimeMillis();
 
-    private void checkParallelQueue() {
-        if (!globalActionsGroup.isParallel()) return;
-
+        // Count currently running tasks
         long runningCount = orchestrator.getTasks().stream()
                 .filter(t -> t.getStatus() == TaskStatus.RUNNING)
                 .count();
 
-        if (runningCount < MAX_PARALLEL_PLANS) {
-            orchestrator.getTasks().stream()
-                .filter(Task::isSelected)
-                .filter(t -> t.getStatus() == TaskStatus.PENDING)
-                .findFirst()
-                .ifPresent(this::runPlan);
+        for (Task task : orchestrator.getTasks()) {
+            if (task.getStatus() == TaskStatus.PENDING) {
+                Long execTime = autoExecuteTimes.get(task);
+                if (execTime == null) {
+                    autoExecuteTimes.put(task, now + AUTO_EXECUTION_DELAY_MS);
+                } else if (now >= execTime) {
+                    // Try to start it
+                    if (globalActionsGroup.isParallel()) {
+                        if (runningCount < MAX_PARALLEL_PLANS) {
+                            autoExecuteTimes.remove(task);
+                            runPlan(task);
+                            runningCount++; // Increment local count to prevent over-starting
+                        }
+                    } else {
+                        if (runningCount == 0) {
+                            autoExecuteTimes.remove(task);
+                            runPlan(task);
+                            runningCount++;
+                        }
+                    }
+                }
+            } else {
+                autoExecuteTimes.remove(task);
+            }
         }
     }
+
+    public String getCountdown(Task task) {
+        if (task.getStatus() != TaskStatus.PENDING) return "";
+        Long execTime = autoExecuteTimes.get(task);
+        if (execTime == null) return "";
+        long remaining = execTime - System.currentTimeMillis();
+        if (remaining <= 0) return "00:00";
+        long seconds = (remaining / 1000) % 60;
+        long minutes = (remaining / 1000) / 60;
+        return String.format("%02d:%02d", minutes, seconds);
+    }
+
 
     public void setOrchestrator(Orchestrator orchestrator) {
         if (this.orchestrator != null) {
@@ -157,7 +174,7 @@ public class TaskStackPage extends SharedScrolledComposite {
     }
 
     public void addDefaultModeTests() {
-        String[] modes = {"SIMPLE_CHAT", "ASSISTED_CODING", "DARWIN_MODE", "SELF_DEV_MODE"};
+        String[] modes = {"SIMPLE_CHAT", "ASSISTED_CODING", "DARWIN_MODE", "SELF_DEV_MODE", "HEADLESS_MODE"};
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
         String timestamp = sdf.format(new Date());
         for (String mode : modes) {
@@ -176,6 +193,7 @@ public class TaskStackPage extends SharedScrolledComposite {
                     case "ASSISTED_CODING" -> "Add a new utility method to stringify JSON in eu.kalafatic.utils.";
                     case "DARWIN_MODE" -> "Optimize the EvolutionOrchestrator performance.";
                     case "SELF_DEV_MODE" -> "Improve the TaskStackPage UI with better execution controls.";
+                    case "HEADLESS_MODE" -> "Verify headless execution using the Self-Development Supervisor.";
                     default -> "";
                 };
                 testPlan.setDescription(description);
@@ -185,6 +203,7 @@ public class TaskStackPage extends SharedScrolledComposite {
                     case "ASSISTED_CODING" -> new String[]{"Plan Generation", "User Approval Wait", "Atomic Task Execution", "Result Verification"};
                     case "DARWIN_MODE" -> new String[]{"Variant Generation", "Parallel Execution", "Scoring & Selection", "Merge fittest solution"};
                     case "SELF_DEV_MODE" -> new String[]{"Supervisor Session Start", "Iterative Darwin Loop", "Self-Modification Check", "Regression Testing"};
+                    case "HEADLESS_MODE" -> new String[]{"Supervisor Initialization", "Headless Maven Build", "External Loop Execution", "Result Aggregation"};
                     default -> new String[0];
                 };
 
@@ -276,7 +295,6 @@ public class TaskStackPage extends SharedScrolledComposite {
             plan.setStatus(TaskStatus.DONE);
             plan.setResultSummary("Plan executed successfully.");
             updateUIFromModel();
-            Display.getDefault().asyncExec(this::checkParallelQueue);
         });
     }
 
