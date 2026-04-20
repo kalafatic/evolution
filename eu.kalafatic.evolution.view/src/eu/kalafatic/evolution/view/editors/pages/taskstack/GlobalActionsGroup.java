@@ -66,7 +66,7 @@ public class GlobalActionsGroup extends AEvoGroup {
         });
 
         Composite compositeRemote = new Composite(parent, SWT.BORDER);
-        compositeRemote.setLayout(new GridLayout(4, false));
+        compositeRemote.setLayout(new GridLayout(5, false));
         compositeRemote.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Button executeBtn = SWTFactory.createButton(compositeRemote, "Execute Selected", 150);
