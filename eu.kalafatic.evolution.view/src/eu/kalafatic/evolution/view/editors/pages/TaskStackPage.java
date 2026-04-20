@@ -170,6 +170,22 @@ public class TaskStackPage extends SharedScrolledComposite {
                 testPlan.setType(mode);
                 testPlan.setStatus(TaskStatus.PENDING);
                 testPlan.setSelected(true);
+
+                String[] subtaskNames = switch(mode) {
+                    case "SIMPLE_CHAT" -> new String[]{"Intent Analysis (Skip Loop)", "Direct Agent Dispatch", "Response Generation"};
+                    case "ASSISTED_CODING" -> new String[]{"Plan Generation", "User Approval Wait", "Atomic Task Execution", "Result Verification"};
+                    case "DARWIN_MODE" -> new String[]{"Variant Generation", "Parallel Execution", "Scoring & Selection", "Merge fittest solution"};
+                    case "SELF_DEV_MODE" -> new String[]{"Supervisor Session Start", "Iterative Darwin Loop", "Self-Modification Check", "Regression Testing"};
+                    default -> new String[0];
+                };
+
+                for (String stName : subtaskNames) {
+                    Task subTask = OrchestrationFactory.eINSTANCE.createTask();
+                    subTask.setName(stName);
+                    subTask.setStatus(TaskStatus.PENDING);
+                    testPlan.getSubTasks().add(subTask);
+                }
+
                 orchestrator.getTasks().add(testPlan);
             }
         }
