@@ -102,7 +102,7 @@ public class TaskStackGroup extends AEvoGroup {
                     }
                     if (column == 0) { // Run
                         page.runSingleTask(task);
-                    } else if (column == 5) { // Result
+                    } else if (column == 6) { // Result
                         editor.openTaskResult(task);
                     }
                 }
@@ -137,7 +137,7 @@ public class TaskStackGroup extends AEvoGroup {
         // Thread ID Column
         TreeViewerColumn idCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
         idCol.getColumn().setText("Thread ID");
-        idCol.getColumn().setWidth(150);
+        idCol.getColumn().setWidth(120);
         idCol.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -145,6 +145,18 @@ public class TaskStackGroup extends AEvoGroup {
             }
         });
         idCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "id"));
+
+        // Type Column
+        TreeViewerColumn typeCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        typeCol.getColumn().setText("Type");
+        typeCol.getColumn().setWidth(120);
+        typeCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                String type = ((Task) element).getType();
+                return type != null ? type : "";
+            }
+        });
 
         // Tasks Column
         TreeViewerColumn nameCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
@@ -176,7 +188,7 @@ public class TaskStackGroup extends AEvoGroup {
         // Result Column
         TreeViewerColumn resultCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
         resultCol.getColumn().setText("Result");
-        resultCol.getColumn().setWidth(250);
+        resultCol.getColumn().setWidth(300);
         resultCol.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
