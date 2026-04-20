@@ -156,6 +156,27 @@ public class TaskStackPage extends SharedScrolledComposite {
         setDirty(true);
     }
 
+    public void addDefaultModeTests() {
+        String[] modes = {"SIMPLE_CHAT", "ASSISTED_CODING", "DARWIN_MODE", "SELF_DEV_MODE"};
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
+        String timestamp = sdf.format(new Date());
+        for (String mode : modes) {
+            String name = "Default Test: " + mode;
+            boolean exists = orchestrator.getTasks().stream().anyMatch(t -> name.equals(t.getName()));
+            if (!exists) {
+                Task testPlan = OrchestrationFactory.eINSTANCE.createTask();
+                testPlan.setId("DT-" + mode + "-" + timestamp);
+                testPlan.setName(name);
+                testPlan.setType(mode);
+                testPlan.setStatus(TaskStatus.PENDING);
+                testPlan.setSelected(true);
+                orchestrator.getTasks().add(testPlan);
+            }
+        }
+        setDirty(true);
+        updateUIFromModel();
+    }
+
     public void addNewTaskToSelectedPlan() {
         Task selectedPlan = null;
         for (Task plan : orchestrator.getTasks()) {
