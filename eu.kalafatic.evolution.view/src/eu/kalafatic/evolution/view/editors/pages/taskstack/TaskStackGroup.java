@@ -51,6 +51,17 @@ public class TaskStackGroup extends AEvoGroup {
         }
     }
 
+    public void scheduleRefresh() {
+        if (refreshPending.compareAndSet(false, true)) {
+            org.eclipse.swt.widgets.Display.getDefault().asyncExec(() -> {
+                refreshPending.set(false);
+                if (treeViewer != null && !treeViewer.getControl().isDisposed()) {
+                    treeViewer.refresh();
+                }
+            });
+        }
+    }
+
     private void createControl(Composite parent) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Task/Prompt Stack", 1, true, true);
         group.setLayout(new GridLayout(1, false));

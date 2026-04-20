@@ -13,13 +13,9 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.tools.*;
 
-public class ToolsPage extends SharedScrolledComposite {
+public class ToolsPage extends AEvoPage {
 
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
     private boolean isUpdating = false;
-
-    private FormToolkit toolkit;
     private Color successColor;
 
     private GitGroup gitGroup;
@@ -31,12 +27,7 @@ public class ToolsPage extends SharedScrolledComposite {
     private TerminalGroup terminalGroup;
 
     public ToolsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-        super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.setExpandHorizontal(true);
-        this.setExpandVertical(true);
-        this.toolkit = new FormToolkit(parent.getDisplay());
+        super(parent, editor, orchestrator);
         createControl();
     }
 
@@ -74,11 +65,16 @@ public class ToolsPage extends SharedScrolledComposite {
         updateUIFromModel();
     }
 
-    public void updateUIFromModel() {
+    @Override
+    protected void refreshUI() {
         if (orchestrator == null || isUpdating) return;
         isUpdating = true;
         gitGroup.updateUI(); mavenGroup.updateUI(); fileGroup.updateUI(); databaseGroup.updateUI(); eclipseGroup.updateUI(); compilerGroup.updateUI(); terminalGroup.updateUI();
         isUpdating = false;
+    }
+
+    public void updateUIFromModel() {
+        scheduleRefresh();
     }
 
     private void updateModelFromFields() {
@@ -89,8 +85,9 @@ public class ToolsPage extends SharedScrolledComposite {
         isUpdating = false;
     }
 
+    @Override
     public void setOrchestrator(Orchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+        super.setOrchestrator(orchestrator);
         if (gitGroup != null) gitGroup.setOrchestrator(orchestrator);
         if (mavenGroup != null) mavenGroup.setOrchestrator(orchestrator);
         if (fileGroup != null) fileGroup.setOrchestrator(orchestrator);
@@ -98,13 +95,11 @@ public class ToolsPage extends SharedScrolledComposite {
         if (eclipseGroup != null) eclipseGroup.setOrchestrator(orchestrator);
         if (compilerGroup != null) compilerGroup.setOrchestrator(orchestrator);
         if (terminalGroup != null) terminalGroup.setOrchestrator(orchestrator);
-        updateUIFromModel();
     }
 
     @Override
     public void dispose() {
         if (successColor != null && !successColor.isDisposed()) successColor.dispose();
-        if (toolkit != null) toolkit.dispose();
         super.dispose();
     }
 

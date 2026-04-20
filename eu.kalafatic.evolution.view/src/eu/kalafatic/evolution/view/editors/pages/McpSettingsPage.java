@@ -12,23 +12,15 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.mcpsettings.*;
 
-public class McpSettingsPage extends SharedScrolledComposite {
+public class McpSettingsPage extends AEvoPage {
 
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
     private boolean isUpdating = false;
-    private FormToolkit toolkit;
 
     private McpConfigGroup configGroup;
     private McpResourcesGroup resourcesGroup;
 
     public McpSettingsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-        super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.setExpandHorizontal(true);
-        this.setExpandVertical(true);
-        this.toolkit = new FormToolkit(parent.getDisplay());
+        super(parent, editor, orchestrator);
         createControl();
     }
 
@@ -67,16 +59,16 @@ public class McpSettingsPage extends SharedScrolledComposite {
         }).start();
     }
 
-    public void updateMcpInfo() { if (orchestrator == null || isUpdating) return; isUpdating = true; configGroup.updateUI(); isUpdating = false; refreshResources(); }
+    @Override
+    protected void refreshUI() { if (orchestrator == null || isUpdating) return; isUpdating = true; configGroup.updateUI(); isUpdating = false; refreshResources(); }
 
+    public void updateMcpInfo() { scheduleRefresh(); }
+
+    @Override
     public void setOrchestrator(Orchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+        super.setOrchestrator(orchestrator);
         if (configGroup != null) configGroup.setOrchestrator(orchestrator);
-        updateMcpInfo();
     }
 
     public void setDirty(boolean dirty) { editor.setDirty(dirty); }
-
-    @Override
-    public void dispose() { if (toolkit != null) toolkit.dispose(); super.dispose(); }
 }

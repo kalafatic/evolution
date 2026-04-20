@@ -54,7 +54,7 @@ public class ChatGroup extends AEvoGroup {
 
     @Override
     protected void refreshUI() {
-        // Managed by AiChatPage
+        refreshBrowser();
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, Font chatFont) {

@@ -60,16 +60,13 @@ import eu.kalafatic.evolution.controller.manager.EnvironmentSuggestionService;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AiChatPage extends SharedScrolledComposite {
-	private MultiPageEditor editor;
-	private Orchestrator orchestrator;
+public class AiChatPage extends AEvoPage {
 	private boolean isUpdating = false;
 	private Label modeIndicatorLabel;
 	private TaskContext currentContext;
 	private OllamaService ollamaService;
 	private ChatThread currentThread;
 	private Composite content;
-	private FormToolkit toolkit;
 	private long lastStatusUpdate = 0;
 
 	private ChatMgmtGroup chatMgmtGroup;
@@ -88,12 +85,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	private Color lightGreen;
 
 	public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-		this.editor = editor;
-		this.setExpandHorizontal(true);
-		this.setExpandVertical(true);
-		this.orchestrator = orchestrator;
-		this.toolkit = new FormToolkit(parent.getDisplay());
+		super(parent, editor, orchestrator);
 		initResources();
 		createControl();
 		addDisposeListener(new DisposeListener() {
@@ -103,7 +95,6 @@ public class AiChatPage extends SharedScrolledComposite {
 				if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
 				if (colorWaiting != null && !colorWaiting.isDisposed()) colorWaiting.dispose();
 				if (colorLightOrange != null && !colorLightOrange.isDisposed()) colorLightOrange.dispose();
-				if (toolkit != null) toolkit.dispose();
 			}
 		});
 	}
@@ -696,12 +687,14 @@ public class AiChatPage extends SharedScrolledComposite {
 		}
 	}
 
+	@Override
 	public void setOrchestrator(Orchestrator orchestrator) {
-		this.orchestrator = orchestrator; this.ollamaService = null;
-		updateUI();
+		super.setOrchestrator(orchestrator);
+		this.ollamaService = null;
 	}
 
-	public void updateUI() {
+	@Override
+	protected void refreshUI() {
 		if (orchestrator != null && aiSettingsGroup != null && !isUpdating) {
 			isUpdating = true;
 			aiSettingsGroup.updateUI();
@@ -710,6 +703,10 @@ public class AiChatPage extends SharedScrolledComposite {
 			updateModeDisplay();
 			isUpdating = false;
 		}
+	}
+
+	public void updateUI() {
+		scheduleRefresh();
 	}
 
 	public void submitFeedback(int satisfaction, String comments) {

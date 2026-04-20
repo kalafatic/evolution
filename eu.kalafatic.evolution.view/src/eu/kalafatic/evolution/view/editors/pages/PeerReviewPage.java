@@ -14,10 +14,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.peerreview.*;
 
-public class PeerReviewPage extends SharedScrolledComposite {
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
-    private FormToolkit toolkit;
+public class PeerReviewPage extends AEvoPage {
 
     private FileTreeGroup fileTreeGroup;
     private DiffViewerGroup diffViewerGroup;
@@ -32,14 +29,8 @@ public class PeerReviewPage extends SharedScrolledComposite {
     };
 
     public PeerReviewPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-        super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.setExpandHorizontal(true);
-        this.setExpandVertical(true);
-        this.toolkit = new FormToolkit(parent.getDisplay());
+        super(parent, editor, orchestrator);
         createControl();
-        setOrchestrator(orchestrator);
     }
 
     private void createControl() {
@@ -80,32 +71,33 @@ public class PeerReviewPage extends SharedScrolledComposite {
         }
     }
 
+    @Override
     public void setOrchestrator(Orchestrator orchestrator) {
         if (this.orchestrator != null) this.orchestrator.eAdapters().remove(modelAdapter);
-        this.orchestrator = orchestrator;
+        super.setOrchestrator(orchestrator);
         if (this.orchestrator != null) this.orchestrator.eAdapters().add(modelAdapter);
-        refreshUI();
     }
 
     public void notifyLineSelected(String filePath, int lineNum) {
         commentsGroup.setSelectedLine(filePath, lineNum);
     }
 
-    public void refreshUI() {
+    @Override
+    protected void refreshUI() {
         if (isDisposed()) return;
-        Display.getDefault().asyncExec(() -> {
-            if (isDisposed()) return;
-            fileTreeGroup.updateUI();
-            diffViewerGroup.updateUI();
-            commentsGroup.updateUI();
-            this.reflow(true);
-        });
+        fileTreeGroup.updateUI();
+        diffViewerGroup.updateUI();
+        commentsGroup.updateUI();
+        this.reflow(true);
+    }
+
+    public void updateUI() {
+        scheduleRefresh();
     }
 
     @Override
     public void dispose() {
         if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
-        if (toolkit != null) toolkit.dispose();
         super.dispose();
     }
 }
