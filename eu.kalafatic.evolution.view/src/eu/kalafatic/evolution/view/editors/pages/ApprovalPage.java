@@ -35,13 +35,10 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.approval.*;
 
-public class ApprovalPage extends SharedScrolledComposite {
-	private MultiPageEditor editor;
-	private Orchestrator orchestrator;
+public class ApprovalPage extends AEvoPage {
 	private boolean isLoaded = false;
 	private int initRetries = 0;
 	private static final int MAX_INIT_RETRIES = 5;
-	private FormToolkit toolkit;
 	private String lastJson = "";
 
 	private SummaryGroup summaryGroup;
@@ -59,14 +56,8 @@ public class ApprovalPage extends SharedScrolledComposite {
 	};
 
 	public ApprovalPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-		this.editor = editor;
-		this.orchestrator = orchestrator;
-		this.setExpandHorizontal(true);
-		this.setExpandVertical(true);
-		this.toolkit = new FormToolkit(parent.getDisplay());
+		super(parent, editor, orchestrator);
 		createControl();
-		setOrchestrator(orchestrator);
 	}
 
 	private void createControl() {
@@ -84,11 +75,11 @@ public class ApprovalPage extends SharedScrolledComposite {
 		this.setMinSize(comp.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
+	@Override
 	public void setOrchestrator(Orchestrator orchestrator) {
 		if (this.orchestrator != null) this.orchestrator.eAdapters().remove(modelAdapter);
-		this.orchestrator = orchestrator;
+		super.setOrchestrator(orchestrator);
 		if (this.orchestrator != null) this.orchestrator.eAdapters().add(modelAdapter);
-		refreshUI();
 	}
 
 	public void createColumns(TableViewer tableViewer) {
@@ -127,17 +118,19 @@ public class ApprovalPage extends SharedScrolledComposite {
 		orchestrator.getTasks().remove(task); editor.setDirty(true); proposedTasksGroup.getTableViewer().refresh();
 	}
 
-	private void refreshUI() {
+	@Override
+	protected void refreshUI() {
 		if (isDisposed()) return;
-		Display.getDefault().asyncExec(() -> {
-			if (isDisposed()) return;
-			summaryGroup.updateUI();
-			reviewGroup.updateUI();
-			feedbackGroup.updateUI();
-			proposedTasksGroup.updateUI();
-			refreshBrowser();
-			this.reflow(true);
-		});
+		summaryGroup.updateUI();
+		reviewGroup.updateUI();
+		feedbackGroup.updateUI();
+		proposedTasksGroup.updateUI();
+		refreshBrowser();
+		this.reflow(true);
+	}
+
+	public void updateUI() {
+		scheduleRefresh();
 	}
 
 	public void setupBrowserListeners(Browser browser) {
@@ -417,7 +410,6 @@ public class ApprovalPage extends SharedScrolledComposite {
 	@Override
 	public void dispose() {
 		if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
-		if (toolkit != null) toolkit.dispose();
 		super.dispose();
 	}
 }

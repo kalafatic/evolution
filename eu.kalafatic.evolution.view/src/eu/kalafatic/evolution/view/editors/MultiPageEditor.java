@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.view.editors;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
@@ -93,7 +94,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     
     private Color lightGreen, lightRed, lightOrange;
     
-    private boolean refreshScheduled = false;
+    private AtomicBoolean refreshScheduled = new AtomicBoolean(false);
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -107,11 +108,9 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 setDirty(true);
             }
                        
-            if (!refreshScheduled) {
-                refreshScheduled = true;
-
+            if (refreshScheduled.compareAndSet(false, true)) {
                 Display.getDefault().asyncExec(() -> {
-                    refreshScheduled = false;
+                    refreshScheduled.set(false);
 
                     if (!getContainer().isDisposed()) {
                         refreshPages();
@@ -319,16 +318,17 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     public void refreshPages() {
         if (orchestrator == null) return;
-        if (aiChatPage != null) aiChatPage.updateUI();
-        if (propertiesPage != null) propertiesPage.updatePropertiesInfo();
-        if (toolsPage != null) toolsPage.updateUIFromModel();
-        if (taskStackPage != null) taskStackPage.updateUIFromModel();
-        if (testsPage != null) testsPage.updateUIFromModel();
-        if (iterationPage != null) iterationPage.updateUIFromModel();
-        if (peerReviewPage != null) peerReviewPage.refreshUI();
-        if (mcpSettingsPage != null) mcpSettingsPage.updateMcpInfo();
-        if (contextPage != null) contextPage.refreshUI();
-        if (serverPage != null) serverPage.updateUIFromModel();
+        if (aiChatPage != null) aiChatPage.scheduleRefresh();
+        if (propertiesPage != null) propertiesPage.scheduleRefresh();
+        if (toolsPage != null) toolsPage.scheduleRefresh();
+        if (taskStackPage != null) taskStackPage.scheduleRefresh();
+        if (testsPage != null) testsPage.scheduleRefresh();
+        if (iterationPage != null) iterationPage.scheduleRefresh();
+        if (peerReviewPage != null) peerReviewPage.scheduleRefresh();
+        if (mcpSettingsPage != null) mcpSettingsPage.scheduleRefresh();
+        if (contextPage != null) contextPage.refreshUI(); // TODO: refactor ContextPage if needed
+        if (serverPage != null) serverPage.scheduleRefresh();
+        if (approvalPage != null) approvalPage.scheduleRefresh();
         refreshComparePage();
     }
 

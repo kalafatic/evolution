@@ -15,14 +15,11 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.properties.*;
 
-public class PropertiesPage extends SharedScrolledComposite {
+public class PropertiesPage extends AEvoPage {
 
-	private MultiPageEditor editor;
-	private Orchestrator orchestrator;
 	private boolean isUpdating = false;
 	private Canvas statusCanvas;
 	private Label modeIndicatorLabel;
-	private FormToolkit toolkit;
 
 	private OrchestratorGroup orchestratorGroup;
 	private LlmSettingsGroup llmSettingsGroup;
@@ -34,12 +31,7 @@ public class PropertiesPage extends SharedScrolledComposite {
 	private ModelsGroup modelsGroup;
 
 	public PropertiesPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-		super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-		this.editor = editor;
-		this.orchestrator = orchestrator;
-		this.setExpandHorizontal(true);
-		this.setExpandVertical(true);
-		this.toolkit = new FormToolkit(parent.getDisplay());
+		super(parent, editor, orchestrator);
 		createControl();
 	}
 
@@ -137,11 +129,17 @@ public class PropertiesPage extends SharedScrolledComposite {
 		}
 	}
 
-	public void updatePropertiesInfo() {
+	@Override
+	public void refreshUI() {
 		if (orchestrator == null || isUpdating) return;
 		isUpdating = true;
 		orchestratorGroup.updateUI(); llmSettingsGroup.updateUI(); ollamaSettingsGroup.updateUI(); agentsGroup.updateUI(); additionalAiToolsGroup.updateUI(); mcpOpenAiGroup.updateUI(); aiChatModelsGroup.updateUI(); modelsGroup.updateUI();
 		isUpdating = false;
+		updateModeDisplay();
+	}
+
+	public void updatePropertiesInfo() {
+		scheduleRefresh();
 	}
 
 	public void syncModelWithUI() {
@@ -154,8 +152,9 @@ public class PropertiesPage extends SharedScrolledComposite {
 
 	public void updateAiChatUrl(String url) { additionalAiToolsGroup.updateUI(); }
 
+	@Override
 	public void setOrchestrator(Orchestrator orchestrator) {
-		this.orchestrator = orchestrator;
+		super.setOrchestrator(orchestrator);
 		if (orchestratorGroup != null) orchestratorGroup.setOrchestrator(orchestrator);
 		if (llmSettingsGroup != null) llmSettingsGroup.setOrchestrator(orchestrator);
 		if (ollamaSettingsGroup != null) ollamaSettingsGroup.setOrchestrator(orchestrator);
@@ -164,13 +163,5 @@ public class PropertiesPage extends SharedScrolledComposite {
 		if (mcpOpenAiGroup != null) mcpOpenAiGroup.setOrchestrator(orchestrator);
 		if (aiChatModelsGroup != null) aiChatModelsGroup.setOrchestrator(orchestrator);
 		if (modelsGroup != null) modelsGroup.setOrchestrator(orchestrator);
-		updatePropertiesInfo();
-		updateModeDisplay();
-	}
-
-	@Override
-	public void dispose() {
-		if (toolkit != null) toolkit.dispose();
-		super.dispose();
 	}
 }

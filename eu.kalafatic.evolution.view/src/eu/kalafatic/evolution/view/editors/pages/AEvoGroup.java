@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Composite;
@@ -16,7 +18,8 @@ public abstract class AEvoGroup {
     protected Composite group;
     protected MultiPageEditor editor;
     protected Orchestrator orchestrator;
-   
+    protected AtomicBoolean refreshPending = new AtomicBoolean(false);
+
     protected Color lightGreen, lightRed, lightOrange;
 
     public AEvoGroup(MultiPageEditor editor, Orchestrator orchestrator) {
@@ -32,12 +35,16 @@ public abstract class AEvoGroup {
      * Standardized thread-safe UI update.
      */
     public final void updateUI() {
-        if (Display.getCurrent() != null) {
-            if (group != null && !group.isDisposed()) {
-                refreshUI();
-            }
-        } else {
+        scheduleRefresh();
+    }
+
+    /**
+     * Coalesces multiple refresh requests.
+     */
+    public void scheduleRefresh() {
+        if (refreshPending.compareAndSet(false, true)) {
             Display.getDefault().asyncExec(() -> {
+                refreshPending.set(false);
                 if (group != null && !group.isDisposed()) {
                     refreshUI();
                 }

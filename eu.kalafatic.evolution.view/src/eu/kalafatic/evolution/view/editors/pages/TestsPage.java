@@ -37,11 +37,8 @@ import eu.kalafatic.evolution.view.editors.pages.tests.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TestsPage extends Composite {
+public class TestsPage extends AEvoPage {
 
-	private MultiPageEditor editor;
-	private Orchestrator orchestrator;
-	private FormToolkit toolkit;
 	private boolean isUpdating = false;
 	private SharedScrolledComposite testsScrolled;
 	private Composite testsContent;
@@ -77,12 +74,9 @@ public class TestsPage extends Composite {
 	}
 
 	public TestsPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-		super(parent, SWT.NONE);
-		this.editor = editor;
-		this.orchestrator = orchestrator;
+		super(parent, editor, orchestrator);
 		this.setLayout(new GridLayout(1, false));
 		createControl();
-		setOrchestrator(orchestrator);
 	}
 
 	private void createControl() {
@@ -99,14 +93,15 @@ public class TestsPage extends Composite {
 		statusBrowser.setText(getHtmlTemplate());
 	}
 
+	@Override
 	public void setOrchestrator(Orchestrator orchestrator) {
 		if (this.orchestrator != null) this.orchestrator.eAdapters().remove(modelAdapter);
-		this.orchestrator = orchestrator;
+		super.setOrchestrator(orchestrator);
 		if (this.orchestrator != null) this.orchestrator.eAdapters().add(modelAdapter);
-		updateUIFromModel(); refreshBrowser();
 	}
 
-	public void updateUIFromModel() {
+	@Override
+	protected void refreshUI() {
 		if (isUpdating || orchestrator == null || testsContent == null || testsContent.isDisposed()) return;
 		isUpdating = true;
 		for (org.eclipse.swt.widgets.Control child : testsContent.getChildren()) child.dispose();
@@ -145,6 +140,11 @@ public class TestsPage extends Composite {
 		testsScrolled.setMinSize(testsContent.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 		testsScrolled.reflow(true);
 		isUpdating = false;
+		refreshBrowser();
+	}
+
+	public void updateUIFromModel() {
+		scheduleRefresh();
 	}
 
 	public void registerTestRow(Test test, Button executeBtn, TableItem item) {
@@ -323,7 +323,6 @@ public class TestsPage extends Composite {
 	@Override
 	public void dispose() {
 		if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
-		if (toolkit != null) toolkit.dispose();
 		super.dispose();
 	}
 }

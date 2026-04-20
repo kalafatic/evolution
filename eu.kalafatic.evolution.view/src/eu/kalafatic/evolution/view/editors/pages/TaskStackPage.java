@@ -23,11 +23,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TaskStackPage extends SharedScrolledComposite {
+public class TaskStackPage extends AEvoPage {
 
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
-    private FormToolkit toolkit;
     private Composite body;
     private boolean isUpdating = false;
     private boolean runInUi = false;
@@ -54,13 +51,7 @@ public class TaskStackPage extends SharedScrolledComposite {
     };
 
     public TaskStackPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-        super(parent, SWT.V_SCROLL | SWT.H_SCROLL);
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.toolkit = new FormToolkit(parent.getDisplay());
-
-        setExpandHorizontal(true);
-        setExpandVertical(true);
+        super(parent, editor, orchestrator);
 
         body = toolkit.createComposite(this);
         body.setLayout(new GridLayout(1, false));
@@ -120,6 +111,7 @@ public class TaskStackPage extends SharedScrolledComposite {
         }
     }
 
+    @Override
     public String getCountdown(Task task) {
         if (task.getStatus() != TaskStatus.PENDING) return "";
         Long execTime = autoExecuteTimes.get(task);
@@ -136,14 +128,14 @@ public class TaskStackPage extends SharedScrolledComposite {
         if (this.orchestrator != null) {
             this.orchestrator.eAdapters().remove(modelAdapter);
         }
-        this.orchestrator = orchestrator;
+        super.setOrchestrator(orchestrator);
         if (this.orchestrator != null) {
             this.orchestrator.eAdapters().add(modelAdapter);
         }
-        updateUIFromModel();
     }
 
-    public void updateUIFromModel() {
+    @Override
+    protected void refreshUI() {
         if (isUpdating || orchestrator == null || body == null || body.isDisposed()) return;
         isUpdating = true;
         taskStackGroup.refreshUI();
@@ -151,6 +143,10 @@ public class TaskStackPage extends SharedScrolledComposite {
         this.setMinSize(body.computeSize(SWT.DEFAULT, SWT.DEFAULT));
         this.reflow(true);
         isUpdating = false;
+    }
+
+    public void updateUIFromModel() {
+        scheduleRefresh();
     }
 
     public void selectAll(boolean select) {
@@ -351,7 +347,6 @@ public class TaskStackPage extends SharedScrolledComposite {
     @Override
     public void dispose() {
         if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
-        if (toolkit != null) toolkit.dispose();
         super.dispose();
     }
 

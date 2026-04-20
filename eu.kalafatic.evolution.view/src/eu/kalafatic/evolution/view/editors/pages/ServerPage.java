@@ -29,13 +29,10 @@ import org.eclipse.swt.widgets.Display;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class ServerPage extends SharedScrolledComposite {
+public class ServerPage extends AEvoPage {
 
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
     private boolean isUpdating = false;
 
-    private FormToolkit toolkit;
     private Color successColor;
     private Color colorWaiting;
     private Color lightGreen;
@@ -49,12 +46,7 @@ public class ServerPage extends SharedScrolledComposite {
     private MonitoringGroup monitoringGroup;
 
     public ServerPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-        super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.setExpandHorizontal(true);
-        this.setExpandVertical(true);
-        this.toolkit = new FormToolkit(parent.getDisplay());
+        super(parent, editor, orchestrator);
         initResources();
         createControl();
     }
@@ -103,7 +95,8 @@ public class ServerPage extends SharedScrolledComposite {
         updateUIFromModel();
     }
 
-    public void updateUIFromModel() {
+    @Override
+    protected void refreshUI() {
         if (orchestrator == null || isUpdating) return;
         isUpdating = true;
         settingsGroup.updateUI();
@@ -112,6 +105,10 @@ public class ServerPage extends SharedScrolledComposite {
         resourcesGroup.updateUI();
         monitoringGroup.updateUI();
         isUpdating = false;
+    }
+
+    public void updateUIFromModel() {
+        scheduleRefresh();
     }
 
     private void updateModelFromFields() {
@@ -189,14 +186,14 @@ public class ServerPage extends SharedScrolledComposite {
         }).start();
     }
 
+    @Override
     public void setOrchestrator(Orchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+        super.setOrchestrator(orchestrator);
         if (settingsGroup != null) settingsGroup.setOrchestrator(orchestrator);
         if (sessionsGroup != null) sessionsGroup.setOrchestrator(orchestrator);
         if (clientsGroup != null) clientsGroup.setOrchestrator(orchestrator);
         if (resourcesGroup != null) resourcesGroup.setOrchestrator(orchestrator);
         if (monitoringGroup != null) monitoringGroup.setOrchestrator(orchestrator);
-        updateUIFromModel();
     }
 
     private void updateBanner() {
@@ -218,7 +215,6 @@ public class ServerPage extends SharedScrolledComposite {
         if (colorWaiting != null && !colorWaiting.isDisposed()) colorWaiting.dispose();
         if (lightGreen != null && !lightGreen.isDisposed()) lightGreen.dispose();
         if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
-        if (toolkit != null) toolkit.dispose();
         super.dispose();
     }
 }

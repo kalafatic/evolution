@@ -28,6 +28,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IFileEditorInput;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 
@@ -36,11 +38,8 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
-public class IterationPage extends Composite {
+public class IterationPage extends AEvoPage {
 
-    private MultiPageEditor editor;
-    private Orchestrator orchestrator;
-    private FormToolkit toolkit;
     private IterationMemoryService memoryService;
 
     private Map<Integer, List<IterationRecord>> iterationsMap = new TreeMap<>();
@@ -61,10 +60,7 @@ public class IterationPage extends Composite {
     private String[] stepNames = {"PLAN", "CODE", "TEST", "SCORE", "SELECT", "MERGE"};
 
     public IterationPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-        super(parent, SWT.NONE);
-        this.editor = editor;
-        this.orchestrator = orchestrator;
-        this.toolkit = new FormToolkit(Display.getCurrent());
+        super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
 
         initMemoryService();
@@ -328,17 +324,19 @@ public class IterationPage extends Composite {
         flowComposite.layout();
     }
 
+    @Override
     public void setOrchestrator(Orchestrator orchestrator) {
-        this.orchestrator = orchestrator;
+        super.setOrchestrator(orchestrator);
+        refreshData();
+    }
+
+    @Override
+    protected void refreshUI() {
         refreshData();
     }
 
     public void updateUIFromModel() {
-        Display.getDefault().asyncExec(() -> {
-            if (!isDisposed()) {
-                refreshData();
-            }
-        });
+        scheduleRefresh();
     }
 
     @Override
