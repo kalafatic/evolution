@@ -83,6 +83,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
             ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
             state.addMessage("User: " + request);
 
+            // 1b. Fast Greeting Detection (Bypass LLM for simple hi/hello)
+            if (state.getGoal().isEmpty() && request.toLowerCase().matches("^\\s*(hi|hello|hey|greetings|good morning|good afternoon|good evening)\\s*[!.]*\\s*$")) {
+                String greeting = "Hello! I'm Evo, your AI software engineer. How can I help you today?";
+                state.addMessage("Evo: " + greeting);
+                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
+                return greeting;
+            }
+
             // 2. Context Assist Layer + Mode Routing (Internal Guard)
             if (context.getPlatformMode() == null) {
                 ContextAssistResult assistResult = contextAssistant.analyze(request, context);
@@ -122,7 +130,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
                         }
                     }
 
-                    if (clarificationMsg.length() > 0 && !context.isAutoApprove()) {
+                    if (clarificationMsg.length() > 0 && !context.isAutoApprove() && assistResult.getMode() != PlatformType.SIMPLE_CHAT) {
+                        context.log("Evo-Orchestrator: Asking for clarification...\n" + clarificationMsg.toString());
                         String clarification = context.requestInput(clarificationMsg.toString()).get();
                         if (clarification != null && !clarification.isEmpty()) {
                             return execute(request + "\nClarification: " + clarification, context);
