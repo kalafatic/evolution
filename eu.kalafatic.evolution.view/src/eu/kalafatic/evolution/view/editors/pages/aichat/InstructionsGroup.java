@@ -67,7 +67,7 @@ public class InstructionsGroup extends AEvoGroup {
         attachmentArea.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Composite composite = toolkit.createComposite(group);
-        org.eclipse.swt.layout.GridLayout compLayout = new org.eclipse.swt.layout.GridLayout(9, false);
+        org.eclipse.swt.layout.GridLayout compLayout = new org.eclipse.swt.layout.GridLayout(10, false);
         compLayout.marginHeight = 0; compLayout.marginWidth = 0;
         composite.setLayout(compLayout);
         composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -104,7 +104,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        iterativeCheck = toolkit.createButton(composite, "Iterative Development", SWT.CHECK);
+        iterativeCheck = toolkit.createButton(composite, "Iterative", SWT.CHECK);
         iterativeCheck.setToolTipText("Enable iterative development based on your prompt.");
         iterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -114,7 +114,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        selfIterativeCheck = toolkit.createButton(composite, "Self Iterative Development", SWT.CHECK);
+        selfIterativeCheck = toolkit.createButton(composite, "Self Development", SWT.CHECK);
         selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");
         selfIterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -133,7 +133,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        gitAutomationCheck = toolkit.createButton(composite, "Git Automation", SWT.CHECK);
+        gitAutomationCheck = toolkit.createButton(composite, "Auto-Git", SWT.CHECK);
         gitAutomationCheck.setToolTipText("Automatically create branches and commit changes.");
         gitAutomationCheck.addSelectionListener(new SelectionAdapter() {
             @Override
