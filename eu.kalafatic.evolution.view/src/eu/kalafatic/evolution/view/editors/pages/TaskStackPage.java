@@ -77,7 +77,6 @@ public class TaskStackPage extends SharedScrolledComposite {
             public void run() {
                 if (isDisposed()) return;
                 checkScheduledTasks();
-                checkParallelQueue();
                 Display.getDefault().timerExec(10000, this);
             }
         });
