@@ -245,7 +245,15 @@ public class InstructionsGroup extends AEvoGroup {
         }
     }
     public boolean isIterative() { return iterativeCheck.getSelection(); }
+    public void setIterative(boolean iterative) {
+        iterativeCheck.setSelection(iterative);
+        if (iterative) selfIterativeCheck.setSelection(false);
+    }
     public boolean isSelfIterative() { return selfIterativeCheck.getSelection(); }
+    public void setSelfIterative(boolean selfIterative) {
+        selfIterativeCheck.setSelection(selfIterative);
+        if (selfIterative) iterativeCheck.setSelection(false);
+    }
     public boolean isAutoApprove() { return autoApproveCheck.getSelection(); }
     public int getMaxIterations() { return maxIterationsSpinner.getSelection(); }
     public boolean isGitAutomationCheck() { return gitAutomationCheck.getSelection(); }

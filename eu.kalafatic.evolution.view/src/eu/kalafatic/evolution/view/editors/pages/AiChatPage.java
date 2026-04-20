@@ -751,6 +751,41 @@ public class AiChatPage extends SharedScrolledComposite {
 		handleSend();
 	}
 
+	public void runTask(eu.kalafatic.evolution.model.orchestration.Task task) {
+		if (task == null) return;
+
+		// 1. Switch to thread or create one
+		if (task.getId() != null) {
+			boolean exists = orchestrator.getAiChat().getThreads().stream()
+					.anyMatch(t -> t.getId().equals(task.getId()));
+			if (!exists) {
+				ChatThread newThread = OrchestrationFactory.eINSTANCE.createChatThread();
+				newThread.setId(task.getId());
+				orchestrator.getAiChat().getThreads().add(newThread);
+			}
+			switchThread(task.getId());
+			updateThreadCombo();
+		}
+
+		// 2. Set instructions
+		String prompt = task.getDescription();
+		if (prompt == null || prompt.isEmpty()) prompt = task.getName();
+		instructionsGroup.setRequest(prompt);
+
+		// 3. Set mode
+		if ("SELF_DEV_MODE".equals(task.getType())) {
+			instructionsGroup.setSelfIterative(true);
+		} else if ("ASSISTED_CODING".equals(task.getType()) || "DARWIN_MODE".equals(task.getType())) {
+			instructionsGroup.setIterative(true);
+		} else {
+			instructionsGroup.setIterative(false);
+			instructionsGroup.setSelfIterative(false);
+		}
+
+		// 4. Send
+		handleSend();
+	}
+
 	public void provideInput(String input) {
 		instructionsGroup.resetBackground();
 		if (orchestrationThread != null) {
