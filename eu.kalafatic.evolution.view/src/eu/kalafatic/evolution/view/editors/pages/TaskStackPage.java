@@ -156,6 +156,43 @@ public class TaskStackPage extends SharedScrolledComposite {
         setDirty(true);
     }
 
+    public void addDefaultModeTests() {
+        String[] modes = {"SIMPLE_CHAT", "ASSISTED_CODING", "DARWIN_MODE", "SELF_DEV_MODE"};
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
+        String timestamp = sdf.format(new Date());
+        for (String mode : modes) {
+            String name = "Default Test: " + mode;
+            boolean exists = orchestrator.getTasks().stream().anyMatch(t -> name.equals(t.getName()));
+            if (!exists) {
+                Task testPlan = OrchestrationFactory.eINSTANCE.createTask();
+                testPlan.setId("DT-" + mode + "-" + timestamp);
+                testPlan.setName(name);
+                testPlan.setType(mode);
+                testPlan.setStatus(TaskStatus.PENDING);
+                testPlan.setSelected(true);
+
+                String[] subtaskNames = switch(mode) {
+                    case "SIMPLE_CHAT" -> new String[]{"Intent Analysis (Skip Loop)", "Direct Agent Dispatch", "Response Generation"};
+                    case "ASSISTED_CODING" -> new String[]{"Plan Generation", "User Approval Wait", "Atomic Task Execution", "Result Verification"};
+                    case "DARWIN_MODE" -> new String[]{"Variant Generation", "Parallel Execution", "Scoring & Selection", "Merge fittest solution"};
+                    case "SELF_DEV_MODE" -> new String[]{"Supervisor Session Start", "Iterative Darwin Loop", "Self-Modification Check", "Regression Testing"};
+                    default -> new String[0];
+                };
+
+                for (String stName : subtaskNames) {
+                    Task subTask = OrchestrationFactory.eINSTANCE.createTask();
+                    subTask.setName(stName);
+                    subTask.setStatus(TaskStatus.PENDING);
+                    testPlan.getSubTasks().add(subTask);
+                }
+
+                orchestrator.getTasks().add(testPlan);
+            }
+        }
+        setDirty(true);
+        updateUIFromModel();
+    }
+
     public void addNewTaskToSelectedPlan() {
         Task selectedPlan = null;
         for (Task plan : orchestrator.getTasks()) {

@@ -84,6 +84,14 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
+        Button addDefaultsBtn = SWTFactory.createButton(compositeRemote, "Add Default Tests", 150);
+        addDefaultsBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.addDefaultModeTests();
+            }
+        });
+
         Button clearBtn = SWTFactory.createButton(compositeRemote, "Clear Done", 150);
         clearBtn.addSelectionListener(new SelectionAdapter() {
             @Override
