@@ -132,6 +132,7 @@ public class SelfDevSupervisor {
                     return request;
                 }
 
+                context.log("Evo-Supervisor-Waiting: Waiting for user clarification...");
                 String clarification = context.requestInput(question).get();
                 if (clarification == null || clarification.trim().isEmpty()) {
                     context.log("[SUPERVISOR] No clarification provided. Proceeding with original request.");

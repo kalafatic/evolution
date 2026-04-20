@@ -182,6 +182,7 @@ public abstract class BaseAiAgent implements IAgent {
         }
 
         context.log("Evo-" + type + "-" + context.getCurrentTaskName() + ": Processing task");
+        context.log("Evo-" + type + "-Thinking: " + prompt);
 
         // Routing via LlmRouter
         float temperature = 0.7f;
@@ -191,6 +192,7 @@ public abstract class BaseAiAgent implements IAgent {
 
         String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
         String response = llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        context.log("Evo-" + type + "-Response: " + response);
 
         return cleanResponse(response);
     }

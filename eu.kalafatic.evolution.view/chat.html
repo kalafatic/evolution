@@ -95,6 +95,14 @@
             --error-bg: #fee2e2; /* Light Red */
             --error-border: #dc2626;
             --error-text: #991b1b;
+
+            --thinking-bg: #f8fafc;
+            --thinking-border: #94a3b8;
+            --thinking-text: #475569;
+
+            --response-bg: #f1f5f9;
+            --response-border: #64748b;
+            --response-text: #1e293b;
         }
 
         body { 
@@ -197,6 +205,19 @@
             color: var(--error-text);
             border-bottom-left-radius: 4px;
             border-width: 2px;
+        }
+        .message.thinking .bubble {
+            background: var(--thinking-bg);
+            border-color: var(--thinking-border);
+            color: var(--thinking-text);
+            border-bottom-left-radius: 4px;
+            border-style: dashed;
+        }
+        .message.response .bubble {
+            background: var(--response-bg);
+            border-color: var(--response-border);
+            color: var(--response-text);
+            border-bottom-left-radius: 4px;
         }
 
         .message.ai .bubble { 
@@ -453,7 +474,8 @@
             analytic: '🔍', general: '🧠', terminal: '📟', file: '📂',
             maven: '📦', git: '🌿', structure: '🌳', websearch: '🌐',
             quality: '✨', observability: '📊', orchestrator: '🎼',
-            'final-response': '✅', 'result-summary': 'ℹ️', waiting: '❓', error: '❌'
+            'final-response': '✅', 'result-summary': 'ℹ️', waiting: '❓', error: '❌',
+            thinking: '💭', response: '💬'
         };
 
         function formatText(text) {

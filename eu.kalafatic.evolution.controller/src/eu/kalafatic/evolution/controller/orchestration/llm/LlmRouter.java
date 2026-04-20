@@ -29,16 +29,21 @@ public class LlmRouter {
      */
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         AiMode mode = orchestrator.getAiMode();
+        if (context != null) context.log("LlmRouter: Routing request in " + mode + " mode.");
+
         if (mode == AiMode.REMOTE) {
             return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
         } else if (mode == AiMode.HYBRID) {
             // HYBRID: 3-step process
+            if (context != null) context.log("LlmRouter-Hybrid: Step 1 - Optimizing prompt locally...");
             // 1. Optimize prompt using local model
             String optimizedPrompt = optimizePromptLocally(orchestrator, prompt, temperature, proxyUrl, context);
 
+            if (context != null) context.log("LlmRouter-Hybrid: Step 2 - Executing remote request...");
             // 2. Execute using remote model
             String remoteResponse = sendRemoteRequest(orchestrator, optimizedPrompt, temperature, proxyUrl, context);
 
+            if (context != null) context.log("LlmRouter-Hybrid: Step 3 - Simplifying response locally...");
             // 3. Simplify response using local model
             return simplifyResponseLocally(orchestrator, remoteResponse, temperature, proxyUrl, context);
         } else {
@@ -50,12 +55,15 @@ public class LlmRouter {
                 }
                 orchestrator.getOllama().setModel(model);
             }
+            if (context != null) context.log("LlmRouter-Local: Using Ollama model: " + (model != null ? model : "default"));
             return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
         }
     }
 
     private String sendRemoteRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String remoteModel = orchestrator.getRemoteModel();
+
+        if (context != null) context.log("LlmRouter-Remote: Using model " + (remoteModel != null ? remoteModel : "default (deepseek)"));
 
         // Default to deepseek if none selected
         if (remoteModel == null || remoteModel.isEmpty()) {

@@ -157,6 +157,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     public void provideApproval(String taskId, boolean approved) {
         TaskContext context = contexts.get(taskId);
         if (context != null) {
+            context.log("User Interaction: Approval provided - " + approved);
             context.provideApproval(approved);
             TaskResult result = tasks.get(taskId);
             if (result != null && result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
@@ -169,6 +170,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     public void provideInput(String taskId, String input) {
         TaskContext context = contexts.get(taskId);
         if (context != null) {
+            context.log("User Interaction: Input provided - " + input);
             context.provideInput(input);
             TaskResult result = tasks.get(taskId);
             if (result != null && result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
