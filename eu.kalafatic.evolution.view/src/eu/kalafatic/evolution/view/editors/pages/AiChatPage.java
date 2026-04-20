@@ -81,6 +81,7 @@ public class AiChatPage extends SharedScrolledComposite {
 	private SatisfactionGroup satisfactionGroup;
 	private ApprovalGroup approvalGroup;
 	private InputGroup inputGroup;
+	private eu.kalafatic.evolution.model.orchestration.Task currentStackTask;
 
 	private Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote, colorWaiting, colorLightOrange;
 	private Font chatFont, bannerFont;
@@ -396,6 +397,13 @@ public class AiChatPage extends SharedScrolledComposite {
 
 				// Final log drain
 				if (result != null) {
+					final TaskResult finalRes = result;
+					Display.getDefault().asyncExec(() -> {
+						if (currentStackTask != null) {
+							currentStackTask.setStatus(finalRes.getStatus() == TaskResult.Status.SUCCESS ? eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE : eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+							currentStackTask.setResultSummary(finalRes.getResponse());
+						}
+					});
 					int toIndex = result.getLogs().size();
 					if (lastProcessedIndex < toIndex) {
 						final List<String> newLogs = new java.util.ArrayList<>(result.getLogs().subList(lastProcessedIndex, toIndex));
@@ -411,6 +419,10 @@ public class AiChatPage extends SharedScrolledComposite {
 				final TaskResult finalResult = result;
 				Display.getDefault().asyncExec(() -> {
 					instructionsGroup.resetBackground();
+					if (currentStackTask != null) {
+						currentStackTask.setStatus(finalResult.getStatus() == TaskResult.Status.SUCCESS ? eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE : eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+						currentStackTask.setResultSummary(finalResult.getResponse());
+					}
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 
@@ -603,6 +615,10 @@ public class AiChatPage extends SharedScrolledComposite {
 
 				Display.getDefault().asyncExec(() -> {
 					instructionsGroup.resetBackground();
+					if (currentStackTask != null) {
+						currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
+						currentStackTask.setResultSummary("Self-Development session finished.");
+					}
 					if (!chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 
@@ -753,6 +769,7 @@ public class AiChatPage extends SharedScrolledComposite {
 
 	public void runTask(eu.kalafatic.evolution.model.orchestration.Task task) {
 		if (task == null) return;
+		this.currentStackTask = task;
 
 		// 1. Switch to thread or create one
 		if (task.getId() != null) {
