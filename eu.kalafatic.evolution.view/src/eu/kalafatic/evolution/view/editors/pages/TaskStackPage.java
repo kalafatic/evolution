@@ -159,6 +159,10 @@ public class TaskStackPage extends AEvoPage {
     public void selectAll(boolean select) {
         for (Task task : orchestrator.getTasks()) {
             task.setSelected(select);
+            
+            for (Task subTask : task.getSubTasks()) {
+            	subTask.setSelected(select);
+            }
         }
         updateUIFromModel();
         setDirty(true);
