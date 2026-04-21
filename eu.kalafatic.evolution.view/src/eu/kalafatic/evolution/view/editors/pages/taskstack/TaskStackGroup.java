@@ -125,7 +125,7 @@ public class TaskStackGroup extends AEvoGroup {
         // Run Column
         TreeViewerColumn runCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
         runCol.getColumn().setText("Run");
-        runCol.getColumn().setWidth(40);
+        runCol.getColumn().setWidth(80);
         runCol.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {

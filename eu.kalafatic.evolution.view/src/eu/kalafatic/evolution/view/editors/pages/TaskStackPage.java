@@ -111,7 +111,7 @@ public class TaskStackPage extends AEvoPage {
         }
     }
 
-    @Override
+    
     public String getCountdown(Task task) {
         if (task.getStatus() != TaskStatus.PENDING) return "";
         Long execTime = autoExecuteTimes.get(task);
