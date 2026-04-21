@@ -61,10 +61,11 @@ public class TaskStackPage extends AEvoPage {
         taskStackGroup = new TaskStackGroup(toolkit, body, editor, orchestrator, this);
 
         setOrchestrator(orchestrator);
-        startTimer();
+        // startTimer();
     }
 
     private void startTimer() {
+        /*
         Display.getDefault().timerExec(1000, new Runnable() {
             @Override
             public void run() {
@@ -74,9 +75,11 @@ public class TaskStackPage extends AEvoPage {
                 Display.getDefault().timerExec(1000, this);
             }
         });
+        */
     }
 
     private void checkAutoExecution() {
+        /*
         long now = System.currentTimeMillis();
 
         // Count currently running tasks
@@ -109,10 +112,13 @@ public class TaskStackPage extends AEvoPage {
                 autoExecuteTimes.remove(task);
             }
         }
+        */
     }
 
     
     public String getCountdown(Task task) {
+        return "";
+        /*
         if (task.getStatus() != TaskStatus.PENDING) return "";
         Long execTime = autoExecuteTimes.get(task);
         if (execTime == null) return "";
@@ -121,6 +127,7 @@ public class TaskStackPage extends AEvoPage {
         long seconds = (remaining / 1000) % 60;
         long minutes = (remaining / 1000) / 60;
         return String.format("%02d:%02d", minutes, seconds);
+        */
     }
 
 
