@@ -19,6 +19,16 @@ import org.eclipse.emf.common.util.Enumerator;
  */
 public enum TaskStatus implements Enumerator {
 	/**
+	 * The '<em><b>READY</b></em>' literal object.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #READY_VALUE
+	 * @generated
+	 * @ordered
+	 */
+	READY(0, "READY", "READY"),
+
+	/**
 	 * The '<em><b>PENDING</b></em>' literal object.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -26,7 +36,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	PENDING(0, "PENDING", "PENDING"),
+	PENDING(1, "PENDING", "PENDING"),
 
 	/**
 	 * The '<em><b>RUNNING</b></em>' literal object.
@@ -36,7 +46,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	RUNNING(1, "RUNNING", "RUNNING"),
+	RUNNING(2, "RUNNING", "RUNNING"),
 
 	/**
 	 * The '<em><b>DONE</b></em>' literal object.
@@ -46,7 +56,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	DONE(2, "DONE", "DONE"),
+	DONE(3, "DONE", "DONE"),
 
 	/**
 	 * The '<em><b>FAILED</b></em>' literal object.
@@ -56,7 +66,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	FAILED(3, "FAILED", "FAILED"),
+	FAILED(4, "FAILED", "FAILED"),
 
 	/**
 	 * The '<em><b>WAITING FOR APPROVAL</b></em>' literal object.
@@ -66,7 +76,18 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	WAITING_FOR_APPROVAL(4, "WAITING_FOR_APPROVAL", "WAITING_FOR_APPROVAL");
+	WAITING_FOR_APPROVAL(5, "WAITING_FOR_APPROVAL", "WAITING_FOR_APPROVAL");
+
+	/**
+	 * The '<em><b>READY</b></em>' literal value.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #READY
+	 * @model
+	 * @generated
+	 * @ordered
+	 */
+	public static final int READY_VALUE = 0;
 
 	/**
 	 * The '<em><b>PENDING</b></em>' literal value.
@@ -77,7 +98,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int PENDING_VALUE = 0;
+	public static final int PENDING_VALUE = 1;
 
 	/**
 	 * The '<em><b>RUNNING</b></em>' literal value.
@@ -88,7 +109,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int RUNNING_VALUE = 1;
+	public static final int RUNNING_VALUE = 2;
 
 	/**
 	 * The '<em><b>DONE</b></em>' literal value.
@@ -99,7 +120,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int DONE_VALUE = 2;
+	public static final int DONE_VALUE = 3;
 
 	/**
 	 * The '<em><b>FAILED</b></em>' literal value.
@@ -110,7 +131,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int FAILED_VALUE = 3;
+	public static final int FAILED_VALUE = 4;
 
 	/**
 	 * The '<em><b>WAITING FOR APPROVAL</b></em>' literal value.
@@ -121,7 +142,7 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int WAITING_FOR_APPROVAL_VALUE = 4;
+	public static final int WAITING_FOR_APPROVAL_VALUE = 5;
 
 	/**
 	 * An array of all the '<em><b>Task Status</b></em>' enumerators.
@@ -131,6 +152,7 @@ public enum TaskStatus implements Enumerator {
 	 */
 	private static final TaskStatus[] VALUES_ARRAY =
 		new TaskStatus[] {
+			READY,
 			PENDING,
 			RUNNING,
 			DONE,
@@ -192,6 +214,7 @@ public enum TaskStatus implements Enumerator {
 	 */
 	public static TaskStatus get(int value) {
 		switch (value) {
+			case READY_VALUE: return READY;
 			case PENDING_VALUE: return PENDING;
 			case RUNNING_VALUE: return RUNNING;
 			case DONE_VALUE: return DONE;
