@@ -170,7 +170,7 @@ public class TaskStackPage extends AEvoPage {
         String timestamp = sdf.format(new Date());
         newPlan.setId("P-" + timestamp);
         newPlan.setName("New Plan Thread");
-        newPlan.setStatus(TaskStatus.PENDING);
+        newPlan.setStatus(TaskStatus.READY);
         newPlan.setSelected(true);
         orchestrator.getTasks().add(newPlan);
         setDirty(true);
@@ -188,8 +188,8 @@ public class TaskStackPage extends AEvoPage {
                 testPlan.setId("DT-" + mode + "-" + timestamp);
                 testPlan.setName(name);
                 testPlan.setType(mode);
-                testPlan.setStatus(TaskStatus.PENDING);
-                testPlan.setSelected(false);
+                testPlan.setStatus(TaskStatus.READY);
+                testPlan.setSelected(true);
 
                 String description = switch(mode) {
                     case "SIMPLE_CHAT" -> "Explain the purpose of this project.";
@@ -213,7 +213,7 @@ public class TaskStackPage extends AEvoPage {
                 for (String stName : subtaskNames) {
                     Task subTask = OrchestrationFactory.eINSTANCE.createTask();
                     subTask.setName(stName);
-                    subTask.setStatus(TaskStatus.PENDING);
+                    subTask.setStatus(TaskStatus.READY);
                     testPlan.getSubTasks().add(subTask);
                 }
 
@@ -239,7 +239,7 @@ public class TaskStackPage extends AEvoPage {
         if (selectedPlan != null) {
             Task newTask = OrchestrationFactory.eINSTANCE.createTask();
             newTask.setName("New Sub-Task");
-            newTask.setStatus(TaskStatus.PENDING);
+            newTask.setStatus(TaskStatus.READY);
             selectedPlan.getSubTasks().add(newTask);
             setDirty(true);
         }
@@ -254,10 +254,8 @@ public class TaskStackPage extends AEvoPage {
     }
 
     public void executeSelected() {
-        List<Task> selectedPlans = orchestrator.getTasks().stream()
-                .filter(Task::isSelected)
-                .filter(t -> t.getStatus() == TaskStatus.PENDING)
-                .collect(Collectors.toList());
+        List<Task> selectedPlans = new ArrayList<>();
+        collectSelectedTasks(orchestrator.getTasks(), selectedPlans);
 
         if (selectedPlans.isEmpty()) return;
 
@@ -270,6 +268,15 @@ public class TaskStackPage extends AEvoPage {
             }
         } else {
             runPlansSequentially(selectedPlans, 0);
+        }
+    }
+
+    private void collectSelectedTasks(List<Task> tasks, List<Task> collected) {
+        for (Task task : tasks) {
+            if (task.isSelected() && (task.getStatus() == TaskStatus.READY || task.getStatus() == TaskStatus.PENDING)) {
+                collected.add(task);
+            }
+            collectSelectedTasks(task.getSubTasks(), collected);
         }
     }
 

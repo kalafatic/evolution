@@ -246,6 +246,8 @@ public class TaskStackGroup extends AEvoGroup {
     private org.eclipse.swt.graphics.Color getStatusColor(TaskStatus status) {
         int color = SWT.COLOR_BLACK;
         switch (status) {
+            case READY: color = SWT.COLOR_DARK_GRAY; break;
+            case PENDING: color = SWT.COLOR_BLACK; break;
             case RUNNING: color = SWT.COLOR_BLUE; break;
             case DONE: color = SWT.COLOR_DARK_GREEN; break;
             case FAILED: color = SWT.COLOR_RED; break;

@@ -3,11 +3,12 @@
     xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="orchestration" nsURI="http://eu.kalafatic.evolution/orchestration"
     nsPrefix="orchestration">
   <eClassifiers xsi:type="ecore:EEnum" name="TaskStatus">
-    <eLiterals name="PENDING"/>
-    <eLiterals name="RUNNING" value="1"/>
-    <eLiterals name="DONE" value="2"/>
-    <eLiterals name="FAILED" value="3"/>
-    <eLiterals name="WAITING_FOR_APPROVAL" value="4"/>
+    <eLiterals name="READY"/>
+    <eLiterals name="PENDING" value="1"/>
+    <eLiterals name="RUNNING" value="2"/>
+    <eLiterals name="DONE" value="3"/>
+    <eLiterals name="FAILED" value="4"/>
+    <eLiterals name="WAITING_FOR_APPROVAL" value="5"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Task">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
