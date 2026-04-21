@@ -8,7 +8,9 @@ import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.DialogCellEditor;
 import org.eclipse.jface.viewers.EditingSupport;
+import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -97,6 +99,19 @@ public class TaskStackGroup extends AEvoGroup {
 
         treeViewer.setInput(orchestrator);
         treeViewer.expandAll();
+        
+        // Add listener for checkbox changes
+        treeViewer.addCheckStateListener(new ICheckStateListener() {
+            @Override
+            public void checkStateChanged(CheckStateChangedEvent event) {
+                Object element = event.getElement();
+                boolean checked = event.getChecked();
+                
+                Task task = (Task) element;
+                task.setSelected(checked);
+               
+            }
+        });
 
         tree.addMouseListener(new org.eclipse.swt.events.MouseAdapter() {
             @Override
@@ -111,9 +126,7 @@ public class TaskStackGroup extends AEvoGroup {
                             break;
                         }
                     }
-                    if (column == 0) { // Run
-                        page.runSingleTask(task);
-                    } else if (column == 6) { // Result (was 7, shifted due to Timer column removal)
+                    if (column == 6) { // Result (was 7, shifted due to Timer column removal)
                         editor.openTaskResult(task);
                     }
                 }
