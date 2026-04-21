@@ -189,7 +189,7 @@ public class TaskStackPage extends AEvoPage {
                 testPlan.setName(name);
                 testPlan.setType(mode);
                 testPlan.setStatus(TaskStatus.PENDING);
-                testPlan.setSelected(true);
+                testPlan.setSelected(false);
 
                 String description = switch(mode) {
                     case "SIMPLE_CHAT" -> "Explain the purpose of this project.";
