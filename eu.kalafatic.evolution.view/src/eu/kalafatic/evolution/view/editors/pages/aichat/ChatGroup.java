@@ -34,6 +34,10 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
+/**
+ * @evo.lastModified: 13:A
+ * @evo.origin: user
+ */
 public class ChatGroup extends AEvoGroup {
     private Browser browser;
     private AiChatPage page;
@@ -57,8 +61,9 @@ public class ChatGroup extends AEvoGroup {
         refreshBrowser();
     }
 
+    // @evo:13:A reason=fill-chat-group
     private void createControl(FormToolkit toolkit, Composite parent, Font chatFont) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat", 1, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat", 1, true, true);
 
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();

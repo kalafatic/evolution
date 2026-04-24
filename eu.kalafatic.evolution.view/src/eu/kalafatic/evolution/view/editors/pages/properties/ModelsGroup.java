@@ -37,6 +37,10 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
+/**
+ * @evo.lastModified: 13:A
+ * @evo.origin: user
+ */
 public class ModelsGroup extends AEvoGroup {
 
     private TableViewer viewer;
@@ -74,10 +78,9 @@ public class ModelsGroup extends AEvoGroup {
         createControl(toolkit, parent);
     }
 
+    // @evo:13:A reason=fill-models-group
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Models", 1, true);
-        group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        ((GridData)group.getLayoutData()).heightHint = 250;
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Models", 1, true, true);
 
         viewer = new TableViewer(group, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
         Table table = viewer.getTable();
