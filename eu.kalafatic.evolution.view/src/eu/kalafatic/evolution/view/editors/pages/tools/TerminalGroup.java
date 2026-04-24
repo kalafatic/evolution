@@ -17,6 +17,10 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 import java.io.File;
 
+/**
+ * @evo.lastModified: 13:A
+ * @evo.origin: user
+ */
 public class TerminalGroup extends AToolGroup {
 
     private Text outputText;
@@ -27,10 +31,9 @@ public class TerminalGroup extends AToolGroup {
         createControl(toolkit, parent);
     }
 
+    // @evo:13:A reason=fill-terminal-group
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Terminal", 1, true);
-        group.setLayoutData(new GridData(GridData.FILL_BOTH));
-        ((GridData)group.getLayoutData()).heightHint = 300;
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Terminal", 1, true, true);
 
         outputText = new Text(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
         outputText.setLayoutData(new GridData(GridData.FILL_BOTH));
