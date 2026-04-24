@@ -21,6 +21,29 @@
       </command>
    </extension>
    <extension
+         id="eu.kalafatic.evolution.controller.headless"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="eu.kalafatic.evolution.controller.application.HeadlessApplication"
+            name="Evolution Headless">
+         <property
+               name="appName"
+               value="Evolution Headless">
+         </property>
+      </product>
+   </extension>
+   <extension
+         id="eu.kalafatic.evolution.controller.application.HeadlessApplication"
+         name="Evolution Headless"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            visible="false">
+         <run
+               class="eu.kalafatic.evolution.controller.application.HeadlessApplication">
+         </run>
+      </application>
+   </extension>
+   <extension
          point="org.eclipse.ui.handlers">
       <handler
             commandId="eu.kalafatic.evolution.controller.saveCommand"

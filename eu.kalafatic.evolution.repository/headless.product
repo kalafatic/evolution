@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pde version="3.5"?>
+
+<product name="Evolution Headless" uid="headless" id="eu.kalafatic.evolution.controller.headless" application="eu.kalafatic.evolution.controller.application.HeadlessApplication" version="2.6.1.qualifier" type="bundles" includeLaunchers="true" autoIncludeRequirements="true">
+
+   <configIni use="default">
+   </configIni>
+
+   <launcherArgs>
+      <programArgs>-nosplash
+      </programArgs>
+   </launcherArgs>
+
+   <launcher>
+      <win useIco="false">
+         <bmp/>
+      </win>
+   </launcher>
+
+   <vm>
+   </vm>
+
+   <plugins>
+      <plugin id="eu.kalafatic.evolution.controller"/>
+      <plugin id="eu.kalafatic.evolution.model"/>
+      <plugin id="eu.kalafatic.utils"/>
+      <plugin id="org.eclipse.osgi"/>
+      <plugin id="org.eclipse.equinox.common"/>
+      <plugin id="org.eclipse.equinox.app"/>
+      <plugin id="org.eclipse.core.runtime"/>
+      <plugin id="org.eclipse.core.jobs"/>
+      <plugin id="org.eclipse.core.contenttype"/>
+      <plugin id="org.eclipse.equinox.preferences"/>
+      <plugin id="org.eclipse.equinox.registry"/>
+   </plugins>
+
+   <configurations>
+      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="0" />
+      <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1" />
+   </configurations>
+
+</product>
