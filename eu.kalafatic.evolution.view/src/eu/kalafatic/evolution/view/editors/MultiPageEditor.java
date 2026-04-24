@@ -91,6 +91,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private Resource resource;
     private EditorResourceChangeListener resourceListener;
     private EditorSelectionListener selectionListener;
+    private org.eclipse.jface.text.ITextSelection lastTextSelection;
     
     private Color lightGreen, lightRed, lightOrange;
     
@@ -314,6 +315,14 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     public TaskContext getCurrentContext() {
         return currentContext;
+    }
+
+    public org.eclipse.jface.text.ITextSelection getLastTextSelection() {
+        return lastTextSelection;
+    }
+
+    public void setLastTextSelection(org.eclipse.jface.text.ITextSelection lastTextSelection) {
+        this.lastTextSelection = lastTextSelection;
     }
 
     public void refreshPages() {

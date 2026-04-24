@@ -185,12 +185,23 @@ public class InstructionsGroup extends AEvoGroup {
         requestText.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
+                // Ctrl+Enter or just Enter
                 if (e.keyCode == SWT.CR || e.keyCode == SWT.KEYPAD_CR) {
-                    if ((e.stateMask & SWT.MODIFIER_MASK) == 0) {
+                    if ((e.stateMask & SWT.MODIFIER_MASK) == 0 || (e.stateMask & SWT.CTRL) != 0) {
                         e.doit = false;
                         updateModel();
                         page.handleSend();
                     }
+                }
+                // Ctrl+N: New Thread
+                if (e.keyCode == 'n' && (e.stateMask & SWT.CTRL) != 0) {
+                    e.doit = false;
+                    page.createNewThread();
+                }
+                // Ctrl+L: Clean Chat
+                if (e.keyCode == 'l' && (e.stateMask & SWT.CTRL) != 0) {
+                    e.doit = false;
+                    page.cleanChat();
                 }
             }
         });
