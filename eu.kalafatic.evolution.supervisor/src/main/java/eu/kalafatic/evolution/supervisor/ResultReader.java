@@ -21,6 +21,13 @@ public class ResultReader {
         return mapper.readValue(file, State.class);
     }
 
+    public EvoPlan readPlan(File file) throws IOException {
+        if (!file.exists()) {
+            throw new IOException("Plan file missing: " + file.getAbsolutePath());
+        }
+        return mapper.readValue(file, EvoPlan.class);
+    }
+
     public void writeState(File file, State state) throws IOException {
         mapper.writerWithDefaultPrettyPrinter().writeValue(file, state);
     }

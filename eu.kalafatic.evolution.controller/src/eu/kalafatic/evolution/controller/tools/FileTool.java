@@ -8,6 +8,9 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
  * Tool for file operations within the orchestration system.
+ *
+ * @evo.lastModified: 12:A
+ * @evo.origin: self
  */
 public class FileTool implements ITool {
     @Override
@@ -16,6 +19,7 @@ public class FileTool implements ITool {
     }
 
     @Override
+    // @evo:12:A reason=traceability-support
     public String execute(String command, File workingDir, TaskContext context) throws Exception {
         // command format expected: "WRITE path/to/file\n[CONTENT]"
         if (command.startsWith("WRITE")) {

@@ -9,6 +9,7 @@ public class Supervisor {
     private final File baseDir;
     private final ResultReader reader = new ResultReader();
     private final ProcessRunner runner = new ProcessRunner();
+    private final EvoValidator validator = new EvoValidator();
     private final IterationManager iterationManager;
 
     public Supervisor(File baseDir) {
@@ -36,6 +37,25 @@ public class Supervisor {
                 if (variants != null) {
                     for (File variant : variants) {
                         System.out.println("\n[VARIANT] Processing " + variant.getName());
+
+                        // Load and validate plan
+                        try {
+                            File planFile = new File(variant, "plan.json");
+                            if (!planFile.exists()) {
+                                // Try iteration directory
+                                planFile = new File(iterDir, "plan.json");
+                            }
+                            if (planFile.exists()) {
+                                EvoPlan plan = reader.readPlan(planFile);
+                                validator.validate(variant, plan);
+                            } else {
+                                System.out.println("[WARNING] No plan.json found for variant " + variant.getName() + ". Skipping validation.");
+                            }
+                        } catch (IOException e) {
+                            System.err.println("[ERROR] Failed to read or validate plan for " + variant.getName() + ": " + e.getMessage());
+                            System.exit(1);
+                        }
+
                         if (runner.runBuild(variant)) {
                             // Assume the JAR is produced in target/app.jar (adjust if needed)
                             // In this case, we'll look for a JAR in the variant directory or target

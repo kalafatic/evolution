@@ -30,6 +30,9 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
 
 /**
  * Core Orchestrator implementation that manages the task lifecycle and execution.
+ *
+ * @evo.lastModified: 12:A
+ * @evo.origin: self
  */
 public class EvolutionOrchestrator implements IOrchestrator {
 
@@ -61,6 +64,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     }
 
     @Override
+    // @evo:12:A reason=traceability-support
     public String executeTask(Task task, TaskContext context) throws Exception {
         context.setCurrentTaskName(task.getName());
         context.log("Evo-Orchestrator-" + task.getName() + ": Executing single task");
@@ -74,6 +78,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     }
 
     @Override
+    // @evo:12:A reason=traceability-support
     public String execute(String request, TaskContext context) throws Exception {
         try {
             context.setCurrentTaskName("Initialization");
