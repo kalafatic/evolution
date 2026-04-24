@@ -1,0 +1,9 @@
+{
+  "iteration": 12,
+  "variant": "A",
+  "files": [
+    "EvolutionOrchestrator.java",
+    "FileTool.java",
+    "EnumUtils.java"
+  ]
+}
