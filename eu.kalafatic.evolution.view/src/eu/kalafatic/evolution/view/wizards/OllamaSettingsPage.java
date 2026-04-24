@@ -132,6 +132,8 @@ public class OllamaSettingsPage extends AWizardPage {
 		modelDecorator = new ControlDecoration(modelText, SWT.TOP | SWT.LEFT);
 		modelDecorator.setImage(FieldDecorationRegistry.getDefault()
 				.getFieldDecoration(FieldDecorationRegistry.DEC_WARNING).getImage());
+		modelDecorator.setDescriptionText("Model name is required. Choose from 'Select Model' or use 'Setup Ollama...' link.");
+		modelDecorator.setShowOnlyOnFocus(false);
 		modelDecorator.hide();
 
 		proposalProvider = new SimpleContentProposalProvider(new String[0]);
@@ -247,6 +249,12 @@ public class OllamaSettingsPage extends AWizardPage {
 			setErrorMessage(null);
 			return;
 		}
+
+		if (modelText.getText().isEmpty()) {
+			modelDecorator.setDescriptionText("Model name is required. Choose from 'Select Model' or use 'Setup Ollama...' link.");
+			modelDecorator.show();
+		}
+
 		String path = pathText.getText();
 		File file = new File(path);
 		if (!file.exists()) {
@@ -493,11 +501,7 @@ public class OllamaSettingsPage extends AWizardPage {
 	}
 
 	public String getModelName() {
-		String model = modelText.getText();
-		if (model == null || model.isEmpty()) {
-			return "llama3.2:3b";
-		}
-		return model;
+		return modelText.getText();
 	}
 
 	public String getExecutablePath() {

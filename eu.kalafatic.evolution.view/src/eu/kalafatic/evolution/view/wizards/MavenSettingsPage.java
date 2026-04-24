@@ -43,7 +43,6 @@ public class MavenSettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Goals (comma separated):");
         goalsText = new Text(container, SWT.BORDER);
         goalsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        goalsText.setText("clean, install");
 
         new Label(container, SWT.NONE).setText("Profiles (comma separated):");
         profilesText = new Text(container, SWT.BORDER);

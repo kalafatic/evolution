@@ -3,6 +3,8 @@ package eu.kalafatic.evolution.view.wizards;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.jface.fieldassist.ControlDecoration;
+import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
@@ -34,6 +36,7 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 public class LLMSettingsPage extends AWizardPage {
     private Text modelText, tempText;
     private Button skipCheck;
+    private ControlDecoration modelDecorator;
     
     private Orchestrator orchestrator;
     private StyledText requestText;
@@ -110,12 +113,6 @@ public class LLMSettingsPage extends AWizardPage {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
             String remoteModel = orchestrator.getRemoteModel();
 
-            // Set default to deepseek if not configured
-            if (remoteModel == null || remoteModel.isEmpty()) {
-                remoteModel = "deepseek";
-                orchestrator.setRemoteModel(remoteModel);
-            }
-
             if (remoteModel != null) {
                 int index = aiRemoteCombo.indexOf(remoteModel);
                 if (index >= 0) aiRemoteCombo.select(index);
@@ -153,12 +150,18 @@ public class LLMSettingsPage extends AWizardPage {
         new Label(groupLinks, SWT.NONE).setText("LLM Model:");
         modelText = new Text(groupLinks, SWT.BORDER);
         modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        //modelText.setText(ollam);
+
+        modelDecorator = new ControlDecoration(modelText, SWT.TOP | SWT.LEFT);
+        modelDecorator.setImage(FieldDecorationRegistry.getDefault()
+                .getFieldDecoration(FieldDecorationRegistry.DEC_WARNING).getImage());
+        modelDecorator.setDescriptionText("Model name is required. Use 'Setup LLM...' link to configure.");
+        modelDecorator.setShowOnlyOnFocus(false);
+
+        modelText.addModifyListener(e -> validateModel());
 
         new Label(groupLinks, SWT.NONE).setText("Temperature:");
         tempText = new Text(groupLinks, SWT.BORDER);
         tempText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        tempText.setText("1.0");
 
         Link pullModelLink = new Link(groupLinks, SWT.NONE);
         pullModelLink.setText("<a>Setup/Pull Ollama Model...</a>");
@@ -215,13 +218,15 @@ public class LLMSettingsPage extends AWizardPage {
         }
     }
 
-    public String getLlmModel() {
-        String model = modelText.getText();
-        if (model == null || model.isEmpty()) {
-            return "gpt-4o";
+    private void validateModel() {
+        if (modelText.getText().isEmpty()) {
+            modelDecorator.show();
+        } else {
+            modelDecorator.hide();
         }
-        return model;
     }
+
+    public String getLlmModel() { return modelText.getText(); }
     public String getTemperature() { return tempText.getText(); }
     public boolean isSkipped() { return skipCheck.getSelection(); }
 }
