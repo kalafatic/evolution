@@ -493,7 +493,11 @@ public class OllamaSettingsPage extends AWizardPage {
 	}
 
 	public String getModelName() {
-		return modelText.getText();
+		String model = modelText.getText();
+		if (model == null || model.isEmpty()) {
+			return "llama3.2:3b";
+		}
+		return model;
 	}
 
 	public String getExecutablePath() {

@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.wizards;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -149,6 +150,29 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             createFolder(project, "git", monitor);
             createFolder(project, "mvn", monitor);
 
+            // Initialize local Git repository if no remote is provided
+            if (gitPage.isSkipped() || gitPage.getRepoUrl() == null || gitPage.getRepoUrl().isEmpty()) {
+                try {
+                    File projectDir = project.getLocation().toFile();
+                    new ProcessBuilder("git", "init").directory(projectDir).start().waitFor();
+
+                    File gitignore = new File(projectDir, ".gitignore");
+                    if (!gitignore.exists()) {
+                        java.nio.file.Files.write(gitignore.toPath(),
+                            ("target/\n" +
+                             ".settings/\n" +
+                             ".project\n" +
+                             ".classpath\n" +
+                             "bin/\n" +
+                             "*.class\n" +
+                             "*.evo\n" +
+                             "*.log\n").getBytes());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to initialize local git: " + e.getMessage());
+                }
+            }
+
             // Create basic pom.xml
             IFile pomFile = project.getFile("pom.xml");
             if (!pomFile.exists()) {
@@ -191,30 +215,35 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             }
 
             // Ollama Settings
+            Ollama ollama = orchestrator.getOllama();
+            if (ollama == null) {
+                ollama = factory.createOllama();
+                orchestrator.setOllama(ollama);
+            }
             if (!ollamaPage.isSkipped()) {
-                Ollama ollama = orchestrator.getOllama();
-                if (ollama == null) {
-                    ollama = factory.createOllama();
-                    orchestrator.setOllama(ollama);
-                }
                 ollama.setUrl(ollamaPage.getOllamaUrl());
                 ollama.setModel(ollamaPage.getModelName());
                 ollama.setPath(ollamaPage.getExecutablePath());
+            } else {
+                if (ollama.getUrl() == null || ollama.getUrl().isEmpty()) ollama.setUrl("http://localhost:11434");
+                if (ollama.getModel() == null || ollama.getModel().isEmpty()) ollama.setModel("llama3.2:3b");
             }
 
             // LLM Settings
+            LLM llm = orchestrator.getLlm();
+            if (llm == null) {
+                llm = factory.createLLM();
+                orchestrator.setLlm(llm);
+            }
             if (!llmPage.isSkipped()) {
-                LLM llm = orchestrator.getLlm();
-                if (llm == null) {
-                    llm = factory.createLLM();
-                    orchestrator.setLlm(llm);
-                }
                 llm.setModel(llmPage.getLlmModel());
                 try {
                     llm.setTemperature(Float.parseFloat(llmPage.getTemperature()));
                 } catch (NumberFormatException e) {
                     llm.setTemperature(1.0f);
                 }
+            } else {
+                if (llm.getModel() == null || llm.getModel().isEmpty()) llm.setModel("gpt-4o");
             }
 
             // Maven Settings

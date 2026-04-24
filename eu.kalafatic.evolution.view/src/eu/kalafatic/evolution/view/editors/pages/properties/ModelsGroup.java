@@ -552,7 +552,8 @@ public class ModelsGroup extends AEvoGroup {
         if (orchestrator == null) return;
         
         if (viewer == null || viewer.getControl().isDisposed()) return;
-	      viewer.refresh(); // ✅ safe        
+        load();
+        viewer.refresh(); // ✅ safe
     }
 
 	public void load() {

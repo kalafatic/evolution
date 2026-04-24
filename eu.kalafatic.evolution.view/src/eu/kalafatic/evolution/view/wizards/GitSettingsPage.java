@@ -53,7 +53,6 @@ public class GitSettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Repository URL:");
         repoUrlText = new Text(container, SWT.BORDER);
         repoUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        repoUrlText.setText("https://github.com/kalafatic/evo.git");
 
         gitDecorator = new ControlDecoration(repoUrlText, SWT.TOP | SWT.LEFT);
         gitDecorator.setImage(FieldDecorationRegistry.getDefault()

@@ -215,7 +215,13 @@ public class LLMSettingsPage extends AWizardPage {
         }
     }
 
-    public String getLlmModel() { return modelText.getText(); }
+    public String getLlmModel() {
+        String model = modelText.getText();
+        if (model == null || model.isEmpty()) {
+            return "gpt-4o";
+        }
+        return model;
+    }
     public String getTemperature() { return tempText.getText(); }
     public boolean isSkipped() { return skipCheck.getSelection(); }
 }
