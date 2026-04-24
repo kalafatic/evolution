@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.view.wizards;
 
+import org.eclipse.jface.fieldassist.ControlDecoration;
+import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -14,6 +16,7 @@ import eu.kalafatic.evolution.model.orchestration.NeuronType;
 
 public class NeuronAISettingsPage extends AWizardPage {
     private Text urlText, modelText;
+    private ControlDecoration urlDecorator;
     private Combo typeCombo;
     private Button skipCheck;
 
@@ -31,12 +34,18 @@ public class NeuronAISettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Neuron AI URL:");
         urlText = new Text(container, SWT.BORDER);
         urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        urlText.setText("http://localhost:48080/neuron");
+
+        urlDecorator = new ControlDecoration(urlText, SWT.TOP | SWT.LEFT);
+        urlDecorator.setImage(FieldDecorationRegistry.getDefault()
+                .getFieldDecoration(FieldDecorationRegistry.DEC_WARNING).getImage());
+        urlDecorator.setDescriptionText("Neuron AI URL is required for neural network features.");
+        urlDecorator.setShowOnlyOnFocus(false);
+
+        urlText.addModifyListener(e -> validateFields());
 
         new Label(container, SWT.NONE).setText("Model Name:");
         modelText = new Text(container, SWT.BORDER);
         modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        modelText.setText("default-neuron-model");
 
         new Label(container, SWT.NONE).setText("Model Type:");
         typeCombo = new Combo(container, SWT.READ_ONLY);
@@ -59,6 +68,10 @@ public class NeuronAISettingsPage extends AWizardPage {
         if (!visible && orchestrator != null) {
             updateModel();
         }
+    }
+
+    private void validateFields() {
+        if (urlText.getText().isEmpty()) urlDecorator.show(); else urlDecorator.hide();
     }
 
     public void updateModel() {

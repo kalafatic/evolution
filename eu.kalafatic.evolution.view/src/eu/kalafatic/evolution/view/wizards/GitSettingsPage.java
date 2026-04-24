@@ -26,7 +26,7 @@ import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 public class GitSettingsPage extends AWizardPage {
     private Text repoUrlText, branchText, usernameText, localPathText;
     private Button skipCheck;
-    private ControlDecoration gitDecorator;
+    private ControlDecoration gitDecorator, infoDecorator;
     private Job validationJob;
 
     public GitSettingsPage() {
@@ -53,12 +53,17 @@ public class GitSettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Repository URL:");
         repoUrlText = new Text(container, SWT.BORDER);
         repoUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        repoUrlText.setText("https://github.com/kalafatic/evo.git");
 
         gitDecorator = new ControlDecoration(repoUrlText, SWT.TOP | SWT.LEFT);
         gitDecorator.setImage(FieldDecorationRegistry.getDefault()
                 .getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
         gitDecorator.hide();
+
+        infoDecorator = new ControlDecoration(repoUrlText, SWT.TOP | SWT.LEFT);
+        infoDecorator.setImage(FieldDecorationRegistry.getDefault()
+                .getFieldDecoration(FieldDecorationRegistry.DEC_INFORMATION).getImage());
+        infoDecorator.setDescriptionText("Leave empty to initialize a local Git repository with a standard .gitignore.");
+        infoDecorator.setShowOnlyOnFocus(false);
 
         repoUrlText.addModifyListener(e -> validateGit());
 
@@ -75,17 +80,14 @@ public class GitSettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Branch:");
         branchText = new Text(container, SWT.BORDER);
         branchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        branchText.setText("master");
 
         new Label(container, SWT.NONE).setText("Username:");
         usernameText = new Text(container, SWT.BORDER);
         usernameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        usernameText.setText("admin");
 
         new Label(container, SWT.NONE).setText("Local Path:");
         localPathText = new Text(container, SWT.BORDER);
         localPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        localPathText.setText("repo");
 
         skipCheck = new Button(container, SWT.CHECK);
         skipCheck.setText("Skip this step and setup later");
@@ -105,10 +107,18 @@ public class GitSettingsPage extends AWizardPage {
         if (skipCheck.getSelection()) {
             if (validationJob != null) validationJob.cancel();
             gitDecorator.hide();
+            infoDecorator.hide();
             setPageComplete(true);
             setErrorMessage(null);
             return;
         }
+
+        if (repoUrlText.getText().isEmpty()) {
+            infoDecorator.show();
+        } else {
+            infoDecorator.hide();
+        }
+
         if (validationJob != null) validationJob.cancel();
         validationJob = new Job("Validate Git") {
             @Override

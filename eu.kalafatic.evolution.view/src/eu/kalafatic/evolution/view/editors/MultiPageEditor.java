@@ -356,6 +356,12 @@ public class MultiPageEditor extends MultiPageEditorPart {
     }
 
     private void updateComparePage(IFile file) {
+        if (orchestrator == null || orchestrator.getAiChat() == null ||
+            orchestrator.getAiChat().getPromptInstructions() == null ||
+            !orchestrator.getAiChat().getPromptInstructions().isGitAutomation()) {
+            return;
+        }
+
         Job job = new Job("Fetching Git content") {
             @Override
             protected IStatus run(IProgressMonitor monitor) {

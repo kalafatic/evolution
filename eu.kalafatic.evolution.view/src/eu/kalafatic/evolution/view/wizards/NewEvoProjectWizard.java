@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.wizards;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,6 +56,15 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.nature.EvolutionNature;
 
 public class NewEvoProjectWizard extends Wizard implements INewWizard {
+    private static final String GITIGNORE_TEMPLATE = "target/\n" +
+            ".settings/\n" +
+            ".project\n" +
+            ".classpath\n" +
+            "bin/\n" +
+            "*.class\n" +
+            "*.evo\n" +
+            "*.log\n";
+
     private IWorkbench workbench;
     private Orchestrator orchestrator;
     private WizardNewProjectCreationPage projectPage;
@@ -148,6 +158,21 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             createFolder(project, "resources/models", monitor);
             createFolder(project, "git", monitor);
             createFolder(project, "mvn", monitor);
+
+            // Initialize local Git repository if no remote is provided
+            if (gitPage.isSkipped() || gitPage.getRepoUrl() == null || gitPage.getRepoUrl().isEmpty()) {
+                try {
+                    File projectDir = project.getLocation().toFile();
+                    new ProcessBuilder("git", "init").directory(projectDir).start().waitFor();
+
+                    File gitignore = new File(projectDir, ".gitignore");
+                    if (!gitignore.exists()) {
+                        java.nio.file.Files.write(gitignore.toPath(), GITIGNORE_TEMPLATE.getBytes());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to initialize local git: " + e.getMessage());
+                }
+            }
 
             // Create basic pom.xml
             IFile pomFile = project.getFile("pom.xml");
