@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors.listeners;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.ISelectionListener;
@@ -25,6 +26,8 @@ public class EditorSelectionListener implements ISelectionListener {
                 }
                 editor.selectNode(firstElement);
             }
+        } else if (selection instanceof ITextSelection) {
+            editor.setLastTextSelection((ITextSelection) selection);
         }
     }
 }

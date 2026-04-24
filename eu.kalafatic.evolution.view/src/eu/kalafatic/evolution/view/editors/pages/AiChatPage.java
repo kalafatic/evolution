@@ -490,6 +490,12 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void createNewThread() {
+		String initialPrompt = "";
+		org.eclipse.jface.text.ITextSelection selection = editor.getLastTextSelection();
+		if (selection != null && !selection.getText().isEmpty()) {
+			initialPrompt = "Analyze this code:\n\n" + selection.getText();
+		}
+
 		InputDialog dlg = new InputDialog(getShell(), "New Chat Thread", "Enter thread description:", "task", null);
 		if (dlg.open() == Window.OK) {
 			String taskName = dlg.getValue();
@@ -503,6 +509,11 @@ public class AiChatPage extends AEvoPage {
 				currentThread = newThread;
 				chatGroup.setThread(currentThread);
 				updateThreadCombo();
+
+				if (!initialPrompt.isEmpty()) {
+					instructionsGroup.setRequest(initialPrompt);
+				}
+
 				editor.setDirty(true);
 			}
 		}
