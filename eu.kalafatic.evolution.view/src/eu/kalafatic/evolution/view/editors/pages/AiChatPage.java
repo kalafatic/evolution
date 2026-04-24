@@ -180,6 +180,8 @@ public class AiChatPage extends AEvoPage {
 		updateScrolledContent();
 
 		if (lastStatusUpdate == 0) Display.getDefault().asyncExec(() -> checkEnvironment());
+		
+		content.getParent().layout(true, true);
 	}
 
 	private void checkEnvironment() {

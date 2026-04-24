@@ -15,6 +15,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+
+import eu.kalafatic.evolution.controller.manager.OllamaConfigManager;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -25,6 +27,9 @@ import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class OllamaSettingsGroup extends AEvoGroup {
+	
+	OllamaConfigManager.OllamaDefaults defaults = OllamaConfigManager.getDefaults();
+	
     private Text ollamaUrlText, ollamaModelText, ollamaPathText, ollamaVersionText;
     private PropertiesPage page;
     private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator;
@@ -41,6 +46,9 @@ public class OllamaSettingsGroup extends AEvoGroup {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Ollama Settings", 3, false);
         SWTFactory.createLabel(group, "URL:");
         ollamaUrlText = SWTFactory.createText(group);
+        String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : defaults.apiUrl;
+        ollamaUrlText.setText(ollamaUrl);
+        
         SWTFactory.createEditButton(group, ollamaUrlText);
         SWTFactory.createLabel(group, "Model:");
         ollamaModelText = SWTFactory.createText(group);
@@ -62,6 +70,9 @@ public class OllamaSettingsGroup extends AEvoGroup {
         SWTFactory.createLabel(group, "");
         SWTFactory.createLabel(group, "Model Path:");
         ollamaPathText = SWTFactory.createText(group);
+        String ollamaPath = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getPath() : defaults.binPath;
+        ollamaPathText.setText(ollamaPath);        
+        
         Button browseOllamaBtn = SWTFactory.createButton(group, "...");
         browseOllamaBtn.addSelectionListener(new SelectionAdapter() {
             @Override

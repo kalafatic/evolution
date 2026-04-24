@@ -117,7 +117,8 @@ public class ModelsGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
                 OllamaManager.getInstance().getService(ollamaUrl).refreshModels();
-                refreshUI();
+              
+                load();
             }
         });
 
@@ -555,7 +556,7 @@ public class ModelsGroup extends AEvoGroup {
         if (orchestrator == null) return;
         
         if (viewer == null || viewer.getControl().isDisposed()) return;
-        load();
+        
         viewer.refresh(); // ✅ safe
     }
 

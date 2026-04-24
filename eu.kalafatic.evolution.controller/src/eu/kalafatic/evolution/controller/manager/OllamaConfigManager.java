@@ -1,7 +1,17 @@
 package eu.kalafatic.evolution.controller.manager;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 
 public class OllamaConfigManager {
 
@@ -84,4 +94,48 @@ public class OllamaConfigManager {
         System.out.println("Generate Endpoint: " + config.apiUrl + "/api/generate");
         System.out.println("Chat Endpoint: " + config.apiUrl + "/api/chat");
     }
+    
+    
+    public static List<OllamaModel> loadModels() {
+    	 OllamaDefaults config = getDefaults();    	 
+    	 
+	    List<OllamaModel> result = new ArrayList<>();
+
+	    try {
+	    	
+	        URL url = new URL(config.apiUrl + "/api/tags");
+	        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+	        conn.setRequestMethod("GET");
+
+	        BufferedReader reader = new BufferedReader(
+	            new InputStreamReader(conn.getInputStream())
+	        );
+
+	        StringBuilder json = new StringBuilder();
+	        String line;
+
+	        while ((line = reader.readLine()) != null) {
+	            json.append(line);
+	        }
+
+	        reader.close();
+
+	        JSONObject obj = new JSONObject(json.toString());
+	        JSONArray models = obj.getJSONArray("models");
+
+	        for (int i = 0; i < models.length(); i++) {
+	            JSONObject m = models.getJSONObject(i);
+
+	            String name = m.getString("name");
+	            long size = m.optLong("size", 0);
+
+	            result.add(new OllamaModel(name, size));
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return result;
+	}
 }
