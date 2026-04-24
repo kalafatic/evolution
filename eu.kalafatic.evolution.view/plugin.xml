@@ -634,6 +634,14 @@
             id="eu.kalafatic.evolution.view.refreshNavigator"
             name="Refresh Navigator">
       </command>
+      <command
+            id="org.eclipse.equinox.p2.ui.sdk.update"
+            name="Check for Updates">
+      </command>
+      <command
+            id="org.eclipse.equinox.p2.ui.sdk.install"
+            name="Install New Software...">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -672,6 +680,14 @@
       <handler
             class="eu.kalafatic.evolution.view.handlers.RefreshNavigatorHandler"
             commandId="eu.kalafatic.evolution.view.refreshNavigator">
+      </handler>
+      <handler
+            class="eu.kalafatic.utils.p2.UpdateHandler"
+            commandId="org.eclipse.equinox.p2.ui.sdk.update">
+      </handler>
+      <handler
+            class="eu.kalafatic.utils.p2.InstallHandler"
+            commandId="org.eclipse.equinox.p2.ui.sdk.install">
       </handler>
    </extension>
    <extension
