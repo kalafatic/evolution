@@ -1,0 +1,200 @@
+        } else if (input instanceof OrchestratorEditorInput) {
+            orchestrator = ((OrchestratorEditorInput) input).getOrchestrator();
+            resource = orchestrator.eResource();
+        }
+
+        if (orchestrator != null) {
+            orchestrator.eAdapters().add(modelAdapter);
+        }
+    }
+
+    @Override
+    public void doSave(IProgressMonitor monitor) {
+        if (resource != null) {
+            try {
+                org.eclipse.ui.actions.WorkspaceModifyOperation operation = new org.eclipse.ui.actions.WorkspaceModifyOperation() {
+                    @Override
+                    protected void execute(IProgressMonitor monitor) throws org.eclipse.core.runtime.CoreException, java.lang.reflect.InvocationTargetException {
+                        try {
+                            resource.save(Collections.EMPTY_MAP);
+                        } catch (IOException e) {
+                            throw new org.eclipse.core.runtime.CoreException(new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", e.getMessage(), e));
+                        }
+                    }
+                };
+                operation.run(monitor);
+                setDirty(false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (textEditor != null) {
+            textEditor.doSave(monitor);
+        }
+    }
+
+    @Override
+    public void doSaveAs() {
+        IEditorPart editor = getEditor(1);
+        if (editor != null) {
+            editor.doSaveAs();
+            setPageText(1, editor.getTitle());
+            setInput(editor.getEditorInput());
+        }
+    }
+
+    @Override
+    public boolean isSaveAsAllowed() { return true; }
+
+    @Override
+    public void setFocus() {
+        int index = getActivePage();
+        if (index != -1) getControl(index).setFocus();
+    }
+
+    public Object getActivePageInstance() {
+        int index = getActivePage();
+        if (index != -1) return getControl(index);
+        return null;
+    }
+
+    @Override
+    public void dispose() {
+        if (resourceListener != null) ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceListener);
+        if (selectionListener != null) getSite().getWorkbenchWindow().getSelectionService().removeSelectionListener(selectionListener);
+        if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
+        super.dispose();
+    }
+
+    @Override
+    public boolean isDirty() { return isDirty || (textEditor != null && textEditor.isDirty()); }
+
+    public void setDirty(boolean dirty) {
+        if (this.isDirty != dirty) {
+            this.isDirty = dirty;
+            firePropertyChange(IEditorPart.PROP_DIRTY);
+        }
+    }
+
+    public void setOrchestrator(Orchestrator orchestrator) {
+        if (this.orchestrator != null) {
+            this.orchestrator.eAdapters().remove(modelAdapter);
+        }
+        this.orchestrator = orchestrator;
+        if (this.orchestrator != null) {
+            this.orchestrator.eAdapters().add(modelAdapter);
+        }
+
+        if (aiChatPage != null) aiChatPage.setOrchestrator(orchestrator);
+        if (propertiesPage != null) propertiesPage.setOrchestrator(orchestrator);
+        if (mcpSettingsPage != null) mcpSettingsPage.setOrchestrator(orchestrator);
+        if (previewPage != null) previewPage.setOrchestrator(orchestrator);
+        if (graphPage != null) graphPage.setOrchestrator(orchestrator);
+        if (browserPage != null) browserPage.setOrchestrator(orchestrator);
+        if (aiFlowPage != null) aiFlowPage.setOrchestrator(orchestrator);
+        if (approvalPage != null) approvalPage.setOrchestrator(orchestrator);
+        if (toolsPage != null) toolsPage.setOrchestrator(orchestrator);
+        if (testsPage != null) testsPage.setOrchestrator(orchestrator);
+        if (iterationPage != null) iterationPage.setOrchestrator(orchestrator);
+        if (peerReviewPage != null) peerReviewPage.setOrchestrator(orchestrator);
+        if (taskStackPage != null) taskStackPage.setOrchestrator(orchestrator);
+        if (contextPage != null) contextPage.setOrchestrator(orchestrator);
+        if (serverPage != null) serverPage.setOrchestrator(orchestrator);
+    }
+
+    public void reloadModel() {
+        loadModel();
+        if (orchestrator != null) {
+            setOrchestrator(orchestrator);
+        }
+    }
+
+    public void setCurrentContext(TaskContext context) {
+        this.currentContext = context;
+    }
+
+    public TaskContext getCurrentContext() {
+        return currentContext;
+    }
+
+    public org.eclipse.jface.text.ITextSelection getLastTextSelection() {
+        return lastTextSelection;
+    }
+
+    public void setLastTextSelection(org.eclipse.jface.text.ITextSelection lastTextSelection) {
+        this.lastTextSelection = lastTextSelection;
+    }
+
+    public void refreshPages() {
+        if (orchestrator == null) return;
+        if (aiChatPage != null) aiChatPage.scheduleRefresh();
+        if (propertiesPage != null) propertiesPage.scheduleRefresh();
+        if (toolsPage != null) toolsPage.scheduleRefresh();
+        if (taskStackPage != null) taskStackPage.scheduleRefresh();
+        if (testsPage != null) testsPage.scheduleRefresh();
+        if (iterationPage != null) iterationPage.scheduleRefresh();
+        if (peerReviewPage != null) peerReviewPage.scheduleRefresh();
+        if (mcpSettingsPage != null) mcpSettingsPage.scheduleRefresh();
+        if (contextPage != null) contextPage.refreshUI(); // TODO: refactor ContextPage if needed
+        if (serverPage != null) serverPage.scheduleRefresh();
+        if (approvalPage != null) approvalPage.scheduleRefresh();
+        refreshComparePage();
+    }
+
+    private void refreshComparePage() {
+        if (comparePage == null || orchestrator == null || getEditorInput() == null) return;
+        if (!(getEditorInput() instanceof IFileEditorInput)) return;
+
+        IFile file = ((IFileEditorInput) getEditorInput()).getFile();
+        updateComparePage(file);
+    }
+
+    public void showComparePage(IFile file) {
+        if (comparePage == null) return;
+        updateComparePage(file);
+        setActivePageByControl(comparePage);
+    }
+
+    private void updateComparePage(IFile file) {
+        if (orchestrator == null || orchestrator.getAiChat() == null ||
+            orchestrator.getAiChat().getPromptInstructions() == null ||
+            !orchestrator.getAiChat().getPromptInstructions().isGitAutomation()) {
+            return;
+        }
+
+        Job job = new Job("Fetching Git content") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                java.io.File workingDir = file.getProject().getLocation().toFile();
+                String relativePath = file.getProjectRelativePath().toString();
+                try {
+                    eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider vcs = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+                    String headContent = vcs.getFileContent(workingDir, "HEAD", relativePath);
+                    if (headContent != null) {
+                        Display.getDefault().asyncExec(() -> {
+                            if (!comparePage.isDisposed()) {
+                                comparePage.setInput(file, new StringElement(headContent, file.getName(), file.getFileExtension()), "Local File", "Git HEAD");
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    // Probably not a git repo or file not in git
+                }
+                return Status.OK_STATUS;
+            }
+        };
+        job.schedule();
+    }
+
+    public void showApprovalPage() {
+        setActivePageByControl(approvalPage);
+    }
+
+    public void showAiChatPage() {
+        setActivePageByControl(aiChatPage);
+    }
+
+    public void runTaskInChat(Task task) {
+        if (aiChatPage != null) {
+            showAiChatPage();
+            aiChatPage.runTask(task);
