@@ -32,6 +32,7 @@ import org.eclipse.ui.forms.events.ExpansionEvent;
 import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 
+import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 
 public class SWTFactory {
@@ -133,6 +134,10 @@ public class SWTFactory {
 		for (String name : uniqueModels)
 			combo.add(name);
 		return combo;
+	}
+
+	public static Combo selectModel(Composite parent, String url) {
+		return selectModel(parent, OllamaManager.getInstance().getService(url));
 	}
 
 	public static Group createMaximizableGroup(Composite parent, String text, int columns) {

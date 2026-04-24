@@ -62,4 +62,8 @@ public class SystemStatusGroup extends AEvoGroup {
         statusLabel.setText(status);
         progressBar.setSelection(progress);
     }
+
+    public boolean isDisposed() {
+        return group == null || group.isDisposed();
+    }
 }

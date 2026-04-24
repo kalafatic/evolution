@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -114,6 +115,8 @@ public class ModelsGroup extends AEvoGroup {
         reloadButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
+                String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+                OllamaManager.getInstance().getService(ollamaUrl).refreshModels();
                 refreshUI();
             }
         });
@@ -596,7 +599,7 @@ public class ModelsGroup extends AEvoGroup {
 
         // Load Local Models (asynchronously)
         String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
-        OllamaService ollamaService = new OllamaService(ollamaUrl, null);
+        OllamaService ollamaService = OllamaManager.getInstance().getService(ollamaUrl);
 
         CompletableFuture.runAsync(() -> {
             try {

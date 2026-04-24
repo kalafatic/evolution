@@ -17,6 +17,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Display;
 
+import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 
 public class ModelDownloadDialog extends Dialog {
@@ -85,7 +86,7 @@ public class ModelDownloadDialog extends Dialog {
 
         new Thread(() -> {
             try {
-                OllamaService service = new OllamaService(ollamaUrl, null);
+                OllamaService service = OllamaManager.getInstance().getService(ollamaUrl);
                 service.pullModel(modelName, update -> {
                     Display.getDefault().asyncExec(() -> {
                         if (progressBar.isDisposed()) return;

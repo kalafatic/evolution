@@ -31,6 +31,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import eu.kalafatic.evolution.controller.manager.NeuronService;
+import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
@@ -683,14 +684,19 @@ public class AiChatPage extends AEvoPage {
 	public void updateStatusInfo() {
 		if (orchestrator != null && orchestrator.getOllama() != null) {
 			String url = orchestrator.getOllama().getUrl(); String model = orchestrator.getOllama().getModel();
-			if (ollamaService == null) {
-				float temp = orchestrator.getLlm() != null ? orchestrator.getLlm().getTemperature() : 0.7f;
-				ollamaService = new OllamaService(url, model).setTemperature(temp);
-			}
+			ollamaService = OllamaManager.getInstance().getService(url);
+			float temp = orchestrator.getLlm() != null ? orchestrator.getLlm().getTemperature() : 0.7f;
+			ollamaService.setTemperature(temp);
+			if (model != null) ollamaService.setModel(model);
+
 			systemStatusGroup.updateModelStatus(model != null ? model : "Not Configured");
 			new Thread(() -> {
 				boolean isOnline = ollamaService.ping();
-				Display.getDefault().asyncExec(() -> systemStatusGroup.updateOllamaStatus((isOnline ? "Online (" : "Offline (") + url + ")", Display.getDefault().getSystemColor(isOnline ? SWT.COLOR_DARK_GREEN : SWT.COLOR_RED)));
+				Display.getDefault().asyncExec(() -> {
+					if (!systemStatusGroup.isDisposed()) {
+						systemStatusGroup.updateOllamaStatus((isOnline ? "Online (" : "Offline (") + url + ")", Display.getDefault().getSystemColor(isOnline ? SWT.COLOR_DARK_GREEN : SWT.COLOR_RED));
+					}
+				});
 			}).start();
 		} else {
 			systemStatusGroup.updateOllamaStatus("Not Configured", Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
