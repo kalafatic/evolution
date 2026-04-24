@@ -1603,5 +1603,29 @@ public class WorkbenchActionBuilder extends ActionBarAdvisor {
  		}
  		return EN_IMG;
  	}
+
+	public IAction createAction(final IWorkbenchWindow window, final String commandId) {
+		return new org.eclipse.jface.action.Action() {
+			@Override
+			public void run() {
+				IHandlerService handlerService = (IHandlerService) window.getService(IHandlerService.class);
+				try {
+					handlerService.executeCommand(commandId, null);
+				} catch (Exception e) {
+					eu.kalafatic.utils.log.Log.log(eu.kalafatic.utils.preferences.ECorePreferences.MODULE, e);
+				}
+			}
+
+			@Override
+			public String getText() {
+				if ("org.eclipse.equinox.p2.ui.sdk.update".equals(commandId)) {
+					return "Check for Updates";
+				} else if ("org.eclipse.equinox.p2.ui.sdk.install".equals(commandId)) {
+					return "Install New Software...";
+				}
+				return super.getText();
+			}
+		};
+	}
 }
 

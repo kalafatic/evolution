@@ -209,6 +209,21 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		menu.add(new GroupMarker(IWorkbenchActionConstants.HELP_START));
 
 		// For RCPs, these often need specific bundles, but we add the markers and standard actions
+
+		menu.add(new Separator());
+
+		IAction updateAction = builder.createAction(window, "org.eclipse.equinox.p2.ui.sdk.update");
+		if (updateAction != null) {
+			menu.add(updateAction);
+		}
+
+		IAction installAction = builder.createAction(window, "org.eclipse.equinox.p2.ui.sdk.install");
+		if (installAction != null) {
+			menu.add(installAction);
+		}
+
+		menu.add(new Separator());
+
 		menu.add(ActionFactory.ABOUT.create(window));
 
 		menu.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
