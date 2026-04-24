@@ -150,6 +150,7 @@ public class LLMSettingsPage extends AWizardPage {
         new Label(groupLinks, SWT.NONE).setText("LLM Model:");
         modelText = new Text(groupLinks, SWT.BORDER);
         modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        modelText.setText("gpt-4o");
 
         modelDecorator = new ControlDecoration(modelText, SWT.TOP | SWT.LEFT);
         modelDecorator.setImage(FieldDecorationRegistry.getDefault()

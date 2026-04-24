@@ -80,14 +80,17 @@ public class GitSettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Branch:");
         branchText = new Text(container, SWT.BORDER);
         branchText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        branchText.setText("master");
 
         new Label(container, SWT.NONE).setText("Username:");
         usernameText = new Text(container, SWT.BORDER);
         usernameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        usernameText.setText("admin");
 
         new Label(container, SWT.NONE).setText("Local Path:");
         localPathText = new Text(container, SWT.BORDER);
         localPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        localPathText.setText("repo");
 
         skipCheck = new Button(container, SWT.CHECK);
         skipCheck.setText("Skip this step and setup later");
