@@ -6,3 +6,4 @@ bin/
 build_output.txt
 partial_build_output.txt
 final_build_output.txt
+.m2/

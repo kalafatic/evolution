@@ -29,6 +29,18 @@
          version="0.0.0"/>
 
    <plugin
+         id="eu.kalafatic.evolution.model.edit"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.evolution.model.editor"
+         version="0.0.0"/>
+
+   <plugin
+         id="eu.kalafatic.utils"
+         version="0.0.0"/>
+
+   <plugin
          id="eu.kalafatic.evolution.tests"
          version="0.0.0"/>
 
