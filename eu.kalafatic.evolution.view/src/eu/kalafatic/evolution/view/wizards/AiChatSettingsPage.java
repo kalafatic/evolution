@@ -30,6 +30,7 @@ public class AiChatSettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Chat URL:");
         urlText = new Text(container, SWT.BORDER);
         urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        urlText.setText("http://localhost:58080/ai");
 
         urlDecorator = new ControlDecoration(urlText, SWT.TOP | SWT.LEFT);
         urlDecorator.setImage(FieldDecorationRegistry.getDefault()
@@ -40,6 +41,7 @@ public class AiChatSettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Token:");
         tokenText = new Text(container, SWT.BORDER | SWT.PASSWORD);
         tokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        tokenText.setText("ENTER_TOKEN_HERE");
 
         tokenDecorator = new ControlDecoration(tokenText, SWT.TOP | SWT.LEFT);
         tokenDecorator.setImage(FieldDecorationRegistry.getDefault()
@@ -55,6 +57,7 @@ public class AiChatSettingsPage extends AWizardPage {
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 60;
         promptText.setLayoutData(gd);
+        promptText.setText("You are a helpful assistant.");
 
         new Label(container, SWT.NONE).setText("Proxy URL:");
         proxyUrlText = new Text(container, SWT.BORDER);

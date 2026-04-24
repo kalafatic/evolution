@@ -216,30 +216,35 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             }
 
             // Ollama Settings
+            Ollama ollama = orchestrator.getOllama();
+            if (ollama == null) {
+                ollama = factory.createOllama();
+                orchestrator.setOllama(ollama);
+            }
             if (!ollamaPage.isSkipped()) {
-                Ollama ollama = orchestrator.getOllama();
-                if (ollama == null) {
-                    ollama = factory.createOllama();
-                    orchestrator.setOllama(ollama);
-                }
                 ollama.setUrl(ollamaPage.getOllamaUrl());
                 ollama.setModel(ollamaPage.getModelName());
                 ollama.setPath(ollamaPage.getExecutablePath());
+            } else {
+                if (ollama.getUrl() == null || ollama.getUrl().isEmpty()) ollama.setUrl("http://localhost:11434");
+                if (ollama.getModel() == null || ollama.getModel().isEmpty()) ollama.setModel("llama3.2:3b");
             }
 
             // LLM Settings
+            LLM llm = orchestrator.getLlm();
+            if (llm == null) {
+                llm = factory.createLLM();
+                orchestrator.setLlm(llm);
+            }
             if (!llmPage.isSkipped()) {
-                LLM llm = orchestrator.getLlm();
-                if (llm == null) {
-                    llm = factory.createLLM();
-                    orchestrator.setLlm(llm);
-                }
                 llm.setModel(llmPage.getLlmModel());
                 try {
                     llm.setTemperature(Float.parseFloat(llmPage.getTemperature()));
                 } catch (NumberFormatException e) {
                     llm.setTemperature(1.0f);
                 }
+            } else {
+                if (llm.getModel() == null || llm.getModel().isEmpty()) llm.setModel("gpt-4o");
             }
 
             // Maven Settings

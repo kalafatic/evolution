@@ -34,6 +34,7 @@ public class NeuronAISettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Neuron AI URL:");
         urlText = new Text(container, SWT.BORDER);
         urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        urlText.setText("http://localhost:48080/neuron");
 
         urlDecorator = new ControlDecoration(urlText, SWT.TOP | SWT.LEFT);
         urlDecorator.setImage(FieldDecorationRegistry.getDefault()
@@ -46,6 +47,7 @@ public class NeuronAISettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Model Name:");
         modelText = new Text(container, SWT.BORDER);
         modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        modelText.setText("default-neuron-model");
 
         new Label(container, SWT.NONE).setText("Model Type:");
         typeCombo = new Combo(container, SWT.READ_ONLY);

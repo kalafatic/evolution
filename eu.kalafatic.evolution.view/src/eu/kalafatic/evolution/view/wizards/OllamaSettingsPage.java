@@ -96,6 +96,7 @@ public class OllamaSettingsPage extends AWizardPage {
 		new Label(container, SWT.NONE).setText("Model Name:");	
 		modelText = new Text(container, SWT.BORDER);
 		modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		modelText.setText("llama3.2:3b");
 				
 		new Label(container, SWT.NONE).setText("Select Model:");	
 		selectModel(container);
