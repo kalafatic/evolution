@@ -62,47 +62,47 @@ public class OrchestrationGraphLabelProvider extends LabelProvider implements IE
     @Override
     public Image getImage(Object element) {
         if (element instanceof Orchestrator) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Orchestrator.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_orchestrate.svg");
         } else if (element instanceof Agent) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Agent.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_model.svg");
         } else if (element instanceof Task) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Task.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_task.svg");
         } else if (element instanceof Git) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Git.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof Maven) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Maven.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_graph.svg");
         } else if (element instanceof LLM) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/LLM.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof Compiler) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Compiler.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_stack.svg");
         } else if (element instanceof Ollama) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Ollama.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof AiChat) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/AiChat.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_chat.svg");
         } else if (element instanceof NeuronAI) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/NeuronAI.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof Database) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Database.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof SelfDevSession) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/SelfDevSession.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_update.svg");
         } else if (element instanceof Iteration) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Iteration.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_diagram.svg");
         } else if (element instanceof EvaluationResult) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/EvaluationResult.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_task.svg");
         } else if (element instanceof Test) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Task.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_task.svg");
         } else if (element instanceof Eclipse) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/Eclipse.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof FileConfig) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/FileConfig.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_editor.svg");
         } else if (element instanceof AccessRule) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/AccessRule.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof NetworkRule) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/NetworkRule.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof MemoryRule) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/MemoryRule.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof SecretRule) {
-            return getCachedImage("eu.kalafatic.evolution.model.edit", "icons/full/obj16/SecretRule.gif");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         }
         return super.getImage(element);
     }

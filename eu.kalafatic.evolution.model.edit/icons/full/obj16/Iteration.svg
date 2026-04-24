@@ -1,0 +1,15 @@
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hierarchical tree -->
+  <rect x="7" y="1" width="2" height="2" rx="0.5" fill="#a855f7" />
+  <line x1="8" y1="3" x2="8" y2="5" stroke="#94a3b8" stroke-width="0.5" />
+  <line x1="4" y1="5" x2="12" y2="5" stroke="#94a3b8" stroke-width="0.5" />
+  <line x1="4" y1="5" x2="4" y2="7" stroke="#94a3b8" stroke-width="0.5" />
+  <line x1="12" y1="5" x2="12" y2="7" stroke="#94a3b8" stroke-width="0.5" />
+
+  <circle cx="4" cy="8" r="1.5" fill="#3b82f6" />
+  <circle cx="8" cy="8" r="1.5" fill="#3b82f6" />
+  <circle cx="12" cy="8" r="1.5" fill="#3b82f6" />
+
+  <line x1="8" y1="9" x2="8" y2="11" stroke="#94a3b8" stroke-width="0.5" />
+  <circle cx="8" cy="13" r="1.5" fill="#06b6d4" />
+</svg>
