@@ -73,43 +73,43 @@
          point="org.eclipse.ui.views">
       <view
             name="Orchestration Graph"
-            icon="icons/eclipse16.png"
+            icon="icons/evo_graph.svg"
             class="eu.kalafatic.evolution.view.views.OrchestrationZestView"
             id="eu.kalafatic.evolution.view.orchestrationZestView">
       </view>
       <view
             name="Properties"
-            icon="icons/eclipse16.png"
+            icon="icons/evo_settings.svg"
             class="eu.kalafatic.evolution.view.views.PropertiesView"
             id="eu.kalafatic.evolution.view.propertiesView">
       </view>
       <view
             class="eu.kalafatic.evolution.view.views.TaskTreeView"
-            icon="icons/eclipse16.png"
+            icon="icons/evo_diagram.svg"
             id="eu.kalafatic.evolution.view.taskTreeView"
             name="Task Tree">
       </view>
       <view
             class="eu.kalafatic.evolution.view.views.CommandStackView"
-            icon="icons/eclipse16.png"
+            icon="icons/evo_stack.svg"
             id="eu.kalafatic.evolution.view.commandStackView"
             name="Command Stack">
       </view>
       <view
             class="eu.kalafatic.evolution.view.views.AIOutputView"
-            icon="icons/eclipse16.png"
+            icon="icons/evo_chat.svg"
             id="eu.kalafatic.evolution.view.aiOutputView"
             name="AI Output">
       </view>
       <view
             class="eu.kalafatic.evolution.view.views.EvoNavigator"
-            icon="icons/eclipse16.png"
+            icon="icons/evo_navigator.svg"
             id="eu.kalafatic.views.EvoNavigator"
             name="Evo Navigator">
       </view>
       <view
             class="eu.kalafatic.evolution.view.views.InternalBrowserView"
-            icon="icons/eclipse16.png"
+            icon="icons/evo_browser.svg"
             id="eu.kalafatic.evolution.view.views.InternalBrowserView"
             name="Internal Browser">
       </view>
@@ -263,6 +263,7 @@
                label="Setup">
             <command
                   commandId="eu.kalafatic.evolution.view.setupOllama"
+                  icon="icons/evo_settings.svg"
                   label="Setup Ollama"
                   style="push">
             </command>
@@ -273,6 +274,7 @@
             </command>
             <command
                   commandId="eu.kalafatic.evolution.view.setupLLM"
+                  icon="icons/evo_settings.svg"
                   label="Setup LLM"
                   style="push">
             </command>
@@ -306,6 +308,7 @@
             </command>
             <command
                   commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
+                  icon="icons/evo_orchestrate.svg"
                   label="Orchestrate"
                   style="push">
             </command>
@@ -431,6 +434,7 @@
             </separator>
             <command
                   commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
+                  icon="icons/evo_orchestrate.svg"
                   label="Orchestrate"
                   style="push">
             </command>
@@ -514,11 +518,13 @@
             </separator>
             <command
                   commandId="eu.kalafatic.evolution.view.setupOllama"
+                  icon="icons/evo_settings.svg"
                   label="Setup Ollama"
                   style="push">
             </command>
             <command
                   commandId="eu.kalafatic.evolution.view.setupLLM"
+                  icon="icons/evo_settings.svg"
                   label="Setup LLM"
                   style="push">
             </command>
@@ -532,7 +538,7 @@
             contributorClass="eu.kalafatic.evolution.view.editors.MultiPageEditorContributor"
             default="true"
             extensions="xml,evo"
-            icon="icons/eclipse16.png"
+            icon="icons/evo_editor.svg"
             id="eu.kalafatic.evolution.view.editors.MultiPageEditor"
             name="Evo Multi-page Editor">
       </editor>
@@ -703,7 +709,7 @@
    <extension
          point="org.eclipse.ui.ide.projectNatureImages">
       <image
-            icon="icons/evo_project.png"
+            icon="icons/evo_project_nature.svg"
             id="eu.kalafatic.evolution.view.evolutionNatureImage"
             natureId="eu.kalafatic.evolution.view.evolutionNature">
       </image>

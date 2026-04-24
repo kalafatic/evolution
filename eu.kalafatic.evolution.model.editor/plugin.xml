@@ -16,7 +16,7 @@
             name="%_UI_OrchestrationModelWizard_label"
             class="eu.kalafatic.evolution.model.orchestration.presentation.OrchestrationModelWizard"
             category="org.eclipse.emf.ecore.Wizard.category.ID"
-            icon="icons/full/obj16/OrchestrationModelFile.gif">
+            icon="icons/evo_model.svg">
          <description>%_UI_OrchestrationModelWizard_description</description>
          <selection class="org.eclipse.core.resources.IResource"/>
       </wizard>
@@ -27,7 +27,7 @@
       <editor
             id="eu.kalafatic.evolution.model.orchestration.presentation.OrchestrationEditorID"
             name="%_UI_OrchestrationEditor_label"
-            icon="icons/full/obj16/OrchestrationModelFile.gif"
+            icon="icons/evo_model.svg"
             extensions="orchestration"
             class="eu.kalafatic.evolution.model.orchestration.presentation.OrchestrationEditor"
             contributorClass="eu.kalafatic.evolution.model.orchestration.presentation.OrchestrationActionBarContributor">
