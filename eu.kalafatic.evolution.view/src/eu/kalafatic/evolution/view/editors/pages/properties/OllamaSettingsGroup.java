@@ -128,6 +128,9 @@ public class OllamaSettingsGroup extends AEvoGroup {
                         }
                         for (String name : uniqueModels) modelCombo.add(name);
 
+                        int idx = modelCombo.indexOf(model);
+                        if (idx >= 0) modelCombo.select(idx);
+
                         if (!model.isEmpty() && !modelFound) {
                             ollamaModelDecorator.setDescriptionText("Model not found in Ollama");
                             ollamaModelDecorator.show();
