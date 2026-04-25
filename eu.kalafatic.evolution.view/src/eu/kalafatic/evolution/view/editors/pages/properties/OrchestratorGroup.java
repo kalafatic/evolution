@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.view.editors.pages.properties;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -37,8 +38,7 @@ public class OrchestratorGroup extends AEvoGroup {
     @Override
     public void updateModel() {
         if (orchestrator != null) {
-            orchestrator.setId(orchIdText.getText());
-            orchestrator.setName(orchNameText.getText());
+            ProjectModelManager.getInstance().updateOrchestratorGeneral(orchestrator, orchIdText.getText(), orchNameText.getText());
         }
     }
 

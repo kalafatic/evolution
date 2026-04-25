@@ -156,19 +156,7 @@ public class PropertiesPage extends AEvoPage {
 	public void setOrchestrator(Orchestrator orchestrator) {
 		super.setOrchestrator(orchestrator);
 		if (orchestrator != null) {
-			if (orchestrator.getLlm() == null) {
-				orchestrator.setLlm(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createLLM());
-				orchestrator.getLlm().setModel("gpt-4o");
-				orchestrator.getLlm().setTemperature(1.0f);
-			}
-			if (orchestrator.getOllama() == null) {
-				orchestrator.setOllama(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOllama());
-				orchestrator.getOllama().setUrl("http://127.0.0.1:11434");
-				orchestrator.getOllama().setModel("llama3.2:3b");
-			}
-			if (orchestrator.getAiChat() == null) {
-				orchestrator.setAiChat(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAiChat());
-			}
+			ProjectModelManager.getInstance().initializeDefaults(orchestrator);
 		}
 		if (orchestratorGroup != null) orchestratorGroup.setOrchestrator(orchestrator);
 		if (llmSettingsGroup != null) llmSettingsGroup.setOrchestrator(orchestrator);

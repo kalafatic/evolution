@@ -28,6 +28,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
@@ -519,19 +520,14 @@ public class ModelsGroup extends AEvoGroup {
         ModelItem item = (ModelItem) selection.getFirstElement();
 
         if (orchestrator != null) {
+            ProjectModelManager modelManager = ProjectModelManager.getInstance();
             if (item.local) {
-                if (orchestrator.getOllama() != null) {
-                    orchestrator.getOllama().setModel(item.name);
-                }
-                orchestrator.setLocalModel(item.name);
-                if (orchestrator.getLlm() != null) {
-                    orchestrator.getLlm().setModel(item.name);
-                }
+                modelManager.updateOllamaSettings(orchestrator, (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : null, item.name, (orchestrator.getOllama() != null) ? orchestrator.getOllama().getPath() : null);
+                modelManager.updateLocalModel(orchestrator, item.name);
+                modelManager.updateLlmSettings(orchestrator, item.name, (orchestrator.getLlm() != null) ? orchestrator.getLlm().getTemperature() : 1.0f);
             } else {
-                orchestrator.setRemoteModel(item.name);
-                if (orchestrator.getLlm() != null) {
-                    orchestrator.getLlm().setModel(item.name);
-                }
+                modelManager.updateRemoteModel(orchestrator, item.name);
+                modelManager.updateLlmSettings(orchestrator, item.name, (orchestrator.getLlm() != null) ? orchestrator.getLlm().getTemperature() : 1.0f);
             }
             editor.setDirty(true);
             if (page != null) {
@@ -559,7 +555,7 @@ public class ModelsGroup extends AEvoGroup {
                         editor.setDirty(true);
                         refreshUI();
                     } else if (item.name.equalsIgnoreCase(orchestrator.getRemoteModel())) {
-                        orchestrator.setRemoteModel("");
+                        ProjectModelManager.getInstance().updateRemoteModel(orchestrator, "");
                         editor.setDirty(true);
                         refreshUI();
                     }

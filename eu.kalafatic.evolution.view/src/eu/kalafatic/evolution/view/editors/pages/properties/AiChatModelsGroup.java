@@ -11,6 +11,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -138,9 +139,9 @@ public class AiChatModelsGroup extends AEvoGroup {
     @Override
     public void updateModel() {
         if (orchestrator != null) {
-            orchestrator.setLocalModel(localModelText.getText());
-            orchestrator.setHybridModel(hybridModelText.getText());
-            orchestrator.setRemoteModel(remoteModelCombo.getText());
+            ProjectModelManager.getInstance().updateLocalModel(orchestrator, localModelText.getText());
+            ProjectModelManager.getInstance().updateHybridModel(orchestrator, hybridModelText.getText());
+            ProjectModelManager.getInstance().updateRemoteModel(orchestrator, remoteModelCombo.getText());
         }
     }
 

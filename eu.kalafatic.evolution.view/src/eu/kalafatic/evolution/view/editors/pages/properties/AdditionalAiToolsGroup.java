@@ -3,8 +3,8 @@ package eu.kalafatic.evolution.view.editors.pages.properties;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
@@ -42,12 +42,14 @@ public class AdditionalAiToolsGroup extends AEvoGroup {
     @Override
     public void updateModel() {
         if (orchestrator != null) {
-            if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
-            orchestrator.getAiChat().setUrl(aiChatUrlText.getText());
-            if (orchestrator.getNeuronAI() == null) orchestrator.setNeuronAI(OrchestrationFactory.eINSTANCE.createNeuronAI());
-            orchestrator.getNeuronAI().setUrl(neuronAiUrlText.getText());
-            if (orchestrator.getCompiler() == null) orchestrator.setCompiler(OrchestrationFactory.eINSTANCE.createCompiler());
-            orchestrator.getCompiler().setSourceVersion(compilerSourceText.getText());
+            ProjectModelManager.getInstance().updateAiChatSettings(orchestrator, aiChatUrlText.getText(),
+                (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getToken() : null,
+                (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getPrompt() : null,
+                (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
+            ProjectModelManager.getInstance().updateNeuronAISettings(orchestrator, neuronAiUrlText.getText(),
+                (orchestrator.getNeuronAI() != null) ? orchestrator.getNeuronAI().getModel() : null,
+                (orchestrator.getNeuronAI() != null) ? orchestrator.getNeuronAI().getType() : null);
+            ProjectModelManager.getInstance().updateCompilerSettings(orchestrator, compilerSourceText.getText());
         }
     }
 
