@@ -312,6 +312,17 @@
         #resize-handle:hover {
             background-color: #3b82f6;
         }
+
+        @keyframes pulse-waiting {
+            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+        }
+        .highlight-waiting {
+            border: 3px solid #f97316 !important;
+            animation: pulse-waiting 2s infinite;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -603,6 +614,19 @@
             requestAnimationFrame(() => {
                 container.scrollTop = container.scrollHeight;
             });
+        }
+
+        function scrollToLastWaiting() {
+            const messages = document.querySelectorAll('.message.waiting');
+            if (messages.length > 0) {
+                const lastWaiting = messages[messages.length - 1];
+                const bubble = lastWaiting.querySelector('.bubble');
+                lastWaiting.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (bubble) {
+                    bubble.classList.add('highlight-waiting');
+                    setTimeout(() => bubble.classList.remove('highlight-waiting'), 5000);
+                }
+            }
         }
 
         function updateMessages(messages) {

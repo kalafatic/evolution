@@ -760,6 +760,7 @@ public class AiChatPage extends AEvoPage {
 
 	public void handleClarify() {
 		instructionsGroup.focusAndHighlight(colorLightOrange);
+		chatGroup.focusWaitingMessage();
 	}
 
 	public void handleOpenDiff(String path) {
