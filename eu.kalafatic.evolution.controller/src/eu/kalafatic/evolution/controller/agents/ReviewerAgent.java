@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.agents;
 
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -40,27 +41,28 @@ public class ReviewerAgent extends BaseAiAgent {
         }
         String reviewResult = process("Evaluation of output: " + taskOutput + " for task: " + taskDescription + modeInfo, context, null);
 
-        int start = reviewResult.indexOf("{");
-        int end = reviewResult.lastIndexOf("}");
+        // Use robust extraction
+        JSONObject evaluation = JsonUtils.extractJsonObject(reviewResult);
 
-        if (start == -1 || end == -1 || end <= start) {
-            context.log("Reviewer: Warning - AI response is not a JSON object. Assuming success for non-technical task.");
-            JSONObject fallback = new JSONObject();
-            fallback.put("success", true);
-            fallback.put("comment", "Task completed (non-JSON review).");
-            return fallback;
+        if (evaluation == null) {
+            boolean isTechnical = taskDescription.toLowerCase().matches(".*(file|maven|git|shell|test|build|compile).*");
+
+            if (isTechnical) {
+                context.log("Reviewer: ERROR - AI response is not a JSON object for TECHNICAL task. Failing by default.");
+                JSONObject failure = new JSONObject();
+                failure.put("success", false);
+                failure.put("feedback", "Reviewer failed to provide a valid JSON evaluation for a technical task. Response was: " + reviewResult);
+                return failure;
+            } else {
+                context.log("Reviewer: Warning - AI response is not a JSON object. Assuming success for non-technical task.");
+                JSONObject fallback = new JSONObject();
+                fallback.put("success", true);
+                fallback.put("comment", "Task completed (non-JSON review).");
+                return fallback;
+            }
         }
 
-        try {
-            JSONObject evaluation = new JSONObject(reviewResult.substring(start, end + 1));
-            context.log("Reviewer: Evaluation for '" + taskDescription + "': success=" + evaluation.optBoolean("success") + ", comment=" + evaluation.optString("comment"));
-            return evaluation;
-        } catch (org.json.JSONException e) {
-            context.log("Reviewer: Warning - Failed to parse AI response as JSON object. Assuming success.");
-            JSONObject fallback = new JSONObject();
-            fallback.put("success", true);
-            fallback.put("comment", "Task completed (parse error in review).");
-            return fallback;
-        }
+        context.log("Reviewer: Evaluation for '" + taskDescription + "': success=" + evaluation.optBoolean("success") + ", comment=" + evaluation.optString("comment"));
+        return evaluation;
     }
 }

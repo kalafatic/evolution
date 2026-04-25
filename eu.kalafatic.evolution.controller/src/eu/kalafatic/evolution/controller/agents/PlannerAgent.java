@@ -5,6 +5,7 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.IPlanner;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
@@ -94,31 +95,17 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
         context.log("Evo-Planner-Response: " + response);
         context.log("Planner: Received response from AI: " + (response.length() > 100 ? response.substring(0, 100) + "..." : response));
 
-        // Extracting JSON logic
-        int start = response.indexOf("[");
-        int end = response.lastIndexOf("]");
+        // Use robust extraction
+        JSONArray jsonArray = JsonUtils.extractJsonArray(response);
 
-        JSONArray jsonArray;
-        if (start == -1 || end == -1 || end <= start) {
-            context.log("Planner: Warning - AI response is not a JSON array. Using fallback llm task.");
+        if (jsonArray == null) {
+            context.log("Planner: Warning - AI response is not a JSON array or failed parsing. Using fallback llm task.");
             jsonArray = new JSONArray();
             JSONObject fallbackTask = new JSONObject();
             fallbackTask.put("id", "task0");
             fallbackTask.put("name", request);
             fallbackTask.put("taskType", "llm");
             jsonArray.put(fallbackTask);
-        } else {
-            try {
-                jsonArray = new JSONArray(response.substring(start, end + 1));
-            } catch (org.json.JSONException e) {
-                context.log("Planner: Warning - Failed to parse AI response as JSON array. Using fallback llm task.");
-                jsonArray = new JSONArray();
-                JSONObject fallbackTask = new JSONObject();
-                fallbackTask.put("id", "task0");
-                fallbackTask.put("name", request);
-                fallbackTask.put("taskType", "llm");
-                jsonArray.put(fallbackTask);
-            }
         }
 
         List<Task> tasks = new ArrayList<>();

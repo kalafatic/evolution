@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.agents;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import org.json.JSONObject;
+import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 
 /**
  * Specialized agent for analyzing user prompts to determine intent,
@@ -53,13 +54,17 @@ public class AnalyticAgent extends BaseAiAgent {
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("Evo-Analytic-Response: " + response);
 
-        String cleaned = cleanResponse(response);
-        int start = cleaned.indexOf("{");
-        int end = cleaned.lastIndexOf("}");
-        if (start != -1 && end != -1 && end > start) {
-            cleaned = cleaned.substring(start, end + 1);
+        JSONObject analysis = JsonUtils.extractJsonObject(response);
+        if (analysis == null) {
+            context.log("Evo-Analytic: ERROR - Failed to extract JSON analysis. Returning fallback.");
+            analysis = new JSONObject();
+            analysis.put("category", "CHAT");
+            analysis.put("objective", prompt);
+            analysis.put("isAmbiguous", false);
+            analysis.put("missingInformation", new org.json.JSONArray());
+            analysis.put("clarificationQuestion", "");
+            analysis.put("refinedPrompt", prompt);
         }
-
-        return new JSONObject(cleaned);
+        return analysis;
     }
 }

@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import org.json.JSONObject;
+
+import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -54,16 +56,13 @@ public class LlmIntentClassifier implements IIntentClassifier {
         String response = llmRouter.sendRequest(orchestrator, prompt, 0.0f, proxyUrl, context);
         context.log("Evo-IntentClassifier-Response: " + response);
 
-        return new JSONObject(cleanResponse(response));
-    }
-
-    private String cleanResponse(String response) {
-        String trimmed = response.trim();
-        int start = trimmed.indexOf("{");
-        int end = trimmed.lastIndexOf("}");
-        if (start != -1 && end != -1 && end > start) {
-            return trimmed.substring(start, end + 1);
+        JSONObject classification = JsonUtils.extractJsonObject(response);
+        if (classification == null) {
+            context.log("Evo-IntentClassifier: ERROR - Failed to extract JSON classification. Returning unclear.");
+            classification = new JSONObject();
+            classification.put("intent", "unclear");
+            classification.put("reason", "Failed to parse AI response.");
         }
-        return trimmed;
+        return classification;
     }
 }
