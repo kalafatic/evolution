@@ -46,6 +46,13 @@ public class SWTFactory {
 		container.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		return container;
 	}
+	
+	public static Composite createComposite(Composite parent, int style, int columns) {
+		Composite container = new Composite(parent, SWT.NONE | style);
+		container.setLayout(new GridLayout(columns, false));
+		container.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return container;
+	}
 
 	public static Group createGroup(Composite parent, String text, int columns) {
 		Group composite = new Group(parent, SWT.NONE);

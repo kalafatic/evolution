@@ -34,7 +34,7 @@ public class AiSettingsGroup extends AEvoGroup {
     private Combo aiModeCombo;
     private Combo aiRemoteCombo;
     private Text remoteTokenText, remoteUrlText;
-    private Composite compositeRemote;
+    private Composite compositeLocal, compositeRemote;
     private AiChatPage page;
 
     public AiSettingsGroup(FormToolkit toolkit, Composite parent, AiChatPage page, Orchestrator orchestrator) {
@@ -44,29 +44,26 @@ public class AiSettingsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "AI Settings", 3, false);
-
-        SWTFactory.createLabel(group, "AI Mode:");
-        aiModeCombo = SWTFactory.createCombo(group);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "AI Settings", 1, false);
+        
+        compositeLocal = SWTFactory.createComposite(group, SWT.BORDER, 3);
+        
+        SWTFactory.createLabel(compositeLocal, "AI Mode:");
+        aiModeCombo = SWTFactory.createCombo(compositeLocal);
         for (AiMode mode : AiMode.values()) {
             aiModeCombo.add(mode.getName());
-        }        
-        if (AiMode.LOCAL.equals(AiMode.get(aiModeCombo.getSelectionIndex()))) {
-        	new Label(group, SWT.NONE).setText("Select Model:");	
-        	
-        	selectModel(group);
-
-		}
+        }       
+        SWTFactory.createLabel(compositeLocal, "");
+      
         
-        SWTFactory.createLabel(group, "");
-
-        compositeRemote = new Composite(group, SWT.BORDER);
-        compositeRemote.setLayout(new GridLayout(3, false));
-        GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 3;
-        gd.grabExcessVerticalSpace = true;
-        compositeRemote.setLayoutData(gd);
-
+        SWTFactory.createLabel(compositeLocal,"Model:");	    	
+    	selectModel(compositeLocal);
+    	SWTFactory.createLabel(compositeLocal, "");
+    	
+    	compositeLocal.setEnabled(AiMode.LOCAL.equals(orchestrator.getAiMode()));	
+        
+        
+        compositeRemote = SWTFactory.createComposite(group, SWT.BORDER, 3);
         SWTFactory.createLabel(compositeRemote, "AI Remote:");
         aiRemoteCombo = SWTFactory.createCombo(compositeRemote);
         // Providers will be populated in refreshUI
@@ -105,6 +102,7 @@ public class AiSettingsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.syncModelWithUI();
+                compositeLocal.setEnabled(AiMode.LOCAL.equals(AiMode.get(aiModeCombo.getSelectionIndex())));
             }
         });
 
@@ -126,7 +124,9 @@ public class AiSettingsGroup extends AEvoGroup {
         remoteUrlText.addModifyListener(e -> page.syncModelWithUI());
     }
     
-    private Combo selectModel(Composite parent) {
+
+
+	private Combo selectModel(Composite parent) {
 		List<OllamaModel> models = OllamaConfigManager.loadModels(); // Load models to populate the combo
 		
 		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);	

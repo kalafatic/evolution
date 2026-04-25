@@ -113,7 +113,7 @@ public class ModelsGroup extends AEvoGroup {
 
 	public void createButtons(FormToolkit toolkit) {
 		Composite buttonBar = toolkit.createComposite(group);
-        buttonBar.setLayout(new GridLayout(7, false));
+        buttonBar.setLayout(new GridLayout(8, false));
         buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
         
         Button reloadButton = SWTFactory.createButton(buttonBar, "Reload");
