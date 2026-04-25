@@ -328,7 +328,8 @@ public class ChatGroup extends AEvoGroup {
 
             if (content.toLowerCase().contains("waiting for user") ||
                 content.toLowerCase().contains("guidance?") ||
-                content.contains("CLARIFY") ||
+                content.toLowerCase().contains("clarify") ||
+                content.toLowerCase().contains("clarification") ||
                 content.contains("[PROPOSAL:") ||
                 content.toLowerCase().contains("ambiguous")) {
                 agentType = "waiting";
@@ -407,6 +408,11 @@ public class ChatGroup extends AEvoGroup {
     public void setThinking(boolean show) {
         if (!isLoaded || browser.isDisposed()) return;
         browser.execute("showThinking(" + show + ");");
+    }
+
+    public void focusWaitingMessage() {
+        if (!isLoaded || browser.isDisposed()) return;
+        browser.execute("scrollToLastWaiting();");
     }
 
     private void refreshBrowser() {
