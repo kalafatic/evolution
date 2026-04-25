@@ -9,6 +9,7 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -90,14 +91,14 @@ public class McpOpenAiGroup extends AEvoGroup {
     @Override
     public void updateModel() {
         if (orchestrator != null) {
-            orchestrator.setAiMode(AiMode.get(aiModeCombo.getSelectionIndex()));
-            orchestrator.setMcpServerUrl(mcpUrlText.getText());
+            ProjectModelManager.getInstance().updateAiMode(orchestrator, AiMode.get(aiModeCombo.getSelectionIndex()));
+            ProjectModelManager.getInstance().updateMcpServerUrl(orchestrator, mcpUrlText.getText());
 
             eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
                 .updateToken(orchestrator, "openai", openAiTokenText.getText());
 
-            orchestrator.setOpenAiModel(openAiModelText.getText());
-            orchestrator.setOfflineMode(offlineBtn.getSelection());
+            ProjectModelManager.getInstance().updateOpenAiModel(orchestrator, openAiModelText.getText());
+            ProjectModelManager.getInstance().updateOfflineMode(orchestrator, offlineBtn.getSelection());
         }
     }
 

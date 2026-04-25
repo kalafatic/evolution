@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.view.editors;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.core.resources.IFile;
@@ -14,12 +13,8 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EContentAdapter;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -37,11 +32,10 @@ import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.part.MultiPageEditorPart;
 
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.listeners.EditorResourceChangeListener;
 import eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener;
@@ -87,7 +81,6 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private Orchestrator orchestrator;
     private TaskContext currentContext;
     private boolean isDirty = false;
-    private ResourceSet resourceSet;
     private Resource resource;
     private EditorResourceChangeListener resourceListener;
     private EditorSelectionListener selectionListener;
@@ -123,9 +116,6 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     public MultiPageEditor() {
         super();
-        resourceSet = new ResourceSetImpl();
-        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xml", new XMIResourceFactoryImpl());
-        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("evo", new XMIResourceFactoryImpl());
     }
 
     @Override
@@ -179,24 +169,17 @@ public class MultiPageEditor extends MultiPageEditorPart {
     }
 
     private void loadModel() {
-        OrchestrationPackage.eINSTANCE.eClass();
-        OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
-
+        ProjectModelManager modelManager = ProjectModelManager.getInstance();
         IEditorInput input = getEditorInput();
         if (input instanceof IFileEditorInput) {
             setPartName(((IFileEditorInput) input).getFile().getProject().getName());
-            URI uri = URI.createPlatformResourceURI(((IFileEditorInput) input).getFile().getFullPath().toString(), true);
-            resource = resourceSet.getResource(uri, true);
-            if (resource != null && !resource.getContents().isEmpty()) {
-                Object root = resource.getContents().get(0);
-                if (root instanceof Orchestrator) {
-                    orchestrator = (Orchestrator) root;
-                } else if (root instanceof EvoProject) {
-                    EvoProject project = (EvoProject) root;
-                    if (!project.getOrchestrations().isEmpty()) {
-                        orchestrator = project.getOrchestrations().get(0);
-                    }
+            try {
+                orchestrator = modelManager.loadOrchestrator(((IFileEditorInput) input).getFile());
+                if (orchestrator != null) {
+                    resource = orchestrator.eResource();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         } else if (input instanceof OrchestratorEditorInput) {
             orchestrator = ((OrchestratorEditorInput) input).getOrchestrator();
@@ -216,7 +199,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                     @Override
                     protected void execute(IProgressMonitor monitor) throws org.eclipse.core.runtime.CoreException, java.lang.reflect.InvocationTargetException {
                         try {
-                            resource.save(Collections.EMPTY_MAP);
+                            ProjectModelManager.getInstance().saveResource(resource);
                         } catch (IOException e) {
                             throw new org.eclipse.core.runtime.CoreException(new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", e.getMessage(), e));
                         }

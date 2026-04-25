@@ -6,8 +6,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
@@ -62,16 +62,15 @@ public class LlmSettingsGroup extends AEvoGroup {
     @Override
     public void updateModel() {
         if (orchestrator != null) {
-            if (orchestrator.getLlm() == null) {
-                orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
-            }
-            orchestrator.getLlm().setModel(llmModelText.getText());
             try {
-                orchestrator.getLlm().setTemperature(Float.parseFloat(llmTempText.getText()));
+                float temp = Float.parseFloat(llmTempText.getText());
+                ProjectModelManager.getInstance().updateLlmSettings(orchestrator, llmModelText.getText(), temp);
                 llmTempDecorator.hide();
             } catch (NumberFormatException e) {
                 llmTempDecorator.setDescriptionText("Temperature must be a number");
                 llmTempDecorator.show();
+                // Fallback update without temperature if invalid
+                ProjectModelManager.getInstance().updateLlmSettings(orchestrator, llmModelText.getText(), (orchestrator.getLlm() != null) ? orchestrator.getLlm().getTemperature() : 1.0f);
             }
         }
     }

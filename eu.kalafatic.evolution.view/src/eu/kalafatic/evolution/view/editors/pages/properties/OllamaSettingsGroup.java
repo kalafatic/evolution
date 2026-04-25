@@ -19,8 +19,8 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.manager.OllamaConfigManager;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
@@ -157,12 +157,7 @@ public class OllamaSettingsGroup extends AEvoGroup {
     @Override
     public void updateModel() {
         if (orchestrator != null) {
-            if (orchestrator.getOllama() == null) {
-                orchestrator.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
-            }
-            orchestrator.getOllama().setUrl(ollamaUrlText.getText());
-            orchestrator.getOllama().setModel(ollamaModelText.getText());
-            orchestrator.getOllama().setPath(ollamaPathText.getText());
+            ProjectModelManager.getInstance().updateOllamaSettings(orchestrator, ollamaUrlText.getText(), ollamaModelText.getText(), ollamaPathText.getText());
 
             boolean urlValid = !ollamaUrlText.getText().isEmpty() && ollamaUrlText.getText().startsWith("http");
             if (!urlValid) { ollamaUrlDecorator.setDescriptionText("Invalid Ollama URL"); ollamaUrlDecorator.show(); }
