@@ -57,7 +57,7 @@ public class ChatGroup extends AEvoGroup {
     }
 
     @Override
-    protected void refreshUI() {
+    public void refreshUI() {
         refreshBrowser();
     }
 
