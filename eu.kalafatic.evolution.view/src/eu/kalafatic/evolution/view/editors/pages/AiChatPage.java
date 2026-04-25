@@ -64,6 +64,7 @@ import java.util.stream.Collectors;
 public class AiChatPage extends AEvoPage {
 	private boolean isUpdating = false;
 	private Label modeIndicatorLabel;
+	private ContentProposalAdapter assistAdapter;
 	private TaskContext currentContext;
 	private OllamaService ollamaService;
 	private ChatThread currentThread;
@@ -309,10 +310,12 @@ public class AiChatPage extends AEvoPage {
 		if (orchestrator != null) {
 			if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
 			if (orchestrator.getLlm() == null) orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
-			NeuronService.getInstance().train(orchestrator, request);
+			String category = getCategory();
+			NeuronService.getInstance().train(orchestrator, request, category, 3);
 			editor.setDirty(true);
 			if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) orchestrator.setId("chat-" + System.currentTimeMillis());
 		}
+		if (assistAdapter != null) assistAdapter.closeProposalPopup();
 		if (!chatGroup.getText().isEmpty()) chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 		chatGroup.appendText("You: " + request, colorUser, SWT.BOLD);
 		chatGroup.appendText("\n\nEvo: Initializing orchestration...", colorEvolution, SWT.ITALIC);
@@ -571,6 +574,7 @@ public class AiChatPage extends AEvoPage {
 		if (orchestrator != null) {
 			if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
 			if (orchestrator.getLlm() == null) orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
+			NeuronService.getInstance().train(orchestrator, finalRequest, "coding", 5);
 			if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) orchestrator.setId("selfdev-" + System.currentTimeMillis());
 		}
 		if (!chatGroup.getText().isEmpty()) chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
@@ -734,7 +738,7 @@ public class AiChatPage extends AEvoPage {
 			eu.kalafatic.evolution.model.orchestration.Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
 			if (last.getEvaluationResult() == null) last.setEvaluationResult(OrchestrationFactory.eINSTANCE.createEvaluationResult());
 			last.getEvaluationResult().setUserSatisfaction(satisfaction); last.setComments(comments);
-			NeuronService.getInstance().train(orchestrator, comments, satisfaction);
+			NeuronService.getInstance().train(orchestrator, comments, "coding", satisfaction);
 			editor.setDirty(true); satisfactionGroup.setVisible(false); updateScrolledContent();
 			MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK); mb.setText("Thank You"); mb.setMessage("Your feedback has been recorded and will be used to improve the AI."); mb.open();
 		}
@@ -821,6 +825,7 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void provideInput(String input) {
+		if (assistAdapter != null) assistAdapter.closeProposalPopup();
 		instructionsGroup.resetBackground();
 		clearWaitingMessages();
 		if (orchestrationThread != null) {
@@ -867,6 +872,22 @@ public class AiChatPage extends AEvoPage {
 
 	public FormToolkit getToolkit() { return toolkit; }
 
+	/**
+	 * @evo:14:A reason=categorized-assist
+	 */
+	private String getCategory() {
+		if (currentStackTask != null) {
+			String type = currentStackTask.getType();
+			if ("SELF_DEV_MODE".equals(type) || "ASSISTED_CODING".equals(type) || "DARWIN_MODE".equals(type)) {
+				return "coding";
+			}
+		}
+		if (instructionsGroup != null) {
+			if (instructionsGroup.isSelfIterative() || instructionsGroup.isIterative()) return "coding";
+		}
+		return "chat";
+	}
+
 	public void setupContextAssist(StyledText text) {
 		IContentProposalProvider proposalProvider = (contents, position) -> {
 			String prefix = contents.substring(0, position);
@@ -891,7 +912,8 @@ public class AiChatPage extends AEvoPage {
 			}
 
 			// Neuron Proposals
-			String[] neuronProposals = NeuronService.getInstance().getProposals(orchestrator, finalPrefix);
+			String category = getCategory();
+			String[] neuronProposals = NeuronService.getInstance().getProposals(orchestrator, finalPrefix, category);
 			for (String p : neuronProposals) {
 				if (!allProposals.contains(p)) allProposals.add(p);
 			}
@@ -921,10 +943,17 @@ public class AiChatPage extends AEvoPage {
 			@Override public void setCursorPosition(org.eclipse.swt.widgets.Control control, int index) { ((StyledText) control).setSelection(index); }
 		};
 		KeyStroke ks = null; try { ks = KeyStroke.getInstance("Ctrl+Space"); } catch (Exception e) {}
-		ContentProposalAdapter adapter = new ContentProposalAdapter(text, contentAdapter, proposalProvider, ks, null);
-		adapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_REPLACE);
-		adapter.setAutoActivationDelay(200);
-		adapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyz".toCharArray());
+		assistAdapter = new ContentProposalAdapter(text, contentAdapter, proposalProvider, ks, null);
+		assistAdapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_REPLACE);
+		assistAdapter.setAutoActivationDelay(200);
+		assistAdapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyz".toCharArray());
+
+		text.addFocusListener(new org.eclipse.swt.events.FocusAdapter() {
+			@Override
+			public void focusLost(org.eclipse.swt.events.FocusEvent e) {
+				if (assistAdapter != null) assistAdapter.closeProposalPopup();
+			}
+		});
 	}
 
 	public void testAiConnectionRemote(int modeIndex, String remoteModel, String token, String apiUrl) {
