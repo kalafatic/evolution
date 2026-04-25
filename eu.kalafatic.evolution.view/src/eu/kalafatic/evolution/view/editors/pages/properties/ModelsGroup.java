@@ -535,7 +535,6 @@ public class ModelsGroup extends AEvoGroup {
             }
             editor.setDirty(true);
             if (page != null) {
-                page.syncModelWithUI();
                 page.refreshUI();
             }
         }
