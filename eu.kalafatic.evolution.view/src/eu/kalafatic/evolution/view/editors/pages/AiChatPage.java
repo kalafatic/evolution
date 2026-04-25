@@ -822,6 +822,7 @@ public class AiChatPage extends AEvoPage {
 
 	public void provideInput(String input) {
 		instructionsGroup.resetBackground();
+		clearWaitingMessages();
 		if (orchestrationThread != null) {
 			OrchestratorServiceImpl.getInstance().provideInput(orchestrator.getId(), input);
 		}
@@ -830,6 +831,17 @@ public class AiChatPage extends AEvoPage {
 			inputGroup.hide();
 			updateModeDisplay();
 			updateScrolledContent();
+		}
+	}
+
+	private void clearWaitingMessages() {
+		if (currentThread != null) {
+			currentThread.getMessages().forEach(m -> {
+				if ("waiting".equals(m.getAgentType())) {
+					m.setAgentType("response");
+				}
+			});
+			chatGroup.refreshUI();
 		}
 	}
 
