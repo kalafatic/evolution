@@ -32,7 +32,7 @@ public class OllamaSettingsGroup extends AEvoGroup {
 	
     private Text ollamaUrlText, ollamaModelText, ollamaPathText, ollamaVersionText;
     private PropertiesPage page;
-    private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator;
+    private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator, ollamaModelDecorator;
     private OllamaService ollamaService;
     private Combo modelCombo;
 
@@ -92,30 +92,54 @@ public class OllamaSettingsGroup extends AEvoGroup {
         ollamaPathDecorator = new ControlDecoration(ollamaPathText, SWT.TOP | SWT.LEFT);
         ollamaPathDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
         ollamaPathDecorator.hide();
+
+        ollamaModelDecorator = new ControlDecoration(ollamaModelText, SWT.TOP | SWT.LEFT);
+        ollamaModelDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+        ollamaModelDecorator.hide();
     }
 
     @Override
     protected void refreshUI() {
         if (orchestrator != null && orchestrator.getOllama() != null) {
-            ollamaUrlText.setText(orchestrator.getOllama().getUrl() != null ? orchestrator.getOllama().getUrl() : "");
-            ollamaModelText.setText(orchestrator.getOllama().getModel() != null ? orchestrator.getOllama().getModel() : "");
+            String url = orchestrator.getOllama().getUrl() != null ? orchestrator.getOllama().getUrl() : "";
+            String model = orchestrator.getOllama().getModel() != null ? orchestrator.getOllama().getModel() : "";
+            ollamaUrlText.setText(url);
+            ollamaModelText.setText(model);
             ollamaPathText.setText(orchestrator.getOllama().getPath() != null ? orchestrator.getOllama().getPath() : "");
 
-            ollamaService = new OllamaService(orchestrator.getOllama().getUrl(), orchestrator.getOllama().getModel());
+            ollamaService = new OllamaService(url, model);
 
-            // Populate combo
+            // Populate combo and verify model
             new Thread(() -> {
-                if (ollamaService.ping()) {
-                    List<OllamaModel> models = ollamaService.loadModels();
-                    Display.getDefault().asyncExec(() -> {
-                        if (!modelCombo.isDisposed()) {
-                            modelCombo.removeAll();
-                            Set<String> uniqueModels = new LinkedHashSet<>();
-                            for (OllamaModel m : models) uniqueModels.add(m.getName());
-                            for (String name : uniqueModels) modelCombo.add(name);
+                boolean reachable = ollamaService.ping();
+                List<OllamaModel> models = reachable ? ollamaService.loadModels() : java.util.Collections.emptyList();
+
+                Display.getDefault().asyncExec(() -> {
+                    if (modelCombo.isDisposed()) return;
+
+                    if (reachable) {
+                        ollamaUrlDecorator.hide();
+                        modelCombo.removeAll();
+                        Set<String> uniqueModels = new LinkedHashSet<>();
+                        boolean modelFound = false;
+                        for (OllamaModel m : models) {
+                            uniqueModels.add(m.getName());
+                            if (m.getName().equalsIgnoreCase(model)) modelFound = true;
                         }
-                    });
-                }
+                        for (String name : uniqueModels) modelCombo.add(name);
+
+                        if (!model.isEmpty() && !modelFound) {
+                            ollamaModelDecorator.setDescriptionText("Model not found in Ollama");
+                            ollamaModelDecorator.show();
+                        } else {
+                            ollamaModelDecorator.hide();
+                        }
+                    } else {
+                        ollamaUrlDecorator.setDescriptionText("Ollama server offline");
+                        ollamaUrlDecorator.show();
+                        ollamaModelDecorator.hide();
+                    }
+                });
             }).start();
 
             new Thread(() -> {

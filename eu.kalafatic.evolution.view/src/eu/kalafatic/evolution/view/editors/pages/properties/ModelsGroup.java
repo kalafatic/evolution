@@ -45,7 +45,7 @@ public class ModelsGroup extends AEvoGroup {
 
     private TableViewer viewer;
     private List<ModelItem> modelItems = new ArrayList<>();
-    
+    private eu.kalafatic.evolution.view.editors.pages.PropertiesPage page;
 
     public enum ModelState { OK, ERR, NA }
 
@@ -72,9 +72,9 @@ public class ModelsGroup extends AEvoGroup {
     }
 
 
-    public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
+    public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, eu.kalafatic.evolution.view.editors.pages.PropertiesPage page) {
         super(editor, orchestrator);
-       
+        this.page = page;
         createControl(toolkit, parent);
     }
 
@@ -91,6 +91,7 @@ public class ModelsGroup extends AEvoGroup {
         createColumns();
 
         viewer.setContentProvider(ArrayContentProvider.getInstance());
+        viewer.addDoubleClickListener(event -> handleUseModel());
 
         createButtons(toolkit);
         
@@ -130,6 +131,14 @@ public class ModelsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 handleTestModel();
+            }
+        });
+
+        Button useButton = SWTFactory.createButton(buttonBar, "Use");
+        useButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleUseModel();
             }
         });
 
@@ -502,6 +511,34 @@ public class ModelsGroup extends AEvoGroup {
             }
         };
         job.schedule();
+    }
+
+    private void handleUseModel() {
+        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+        if (selection.isEmpty()) return;
+        ModelItem item = (ModelItem) selection.getFirstElement();
+
+        if (orchestrator != null) {
+            if (item.local) {
+                if (orchestrator.getOllama() != null) {
+                    orchestrator.getOllama().setModel(item.name);
+                }
+                orchestrator.setLocalModel(item.name);
+                if (orchestrator.getLlm() != null) {
+                    orchestrator.getLlm().setModel(item.name);
+                }
+            } else {
+                orchestrator.setRemoteModel(item.name);
+                if (orchestrator.getLlm() != null) {
+                    orchestrator.getLlm().setModel(item.name);
+                }
+            }
+            editor.setDirty(true);
+            if (page != null) {
+                page.syncModelWithUI();
+                page.refreshUI();
+            }
+        }
     }
 
     private void handleRemoveModel() {

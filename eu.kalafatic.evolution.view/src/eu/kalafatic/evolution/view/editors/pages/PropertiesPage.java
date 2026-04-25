@@ -95,7 +95,7 @@ public class PropertiesPage extends AEvoPage {
 		additionalAiToolsGroup = new AdditionalAiToolsGroup(toolkit, comp, editor, orchestrator);
 		mcpOpenAiGroup = new McpOpenAiGroup(toolkit, comp, editor, orchestrator, this);
 		aiChatModelsGroup = new AiChatModelsGroup(toolkit, comp, editor, orchestrator, this);
-		modelsGroup = new ModelsGroup(toolkit, comp, editor, orchestrator);
+		modelsGroup = new ModelsGroup(toolkit, comp, editor, orchestrator, this);
 
 		ModifyListener ml = e -> {
 			if (orchestrator != null && !isUpdating) {
@@ -155,6 +155,21 @@ public class PropertiesPage extends AEvoPage {
 	@Override
 	public void setOrchestrator(Orchestrator orchestrator) {
 		super.setOrchestrator(orchestrator);
+		if (orchestrator != null) {
+			if (orchestrator.getLlm() == null) {
+				orchestrator.setLlm(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createLLM());
+				orchestrator.getLlm().setModel("gpt-4o");
+				orchestrator.getLlm().setTemperature(1.0f);
+			}
+			if (orchestrator.getOllama() == null) {
+				orchestrator.setOllama(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOllama());
+				orchestrator.getOllama().setUrl("http://127.0.0.1:11434");
+				orchestrator.getOllama().setModel("llama3.2:3b");
+			}
+			if (orchestrator.getAiChat() == null) {
+				orchestrator.setAiChat(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAiChat());
+			}
+		}
 		if (orchestratorGroup != null) orchestratorGroup.setOrchestrator(orchestrator);
 		if (llmSettingsGroup != null) llmSettingsGroup.setOrchestrator(orchestrator);
 		if (ollamaSettingsGroup != null) ollamaSettingsGroup.setOrchestrator(orchestrator);

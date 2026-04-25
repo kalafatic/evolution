@@ -14,7 +14,7 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class LlmSettingsGroup extends AEvoGroup {
     private Text llmModelText, llmTempText;
-    private ControlDecoration llmTempDecorator;
+    private ControlDecoration llmTempDecorator, llmModelDecorator;
 
     public LlmSettingsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(editor, orchestrator);
@@ -33,13 +33,29 @@ public class LlmSettingsGroup extends AEvoGroup {
         llmTempDecorator = new ControlDecoration(llmTempText, SWT.TOP | SWT.LEFT);
         llmTempDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
         llmTempDecorator.hide();
+
+        llmModelDecorator = new ControlDecoration(llmModelText, SWT.TOP | SWT.LEFT);
+        llmModelDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_INFORMATION).getImage());
+        llmModelDecorator.hide();
     }
 
     @Override
     protected void refreshUI() {
         if (orchestrator != null && orchestrator.getLlm() != null) {
-            llmModelText.setText(orchestrator.getLlm().getModel() != null ? orchestrator.getLlm().getModel() : "");
+            String model = orchestrator.getLlm().getModel() != null ? orchestrator.getLlm().getModel() : "";
+            llmModelText.setText(model);
             llmTempText.setText(String.valueOf(orchestrator.getLlm().getTemperature()));
+
+            // Verify token
+            eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
+                eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().resolve(orchestrator, model);
+
+            if (resolved != null && (resolved.token == null || resolved.token.isEmpty() || "YOUR_API_KEY".equals(resolved.token))) {
+                llmModelDecorator.setDescriptionText("API Token missing for this model");
+                llmModelDecorator.show();
+            } else {
+                llmModelDecorator.hide();
+            }
         }
     }
 
