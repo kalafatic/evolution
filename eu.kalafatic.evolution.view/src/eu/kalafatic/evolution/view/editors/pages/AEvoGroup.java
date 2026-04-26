@@ -20,7 +20,7 @@ public abstract class AEvoGroup {
     protected Orchestrator orchestrator;
     protected AtomicBoolean refreshPending = new AtomicBoolean(false);
 
-    protected Color lightGreen, lightRed, lightOrange;
+    protected Color lightGreen, lightRed, lightOrange, lightBlue, lightPurple, lightCyan;
 
     public AEvoGroup(MultiPageEditor editor, Orchestrator orchestrator) {
         this.editor = editor;
@@ -29,6 +29,9 @@ public abstract class AEvoGroup {
         this.lightGreen = editor.getLightGreen();
         this.lightRed = editor.getLightRed();
         this.lightOrange = editor.getLightOrange();
+        this.lightBlue = editor.getLightBlue();
+        this.lightPurple = editor.getLightPurple();
+        this.lightCyan = editor.getLightCyan();
     }
 
     /**
