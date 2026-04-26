@@ -117,7 +117,7 @@ public class AiChatPage extends AEvoPage {
 		colorHybrid = display.getSystemColor(SWT.COLOR_CYAN);
 		colorRemote = display.getSystemColor(SWT.COLOR_MAGENTA);
 		colorWaiting = new Color(display, 255, 140, 0); // Dark Orange
-		colorLightOrange = new Color(display, 255, 224, 189);
+		colorLightOrange = new Color(display, 255, 200, 150);
 		lightGreen = new Color(Display.getDefault(), 220, 255, 220);
 
 		Font defaultFont = JFaceResources.getDefaultFont();
@@ -316,7 +316,6 @@ public class AiChatPage extends AEvoPage {
 			if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) orchestrator.setId("chat-" + System.currentTimeMillis());
 		}
 		if (assistAdapter != null) assistAdapter.closeProposalPopup();
-		if (!chatGroup.getText().isEmpty()) chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 		chatGroup.appendText("You: " + request, colorUser, SWT.BOLD);
 		chatGroup.appendText("\n\nEvo: Initializing orchestration...", colorEvolution, SWT.ITALIC);
 		instructionsGroup.setRequest("");
@@ -424,10 +423,9 @@ public class AiChatPage extends AEvoPage {
 						chatGroup.setThinking(false);
 
 						if (!finalResult.getFileChanges().isEmpty()) {
-							chatGroup.appendText("\n\nResult Summary:\n" + String.join("\n", finalResult.getFileChanges()), colorUser, SWT.NORMAL);
+							chatGroup.appendText("Result Summary:\n" + String.join("\n", finalResult.getFileChanges()), colorUser, SWT.NORMAL);
 						}
 
-						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 						chatGroup.appendText("Final Response: " + finalResult.getResponse(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						satisfactionGroup.setVisible(true); updateScrolledContent();
@@ -577,7 +575,6 @@ public class AiChatPage extends AEvoPage {
 			NeuronService.getInstance().train(orchestrator, finalRequest, "coding", 5);
 			if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) orchestrator.setId("selfdev-" + System.currentTimeMillis());
 		}
-		if (!chatGroup.getText().isEmpty()) chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 		chatGroup.appendText("User [SELF-DEV]: " + finalRequest, colorUser, SWT.BOLD);
 		chatGroup.appendText("\n\nEvo: Initializing Self-Development Supervisor loop...", colorEvolution, SWT.ITALIC | SWT.BOLD);
 		instructionsGroup.setRequest("");
@@ -632,17 +629,16 @@ public class AiChatPage extends AEvoPage {
 						chatGroup.setThinking(false);
 
 						if (!summary.isEmpty()) {
-							chatGroup.appendText("\n\nResult Summary: " + summary, colorUser, SWT.NORMAL);
+							chatGroup.appendText("Result Summary: " + summary, colorUser, SWT.NORMAL);
 						}
 
-						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 						chatGroup.appendText("Final Response: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						satisfactionGroup.setVisible(true); updateScrolledContent();
 					}
 				});
 			} catch (Exception e) {
-				Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) { chatGroup.setThinking(false); chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL); chatGroup.appendText("Supervisor Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD); } });
+				Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) { chatGroup.setThinking(false); chatGroup.appendText("Supervisor Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD); } });
 			} finally {
 				Display.getDefault().asyncExec(() -> {
 					instructionsGroup.setOrchestrationRunning(false);
@@ -862,7 +858,7 @@ public class AiChatPage extends AEvoPage {
 		else if (log.contains("Agent [") && log.contains("Tester")) { color = colorTester; style = SWT.BOLD; }
 		else if (log.contains("Agent [") && log.contains("Reviewer")) { color = colorReviewer; style = SWT.BOLD; }
 		else if (log.startsWith("Orchestrator Error:") || log.contains("Exception:")) { color = colorError; style = SWT.BOLD; }
-		chatGroup.appendText("\n" + log, color, style);
+		chatGroup.appendText(log, color, style);
 		editor.setDirty(true);
 	}
 
