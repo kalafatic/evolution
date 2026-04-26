@@ -130,8 +130,11 @@ public class TaskContext {
     }
 
     public void provideApproval(boolean approved) {
-        if (approvalFuture != null) {
+        if (approvalFuture != null && !approvalFuture.isDone()) {
             approvalFuture.complete(approved);
+        }
+        if (inputFuture != null && !inputFuture.isDone()) {
+            provideInput(approved ? "Approved" : "Rejected");
         }
     }
 

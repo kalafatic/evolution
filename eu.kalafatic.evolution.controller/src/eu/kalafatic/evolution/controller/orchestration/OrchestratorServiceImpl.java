@@ -22,7 +22,10 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
     @Override
     public TaskResult execute(TaskRequest request) {
-        String taskId = UUID.randomUUID().toString();
+        final Orchestrator inputOrchModel = (Orchestrator) request.getContext().get("orchestrator");
+        String taskId = (inputOrchModel != null && inputOrchModel.getId() != null && !inputOrchModel.getId().isEmpty()) ?
+                         inputOrchModel.getId() : UUID.randomUUID().toString();
+
         TaskResult result = new TaskResult();
         result.setId(taskId);
         result.setStatus(TaskResult.Status.RUNNING);
@@ -31,9 +34,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         executor.submit(() -> {
             try {
                 EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
+                Orchestrator orchModel = inputOrchModel;
 
                 // We might need a real Orchestrator EMF object here if the system depends on it
-                Orchestrator orchModel = (Orchestrator) request.getContext().get("orchestrator");
                 PromptInstructions promptInstructions = null;
                 
                 if (orchModel == null) {
@@ -160,7 +163,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             context.log("User Interaction: Approval provided - " + approved);
             context.provideApproval(approved);
             TaskResult result = tasks.get(taskId);
-            if (result != null && result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
+            if (result != null && (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL || result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT)) {
                 result.setStatus(TaskResult.Status.RUNNING);
                 result.setWaitingMessage(null);
             }
