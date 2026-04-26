@@ -61,6 +61,9 @@ import eu.kalafatic.evolution.controller.manager.EnvironmentSuggestionService;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * @evo:16:A reason=darwin-mode-sync
+ */
 public class AiChatPage extends AEvoPage {
 	private boolean isUpdating = false;
 	private Label modeIndicatorLabel;
@@ -277,6 +280,7 @@ public class AiChatPage extends AEvoPage {
           
         promptInstructions.setIterativeMode(instructionsGroup.isIterative());
         promptInstructions.setSelfIterativeMode(instructionsGroup.isSelfIterative());
+        orchestrator.setDarwinMode(instructionsGroup.isDarwin());
         promptInstructions.setAutoApprove(instructionsGroup.isAutoApprove());
         promptInstructions.setPreferredMaxIterations(instructionsGroup.getMaxIterations());
         promptInstructions.setGitAutomation(instructionsGroup.isGitAutomationCheck());
@@ -818,7 +822,9 @@ public class AiChatPage extends AEvoPage {
 		// 3. Set mode
 		if ("SELF_DEV_MODE".equals(task.getType())) {
 			instructionsGroup.setSelfIterative(true);
-		} else if ("ASSISTED_CODING".equals(task.getType()) || "DARWIN_MODE".equals(task.getType())) {
+		} else if ("DARWIN_MODE".equals(task.getType())) {
+			instructionsGroup.setDarwin(true);
+		} else if ("ASSISTED_CODING".equals(task.getType())) {
 			instructionsGroup.setIterative(true);
 		} else {
 			instructionsGroup.setIterative(false);
@@ -889,7 +895,7 @@ public class AiChatPage extends AEvoPage {
 			}
 		}
 		if (instructionsGroup != null) {
-			if (instructionsGroup.isSelfIterative() || instructionsGroup.isIterative()) return "coding";
+			if (instructionsGroup.isSelfIterative() || instructionsGroup.isIterative() || instructionsGroup.isDarwin()) return "coding";
 		}
 		return "chat";
 	}

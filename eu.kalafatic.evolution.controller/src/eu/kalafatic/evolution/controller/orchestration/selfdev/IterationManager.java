@@ -12,7 +12,12 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
 import java.util.stream.Collectors;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
+/**
+ * @evo:16:A reason=darwin-proposal-logging
+ */
 public class IterationManager {
     private final Iteration iteration;
     private final TaskContext context;
@@ -231,6 +236,34 @@ public class IterationManager {
         return bestVariant;
     }
 
+    private void logDarwinBranches(List<BranchVariant> variants) {
+        try {
+            JSONObject root = new JSONObject();
+            JSONArray variantsArr = new JSONArray();
+            for (BranchVariant v : variants) {
+                JSONObject vObj = new JSONObject();
+                vObj.put("id", v.getId());
+                vObj.put("strategy", v.getStrategy());
+                vObj.put("isBest", false);
+                vObj.put("isApproved", false);
+
+                JSONArray actionsArr = new JSONArray();
+                for (BranchVariant.Action a : v.getActions()) {
+                    JSONObject aObj = new JSONObject();
+                    aObj.put("operation", a.getOperation());
+                    aObj.put("target", a.getTarget());
+                    actionsArr.put(aObj);
+                }
+                vObj.put("actions", actionsArr);
+                variantsArr.put(vObj);
+            }
+            root.put("variants", variantsArr);
+            context.log("Evo-DarwinEngine-Proposal: [DARWIN_BRANCHES] " + root.toString());
+        } catch (Exception e) {
+            context.log("Error logging Darwin branches: " + e.getMessage());
+        }
+    }
+
     private EvaluationResult runDarwin() throws Exception {
         context.log("[ITERATION] Starting Darwin iteration: " + iteration.getId());
         iteration.setStatus(IterationStatus.RUNNING);
@@ -260,6 +293,7 @@ public class IterationManager {
             FailureMemory failureMemory = memoryService.getFailureMemory();
 
             List<BranchVariant> variants = darwinEngine.generateVariants(goal, snapshot, failureMemory, trajectory);
+            logDarwinBranches(variants);
 
             iteration.setPhase("PLAN");
             // Ensure we start variants from the snapshot
