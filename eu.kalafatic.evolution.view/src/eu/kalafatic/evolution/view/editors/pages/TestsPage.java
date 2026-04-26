@@ -97,6 +97,15 @@ public class TestsPage extends AEvoPage {
 		testsContent.setLayout(new GridLayout(1, false));
 		testsScrolled.setContent(testsContent);
 
+		discoverTests();
+		predefinedTestsGroup = new PredefinedTestsGroup(toolkit, testsContent, editor, orchestrator, this);
+		iterativeDevelopmentLifecycleGroup = new IterativeDevelopmentLifecycleGroup(toolkit, testsContent, editor, orchestrator, this);
+
+		Button addBtn = toolkit.createButton(testsContent, "Add Test", SWT.PUSH);
+		addBtn.addSelectionListener(new SelectionAdapter() {
+			@Override public void widgetSelected(SelectionEvent e) { addNewTest(); }
+		});
+
 		statusBrowser = new Browser(mainSash, SWT.NONE);
 		mainSash.setWeights(new int[] { 2, 1 });
 		statusBrowser.setText(getHtmlTemplate());
@@ -113,12 +122,11 @@ public class TestsPage extends AEvoPage {
 	protected void refreshUI() {
 		if (isUpdating || orchestrator == null || testsContent == null || testsContent.isDisposed()) return;
 		isUpdating = true;
-		for (org.eclipse.swt.widgets.Control child : testsContent.getChildren()) child.dispose();
 		testRows.clear();
 		discoverTests();
 
-		predefinedTestsGroup = new PredefinedTestsGroup(toolkit, testsContent, editor, orchestrator, this);
-		iterativeDevelopmentLifecycleGroup = new IterativeDevelopmentLifecycleGroup(toolkit, testsContent, editor, orchestrator, this);
+		if (predefinedTestsGroup != null) predefinedTestsGroup.setOrchestrator(orchestrator);
+		if (iterativeDevelopmentLifecycleGroup != null) iterativeDevelopmentLifecycleGroup.setOrchestrator(orchestrator);
 
 		// Synchronize Lifecycle Browser with Model Phase
 		if (orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
@@ -134,17 +142,21 @@ public class TestsPage extends AEvoPage {
 			}
 		}
 
+		// Remove existing dynamic groups
+		for (org.eclipse.swt.widgets.Control child : testsContent.getChildren()) {
+			if (child.getData() instanceof TestTableGroup) child.dispose();
+		}
+
 		java.util.Map<String, List<Test>> groupedBy = new java.util.HashMap<>();
 		for (Test test : orchestrator.getTests()) {
 			String type = test.getType() != null ? test.getType() : "General";
 			if (!"Predefined".equals(type)) groupedBy.computeIfAbsent(type, k -> new java.util.ArrayList<>()).add(test);
 		}
-		for (String type : groupedBy.keySet()) new TestTableGroup(toolkit, testsContent, type + " Tests", groupedBy.get(type), false, editor, orchestrator, this);
+		for (String type : groupedBy.keySet()) {
+			TestTableGroup dynamicGroup = new TestTableGroup(toolkit, testsContent, type + " Tests", groupedBy.get(type), false, editor, orchestrator, this);
+			dynamicGroup.getGroup().setData(dynamicGroup);
+		}
 
-		Button addBtn = toolkit.createButton(testsContent, "Add Test", SWT.PUSH);
-		addBtn.addSelectionListener(new SelectionAdapter() {
-			@Override public void widgetSelected(SelectionEvent e) { addNewTest(); }
-		});
 		testsContent.layout(true, true);
 		testsScrolled.setMinSize(testsContent.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 		testsScrolled.reflow(true);
