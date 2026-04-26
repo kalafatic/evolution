@@ -86,6 +86,14 @@ public class ChatGroup extends AEvoGroup {
                 }
             });
 
+            Button quoteSelectionBtn = toolkit.createButton(toolbar, "Quote Selection", SWT.PUSH);
+            quoteSelectionBtn.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    browser.execute("quoteSelection();");
+                }
+            });
+
             Button copySelectionBtn = toolkit.createButton(toolbar, "Copy Selection", SWT.PUSH);
             copySelectionBtn.addSelectionListener(new SelectionAdapter() {
                 @Override
@@ -197,6 +205,9 @@ public class ChatGroup extends AEvoGroup {
                             break;
                         case "copy":
                             handleCopy(text);
+                            break;
+                        case "quote":
+                            page.handleQuote(text);
                             break;
                         case "approve":
                         case "create":

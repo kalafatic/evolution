@@ -70,6 +70,7 @@ public class AiChatPage extends AEvoPage {
 	private ChatThread currentThread;
 	private Composite content;
 	private long lastStatusUpdate = 0;
+	private String activeTaskId;
 
 	private ChatMgmtGroup chatMgmtGroup;
 	private AiSettingsGroup aiSettingsGroup;
@@ -330,7 +331,8 @@ public class AiChatPage extends AEvoPage {
 		orchestrationThread = new Thread(() -> {
 			try {
 				TaskResult result = OrchestratorServiceImpl.getInstance().execute(taskRequest);
-				String taskId = result.getId();
+				activeTaskId = result.getId();
+				String taskId = activeTaskId;
 				int lastProcessedIndex = 0;
 				boolean approvalShown = false;
 				boolean inputShown = false;
@@ -742,9 +744,8 @@ public class AiChatPage extends AEvoPage {
 
 	public void provideApproval(boolean approved) {
 		if (orchestrationThread != null) {
-			// We find the current task ID from the service (simplified, assuming one active task)
-			// In a real multi-tenant scenario, we'd need to track which taskId belongs to this page
-			OrchestratorServiceImpl.getInstance().provideApproval(orchestrator.getId(), approved);
+			String taskId = activeTaskId != null ? activeTaskId : orchestrator.getId();
+			OrchestratorServiceImpl.getInstance().provideApproval(taskId, approved);
 		}
 		if (currentContext != null) {
 			currentContext.provideApproval(approved);
@@ -761,6 +762,14 @@ public class AiChatPage extends AEvoPage {
 	public void handleClarify() {
 		instructionsGroup.focusAndHighlight(colorLightOrange);
 		chatGroup.focusWaitingMessage();
+	}
+
+	public void handleQuote(String text) {
+		if (text == null || text.isEmpty()) return;
+		String current = instructionsGroup.getRequest();
+		String quote = "> " + text.replace("\n", "\n> ") + "\n\n";
+		instructionsGroup.setRequest(current + (current.isEmpty() ? "" : "\n\n") + quote);
+		instructionsGroup.focusAndHighlight(colorWhite);
 	}
 
 	public void handleOpenDiff(String path) {
@@ -825,7 +834,8 @@ public class AiChatPage extends AEvoPage {
 		instructionsGroup.resetBackground();
 		clearWaitingMessages();
 		if (orchestrationThread != null) {
-			OrchestratorServiceImpl.getInstance().provideInput(orchestrator.getId(), input);
+			String taskId = activeTaskId != null ? activeTaskId : orchestrator.getId();
+			OrchestratorServiceImpl.getInstance().provideInput(taskId, input);
 		}
 		if (currentContext != null) {
 			currentContext.provideInput(input);
