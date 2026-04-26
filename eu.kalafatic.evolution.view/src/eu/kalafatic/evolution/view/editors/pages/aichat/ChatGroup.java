@@ -264,41 +264,42 @@ public class ChatGroup extends AEvoGroup {
     }
 
     public void appendText(String text, org.eclipse.swt.graphics.Color color, int style) {
-        if (currentThread == null) return;
+        if (currentThread == null || text == null || text.trim().isEmpty()) return;
     	if (color == null) {
     		color = Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
 		}
     	
+        String trimmedText = text.trim();
         String sender = "Evo";
-        String content = text;
+        String content = trimmedText;
         String agentType = "ai";
-        if (text.startsWith("You: ")) {
+        if (trimmedText.startsWith("You: ")) {
             sender = "You";
-            content = text.substring(5);
+            content = trimmedText.substring(5);
             agentType = "user";
-        } else if (text.startsWith("User [SELF-DEV]: ")) {
+        } else if (trimmedText.startsWith("User [SELF-DEV]: ")) {
             sender = "User [SELF-DEV]";
-            content = text.substring(17);
+            content = trimmedText.substring(17);
             agentType = "user";
-        } else if (text.startsWith("Final Response: ")) {
+        } else if (trimmedText.startsWith("Final Response: ")) {
             sender = "Final Response";
-            content = text.substring(16);
+            content = trimmedText.substring(16);
             agentType = "final-response";
             if (content.contains("CLARIFY:")) {
                 agentType = "waiting";
             }
-        } else if (text.startsWith("Error: ")) {
+        } else if (trimmedText.startsWith("Error: ")) {
             sender = "Error";
-            content = text.substring(7);
+            content = trimmedText.substring(7);
             agentType = "error";
-        } else if (text.startsWith("Result Summary: ")) {
+        } else if (trimmedText.startsWith("Result Summary: ")) {
             sender = "Result Summary";
-            content = text.substring(16);
+            content = trimmedText.substring(16);
             agentType = "result-summary";
-        } else if (text.startsWith("Evo-") && text.contains(": ")) {
-            int colon = text.indexOf(": ");
-            sender = text.substring(0, colon);
-            content = text.substring(colon + 2).trim();
+        } else if (trimmedText.startsWith("Evo-") && trimmedText.contains(": ")) {
+            int colon = trimmedText.indexOf(": ");
+            sender = trimmedText.substring(0, colon);
+            content = trimmedText.substring(colon + 2).trim();
 
             String senderLower = sender.toLowerCase();
             if (senderLower.contains("-planner-")) agentType = "planner";
@@ -334,29 +335,29 @@ public class ChatGroup extends AEvoGroup {
                 content.toLowerCase().contains("ambiguous")) {
                 agentType = "waiting";
             }
-        } else if (text.startsWith("Evolution: ")) {
+        } else if (trimmedText.startsWith("Evolution: ")) {
             sender = "Evo";
-            content = text.substring(11);
+            content = trimmedText.substring(11);
             agentType = "ai";
-        } else if (text.startsWith("Evo: ")) {
+        } else if (trimmedText.startsWith("Evo: ")) {
             sender = "Evo";
-            content = text.substring(5);
+            content = trimmedText.substring(5);
             agentType = "ai";
-        } else if (text.startsWith("User Interaction: ")) {
+        } else if (trimmedText.startsWith("User Interaction: ")) {
             sender = "User Interaction";
-            content = text.substring(18);
+            content = trimmedText.substring(18);
             agentType = "user";
-        } else if (text.startsWith("LlmRouter: ") || text.startsWith("LlmRouter-")) {
-            int colon = text.indexOf(": ");
-            sender = text.substring(0, colon);
-            content = text.substring(colon + 2);
+        } else if (trimmedText.startsWith("LlmRouter: ") || trimmedText.startsWith("LlmRouter-")) {
+            int colon = trimmedText.indexOf(": ");
+            sender = trimmedText.substring(0, colon);
+            content = trimmedText.substring(colon + 2);
             agentType = "orchestrator";
-        } else if (text.contains("Agent [")) {
-            int start = text.indexOf("Agent [");
-            int end = text.indexOf("]", start);
+        } else if (trimmedText.contains("Agent [")) {
+            int start = trimmedText.indexOf("Agent [");
+            int end = trimmedText.indexOf("]", start);
             if (end != -1) {
-                sender = text.substring(start, end + 1);
-                content = text.substring(end + 1).trim();
+                sender = trimmedText.substring(start, end + 1);
+                content = trimmedText.substring(end + 1).trim();
                 if (content.startsWith(":")) content = content.substring(1).trim();
                 String agentName = sender.toLowerCase();
                 if (agentName.contains("planner")) agentType = "planner";
@@ -365,12 +366,12 @@ public class ChatGroup extends AEvoGroup {
                 else if (agentName.contains("tester")) agentType = "tester";
                 else if (agentName.contains("reviewer")) agentType = "reviewer";
             }
-        } else if (text.contains("Tool [")) {
-            int start = text.indexOf("Tool [");
-            int end = text.indexOf("]", start);
+        } else if (trimmedText.contains("Tool [")) {
+            int start = trimmedText.indexOf("Tool [");
+            int end = trimmedText.indexOf("]", start);
             if (end != -1) {
-                sender = text.substring(start, end + 1);
-                content = text.substring(end + 1).trim();
+                sender = trimmedText.substring(start, end + 1);
+                content = trimmedText.substring(end + 1).trim();
                 if (content.startsWith(":")) content = content.substring(1).trim();
                 agentType = "tool";
             }
