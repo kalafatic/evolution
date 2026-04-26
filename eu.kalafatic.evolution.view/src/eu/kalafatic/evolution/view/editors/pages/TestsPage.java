@@ -159,15 +159,29 @@ public class TestsPage extends AEvoPage {
 		if (!discoveredTestClasses.isEmpty()) return;
 		Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.tests");
 		if (bundle != null) {
+			// Try to find .class files first
 			java.util.Enumeration<java.net.URL> entries = bundle.findEntries("/", "*Test.class", true);
 			if (entries != null) {
 				while (entries.hasMoreElements()) {
 					java.net.URL url = entries.nextElement(); String path = url.getPath();
 					String className = path.replace("/", "."); if (className.endsWith(".class")) className = className.substring(0, className.length() - 6);
 					if (className.startsWith(".")) className = className.substring(1);
-					String[] prefixes = { "bin.", "target.classes.", "target.test-classes." };
+					String[] prefixes = { "bin.", "target.classes.", "target.test-classes.", "src." };
 					for (String pref : prefixes) if (className.contains(pref)) className = className.substring(className.indexOf(pref) + pref.length());
 					try { Class<?> clazz = bundle.loadClass(className); if (!clazz.isInterface() && !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) discoveredTestClasses.add(clazz); } catch (Exception e) {}
+				}
+			}
+			// If no classes found, try to find .java files as fallback for source-only environments
+			if (discoveredTestClasses.isEmpty()) {
+				entries = bundle.findEntries("/", "*Test.java", true);
+				if (entries != null) {
+					while (entries.hasMoreElements()) {
+						java.net.URL url = entries.nextElement(); String path = url.getPath();
+						String className = path.replace("/", "."); if (className.endsWith(".java")) className = className.substring(0, className.length() - 5);
+						if (className.startsWith(".")) className = className.substring(1);
+						if (className.contains("src.")) className = className.substring(className.indexOf("src.") + 4);
+						try { Class<?> clazz = bundle.loadClass(className); if (!clazz.isInterface() && !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) discoveredTestClasses.add(clazz); } catch (Exception e) {}
+					}
 				}
 			}
 		}

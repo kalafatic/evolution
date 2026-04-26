@@ -180,19 +180,25 @@ public class AiFlowPage extends Composite {
 			if (json.equals(lastJson) && isLoaded) return; // No change, avoid update
 
 			if (!isLoaded) {
-				browser.setText(getHtmlTemplate());
+				// Only set text if not already loading to avoid "blinking"
+				if (browser.getUrl() == null || browser.getUrl().isEmpty() || browser.getUrl().equals("about:blank")) {
+					browser.setText(getHtmlTemplate());
+				}
 				return;
 			}
 
 			try {
-				// If updateGraph is not defined, the template was lost (e.g. after reload)
+				// Check if updateGraph is actually available before calling it
 				Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
 				if (result instanceof Boolean && (Boolean) result) {
 					browser.execute("updateGraph(" + json + ");");
 					lastJson = json;
 				} else {
-					// Fallback if template lost
-					browser.setText(getHtmlTemplate());
+					// If template is lost, set it again, but only if not already loading
+					if (browser.getUrl() == null || browser.getUrl().isEmpty() || browser.getUrl().equals("about:blank")) {
+						isLoaded = false;
+						browser.setText(getHtmlTemplate());
+					}
 				}
 			} catch (Exception e) {
 				// Edge-based browser may throw exception if not fully initialized

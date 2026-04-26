@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 
 public class IterationMemoryService {
+    private final File projectRoot;
     private final File memoryDir;
     private final ObjectMapper mapper;
     private final List<IterationRecord> records = new ArrayList<>();
@@ -20,6 +21,7 @@ public class IterationMemoryService {
     private final FailureMemory failureMemory = new FailureMemory();
 
     public IterationMemoryService(File projectRoot) {
+        this.projectRoot = projectRoot;
         this.memoryDir = new File(projectRoot, "orchestrator/memory");
         if (!memoryDir.exists()) {
             memoryDir.mkdirs();
@@ -27,6 +29,7 @@ public class IterationMemoryService {
         this.mapper = new ObjectMapper();
         this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
         loadRecords();
+        loadFromIterationsDir();
     }
 
     private void loadRecords() {
@@ -40,6 +43,49 @@ public class IterationMemoryService {
                 } catch (IOException e) {
                     // Log error but continue
                     System.err.println("Failed to load iteration record: " + file.getName() + " - " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void loadFromIterationsDir() {
+        File iterationsDir = new File(projectRoot, "iterations");
+        if (!iterationsDir.exists() || !iterationsDir.isDirectory()) return;
+
+        File[] dirs = iterationsDir.listFiles(File::isDirectory);
+        if (dirs == null) return;
+
+        for (File dir : dirs) {
+            File planFile = new File(dir, "plan.json");
+            if (planFile.exists()) {
+                try {
+                    Map<String, Object> plan = mapper.readValue(planFile, Map.class);
+                    IterationRecord record = new IterationRecord();
+
+                    Object iter = plan.get("iteration");
+                    if (iter instanceof Number) record.setIteration(((Number) iter).intValue());
+                    else if (iter instanceof String) record.setIteration(Integer.parseInt((String) iter));
+
+                    String variant = (String) plan.get("variant");
+                    record.setBranch("it-" + record.getIteration() + (variant != null ? "-" + variant : ""));
+                    record.setStrategy("Imported from " + planFile.getPath());
+                    record.setGoal("Autonomous improvement");
+                    record.setResult("SUCCESS");
+                    record.setTimestamp(planFile.lastModified());
+
+                    Object files = plan.get("files");
+                    if (files instanceof List) {
+                        record.setChangedFiles((List<String>) files);
+                    }
+
+                    // Check if already loaded from memoryDir to avoid duplicates
+                    boolean exists = records.stream().anyMatch(r -> r.getIteration() == record.getIteration() && record.getBranch().equals(r.getBranch()));
+                    if (!exists) {
+                        records.add(record);
+                        indexRecord(record);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to load plan.json from " + dir.getName() + ": " + e.getMessage());
                 }
             }
         }

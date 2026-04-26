@@ -41,7 +41,15 @@ public class ComparePage extends Composite {
 		this.editor = editor;
 		this.orchestrator = orchestrator;
 		setLayout(new FillLayout());
+		createPlaceholder();
 		initDragAndDrop();
+	}
+
+	private void createPlaceholder() {
+		org.eclipse.swt.widgets.Label label = new org.eclipse.swt.widgets.Label(this, SWT.CENTER | SWT.WRAP);
+		label.setText("\n\n\nDrop two files here to compare,\n or right-click a file and select 'Compare with Git HEAD'.");
+		label.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
+		this.compareControl = label;
 	}
 
 	private void initDragAndDrop() {
