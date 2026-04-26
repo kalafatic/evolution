@@ -223,6 +223,113 @@
             border-bottom-left-radius: 4px;
         }
 
+        .message.darwin-branches {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .branch-container {
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+            overflow-x: auto;
+            padding: 8px 0;
+            width: 100%;
+        }
+
+        .branch-column {
+            flex: 1;
+            min-width: 250px;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #fff;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+
+        .branch-column.best {
+            border-color: #16a34a;
+            background: #f0fdf4;
+        }
+
+        .branch-header {
+            font-weight: 800;
+            font-size: 14px;
+            color: #1e293b;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .branch-strategy {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+
+        .branch-actions {
+            font-size: 11px;
+            background: #f8fafc;
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .branch-action-item {
+            margin-bottom: 4px;
+            padding-left: 12px;
+            position: relative;
+        }
+
+        .branch-action-item::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #3b82f6;
+        }
+
+        .branch-footer {
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+        }
+
+        .branch-btn {
+            flex: 1;
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: white;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .branch-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .branch-btn.approve {
+            background: #16a34a;
+            color: white;
+            border-color: #15803d;
+        }
+
+        .branch-btn.approve:hover {
+            background: #15803d;
+        }
+
         .message.ai .bubble { 
             border-bottom-left-radius: 4px;
         }
@@ -719,26 +826,30 @@
                 const msgContent = document.createElement('div');
                 msgContent.className = 'message-content';
 
-                const bubble = document.createElement('div');
-                bubble.className = 'bubble';
-                bubble.onclick = () => JavaHandler('edit', m.index.toString(), m.text);
+                if (role === 'darwin-branches') {
+                    renderDarwinBranches(msgContent, m);
+                } else {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'bubble';
+                    bubble.onclick = () => JavaHandler('edit', m.index.toString(), m.text);
 
-                const content = document.createElement('div');
-                content.className = 'bubble-content';
-                content.innerHTML = formatText(m.text);
-                bubble.appendChild(content);
+                    const content = document.createElement('div');
+                    content.className = 'bubble-content';
+                    content.innerHTML = formatText(m.text);
+                    bubble.appendChild(content);
 
-                const actions = document.createElement('div');
-                actions.className = 'actions';
-                actions.innerHTML = `
-                    <button class="action-btn approve" title="Approve" onclick="event.stopPropagation(); JavaHandler('approve', '${m.index}', '')">✅</button>
-                    <button class="action-btn" title="Quote" onclick="event.stopPropagation(); JavaHandler('quote', '${m.index}', '${escapeJs(m.text)}')">”</button>
-                    <button class="action-btn" title="Copy Message" onclick="event.stopPropagation(); JavaHandler('copy', '${m.index}', '${escapeJs(m.text)}')">📋</button>
-                    <button class="action-btn" title="Collapse/Expand" onclick="event.stopPropagation(); toggleCollapse(${m.index})">↕️</button>
-                `;
+                    const actions = document.createElement('div');
+                    actions.className = 'actions';
+                    actions.innerHTML = `
+                        <button class="action-btn approve" title="Approve" onclick="event.stopPropagation(); JavaHandler('approve', '${m.index}', '')">✅</button>
+                        <button class="action-btn" title="Quote" onclick="event.stopPropagation(); JavaHandler('quote', '${m.index}', '${escapeJs(m.text)}')">”</button>
+                        <button class="action-btn" title="Copy Message" onclick="event.stopPropagation(); JavaHandler('copy', '${m.index}', '${escapeJs(m.text)}')">📋</button>
+                        <button class="action-btn" title="Collapse/Expand" onclick="event.stopPropagation(); toggleCollapse(${m.index})">↕️</button>
+                    `;
 
-                msgContent.appendChild(bubble);
-                msgContent.appendChild(actions);
+                    msgContent.appendChild(bubble);
+                    msgContent.appendChild(actions);
+                }
 
                 div.appendChild(header);
                 div.appendChild(msgContent);
@@ -747,6 +858,58 @@
 
             if (wasAtBottom || messages.length === 1) {
                 scrollToBottom();
+            }
+        }
+
+        function renderDarwinBranches(container, m) {
+            try {
+                const data = JSON.parse(m.text);
+                const branchContainer = document.createElement('div');
+                branchContainer.className = 'branch-container';
+
+                data.variants.forEach(v => {
+                    const column = document.createElement('div');
+                    column.className = 'branch-column' + (v.isBest ? ' best' : '');
+
+                    const header = document.createElement('div');
+                    header.className = 'branch-header';
+                    header.innerHTML = `<span>${v.id}</span>${v.isBest ? '<span>🏆</span>' : ''}`;
+
+                    const strategy = document.createElement('div');
+                    strategy.className = 'branch-strategy';
+                    strategy.innerText = v.strategy;
+
+                    const actions = document.createElement('div');
+                    actions.className = 'branch-actions';
+                    v.actions.forEach(a => {
+                        const item = document.createElement('div');
+                        item.className = 'branch-action-item';
+                        item.innerText = (a.operation || '') + ' ' + (a.target || '');
+                        actions.appendChild(item);
+                    });
+
+                    const footer = document.createElement('div');
+                    footer.className = 'branch-footer';
+
+                    if (v.isApproved) {
+                        footer.innerHTML = '<div style="color: #16a34a; font-weight: bold; width: 100%; text-align: center;">APPROVED</div>';
+                    } else {
+                        footer.innerHTML = `
+                            <button class="branch-btn" onclick="JavaHandler('copy', '-1', '${escapeJs(v.strategy)}')">Copy</button>
+                            <button class="branch-btn approve" onclick="JavaHandler('executeProposal', '-1', 'Approve variant ${v.id}')">Approve</button>
+                        `;
+                    }
+
+                    column.appendChild(header);
+                    column.appendChild(strategy);
+                    column.appendChild(actions);
+                    column.appendChild(footer);
+                    branchContainer.appendChild(column);
+                });
+
+                container.appendChild(branchContainer);
+            } catch (e) {
+                container.innerHTML = '<div class="bubble error">Failed to parse Darwin branches: ' + e.message + '</div>';
             }
         }
 

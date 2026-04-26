@@ -338,6 +338,11 @@ public class ChatGroup extends AEvoGroup {
                 agentType = "darwin";
             }
 
+            if (content.contains("[DARWIN_BRANCHES]")) {
+		agentType = "darwin-branches";
+		content = content.replace("[DARWIN_BRANCHES]", "").trim();
+            }
+
             if (content.toLowerCase().contains("waiting for user") ||
                 content.toLowerCase().contains("guidance?") ||
                 content.toLowerCase().contains("clarify") ||
@@ -408,6 +413,40 @@ public class ChatGroup extends AEvoGroup {
 			e.printStackTrace();
 		}
         refreshBrowser();
+    }
+
+    private String getIconForAgentType(String agentType) {
+	if (agentType == null) return "🤖";
+	switch (agentType) {
+		case "user": return "👤";
+		case "ai": return "🤖";
+		case "planner": return "📋";
+		case "architect": return "📐";
+		case "javadev": return "💻";
+		case "tester": return "🧪";
+		case "reviewer": return "⚖️";
+		case "tool": return "⚙️";
+		case "analytic": return "🔍";
+		case "general": return "🧠";
+		case "terminal": return "📟";
+		case "file": return "📂";
+		case "maven": return "📦";
+		case "git": return "🌿";
+		case "structure": return "🌳";
+		case "websearch": return "🌐";
+		case "quality": return "✨";
+		case "observability": return "📊";
+		case "orchestrator": return "🎼";
+		case "darwin": return "🧬";
+		case "darwin-branches": return "🧬";
+		case "final-response": return "✅";
+		case "result-summary": return "ℹ️";
+		case "waiting": return "❓";
+		case "error": return "❌";
+		case "thinking": return "💭";
+		case "response": return "💬";
+		default: return "🤖";
+	}
     }
 
 	public void updateMessage(int index, String newText) {

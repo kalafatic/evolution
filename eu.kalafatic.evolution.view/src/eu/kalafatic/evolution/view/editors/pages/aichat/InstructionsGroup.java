@@ -23,9 +23,12 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
+/**
+ * @evo:16:A reason=darwin-checkbox-ui
+ */
 public class InstructionsGroup extends AEvoGroup {
     private StyledText requestText;
-    private Button iterativeCheck, selfIterativeCheck, autoApproveCheck, gitAutomationCheck;
+    private Button iterativeCheck, selfIterativeCheck, darwinCheck, autoApproveCheck, gitAutomationCheck;
     private org.eclipse.swt.widgets.Spinner maxIterationsSpinner;
     private Button sendButton, pauseButton, stopButton, attachButton;
     private Composite attachmentArea;
@@ -109,7 +112,10 @@ public class InstructionsGroup extends AEvoGroup {
         iterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (iterativeCheck.getSelection()) selfIterativeCheck.setSelection(false);
+                if (iterativeCheck.getSelection()) {
+                    selfIterativeCheck.setSelection(false);
+                    darwinCheck.setSelection(false);
+                }
                 page.syncModelWithUI();
             }
         });
@@ -119,7 +125,23 @@ public class InstructionsGroup extends AEvoGroup {
         selfIterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (selfIterativeCheck.getSelection()) iterativeCheck.setSelection(false);
+                if (selfIterativeCheck.getSelection()) {
+                    iterativeCheck.setSelection(false);
+                    darwinCheck.setSelection(false);
+                }
+                page.syncModelWithUI();
+            }
+        });
+
+        darwinCheck = toolkit.createButton(composite, "Darwin", SWT.CHECK);
+        darwinCheck.setToolTipText("Enable Darwin style iterations (multiple branches, survival of the fittest).");
+        darwinCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (darwinCheck.getSelection()) {
+                    iterativeCheck.setSelection(false);
+                    selfIterativeCheck.setSelection(false);
+                }
                 page.syncModelWithUI();
             }
         });
@@ -209,21 +231,23 @@ public class InstructionsGroup extends AEvoGroup {
 
     @Override
     protected void refreshUI() {
-        if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
-        	
-        	PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
-        	
-            iterativeCheck.setSelection(promptInstructions.isIterativeMode());
-            selfIterativeCheck.setSelection(promptInstructions.isSelfIterativeMode());
-            autoApproveCheck.setSelection(promptInstructions.isAutoApprove());
-            gitAutomationCheck.setSelection(promptInstructions.isGitAutomation());
-            maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
+        if (orchestrator != null) {
+            darwinCheck.setSelection(orchestrator.isDarwinMode());
+            if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
+                PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
+                iterativeCheck.setSelection(promptInstructions.isIterativeMode());
+                selfIterativeCheck.setSelection(promptInstructions.isSelfIterativeMode());
+                autoApproveCheck.setSelection(promptInstructions.isAutoApprove());
+                gitAutomationCheck.setSelection(promptInstructions.isGitAutomation());
+                maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
+            }
         }
     }
 
     @Override
     public void updateModel() {
         if (orchestrator != null) {
+            orchestrator.setDarwinMode(darwinCheck.getSelection());
         	if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
         	
         	PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
@@ -258,12 +282,26 @@ public class InstructionsGroup extends AEvoGroup {
     public boolean isIterative() { return iterativeCheck.getSelection(); }
     public void setIterative(boolean iterative) {
         iterativeCheck.setSelection(iterative);
-        if (iterative) selfIterativeCheck.setSelection(false);
+        if (iterative) {
+            selfIterativeCheck.setSelection(false);
+            darwinCheck.setSelection(false);
+        }
     }
     public boolean isSelfIterative() { return selfIterativeCheck.getSelection(); }
     public void setSelfIterative(boolean selfIterative) {
         selfIterativeCheck.setSelection(selfIterative);
-        if (selfIterative) iterativeCheck.setSelection(false);
+        if (selfIterative) {
+            iterativeCheck.setSelection(false);
+            darwinCheck.setSelection(false);
+        }
+    }
+    public boolean isDarwin() { return darwinCheck.getSelection(); }
+    public void setDarwin(boolean darwin) {
+        darwinCheck.setSelection(darwin);
+        if (darwin) {
+            iterativeCheck.setSelection(false);
+            selfIterativeCheck.setSelection(false);
+        }
     }
     public boolean isAutoApprove() { return autoApproveCheck.getSelection(); }
     public int getMaxIterations() { return maxIterationsSpinner.getSelection(); }
