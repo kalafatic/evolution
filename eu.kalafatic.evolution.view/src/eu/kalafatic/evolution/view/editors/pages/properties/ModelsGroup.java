@@ -98,11 +98,6 @@ public class ModelsGroup extends AEvoGroup {
         
         
 
-        group.addDisposeListener(e -> {
-            if (lightGreen != null && !lightGreen.isDisposed()) lightGreen.dispose();
-            if (lightRed != null && !lightRed.isDisposed()) lightRed.dispose();
-            if (lightOrange != null && !lightOrange.isDisposed()) lightOrange.dispose();
-        });
         
         Display.getDefault().asyncExec(() -> {
             if (!viewer.getControl().isDisposed()) {
@@ -184,6 +179,30 @@ public class ModelsGroup extends AEvoGroup {
         });
 	}
 
+    private boolean isHybrid(ModelItem item) {
+        if (item.name.toLowerCase().endsWith(":cloud")) return true;
+        if (!item.local) {
+            // Remote model without token is considered hybrid (ollama based big models - not entirely local)
+            if (item.token == null || item.token.isEmpty() || "YOUR_API_KEY".equals(item.token)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Color getModelColor(ModelItem item) {
+        if (item.state == ModelState.ERR) return lightRed;
+        if (item.state == ModelState.NA) return lightOrange;
+        if (item.state == ModelState.OK) {
+            String name = item.name.toLowerCase();
+            if (isHybrid(item)) return lightCyan;
+            if (name.endsWith(":instruct")) return lightPurple;
+            if (name.endsWith(":chat")) return lightBlue;
+            return lightGreen;
+        }
+        return null;
+    }
+
     private void createColumns() {
         String[] titles = { "State", "Name", "Type", "Path/URL", "Token", "Rating (A/CH/P)" };
         int[] bounds = { 60, 150, 60, 250, 80, 120 };
@@ -201,11 +220,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                ModelItem item = (ModelItem) element;
-                if (item.state == ModelState.OK) return lightGreen;
-                if (item.state == ModelState.ERR) return lightRed;
-                if (item.state == ModelState.NA) return lightOrange;
-                return null;
+                return getModelColor((ModelItem) element);
             }
         });
         org.eclipse.jface.viewers.ColumnViewerToolTipSupport.enableFor(viewer);
@@ -221,11 +236,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                ModelItem item = (ModelItem) element;
-                if (item.state == ModelState.OK) return lightGreen;
-                if (item.state == ModelState.ERR) return lightRed;
-                if (item.state == ModelState.NA) return lightOrange;
-                return null;
+                return getModelColor((ModelItem) element);
             }
         });
 
@@ -238,10 +249,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                if (((ModelItem) element).state == ModelState.OK) {
-                    return lightGreen;
-                }
-                return null;
+                return getModelColor((ModelItem) element);
             }
         });
 
@@ -250,14 +258,13 @@ public class ModelsGroup extends AEvoGroup {
         colLocal.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return (((ModelItem) element).local) ? "Local" : "Remote";
+                ModelItem item = (ModelItem) element;
+                if (isHybrid(item)) return "Hybrid";
+                return (item.local) ? "Local" : "Remote";
             }
             @Override
             public Color getBackground(Object element) {
-                if (((ModelItem) element).state == ModelState.OK) {
-                    return lightGreen;
-                }
-                return null;
+                return getModelColor((ModelItem) element);
             }
         });
 
@@ -270,11 +277,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                ModelItem item = (ModelItem) element;
-                if (item.state == ModelState.OK) return lightGreen;
-                if (item.state == ModelState.ERR) return lightRed;
-                if (item.state == ModelState.NA) return lightOrange;
-                return null;
+                return getModelColor((ModelItem) element);
             }
         });
 
@@ -288,11 +291,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                ModelItem item = (ModelItem) element;
-                if (item.state == ModelState.OK) return lightGreen;
-                if (item.state == ModelState.ERR) return lightRed;
-                if (item.state == ModelState.NA) return lightOrange;
-                return null;
+                return getModelColor((ModelItem) element);
             }
         });
 

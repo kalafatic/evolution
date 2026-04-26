@@ -86,7 +86,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private EditorSelectionListener selectionListener;
     private org.eclipse.jface.text.ITextSelection lastTextSelection;
     
-    private Color lightGreen, lightRed, lightOrange;
+    private Color lightGreen, lightRed, lightOrange, lightBlue, lightPurple, lightCyan;
     
     private AtomicBoolean refreshScheduled = new AtomicBoolean(false);
 
@@ -126,6 +126,9 @@ public class MultiPageEditor extends MultiPageEditorPart {
         	this.lightGreen = new Color(Display.getDefault(), 220, 255, 220);
             this.lightRed = new Color(Display.getDefault(), 255, 220, 220);
             this.lightOrange = new Color(Display.getDefault(), 255, 240, 200);
+            this.lightBlue = new Color(Display.getDefault(), 220, 240, 255);
+            this.lightPurple = new Color(Display.getDefault(), 240, 220, 255);
+            this.lightCyan = new Color(Display.getDefault(), 220, 255, 255);
             
             if (orchestrator != null) {
                 aiChatPage = AiChatPageFactory.createAiChatPage(this, orchestrator);
@@ -246,6 +249,14 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (resourceListener != null) ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceListener);
         if (selectionListener != null) getSite().getWorkbenchWindow().getSelectionService().removeSelectionListener(selectionListener);
         if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
+
+        if (lightGreen != null && !lightGreen.isDisposed()) lightGreen.dispose();
+        if (lightRed != null && !lightRed.isDisposed()) lightRed.dispose();
+        if (lightOrange != null && !lightOrange.isDisposed()) lightOrange.dispose();
+        if (lightBlue != null && !lightBlue.isDisposed()) lightBlue.dispose();
+        if (lightPurple != null && !lightPurple.isDisposed()) lightPurple.dispose();
+        if (lightCyan != null && !lightCyan.isDisposed()) lightCyan.dispose();
+
         super.dispose();
     }
 
@@ -468,4 +479,28 @@ public class MultiPageEditor extends MultiPageEditorPart {
 	public void setLightOrange(Color lightOrange) {
 		this.lightOrange = lightOrange;
 	}
+
+    public Color getLightBlue() {
+        return lightBlue;
+    }
+
+    public void setLightBlue(Color lightBlue) {
+        this.lightBlue = lightBlue;
+    }
+
+    public Color getLightPurple() {
+        return lightPurple;
+    }
+
+    public void setLightPurple(Color lightPurple) {
+        this.lightPurple = lightPurple;
+    }
+
+    public Color getLightCyan() {
+        return lightCyan;
+    }
+
+    public void setLightCyan(Color lightCyan) {
+        this.lightCyan = lightCyan;
+    }
 }
