@@ -31,7 +31,7 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
 /**
  * Core Orchestrator implementation that manages the task lifecycle and execution.
  *
- * @evo.lastModified: 12:A
+ * @evo.lastModified: 14:B
  * @evo.origin: self
  */
 public class EvolutionOrchestrator implements IOrchestrator {
@@ -64,7 +64,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     }
 
     @Override
-    // @evo:12:A reason=traceability-support
+    // @evo:14:B reason=traceability-support
     public String executeTask(Task task, TaskContext context) throws Exception {
         context.setCurrentTaskName(task.getName());
         context.log("Evo-Orchestrator-" + task.getName() + ": Executing single task");
@@ -78,7 +78,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     }
 
     @Override
-    // @evo:12:A reason=traceability-support
+    // @evo:14:B reason=traceability-support
     public String execute(String request, TaskContext context) throws Exception {
         try {
             context.setCurrentTaskName("Initialization");
@@ -119,13 +119,17 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 // Handle confidence and missing info
                 if (assistResult.getConfidence() != ConfidenceLevel.HIGH) {
                     StringBuilder clarificationMsg = new StringBuilder();
+                    boolean criticalMissing = false;
+
                     if (assistResult.getMissingInfo() != null && !assistResult.getMissingInfo().isEmpty()) {
                         clarificationMsg.append("To help you better, I need a bit more information:\n");
                         for (String info : assistResult.getMissingInfo()) {
                             clarificationMsg.append("- ").append(info).append("\n");
                         }
+                        criticalMissing = true;
                     } else if (assistResult.getMode() == null) {
                         clarificationMsg.append("I'm not entirely sure how to help. Do you want quick chat, coding help, or an iterative solution search?");
+                        criticalMissing = true;
                     }
 
                     if (assistResult.getSuggestedSteps() != null && !assistResult.getSuggestedSteps().isEmpty()) {
@@ -135,7 +139,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
                         }
                     }
 
-                    if (clarificationMsg.length() > 0 && !context.isAutoApprove() && assistResult.getMode() != PlatformType.SIMPLE_CHAT) {
+                    // Only block if critical info is missing and not in SIMPLE_CHAT or AUTO_APPROVE mode
+                    if (criticalMissing && clarificationMsg.length() > 0 && !context.isAutoApprove() && assistResult.getMode() != PlatformType.SIMPLE_CHAT) {
                         context.log("Evo-Orchestrator: Asking for clarification...\n" + clarificationMsg.toString());
                         context.log("Evo-Orchestrator-Waiting: Waiting for user clarification...");
                         String clarification = context.requestInput(clarificationMsg.toString()).get();
@@ -143,6 +148,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
                             context.log("Evo-Orchestrator-Clarification: User provided - " + clarification);
                             return execute(request + "\nClarification: " + clarification, context);
                         }
+                    } else if (clarificationMsg.length() > 0) {
+                        // Non-blocking hints
+                        context.log("Evo-Orchestrator: Guidance (non-blocking):\n" + clarificationMsg.toString());
                     }
                 }
 
