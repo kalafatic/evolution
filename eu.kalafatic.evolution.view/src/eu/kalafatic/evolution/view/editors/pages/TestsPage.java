@@ -34,6 +34,7 @@ import eu.kalafatic.evolution.tests.iterative.IterativeDevelopmentTest;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.tests.*;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,13 +82,21 @@ public class TestsPage extends AEvoPage {
 
 	private void createControl() {
 		toolkit = new FormToolkit(getDisplay());
-		SashForm mainSash = new SashForm(this, SWT.VERTICAL);
+
+		Composite container = toolkit.createComposite(this);
+		container.setLayout(new GridLayout(1, false));
+		container.setLayoutData(new GridData(GridData.FILL_BOTH));
+		this.setContent(container);
+
+		SashForm mainSash = new SashForm(container, SWT.VERTICAL);
 		mainSash.setLayoutData(new GridData(GridData.FILL_BOTH));
+
 		testsScrolled = new SharedScrolledComposite(mainSash, SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER) {};
 		testsScrolled.setExpandHorizontal(true); testsScrolled.setExpandVertical(true);
 		testsContent = toolkit.createComposite(testsScrolled, SWT.NONE);
 		testsContent.setLayout(new GridLayout(1, false));
 		testsScrolled.setContent(testsContent);
+
 		statusBrowser = new Browser(mainSash, SWT.NONE);
 		mainSash.setWeights(new int[] { 2, 1 });
 		statusBrowser.setText(getHtmlTemplate());
@@ -159,6 +168,7 @@ public class TestsPage extends AEvoPage {
 		if (!discoveredTestClasses.isEmpty()) return;
 		Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.tests");
 		if (bundle != null) {
+			// Try to find tests in the bundle
 			// Try to find .class files first
 			java.util.Enumeration<java.net.URL> entries = bundle.findEntries("/", "*Test.class", true);
 			if (entries != null) {
@@ -184,6 +194,26 @@ public class TestsPage extends AEvoPage {
 					}
 				}
 			}
+		}
+
+		// If still empty, try to look at the filesystem directly if we are in a dev environment
+		if (discoveredTestClasses.isEmpty()) {
+			try {
+				File testsProject = new File("eu.kalafatic.evolution.tests/src/eu/kalafatic/evolution/tests/iterative");
+				if (testsProject.exists() && testsProject.isDirectory()) {
+					for (File f : testsProject.listFiles()) {
+						if (f.getName().endsWith("Test.java")) {
+							String className = "eu.kalafatic.evolution.tests.iterative." + f.getName().substring(0, f.getName().length() - 5);
+							try {
+								Class<?> clazz = (bundle != null) ? bundle.loadClass(className) : Class.forName(className);
+								if (!clazz.isInterface() && !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
+									if (!discoveredTestClasses.contains(clazz)) discoveredTestClasses.add(clazz);
+								}
+							} catch (Exception e) {}
+						}
+					}
+				}
+			} catch (Exception e) {}
 		}
 	}
 

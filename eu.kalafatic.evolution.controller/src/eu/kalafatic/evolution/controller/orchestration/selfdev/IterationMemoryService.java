@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 
 public class IterationMemoryService {
-    private final File projectRoot;
+    private File projectRoot;
     private final File memoryDir;
     private final ObjectMapper mapper;
     private final List<IterationRecord> records = new ArrayList<>();
@@ -21,8 +21,8 @@ public class IterationMemoryService {
     private final FailureMemory failureMemory = new FailureMemory();
 
     public IterationMemoryService(File projectRoot) {
-        this.projectRoot = projectRoot;
-        this.memoryDir = new File(projectRoot, "orchestrator/memory");
+        this.projectRoot = findEffectiveRoot(projectRoot);
+        this.memoryDir = new File(this.projectRoot, "orchestrator/memory");
         if (!memoryDir.exists()) {
             memoryDir.mkdirs();
         }
@@ -48,9 +48,25 @@ public class IterationMemoryService {
         }
     }
 
+    private File findEffectiveRoot(File startDir) {
+        if (startDir == null) return new File(".");
+        File current = startDir;
+        while (current != null) {
+            if (new File(current, "iterations").exists() || new File(current, ".git").exists()) {
+                return current;
+            }
+            current = current.getParentFile();
+        }
+        return startDir;
+    }
+
     private void loadFromIterationsDir() {
         File iterationsDir = new File(projectRoot, "iterations");
-        if (!iterationsDir.exists() || !iterationsDir.isDirectory()) return;
+        if (!iterationsDir.exists() || !iterationsDir.isDirectory()) {
+            // Try one more time with a relative path if projectRoot failed us
+            iterationsDir = new File("iterations");
+            if (!iterationsDir.exists()) return;
+        }
 
         File[] dirs = iterationsDir.listFiles(File::isDirectory);
         if (dirs == null) return;

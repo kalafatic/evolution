@@ -70,9 +70,20 @@ public class IterationPage extends AEvoPage {
 
     private void initMemoryService() {
         File projectRoot = null;
-        IEditorInput input = editor.getEditorInput();
-        if (input instanceof IFileEditorInput) {
-            projectRoot = ((IFileEditorInput) input).getFile().getProject().getLocation().toFile();
+        if (orchestrator != null && orchestrator.eResource() != null) {
+            org.eclipse.emf.common.util.URI uri = orchestrator.eResource().getURI();
+            if (uri.isPlatformResource()) {
+                org.eclipse.core.resources.IResource res = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().findMember(uri.toPlatformString(true));
+                if (res != null) projectRoot = res.getProject().getLocation().toFile();
+            } else if (uri.isFile()) {
+                projectRoot = new File(uri.toFileString()).getParentFile();
+            }
+        }
+        if (projectRoot == null) {
+            IEditorInput input = editor.getEditorInput();
+            if (input instanceof IFileEditorInput) {
+                projectRoot = ((IFileEditorInput) input).getFile().getProject().getLocation().toFile();
+            }
         }
         if (projectRoot != null) {
             this.memoryService = new IterationMemoryService(projectRoot);
@@ -80,8 +91,13 @@ public class IterationPage extends AEvoPage {
     }
 
     private void createControl() {
+        Composite container = toolkit.createComposite(this);
+        container.setLayout(new GridLayout(1, false));
+        container.setLayoutData(new GridData(GridData.FILL_BOTH));
+        this.setContent(container);
+
         // Top Bar
-        Composite topBar = toolkit.createComposite(this);
+        Composite topBar = toolkit.createComposite(container);
         topBar.setLayout(new GridLayout(4, false));
         topBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -110,7 +126,7 @@ public class IterationPage extends AEvoPage {
             }
         });
 
-        Composite infoComp = toolkit.createComposite(this);
+        Composite infoComp = toolkit.createComposite(container);
         infoComp.setLayout(new GridLayout(1, false));
         infoComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -120,7 +136,7 @@ public class IterationPage extends AEvoPage {
         resultLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         // Branch Table
-        Section branchSection = toolkit.createSection(this, Section.TITLE_BAR);
+        Section branchSection = toolkit.createSection(container, Section.TITLE_BAR);
         branchSection.setText("Branches");
         branchSection.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -146,7 +162,7 @@ public class IterationPage extends AEvoPage {
         });
 
         // Flow View
-        Section flowSection = toolkit.createSection(this, Section.TITLE_BAR);
+        Section flowSection = toolkit.createSection(container, Section.TITLE_BAR);
         flowSection.setText("Flow");
         flowSection.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -164,7 +180,7 @@ public class IterationPage extends AEvoPage {
         }
 
         // Log Area
-        Section logSection = toolkit.createSection(this, Section.TITLE_BAR | Section.EXPANDED);
+        Section logSection = toolkit.createSection(container, Section.TITLE_BAR | Section.EXPANDED);
         logSection.setText("Log (selected branch)");
         logSection.setLayoutData(new GridData(GridData.FILL_BOTH));
 
