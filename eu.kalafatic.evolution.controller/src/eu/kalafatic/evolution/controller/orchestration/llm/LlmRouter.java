@@ -9,6 +9,9 @@ import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 /**
  * Router that chooses between LLM providers based on orchestrator settings.
  * Implements HYBRID mode with local proxy optimization and simplification.
+ *
+ * @evo.lastModified: 14:B
+ * @evo.origin: self
  */
 public class LlmRouter {
 
@@ -54,8 +57,11 @@ public class LlmRouter {
                     orchestrator.setOllama(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOllama());
                 }
                 orchestrator.getOllama().setModel(model);
+            } else if (orchestrator.getOllama() != null) {
+                model = orchestrator.getOllama().getModel();
             }
-            if (context != null) context.log("LlmRouter-Local: Using Ollama model: " + (model != null ? model : "default"));
+
+            if (context != null) context.log("LlmRouter-Local: Using Ollama model: " + (model != null && !model.isEmpty() ? model : "default"));
             return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
         }
     }
@@ -113,7 +119,11 @@ public class LlmRouter {
                 orchestrator.setOllama(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOllama());
             }
             orchestrator.getOllama().setModel(hybridModel);
+        } else if (orchestrator.getOllama() != null) {
+            hybridModel = orchestrator.getOllama().getModel();
         }
+
+        if (context != null) context.log("LlmRouter-Hybrid: Using local model for optimization: " + (hybridModel != null && !hybridModel.isEmpty() ? hybridModel : "default"));
 
         String optimizationPrompt = "Analyze the following user request and optimize it for AI-to-AI communication. " +
                 "Fix errors, clarify intent, and simplify or rewrite the request to be more effective for a large language model. " +
