@@ -39,6 +39,12 @@ public class LlmRouter {
             // 1. Optimize prompt using local model
             String optimizedPrompt = optimizePromptLocally(orchestrator, prompt, temperature, proxyUrl, context);
 
+            // Check for mandatory clarification request (Small Models Strategy)
+            if (optimizedPrompt != null && optimizedPrompt.toUpperCase().startsWith("CLARIFICATION:")) {
+                if (context != null) context.log("LlmRouter-Hybrid: Clarification required. Stopping pipeline.");
+                return optimizedPrompt;
+            }
+
             if (context != null) context.log("LlmRouter-Hybrid: Step 2 - Executing remote request...");
             // 2. Execute using remote model
             String remoteResponse = sendRemoteRequest(orchestrator, optimizedPrompt, temperature, proxyUrl, context);
@@ -101,6 +107,10 @@ public class LlmRouter {
             return geminiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
         }
 
+        if ("ollama".equals(format)) {
+            return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        }
+
         // TODO: implement anthropic, cohere if needed.
         // For now, default to common calling (OpenAI format)
         return openAiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
@@ -117,7 +127,9 @@ public class LlmRouter {
 
         String optimizationPrompt = "Analyze the following user request and optimize it for AI-to-AI communication. " +
                 "Fix errors, clarify intent, and simplify or rewrite the request to be more effective for a large language model. " +
-                "Provide ONLY the optimized request text.\n\n" +
+                "If the request is ambiguous or missing critical information (like target files, specific programming language, or clear goal), " +
+                "start your response with 'CLARIFICATION:' followed by your questions. " +
+                "Otherwise, provide ONLY the optimized request text.\n\n" +
                 "Request: " + prompt;
 
         return ollamaProvider.sendRequest(orchestrator, optimizationPrompt, temperature, proxyUrl, context);
@@ -176,6 +188,10 @@ public class LlmRouter {
 
             if ("google".equals(format)) {
                 return geminiProvider.testConnection(orchestrator, temperature, proxyUrl, context);
+            }
+
+            if ("ollama".equals(format)) {
+                return ollamaProvider.testConnection(orchestrator, temperature, proxyUrl, context);
             }
 
             // Default to common calling (OpenAI format)

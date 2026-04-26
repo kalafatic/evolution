@@ -520,9 +520,15 @@ public class ModelsGroup extends AEvoGroup {
 
         if (orchestrator != null) {
             ProjectModelManager modelManager = ProjectModelManager.getInstance();
-            if (item.local) {
+            if (isHybrid(item)) {
+                // Strategic Role: Big execution model
+                modelManager.updateRemoteModel(orchestrator, item.name);
+                modelManager.updateLlmSettings(orchestrator, item.name, (orchestrator.getLlm() != null) ? orchestrator.getLlm().getTemperature() : 1.0f);
+            } else if (item.local) {
+                // Strategic Role: Small refinement/simplification model
                 modelManager.updateOllamaSettings(orchestrator, (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : null, item.name, (orchestrator.getOllama() != null) ? orchestrator.getOllama().getPath() : null);
                 modelManager.updateLocalModel(orchestrator, item.name);
+                modelManager.updateHybridModel(orchestrator, item.name);
                 modelManager.updateLlmSettings(orchestrator, item.name, (orchestrator.getLlm() != null) ? orchestrator.getLlm().getTemperature() : 1.0f);
             } else {
                 modelManager.updateRemoteModel(orchestrator, item.name);
