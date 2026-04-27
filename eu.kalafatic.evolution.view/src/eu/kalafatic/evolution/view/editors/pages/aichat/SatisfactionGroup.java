@@ -85,5 +85,12 @@ public class SatisfactionGroup extends AEvoGroup {
         if (group.isDisposed()) return;
         group.setVisible(visible);
         ((GridData) group.getLayoutData()).exclude = !visible;
+        if (visible) {
+            page.expandFeedbackSection();
+        }
+    }
+
+    public boolean isVisible() {
+        return group != null && !group.isDisposed() && group.getVisible();
     }
 }

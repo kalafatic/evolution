@@ -68,23 +68,39 @@ public class AiChatPage extends AEvoPage {
 	private boolean isUpdating = false;
 	private Label modeIndicatorLabel;
 	private ContentProposalAdapter assistAdapter;
-	private TaskContext currentContext;
 	private OllamaService ollamaService;
 	private ChatThread currentThread;
 	private Composite content;
 	private long lastStatusUpdate = 0;
-	private String activeTaskId;
 
 	private ChatMgmtGroup chatMgmtGroup;
 	private AiSettingsGroup aiSettingsGroup;
 	private InstructionsGroup instructionsGroup;
 	private ChatGroup chatGroup;
 	private SystemStatusGroup systemStatusGroup;
-	private Thread orchestrationThread;
 	private SatisfactionGroup satisfactionGroup;
 	private ApprovalGroup approvalGroup;
 	private InputGroup inputGroup;
-	private eu.kalafatic.evolution.model.orchestration.Task currentStackTask;
+	private org.eclipse.ui.forms.widgets.Section feedbackSection;
+
+	private static class ThreadState {
+		Thread orchestrationThread;
+		TaskContext currentContext;
+		String activeTaskId;
+		eu.kalafatic.evolution.model.orchestration.Task currentStackTask;
+		boolean isRunning = false;
+		boolean isPaused = false;
+	}
+
+	private java.util.Map<String, ThreadState> threadStates = new java.util.HashMap<>();
+
+	private ThreadState getThreadState(String threadId) {
+		return threadStates.computeIfAbsent(threadId, k -> new ThreadState());
+	}
+
+	private ThreadState getCurrentThreadState() {
+		return getThreadState(getCurrentThreadName());
+	}
 
 	private Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote, colorWaiting, colorLightOrange;
 	private Font chatFont, bannerFont;
@@ -159,9 +175,19 @@ public class AiChatPage extends AEvoPage {
 		});
 		instructionsGroup = new InstructionsGroup(toolkit, chatGroup.getControl(), this, orchestrator, true);
 		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
-		satisfactionGroup = new SatisfactionGroup(content, editor, orchestrator, this);
-		approvalGroup = new ApprovalGroup(content, editor, orchestrator, this);
-		inputGroup = new InputGroup(content, editor, orchestrator, this);
+
+		feedbackSection = toolkit.createSection(content, org.eclipse.ui.forms.widgets.Section.TITLE_BAR | org.eclipse.ui.forms.widgets.Section.TWISTIE);
+		feedbackSection.setText("Session Interaction & Feedback");
+		feedbackSection.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		feedbackSection.setExpanded(false);
+
+		Composite feedbackComposite = toolkit.createComposite(feedbackSection);
+		feedbackComposite.setLayout(new GridLayout(1, false));
+		feedbackSection.setClient(feedbackComposite);
+
+		satisfactionGroup = new SatisfactionGroup(feedbackComposite, editor, orchestrator, this);
+		approvalGroup = new ApprovalGroup(feedbackComposite, editor, orchestrator, this);
+		inputGroup = new InputGroup(feedbackComposite, editor, orchestrator, this);
 
 		initializeThreads();
 
@@ -296,7 +322,8 @@ public class AiChatPage extends AEvoPage {
 		instructionsGroup.resetBackground();
 		String request = instructionsGroup.getRequest();
 		if (request.isEmpty()) return;
-		if (currentContext != null && currentContext.isWaitingForInput()) {
+		ThreadState state = getCurrentThreadState();
+		if (state.currentContext != null && state.currentContext.isWaitingForInput()) {
 			provideInput(request);
 			instructionsGroup.setRequest("");
 			return;
@@ -324,19 +351,21 @@ public class AiChatPage extends AEvoPage {
 		chatGroup.appendText("You: " + request, colorUser, SWT.BOLD);
 		chatGroup.appendText("\n\nEvo: Initializing orchestration...", colorEvolution, SWT.ITALIC);
 		instructionsGroup.setRequest("");
+		state.isRunning = true;
 		instructionsGroup.setOrchestrationRunning(true);
 		chatGroup.setThinking(true);
 		chatGroup.resetLogCount();
 
 		TaskRequest taskRequest = new TaskRequest(request, getProjectRoot());
 		taskRequest.getContext().put("orchestrator", orchestrator);
-		taskRequest.getContext().put("threadId", getCurrentThreadName());
+		String threadId = getCurrentThreadName();
+		taskRequest.getContext().put("threadId", threadId);
 
-		orchestrationThread = new Thread(() -> {
+		state.orchestrationThread = new Thread(() -> {
 			try {
 				TaskResult result = OrchestratorServiceImpl.getInstance().execute(taskRequest);
-				activeTaskId = result.getId();
-				String taskId = activeTaskId;
+				state.activeTaskId = result.getId();
+				String taskId = state.activeTaskId;
 				int lastProcessedIndex = 0;
 				boolean approvalShown = false;
 				boolean inputShown = false;
@@ -349,6 +378,7 @@ public class AiChatPage extends AEvoPage {
 				    if (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL && !approvalShown) {
 				        final String msg = result.getWaitingMessage();
 				        Display.getDefault().asyncExec(() -> {
+							if (!threadId.equals(getCurrentThreadName())) return;
 				            if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
 				                modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
 				                modeIndicatorLabel.setBackground(colorWaiting);
@@ -357,13 +387,17 @@ public class AiChatPage extends AEvoPage {
 				        });
 				        approvalShown = true;
 				    } else if (result.getStatus() != TaskResult.Status.WAITING_FOR_APPROVAL && approvalShown) {
-					Display.getDefault().asyncExec(() -> { updateModeDisplay(); approvalGroup.hide(); });
+					Display.getDefault().asyncExec(() -> {
+						if (!threadId.equals(getCurrentThreadName())) return;
+						updateModeDisplay(); approvalGroup.hide();
+					});
 					approvalShown = false;
 				    }
 
 				    if (result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT && !inputShown) {
 				        final String msg = result.getWaitingMessage();
 				        Display.getDefault().asyncExec(() -> {
+							if (!threadId.equals(getCurrentThreadName())) return;
 				            if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
 				                modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
 				                modeIndicatorLabel.setBackground(colorWaiting);
@@ -373,7 +407,10 @@ public class AiChatPage extends AEvoPage {
 				        });
 				        inputShown = true;
 				    } else if (result.getStatus() != TaskResult.Status.WAITING_FOR_INPUT && inputShown) {
-					Display.getDefault().asyncExec(() -> { updateModeDisplay(); inputGroup.hide(); });
+					Display.getDefault().asyncExec(() -> {
+						if (!threadId.equals(getCurrentThreadName())) return;
+						updateModeDisplay(); inputGroup.hide();
+					});
 					inputShown = false;
 				    }
 
@@ -385,8 +422,8 @@ public class AiChatPage extends AEvoPage {
 				        if (!newLogs.isEmpty()) {
 				            Display.getDefault().asyncExec(() -> {
 				                for (String log : newLogs) {
-				                    processLogEntry(log);
-				                    chatGroup.incrementLogCount();
+				                    processLogEntry(log, threadId);
+				                    if (threadId.equals(getCurrentThreadName())) chatGroup.incrementLogCount();
 				                }
 				            });
 				        }
@@ -401,9 +438,9 @@ public class AiChatPage extends AEvoPage {
 				if (result != null) {
 					final TaskResult finalRes = result;
 					Display.getDefault().asyncExec(() -> {
-						if (currentStackTask != null) {
-							currentStackTask.setStatus(finalRes.getStatus() == TaskResult.Status.SUCCESS ? eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE : eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
-							currentStackTask.setResultSummary(finalRes.getResponse());
+						if (state.currentStackTask != null) {
+							state.currentStackTask.setStatus(finalRes.getStatus() == TaskResult.Status.SUCCESS ? eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE : eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+							state.currentStackTask.setResultSummary(finalRes.getResponse());
 						}
 					});
 					int toIndex = result.getLogs().size();
@@ -411,8 +448,8 @@ public class AiChatPage extends AEvoPage {
 						final List<String> newLogs = new java.util.ArrayList<>(result.getLogs().subList(lastProcessedIndex, toIndex));
 						Display.getDefault().asyncExec(() -> {
 							for (String log : newLogs) {
-								processLogEntry(log);
-								chatGroup.incrementLogCount();
+								processLogEntry(log, threadId);
+								if (threadId.equals(getCurrentThreadName())) chatGroup.incrementLogCount();
 							}
 						});
 					}
@@ -420,12 +457,12 @@ public class AiChatPage extends AEvoPage {
 
 				final TaskResult finalResult = result;
 				Display.getDefault().asyncExec(() -> {
-					instructionsGroup.resetBackground();
-					if (currentStackTask != null) {
-						currentStackTask.setStatus(finalResult.getStatus() == TaskResult.Status.SUCCESS ? eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE : eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
-						currentStackTask.setResultSummary(finalResult.getResponse());
+					if (threadId.equals(getCurrentThreadName())) instructionsGroup.resetBackground();
+					if (state.currentStackTask != null) {
+						state.currentStackTask.setStatus(finalResult.getStatus() == TaskResult.Status.SUCCESS ? eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE : eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+						state.currentStackTask.setResultSummary(finalResult.getResponse());
 					}
-					if (!chatGroup.isDisposed()) {
+					if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 
 						if (!finalResult.getFileChanges().isEmpty()) {
@@ -435,11 +472,17 @@ public class AiChatPage extends AEvoPage {
 						chatGroup.appendText("Final Response: " + finalResult.getResponse(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						satisfactionGroup.setVisible(true); updateScrolledContent();
+					} else {
+						// Update model silently if not current thread
+						ChatThread targetThread = orchestrator.getAiChat().getThreads().stream().filter(t -> t.getId().equals(threadId)).findFirst().orElse(null);
+						if (targetThread != null) {
+							chatGroup.appendTextToThread(targetThread, "Final Response: " + finalResult.getResponse(), colorEvolution, SWT.BOLD);
+						}
 					}
 				});
 			} catch (Exception e) {
 				Display.getDefault().asyncExec(() -> {
-					if (!chatGroup.isDisposed()) {
+					if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
 						chatGroup.appendText("Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD);
@@ -447,28 +490,35 @@ public class AiChatPage extends AEvoPage {
 				});
 			} finally {
 				Display.getDefault().asyncExec(() -> {
-					instructionsGroup.setOrchestrationRunning(false);
-					orchestrationThread = null;
+					state.isRunning = false;
+					if (threadId.equals(getCurrentThreadName())) {
+						instructionsGroup.setOrchestrationRunning(false);
+					}
+					state.orchestrationThread = null;
 				});
 			}
 		});
-		orchestrationThread.start();
+		state.orchestrationThread.start();
 	}
 
 	public void handlePause() {
-		if (currentContext != null) {
-			boolean isPaused = !currentContext.isPaused();
-			currentContext.setPaused(isPaused);
-			instructionsGroup.setPaused(isPaused);
-			chatGroup.setThinking(!isPaused);
+		ThreadState state = getCurrentThreadState();
+		if (state.currentContext != null) {
+			state.isPaused = !state.currentContext.isPaused();
+			state.currentContext.setPaused(state.isPaused);
+			instructionsGroup.setPaused(state.isPaused);
+			chatGroup.setThinking(!state.isPaused);
 		}
 	}
 
 	public void handleStop() {
 		instructionsGroup.resetBackground();
-		if (orchestrationThread != null && orchestrationThread.isAlive()) {
-			if (currentContext != null) currentContext.setPaused(false);
-			orchestrationThread.interrupt();
+		ThreadState state = getCurrentThreadState();
+		if (state.orchestrationThread != null && state.orchestrationThread.isAlive()) {
+			if (state.currentContext != null) state.currentContext.setPaused(false);
+			state.orchestrationThread.interrupt();
+			state.isRunning = false;
+			instructionsGroup.setOrchestrationRunning(false);
 		}
 	}
 
@@ -543,6 +593,28 @@ public class AiChatPage extends AEvoPage {
 				.ifPresent(t -> {
 					currentThread = t;
 					chatGroup.setThread(currentThread);
+
+					ThreadState state = getThreadState(threadId);
+					instructionsGroup.setOrchestrationRunning(state.isRunning);
+					instructionsGroup.setPaused(state.isPaused);
+					chatGroup.setThinking(state.isRunning && !state.isPaused);
+
+					updateModeDisplay();
+					approvalGroup.hide();
+					inputGroup.hide();
+
+					// Re-check status if running
+					if (state.isRunning && state.activeTaskId != null) {
+						TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
+						if (result != null) {
+							if (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
+								approvalGroup.show(result.getWaitingMessage());
+							} else if (result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
+								inputGroup.show(result.getWaitingMessage());
+							}
+						}
+					}
+					updateScrolledContent();
 				});
 	}
 
@@ -576,7 +648,8 @@ public class AiChatPage extends AEvoPage {
 	private void startSelfDevAction(String request) {
 		instructionsGroup.resetBackground();
 		if (request == null || request.isEmpty()) request = "Analyze the project and suggest improvements.";
-		if (currentContext != null && currentContext.isWaitingForInput()) {
+		ThreadState state = getCurrentThreadState();
+		if (state.currentContext != null && state.currentContext.isWaitingForInput()) {
 			provideInput(request);
 			instructionsGroup.setRequest("");
 			return;
@@ -591,17 +664,20 @@ public class AiChatPage extends AEvoPage {
 		chatGroup.appendText("User [SELF-DEV]: " + finalRequest, colorUser, SWT.BOLD);
 		chatGroup.appendText("\n\nEvo: Initializing Self-Development Supervisor loop...", colorEvolution, SWT.ITALIC | SWT.BOLD);
 		instructionsGroup.setRequest("");
+		state.isRunning = true;
 		instructionsGroup.setOrchestrationRunning(true);
 		chatGroup.setThinking(true);
-		orchestrationThread = new Thread(() -> {
+		String threadId = getCurrentThreadName();
+		state.orchestrationThread = new Thread(() -> {
 			try {
 				File projectRoot = getProjectRoot();
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
-				context.setThreadId(getCurrentThreadName());
+				context.setThreadId(threadId);
 				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
-				this.currentContext = context;
-				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) processLogEntry(log); }));
+				state.currentContext = context;
+				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) processLogEntry(log, threadId); }));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
+					if (!threadId.equals(getCurrentThreadName())) return;
 					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
 						modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
 						modeIndicatorLabel.setBackground(colorWaiting);
@@ -609,6 +685,7 @@ public class AiChatPage extends AEvoPage {
 					approvalGroup.show(message); updateScrolledContent();
 				}));
 				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
+					if (!threadId.equals(getCurrentThreadName())) return;
 					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
 						modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
 						modeIndicatorLabel.setBackground(colorWaiting);
@@ -633,12 +710,12 @@ public class AiChatPage extends AEvoPage {
 						.collect(Collectors.joining("\n"));
 
 				Display.getDefault().asyncExec(() -> {
-					instructionsGroup.resetBackground();
-					if (currentStackTask != null) {
-						currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
-						currentStackTask.setResultSummary("Self-Development session finished.");
+					if (threadId.equals(getCurrentThreadName())) instructionsGroup.resetBackground();
+					if (state.currentStackTask != null) {
+						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
+						state.currentStackTask.setResultSummary("Self-Development session finished.");
 					}
-					if (!chatGroup.isDisposed()) {
+					if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 
 						if (!summary.isEmpty()) {
@@ -651,15 +728,18 @@ public class AiChatPage extends AEvoPage {
 					}
 				});
 			} catch (Exception e) {
-				Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) { chatGroup.setThinking(false); chatGroup.appendText("Supervisor Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD); } });
+				Display.getDefault().asyncExec(() -> { if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) { chatGroup.setThinking(false); chatGroup.appendText("Supervisor Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD); } });
 			} finally {
 				Display.getDefault().asyncExec(() -> {
-					instructionsGroup.setOrchestrationRunning(false);
-					orchestrationThread = null;
+					state.isRunning = false;
+					if (threadId.equals(getCurrentThreadName())) {
+						instructionsGroup.setOrchestrationRunning(false);
+					}
+					state.orchestrationThread = null;
 				});
 			}
 		});
-		orchestrationThread.start();
+		state.orchestrationThread.start();
 	}
 
 	public File getProjectRoot() {
@@ -748,7 +828,11 @@ public class AiChatPage extends AEvoPage {
 			if (last.getEvaluationResult() == null) last.setEvaluationResult(OrchestrationFactory.eINSTANCE.createEvaluationResult());
 			last.getEvaluationResult().setUserSatisfaction(satisfaction); last.setComments(comments);
 			NeuronService.getInstance().train(orchestrator, comments, "coding", satisfaction);
-			editor.setDirty(true); satisfactionGroup.setVisible(false); updateScrolledContent();
+			editor.setDirty(true); satisfactionGroup.setVisible(false);
+			if (!approvalGroup.isVisible() && !inputGroup.isVisible()) {
+				feedbackSection.setExpanded(false);
+			}
+			updateScrolledContent();
 			MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK); mb.setText("Thank You"); mb.setMessage("Your feedback has been recorded and will be used to improve the AI."); mb.open();
 		}
 	}
@@ -757,13 +841,17 @@ public class AiChatPage extends AEvoPage {
 		if (approved) {
 			chatGroup.markLastWaitingAsApproved();
 		}
-		if (orchestrationThread != null) {
-			String taskId = activeTaskId != null ? activeTaskId : orchestrator.getId();
+		ThreadState state = getCurrentThreadState();
+		if (state.orchestrationThread != null) {
+			String taskId = state.activeTaskId != null ? state.activeTaskId : orchestrator.getId();
 			OrchestratorServiceImpl.getInstance().provideApproval(taskId, approved);
 		}
-		if (currentContext != null) {
-			currentContext.provideApproval(approved);
+		if (state.currentContext != null) {
+			state.currentContext.provideApproval(approved);
 			approvalGroup.hide();
+			if (!satisfactionGroup.isVisible() && !inputGroup.isVisible()) {
+				feedbackSection.setExpanded(false);
+			}
 			updateModeDisplay();
 			updateScrolledContent();
 		}
@@ -776,6 +864,14 @@ public class AiChatPage extends AEvoPage {
 	public void handleClarify() {
 		instructionsGroup.focusAndHighlight(colorLightOrange);
 		chatGroup.focusWaitingMessage();
+		expandFeedbackSection();
+	}
+
+	public void expandFeedbackSection() {
+		if (feedbackSection != null && !feedbackSection.isDisposed() && !feedbackSection.isExpanded()) {
+			feedbackSection.setExpanded(true);
+			updateScrolledContent();
+		}
 	}
 
 	public void handleQuote(String text) {
@@ -809,7 +905,6 @@ public class AiChatPage extends AEvoPage {
 
 	public void runTask(eu.kalafatic.evolution.model.orchestration.Task task) {
 		if (task == null) return;
-		this.currentStackTask = task;
 
 		// 1. Switch to thread or create one
 		if (task.getId() != null) {
@@ -823,6 +918,8 @@ public class AiChatPage extends AEvoPage {
 			switchThread(task.getId());
 			updateThreadCombo();
 		}
+
+		getCurrentThreadState().currentStackTask = task;
 
 		// 2. Set instructions
 		String prompt = task.getDescription();
@@ -849,13 +946,17 @@ public class AiChatPage extends AEvoPage {
 		if (assistAdapter != null) assistAdapter.closeProposalPopup();
 		instructionsGroup.resetBackground();
 		clearWaitingMessages();
-		if (orchestrationThread != null) {
-			String taskId = activeTaskId != null ? activeTaskId : orchestrator.getId();
+		ThreadState state = getCurrentThreadState();
+		if (state.orchestrationThread != null) {
+			String taskId = state.activeTaskId != null ? state.activeTaskId : orchestrator.getId();
 			OrchestratorServiceImpl.getInstance().provideInput(taskId, input);
 		}
-		if (currentContext != null) {
-			currentContext.provideInput(input);
+		if (state.currentContext != null) {
+			state.currentContext.provideInput(input);
 			inputGroup.hide();
+			if (!satisfactionGroup.isVisible() && !approvalGroup.isVisible()) {
+				feedbackSection.setExpanded(false);
+			}
 			updateModeDisplay();
 			updateScrolledContent();
 		}
@@ -873,6 +974,10 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	private void processLogEntry(String log) {
+		processLogEntry(log, getCurrentThreadName());
+	}
+
+	private void processLogEntry(String log, String threadId) {
 		if (log == null || log.isEmpty()) return;
 		
 		Color color = Display.getDefault().getSystemColor(SWT.COLOR_GREEN);
@@ -884,7 +989,15 @@ public class AiChatPage extends AEvoPage {
 		else if (log.contains("Agent [") && log.contains("Tester")) { color = colorTester; style = SWT.BOLD; }
 		else if (log.contains("Agent [") && log.contains("Reviewer")) { color = colorReviewer; style = SWT.BOLD; }
 		else if (log.startsWith("Orchestrator Error:") || log.contains("Exception:")) { color = colorError; style = SWT.BOLD; }
-		chatGroup.appendText(log, color, style);
+
+		if (threadId.equals(getCurrentThreadName())) {
+			chatGroup.appendText(log, color, style);
+		} else {
+			ChatThread targetThread = orchestrator.getAiChat().getThreads().stream().filter(t -> t.getId().equals(threadId)).findFirst().orElse(null);
+			if (targetThread != null) {
+				chatGroup.appendTextToThread(targetThread, log, color, style);
+			}
+		}
 		editor.setDirty(true);
 	}
 
@@ -898,6 +1011,7 @@ public class AiChatPage extends AEvoPage {
 	 * @evo:14:A reason=categorized-assist
 	 */
 	private String getCategory() {
+		eu.kalafatic.evolution.model.orchestration.Task currentStackTask = getCurrentThreadState().currentStackTask;
 		if (currentStackTask != null) {
 			String type = currentStackTask.getType();
 			if ("SELF_DEV_MODE".equals(type) || "ASSISTED_CODING".equals(type) || "DARWIN_MODE".equals(type)) {
