@@ -71,4 +71,19 @@ public class ModeRouterTest {
         PlatformMode mode = router.route("Hello world", orchestrator);
         assertEquals(PlatformType.SIMPLE_CHAT, mode.getType());
     }
+
+    @Test
+    public void testModelMappingCombinedSelfDevAndDarwin() {
+        if (orchestrator.getAiChat() == null) {
+            orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        }
+        if (orchestrator.getAiChat().getPromptInstructions() == null) {
+            orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        }
+        orchestrator.getAiChat().getPromptInstructions().setSelfIterativeMode(true);
+        orchestrator.setDarwinMode(true);
+
+        PlatformMode mode = router.route("Combined mode", orchestrator);
+        assertEquals(PlatformType.SELF_DEV_MODE, mode.getType());
+    }
 }

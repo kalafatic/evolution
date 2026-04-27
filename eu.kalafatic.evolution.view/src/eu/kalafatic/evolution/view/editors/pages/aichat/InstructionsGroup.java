@@ -112,10 +112,6 @@ public class InstructionsGroup extends AEvoGroup {
         iterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (iterativeCheck.getSelection()) {
-                    selfIterativeCheck.setSelection(false);
-                    darwinCheck.setSelection(false);
-                }
                 page.syncModelWithUI();
             }
         });
@@ -126,8 +122,8 @@ public class InstructionsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (selfIterativeCheck.getSelection()) {
-                    iterativeCheck.setSelection(false);
-                    darwinCheck.setSelection(false);
+                    iterativeCheck.setSelection(true);
+                    darwinCheck.setSelection(true);
                 }
                 page.syncModelWithUI();
             }
@@ -138,10 +134,6 @@ public class InstructionsGroup extends AEvoGroup {
         darwinCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (darwinCheck.getSelection()) {
-                    iterativeCheck.setSelection(false);
-                    selfIterativeCheck.setSelection(false);
-                }
                 page.syncModelWithUI();
             }
         });
@@ -282,26 +274,18 @@ public class InstructionsGroup extends AEvoGroup {
     public boolean isIterative() { return iterativeCheck.getSelection(); }
     public void setIterative(boolean iterative) {
         iterativeCheck.setSelection(iterative);
-        if (iterative) {
-            selfIterativeCheck.setSelection(false);
-            darwinCheck.setSelection(false);
-        }
     }
     public boolean isSelfIterative() { return selfIterativeCheck.getSelection(); }
     public void setSelfIterative(boolean selfIterative) {
         selfIterativeCheck.setSelection(selfIterative);
         if (selfIterative) {
-            iterativeCheck.setSelection(false);
-            darwinCheck.setSelection(false);
+            iterativeCheck.setSelection(true);
+            darwinCheck.setSelection(true);
         }
     }
     public boolean isDarwin() { return darwinCheck.getSelection(); }
     public void setDarwin(boolean darwin) {
         darwinCheck.setSelection(darwin);
-        if (darwin) {
-            iterativeCheck.setSelection(false);
-            selfIterativeCheck.setSelection(false);
-        }
     }
     public boolean isAutoApprove() { return autoApproveCheck.getSelection(); }
     public int getMaxIterations() { return maxIterationsSpinner.getSelection(); }
