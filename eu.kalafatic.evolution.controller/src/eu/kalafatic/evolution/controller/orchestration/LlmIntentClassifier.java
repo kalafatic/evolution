@@ -39,15 +39,23 @@ public class LlmIntentClassifier implements IIntentClassifier {
         sb.append("- 'ok', 'yes', 'proceed' are 'continue' if a task is active.\n");
         sb.append("- If input is 'new', suggest a NEW 'goal_update'.\n\n");
 
-        sb.append("Return ONLY JSON:\n");
+        sb.append("EXAMPLES:\n");
+        sb.append("- Input: \"fix the bug in Main.java\"\n");
+        sb.append("  Output: {\"intent\": \"new\", \"goal_update\": \"Fix bug in Main.java\", \"needs_clarification\": false, \"confidence\": 0.9, \"reason\": \"User requested a specific coding action.\"}\n");
+        sb.append("- Input: \"yes, please proceed\"\n");
+        sb.append("  Output: {\"intent\": \"continue\", \"needs_clarification\": false, \"confidence\": 1.0, \"reason\": \"User confirmed the current task.\"}\n\n");
+
+        sb.append("Input: \"").append(input).append("\"\n\n");
+
+        sb.append("Return ONLY valid JSON. No preamble. No thinking block. Use ONLY the specified schema.\n");
+        sb.append("Schema:\n");
         sb.append("{\n");
         sb.append("  \"intent\": \"new | continue | chat | unclear\",\n");
         sb.append("  \"goal_update\": \"...optional...\",\n");
         sb.append("  \"needs_clarification\": boolean,\n");
         sb.append("  \"confidence\": 0.0-1.0,\n");
         sb.append("  \"reason\": \"short explanation\"\n");
-        sb.append("}\n\n");
-        sb.append("Input: \"").append(input).append("\"");
+        sb.append("}");
 
         String prompt = sb.toString();
         context.log("Evo-IntentClassifier-Thinking: " + prompt);
