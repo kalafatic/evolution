@@ -17,10 +17,10 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignExporter;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
+import eu.kalafatic.evolution.controller.orchestration.design.DesignRenderer;
 import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.editors.pages.architecture.DesignRenderer;
 
 /**
  * @evo:19:A reason=dynamic-architecture-page
@@ -102,7 +102,8 @@ public class ArchitecturePage extends Composite {
         if (path != null) {
             try {
                 DesignModel model = extractModel();
-                DesignExporter.exportToHtml(renderer.render(model), new java.io.File(path));
+                eu.kalafatic.evolution.controller.orchestration.TaskContext context = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, null);
+                DesignExporter.exportToHtml(renderer.render(model), new java.io.File(path), context);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -116,7 +117,8 @@ public class ArchitecturePage extends Composite {
         String path = dialog.open();
         if (path != null) {
             try {
-                DesignExporter.saveModelAsJson(orchestrator.getSharedMemory(), new java.io.File(path));
+                eu.kalafatic.evolution.controller.orchestration.TaskContext context = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, null);
+                DesignExporter.saveModelAsJson(orchestrator.getSharedMemory(), new java.io.File(path), context);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -197,7 +199,17 @@ public class ArchitecturePage extends Composite {
                     if (task.getDescription() != null) {
                         String desc = task.getDescription();
                         if (desc.contains("method") || desc.contains("(")) {
-                            comp.getMethods().add("inferredMethod()");
+                            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\w+)\\s*\\(").matcher(desc);
+                            while (m.find()) {
+                                if (!m.group(1).equalsIgnoreCase("create")) comp.getMethods().add(m.group(1) + "()");
+                            }
+                            if (comp.getMethods().isEmpty()) comp.getMethods().add("inferredMethod()");
+                        }
+                        if (desc.contains("property") || desc.contains("field") || desc.contains(":")) {
+                            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\w+)\\s*:").matcher(desc);
+                            while (m.find()) {
+                                comp.getProperties().add(m.group(1));
+                            }
                         }
                     }
 

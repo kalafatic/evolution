@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view.editors.pages.architecture;
+package eu.kalafatic.evolution.controller.orchestration.design;
 
 import java.util.HashMap;
 import java.util.Map;
