@@ -176,14 +176,8 @@ public class AiChatPage extends AEvoPage {
 		instructionsGroup = new InstructionsGroup(toolkit, chatGroup.getControl(), this, orchestrator, true);
 		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
 
-		feedbackSection = toolkit.createSection(content, org.eclipse.ui.forms.widgets.Section.TITLE_BAR | org.eclipse.ui.forms.widgets.Section.TWISTIE);
-		feedbackSection.setText("Session Interaction & Feedback");
-		feedbackSection.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		feedbackSection.setExpanded(false);
-
-		Composite feedbackComposite = toolkit.createComposite(feedbackSection);
-		feedbackComposite.setLayout(new GridLayout(1, false));
-		feedbackSection.setClient(feedbackComposite);
+		Composite feedbackComposite = SWTFactory.createExpandableGroup(toolkit, content, "Session Interaction & Feedback", 1, false);
+		feedbackSection = (org.eclipse.ui.forms.widgets.Section) feedbackComposite.getParent();
 
 		satisfactionGroup = new SatisfactionGroup(feedbackComposite, editor, orchestrator, this);
 		approvalGroup = new ApprovalGroup(feedbackComposite, editor, orchestrator, this);
