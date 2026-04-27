@@ -49,6 +49,11 @@ public class RuleBasedPolicyEngine implements IPolicyEngine {
         }
 
         if ("chat".equals(intent)) {
+            // Safety check: if classification is 'chat' but input contains actionable keywords,
+            // we override it to allow the request to proceed. Small models often hallucinate 'chat' for short requests.
+            if (input.toLowerCase().matches(".*\\b(create|fix|add|run|test|generate|write|refactor|modify|delete|check)\\b.*")) {
+                return null; // Proceed instead of blocking with greeting
+            }
             return "I'm here to help with your project. You can ask me to create files, fix bugs, or run tests.";
         }
 
