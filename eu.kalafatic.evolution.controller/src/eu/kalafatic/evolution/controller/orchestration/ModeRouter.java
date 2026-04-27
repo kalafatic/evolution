@@ -44,13 +44,15 @@ public class ModeRouter {
 
         // 2. Map from existing model flags
         if (orchestrator != null) {
-            if (orchestrator.isDarwinMode()) {
-                return createDarwinMode();
-            }
             if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
                 if (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
                     return createSelfDevMode();
                 }
+            }
+            if (orchestrator.isDarwinMode()) {
+                return createDarwinMode();
+            }
+            if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
                 if (orchestrator.getAiChat().getPromptInstructions().isIterativeMode()) {
                     return createAssistedCodingMode();
                 }
