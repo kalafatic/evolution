@@ -13,6 +13,7 @@ import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
 import org.eclipse.swt.browser.ProgressEvent;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -47,6 +48,7 @@ public class ApprovalPage extends AEvoPage {
 	private ProposedTasksGroup proposedTasksGroup;
 	private VizGroup vizGroup;
 	private ActionsGroup actionsGroup;
+	private ArchitecturePage archViz;
 
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override public void notifyChanged(Notification notification) {
@@ -69,6 +71,15 @@ public class ApprovalPage extends AEvoPage {
 		feedbackGroup = new FeedbackGroup(toolkit, comp, editor, orchestrator);
 		proposedTasksGroup = new ProposedTasksGroup(toolkit, comp, editor, orchestrator, this);
 		vizGroup = new VizGroup(toolkit, comp, editor, orchestrator, this);
+
+		// Dynamic Architecture Visualization in Approval Page
+		Composite archComp = toolkit.createComposite(comp);
+		archComp.setLayout(new org.eclipse.swt.layout.FillLayout());
+		GridData archGd = new GridData(GridData.FILL_HORIZONTAL);
+		archGd.heightHint = 400;
+		archComp.setLayoutData(archGd);
+		archViz = new ArchitecturePage(archComp, editor, orchestrator);
+
 		actionsGroup = new ActionsGroup(toolkit, comp, editor, orchestrator, this);
 
 		this.setContent(comp);

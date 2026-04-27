@@ -7,28 +7,33 @@ import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
 import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
 
 /**
- * @evo:19:A reason=dynamic-design-renderer
+ * @evo:20:A reason=rich-design-renderer
  */
 public class DesignRenderer {
 
     public String render(DesignModel model) {
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html><html><head><style>");
-        html.append("body { font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; padding: 40px; margin: 0; }");
-        html.append(".canvas { position: relative; width: 1000px; height: 800px; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin: auto; overflow: hidden; }");
-        html.append(".component { position: absolute; width: 160px; padding: 15px; background: #eff6ff; border: 2px solid #3b82f6; border-radius: 8px; text-align: center; z-index: 10; }");
-        html.append(".component-name { font-weight: bold; color: #1e40af; margin-bottom: 4px; }");
-        html.append(".component-type { font-size: 0.8em; color: #60a5fa; text-transform: uppercase; }");
-        html.append(".relationship { position: absolute; height: 2px; background: #94a3b8; transform-origin: 0 0; z-index: 5; }");
-        html.append(".relationship::after { content: ''; position: absolute; right: -5px; top: -4px; border: 5px solid transparent; border-left-color: #94a3b8; }");
+        html.append("body { font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; padding: 40px; margin: 0; }");
+        html.append(".canvas { position: relative; width: 1000px; height: 1000px; background: white; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin: auto; overflow: hidden; padding: 50px; }");
+        html.append(".component { position: absolute; min-width: 180px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); z-index: 10; overflow: hidden; }");
+        html.append(".comp-header { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px; text-align: center; }");
+        html.append(".comp-name { font-weight: bold; color: #1e293b; }");
+        html.append(".comp-type { font-size: 0.75em; color: #64748b; text-transform: uppercase; font-style: italic; }");
+        html.append(".comp-content { padding: 8px; font-size: 0.85em; color: #334155; }");
+        html.append(".comp-section { border-top: 1px solid #f1f5f9; margin-top: 4px; padding-top: 4px; }");
+        html.append(".item { padding: 2px 0; }");
+        html.append(".item::before { content: '• '; color: #94a3b8; }");
+        html.append(".relationship { position: absolute; height: 1.5px; background: #94a3b8; transform-origin: 0 0; z-index: 5; }");
+        html.append(".relationship::after { content: ''; position: absolute; right: -4px; top: -3.5px; border: 4.5px solid transparent; border-left-color: #94a3b8; }");
         html.append(".header { text-align: center; margin-bottom: 30px; }");
-        html.append("h1 { color: #1e293b; margin: 0; }");
-        html.append("p { color: #64748b; }");
+        html.append("h1 { color: #0f172a; margin: 0; font-size: 1.8em; }");
+        html.append("p { color: #475569; margin-top: 8px; }");
         html.append("</style></head><body>");
 
         html.append("<div class='header'>");
-        html.append("<h1>").append(model.getName() != null ? model.getName() : "Evolution Architecture").append("</h1>");
-        html.append("<p>Model-driven dynamic visualization</p>");
+        html.append("<h1>").append(model.getName() != null ? model.getName() : "Evolution Design").append("</h1>");
+        html.append("<p>Dynamic architecture visualization from active context</p>");
         html.append("</div>");
 
         html.append("<div class='canvas'>");
@@ -37,8 +42,27 @@ public class DesignRenderer {
         for (ComponentRecord comp : model.getComponents()) {
             compMap.put(comp.getName(), comp);
             html.append("<div class='component' style='left: ").append(comp.getX()).append("px; top: ").append(comp.getY()).append("px;'>");
-            html.append("<div class='component-name'>").append(comp.getName()).append("</div>");
-            html.append("<div class='component-type'>").append(comp.getType()).append("</div>");
+            html.append("<div class='comp-header'>");
+            html.append("<div class='comp-name'>").append(comp.getName()).append("</div>");
+            html.append("<div class='comp-type'>").append(comp.getType()).append("</div>");
+            html.append("</div>");
+
+            if (!comp.getProperties().isEmpty() || !comp.getMethods().isEmpty()) {
+                html.append("<div class='comp-content'>");
+                if (!comp.getProperties().isEmpty()) {
+                    for (String prop : comp.getProperties()) {
+                        html.append("<div class='item'>").append(prop).append("</div>");
+                    }
+                }
+                if (!comp.getMethods().isEmpty()) {
+                    html.append("<div class='comp-section'>");
+                    for (String method : comp.getMethods()) {
+                        html.append("<div class='item'>").append(method).append("</div>");
+                    }
+                    html.append("</div>");
+                }
+                html.append("</div>");
+            }
             html.append("</div>");
         }
 
@@ -46,7 +70,7 @@ public class DesignRenderer {
             ComponentRecord from = compMap.get(rel.getFrom());
             ComponentRecord to = compMap.get(rel.getTo());
             if (from != null && to != null) {
-                html.append(renderLink(from.getX() + 80, from.getY() + 30, to.getX() + 80, to.getY() + 30));
+                html.append(renderLink(from.getX() + 90, from.getY() + 30, to.getX() + 90, to.getY() + 30));
             }
         }
 
