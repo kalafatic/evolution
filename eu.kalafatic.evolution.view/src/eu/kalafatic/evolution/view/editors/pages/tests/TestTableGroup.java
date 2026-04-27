@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages.tests;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
@@ -25,6 +26,7 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 public class TestTableGroup extends AEvoGroup {
     private FormToolkit toolkit;
     private TestsPage page;
+    private List<TableEditor> editors = new ArrayList<>();
 
     public TestTableGroup(FormToolkit toolkit, Composite parent, String title, List<Test> tests, boolean expanded, MultiPageEditor editor, Orchestrator orchestrator, TestsPage page) {
         super(editor, orchestrator);
@@ -62,6 +64,7 @@ public class TestTableGroup extends AEvoGroup {
             item.setText(2, test.getStatus().toString());
 
             TableEditor execEditor = new TableEditor(table);
+            editors.add(execEditor);
             Button execBtn = toolkit.createButton(table, "Execute", SWT.PUSH);
             execBtn.pack();
             execEditor.minimumWidth = execBtn.getSize().x;
@@ -80,5 +83,15 @@ public class TestTableGroup extends AEvoGroup {
         TableColumn col = new TableColumn(table, SWT.NONE);
         col.setText(text);
         layout.setColumnData(col, new ColumnWeightData(weight, width, true));
+    }
+
+    public void dispose() {
+        for (TableEditor editor : editors) {
+            if (editor.getEditor() != null && !editor.getEditor().isDisposed()) {
+                editor.getEditor().dispose();
+            }
+            editor.setEditor(null, null, -1);
+        }
+        editors.clear();
     }
 }

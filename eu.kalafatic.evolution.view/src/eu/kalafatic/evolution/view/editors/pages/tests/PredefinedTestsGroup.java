@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.view.editors.pages.tests;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
@@ -27,6 +28,7 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 public class PredefinedTestsGroup extends AEvoGroup {
 	private TestsPage page;
 	private FormToolkit toolkit;
+	private List<TableEditor> editors = new ArrayList<>();
 	private Table table;
 	private TableColumnLayout tableLayout;
 	private Composite tableComposite;
@@ -44,6 +46,14 @@ public class PredefinedTestsGroup extends AEvoGroup {
 
 		table.setRedraw(false);
 		try {
+			for (TableEditor editor : editors) {
+				if (editor.getEditor() != null && !editor.getEditor().isDisposed()) {
+					editor.getEditor().dispose();
+				}
+				editor.setEditor(null, null, -1);
+			}
+			editors.clear();
+
 			for (TableItem item : table.getItems()) {
 				item.dispose();
 			}
@@ -77,6 +87,7 @@ public class PredefinedTestsGroup extends AEvoGroup {
 					item.setText(3, finalTest.getStatus().toString());
 
 					TableEditor selEditor = new TableEditor(table);
+					editors.add(selEditor);
 					final Button radio = new Button(table, SWT.RADIO);
 					radio.setSelection(finalTest.isSelected());
 					radio.pack();
@@ -92,6 +103,7 @@ public class PredefinedTestsGroup extends AEvoGroup {
 					});
 
 					TableEditor actionEditor = new TableEditor(table);
+					editors.add(actionEditor);
 					Composite actionComp = toolkit.createComposite(table);
 					GridLayout actionLayout = new GridLayout(2, false);
 					actionLayout.marginHeight = 0;

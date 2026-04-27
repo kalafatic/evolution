@@ -45,6 +45,7 @@ public class TestsPage extends AEvoPage {
 	private Composite testsContent;
 	private Browser statusBrowser;
 	private List<TestRow> testRows = new ArrayList<>();
+	private List<TestTableGroup> dynamicGroups = new ArrayList<>();
 	private ISimulationTest iterativeTest;
 	private List<Class<?>> discoveredTestClasses = new ArrayList<>();
 
@@ -82,7 +83,6 @@ public class TestsPage extends AEvoPage {
 
 	private void createControl() {
 		toolkit = new FormToolkit(getDisplay());
-
 		Composite container = toolkit.createComposite(this);
 		container.setLayout(new GridLayout(1, false));
 		container.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -143,9 +143,13 @@ public class TestsPage extends AEvoPage {
 		}
 
 		// Remove existing dynamic groups
-		for (org.eclipse.swt.widgets.Control child : testsContent.getChildren()) {
-			if (child.getData() instanceof TestTableGroup) child.dispose();
+		for (TestTableGroup dg : dynamicGroups) {
+			dg.dispose();
+			if (dg.getGroup() != null && !dg.getGroup().isDisposed()) {
+				dg.getGroup().getParent().dispose(); // Dispose the Section
+			}
 		}
+		dynamicGroups.clear();
 
 		java.util.Map<String, List<Test>> groupedBy = new java.util.HashMap<>();
 		for (Test test : orchestrator.getTests()) {
@@ -154,7 +158,7 @@ public class TestsPage extends AEvoPage {
 		}
 		for (String type : groupedBy.keySet()) {
 			TestTableGroup dynamicGroup = new TestTableGroup(toolkit, testsContent, type + " Tests", groupedBy.get(type), false, editor, orchestrator, this);
-			dynamicGroup.getGroup().setData(dynamicGroup);
+			dynamicGroups.add(dynamicGroup);
 		}
 
 		testsContent.layout(true, true);
