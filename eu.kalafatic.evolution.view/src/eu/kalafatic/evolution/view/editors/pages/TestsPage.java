@@ -55,10 +55,12 @@ public class TestsPage extends AEvoPage {
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override public void notifyChanged(Notification notification) {
 			super.notifyChanged(notification);
+			if (notification.isTouch()) return;
 			if (!isUpdating) {
 				Display.getDefault().asyncExec(() -> {
 					if (!isDisposed()) {
-						if (notification.getEventType() == Notification.ADD || notification.getEventType() == Notification.REMOVE) {
+						int type = notification.getEventType();
+						if (type == Notification.ADD || type == Notification.REMOVE || type == Notification.SET) {
 							updateUIFromModel();
 						}
 						refreshBrowser();
@@ -82,7 +84,6 @@ public class TestsPage extends AEvoPage {
 	}
 
 	private void createControl() {
-		toolkit = new FormToolkit(getDisplay());
 		Composite container = toolkit.createComposite(this);
 		container.setLayout(new GridLayout(1, false));
 		container.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -100,6 +101,7 @@ public class TestsPage extends AEvoPage {
 		discoverTests();
 		predefinedTestsGroup = new PredefinedTestsGroup(toolkit, testsContent, editor, orchestrator, this);
 		iterativeDevelopmentLifecycleGroup = new IterativeDevelopmentLifecycleGroup(toolkit, testsContent, editor, orchestrator, this);
+		predefinedTestsGroup.syncTestsToModel();
 
 		Button addBtn = toolkit.createButton(testsContent, "Add Test", SWT.PUSH);
 		addBtn.addSelectionListener(new SelectionAdapter() {
@@ -120,12 +122,14 @@ public class TestsPage extends AEvoPage {
 
 	@Override
 	protected void refreshUI() {
-		if (isUpdating || orchestrator == null || testsContent == null || testsContent.isDisposed()) return;
+		if (isUpdating || orchestrator == null || testsContent == null || testsContent.isDisposed() || !isVisible()) return;
 		isUpdating = true;
 		testRows.clear();
 		discoverTests();
 
-		if (predefinedTestsGroup != null) predefinedTestsGroup.setOrchestrator(orchestrator);
+		if (predefinedTestsGroup != null) {
+			predefinedTestsGroup.setOrchestrator(orchestrator);
+		}
 		if (iterativeDevelopmentLifecycleGroup != null) iterativeDevelopmentLifecycleGroup.setOrchestrator(orchestrator);
 
 		// Synchronize Lifecycle Browser with Model Phase
@@ -161,9 +165,11 @@ public class TestsPage extends AEvoPage {
 			dynamicGroups.add(dynamicGroup);
 		}
 
-		testsContent.layout(true, true);
-		testsScrolled.setMinSize(testsContent.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-		testsScrolled.reflow(true);
+		if (!testsContent.isDisposed()) {
+			testsContent.layout(true, true);
+			testsScrolled.setMinSize(testsContent.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+			testsScrolled.reflow(true);
+		}
 		isUpdating = false;
 		refreshBrowser();
 	}

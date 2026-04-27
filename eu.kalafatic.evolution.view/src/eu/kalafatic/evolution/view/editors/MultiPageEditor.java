@@ -332,7 +332,11 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (contextPage != null) contextPage.refreshUI(); // TODO: refactor ContextPage if needed
         if (serverPage != null) serverPage.scheduleRefresh();
         if (approvalPage != null) approvalPage.scheduleRefresh();
-        refreshComparePage();
+
+        int active = getActivePage();
+        if (active != -1 && getControl(active) == comparePage) {
+            refreshComparePage();
+        }
     }
 
     private void refreshComparePage() {
