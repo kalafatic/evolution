@@ -21,6 +21,9 @@ public class JsonUtils {
     public static JSONObject extractJsonObject(String text) {
         if (text == null) return null;
 
+        // Strip <think> blocks
+        text = text.replaceAll("(?is)<think>.*?</think>", "");
+
         int start = text.indexOf("{");
         int end = text.lastIndexOf("}");
 
@@ -43,6 +46,9 @@ public class JsonUtils {
      */
     public static JSONArray extractJsonArray(String text) {
         if (text == null) return null;
+
+        // Strip <think> blocks
+        text = text.replaceAll("(?is)<think>.*?</think>", "");
 
         int start = text.indexOf("[");
         int end = text.lastIndexOf("]");

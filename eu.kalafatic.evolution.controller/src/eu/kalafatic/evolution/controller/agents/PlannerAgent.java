@@ -103,7 +103,9 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
             jsonArray = new JSONArray();
             JSONObject fallbackTask = new JSONObject();
             fallbackTask.put("id", "task0");
-            fallbackTask.put("name", request);
+            // Use a neutral name to avoid incorrect specialized agent triggering via name matching
+            fallbackTask.put("name", "General: Process Request");
+            fallbackTask.put("description", request);
             fallbackTask.put("taskType", "llm");
             jsonArray.put(fallbackTask);
         }
