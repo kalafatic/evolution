@@ -210,6 +210,9 @@ public class ChatGroup extends AEvoGroup {
                             page.handleQuote(text);
                             break;
                         case "approve":
+                            handleApprove(index);
+                            page.provideApproval(true);
+                            break;
                         case "create":
                             page.provideApproval(true);
                             break;
@@ -268,6 +271,39 @@ public class ChatGroup extends AEvoGroup {
         org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(browser.getDisplay());
         cb.setContents(new Object[]{text}, new org.eclipse.swt.dnd.Transfer[]{org.eclipse.swt.dnd.TextTransfer.getInstance()});
         cb.dispose();
+    }
+
+    public void handleApprove(int index) {
+        if (currentThread != null && index >= 0 && index < currentThread.getMessages().size()) {
+            ChatMessage msg = currentThread.getMessages().get(index);
+            String agentType = msg.getAgentType();
+            if (agentType == null) agentType = "ai";
+
+            // If it was waiting, change it back to what it likely was
+            if ("waiting".equals(agentType)) {
+                agentType = "final-response";
+            } else if (agentType.startsWith("waiting ")) {
+                 agentType = agentType.replace("waiting ", "");
+            }
+
+            if (!agentType.contains("approved")) {
+                msg.setAgentType(agentType + " approved");
+            }
+            refreshBrowser();
+        }
+    }
+
+    public void markLastWaitingAsApproved() {
+        if (currentThread != null) {
+            List<ChatMessage> messages = currentThread.getMessages();
+            for (int i = messages.size() - 1; i >= 0; i--) {
+                ChatMessage msg = messages.get(i);
+                if (msg.getAgentType() != null && msg.getAgentType().contains("waiting")) {
+                    handleApprove(i);
+                    return;
+                }
+            }
+        }
     }
 
     public void setEditCallback(EditMessageCallback callback) {

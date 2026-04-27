@@ -754,6 +754,9 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void provideApproval(boolean approved) {
+		if (approved) {
+			chatGroup.markLastWaitingAsApproved();
+		}
 		if (orchestrationThread != null) {
 			String taskId = activeTaskId != null ? activeTaskId : orchestrator.getId();
 			OrchestratorServiceImpl.getInstance().provideApproval(taskId, approved);
