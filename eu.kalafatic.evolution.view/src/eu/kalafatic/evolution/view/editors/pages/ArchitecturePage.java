@@ -5,18 +5,22 @@ import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Display;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
+import eu.kalafatic.evolution.controller.orchestration.design.DesignExporter;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
+import eu.kalafatic.evolution.controller.orchestration.design.DesignRenderer;
 import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.editors.pages.architecture.DesignRenderer;
 
 /**
  * @evo:19:A reason=dynamic-architecture-page
@@ -26,8 +30,7 @@ public class ArchitecturePage extends Composite {
     private Orchestrator orchestrator;
     private MultiPageEditor editor;
     private DesignRenderer renderer = new DesignRenderer();
-    private long lastRefresh = 0;
-    private static final long REFRESH_DEBOUNCE = 500;
+    private Runnable refreshRunnable = this::refreshBrowser;
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -41,9 +44,12 @@ public class ArchitecturePage extends Composite {
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.NONE);
         this.editor = editor;
-        this.setLayout(new FillLayout());
+        this.setLayout(new GridLayout(1, false));
+
+        createControlPanel();
 
         this.browser = new Browser(this, SWT.NONE);
+        this.browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         setOrchestrator(orchestrator);
         refreshBrowser();
@@ -60,10 +66,63 @@ public class ArchitecturePage extends Composite {
     }
 
     private void scheduleRefresh() {
-        long now = System.currentTimeMillis();
-        if (now - lastRefresh < REFRESH_DEBOUNCE) return;
-        lastRefresh = now;
-        refreshBrowser();
+        Display.getDefault().timerExec(-1, refreshRunnable); // Cancel previous
+        Display.getDefault().timerExec(500, refreshRunnable); // Debounce
+    }
+
+    private void createControlPanel() {
+        Composite panel = new Composite(this, SWT.NONE);
+        panel.setLayout(new GridLayout(2, false));
+        panel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button exportBtn = new Button(panel, SWT.PUSH);
+        exportBtn.setText("Export Architecture (HTML)");
+        exportBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                handleExport();
+            }
+        });
+
+        Button saveBtn = new Button(panel, SWT.PUSH);
+        saveBtn.setText("Save Design Model (JSON)");
+        saveBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                handleSaveModel();
+            }
+        });
+    }
+
+    private void handleExport() {
+        FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
+        dialog.setFilterExtensions(new String[] { "*.html" });
+        dialog.setFileName("architecture.html");
+        String path = dialog.open();
+        if (path != null) {
+            try {
+                DesignModel model = extractModel();
+                eu.kalafatic.evolution.controller.orchestration.TaskContext context = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, null);
+                DesignExporter.exportToHtml(renderer.render(model), new java.io.File(path), context);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    private void handleSaveModel() {
+        FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
+        dialog.setFilterExtensions(new String[] { "*.json" });
+        dialog.setFileName("design_model.json");
+        String path = dialog.open();
+        if (path != null) {
+            try {
+                eu.kalafatic.evolution.controller.orchestration.TaskContext context = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, null);
+                DesignExporter.saveModelAsJson(orchestrator.getSharedMemory(), new java.io.File(path), context);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
     }
 
     private void refreshBrowser() {
@@ -124,6 +183,43 @@ public class ArchitecturePage extends Composite {
 
     private DesignModel createDefaultModel() {
         DesignModel model = new DesignModel();
+        if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
+            model.setName("Inferred Architecture (from active tasks)");
+            int i = 0;
+            for (eu.kalafatic.evolution.model.orchestration.Task task : orchestrator.getTasks()) {
+                if (task.getName().contains("class") || task.getName().contains("Class") || task.getName().contains("interface")) {
+                    ComponentRecord comp = new ComponentRecord();
+                    String name = task.getName().replace("Create", "").replace("create", "").replace("class", "").replace("java", "").replace(".", "").trim();
+                    if (name.isEmpty()) name = "NewClass" + i;
+                    comp.setName(name);
+                    comp.setType("Class");
+                    comp.setX(100 + (i * 220) % 660);
+                    comp.setY(100 + (i / 3) * 180);
+
+                    if (task.getDescription() != null) {
+                        String desc = task.getDescription();
+                        if (desc.contains("method") || desc.contains("(")) {
+                            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\w+)\\s*\\(").matcher(desc);
+                            while (m.find()) {
+                                if (!m.group(1).equalsIgnoreCase("create")) comp.getMethods().add(m.group(1) + "()");
+                            }
+                            if (comp.getMethods().isEmpty()) comp.getMethods().add("inferredMethod()");
+                        }
+                        if (desc.contains("property") || desc.contains("field") || desc.contains(":")) {
+                            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\w+)\\s*:").matcher(desc);
+                            while (m.find()) {
+                                comp.getProperties().add(m.group(1));
+                            }
+                        }
+                    }
+
+                    model.getComponents().add(comp);
+                    i++;
+                }
+            }
+            if (!model.getComponents().isEmpty()) return model;
+        }
+
         model.setName("Darwinian Evolution (Default)");
 
         ComponentRecord engine = new ComponentRecord();

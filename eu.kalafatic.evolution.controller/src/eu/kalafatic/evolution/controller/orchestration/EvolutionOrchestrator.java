@@ -396,6 +396,21 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
                 }
 
+                // Design Model Update
+                if (result != null && result.contains("[PROPOSAL:DESIGN")) {
+                    try {
+                        int start = result.indexOf("[PROPOSAL:DESIGN") + 16;
+                        int end = result.indexOf("]", start);
+                        if (end != -1) {
+                            String designJson = result.substring(start, end).trim();
+                            context.getOrchestrator().setSharedMemory(designJson);
+                            context.log("Evo-Orchestrator: Design Model updated from [PROPOSAL:DESIGN]");
+                        }
+                    } catch (Exception e) {
+                        context.log("Evo-Orchestrator: Error parsing design proposal: " + e.getMessage());
+                    }
+                }
+
                 // Evaluation
                 JSONObject evaluation = reviewer.evaluate(result, task.getName(), context);
                 if (evaluation.optBoolean("success", false)) {
