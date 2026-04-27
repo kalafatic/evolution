@@ -70,7 +70,7 @@ public class InstructionsGroup extends AEvoGroup {
         attachmentArea.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Composite composite = toolkit.createComposite(group);
-        org.eclipse.swt.layout.GridLayout compLayout = new org.eclipse.swt.layout.GridLayout(10, false);
+        org.eclipse.swt.layout.GridLayout compLayout = new org.eclipse.swt.layout.GridLayout(11, false);
         compLayout.marginHeight = 0; compLayout.marginWidth = 0;
         composite.setLayout(compLayout);
         composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
