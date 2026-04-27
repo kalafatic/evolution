@@ -59,15 +59,23 @@ public class InputGroup extends AEvoGroup {
 
     public void show(String message) {
         if (group.isDisposed()) return;
+        if (message != null) {
+            message = message.replaceAll("(?s)<think>.*?</think>", "").trim();
+        }
         promptLabel.setText(message);
         group.setVisible(true);
         ((GridData) group.getLayoutData()).exclude = false;
         inputText.setFocus();
+        page.expandFeedbackSection();
     }
 
     public void hide() {
         if (group.isDisposed()) return;
         group.setVisible(false);
         ((GridData) group.getLayoutData()).exclude = true;
+    }
+
+    public boolean isVisible() {
+        return group != null && !group.isDisposed() && group.getVisible();
     }
 }

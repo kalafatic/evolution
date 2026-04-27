@@ -311,7 +311,11 @@ public class ChatGroup extends AEvoGroup {
     }
 
     public void appendText(String text, org.eclipse.swt.graphics.Color color, int style) {
-        if (currentThread == null || text == null || text.trim().isEmpty()) return;
+        appendTextToThread(currentThread, text, color, style);
+    }
+
+    public void appendTextToThread(ChatThread thread, String text, org.eclipse.swt.graphics.Color color, int style) {
+        if (thread == null || text == null || text.trim().isEmpty()) return;
     	if (color == null) {
     		color = Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
 		}
@@ -436,7 +440,7 @@ public class ChatGroup extends AEvoGroup {
 			String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
 
             ChatMessage msg = OrchestrationFactory.eINSTANCE.createChatMessage();
-            msg.setIndex(currentThread.getMessages().size());
+            msg.setIndex(thread.getMessages().size());
             msg.setSender(sender);
             msg.setText(content);
             msg.setColor(hexColor);
@@ -444,11 +448,13 @@ public class ChatGroup extends AEvoGroup {
             msg.setIsItalic(isItalic);
             msg.setAgentType(agentType);
             msg.setTimestamp(timestamp);
-			currentThread.getMessages().add(msg);
+			thread.getMessages().add(msg);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-        refreshBrowser();
+        if (thread == currentThread) {
+            refreshBrowser();
+        }
     }
 
     private String getIconForAgentType(String agentType) {
