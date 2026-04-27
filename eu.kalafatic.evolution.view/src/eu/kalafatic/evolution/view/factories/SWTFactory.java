@@ -53,6 +53,7 @@ public class SWTFactory {
 		container.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		return container;
 	}
+	
 
 	public static Group createGroup(Composite parent, String text, int columns) {
 		Group composite = new Group(parent, SWT.NONE);
@@ -70,6 +71,15 @@ public class SWTFactory {
 		GridData gd = new GridData();
 		gd.widthHint = LABEL_WIDTH;
 		Label label = new Label(parent, SWT.NONE);
+		label.setLayoutData(gd);
+		label.setText(text);
+		return label;
+	}
+	
+	public static Label createLabel(Composite parent, String text, int style) {
+		GridData gd = new GridData();
+		gd.widthHint = LABEL_WIDTH;
+		Label label = new Label(parent, style);
 		label.setLayoutData(gd);
 		label.setText(text);
 		return label;
@@ -107,6 +117,13 @@ public class SWTFactory {
 	public static Text createText(Composite parent) {
 		Text text = new Text(parent, SWT.BORDER);
 		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
+	}
+	
+	public static Text createText(Composite parent, String string, int style) {
+		Text text = new Text(parent, style);
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		text.setText(string);
 		return text;
 	}
 
@@ -373,5 +390,9 @@ public class SWTFactory {
 
 		return browser;
 	}
+
+	
+
+
 
 }

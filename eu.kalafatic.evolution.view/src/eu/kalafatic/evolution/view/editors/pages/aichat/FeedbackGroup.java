@@ -51,41 +51,30 @@ public class FeedbackGroup extends AEvoGroup {
 
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Session Interaction & Feedback", 1, false);
-        section = (Section) group.getParent();
-        section.setVisible(false);
-        ((GridData) section.getLayoutData()).exclude = true;
+        //section = (Section) group.getParent();
+        //section.setVisible(false);
+        //((GridData) section.getLayoutData()).exclude = true;
 
-        createSatisfactionControl(toolkit, group);
-        createApprovalControl(toolkit, group);
-        createInputControl(toolkit, group);
+        createSatisfactionControl( group);
+        createApprovalControl( group);
+        createInputControl( group);
     }
 
-    private void createSatisfactionControl(FormToolkit toolkit, Composite parent) {
-        satisfactionBox = toolkit.createComposite(parent);
-        satisfactionBox.setLayout(new GridLayout(2, false));
-        satisfactionBox.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        satisfactionBox.setVisible(false);
-        ((GridData) satisfactionBox.getLayoutData()).exclude = true;
+    private void createSatisfactionControl(Composite parent) {
+        satisfactionBox = SWTFactory.createComposite(parent, 3);
 
-        Label satLabel = toolkit.createLabel(satisfactionBox, "Rate Session (1-5):");
+        Label satLabel = SWTFactory.createLabel(satisfactionBox, "Rate Session (1-5):");
         satisfactionScale = new Scale(satisfactionBox, SWT.HORIZONTAL);
         satisfactionScale.setMinimum(1);
         satisfactionScale.setMaximum(5);
         satisfactionScale.setSelection(3);
         satisfactionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        Label commentLabel = toolkit.createLabel(satisfactionBox, "Session Feedback:");
-        satisfactionCommentsText = toolkit.createText(satisfactionBox, "", SWT.BORDER | SWT.SINGLE);
+        Label commentLabel = SWTFactory.createLabel(satisfactionBox, "Session Feedback:");
+        satisfactionCommentsText = SWTFactory.createText(satisfactionBox, "", SWT.BORDER | SWT.SINGLE);
         satisfactionCommentsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        Composite buttonBox = toolkit.createComposite(satisfactionBox);
-        GridLayout bbLayout = new GridLayout(2, true);
-        bbLayout.marginWidth = 0;
-        bbLayout.marginHeight = 0;
-        buttonBox.setLayout(bbLayout);
-        GridData bbGD = new GridData(GridData.FILL_HORIZONTAL);
-        bbGD.horizontalSpan = 2;
-        buttonBox.setLayoutData(bbGD);
+        Composite buttonBox = SWTFactory.createComposite(satisfactionBox, 2);
 
         Button submitSatButton = SWTFactory.createButton(buttonBox, "Submit Feedback", 120);
         submitSatButton.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -106,14 +95,11 @@ public class FeedbackGroup extends AEvoGroup {
         });
     }
 
-    private void createApprovalControl(FormToolkit toolkit, Composite parent) {
-        approvalBox = toolkit.createComposite(parent);
+    private void createApprovalControl(Composite parent) {
+        approvalBox = SWTFactory.createComposite(parent, 3);
         approvalBox.setLayout(new GridLayout(3, false));
-        approvalBox.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        approvalBox.setVisible(false);
-        ((GridData) approvalBox.getLayoutData()).exclude = true;
 
-        approvalLabel = toolkit.createLabel(approvalBox, "");
+        approvalLabel = SWTFactory.createLabel(approvalBox, "");
         approvalLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Button approveButton = SWTFactory.createButton(approvalBox, "Approve");
@@ -141,17 +127,17 @@ public class FeedbackGroup extends AEvoGroup {
         });
     }
 
-    private void createInputControl(FormToolkit toolkit, Composite parent) {
-        inputBox = toolkit.createComposite(parent);
+    private void createInputControl(Composite parent) {
+        inputBox = SWTFactory.createComposite(parent, 3);
         inputBox.setLayout(new GridLayout(3, false));
         inputBox.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         inputBox.setVisible(false);
         ((GridData) inputBox.getLayoutData()).exclude = true;
 
-        promptLabel = toolkit.createLabel(inputBox, "", SWT.WRAP);
+        promptLabel = SWTFactory.createLabel(inputBox, "", SWT.WRAP);
         promptLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        inputText = toolkit.createText(inputBox, "", SWT.BORDER);
+        inputText = SWTFactory.createText(inputBox, "", SWT.BORDER);
         GridData textGd = new GridData(GridData.FILL_HORIZONTAL);
         textGd.widthHint = 132;
         inputText.setLayoutData(textGd);
