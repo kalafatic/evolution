@@ -29,12 +29,13 @@ public class LlmIntentClassifier implements IIntentClassifier {
         sb.append("--- END STATE ---\n\n");
 
         sb.append("CLASSIFICATION CATEGORIES:\n");
-        sb.append("- 'new': User explicitly requested a new action unrelated to the current goal.\n");
-        sb.append("- 'continue': User is continuing, providing info for, or acknowledging the current task/goal. Also used for confirming or responding to AI's previous clarification or proposal.\n");
-        sb.append("- 'chat': General conversation, greetings (e.g. 'hi', 'hello'), or non-actionable polite remarks.\n");
-        sb.append("- 'unclear': Insufficient info or highly ambiguous intent that doesn't fit the above.\n\n");
+        sb.append("- 'new': User requested a new action (e.g., create, fix, refactor, test, run). Even if a goal is active, specific new instructions are 'new' or 'continue'.\n");
+        sb.append("- 'continue': User is providing info for, or acknowledging the current task/goal (e.g., 'ok', 'yes', 'go ahead').\n");
+        sb.append("- 'chat': ONLY for greetings (hi, hello) or non-actionable remarks. Actionable requests are NEVER 'chat'.\n");
+        sb.append("- 'unclear': Insufficient info or highly ambiguous intent.\n\n");
 
         sb.append("RULES:\n");
+        sb.append("- ANY request to 'create', 'fix', 'generate', 'write', 'add', 'run', 'test' MUST be 'new' or 'continue', NEVER 'chat'.\n");
         sb.append("- 'hi', 'hello' should be 'chat'.\n");
         sb.append("- 'ok', 'yes', 'proceed' are 'continue' if a task is active.\n");
         sb.append("- If input is 'new', suggest a NEW 'goal_update'.\n\n");
@@ -42,12 +43,14 @@ public class LlmIntentClassifier implements IIntentClassifier {
         sb.append("EXAMPLES:\n");
         sb.append("- Input: \"fix the bug in Main.java\"\n");
         sb.append("  Output: {\"intent\": \"new\", \"goal_update\": \"Fix bug in Main.java\", \"needs_clarification\": false, \"confidence\": 0.9, \"reason\": \"User requested a specific coding action.\"}\n");
+        sb.append("- Input: \"create java class Test.java which can print\"\n");
+        sb.append("  Output: {\"intent\": \"new\", \"goal_update\": \"Create Test.java class\", \"needs_clarification\": false, \"confidence\": 1.0, \"reason\": \"User requested to create a new Java class.\"}\n");
         sb.append("- Input: \"yes, please proceed\"\n");
         sb.append("  Output: {\"intent\": \"continue\", \"needs_clarification\": false, \"confidence\": 1.0, \"reason\": \"User confirmed the current task.\"}\n\n");
 
         sb.append("Input: \"").append(input).append("\"\n\n");
 
-        sb.append("Return ONLY valid JSON. No preamble. No thinking block. Use ONLY the specified schema.\n");
+        sb.append("Return ONLY valid JSON. No preamble. NO <think> blocks. NO reasoning text. Use ONLY the specified schema.\n");
         sb.append("Schema:\n");
         sb.append("{\n");
         sb.append("  \"intent\": \"new | continue | chat | unclear\",\n");
