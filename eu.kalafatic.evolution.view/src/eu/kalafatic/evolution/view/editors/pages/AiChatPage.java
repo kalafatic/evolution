@@ -78,10 +78,7 @@ public class AiChatPage extends AEvoPage {
 	private InstructionsGroup instructionsGroup;
 	private ChatGroup chatGroup;
 	private SystemStatusGroup systemStatusGroup;
-	private SatisfactionGroup satisfactionGroup;
-	private ApprovalGroup approvalGroup;
-	private InputGroup inputGroup;
-	private org.eclipse.ui.forms.widgets.Section feedbackSection;
+	private FeedbackGroup feedbackGroup;
 
 	private static class ThreadState {
 		Thread orchestrationThread;
@@ -176,14 +173,7 @@ public class AiChatPage extends AEvoPage {
 		instructionsGroup = new InstructionsGroup(toolkit, chatGroup.getControl(), this, orchestrator, true);
 		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
 
-		Composite feedbackComposite = SWTFactory.createExpandableGroup(toolkit, content, "Session Interaction & Feedback", 1, false);
-		feedbackSection = (org.eclipse.ui.forms.widgets.Section) feedbackComposite.getParent();
-		feedbackSection.setVisible(false);
-		((GridData) feedbackSection.getLayoutData()).exclude = true;
-
-		satisfactionGroup = new SatisfactionGroup(feedbackComposite, editor, orchestrator, this);
-		approvalGroup = new ApprovalGroup(feedbackComposite, editor, orchestrator, this);
-		inputGroup = new InputGroup(feedbackComposite, editor, orchestrator, this);
+		feedbackGroup = new FeedbackGroup(toolkit, content, editor, orchestrator, this);
 
 		initializeThreads();
 
@@ -379,13 +369,13 @@ public class AiChatPage extends AEvoPage {
 				                modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
 				                modeIndicatorLabel.setBackground(colorWaiting);
 				            }
-				            approvalGroup.show(msg); updateScrolledContent();
+				            feedbackGroup.showApproval(msg); updateScrolledContent();
 				        });
 				        approvalShown = true;
 				    } else if (result.getStatus() != TaskResult.Status.WAITING_FOR_APPROVAL && approvalShown) {
 					Display.getDefault().asyncExec(() -> {
 						if (!threadId.equals(getCurrentThreadName())) return;
-						updateModeDisplay(); approvalGroup.hide();
+						updateModeDisplay(); feedbackGroup.hideApproval();
 					});
 					approvalShown = false;
 				    }
@@ -399,13 +389,13 @@ public class AiChatPage extends AEvoPage {
 				                modeIndicatorLabel.setBackground(colorWaiting);
 				            }
 				            handleClarify();
-				            inputGroup.show(msg); updateScrolledContent();
+				            feedbackGroup.showInput(msg); updateScrolledContent();
 				        });
 				        inputShown = true;
 				    } else if (result.getStatus() != TaskResult.Status.WAITING_FOR_INPUT && inputShown) {
 					Display.getDefault().asyncExec(() -> {
 						if (!threadId.equals(getCurrentThreadName())) return;
-						updateModeDisplay(); inputGroup.hide();
+						updateModeDisplay(); feedbackGroup.hideInput();
 					});
 					inputShown = false;
 				    }
@@ -467,7 +457,7 @@ public class AiChatPage extends AEvoPage {
 
 						chatGroup.appendText("Final Response: " + finalResult.getResponse(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
-						satisfactionGroup.setVisible(true); updateScrolledContent();
+						feedbackGroup.showSatisfaction(true); updateScrolledContent();
 					} else {
 						// Update model silently if not current thread
 						ChatThread targetThread = orchestrator.getAiChat().getThreads().stream().filter(t -> t.getId().equals(threadId)).findFirst().orElse(null);
@@ -596,17 +586,17 @@ public class AiChatPage extends AEvoPage {
 					chatGroup.setThinking(state.isRunning && !state.isPaused);
 
 					updateModeDisplay();
-					approvalGroup.hide();
-					inputGroup.hide();
+					feedbackGroup.hideApproval();
+					feedbackGroup.hideInput();
 
 					// Re-check status if running
 					if (state.isRunning && state.activeTaskId != null) {
 						TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
 						if (result != null) {
 							if (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
-								approvalGroup.show(result.getWaitingMessage());
+								feedbackGroup.showApproval(result.getWaitingMessage());
 							} else if (result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
-								inputGroup.show(result.getWaitingMessage());
+								feedbackGroup.showInput(result.getWaitingMessage());
 							}
 						}
 					}
@@ -678,7 +668,7 @@ public class AiChatPage extends AEvoPage {
 						modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
 						modeIndicatorLabel.setBackground(colorWaiting);
 					}
-					approvalGroup.show(message); updateScrolledContent();
+					feedbackGroup.showApproval(message); updateScrolledContent();
 				}));
 				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
 					if (!threadId.equals(getCurrentThreadName())) return;
@@ -687,7 +677,7 @@ public class AiChatPage extends AEvoPage {
 						modeIndicatorLabel.setBackground(colorWaiting);
 					}
 					handleClarify();
-					inputGroup.show(message); updateScrolledContent();
+					feedbackGroup.showInput(message); updateScrolledContent();
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
 					String token = requestToken(provider);
@@ -720,7 +710,7 @@ public class AiChatPage extends AEvoPage {
 
 						chatGroup.appendText("Final Response: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
-						satisfactionGroup.setVisible(true); updateScrolledContent();
+						feedbackGroup.showSatisfaction(true); updateScrolledContent();
 					}
 				});
 			} catch (Exception e) {
@@ -824,7 +814,7 @@ public class AiChatPage extends AEvoPage {
 			if (last.getEvaluationResult() == null) last.setEvaluationResult(OrchestrationFactory.eINSTANCE.createEvaluationResult());
 			last.getEvaluationResult().setUserSatisfaction(satisfaction); last.setComments(comments);
 			NeuronService.getInstance().train(orchestrator, comments, "coding", satisfaction);
-			editor.setDirty(true); satisfactionGroup.setVisible(false);
+			editor.setDirty(true); feedbackGroup.showSatisfaction(false);
 			updateModeDisplay();
 			updateScrolledContent();
 			MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK); mb.setText("Thank You"); mb.setMessage("Your feedback has been recorded and will be used to improve the AI."); mb.open();
@@ -842,7 +832,7 @@ public class AiChatPage extends AEvoPage {
 		}
 		if (state.currentContext != null) {
 			state.currentContext.provideApproval(approved);
-			approvalGroup.hide();
+			feedbackGroup.hideApproval();
 			updateModeDisplay();
 			updateScrolledContent();
 		}
@@ -859,9 +849,12 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void expandFeedbackSection() {
-		if (feedbackSection != null && !feedbackSection.isDisposed() && !feedbackSection.isExpanded()) {
-			feedbackSection.setExpanded(true);
-			updateScrolledContent();
+		if (feedbackGroup != null && !feedbackGroup.getGroup().isDisposed()) {
+			org.eclipse.ui.forms.widgets.Section section = (org.eclipse.ui.forms.widgets.Section) feedbackGroup.getGroup().getParent();
+			if (!section.isExpanded()) {
+				section.setExpanded(true);
+				updateScrolledContent();
+			}
 		}
 	}
 
@@ -944,21 +937,10 @@ public class AiChatPage extends AEvoPage {
 		}
 		if (state.currentContext != null) {
 			state.currentContext.provideInput(input);
-			inputGroup.hide();
+			feedbackGroup.hideInput();
 			updateModeDisplay();
 			updateScrolledContent();
 		}
-	}
-
-	public void updateFeedbackVisibility() {
-		if (feedbackSection == null || feedbackSection.isDisposed()) return;
-		boolean anyVisible = satisfactionGroup.isVisible() || approvalGroup.isVisible() || inputGroup.isVisible();
-		feedbackSection.setVisible(anyVisible);
-		((GridData) feedbackSection.getLayoutData()).exclude = !anyVisible;
-		if (!anyVisible) {
-			feedbackSection.setExpanded(false);
-		}
-		updateScrolledContent();
 	}
 
 	private void clearWaitingMessages() {
