@@ -40,6 +40,30 @@ public class PredefinedTestsGroup extends AEvoGroup {
 		createControl(parent);
 	}
 
+	public void syncTestsToModel() {
+		if (orchestrator == null) return;
+		boolean modified = false;
+		for (Class<?> testClass : page.getDiscoveredTestClasses()) {
+			String name = testClass.getSimpleName();
+			boolean exists = false;
+			for (Test t : orchestrator.getTests()) {
+				if (name.equals(t.getName()) && "Predefined".equals(t.getType())) {
+					exists = true;
+					break;
+				}
+			}
+			if (!exists) {
+				Test newTest = OrchestrationFactory.eINSTANCE.createTest();
+				newTest.setName(name);
+				newTest.setType("Predefined");
+				newTest.setStatus(TestStatus.PENDING);
+				orchestrator.getTests().add(newTest);
+				modified = true;
+			}
+		}
+		if (modified) editor.setDirty(true);
+	}
+
 	@Override
 	protected void refreshUI() {
 		if (table == null || table.isDisposed()) return;
@@ -64,23 +88,10 @@ public class PredefinedTestsGroup extends AEvoGroup {
 			}
 
 			if (orchestrator != null) {
-				for (Class<?> testClass : page.getDiscoveredTestClasses()) {
-					String name = testClass.getSimpleName();
-					Test existing = null;
-					for (Test t : orchestrator.getTests()) {
-						if (name.equals(t.getName()) && "Predefined".equals(t.getType())) {
-							existing = t;
-							break;
-						}
-					}
-					if (existing == null) {
-						existing = OrchestrationFactory.eINSTANCE.createTest();
-						existing.setName(name);
-						existing.setType("Predefined");
-						existing.setStatus(TestStatus.PENDING);
-						page.addTestToModel(existing);
-					}
-					final Test finalTest = existing;
+				for (Test test : orchestrator.getTests()) {
+					if (!"Predefined".equals(test.getType())) continue;
+
+					final Test finalTest = test;
 					final TableItem item = new TableItem(table, SWT.NONE);
 					item.setText(1, finalTest.getName());
 					item.setText(2, finalTest.getPath() != null ? finalTest.getPath() : "");

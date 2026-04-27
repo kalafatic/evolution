@@ -20,6 +20,7 @@ public abstract class AEvoPage extends SharedScrolledComposite {
     protected Orchestrator orchestrator;
     protected FormToolkit toolkit;
     protected AtomicBoolean refreshPending = new AtomicBoolean(false);
+    protected boolean needsRefresh = false;
 
     public AEvoPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -35,13 +36,24 @@ public abstract class AEvoPage extends SharedScrolledComposite {
      * Coalesces multiple refresh requests.
      */
     public void scheduleRefresh() {
+        needsRefresh = true;
         if (refreshPending.compareAndSet(false, true)) {
             Display.getDefault().asyncExec(() -> {
                 refreshPending.set(false);
-                if (!isDisposed()) {
+                if (!isDisposed() && isVisible()) {
+                    needsRefresh = false;
                     refreshUI();
                 }
             });
+        }
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        boolean wasVisible = isVisible();
+        super.setVisible(visible);
+        if (visible && !wasVisible && needsRefresh) {
+            scheduleRefresh();
         }
     }
 
