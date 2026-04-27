@@ -41,6 +41,7 @@ import eu.kalafatic.evolution.view.editors.listeners.EditorResourceChangeListene
 import eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.editors.pages.AiFlowPage;
+import eu.kalafatic.evolution.view.editors.pages.ArchitecturePage;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
 import eu.kalafatic.evolution.view.editors.pages.BrowserPage;
 import eu.kalafatic.evolution.view.editors.pages.ContextPage;
@@ -62,6 +63,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public static final String ID = "eu.kalafatic.evolution.view.editors.MultiPageEditor";
     private TextEditor textEditor;
     private AiChatPage aiChatPage;
+    private ArchitecturePage architecturePage;
     private PropertiesPage propertiesPage;
     private McpSettingsPage mcpSettingsPage;
     private PreviewPage previewPage;
@@ -132,6 +134,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
             
             if (orchestrator != null) {
                 aiChatPage = AiChatPageFactory.createAiChatPage(this, orchestrator);
+                architecturePage = ArchitecturePageFactory.createArchitecturePage(this, orchestrator);
 
                 textEditor = new TextEditor();
                 int index = addPage(textEditor, getEditorInput());
@@ -280,6 +283,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         }
 
         if (aiChatPage != null) aiChatPage.setOrchestrator(orchestrator);
+        if (architecturePage != null) architecturePage.setOrchestrator(orchestrator);
         if (propertiesPage != null) propertiesPage.setOrchestrator(orchestrator);
         if (mcpSettingsPage != null) mcpSettingsPage.setOrchestrator(orchestrator);
         if (previewPage != null) previewPage.setOrchestrator(orchestrator);
@@ -322,6 +326,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void refreshPages() {
         if (orchestrator == null) return;
         if (aiChatPage != null) aiChatPage.scheduleRefresh();
+        if (architecturePage != null) architecturePage.redraw(); // Redraw enough to trigger model update
         if (propertiesPage != null) propertiesPage.scheduleRefresh();
         if (toolsPage != null) toolsPage.scheduleRefresh();
         if (taskStackPage != null) taskStackPage.scheduleRefresh();
