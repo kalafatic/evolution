@@ -88,6 +88,7 @@ public class SatisfactionGroup extends AEvoGroup {
         if (visible) {
             page.expandFeedbackSection();
         }
+        page.updateFeedbackVisibility();
     }
 
     public boolean isVisible() {

@@ -67,12 +67,14 @@ public class InputGroup extends AEvoGroup {
         ((GridData) group.getLayoutData()).exclude = false;
         inputText.setFocus();
         page.expandFeedbackSection();
+        page.updateFeedbackVisibility();
     }
 
     public void hide() {
         if (group.isDisposed()) return;
         group.setVisible(false);
         ((GridData) group.getLayoutData()).exclude = true;
+        page.updateFeedbackVisibility();
     }
 
     public boolean isVisible() {

@@ -74,12 +74,14 @@ public class ApprovalGroup extends AEvoGroup {
         group.setVisible(true);
         ((GridData) group.getLayoutData()).exclude = false;
         page.expandFeedbackSection();
+        page.updateFeedbackVisibility();
     }
 
     public void hide() {
         if (group.isDisposed()) return;
         group.setVisible(false);
         ((GridData) group.getLayoutData()).exclude = true;
+        page.updateFeedbackVisibility();
     }
 
     public boolean isVisible() {

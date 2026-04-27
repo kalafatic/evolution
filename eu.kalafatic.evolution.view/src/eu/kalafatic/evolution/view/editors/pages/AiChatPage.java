@@ -178,6 +178,8 @@ public class AiChatPage extends AEvoPage {
 
 		Composite feedbackComposite = SWTFactory.createExpandableGroup(toolkit, content, "Session Interaction & Feedback", 1, false);
 		feedbackSection = (org.eclipse.ui.forms.widgets.Section) feedbackComposite.getParent();
+		feedbackSection.setVisible(false);
+		((GridData) feedbackSection.getLayoutData()).exclude = true;
 
 		satisfactionGroup = new SatisfactionGroup(feedbackComposite, editor, orchestrator, this);
 		approvalGroup = new ApprovalGroup(feedbackComposite, editor, orchestrator, this);
@@ -823,9 +825,7 @@ public class AiChatPage extends AEvoPage {
 			last.getEvaluationResult().setUserSatisfaction(satisfaction); last.setComments(comments);
 			NeuronService.getInstance().train(orchestrator, comments, "coding", satisfaction);
 			editor.setDirty(true); satisfactionGroup.setVisible(false);
-			if (!approvalGroup.isVisible() && !inputGroup.isVisible()) {
-				feedbackSection.setExpanded(false);
-			}
+			updateModeDisplay();
 			updateScrolledContent();
 			MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK); mb.setText("Thank You"); mb.setMessage("Your feedback has been recorded and will be used to improve the AI."); mb.open();
 		}
@@ -843,9 +843,6 @@ public class AiChatPage extends AEvoPage {
 		if (state.currentContext != null) {
 			state.currentContext.provideApproval(approved);
 			approvalGroup.hide();
-			if (!satisfactionGroup.isVisible() && !inputGroup.isVisible()) {
-				feedbackSection.setExpanded(false);
-			}
 			updateModeDisplay();
 			updateScrolledContent();
 		}
@@ -948,12 +945,20 @@ public class AiChatPage extends AEvoPage {
 		if (state.currentContext != null) {
 			state.currentContext.provideInput(input);
 			inputGroup.hide();
-			if (!satisfactionGroup.isVisible() && !approvalGroup.isVisible()) {
-				feedbackSection.setExpanded(false);
-			}
 			updateModeDisplay();
 			updateScrolledContent();
 		}
+	}
+
+	public void updateFeedbackVisibility() {
+		if (feedbackSection == null || feedbackSection.isDisposed()) return;
+		boolean anyVisible = satisfactionGroup.isVisible() || approvalGroup.isVisible() || inputGroup.isVisible();
+		feedbackSection.setVisible(anyVisible);
+		((GridData) feedbackSection.getLayoutData()).exclude = !anyVisible;
+		if (!anyVisible) {
+			feedbackSection.setExpanded(false);
+		}
+		updateScrolledContent();
 	}
 
 	private void clearWaitingMessages() {

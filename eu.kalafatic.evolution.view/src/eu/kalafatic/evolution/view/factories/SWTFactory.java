@@ -227,12 +227,22 @@ public class SWTFactory {
 		}
 
 		final Section section = new Section(parent, style);
-		section.setLayoutData(new GridData(fillBoth ? GridData.FILL_BOTH : GridData.FILL_HORIZONTAL));
+		GridData gd = new GridData(fillBoth ? GridData.FILL_BOTH : GridData.FILL_HORIZONTAL);
+		if (fillBoth && !expanded) {
+			gd.grabExcessVerticalSpace = false;
+			gd.verticalAlignment = GridData.BEGINNING;
+		}
+		section.setLayoutData(gd);
 		section.setText(title);
 
 		section.addExpansionListener(new ExpansionAdapter() {
 			@Override
 			public void expansionStateChanged(ExpansionEvent e) {
+				if (fillBoth) {
+					GridData gd = (GridData) section.getLayoutData();
+					gd.grabExcessVerticalSpace = e.getState();
+					gd.verticalAlignment = e.getState() ? GridData.FILL : GridData.BEGINNING;
+				}
 				reflow(parent);
 			}
 		});
