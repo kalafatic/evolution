@@ -326,6 +326,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void refreshPages() {
         if (orchestrator == null) return;
         if (aiChatPage != null) aiChatPage.scheduleRefresh();
+        if (architecturePage != null) architecturePage.redraw(); // Redraw enough to trigger model update
         if (propertiesPage != null) propertiesPage.scheduleRefresh();
         if (toolsPage != null) toolsPage.scheduleRefresh();
         if (taskStackPage != null) taskStackPage.scheduleRefresh();
