@@ -198,7 +198,12 @@ public abstract class BaseAiAgent implements IAgent {
     }
 
     protected String cleanResponse(String response) {
-        String trimmed = response.trim();
+        if (response == null) return null;
+
+        // Strip <think> blocks
+        String cleaned = response.replaceAll("(?is)<think>.*?</think>", "");
+
+        String trimmed = cleaned.trim();
         int firstBackticks = trimmed.indexOf("```");
         if (firstBackticks != -1) {
             int firstNewline = trimmed.indexOf("\n", firstBackticks);

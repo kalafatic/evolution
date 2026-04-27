@@ -29,6 +29,7 @@ public class AnalyticAgent extends BaseAiAgent {
                 "3. AMBIGUITY: Is the request clear enough to execute? \n" +
                 "   - Example of ambiguous: 'fix the bug' (which bug? where?).\n" +
                 "   - Example of clear: 'Create a Java class that prints \"Hi\"'. In such cases, DO NOT MARK AS AMBIGUOUS. Instead, infer sensible default names and paths (e.g., src/main/java/HelloWorld.java) in your refinedPrompt.\n" +
+                "   - CRITICAL: If the user explicitly provides a filename (e.g., 'a.java', 'Test.java'), you MUST use that exact filename in your refinedPrompt and objective. DO NOT substitute it with inferred defaults.\n" +
                 "   - Mandatory clarification is ONLY required for destructive actions (DELETE) with missing targets or highly vague requests where no reasonable default can be inferred.\n" +
                 "   - NOTE: Simple greetings (e.g., 'hi', 'hello', 'good morning') are NEVER ambiguous. Categorize them as CHAT.\n" +
                 "4. MISSING INFORMATION: List specific details needed to proceed. If you inferred defaults, list them here as well.\n\n" +

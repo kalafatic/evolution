@@ -316,13 +316,9 @@ public class AiChatPage extends AEvoPage {
 		}
 		if (currentThread == null) initializeThreads();
 	
-		if (orchestrator != null && orchestrator.getAiChat() != null ) {
-			PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
-			
-			if (promptInstructions != null && promptInstructions.isSelfIterativeMode()) {
-				startSelfDevAction(request); 
-				return;
-			}			
+		if (orchestrator != null && (orchestrator.isDarwinMode() || (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()))) {
+			startSelfDevAction(request);
+			return;
 		}
 		
 		if (orchestrator != null) {
