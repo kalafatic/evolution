@@ -17,3 +17,13 @@
     - Refactored `chat.html` and `ChatGroup.java` to support vertical side-by-side rendering of branching variants.
     - Modified `IterationManager` to log Darwinian proposals in JSON format for the new UI.
 - **Traceability**: `iterations/16/plan.json`
+
+## [Iteration 17] - New AI Thread Shortcut and Wizard Integration
+- **Goal**: Add global shortcut and wizard for creating new AI threads.
+- **Changes**:
+    - Refactored `AiChatPage` to extract reusable `createNewThread(String)` method.
+    - Added `getAiChatPage()` to `MultiPageEditor` for programmatic access.
+    - Implemented `NewAiThreadWizard` and `NewAiThreadHandler`.
+    - Registered `Ctrl+Alt+T` shortcut for the `newAiThread` command in `plugin.xml`.
+    - Integrated "New Thread" wizard into the "AI Evolution" category and Evo Perspective shortcuts.
+- **Traceability**: `iterations/17/plan.json`

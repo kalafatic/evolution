@@ -503,4 +503,11 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void setLightCyan(Color lightCyan) {
         this.lightCyan = lightCyan;
     }
+
+    /**
+     * @evo:17:A reason=programmatic-access
+     */
+    public AiChatPage getAiChatPage() {
+        return aiChatPage;
+    }
 }

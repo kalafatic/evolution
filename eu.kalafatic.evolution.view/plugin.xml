@@ -585,6 +585,12 @@
             id="eu.kalafatic.evolution.view.addOrchestrationWizard"
             name="Add Orchestration">
       </wizard>
+      <wizard
+            category="eu.kalafatic.evolution.view.category"
+            class="eu.kalafatic.evolution.view.wizards.NewAiThreadWizard"
+            id="eu.kalafatic.evolution.view.newThreadWizard"
+            name="New Thread">
+      </wizard>
    </extension>
    <extension
          point="org.eclipse.ui.importWizards">
@@ -641,6 +647,10 @@
             name="Refresh Navigator">
       </command>
       <command
+            id="eu.kalafatic.evolution.view.newAiThread"
+            name="New AI Thread">
+      </command>
+      <command
             id="org.eclipse.equinox.p2.ui.sdk.update"
             name="Check for Updates">
       </command>
@@ -688,6 +698,10 @@
             commandId="eu.kalafatic.evolution.view.refreshNavigator">
       </handler>
       <handler
+            class="eu.kalafatic.evolution.view.handlers.NewAiThreadHandler"
+            commandId="eu.kalafatic.evolution.view.newAiThread">
+      </handler>
+      <handler
             class="eu.kalafatic.utils.p2.UpdateHandler"
             commandId="org.eclipse.equinox.p2.ui.sdk.update">
       </handler>
@@ -713,6 +727,15 @@
             id="eu.kalafatic.evolution.view.evolutionNatureImage"
             natureId="eu.kalafatic.evolution.view.evolutionNature">
       </image>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="eu.kalafatic.evolution.view.newAiThread"
+            contextId="org.eclipse.ui.contexts.window"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+M3+T">
+      </key>
    </extension>
    <extension
          point="org.eclipse.ui.splashHandlers">

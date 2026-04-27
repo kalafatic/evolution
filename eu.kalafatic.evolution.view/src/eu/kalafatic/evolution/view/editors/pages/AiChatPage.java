@@ -500,32 +500,39 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void createNewThread() {
-		String initialPrompt = "";
-		org.eclipse.jface.text.ITextSelection selection = editor.getLastTextSelection();
-		if (selection != null && !selection.getText().isEmpty()) {
-			initialPrompt = "Analyze this code:\n\n" + selection.getText();
-		}
-
 		InputDialog dlg = new InputDialog(getShell(), "New Chat Thread", "Enter thread description:", "task", null);
 		if (dlg.open() == Window.OK) {
 			String taskName = dlg.getValue();
-			if (taskName != null && !taskName.trim().isEmpty()) {
-				String dateStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"));
-				String id = dateStr + "_" + taskName.trim();
+			createNewThread(taskName);
+		}
+	}
 
-				ChatThread newThread = OrchestrationFactory.eINSTANCE.createChatThread();
-				newThread.setId(id);
-				orchestrator.getAiChat().getThreads().add(newThread);
-				currentThread = newThread;
-				chatGroup.setThread(currentThread);
-				updateThreadCombo();
-
-				if (!initialPrompt.isEmpty()) {
-					instructionsGroup.setRequest(initialPrompt);
-				}
-
-				editor.setDirty(true);
+	/**
+	 * @evo:17:A reason=reusable-thread-creation
+	 */
+	public void createNewThread(String taskName) {
+		if (taskName != null && !taskName.trim().isEmpty()) {
+			String initialPrompt = "";
+			org.eclipse.jface.text.ITextSelection selection = editor.getLastTextSelection();
+			if (selection != null && !selection.getText().isEmpty()) {
+				initialPrompt = "Analyze this code:\n\n" + selection.getText();
 			}
+
+			String dateStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"));
+			String id = dateStr + "_" + taskName.trim();
+
+			ChatThread newThread = OrchestrationFactory.eINSTANCE.createChatThread();
+			newThread.setId(id);
+			orchestrator.getAiChat().getThreads().add(newThread);
+			currentThread = newThread;
+			chatGroup.setThread(currentThread);
+			updateThreadCombo();
+
+			if (!initialPrompt.isEmpty()) {
+				instructionsGroup.setRequest(initialPrompt);
+			}
+
+			editor.setDirty(true);
 		}
 	}
 
