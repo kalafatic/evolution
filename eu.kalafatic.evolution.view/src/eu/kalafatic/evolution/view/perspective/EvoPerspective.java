@@ -88,6 +88,7 @@ public class EvoPerspective implements IPerspectiveFactory {
         layout.addNewWizardShortcut("eu.kalafatic.evolution.view.wizards.NewEvoProjectWizard");
         layout.addNewWizardShortcut("eu.kalafatic.evolution.view.wizards.AddOrchestrationWizard");
         layout.addNewWizardShortcut("eu.kalafatic.evolution.view.wizards.NewEvoTaskWizard");
+        layout.addNewWizardShortcut("eu.kalafatic.evolution.view.newThreadWizard");
         layout.addNewWizardShortcut("org.eclipse.ui.wizards.new.folder");
         layout.addNewWizardShortcut("org.eclipse.ui.wizards.new.file");
     }
