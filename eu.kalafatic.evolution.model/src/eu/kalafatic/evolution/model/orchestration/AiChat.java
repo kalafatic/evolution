@@ -129,22 +129,22 @@ public interface AiChat extends EObject {
 	EList<ChatThread> getThreads();
 
 	/**
-	 * Returns the value of the '<em><b>Prompt Instructions</b></em>' reference.
+	 * Returns the value of the '<em><b>Prompt Instructions</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Prompt Instructions</em>' reference.
+	 * @return the value of the '<em>Prompt Instructions</em>' containment reference.
 	 * @see #setPromptInstructions(PromptInstructions)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAiChat_PromptInstructions()
-	 * @model
+	 * @model containment="true"
 	 * @generated
 	 */
 	PromptInstructions getPromptInstructions();
 
 	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions <em>Prompt Instructions</em>}' reference.
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions <em>Prompt Instructions</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Prompt Instructions</em>' reference.
+	 * @param value the new value of the '<em>Prompt Instructions</em>' containment reference.
 	 * @see #getPromptInstructions()
 	 * @generated
 	 */

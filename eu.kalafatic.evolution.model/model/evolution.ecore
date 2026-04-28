@@ -204,7 +204,8 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="proxyUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="threads" upperBound="-1"
         eType="#//ChatThread" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="promptInstructions" eType="#//PromptInstructions"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="promptInstructions" eType="#//PromptInstructions"
+        containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="NeuronAI">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="url" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
