@@ -31,7 +31,6 @@ public class FeedbackGroup extends AEvoGroup {
 
     // Approval controls
     private Composite approvalBox;
-    private Label approvalLabel;
 
     // Input controls
     private Composite inputBox;
@@ -145,7 +144,7 @@ public class FeedbackGroup extends AEvoGroup {
         if (message != null) {
             message = message.replaceAll("(?s)<think>.*?</think>", "").trim();
         }
-        approvalLabel.setText(message);
+       
         approvalBox.setVisible(true);
         ((GridData) approvalBox.getLayoutData()).exclude = false;
         page.expandFeedbackSection();
