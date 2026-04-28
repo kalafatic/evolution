@@ -586,8 +586,6 @@ public class AiChatPage extends AEvoPage {
 					chatGroup.setThinking(state.isRunning && !state.isPaused);
 
 					updateModeDisplay();
-					feedbackGroup.hideApproval();
-					feedbackGroup.hideInput();
 
 					// Re-check status if running
 					if (state.isRunning && state.activeTaskId != null) {
