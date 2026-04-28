@@ -474,9 +474,9 @@
         }
 
         #nav-controls {
-            position: fixed;
-            right: 20px;
-            bottom: 80px;
+            position: absolute;
+            right: 15px;
+            bottom: 30px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -509,19 +509,21 @@
 </head>
 <body>
     <div id="floating-quote-btn" onclick="quoteSelection()">Quote</div>
-    <div id="nav-controls">
-        <button class="nav-btn" onclick="scrollToTop()" title="Scroll to Top">↑</button>
-        <button class="nav-btn" onclick="scrollToBottom()" title="Scroll to Bottom">↓</button>
-    </div>
     <div style="display: flex; height: 100vh;">
-        <div class='chat-container' id='chat' style="flex: 1; overflow-y: auto; padding: 12px;">
-            <div id="messages-wrapper" style="display: flex; flex-direction: column; gap: 12px;"></div>
-            <div id='thinking' style='display:none; margin-top: 12px;'>
-                <div class='thinking'>
-                    <div class='dot'></div>
-                    <div class='dot'></div>
-                    <div class='dot'></div>
+        <div style="flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden;">
+            <div class='chat-container' id='chat' style="flex: 1; overflow-y: auto; padding: 12px;">
+                <div id="messages-wrapper" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                <div id='thinking' style='display:none; margin-top: 12px;'>
+                    <div class='thinking'>
+                        <div class='dot'></div>
+                        <div class='dot'></div>
+                        <div class='dot'></div>
+                    </div>
                 </div>
+            </div>
+            <div id="nav-controls">
+                <button class="nav-btn" onclick="scrollToTop()" title="Scroll to Top">↑</button>
+                <button class="nav-btn" onclick="scrollToBottom()" title="Scroll to Bottom">↓</button>
             </div>
         </div>
 

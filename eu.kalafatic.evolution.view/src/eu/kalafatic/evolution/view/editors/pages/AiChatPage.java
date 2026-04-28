@@ -226,10 +226,11 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	private void handleGitInit() {
+		final File projectRoot = getProjectRoot();
 		new Thread(() -> {
 			try {
 				eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
-				shell.execute("git init", getProjectRoot(), null);
+				shell.execute("git init", projectRoot, null);
 				Display.getDefault().asyncExec(() -> processLogEntry("Evo: Git repository initialized successfully."));
 			} catch (Exception e) {
 				Display.getDefault().asyncExec(() -> processLogEntry("Error initializing git: " + e.getMessage()));
@@ -316,7 +317,7 @@ public class AiChatPage extends AEvoPage {
 		}
 		if (currentThread == null) initializeThreads();
 	
-		if (orchestrator != null && (orchestrator.isDarwinMode() || (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()))) {
+		if (orchestrator != null && (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode())) {
 			startSelfDevAction(request);
 			return;
 		}
@@ -650,9 +651,9 @@ public class AiChatPage extends AEvoPage {
 		instructionsGroup.setOrchestrationRunning(true);
 		chatGroup.setThinking(true);
 		String threadId = getCurrentThreadName();
+		final File projectRoot = getProjectRoot();
 		state.orchestrationThread = new Thread(() -> {
 			try {
-				File projectRoot = getProjectRoot();
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
 				context.setThreadId(threadId);
 				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
@@ -957,25 +958,28 @@ public class AiChatPage extends AEvoPage {
 	private void processLogEntry(String log, String threadId) {
 		if (log == null || log.isEmpty()) return;
 		
-		Color color = Display.getDefault().getSystemColor(SWT.COLOR_GREEN);
-		int style = SWT.NORMAL;
-		if (log.startsWith("Evo:") || log.startsWith("Orchestrator:")) { color = colorEvolution; style = SWT.ITALIC; }
-		else if (log.contains("Agent [") && log.contains("Planner")) { color = colorPlanner; style = SWT.BOLD; }
-		else if (log.contains("Agent [") && log.contains("Architect")) { color = colorArchitect; style = SWT.BOLD; }
-		else if (log.contains("Agent [") && log.contains("JavaDev")) { color = colorJavaDev; style = SWT.BOLD; }
-		else if (log.contains("Agent [") && log.contains("Tester")) { color = colorTester; style = SWT.BOLD; }
-		else if (log.contains("Agent [") && log.contains("Reviewer")) { color = colorReviewer; style = SWT.BOLD; }
-		else if (log.startsWith("Orchestrator Error:") || log.contains("Exception:")) { color = colorError; style = SWT.BOLD; }
+		Display.getDefault().asyncExec(() -> {
+			if (isDisposed()) return;
+			Color color = Display.getDefault().getSystemColor(SWT.COLOR_GREEN);
+			int style = SWT.NORMAL;
+			if (log.startsWith("Evo:") || log.startsWith("Orchestrator:")) { color = colorEvolution; style = SWT.ITALIC; }
+			else if (log.contains("Agent [") && log.contains("Planner")) { color = colorPlanner; style = SWT.BOLD; }
+			else if (log.contains("Agent [") && log.contains("Architect")) { color = colorArchitect; style = SWT.BOLD; }
+			else if (log.contains("Agent [") && log.contains("JavaDev")) { color = colorJavaDev; style = SWT.BOLD; }
+			else if (log.contains("Agent [") && log.contains("Tester")) { color = colorTester; style = SWT.BOLD; }
+			else if (log.contains("Agent [") && log.contains("Reviewer")) { color = colorReviewer; style = SWT.BOLD; }
+			else if (log.startsWith("Orchestrator Error:") || log.contains("Exception:")) { color = colorError; style = SWT.BOLD; }
 
-		if (threadId.equals(getCurrentThreadName())) {
-			chatGroup.appendText(log, color, style);
-		} else {
-			ChatThread targetThread = orchestrator.getAiChat().getThreads().stream().filter(t -> t.getId().equals(threadId)).findFirst().orElse(null);
-			if (targetThread != null) {
-				chatGroup.appendTextToThread(targetThread, log, color, style);
+			if (threadId.equals(getCurrentThreadName())) {
+				chatGroup.appendText(log, color, style);
+			} else {
+				ChatThread targetThread = orchestrator.getAiChat().getThreads().stream().filter(t -> t.getId().equals(threadId)).findFirst().orElse(null);
+				if (targetThread != null) {
+					chatGroup.appendTextToThread(targetThread, log, color, style);
+				}
 			}
-		}
-		editor.setDirty(true);
+			editor.setDirty(true);
+		});
 	}
 
 	public String getCurrentThreadName() { return currentThread != null ? currentThread.getId() : "Default"; }

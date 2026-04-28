@@ -434,26 +434,36 @@ public class ChatGroup extends AEvoGroup {
         }
 
         try {
-			String hexColor = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
-			boolean isBold = (style & SWT.BOLD) != 0;
-			boolean isItalic = (style & SWT.ITALIC) != 0;
-			String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+            final String fSender = sender;
+            final String fContent = content;
+            final String fAgentType = agentType;
+            final String fHexColor = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+            final boolean isBold = (style & SWT.BOLD) != 0;
+            final boolean isItalic = (style & SWT.ITALIC) != 0;
+            final String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
 
-            ChatMessage msg = OrchestrationFactory.eINSTANCE.createChatMessage();
-            msg.setIndex(thread.getMessages().size());
-            msg.setSender(sender);
-            msg.setText(content);
-            msg.setColor(hexColor);
-            msg.setIsBold(isBold);
-            msg.setIsItalic(isItalic);
-            msg.setAgentType(agentType);
-            msg.setTimestamp(timestamp);
-			thread.getMessages().add(msg);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-        if (thread == currentThread) {
-            refreshBrowser();
+            Display.getDefault().asyncExec(() -> {
+                try {
+                    ChatMessage msg = OrchestrationFactory.eINSTANCE.createChatMessage();
+                    msg.setIndex(thread.getMessages().size());
+                    msg.setSender(fSender);
+                    msg.setText(fContent);
+                    msg.setColor(fHexColor);
+                    msg.setIsBold(isBold);
+                    msg.setIsItalic(isItalic);
+                    msg.setAgentType(fAgentType);
+                    msg.setTimestamp(timestamp);
+                    thread.getMessages().add(msg);
+
+                    if (thread == currentThread) {
+                        refreshBrowser();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
