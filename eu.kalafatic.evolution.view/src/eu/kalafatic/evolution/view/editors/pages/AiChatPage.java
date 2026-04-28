@@ -343,6 +343,9 @@ public class AiChatPage extends AEvoPage {
 		taskRequest.getContext().put("orchestrator", orchestrator);
 		String threadId = getCurrentThreadName();
 		taskRequest.getContext().put("threadId", threadId);
+		if (state.currentStackTask != null) {
+			taskRequest.getContext().put("task", state.currentStackTask);
+		}
 
 		state.orchestrationThread = new Thread(() -> {
 			try {
@@ -903,7 +906,8 @@ public class AiChatPage extends AEvoPage {
 		getCurrentThreadState().currentStackTask = task;
 
 		// 2. Set instructions
-		String prompt = task.getDescription();
+		String prompt = task.getPrompt();
+		if (prompt == null || prompt.isEmpty()) prompt = task.getDescription();
 		if (prompt == null || prompt.isEmpty()) prompt = task.getName();
 		instructionsGroup.setRequest(prompt);
 
