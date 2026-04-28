@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Optional;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
+import eu.kalafatic.evolution.controller.log.LoggingService;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
 import eu.kalafatic.evolution.controller.agents.ArchitectAgent;
 import eu.kalafatic.evolution.controller.agents.FileAgent;
@@ -380,15 +382,25 @@ public class EvolutionOrchestrator implements IOrchestrator {
         IAgent agent = findAgentForTask(task, context);
         String lastFeedback = null;
         OrchestrationStatusManager.getInstance().updateAgentStatus(agent.getType(), "PEV Loop: " + task.getName());
+        LoggingService logger = LoggingService.getInstance();
+        context.setCurrentTaskId(task.getId());
 
         for (int retry = 1; retry <= MAX_RETRIES; retry++) {
             context.checkPause();
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+            context.setCurrentIteration(retry);
             context.log("Evo-Orchestrator-" + task.getName() + ": PEV Attempt " + retry);
+
+            // Adaptive logging: increase verbosity on retries (DEBUG = 1)
+            if (retry > 1 && task.getLogLevel().getValue() > LogLevel.DEBUG_VALUE) {
+                task.setLogLevel(LogLevel.DEBUG);
+                logger.warn(context, "Increasing verbosity to DEBUG due to retry " + retry);
+            }
 
             try {
                 // 1. PLAN: Agent determines how to solve the specific task
                 task.setStatus(TaskStatus.PLANNING);
+                context.setCurrentPhase("PLAN");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 1 - Planning...");
 
                 String mutationStrategy = "initial";
@@ -407,9 +419,11 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                 String localPlan = agent.process(task.getDescription() + "\nGOAL: " + task.getGoal() + "\nINSTRUCTION: " + planInstruction, context, lastFeedback);
                 task.setPlan(localPlan);
+                logger.debug(context, "Generated plan", localPlan);
 
                 // 2. EXECUTE: Agent performs the action
                 task.setStatus(TaskStatus.EXECUTING);
+                context.setCurrentPhase("EXECUTE");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 2 - Executing...");
                 String result = performAction(task, agent, context, lastFeedback);
                 task.setResponse(result);
@@ -453,20 +467,28 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                 // 3. VERIFY: ReviewerAgent evaluates the result
                 task.setStatus(TaskStatus.VERIFYING);
+                context.setCurrentPhase("VERIFY");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 3 - Verifying...");
                 JSONObject evaluation = reviewer.evaluate(result, task.getName(), context);
+                logger.debug(context, "Evaluation result", evaluation.toString());
 
                 if (evaluation.optBoolean("success", false)) {
                     task.setFeedback("Success: " + evaluation.optString("comment", "Task validated."));
                     return true;
                 } else {
+                    // Adaptive logging: increase verbosity on failure (DEBUG = 1)
+                    if (task.getLogLevel().getValue() > LogLevel.DEBUG_VALUE) {
+                        task.setLogLevel(LogLevel.DEBUG);
+                    }
                     // DARWINIAN MUTATION: Modify approach based on failure
                     lastFeedback = "Verification Failed: " + evaluation.optString("feedback", "Task failed validation.");
                     context.log("Evo-Orchestrator-Darwin: Mutation triggered due to failure. Feedback: " + lastFeedback);
                     task.setFeedback("Retry " + retry + ": " + lastFeedback);
                 }
             } catch (Exception e) {
-                context.log("Evo-Orchestrator-" + task.getName() + ": Error during PEV: " + e.getMessage());
+                // Adaptive logging: set level to ERROR on exception
+                task.setLogLevel(LogLevel.ERROR);
+                logger.error(context, "Error during PEV execution", e);
                 lastFeedback = "Exception: " + e.getMessage();
                 task.setFeedback("Retry " + retry + " Exception: " + e.getMessage());
             }

@@ -38,6 +38,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getArtifacts <em>Artifacts</em>}</li>
 	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getPrompt <em>Prompt</em>}</li>
 	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getAttachments <em>Attachments</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getLogLevel <em>Log Level</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -512,6 +513,31 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setPrompt(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Log Level</b></em>' attribute.
+	 * The literals are from the enumeration {@link eu.kalafatic.evolution.model.orchestration.LogLevel}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Log Level</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.LogLevel
+	 * @see #setLogLevel(LogLevel)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_LogLevel()
+	 * @model
+	 * @generated
+	 */
+	LogLevel getLogLevel();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getLogLevel <em>Log Level</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Log Level</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.LogLevel
+	 * @see #getLogLevel()
+	 * @generated
+	 */
+	void setLogLevel(LogLevel value);
 
 	/**
 	 * Returns the value of the '<em><b>Attachments</b></em>' attribute list.

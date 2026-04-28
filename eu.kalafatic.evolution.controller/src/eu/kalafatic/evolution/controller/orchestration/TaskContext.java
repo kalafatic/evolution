@@ -30,6 +30,9 @@ public class TaskContext {
     private final List<String> instructionFiles = new CopyOnWriteArrayList<>();
     private String currentTaskName = "Orchestration";
     private String threadId = "Default";
+    private String currentTaskId = "Unknown";
+    private int currentIteration = 0;
+    private String currentPhase = "INIT";
     private CompletableFuture<Boolean> approvalFuture;
     private CompletableFuture<String> inputFuture;
     private volatile boolean paused = false;
@@ -76,6 +79,30 @@ public class TaskContext {
 
     public void setCurrentTaskName(String currentTaskName) {
         this.currentTaskName = currentTaskName;
+    }
+
+    public String getCurrentTaskId() {
+        return currentTaskId;
+    }
+
+    public void setCurrentTaskId(String currentTaskId) {
+        this.currentTaskId = currentTaskId;
+    }
+
+    public int getCurrentIteration() {
+        return currentIteration;
+    }
+
+    public void setCurrentIteration(int currentIteration) {
+        this.currentIteration = currentIteration;
+    }
+
+    public String getCurrentPhase() {
+        return currentPhase;
+    }
+
+    public void setCurrentPhase(String currentPhase) {
+        this.currentPhase = currentPhase;
     }
 
     public String getThreadId() {

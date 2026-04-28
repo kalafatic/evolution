@@ -23,6 +23,7 @@ import eu.kalafatic.evolution.model.orchestration.FileChange;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
+import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.IterationStatus;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
@@ -171,6 +172,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createSelfDevDecisionFromString(eDataType, initialValue);
 			case OrchestrationPackage.TEST_STATUS:
 				return createTestStatusFromString(eDataType, initialValue);
+			case OrchestrationPackage.LOG_LEVEL:
+				return createLogLevelFromString(eDataType, initialValue);
 			case OrchestrationPackage.REVIEW_DECISION:
 				return createReviewDecisionFromString(eDataType, initialValue);
 			default:
@@ -206,11 +209,33 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertSelfDevDecisionToString(eDataType, instanceValue);
 			case OrchestrationPackage.TEST_STATUS:
 				return convertTestStatusToString(eDataType, instanceValue);
+			case OrchestrationPackage.LOG_LEVEL:
+				return convertLogLevelToString(eDataType, instanceValue);
 			case OrchestrationPackage.REVIEW_DECISION:
 				return convertReviewDecisionToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public LogLevel createLogLevelFromString(EDataType eDataType, String initialValue) {
+		LogLevel result = LogLevel.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertLogLevelToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
 	}
 
 	/**
