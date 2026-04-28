@@ -86,4 +86,24 @@ public class ModeRouterTest {
         PlatformMode mode = router.route("Combined mode", orchestrator);
         assertEquals(PlatformType.SELF_DEV_MODE, mode.getType());
     }
+
+    @Test
+    public void testRouteFastCoding() {
+        PlatformMode mode = router.routeFast("Create a java class", orchestrator);
+        assertNotNull(mode);
+        assertEquals(PlatformType.ASSISTED_CODING, mode.getType());
+    }
+
+    @Test
+    public void testRouteFastGreeting() {
+        PlatformMode mode = router.routeFast("Hello", orchestrator);
+        assertNotNull(mode);
+        assertEquals(PlatformType.SIMPLE_CHAT, mode.getType());
+    }
+
+    @Test
+    public void testRouteFastUnknown() {
+        PlatformMode mode = router.routeFast("What is the capital of France?", orchestrator);
+        assertNull(mode);
+    }
 }
