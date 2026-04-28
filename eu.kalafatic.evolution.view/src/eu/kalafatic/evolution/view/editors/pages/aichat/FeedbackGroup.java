@@ -51,33 +51,45 @@ public class FeedbackGroup extends AEvoGroup {
 
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Session Interaction & Feedback", 1, false);
-        //section = (Section) group.getParent();
-        //section.setVisible(false);
-        //((GridData) section.getLayoutData()).exclude = true;
 
-        createSatisfactionControl( group);
-        createApprovalControl( group);
-        createInputControl( group);
-    }
+        satisfactionBox = SWTFactory.createComposite(group, 5);
 
-    private void createSatisfactionControl(Composite parent) {
-        satisfactionBox = SWTFactory.createComposite(parent, 3);
-
-        Label satLabel = SWTFactory.createLabel(satisfactionBox, "Rate Session (1-5):");
+        SWTFactory.createLabel(satisfactionBox, "Rate Session (1-5):");
         satisfactionScale = new Scale(satisfactionBox, SWT.HORIZONTAL);
         satisfactionScale.setMinimum(1);
         satisfactionScale.setMaximum(5);
         satisfactionScale.setSelection(3);
-        satisfactionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        GridData gd=new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 3;
+        satisfactionScale.setLayoutData(gd);
+        SWTFactory.createLabel(satisfactionBox); // Spacer
 
-        Label commentLabel = SWTFactory.createLabel(satisfactionBox, "Session Feedback:");
-        satisfactionCommentsText = SWTFactory.createText(satisfactionBox, "", SWT.BORDER | SWT.SINGLE);
-        satisfactionCommentsText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        SWTFactory.createLabel(satisfactionBox, "Session Feedback:");
+        satisfactionCommentsText = SWTFactory.createText(satisfactionBox, "", SWT.BORDER | SWT.SINGLE);  
+        gd=new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 3;
+        satisfactionCommentsText.setLayoutData(gd);
+        SWTFactory.createLabel(satisfactionBox); // Spacer
+        
+        promptLabel = SWTFactory.createLabel(satisfactionBox, "", SWT.WRAP);
+        inputText = SWTFactory.createText(satisfactionBox, "", SWT.BORDER);       
+        gd=new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 3;
+        inputText.setLayoutData(gd);
 
-        Composite buttonBox = SWTFactory.createComposite(satisfactionBox, 2);
+        Button submitButton = SWTFactory.createButton(satisfactionBox, "Submit");
+        submitButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.provideInput(inputText.getText());
+                inputText.setText("");
+            }
+        });
 
-        Button submitSatButton = SWTFactory.createButton(buttonBox, "Submit Feedback", 120);
-        submitSatButton.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        approvalBox = SWTFactory.createComposite(group, 5);
+        
+        Button submitSatButton = SWTFactory.createButton(approvalBox, "Submit Feedback");
         submitSatButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -85,23 +97,14 @@ public class FeedbackGroup extends AEvoGroup {
             }
         });
 
-        Button peerReviewBtn = SWTFactory.createButton(buttonBox, "Peer Review", 120);
-        peerReviewBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        Button peerReviewBtn = SWTFactory.createButton(approvalBox, "Peer Review");
         peerReviewBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.handleReview();
             }
         });
-    }
-
-    private void createApprovalControl(Composite parent) {
-        approvalBox = SWTFactory.createComposite(parent, 3);
-        approvalBox.setLayout(new GridLayout(3, false));
-
-        approvalLabel = SWTFactory.createLabel(approvalBox, "");
-        approvalLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
+        
         Button approveButton = SWTFactory.createButton(approvalBox, "Approve");
         approveButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -123,31 +126,6 @@ public class FeedbackGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.handleReview();
-            }
-        });
-    }
-
-    private void createInputControl(Composite parent) {
-        inputBox = SWTFactory.createComposite(parent, 3);
-        inputBox.setLayout(new GridLayout(3, false));
-        inputBox.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        inputBox.setVisible(false);
-        ((GridData) inputBox.getLayoutData()).exclude = true;
-
-        promptLabel = SWTFactory.createLabel(inputBox, "", SWT.WRAP);
-        promptLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        inputText = SWTFactory.createText(inputBox, "", SWT.BORDER);
-        GridData textGd = new GridData(GridData.FILL_HORIZONTAL);
-        textGd.widthHint = 132;
-        inputText.setLayoutData(textGd);
-
-        Button submitButton = SWTFactory.createButton(inputBox, "Submit");
-        submitButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.provideInput(inputText.getText());
-                inputText.setText("");
             }
         });
     }
