@@ -49,6 +49,7 @@ public class OrchestrationZestView extends ViewPart implements ISelectionListene
         @Override
         public void notifyChanged(Notification notification) {
             super.notifyChanged(notification);
+            if (notification.isTouch()) return;
             Display.getDefault().asyncExec(() -> {
                 if (viewer != null && !viewer.getControl().isDisposed()) {
                     refreshViewer();

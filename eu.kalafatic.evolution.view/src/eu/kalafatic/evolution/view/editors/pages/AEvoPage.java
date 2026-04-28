@@ -39,10 +39,15 @@ public abstract class AEvoPage extends SharedScrolledComposite {
         needsRefresh = true;
         if (refreshPending.compareAndSet(false, true)) {
             Display.getDefault().asyncExec(() -> {
-                refreshPending.set(false);
-                if (!isDisposed() && isVisible()) {
-                    needsRefresh = false;
-                    refreshUI();
+                try {
+                    refreshPending.set(false);
+                    if (!isDisposed() && isVisible()) {
+                        needsRefresh = false;
+                        refreshUI();
+                    }
+                } catch (Exception e) {
+                    // Log error but don't crash the background process
+                    System.err.println("Error during UI refresh in " + getClass().getSimpleName() + ": " + e.getMessage());
                 }
             });
         }

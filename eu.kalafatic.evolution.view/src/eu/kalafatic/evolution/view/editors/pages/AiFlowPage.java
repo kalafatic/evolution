@@ -48,6 +48,7 @@ public class AiFlowPage extends Composite {
 		@Override
 		public void notifyChanged(Notification notification) {
 			super.notifyChanged(notification);
+			if (notification.isTouch()) return;
 			refreshBrowser();
 		}
 	};
@@ -171,8 +172,6 @@ public class AiFlowPage extends Composite {
 	}
 
 	private void refreshBrowser() {
-		if (browser == null || browser.isDisposed())
-			return;
 		Display.getDefault().asyncExec(() -> {
 			if (browser == null || browser.isDisposed()) return;
 
