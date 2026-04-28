@@ -14,6 +14,35 @@ public class LlmIntentClassifier implements IIntentClassifier {
 
     @Override
     public JSONObject classify(String input, TaskContext context) throws Exception {
+        if (input == null) input = "";
+        String lowerInput = input.toLowerCase();
+
+        // 1. Fast-track common intents (Bypass LLM)
+        if (lowerInput.matches("^\\s*(hi|hello|hey|greetings|good morning|good afternoon|good evening)\\s*[!.]*\\s*$")) {
+            JSONObject result = new JSONObject();
+            result.put("intent", "chat");
+            result.put("confidence", 1.0);
+            result.put("reason", "Fast-track greeting detection.");
+            return result;
+        }
+
+        if (lowerInput.matches("^\\s*(yes|ok|okay|proceed|go ahead|yep|sure)\\s*[!.]*\\s*$")) {
+            JSONObject result = new JSONObject();
+            result.put("intent", "continue");
+            result.put("confidence", 1.0);
+            result.put("reason", "Fast-track confirmation detection.");
+            return result;
+        }
+
+        if (lowerInput.matches(".*\\b(create|fix|add|run|test|generate|write|refactor|modify|delete|check|implement|build)\\b.*")) {
+            JSONObject result = new JSONObject();
+            result.put("intent", "new");
+            result.put("confidence", 1.0);
+            result.put("reason", "Fast-track coding intent detection.");
+            // We don't set goal_update here, EvolutionOrchestrator will handle it.
+            return result;
+        }
+
         Orchestrator orchestrator = context.getOrchestrator();
         ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
 

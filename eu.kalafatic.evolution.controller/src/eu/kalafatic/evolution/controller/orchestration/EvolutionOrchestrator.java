@@ -98,7 +98,18 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             // 2. Context Assist Layer + Mode Routing (Internal Guard)
             if (context.getPlatformMode() == null) {
-                ContextAssistResult assistResult = contextAssistant.analyze(request, context);
+                ModeRouter router = new ModeRouter();
+                PlatformMode fastMode = router.routeFast(request, context.getOrchestrator());
+
+                ContextAssistResult assistResult;
+                if (fastMode != null) {
+                    context.log("Evo-Orchestrator-Mode: Fast-track mode detected: " + fastMode.getType());
+                    assistResult = new ContextAssistResult();
+                    assistResult.setMode(fastMode.getType());
+                    assistResult.setConfidence(ConfidenceLevel.HIGH);
+                } else {
+                    assistResult = contextAssistant.analyze(request, context);
+                }
 
                 // SAFETY RULE: SELF_DEV_MODE confirmation (Always confirm explicitly)
                 if (assistResult.getMode() == PlatformType.SELF_DEV_MODE) {
@@ -154,7 +165,6 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
                 }
 
-                ModeRouter router = new ModeRouter();
                 PlatformMode mode = router.route(request, context.getOrchestrator(), assistResult);
                 context.setPlatformMode(mode);
                 context.log("Platform Mode: " + mode.getType() + " (Autonomy: " + mode.getAutonomyLevel() + ")");
