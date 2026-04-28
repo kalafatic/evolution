@@ -68,7 +68,7 @@ public class ChatGroup extends AEvoGroup {
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();
             Composite toolbar = toolkit.createComposite(section);
-            toolbar.setLayout(new GridLayout(4, false));
+            toolbar.setLayout(new GridLayout(5, false));
 
             Button selectAllBtn = toolkit.createButton(toolbar, "Select All", SWT.PUSH);
             selectAllBtn.addSelectionListener(new SelectionAdapter() {
