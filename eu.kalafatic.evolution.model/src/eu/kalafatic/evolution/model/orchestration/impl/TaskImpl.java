@@ -2,6 +2,7 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
+import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
@@ -54,6 +55,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getArtifacts <em>Artifacts</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getPrompt <em>Prompt</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getAttachments <em>Attachments</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getLogLevel <em>Log Level</em>}</li>
  * </ul>
  *
  * @generated
@@ -488,6 +490,49 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @ordered
 	 */
 	protected EList<String> attachments;
+
+	/**
+	 * The default value of the '{@link #getLogLevel() <em>Log Level</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getLogLevel()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final LogLevel LOG_LEVEL_EDEFAULT = LogLevel.INFO;
+
+	/**
+	 * The cached value of the '{@link #getLogLevel() <em>Log Level</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getLogLevel()
+	 * @generated
+	 * @ordered
+	 */
+	protected LogLevel logLevel = LOG_LEVEL_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public LogLevel getLogLevel() {
+		return logLevel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setLogLevel(LogLevel newLogLevel) {
+		LogLevel oldLogLevel = logLevel;
+		logLevel = newLogLevel == null ? LOG_LEVEL_EDEFAULT : newLogLevel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__LOG_LEVEL, oldLogLevel, logLevel));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1075,6 +1120,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getPrompt();
 			case OrchestrationPackage.TASK__ATTACHMENTS:
 				return getAttachments();
+			case OrchestrationPackage.TASK__LOG_LEVEL:
+				return getLogLevel();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1160,6 +1207,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				getAttachments().clear();
 				getAttachments().addAll((Collection<? extends String>)newValue);
 				return;
+			case OrchestrationPackage.TASK__LOG_LEVEL:
+				setLogLevel((LogLevel)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1241,6 +1291,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__ATTACHMENTS:
 				getAttachments().clear();
 				return;
+			case OrchestrationPackage.TASK__LOG_LEVEL:
+				setLogLevel(LOG_LEVEL_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1299,6 +1352,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return PROMPT_EDEFAULT == null ? prompt != null : !PROMPT_EDEFAULT.equals(prompt);
 			case OrchestrationPackage.TASK__ATTACHMENTS:
 				return attachments != null && !attachments.isEmpty();
+			case OrchestrationPackage.TASK__LOG_LEVEL:
+				return logLevel != LOG_LEVEL_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1355,6 +1410,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(prompt);
 		result.append(", attachments: ");
 		result.append(attachments);
+		result.append(", logLevel: ");
+		result.append(logLevel);
 		result.append(')');
 		return result.toString();
 	}

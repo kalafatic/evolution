@@ -24,6 +24,7 @@ import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.IterationStatus;
+import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
@@ -90,6 +91,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getTask_Attachments() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(22);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTask_LogLevel() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(23);
 	}
 
 	/**
@@ -343,6 +354,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EEnum taskStatusEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum logLevelEEnum = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -2840,6 +2858,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EEnum getLogLevel() {
+		return logLevelEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EEnum getSessionType() {
 		return sessionTypeEEnum;
 	}
@@ -2987,6 +3015,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(taskEClass, TASK__ARTIFACTS);
 		createEAttribute(taskEClass, TASK__PROMPT);
 		createEAttribute(taskEClass, TASK__ATTACHMENTS);
+		createEAttribute(taskEClass, TASK__LOG_LEVEL);
 
 		agentEClass = createEClass(AGENT);
 		createEAttribute(agentEClass, AGENT__ID);
@@ -3238,6 +3267,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
+		logLevelEEnum = createEEnum(LOG_LEVEL);
 		sessionTypeEEnum = createEEnum(SESSION_TYPE);
 		commandStatusEEnum = createEEnum(COMMAND_STATUS);
 		executionModeEEnum = createEEnum(EXECUTION_MODE);
@@ -3308,6 +3338,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getTask_Artifacts(), ecorePackage.getEString(), "artifacts", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_Prompt(), ecorePackage.getEString(), "prompt", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_Attachments(), ecorePackage.getEString(), "attachments", null, 0, -1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_LogLevel(), this.getLogLevel(), "logLevel", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(agentEClass, Agent.class, "Agent", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getAgent_Id(), ecorePackage.getEString(), "id", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -3567,6 +3598,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.PLANNING);
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.EXECUTING);
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.VERIFYING);
+
+		initEEnum(logLevelEEnum, LogLevel.class, "LogLevel");
+		addEEnumLiteral(logLevelEEnum, LogLevel.TRACE);
+		addEEnumLiteral(logLevelEEnum, LogLevel.DEBUG);
+		addEEnumLiteral(logLevelEEnum, LogLevel.INFO);
+		addEEnumLiteral(logLevelEEnum, LogLevel.WARN);
+		addEEnumLiteral(logLevelEEnum, LogLevel.ERROR);
 
 		initEEnum(sessionTypeEEnum, SessionType.class, "SessionType");
 		addEEnumLiteral(sessionTypeEEnum, SessionType.HTTPD);
