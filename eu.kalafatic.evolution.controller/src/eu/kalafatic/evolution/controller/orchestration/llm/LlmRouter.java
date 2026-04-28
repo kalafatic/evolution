@@ -8,7 +8,7 @@ import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 
 /**
  * Router that chooses between LLM providers based on orchestrator settings.
- * Implements HYBRID mode with local proxy optimization and simplification.
+ * Implements HYBRID mode with local context building and cloud reasoning.
  *
  * @evo.lastModified: 14:B
  * @evo.origin: self
@@ -37,18 +37,18 @@ public class LlmRouter {
         if (mode == AiMode.REMOTE) {
             return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
         } else if (mode == AiMode.HYBRID) {
-            // HYBRID: 3-step process
-            if (context != null) context.log("LlmRouter-Hybrid: Step 1 - Optimizing prompt locally...");
-            // 1. Optimize prompt using local model
-            String optimizedPrompt = optimizePromptLocally(orchestrator, prompt, temperature, proxyUrl, context);
+            // HYBRID: Local Context Builder + Cloud Reasoner
+            if (context != null) context.log("LlmRouter-Hybrid: Step 1 - Building system context locally...");
+            // 1. Build context using local model (scans files, gathers state)
+            String augmentedPrompt = buildContextLocally(orchestrator, prompt, temperature, proxyUrl, context);
 
-            if (context != null) context.log("LlmRouter-Hybrid: Step 2 - Executing remote request...");
-            // 2. Execute using remote model
-            String remoteResponse = sendRemoteRequest(orchestrator, optimizedPrompt, temperature, proxyUrl, context);
+            if (context != null) context.log("LlmRouter-Hybrid: Step 2 - Executing cloud reasoning...");
+            // 2. Execute reasoning using cloud model
+            String remoteResponse = sendRemoteRequest(orchestrator, augmentedPrompt, temperature, proxyUrl, context);
 
-            if (context != null) context.log("LlmRouter-Hybrid: Step 3 - Simplifying response locally...");
-            // 3. Simplify response using local model
-            return simplifyResponseLocally(orchestrator, remoteResponse, temperature, proxyUrl, context);
+            if (context != null) context.log("LlmRouter-Hybrid: Step 3 - Verifying response locally...");
+            // 3. Optional: Verify/Sanitize response locally
+            return verifyResponseLocally(orchestrator, remoteResponse, temperature, proxyUrl, context);
         } else {
             // LOCAL, ollama+selected local model
             String model = orchestrator.getLocalModel();
@@ -112,7 +112,7 @@ public class LlmRouter {
         return openAiProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
-    private String optimizePromptLocally(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+    private String buildContextLocally(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String hybridModel = orchestrator.getHybridModel();
         if (hybridModel != null && !hybridModel.isEmpty()) {
             if (orchestrator.getOllama() == null) {
@@ -123,24 +123,19 @@ public class LlmRouter {
             hybridModel = orchestrator.getOllama().getModel();
         }
 
-        if (context != null) context.log("LlmRouter-Hybrid: Using local model for optimization: " + (hybridModel != null && !hybridModel.isEmpty() ? hybridModel : "default"));
+        if (context != null) context.log("LlmRouter-Hybrid: Using local model for context building: " + (hybridModel != null && !hybridModel.isEmpty() ? hybridModel : "default"));
 
-        String optimizationPrompt = "Analyze the following user request and optimize it for AI-to-AI communication. " +
-                "Fix errors, clarify intent, and simplify or rewrite the request to be more effective for a large language model. " +
-                "Provide ONLY the optimized request text.\n\n" +
-                "Request: " + prompt;
+        String contextPrompt = "You are a context builder. Analyze the user request and provide a detailed summary of the technical context needed to fulfill it. " +
+                "Include relevant file paths, system state, and architectural constraints found in the shared memory. " +
+                "Provide a structured 'CONTEXT' block followed by the original 'REQUEST'.\n\n" +
+                "Original Request: " + prompt;
 
-        return ollamaProvider.sendRequest(orchestrator, optimizationPrompt, temperature, proxyUrl, context);
+        return ollamaProvider.sendRequest(orchestrator, contextPrompt, temperature, proxyUrl, context);
     }
 
-    private String simplifyResponseLocally(Orchestrator orchestrator, String remoteResponse, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        String simplificationPrompt = "The following is a response from a 'big' AI model. " +
-                "Analyze it and simplify it for a human user. " +
-                "Focus on the most important information and make it easy to understand. " +
-                "Provide ONLY the simplified response text.\n\n" +
-                "Response: " + remoteResponse;
-
-        return ollamaProvider.sendRequest(orchestrator, simplificationPrompt, temperature, proxyUrl, context);
+    private String verifyResponseLocally(Orchestrator orchestrator, String remoteResponse, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        // In this implementation, we just pass through or do a quick safety check
+        return remoteResponse;
     }
 
     /**

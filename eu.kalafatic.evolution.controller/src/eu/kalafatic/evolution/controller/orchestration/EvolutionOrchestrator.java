@@ -309,6 +309,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 }
 
                 task.setStatus(TaskStatus.RUNNING);
+                if (task.getGoal() == null || task.getGoal().isEmpty()) {
+                    task.setGoal(task.getName());
+                }
+
                 double progress = (double) i / taskCount;
                 updateStatus(context, progress, "Executing: " + task.getName());
 
@@ -365,24 +369,50 @@ public class EvolutionOrchestrator implements IOrchestrator {
     private boolean executeTaskWithRetries(Task task, TaskContext context) throws Exception {
         IAgent agent = findAgentForTask(task, context);
         String lastFeedback = null;
-        OrchestrationStatusManager.getInstance().updateAgentStatus(agent.getType(), "Executing: " + task.getName());
+        OrchestrationStatusManager.getInstance().updateAgentStatus(agent.getType(), "PEV Loop: " + task.getName());
 
         for (int retry = 1; retry <= MAX_RETRIES; retry++) {
             context.checkPause();
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            context.log("Evo-Orchestrator-" + task.getName() + ": Attempt " + retry);
+            context.log("Evo-Orchestrator-" + task.getName() + ": PEV Attempt " + retry);
 
             try {
-                // Execute action (either via tool or reasoning)
+                // 1. PLAN: Agent determines how to solve the specific task
+                task.setStatus(TaskStatus.PLANNING);
+                context.log("Evo-Orchestrator-" + task.getName() + ": Phase 1 - Planning...");
+
+                String mutationStrategy = "initial";
+                if (lastFeedback != null) {
+                    if (lastFeedback.toLowerCase().contains("exception") || lastFeedback.toLowerCase().contains("error")) {
+                        mutationStrategy = "Syntactic fix (Self-Correction)";
+                    } else if (lastFeedback.toLowerCase().contains("test") || lastFeedback.toLowerCase().contains("verify")) {
+                        mutationStrategy = "Logic fix (Behavioral-Correction)";
+                    } else {
+                        mutationStrategy = "Heuristic improvement (Evolution)";
+                    }
+                }
+
+                String planInstruction = "Create a structured JSON plan with: 'steps' (array), 'targetFiles' (array), and 'strategy' (string). " +
+                        "Mutation Strategy: " + mutationStrategy + ". Feedback: " + (lastFeedback != null ? lastFeedback : "none");
+
+                String localPlan = agent.process(task.getDescription() + "\nGOAL: " + task.getGoal() + "\nINSTRUCTION: " + planInstruction, context, lastFeedback);
+                task.setPlan(localPlan);
+
+                // 2. EXECUTE: Agent performs the action
+                task.setStatus(TaskStatus.EXECUTING);
+                context.log("Evo-Orchestrator-" + task.getName() + ": Phase 2 - Executing...");
                 String result = performAction(task, agent, context, lastFeedback);
                 task.setResponse(result);
+
+                // Capture Artifacts (result summary + content)
+                task.setArtifacts("RESULT:\n" + result + "\nFEEDBACK: " + (lastFeedback != null ? lastFeedback : "N/A"));
 
                 // Handle Clarification/Proposal stall
                 if (result != null && (result.contains("CLARIFY") || result.contains("[PROPOSAL:"))) {
                     context.log("Evo-Orchestrator-" + task.getName() + ": Agent requested clarification/proposal: " + result);
 
                     if (context.isAutoApprove()) {
-                        context.log("Evo-Orchestrator-" + task.getName() + ": Auto-approval enabled. Skipping agent prompt in headless mode.");
+                        context.log("Evo-Orchestrator-" + task.getName() + ": Auto-approval enabled. Skipping agent prompt.");
                         return true;
                     }
 
@@ -396,7 +426,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
                 }
 
-                // Design Model Update
+                // Design Model Update (DFE support)
                 if (result != null && result.contains("[PROPOSAL:DESIGN")) {
                     try {
                         int start = result.indexOf("[PROPOSAL:DESIGN") + 16;
@@ -411,17 +441,22 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
                 }
 
-                // Evaluation
+                // 3. VERIFY: ReviewerAgent evaluates the result
+                task.setStatus(TaskStatus.VERIFYING);
+                context.log("Evo-Orchestrator-" + task.getName() + ": Phase 3 - Verifying...");
                 JSONObject evaluation = reviewer.evaluate(result, task.getName(), context);
+
                 if (evaluation.optBoolean("success", false)) {
                     task.setFeedback("Success: " + evaluation.optString("comment", "Task validated."));
                     return true;
                 } else {
-                    lastFeedback = evaluation.optString("feedback", "Task failed validation.");
+                    // DARWINIAN MUTATION: Modify approach based on failure
+                    lastFeedback = "Verification Failed: " + evaluation.optString("feedback", "Task failed validation.");
+                    context.log("Evo-Orchestrator-Darwin: Mutation triggered due to failure. Feedback: " + lastFeedback);
                     task.setFeedback("Retry " + retry + ": " + lastFeedback);
                 }
             } catch (Exception e) {
-                context.log("Evo-Orchestrator-" + task.getName() + ": Error during execution: " + e.getMessage());
+                context.log("Evo-Orchestrator-" + task.getName() + ": Error during PEV: " + e.getMessage());
                 lastFeedback = "Exception: " + e.getMessage();
                 task.setFeedback("Retry " + retry + " Exception: " + e.getMessage());
             }

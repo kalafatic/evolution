@@ -49,6 +49,9 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getRationale <em>Rationale</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getScheduledTime <em>Scheduled Time</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isSelected <em>Selected</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getGoal <em>Goal</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getPlan <em>Plan</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getArtifacts <em>Artifacts</em>}</li>
  * </ul>
  *
  * @generated
@@ -395,12 +398,141 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected boolean selected = SELECTED_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getGoal() <em>Goal</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGoal()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String GOAL_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getGoal() <em>Goal</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGoal()
+	 * @generated
+	 * @ordered
+	 */
+	protected String goal = GOAL_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getPlan() <em>Plan</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPlan()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String PLAN_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getPlan() <em>Plan</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPlan()
+	 * @generated
+	 * @ordered
+	 */
+	protected String plan = PLAN_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getArtifacts() <em>Artifacts</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getArtifacts()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String ARTIFACTS_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getArtifacts() <em>Artifacts</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getArtifacts()
+	 * @generated
+	 * @ordered
+	 */
+	protected String artifacts = ARTIFACTS_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	protected TaskImpl() {
 		super();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getArtifacts() {
+		return artifacts;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setArtifacts(String newArtifacts) {
+		String oldArtifacts = artifacts;
+		artifacts = newArtifacts;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__ARTIFACTS, oldArtifacts, artifacts));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getGoal() {
+		return goal;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGoal(String newGoal) {
+		String oldGoal = goal;
+		goal = newGoal;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__GOAL, oldGoal, goal));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getPlan() {
+		return plan;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPlan(String newPlan) {
+		String oldPlan = plan;
+		plan = newPlan;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__PLAN, oldPlan, plan));
 	}
 
 	/**
@@ -865,6 +997,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getScheduledTime();
 			case OrchestrationPackage.TASK__SELECTED:
 				return isSelected();
+			case OrchestrationPackage.TASK__GOAL:
+				return getGoal();
+			case OrchestrationPackage.TASK__PLAN:
+				return getPlan();
+			case OrchestrationPackage.TASK__ARTIFACTS:
+				return getArtifacts();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -934,6 +1072,15 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__SELECTED:
 				setSelected((Boolean)newValue);
 				return;
+			case OrchestrationPackage.TASK__GOAL:
+				setGoal((String)newValue);
+				return;
+			case OrchestrationPackage.TASK__PLAN:
+				setPlan((String)newValue);
+				return;
+			case OrchestrationPackage.TASK__ARTIFACTS:
+				setArtifacts((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1000,6 +1147,15 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__SELECTED:
 				setSelected(SELECTED_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__GOAL:
+				setGoal(GOAL_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__PLAN:
+				setPlan(PLAN_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__ARTIFACTS:
+				setArtifacts(ARTIFACTS_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1048,6 +1204,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return SCHEDULED_TIME_EDEFAULT == null ? scheduledTime != null : !SCHEDULED_TIME_EDEFAULT.equals(scheduledTime);
 			case OrchestrationPackage.TASK__SELECTED:
 				return selected != SELECTED_EDEFAULT;
+			case OrchestrationPackage.TASK__GOAL:
+				return GOAL_EDEFAULT == null ? goal != null : !GOAL_EDEFAULT.equals(goal);
+			case OrchestrationPackage.TASK__PLAN:
+				return PLAN_EDEFAULT == null ? plan != null : !PLAN_EDEFAULT.equals(plan);
+			case OrchestrationPackage.TASK__ARTIFACTS:
+				return ARTIFACTS_EDEFAULT == null ? artifacts != null : !ARTIFACTS_EDEFAULT.equals(artifacts);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1094,6 +1256,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(scheduledTime);
 		result.append(", selected: ");
 		result.append(selected);
+		result.append(", goal: ");
+		result.append(goal);
+		result.append(", plan: ");
+		result.append(plan);
+		result.append(", artifacts: ");
+		result.append(artifacts);
 		result.append(')');
 		return result.toString();
 	}

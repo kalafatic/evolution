@@ -27,3 +27,13 @@
     - Registered `Ctrl+Alt+T` shortcut for the `newAiThread` command in `plugin.xml`.
     - Integrated "New Thread" wizard into the "AI Evolution" category and Evo Perspective shortcuts.
 - **Traceability**: `iterations/17/plan.json`
+
+## [Iteration 18] - Plan–Execute–Verify (PEV) and Hybrid Context Builder
+- **Goal**: Improve task robustness and hybrid LLM efficiency.
+- **Changes**:
+    - **EMF Model**: Added `goal`, `plan`, and `artifacts` attributes to `Task`.
+    - **Task Lifecycle**: Introduced explicit `PLANNING`, `EXECUTING`, and `VERIFYING` states.
+    - **Orchestration**: Implemented structured PEV loop in `EvolutionOrchestrator` with Darwinian mutation on failure.
+    - **Routing**: Refactored `LlmRouter` to use local models as 'Context Builders' and cloud LLMs as 'Reasoners' in HYBRID mode.
+    - **Documentation**: Updated `architecture.md` and `PROJECT_SPECIFICATION.md` to reflect the new technical design.
+- **Traceability**: `iterations/18/plan.json`

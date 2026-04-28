@@ -16,21 +16,26 @@ The Evolution Project is an agentic, AI-driven development environment integrate
     - **Memory**: `sharedMemory` attribute for persisting context across orchestration sessions.
 - **Task**: Represents an atomic unit of work (e.g., `file`, `maven`, `git`, `llm`, `approval`, `shell`).
     - **Execution Control**: `approvalRequired` (boolean), `loopToTaskId` (for iterative refinement), and `priority` (integer).
+    - **Task states**: `PENDING`, `PLANNING`, `EXECUTING`, `VERIFYING`, `DONE`, `FAILED`.
+    - **Evolutionary Data**: `goal` (high-level intent), `plan` (structured steps), `artifacts` (technical outputs).
     - **Documentation**: `description`, `response`, `feedback`, and `resultSummary`.
 - **SelfDevSession**: Manages the state of autonomous improvement loops, containing multiple `Iteration` objects, each tracking its own `Task` list and `EvaluationResult`.
 
 ### 2.2 Controller Logic (Orchestration Engine)
 - **EvolutionOrchestrator**: Implements the multi-stage task lifecycle:
     1. **Planning**: `PlannerAgent` decomposes natural language requests into a sequence of `Task` objects.
-    2. **Approval Pause**: Mandatory execution block using `CompletableFuture` after planning. Execution resumes only after user review in the `ApprovalPage`.
-    3. **Execution Loop**: Iterates through tasks, dispatching to specialized agents (`Architect`, `JavaDev`, `Tester`, `Reviewer`) or tools (`FileTool`, `MavenTool`, `GitTool`, `ShellTool`).
-    4. **Task-Level Approval**: Optional pause before sensitive operations (e.g., file writes).
-    5. **Evaluation**: `ReviewerAgent` validates task output using AI-driven criteria.
+    2. **Approval Pause**: Mandatory execution block using `CompletableFuture` after planning.
+    3. **Plan–Execute–Verify (PEV) Loop**: Every task follows an internal 3-phase cycle:
+        - **Plan**: Agent creates a structured JSON plan (steps, target files, strategy).
+        - **Execute**: Agent performs the task using tools or reasoning; technical outputs are stored in `artifacts`.
+        - **Verify**: `ReviewerAgent` evaluates results.
+    4. **Darwinian Mutation**: On verification failure, the system selects a mutation strategy (e.g., Syntactic vs. Logic fix) based on failure type and retries with a modified plan.
+    5. **Task-Level Approval**: Optional pause before sensitive operations.
 - **LlmRouter**: The central dispatching hub.
-    - **HYBRID Mode**: A signature 3-step sequence:
-        1. **Local Optimization**: Ollama refines the user prompt for LLM consumption.
-        2. **Remote Execution**: A large remote model (e.g., DeepSeek, GPT-4, Gemini) processes the request.
-        3. **Local Simplification**: Ollama translates the complex remote response into user-friendly text.
+    - **HYBRID Mode (Context Builder Pattern)**: A signature 3-step sequence:
+        1. **Local Context Builder**: Ollama gathers repository context, technical briefings, and constraints.
+        2. **Remote Reasoner**: A large remote model (e.g., DeepSeek, GPT-4, Gemini) performs reasoning and coding.
+        3. **Local Verification**: Ollama performs a quick safety/format check on the remote output.
 - **Support Services**:
     - **NeuronService**: Provides context-aware code completion (Ctrl+Space) by training on user interactions.
     - **McpClient**: Implements the Model Context Protocol to fetch external resources/context.

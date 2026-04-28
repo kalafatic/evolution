@@ -76,7 +76,37 @@ public enum TaskStatus implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	WAITING_FOR_APPROVAL(5, "WAITING_FOR_APPROVAL", "WAITING_FOR_APPROVAL");
+	WAITING_FOR_APPROVAL(5, "WAITING_FOR_APPROVAL", "WAITING_FOR_APPROVAL"),
+
+	/**
+	 * The '<em><b>PLANNING</b></em>' literal object.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #PLANNING_VALUE
+	 * @generated
+	 * @ordered
+	 */
+	PLANNING(6, "PLANNING", "PLANNING"),
+
+	/**
+	 * The '<em><b>EXECUTING</b></em>' literal object.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #EXECUTING_VALUE
+	 * @generated
+	 * @ordered
+	 */
+	EXECUTING(7, "EXECUTING", "EXECUTING"),
+
+	/**
+	 * The '<em><b>VERIFYING</b></em>' literal object.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #VERIFYING_VALUE
+	 * @generated
+	 * @ordered
+	 */
+	VERIFYING(8, "VERIFYING", "VERIFYING");
 
 	/**
 	 * The '<em><b>READY</b></em>' literal value.
@@ -145,6 +175,39 @@ public enum TaskStatus implements Enumerator {
 	public static final int WAITING_FOR_APPROVAL_VALUE = 5;
 
 	/**
+	 * The '<em><b>PLANNING</b></em>' literal value.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #PLANNING
+	 * @model
+	 * @generated
+	 * @ordered
+	 */
+	public static final int PLANNING_VALUE = 6;
+
+	/**
+	 * The '<em><b>EXECUTING</b></em>' literal value.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #EXECUTING
+	 * @model
+	 * @generated
+	 * @ordered
+	 */
+	public static final int EXECUTING_VALUE = 7;
+
+	/**
+	 * The '<em><b>VERIFYING</b></em>' literal value.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #VERIFYING
+	 * @model
+	 * @generated
+	 * @ordered
+	 */
+	public static final int VERIFYING_VALUE = 8;
+
+	/**
 	 * An array of all the '<em><b>Task Status</b></em>' enumerators.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -158,6 +221,9 @@ public enum TaskStatus implements Enumerator {
 			DONE,
 			FAILED,
 			WAITING_FOR_APPROVAL,
+			PLANNING,
+			EXECUTING,
+			VERIFYING,
 		};
 
 	/**
@@ -220,6 +286,9 @@ public enum TaskStatus implements Enumerator {
 			case DONE_VALUE: return DONE;
 			case FAILED_VALUE: return FAILED;
 			case WAITING_FOR_APPROVAL_VALUE: return WAITING_FOR_APPROVAL;
+			case PLANNING_VALUE: return PLANNING;
+			case EXECUTING_VALUE: return EXECUTING;
+			case VERIFYING_VALUE: return VERIFYING;
 		}
 		return null;
 	}

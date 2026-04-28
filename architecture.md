@@ -13,8 +13,8 @@ Every prompt/iteration follows this cycle:
 6.  **Document**: Update `CHANGELOG.md` and `architecture.md` (if the blueprint changed) before committing.
 
 ## 3. System Blueprint
-- **Orchestration**: `EvolutionOrchestrator` manages the lifecycle of `Task` objects.
-- **Routing**: `LlmRouter` uses a Hybrid approach (Local Ollama for optimization/simplification, Remote for execution).
+- **Orchestration**: `EvolutionOrchestrator` implements a strict **Plan–Execute–Verify (PEV)** loop for every task.
+- **Routing**: `LlmRouter` uses a **Hybrid Context Builder** approach (Local Ollama gathers repository context, Cloud LLM handles reasoning/coding).
 - **Self-Dev Supervisor**: `SelfDevSupervisor` coordinates the iterative cycles, branch management, and automatic rollbacks.
 - **Traceability**: Strict enforcement of `@evo` markers in code and `plan.json` in `iterations/<id>/`.
 - **UI**: Multi-page editor in Eclipse with specialized tabs for Chat, Approval, and Flow visualization.
