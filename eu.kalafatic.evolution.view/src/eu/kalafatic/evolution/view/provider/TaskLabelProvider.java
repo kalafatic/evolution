@@ -19,18 +19,21 @@ public class TaskLabelProvider extends LabelProvider implements ITableLabelProvi
 
     @Override
     public String getColumnText(Object element, int columnIndex) {
-        if (columnIndex == 0) {
-            if (element instanceof Task) {
-                Task task = (Task) element;
-                return (task.getName() != null ? task.getName() : (task.getId() != null ? task.getId() : "Task"));
-            }
-        } else if (columnIndex == 1) {
-            if (element instanceof Task) {
-                Task task = (Task) element;
-                return task.getStatus() != null ? task.getStatus().toString() : "PENDING";
-            }
+        if (!(element instanceof Task)) return null;
+        Task task = (Task) element;
+        switch (columnIndex) {
+            case 0: return "\u25B6"; // Run
+            case 1: return task.getScheduledTime();
+            case 2: return task.getId();
+            case 3: return task.getType();
+            case 4: return task.getName();
+            case 5: return task.getStatus() != null ? task.getStatus().toString() : "PENDING";
+            case 6: return task.getResultSummary();
+            case 7: return task.getPrompt();
+            case 8: return task.getAttachments() != null ? String.join(", ", task.getAttachments()) : "";
+            case 9: return "\u270E"; // Edit
+            default: return null;
         }
-        return null;
     }
 
     @Override

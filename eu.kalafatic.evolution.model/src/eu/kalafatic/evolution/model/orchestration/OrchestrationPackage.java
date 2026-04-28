@@ -257,13 +257,31 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__ARTIFACTS = 20;
 
 	/**
+	 * The feature id for the '<em><b>Prompt</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__PROMPT = 21;
+
+	/**
+	 * The feature id for the '<em><b>Attachments</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__ATTACHMENTS = 22;
+
+	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 21;
+	int TASK_FEATURE_COUNT = 23;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -3281,6 +3299,28 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getTask_Artifacts();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getPrompt <em>Prompt</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Prompt</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getPrompt()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_Prompt();
+
+	/**
+	 * Returns the meta object for the attribute list '{@link eu.kalafatic.evolution.model.orchestration.Task#getAttachments <em>Attachments</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute list '<em>Attachments</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getAttachments()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_Attachments();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5898,6 +5938,22 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__ARTIFACTS = eINSTANCE.getTask_Artifacts();
+
+		/**
+		 * The meta object literal for the '<em><b>Prompt</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__PROMPT = eINSTANCE.getTask_Prompt();
+
+		/**
+		 * The meta object literal for the '<em><b>Attachments</b></em>' attribute list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__ATTACHMENTS = eINSTANCE.getTask_Attachments();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.

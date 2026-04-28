@@ -36,6 +36,8 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getGoal <em>Goal</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getPlan <em>Plan</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getArtifacts <em>Artifacts</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getPrompt <em>Prompt</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getAttachments <em>Attachments</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -488,5 +490,39 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setArtifacts(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Prompt</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Prompt</em>' attribute.
+	 * @see #setPrompt(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Prompt()
+	 * @model
+	 * @generated
+	 */
+	String getPrompt();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getPrompt <em>Prompt</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Prompt</em>' attribute.
+	 * @see #getPrompt()
+	 * @generated
+	 */
+	void setPrompt(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Attachments</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Attachments</em>' attribute list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Attachments()
+	 * @model
+	 * @generated
+	 */
+	EList<String> getAttachments();
 
 } // Task
