@@ -64,6 +64,14 @@ public class TaskStackGroup extends AEvoGroup {
         }
     }
 
+    public void openTaskEditDialog(Task task) {
+        TaskEditDialog dialog = new TaskEditDialog(treeViewer.getControl().getShell(), task, page);
+        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
+            treeViewer.refresh(task);
+            page.setDirty(true);
+        }
+    }
+
     private void createControl(Composite parent) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Task/Prompt Stack", 1, true, true);
         group.setLayout(new GridLayout(1, false));
@@ -126,8 +134,10 @@ public class TaskStackGroup extends AEvoGroup {
                             break;
                         }
                     }
-                    if (column == 6) { // Result (was 7, shifted due to Timer column removal)
+                    if (column == 6) { // Result
                         editor.openTaskResult(task);
+                    } else if (column == 9) { // Edit
+                        openTaskEditDialog(task);
                     }
                 }
             }
@@ -198,6 +208,7 @@ public class TaskStackGroup extends AEvoGroup {
                 return type != null ? type : "";
             }
         });
+        typeCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "type"));
 
         // Tasks Column
         TreeViewerColumn nameCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
@@ -239,6 +250,41 @@ public class TaskStackGroup extends AEvoGroup {
             @Override
             public org.eclipse.swt.graphics.Color getForeground(Object element) {
                 return treeViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_BLUE);
+            }
+        });
+
+        // Prompt Column
+        TreeViewerColumn promptCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        promptCol.getColumn().setText("Prompt");
+        promptCol.getColumn().setWidth(200);
+        promptCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                String prompt = ((Task) element).getPrompt();
+                return prompt != null ? prompt : "";
+            }
+        });
+        promptCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "prompt"));
+
+        // Attachments Column
+        TreeViewerColumn attachmentsCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        attachmentsCol.getColumn().setText("Attachments");
+        attachmentsCol.getColumn().setWidth(150);
+        attachmentsCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return String.join(", ", ((Task) element).getAttachments());
+            }
+        });
+
+        // Edit Column
+        TreeViewerColumn editCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        editCol.getColumn().setText("Edit");
+        editCol.getColumn().setWidth(50);
+        editCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return "\u270E"; // Pencil icon
             }
         });
     }
@@ -311,6 +357,8 @@ public class TaskStackGroup extends AEvoGroup {
             return switch (attribute) {
                 case "id" -> task.getId() != null ? task.getId() : "";
                 case "name" -> task.getName() != null ? task.getName() : "";
+                case "type" -> task.getType() != null ? task.getType() : "";
+                case "prompt" -> task.getPrompt() != null ? task.getPrompt() : "";
                 default -> "";
             };
         }
@@ -320,6 +368,8 @@ public class TaskStackGroup extends AEvoGroup {
             switch (attribute) {
                 case "id" -> task.setId(strValue);
                 case "name" -> task.setName(strValue);
+                case "type" -> task.setType(strValue);
+                case "prompt" -> task.setPrompt(strValue);
             }
             getViewer().update(element, null);
             page.setDirty(true);

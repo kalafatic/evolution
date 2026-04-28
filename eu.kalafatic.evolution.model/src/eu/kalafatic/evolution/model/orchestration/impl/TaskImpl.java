@@ -52,6 +52,8 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getGoal <em>Goal</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getPlan <em>Plan</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getArtifacts <em>Artifacts</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getPrompt <em>Prompt</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getAttachments <em>Attachments</em>}</li>
  * </ul>
  *
  * @generated
@@ -456,6 +458,72 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @ordered
 	 */
 	protected String artifacts = ARTIFACTS_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getPrompt() <em>Prompt</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPrompt()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String PROMPT_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getPrompt() <em>Prompt</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPrompt()
+	 * @generated
+	 * @ordered
+	 */
+	protected String prompt = PROMPT_EDEFAULT;
+
+	/**
+	 * The cached value of the '{@link #getAttachments() <em>Attachments</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAttachments()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<String> attachments;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getPrompt() {
+		return prompt;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPrompt(String newPrompt) {
+		String oldPrompt = prompt;
+		prompt = newPrompt;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__PROMPT, oldPrompt, prompt));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<String> getAttachments() {
+		if (attachments == null) {
+			attachments = new org.eclipse.emf.ecore.util.EDataTypeUniqueEList<String>(String.class, this, OrchestrationPackage.TASK__ATTACHMENTS);
+		}
+		return attachments;
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1003,6 +1071,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getPlan();
 			case OrchestrationPackage.TASK__ARTIFACTS:
 				return getArtifacts();
+			case OrchestrationPackage.TASK__PROMPT:
+				return getPrompt();
+			case OrchestrationPackage.TASK__ATTACHMENTS:
+				return getAttachments();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1081,6 +1153,13 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__ARTIFACTS:
 				setArtifacts((String)newValue);
 				return;
+			case OrchestrationPackage.TASK__PROMPT:
+				setPrompt((String)newValue);
+				return;
+			case OrchestrationPackage.TASK__ATTACHMENTS:
+				getAttachments().clear();
+				getAttachments().addAll((Collection<? extends String>)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1156,6 +1235,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__ARTIFACTS:
 				setArtifacts(ARTIFACTS_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__PROMPT:
+				setPrompt(PROMPT_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__ATTACHMENTS:
+				getAttachments().clear();
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1210,6 +1295,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return PLAN_EDEFAULT == null ? plan != null : !PLAN_EDEFAULT.equals(plan);
 			case OrchestrationPackage.TASK__ARTIFACTS:
 				return ARTIFACTS_EDEFAULT == null ? artifacts != null : !ARTIFACTS_EDEFAULT.equals(artifacts);
+			case OrchestrationPackage.TASK__PROMPT:
+				return PROMPT_EDEFAULT == null ? prompt != null : !PROMPT_EDEFAULT.equals(prompt);
+			case OrchestrationPackage.TASK__ATTACHMENTS:
+				return attachments != null && !attachments.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1262,6 +1351,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(plan);
 		result.append(", artifacts: ");
 		result.append(artifacts);
+		result.append(", prompt: ");
+		result.append(prompt);
+		result.append(", attachments: ");
+		result.append(attachments);
 		result.append(')');
 		return result.toString();
 	}
