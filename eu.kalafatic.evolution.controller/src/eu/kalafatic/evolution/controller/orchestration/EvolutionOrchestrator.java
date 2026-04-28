@@ -378,15 +378,34 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             try {
                 // 1. PLAN: Agent determines how to solve the specific task
+                task.setStatus(TaskStatus.PLANNING);
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 1 - Planning...");
-                String planInput = (lastFeedback != null) ? "RETRY PLAN based on: " + lastFeedback : "Create local execution plan.";
-                String localPlan = agent.process(task.getDescription() + "\nGOAL: " + task.getGoal() + "\nACTION: " + planInput, context, lastFeedback);
+
+                String mutationStrategy = "initial";
+                if (lastFeedback != null) {
+                    if (lastFeedback.toLowerCase().contains("exception") || lastFeedback.toLowerCase().contains("error")) {
+                        mutationStrategy = "Syntactic fix (Self-Correction)";
+                    } else if (lastFeedback.toLowerCase().contains("test") || lastFeedback.toLowerCase().contains("verify")) {
+                        mutationStrategy = "Logic fix (Behavioral-Correction)";
+                    } else {
+                        mutationStrategy = "Heuristic improvement (Evolution)";
+                    }
+                }
+
+                String planInstruction = "Create a structured JSON plan with: 'steps' (array), 'targetFiles' (array), and 'strategy' (string). " +
+                        "Mutation Strategy: " + mutationStrategy + ". Feedback: " + (lastFeedback != null ? lastFeedback : "none");
+
+                String localPlan = agent.process(task.getDescription() + "\nGOAL: " + task.getGoal() + "\nINSTRUCTION: " + planInstruction, context, lastFeedback);
                 task.setPlan(localPlan);
 
                 // 2. EXECUTE: Agent performs the action
+                task.setStatus(TaskStatus.EXECUTING);
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 2 - Executing...");
                 String result = performAction(task, agent, context, lastFeedback);
                 task.setResponse(result);
+
+                // Capture Artifacts (result summary + content)
+                task.setArtifacts("RESULT:\n" + result + "\nFEEDBACK: " + (lastFeedback != null ? lastFeedback : "N/A"));
 
                 // Handle Clarification/Proposal stall
                 if (result != null && (result.contains("CLARIFY") || result.contains("[PROPOSAL:"))) {
@@ -423,6 +442,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 }
 
                 // 3. VERIFY: ReviewerAgent evaluates the result
+                task.setStatus(TaskStatus.VERIFYING);
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 3 - Verifying...");
                 JSONObject evaluation = reviewer.evaluate(result, task.getName(), context);
 

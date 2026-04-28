@@ -248,13 +248,22 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__PLAN = 19;
 
 	/**
+	 * The feature id for the '<em><b>Artifacts</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__ARTIFACTS = 20;
+
+	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 20;
+	int TASK_FEATURE_COUNT = 21;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -3261,6 +3270,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getTask_Plan();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getArtifacts <em>Artifacts</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Artifacts</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getArtifacts()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_Artifacts();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5870,6 +5890,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__PLAN = eINSTANCE.getTask_Plan();
+
+		/**
+		 * The meta object literal for the '<em><b>Artifacts</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__ARTIFACTS = eINSTANCE.getTask_Artifacts();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.

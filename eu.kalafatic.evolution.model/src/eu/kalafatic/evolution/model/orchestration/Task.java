@@ -35,6 +35,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isSelected <em>Selected</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getGoal <em>Goal</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getPlan <em>Plan</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getArtifacts <em>Artifacts</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -465,5 +466,27 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setPlan(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Artifacts</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Artifacts</em>' attribute.
+	 * @see #setArtifacts(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Artifacts()
+	 * @model
+	 * @generated
+	 */
+	String getArtifacts();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getArtifacts <em>Artifacts</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Artifacts</em>' attribute.
+	 * @see #getArtifacts()
+	 * @generated
+	 */
+	void setArtifacts(String value);
 
 } // Task

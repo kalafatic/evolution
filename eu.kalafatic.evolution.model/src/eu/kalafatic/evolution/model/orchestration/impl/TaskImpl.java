@@ -51,6 +51,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isSelected <em>Selected</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getGoal <em>Goal</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getPlan <em>Plan</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getArtifacts <em>Artifacts</em>}</li>
  * </ul>
  *
  * @generated
@@ -437,12 +438,55 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected String plan = PLAN_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getArtifacts() <em>Artifacts</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getArtifacts()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String ARTIFACTS_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getArtifacts() <em>Artifacts</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getArtifacts()
+	 * @generated
+	 * @ordered
+	 */
+	protected String artifacts = ARTIFACTS_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	protected TaskImpl() {
 		super();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getArtifacts() {
+		return artifacts;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setArtifacts(String newArtifacts) {
+		String oldArtifacts = artifacts;
+		artifacts = newArtifacts;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__ARTIFACTS, oldArtifacts, artifacts));
 	}
 
 	/**
@@ -957,6 +1001,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getGoal();
 			case OrchestrationPackage.TASK__PLAN:
 				return getPlan();
+			case OrchestrationPackage.TASK__ARTIFACTS:
+				return getArtifacts();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1032,6 +1078,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__PLAN:
 				setPlan((String)newValue);
 				return;
+			case OrchestrationPackage.TASK__ARTIFACTS:
+				setArtifacts((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1104,6 +1153,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__PLAN:
 				setPlan(PLAN_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__ARTIFACTS:
+				setArtifacts(ARTIFACTS_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1156,6 +1208,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return GOAL_EDEFAULT == null ? goal != null : !GOAL_EDEFAULT.equals(goal);
 			case OrchestrationPackage.TASK__PLAN:
 				return PLAN_EDEFAULT == null ? plan != null : !PLAN_EDEFAULT.equals(plan);
+			case OrchestrationPackage.TASK__ARTIFACTS:
+				return ARTIFACTS_EDEFAULT == null ? artifacts != null : !ARTIFACTS_EDEFAULT.equals(artifacts);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1206,6 +1260,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(goal);
 		result.append(", plan: ");
 		result.append(plan);
+		result.append(", artifacts: ");
+		result.append(artifacts);
 		result.append(')');
 		return result.toString();
 	}
