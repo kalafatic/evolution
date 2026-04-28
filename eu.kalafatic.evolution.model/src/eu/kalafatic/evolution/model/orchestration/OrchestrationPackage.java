@@ -1440,7 +1440,7 @@ public interface OrchestrationPackage extends EPackage {
 	int AI_CHAT__THREADS = 4;
 
 	/**
-	 * The feature id for the '<em><b>Prompt Instructions</b></em>' reference.
+	 * The feature id for the '<em><b>Prompt Instructions</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -4430,10 +4430,10 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getAiChat_Threads();
 
 	/**
-	 * Returns the meta object for the reference '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions <em>Prompt Instructions</em>}'.
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions <em>Prompt Instructions</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the reference '<em>Prompt Instructions</em>'.
+	 * @return the meta object for the containment reference '<em>Prompt Instructions</em>'.
 	 * @see eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions()
 	 * @see #getAiChat()
 	 * @generated

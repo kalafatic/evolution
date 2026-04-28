@@ -10,6 +10,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
@@ -199,6 +200,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     @Override
     public void doSave(IProgressMonitor monitor) {
+        SubMonitor subMonitor = SubMonitor.convert(monitor, "Saving", 100);
         if (resource != null) {
             try {
                 org.eclipse.ui.actions.WorkspaceModifyOperation operation = new org.eclipse.ui.actions.WorkspaceModifyOperation() {
@@ -211,14 +213,14 @@ public class MultiPageEditor extends MultiPageEditorPart {
                         }
                     }
                 };
-                operation.run(monitor);
+                operation.run(subMonitor.split( resource != null && textEditor != null ? 50 : 100));
                 setDirty(false);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         if (textEditor != null) {
-            textEditor.doSave(monitor);
+            textEditor.doSave(subMonitor.split( resource != null ? 50 : 100));
         }
     }
 

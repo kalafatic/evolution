@@ -133,7 +133,7 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	protected EList<ChatThread> threads;
 
 	/**
-	 * The cached value of the '{@link #getPromptInstructions() <em>Prompt Instructions</em>}' reference.
+	 * The cached value of the '{@link #getPromptInstructions() <em>Prompt Instructions</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getPromptInstructions()
@@ -273,14 +273,6 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	 */
 	@Override
 	public PromptInstructions getPromptInstructions() {
-		if (promptInstructions != null && promptInstructions.eIsProxy()) {
-			InternalEObject oldPromptInstructions = (InternalEObject)promptInstructions;
-			promptInstructions = (PromptInstructions)eResolveProxy(oldPromptInstructions);
-			if (promptInstructions != oldPromptInstructions) {
-				if (eNotificationRequired())
-					eNotify(new ENotificationImpl(this, Notification.RESOLVE, OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS, oldPromptInstructions, promptInstructions));
-			}
-		}
 		return promptInstructions;
 	}
 
@@ -289,8 +281,14 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public PromptInstructions basicGetPromptInstructions() {
-		return promptInstructions;
+	public NotificationChain basicSetPromptInstructions(PromptInstructions newPromptInstructions, NotificationChain msgs) {
+		PromptInstructions oldPromptInstructions = promptInstructions;
+		promptInstructions = newPromptInstructions;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS, oldPromptInstructions, newPromptInstructions);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
 	}
 
 	/**
@@ -300,10 +298,17 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 	 */
 	@Override
 	public void setPromptInstructions(PromptInstructions newPromptInstructions) {
-		PromptInstructions oldPromptInstructions = promptInstructions;
-		promptInstructions = newPromptInstructions;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS, oldPromptInstructions, promptInstructions));
+		if (newPromptInstructions != promptInstructions) {
+			NotificationChain msgs = null;
+			if (promptInstructions != null)
+				msgs = ((InternalEObject)promptInstructions).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS, null, msgs);
+			if (newPromptInstructions != null)
+				msgs = ((InternalEObject)newPromptInstructions).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS, null, msgs);
+			msgs = basicSetPromptInstructions(newPromptInstructions, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS, newPromptInstructions, newPromptInstructions));
 	}
 
 	/**
@@ -316,6 +321,8 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 		switch (featureID) {
 			case OrchestrationPackage.AI_CHAT__THREADS:
 				return ((InternalEList<?>)getThreads()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS:
+				return basicSetPromptInstructions(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -339,8 +346,7 @@ public class AiChatImpl extends MinimalEObjectImpl.Container implements AiChat {
 			case OrchestrationPackage.AI_CHAT__THREADS:
 				return getThreads();
 			case OrchestrationPackage.AI_CHAT__PROMPT_INSTRUCTIONS:
-				if (resolve) return getPromptInstructions();
-				return basicGetPromptInstructions();
+				return getPromptInstructions();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}

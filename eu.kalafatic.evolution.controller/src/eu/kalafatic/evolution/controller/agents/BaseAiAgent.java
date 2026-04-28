@@ -123,16 +123,18 @@ public abstract class BaseAiAgent implements IAgent {
         }
 
         // Special Context injection
-        if (orchestrator.getAiChat().getPromptInstructions().isIterativeMode()) {
-            String ic = bestPracticesService.getSpecialContext("iterative_loop.md");
-            if (ic != null && !ic.isEmpty()) {
-                sb.append("\n--- ITERATIVE LOOP CONTEXT ---\n").append(ic).append("\n--- END ITERATIVE LOOP CONTEXT ---\n");
+        if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
+            if (orchestrator.getAiChat().getPromptInstructions().isIterativeMode()) {
+                String ic = bestPracticesService.getSpecialContext("iterative_loop.md");
+                if (ic != null && !ic.isEmpty()) {
+                    sb.append("\n--- ITERATIVE LOOP CONTEXT ---\n").append(ic).append("\n--- END ITERATIVE LOOP CONTEXT ---\n");
+                }
             }
-        }
-        if (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
-            String sc = bestPracticesService.getSpecialContext("self_development.md");
-            if (sc != null && !sc.isEmpty()) {
-                sb.append("\n--- SELF DEVELOPMENT CONTEXT ---\n").append(sc).append("\n--- END SELF DEVELOPMENT CONTEXT ---\n");
+            if (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
+                String sc = bestPracticesService.getSpecialContext("self_development.md");
+                if (sc != null && !sc.isEmpty()) {
+                    sb.append("\n--- SELF DEVELOPMENT CONTEXT ---\n").append(sc).append("\n--- END SELF DEVELOPMENT CONTEXT ---\n");
+                }
             }
         }
 
