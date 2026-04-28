@@ -49,6 +49,8 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getRationale <em>Rationale</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getScheduledTime <em>Scheduled Time</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isSelected <em>Selected</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getGoal <em>Goal</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getPlan <em>Plan</em>}</li>
  * </ul>
  *
  * @generated
@@ -395,12 +397,98 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected boolean selected = SELECTED_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getGoal() <em>Goal</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGoal()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String GOAL_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getGoal() <em>Goal</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGoal()
+	 * @generated
+	 * @ordered
+	 */
+	protected String goal = GOAL_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getPlan() <em>Plan</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPlan()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String PLAN_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getPlan() <em>Plan</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPlan()
+	 * @generated
+	 * @ordered
+	 */
+	protected String plan = PLAN_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	protected TaskImpl() {
 		super();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getGoal() {
+		return goal;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGoal(String newGoal) {
+		String oldGoal = goal;
+		goal = newGoal;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__GOAL, oldGoal, goal));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getPlan() {
+		return plan;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPlan(String newPlan) {
+		String oldPlan = plan;
+		plan = newPlan;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__PLAN, oldPlan, plan));
 	}
 
 	/**
@@ -865,6 +953,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getScheduledTime();
 			case OrchestrationPackage.TASK__SELECTED:
 				return isSelected();
+			case OrchestrationPackage.TASK__GOAL:
+				return getGoal();
+			case OrchestrationPackage.TASK__PLAN:
+				return getPlan();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -934,6 +1026,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__SELECTED:
 				setSelected((Boolean)newValue);
 				return;
+			case OrchestrationPackage.TASK__GOAL:
+				setGoal((String)newValue);
+				return;
+			case OrchestrationPackage.TASK__PLAN:
+				setPlan((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1000,6 +1098,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__SELECTED:
 				setSelected(SELECTED_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__GOAL:
+				setGoal(GOAL_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__PLAN:
+				setPlan(PLAN_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1048,6 +1152,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return SCHEDULED_TIME_EDEFAULT == null ? scheduledTime != null : !SCHEDULED_TIME_EDEFAULT.equals(scheduledTime);
 			case OrchestrationPackage.TASK__SELECTED:
 				return selected != SELECTED_EDEFAULT;
+			case OrchestrationPackage.TASK__GOAL:
+				return GOAL_EDEFAULT == null ? goal != null : !GOAL_EDEFAULT.equals(goal);
+			case OrchestrationPackage.TASK__PLAN:
+				return PLAN_EDEFAULT == null ? plan != null : !PLAN_EDEFAULT.equals(plan);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1094,6 +1202,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(scheduledTime);
 		result.append(", selected: ");
 		result.append(selected);
+		result.append(", goal: ");
+		result.append(goal);
+		result.append(", plan: ");
+		result.append(plan);
 		result.append(')');
 		return result.toString();
 	}

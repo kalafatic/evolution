@@ -230,13 +230,31 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__SELECTED = 17;
 
 	/**
+	 * The feature id for the '<em><b>Goal</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__GOAL = 18;
+
+	/**
+	 * The feature id for the '<em><b>Plan</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__PLAN = 19;
+
+	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 18;
+	int TASK_FEATURE_COUNT = 20;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -3221,6 +3239,28 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getTask_Selected();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getGoal <em>Goal</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Goal</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getGoal()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_Goal();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getPlan <em>Plan</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Plan</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getPlan()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_Plan();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5814,6 +5854,22 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__SELECTED = eINSTANCE.getTask_Selected();
+
+		/**
+		 * The meta object literal for the '<em><b>Goal</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__GOAL = eINSTANCE.getTask_Goal();
+
+		/**
+		 * The meta object literal for the '<em><b>Plan</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__PLAN = eINSTANCE.getTask_Plan();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.

@@ -33,6 +33,8 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getRationale <em>Rationale</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getScheduledTime <em>Scheduled Time</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isSelected <em>Selected</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getGoal <em>Goal</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getPlan <em>Plan</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -419,5 +421,49 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setSelected(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Goal</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Goal</em>' attribute.
+	 * @see #setGoal(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Goal()
+	 * @model
+	 * @generated
+	 */
+	String getGoal();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getGoal <em>Goal</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Goal</em>' attribute.
+	 * @see #getGoal()
+	 * @generated
+	 */
+	void setGoal(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Plan</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Plan</em>' attribute.
+	 * @see #setPlan(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Plan()
+	 * @model
+	 * @generated
+	 */
+	String getPlan();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getPlan <em>Plan</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Plan</em>' attribute.
+	 * @see #getPlan()
+	 * @generated
+	 */
+	void setPlan(String value);
 
 } // Task
