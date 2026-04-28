@@ -27,9 +27,7 @@ public class TaskStackPage extends AEvoPage {
 
     private Composite body;
     private boolean isUpdating = false;
-    private boolean runInUi = true;
-    private List<Task> pendingExecutionQueue = new ArrayList<>();
-    private Task currentlyExecutingTask = null;
+    private boolean runInUi = false;
 
     private GlobalActionsGroup globalActionsGroup;
     private TaskStackGroup taskStackGroup;
@@ -44,16 +42,7 @@ public class TaskStackPage extends AEvoPage {
             super.notifyChanged(notification);
             if (notification.isTouch()) return;
             if (!isUpdating) {
-                
-                Display.getDefault().asyncExec(() -> {
-                    if (!isDisposed()) {
-                        if (notification.getFeatureID(Task.class) == OrchestrationPackage.TASK__STATUS) {
-                            checkQueue();
-                        }
-                       
-                        scheduleRefresh();
-                    }
-                });
+                scheduleRefresh();
             }
         }
     };
@@ -266,41 +255,20 @@ public class TaskStackPage extends AEvoPage {
     }
 
     public void executeSelected() {
-        List<Task> selectedTasks = new ArrayList<>();
-        collectSelectedTasks(orchestrator.getTasks(), selectedTasks);
+        List<Task> selectedPlans = new ArrayList<>();
+        collectSelectedTasks(orchestrator.getTasks(), selectedPlans);
 
-        if (selectedTasks.isEmpty()) return;
+        if (selectedPlans.isEmpty()) return;
 
-        if (runInUi) {
-            pendingExecutionQueue.addAll(selectedTasks);
-            checkQueue();
-        } else {
-            if (globalActionsGroup.isParallel()) {
-                for (Task plan : selectedTasks) {
-                    long running = orchestrator.getTasks().stream().filter(t -> t.getStatus() == TaskStatus.RUNNING).count();
-                    if (running < MAX_PARALLEL_PLANS) {
-                        runPlan(plan);
-                    }
+        if (globalActionsGroup.isParallel()) {
+            for (Task plan : selectedPlans) {
+                long running = orchestrator.getTasks().stream().filter(t -> t.getStatus() == TaskStatus.RUNNING).count();
+                if (running < MAX_PARALLEL_PLANS) {
+                    runPlan(plan);
                 }
-            } else {
-                runPlansSequentially(selectedTasks, 0);
             }
-        }
-    }
-
-    private void checkQueue() {
-        if (!runInUi) return;
-        if (currentlyExecutingTask != null) {
-            if (currentlyExecutingTask.getStatus() == TaskStatus.DONE || currentlyExecutingTask.getStatus() == TaskStatus.FAILED) {
-                currentlyExecutingTask = null;
-            } else {
-                return;
-            }
-        }
-
-        if (!pendingExecutionQueue.isEmpty()) {
-            currentlyExecutingTask = pendingExecutionQueue.remove(0);
-            runSingleTask(currentlyExecutingTask);
+        } else {
+            runPlansSequentially(selectedPlans, 0);
         }
     }
 

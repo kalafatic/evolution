@@ -82,7 +82,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     private Orchestrator orchestrator;
     private TaskContext currentContext;
-    private boolean isDirty = false;
+    private volatile boolean isDirty = false;
     private Resource resource;
     private EditorResourceChangeListener resourceListener;
     private EditorSelectionListener selectionListener;
@@ -101,7 +101,11 @@ public class MultiPageEditor extends MultiPageEditorPart {
             if (notification.getEventType() == Notification.SET ||
                 notification.getEventType() == Notification.ADD ||
                 notification.getEventType() == Notification.REMOVE) {
-                setDirty(true);
+                Display.getDefault().asyncExec(() -> {
+                    if (!getContainer().isDisposed()) {
+                        setDirty(true);
+                    }
+                });
             }
                        
             if (refreshScheduled.compareAndSet(false, true)) {
@@ -269,7 +273,11 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void setDirty(boolean dirty) {
         if (this.isDirty != dirty) {
             this.isDirty = dirty;
-            firePropertyChange(IEditorPart.PROP_DIRTY);
+            Display.getDefault().asyncExec(() -> {
+                if (getContainer() != null && !getContainer().isDisposed()) {
+                    firePropertyChange(IEditorPart.PROP_DIRTY);
+                }
+            });
         }
     }
 
