@@ -40,12 +40,9 @@ public class TaskStackPage extends AEvoPage {
         @Override
         public void notifyChanged(Notification notification) {
             super.notifyChanged(notification);
+            if (notification.isTouch()) return;
             if (!isUpdating) {
-                Display.getDefault().asyncExec(() -> {
-                    if (!isDisposed()) {
-                        updateUIFromModel();
-                    }
-                });
+                scheduleRefresh();
             }
         }
     };

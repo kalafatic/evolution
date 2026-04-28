@@ -53,7 +53,8 @@ public class ApprovalPage extends AEvoPage {
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override public void notifyChanged(Notification notification) {
 			super.notifyChanged(notification);
-			refreshUI();
+			if (notification.isTouch()) return;
+			scheduleRefresh();
 		}
 	};
 

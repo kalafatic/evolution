@@ -57,15 +57,7 @@ public class TestsPage extends AEvoPage {
 			super.notifyChanged(notification);
 			if (notification.isTouch()) return;
 			if (!isUpdating) {
-				Display.getDefault().asyncExec(() -> {
-					if (!isDisposed()) {
-						int type = notification.getEventType();
-						if (type == Notification.ADD || type == Notification.REMOVE || type == Notification.SET) {
-							updateUIFromModel();
-						}
-						refreshBrowser();
-					}
-				});
+				scheduleRefresh();
 			}
 		}
 	};

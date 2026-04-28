@@ -24,7 +24,8 @@ public class PeerReviewPage extends AEvoPage {
         @Override
         public void notifyChanged(Notification notification) {
             super.notifyChanged(notification);
-            refreshUI();
+            if (notification.isTouch()) return;
+            scheduleRefresh();
         }
     };
 
