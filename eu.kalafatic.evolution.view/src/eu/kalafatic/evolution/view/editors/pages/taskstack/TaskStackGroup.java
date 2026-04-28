@@ -6,6 +6,9 @@ import org.eclipse.jface.viewers.ICheckStateProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.viewers.TextCellEditor;
+import org.eclipse.jface.viewers.ComboBoxViewerCellEditor;
+import org.eclipse.jface.viewers.ArrayContentProvider;
+import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.DialogCellEditor;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.ICheckStateListener;
@@ -134,7 +137,9 @@ public class TaskStackGroup extends AEvoGroup {
                             break;
                         }
                     }
-                    if (column == 6) { // Result
+                    if (column == 0) { // Run
+                        page.runSingleTask(task);
+                    } else if (column == 6) { // Result
                         editor.openTaskResult(task);
                     } else if (column == 9) { // Edit
                         openTaskEditDialog(task);
@@ -344,15 +349,34 @@ public class TaskStackGroup extends AEvoGroup {
 
     private class TaskAttributeEditingSupport extends EditingSupport {
         private String attribute;
-        private TextCellEditor editor;
+        private CellEditor editor;
+
         public TaskAttributeEditingSupport(CheckboxTreeViewer viewer, String attribute) {
             super(viewer);
             this.attribute = attribute;
-            this.editor = new TextCellEditor(viewer.getTree());
+            if ("type".equals(attribute)) {
+                ComboBoxViewerCellEditor comboEditor = new ComboBoxViewerCellEditor(viewer.getTree(), SWT.READ_ONLY);
+                comboEditor.setContentProvider(ArrayContentProvider.getInstance());
+                comboEditor.setLabelProvider(new LabelProvider());
+                comboEditor.setInput(new String[]{"chat", "coding", "llm", "file", "shell", "git", "maven", "approval"});
+                this.editor = comboEditor;
+            } else {
+                this.editor = new TextCellEditor(viewer.getTree());
+            }
         }
-        @Override protected CellEditor getCellEditor(Object element) { return editor; }
-        @Override protected boolean canEdit(Object element) { return true; }
-        @Override protected Object getValue(Object element) {
+
+        @Override
+        protected CellEditor getCellEditor(Object element) {
+            return editor;
+        }
+
+        @Override
+        protected boolean canEdit(Object element) {
+            return true;
+        }
+
+        @Override
+        protected Object getValue(Object element) {
             Task task = (Task) element;
             return switch (attribute) {
                 case "id" -> task.getId() != null ? task.getId() : "";
@@ -362,7 +386,9 @@ public class TaskStackGroup extends AEvoGroup {
                 default -> "";
             };
         }
-        @Override protected void setValue(Object element, Object value) {
+
+        @Override
+        protected void setValue(Object element, Object value) {
             Task task = (Task) element;
             String strValue = (String) value;
             switch (attribute) {
