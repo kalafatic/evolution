@@ -156,7 +156,7 @@
         .message-content {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
             width: 100%;
         }
         .user .message-content { flex-direction: row-reverse; }
@@ -179,8 +179,9 @@
 
         /* Bubbles */
         .bubble { 
-            padding: 8px 12px; border-radius: 12px;
-            font-size: 13px; position: relative;
+            padding: 6px 10px; border-radius: 12px;
+            font-size: 11px; position: relative;
+            opacity: 0.8;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             transition: all 0.2s; background: var(--ai-bg); border: 1px solid var(--border);
             cursor: pointer;
@@ -188,7 +189,10 @@
         }
 
         /* Role Specific Styles */
-        .message.user .bubble { background: var(--user-bg); border-color: var(--user-border); color: var(--user-text); border-bottom-right-radius: 4px; }
+        .message.user .bubble {
+            background: var(--user-bg); border-color: var(--user-border); color: var(--user-text); border-bottom-right-radius: 4px;
+            font-size: 13px; opacity: 1.0;
+        }
         .message.planner .bubble { background: var(--planner-bg); border-color: var(--planner-border); color: var(--planner-text); border-bottom-left-radius: 4px; }
         .message.architect .bubble { background: var(--architect-bg); border-color: var(--architect-border); color: var(--architect-text); border-bottom-left-radius: 4px; }
         .message.javadev .bubble { background: var(--javadev-bg); border-color: var(--javadev-border); color: var(--javadev-text); border-bottom-left-radius: 4px; }
@@ -212,6 +216,7 @@
             border-bottom-left-radius: 4px;
             border-width: 3px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            font-size: 13px; opacity: 1.0;
         }
         .message.result-summary .bubble { background: var(--result-summary-bg); border-color: var(--result-summary-border); color: var(--result-summary-text); border-bottom-left-radius: 4px; border-width: 1px; }
         .message.tool .bubble { background: var(--tool-bg); border-color: var(--tool-border); color: var(--tool-text); border-bottom-left-radius: 4px; }
@@ -224,6 +229,7 @@
             border-width: 3px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             animation: pulse-waiting 2s infinite;
+            font-size: 13px; opacity: 1.0;
         }
         .message.error .bubble {
             background: var(--error-bg);
@@ -231,6 +237,7 @@
             color: var(--error-text);
             border-bottom-left-radius: 4px;
             border-width: 2px;
+            font-size: 13px; opacity: 1.0;
         }
         .message.thinking .bubble {
             background: var(--thinking-bg);
@@ -427,9 +434,22 @@
             font-family: 'Fira Code', monospace; background: rgba(0,0,0,0.05);
             padding: 2px 4px; border-radius: 4px; font-weight: 500; color: inherit;
         }
-        h3 { margin: 16px 0 8px 0; font-size: 16px; font-weight: 700; color: inherit; }
-        ul { margin: 8px 0; padding-left: 20px; }
-        li { margin: 4px 0; }
+        h1, h2, h3, h4, h5, h6 { margin: 4px 0 2px 0; font-weight: 700; color: inherit; line-height: 1.2; }
+        h1 { font-size: 18px; }
+        h2 { font-size: 16px; }
+        h3 { font-size: 14px; }
+        h4, h5, h6 { font-size: 12px; }
+        ul { margin: 2px 0; padding-left: 15px; }
+        li { margin: 1px 0; }
+        .think-block {
+            font-size: 10px;
+            opacity: 0.7;
+            font-style: italic;
+            border-left: 2px solid var(--border);
+            padding-left: 8px;
+            margin: 4px 0;
+            color: #64748b;
+        }
 
         @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -684,23 +704,17 @@
         function formatText(text) {
             if (!text) return "";
 
-            // 1. Escape HTML first to prevent XSS
-            let escaped = escapeHtml(text);
-
-            // 2. Code blocks
-            escaped = escaped.replace(/```([\s\S]*?)```/g, function(match, code) {
-                const trimmedCode = code.trim();
-                // code inside ``` is already escaped by escapeHtml, but we need it raw for Copy
-                // Wait, if I escaped everything, I need to unescape for the copy function?
-                // Better: extract code blocks BEFORE escaping everything else, OR unescape specifically for copy.
-                return 'CODE_BLOCK_PLACEHOLDER';
+            // 1. Extract think blocks and code blocks to avoid escaping them or interfering with markdown
+            const thinkBlocks = [];
+            text = text.replace(/<think>([\s\S]*?)<\/think>/g, function(match, content) {
+                thinkBlocks.push(content.trim());
+                return '___THINK_BLOCK_' + (thinkBlocks.length - 1) + '___';
             });
 
-            // Re-thinking: Better to extract blocks, escape the rest, then put blocks back.
-            const blocks = [];
+            const codeBlocks = [];
             text = text.replace(/```([\s\S]*?)```/g, function(match, code) {
-                blocks.push(code.trim());
-                return '___CODE_BLOCK_' + (blocks.length - 1) + '___';
+                codeBlocks.push(code.trim());
+                return '___CODE_BLOCK_' + (codeBlocks.length - 1) + '___';
             });
 
             text = escapeHtml(text);
@@ -726,17 +740,27 @@
             // File link [FILE: path]
             text = text.replace(/\[FILE:\s*(.*?)\s*\]/g, '<a onclick="event.stopPropagation(); JavaHandler(\'openDiff\', \'-1\', \'$1\')"><b>$1</b></a>');
 
-            text = text.replace(/___CODE_BLOCK_(\d+)___/g, function(match, index) {
-                const code = blocks[parseInt(index)];
-                return '<pre><code>' + escapeHtml(code) + '</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.1);border:none;color:white;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;user-select:none;" onclick="event.stopPropagation(); JavaHandler(\'copy\', \'-1\', \'' + escapeJs(code) + '\')">Copy</button></pre>';
+            // Headers - handle h1 to h6, remove leading/trailing newlines
+            text = text.replace(/^\s*###### (.*$)/gim, '<h6>$1</h6>');
+            text = text.replace(/^\s*##### (.*$)/gim, '<h5>$1</h5>');
+            text = text.replace(/^\s*#### (.*$)/gim, '<h4>$1</h4>');
+            text = text.replace(/^\s*### (.*$)/gim, '<h3>$1</h3>');
+            text = text.replace(/^\s*## (.*$)/gim, '<h2>$1</h2>');
+            text = text.replace(/^\s*# (.*$)/gim, '<h1>$1</h1>');
+
+            // Lists - less greedy and better wrapping, remove leading/trailing newlines
+            text = text.replace(/^\s*(?:\*|-) (.*$)/gim, '<li>$1</li>');
+            text = text.replace(/(?:<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+            // Restore blocks
+            text = text.replace(/___THINK_BLOCK_(\d+)___/g, function(match, index) {
+                return '<div class="think-block">' + formatText(thinkBlocks[parseInt(index)]) + '</div>';
             });
 
-            // Headers
-            text = text.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-
-            // Lists - less greedy and better wrapping
-            text = text.replace(/^(?:\*|-) (.*$)/gim, '<li>$1</li>');
-            text = text.replace(/(?:<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+            text = text.replace(/___CODE_BLOCK_(\d+)___/g, function(match, index) {
+                const code = codeBlocks[parseInt(index)];
+                return '<pre><code>' + escapeHtml(code) + '</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.1);border:none;color:white;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;user-select:none;" onclick="event.stopPropagation(); JavaHandler(\'copy\', \'-1\', \'' + escapeJs(code) + '\')">Copy</button></pre>';
+            });
 
             // Inline code
             text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -745,8 +769,19 @@
             text = text.replace(/\*\*([^\*]+)\*\*/g, '<b>$1</b>');
             text = text.replace(/\*([^\*]+)\*/g, '<i>$1</i>');
 
-            // Newlines
-            return text.replace(/\n/g, '<br>');
+            // Final line breaks
+            text = text.replace(/\n/g, '<br>');
+
+            // Remove unnecessary breaks between block elements and after them
+            text = text.replace(/<\/h[1-6]><br>/gi, (m) => m.substring(0, m.length - 4));
+            text = text.replace(/<\/ul><br>/gi, (m) => m.substring(0, m.length - 4));
+            text = text.replace(/<\/li><br>/gi, (m) => m.substring(0, m.length - 4));
+            text = text.replace(/<br><li>/gi, (m) => m.substring(4));
+            text = text.replace(/<\/pre><br>/gi, (m) => m.substring(0, m.length - 4));
+            text = text.replace(/<\/div><br>/gi, (m) => m.substring(0, m.length - 4));
+            text = text.replace(/<br><ul>/gi, (m) => m.substring(4));
+
+            return text;
         }
 
         function escapeHtml(unsafe) {
