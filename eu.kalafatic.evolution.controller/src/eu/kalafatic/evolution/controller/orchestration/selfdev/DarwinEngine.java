@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
@@ -168,11 +169,12 @@ public class DarwinEngine extends BaseAiAgent {
             throw new Exception("Empty AI response for variants");
         }
 
-        int start = response.indexOf("[");
-        int end = response.lastIndexOf("]");
-        if (start == -1 || end == -1) throw new Exception("Invalid AI response for variants");
+        JSONArray array = JsonUtils.extractJsonArrayFlexible(response);
+        if (array == null) {
+            context.log("[DARWIN] ERROR: Failed to extract variants from AI response. Check format.");
+            throw new Exception("Invalid AI response for variants: " + response);
+        }
 
-        JSONArray array = new JSONArray(response.substring(start, end + 1));
         List<BranchVariant> variants = new ArrayList<>();
         for (int i = 0; i < array.length(); i++) {
             JSONObject obj = array.getJSONObject(i);
