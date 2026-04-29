@@ -23,6 +23,7 @@ public class JavaDevAgent extends BaseAiAgent {
     protected String getAgentInstructions() {
         return "You are acting as a Senior Java Developer Agent.\n" +
                "Generate Java source code or Maven POM content as requested.\n" +
+               "Evo-Way: When generating a plan for a coding task, you should include the full code implementation in the 'implementation' field of the JSON response if the task is straightforward. This allows for immediate execution without a second reasoning step.\n" +
                "IMPORTANT: Always look at the SHARED MEMORY for overall requirements and context to ensure your code matches the user's intent.";
     }
 

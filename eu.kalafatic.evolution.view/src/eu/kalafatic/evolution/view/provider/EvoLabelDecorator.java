@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -15,9 +17,14 @@ import org.eclipse.jface.viewers.ILightweightLabelDecorator;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.LabelProviderChangedEvent;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.UIJob;
 
+import eu.kalafatic.evolution.controller.orchestration.FileChangeTracker;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.view.application.Activator;
+import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
 public class EvoLabelDecorator extends LabelProvider implements ILightweightLabelDecorator {
 
@@ -25,10 +32,12 @@ public class EvoLabelDecorator extends LabelProvider implements ILightweightLabe
 
 	private Set<Object> fChangedResources = new HashSet<Object>();
 
-	ImageDescriptor imageDescriptor;
+	private ImageDescriptor addIcon, editIcon, removeIcon;
 
 	public EvoLabelDecorator() {
-		imageDescriptor = Activator.getImageDescriptor("icons/ovr16/error_co.gif");
+		addIcon = Activator.getImageDescriptor("eu.kalafatic.utils", "icons/ovr16/constr_ovr.gif");
+		editIcon = Activator.getImageDescriptor("eu.kalafatic.utils", "icons/ovr16/write.gif");
+		removeIcon = Activator.getImageDescriptor("eu.kalafatic.utils", "icons/ovr16/error_co.gif");
 	}
 
 	public void update(Object... collection) {
@@ -70,13 +79,39 @@ public class EvoLabelDecorator extends LabelProvider implements ILightweightLabe
 
 	@Override
 	public void decorate(Object element, IDecoration decoration) {
-		if (element instanceof EObject) {
-			EObject el = (EObject) element;
+		if (element instanceof IResource) {
+			IResource resource = (IResource) element;
+			String path = resource.getProjectRelativePath().toString();
 
-//			if (device.getHost().equals("localhost")) {
-				decoration.addOverlay(imageDescriptor);
-//			}
+			TaskContext context = getCurrentContext();
+			if (context != null && context.getFileChangeTracker() != null) {
+				FileChangeTracker.ChangeType type = context.getFileChangeTracker().getChangeType(path);
+				if (type != null) {
+					switch (type) {
+					case NEW:
+						decoration.addOverlay(addIcon, IDecoration.BOTTOM_RIGHT);
+						decoration.addPrefix("[NEW] ");
+						break;
+					case EDITED:
+						decoration.addOverlay(editIcon, IDecoration.BOTTOM_RIGHT);
+						decoration.addPrefix("[EDITED] ");
+						break;
+					case REMOVED:
+						decoration.addOverlay(removeIcon, IDecoration.BOTTOM_RIGHT);
+						decoration.addPrefix("[REMOVED] ");
+						break;
+					}
+				}
+			}
 		}
+	}
+
+	private TaskContext getCurrentContext() {
+		IEditorPart activeEditor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+		if (activeEditor instanceof MultiPageEditor) {
+			return ((MultiPageEditor) activeEditor).getCurrentContext();
+		}
+		return null;
 	}
 
 	@Override

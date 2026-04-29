@@ -414,18 +414,29 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
                 }
 
-                String planInstruction = "Create a structured JSON plan with: 'steps' (array), 'targetFiles' (array), and 'strategy' (string). " +
+                String planInstruction = "Create a structured JSON plan with: 'steps' (array), 'targetFiles' (array), 'strategy' (string), and optional 'implementation' (string - the actual code if known). " +
                         "Mutation Strategy: " + mutationStrategy + ". Feedback: " + (lastFeedback != null ? lastFeedback : "none");
 
                 String localPlan = agent.process(task.getDescription() + "\nGOAL: " + task.getGoal() + "\nINSTRUCTION: " + planInstruction, context, lastFeedback);
                 task.setPlan(localPlan);
                 logger.debug(context, "Generated plan", localPlan);
 
+                // Extract implementation from plan if present to avoid overthinking
+                String preGeneratedContent = null;
+                try {
+                    JSONObject planJson = new JSONObject(localPlan);
+                    if (planJson.has("implementation")) {
+                        preGeneratedContent = planJson.getString("implementation");
+                    }
+                } catch (Exception e) {
+                    // Not JSON or missing implementation, proceed with normal execution
+                }
+
                 // 2. EXECUTE: Agent performs the action
                 task.setStatus(TaskStatus.EXECUTING);
                 context.setCurrentPhase("EXECUTE");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 2 - Executing...");
-                String result = performAction(task, agent, context, lastFeedback);
+                String result = performAction(task, agent, context, lastFeedback, preGeneratedContent);
                 task.setResponse(result);
 
                 // Capture Artifacts (result summary + content)
@@ -526,7 +537,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
         return false;
     }
 
-    private String performAction(Task task, IAgent agent, TaskContext context, String lastFeedback) throws Exception {
+    private String performAction(Task task, IAgent agent, TaskContext context, String lastFeedback, String preGeneratedContent) throws Exception {
         String taskType = task.getType();
         String taskName = task.getName();
         String taskDescription = task.getDescription();
@@ -570,15 +581,20 @@ public class EvolutionOrchestrator implements IOrchestrator {
             }
 
             // JavaDev/Architect will generate content first
-            context.log("Evo-Orchestrator-" + taskName + ": " + agent.getType() + " agent processing " + path);
-            String content = agent.process(processInput, context, lastFeedback);
+            String content = preGeneratedContent;
+            if (content == null || content.isEmpty()) {
+                context.log("Evo-Orchestrator-" + taskName + ": " + agent.getType() + " agent processing " + path);
+                content = agent.process(processInput, context, lastFeedback);
+            } else {
+                context.log("Evo-Orchestrator-" + taskName + ": Using pre-generated content from PLAN phase for " + path);
+            }
 
             // If the agent returned a clarification or proposal instead of file content, return it now
             if (content != null && (content.contains("CLARIFY") || content.contains("[PROPOSAL:"))) {
                 return content;
             }
 
-            context.log("Evo-Orchestrator-" + taskName + ": Agent generated " + content.length() + " chars for " + path);
+            context.log("Evo-Orchestrator-" + taskName + ": Implementation content ready (" + content.length() + " chars) for " + path);
 
             // Check for significant deletions
             try {

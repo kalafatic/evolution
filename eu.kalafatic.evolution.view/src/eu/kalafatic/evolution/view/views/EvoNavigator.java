@@ -3,6 +3,8 @@ package eu.kalafatic.evolution.view.views;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
@@ -14,6 +16,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IWorkbenchActionConstants;
+import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.ui.IDecoratorManager;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.navigator.CommonNavigator;
@@ -105,6 +109,31 @@ public class EvoNavigator extends CommonNavigator {
 		};
 		collapseAllAction.setToolTipText("Collapse All");
 		collapseAllAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_COLLAPSEALL));
+	}
+
+	/**
+	 * Refresh and expand to the given resource.
+	 */
+	public void refreshAndExpand(IResource resource) {
+		if (lock.tryLock()) {
+			try {
+				Display.getDefault().asyncExec(() -> {
+					if (getCommonViewer() != null && !getCommonViewer().getControl().isDisposed()) {
+						getCommonViewer().refresh();
+						if (resource != null) {
+							getCommonViewer().setSelection(new StructuredSelection(resource), true);
+							getCommonViewer().expandToLevel(resource, 1);
+						}
+
+						// Trigger decorator refresh
+						IDecoratorManager decoratorManager = PlatformUI.getWorkbench().getDecoratorManager();
+						decoratorManager.update("eu.kalafatic.evolution.view.evoLabelDecorator");
+					}
+				});
+			} finally {
+				lock.unlock();
+			}
+		}
 	}
 
 	/**

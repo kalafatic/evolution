@@ -5,7 +5,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
+import org.eclipse.core.resources.IResourceDelta;
+import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -58,6 +62,7 @@ import eu.kalafatic.evolution.view.editors.pages.ServerPage;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
 import eu.kalafatic.evolution.view.editors.pages.TestsPage;
 import eu.kalafatic.evolution.view.editors.pages.ToolsPage;
+import eu.kalafatic.evolution.view.views.EvoNavigator;
 
 public class MultiPageEditor extends MultiPageEditorPart {
 
@@ -92,6 +97,31 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private Color lightGreen, lightRed, lightOrange, lightBlue, lightPurple, lightCyan;
     
     private AtomicBoolean refreshScheduled = new AtomicBoolean(false);
+
+    private IResourceChangeListener workspaceListener = new IResourceChangeListener() {
+        @Override
+        public void resourceChanged(IResourceChangeEvent event) {
+            if (event.getType() == IResourceChangeEvent.POST_CHANGE) {
+                try {
+                    event.getDelta().accept(new IResourceDeltaVisitor() {
+                        @Override
+                        public boolean visit(IResourceDelta delta) throws org.eclipse.core.runtime.CoreException {
+                            IResource resource = delta.getResource();
+                            if (resource instanceof IFile) {
+                                // Refresh navigator if a file changed
+                                Display.getDefault().asyncExec(() -> {
+                                    refreshNavigator(resource);
+                                });
+                            }
+                            return true;
+                        }
+                    });
+                } catch (org.eclipse.core.runtime.CoreException e) {
+                    // Ignore
+                }
+            }
+        }
+    };
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -174,6 +204,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
         resourceListener = new EditorResourceChangeListener(this);
         ResourcesPlugin.getWorkspace().addResourceChangeListener(resourceListener);
+        ResourcesPlugin.getWorkspace().addResourceChangeListener(workspaceListener, IResourceChangeEvent.POST_CHANGE);
 
         selectionListener = new EditorSelectionListener(this);
         getSite().getWorkbenchWindow().getSelectionService().addSelectionListener(selectionListener);
@@ -257,6 +288,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     @Override
     public void dispose() {
         if (resourceListener != null) ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceListener);
+        if (workspaceListener != null) ResourcesPlugin.getWorkspace().removeResourceChangeListener(workspaceListener);
         if (selectionListener != null) getSite().getWorkbenchWindow().getSelectionService().removeSelectionListener(selectionListener);
         if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
 
@@ -332,6 +364,13 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     public void setLastTextSelection(org.eclipse.jface.text.ITextSelection lastTextSelection) {
         this.lastTextSelection = lastTextSelection;
+    }
+
+    private void refreshNavigator(IResource resource) {
+        org.eclipse.ui.IViewPart view = getSite().getPage().findView("eu.kalafatic.views.EvoNavigator");
+        if (view instanceof EvoNavigator) {
+            ((EvoNavigator) view).refreshAndExpand(resource);
+        }
     }
 
     public void refreshPages() {

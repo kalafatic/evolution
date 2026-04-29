@@ -69,6 +69,7 @@ public abstract class BaseAiAgent implements IAgent {
                "Use keywords like 'CREATE' (to suggest proceeding) or 'CLARIFY' (to request more info).\n" +
                "Additionally, you can offer general one-click solutions using the format: [PROPOSAL: Action Label | Explicit Request Text]\n" +
                "Example: 'I can help you with that. [PROPOSAL: Create a test class | Create a JUnit 5 test class for the current Main.java file]'.\n\n" +
+               "For coding tasks, you can provide a structured JSON plan with an 'implementation' field containing the final code. This prevents redundant processing.\n\n" +
                "You can also link to specific files in your response using the format: [FILE:path/to/file]\n" +
                "Example: 'I have updated the logic in [FILE:src/Main.java].'";
     }
