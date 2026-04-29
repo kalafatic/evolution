@@ -328,9 +328,10 @@ public class ChatGroup extends AEvoGroup {
             sender = "You";
             content = trimmedText.substring(5);
             agentType = "user";
-        } else if (trimmedText.startsWith("User [SELF-DEV]: ")) {
-            sender = "User [SELF-DEV]";
-            content = trimmedText.substring(17);
+        } else if (trimmedText.startsWith("User [") && trimmedText.contains("]: ")) {
+            int closeBracket = trimmedText.indexOf("]: ");
+            sender = trimmedText.substring(0, closeBracket + 1);
+            content = trimmedText.substring(closeBracket + 3);
             agentType = "user";
         } else if (trimmedText.startsWith("Final Response: ")) {
             sender = "Final Response";
