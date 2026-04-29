@@ -769,13 +769,19 @@
             text = text.replace(/\*\*([^\*]+)\*\*/g, '<b>$1</b>');
             text = text.replace(/\*([^\*]+)\*/g, '<i>$1</i>');
 
-            // Newlines - but not after block elements to save space
-            text = text.replace(/<\/h[1-6]><br>/g, (m) => m.substring(0, m.length - 4));
-            text = text.replace(/<\/ul><br>/g, (m) => m.substring(0, m.length - 4));
-            text = text.replace(/<\/pre><br>/g, (m) => m.substring(0, m.length - 4));
-            text = text.replace(/<\/div><br>/g, (m) => m.substring(0, m.length - 4));
+            // Final line breaks
+            text = text.replace(/\n/g, '<br>');
 
-            return text.replace(/\n/g, '<br>');
+            // Remove unnecessary breaks between block elements and after them
+            text = text.replace(/<\/h[1-6]><br>/gi, (m) => m.substring(0, m.length - 4));
+            text = text.replace(/<\/ul><br>/gi, (m) => m.substring(0, m.length - 4));
+            text = text.replace(/<\/li><br>/gi, (m) => m.substring(0, m.length - 4));
+            text = text.replace(/<br><li>/gi, (m) => m.substring(4));
+            text = text.replace(/<\/pre><br>/gi, (m) => m.substring(0, m.length - 4));
+            text = text.replace(/<\/div><br>/gi, (m) => m.substring(0, m.length - 4));
+            text = text.replace(/<br><ul>/gi, (m) => m.substring(4));
+
+            return text;
         }
 
         function escapeHtml(unsafe) {
