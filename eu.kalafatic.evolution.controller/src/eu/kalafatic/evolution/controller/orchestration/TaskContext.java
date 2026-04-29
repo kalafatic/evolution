@@ -203,8 +203,7 @@ public class TaskContext {
     }
 
     public boolean isAutoApprove() {
-        if (orchestrator != null && orchestrator.getAiChat() != null &&orchestrator.getAiChat().getPromptInstructions() != null) {
-        	
+        if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
             return orchestrator.getAiChat().getPromptInstructions().isAutoApprove();
         }
         return autoApprove;

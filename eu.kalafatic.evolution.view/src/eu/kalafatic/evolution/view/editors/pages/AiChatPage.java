@@ -842,16 +842,23 @@ public class AiChatPage extends AEvoPage {
 	private void resumeWaitingThreads() {
 		for (String threadId : threadStates.keySet()) {
 			ThreadState state = threadStates.get(threadId);
-			if (state != null && state.currentContext != null) {
-				if (state.currentContext.isWaitingForInput()) {
-					provideInput(threadId, "Approved");
-				} else if (state.currentContext.isWaitingForApproval()) {
-					provideApproval(threadId, true);
-				} else if (state.activeTaskId != null) {
+			if (state != null) {
+				if (state.currentContext != null) {
+					if (state.currentContext.isWaitingForInput()) {
+						provideInput(threadId, "Approved");
+					} else if (state.currentContext.isWaitingForApproval()) {
+						provideApproval(threadId, true);
+					}
+				}
+				if (state.activeTaskId != null) {
 					// Check if TaskResult is waiting for approval (legacy OrchestratorServiceImpl tasks)
 					TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
-					if (result != null && result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
-						provideApproval(threadId, true);
+					if (result != null && (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL || result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT)) {
+						if (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
+							provideApproval(threadId, true);
+						} else {
+							provideInput(threadId, "Approved");
+						}
 					}
 				}
 			}
