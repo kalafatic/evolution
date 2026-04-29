@@ -300,11 +300,16 @@ public class AiChatPage extends AEvoPage {
         promptInstructions.setIterativeMode(instructionsGroup.isIterative());
         promptInstructions.setSelfIterativeMode(instructionsGroup.isSelfIterative());
         orchestrator.setDarwinMode(instructionsGroup.isDarwin());
-        promptInstructions.setAutoApprove(instructionsGroup.isAutoApprove());
+        boolean wasAutoApprove = promptInstructions.isAutoApprove();
+        boolean isAutoApprove = instructionsGroup.isAutoApprove();
+        promptInstructions.setAutoApprove(isAutoApprove);
         promptInstructions.setPreferredMaxIterations(instructionsGroup.getMaxIterations());
         promptInstructions.setGitAutomation(instructionsGroup.isGitAutomationCheck());
 		
-		
+		if (!wasAutoApprove && isAutoApprove) {
+			resumeWaitingThreads();
+		}
+
 		orchestrator.getAiChat().setUrl(aiSettingsGroup.getRemoteUrl());
 		editor.setDirty(true);
 		updateModeDisplay();
@@ -323,7 +328,7 @@ public class AiChatPage extends AEvoPage {
 		}
 		if (currentThread == null) initializeThreads();
 	
-		if (orchestrator != null && (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode())) {
+		if (orchestrator != null && (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode() || orchestrator.isDarwinMode()))) {
 			startSelfDevAction(request);
 			return;
 		}
@@ -650,14 +655,19 @@ public class AiChatPage extends AEvoPage {
 			return;
 		}
 		final String finalRequest = request;
+		boolean isDarwin = orchestrator != null && orchestrator.isDarwinMode();
+		boolean isSelfDev = orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode();
+		final String modeLabel = isSelfDev ? "SELF-DEV" : (isDarwin ? "DARWIN" : "EVO");
+		String idPrefix = isSelfDev ? "selfdev-" : (isDarwin ? "darwin-" : "chat-");
+
 		if (orchestrator != null) {
 			if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
 			if (orchestrator.getLlm() == null) orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
 			NeuronService.getInstance().train(orchestrator, finalRequest, "coding", 5);
-			if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) orchestrator.setId("selfdev-" + System.currentTimeMillis());
+			if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) orchestrator.setId(idPrefix + System.currentTimeMillis());
 		}
-		chatGroup.appendText("User [SELF-DEV]: " + finalRequest, colorUser, SWT.BOLD);
-		chatGroup.appendText("\n\nEvo: Initializing Self-Development Supervisor loop...", colorEvolution, SWT.ITALIC | SWT.BOLD);
+		chatGroup.appendText("User [" + modeLabel + "]: " + finalRequest, colorUser, SWT.BOLD);
+		chatGroup.appendText("\n\nEvo: Initializing " + modeLabel + " Supervisor loop...", colorEvolution, SWT.ITALIC | SWT.BOLD);
 		instructionsGroup.setRequest("");
 		state.isRunning = true;
 		instructionsGroup.setOrchestrationRunning(true);
@@ -717,7 +727,7 @@ public class AiChatPage extends AEvoPage {
 							chatGroup.appendText("Result Summary: " + summary, colorUser, SWT.NORMAL);
 						}
 
-						chatGroup.appendText("Final Response: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
+						chatGroup.appendText("Final Response: " + modeLabel + " session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						feedbackGroup.showSatisfaction(true); updateScrolledContent();
 						if (state.currentStackTask != null) {
@@ -827,6 +837,23 @@ public class AiChatPage extends AEvoPage {
 
 	public void updateUI() {
 		scheduleRefresh();
+	}
+
+	private void resumeWaitingThreads() {
+		for (String threadId : threadStates.keySet()) {
+			ThreadState state = threadStates.get(threadId);
+			if (state != null && state.currentContext != null) {
+				if (state.currentContext.isWaitingForInput()) {
+					provideInput("Approved");
+				} else if (state.activeTaskId != null) {
+					// Check if TaskResult is waiting for approval
+					TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
+					if (result != null && result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
+						provideApproval(true);
+					}
+				}
+			}
+		}
 	}
 
 	public void submitFeedback(int satisfaction, String comments) {
