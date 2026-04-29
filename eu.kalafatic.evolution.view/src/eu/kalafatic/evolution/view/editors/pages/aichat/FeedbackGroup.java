@@ -130,11 +130,11 @@ public class FeedbackGroup extends AEvoGroup {
 
         // Ensure all are hidden initially
         satisfactionBox.setVisible(false);
-        ((GridData) satisfactionBox.getLayoutData()).exclude = true;
+        setExclude(satisfactionBox, true);
         approvalBox.setVisible(false);
-        ((GridData) approvalBox.getLayoutData()).exclude = true;
+        setExclude(approvalBox, true);
         inputBox.setVisible(false);
-        ((GridData) inputBox.getLayoutData()).exclude = true;
+        setExclude(inputBox, true);
     }
 
     public void showSatisfaction(boolean visible) {
@@ -144,7 +144,7 @@ public class FeedbackGroup extends AEvoGroup {
             page.expandFeedbackSection();
         } else {
             satisfactionBox.setVisible(false);
-            ((GridData) satisfactionBox.getLayoutData()).exclude = true;
+            setExclude(satisfactionBox, true);
             updateVisibility(null);
         }
     }
@@ -158,7 +158,7 @@ public class FeedbackGroup extends AEvoGroup {
     public void hideApproval() {
         if (approvalBox == null || approvalBox.isDisposed()) return;
         approvalBox.setVisible(false);
-        ((GridData) approvalBox.getLayoutData()).exclude = true;
+        setExclude(approvalBox, true);
         updateVisibility(null);
     }
 
@@ -177,8 +177,16 @@ public class FeedbackGroup extends AEvoGroup {
     public void hideInput() {
         if (inputBox == null || inputBox.isDisposed()) return;
         inputBox.setVisible(false);
-        ((GridData) inputBox.getLayoutData()).exclude = true;
+        setExclude(inputBox, true);
         updateVisibility(null);
+    }
+
+    private void setExclude(org.eclipse.swt.widgets.Control control, boolean exclude) {
+        if (control == null || control.isDisposed()) return;
+        Object layoutData = control.getLayoutData();
+        if (layoutData instanceof GridData) {
+            ((GridData) layoutData).exclude = exclude;
+        }
     }
 
     private void updateVisibility(Composite visibleBox) {
@@ -188,20 +196,20 @@ public class FeedbackGroup extends AEvoGroup {
             // Hide others
             if (satisfactionBox != null && satisfactionBox != visibleBox) {
                 satisfactionBox.setVisible(false);
-                ((GridData) satisfactionBox.getLayoutData()).exclude = true;
+                setExclude(satisfactionBox, true);
             }
             if (approvalBox != null && approvalBox != visibleBox) {
                 approvalBox.setVisible(false);
-                ((GridData) approvalBox.getLayoutData()).exclude = true;
+                setExclude(approvalBox, true);
             }
             if (inputBox != null && inputBox != visibleBox) {
                 inputBox.setVisible(false);
-                ((GridData) inputBox.getLayoutData()).exclude = true;
+                setExclude(inputBox, true);
             }
 
             // Show this one
             visibleBox.setVisible(true);
-            ((GridData) visibleBox.getLayoutData()).exclude = false;
+            setExclude(visibleBox, false);
         }
 
         boolean anyVisible = (satisfactionBox != null && satisfactionBox.getVisible()) ||
@@ -209,7 +217,7 @@ public class FeedbackGroup extends AEvoGroup {
                              (inputBox != null && inputBox.getVisible());
 
         group.setVisible(anyVisible);
-        ((GridData) group.getLayoutData()).exclude = !anyVisible;
+        setExclude(group, !anyVisible);
 
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();
