@@ -92,11 +92,11 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        Button clearBtn = SWTFactory.createButton(compositeRemote, "Clear Done", 150);
+        Button clearBtn = SWTFactory.createButton(compositeRemote, "Remove Selected", 150);
         clearBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.clearDoneTasks();
+                page.removeSelected();
             }
         });
     }
