@@ -253,12 +253,30 @@ public class TaskStackPage extends AEvoPage {
         }
     }
 
-    public void clearDoneTasks() {
-        List<Task> toRemove = orchestrator.getTasks().stream()
-                .filter(t -> t.getStatus() == TaskStatus.DONE)
-                .collect(Collectors.toList());
+    public void removeSelected() {
+        List<Task> toRemove = new ArrayList<>();
+        for (Task task : orchestrator.getTasks()) {
+            if (task.isSelected()) {
+                toRemove.add(task);
+            } else {
+                removeSelectedSubtasks(task);
+            }
+        }
         orchestrator.getTasks().removeAll(toRemove);
         setDirty(true);
+        updateUIFromModel();
+    }
+
+    private void removeSelectedSubtasks(Task parent) {
+        List<Task> subTasksToRemove = new ArrayList<>();
+        for (Task subTask : parent.getSubTasks()) {
+            if (subTask.isSelected()) {
+                subTasksToRemove.add(subTask);
+            } else {
+                removeSelectedSubtasks(subTask);
+            }
+        }
+        parent.getSubTasks().removeAll(subTasksToRemove);
     }
 
     public void executeSelected() {
