@@ -459,10 +459,6 @@ public class AiChatPage extends AEvoPage {
 					if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 
-						if (!finalResult.getFileChanges().isEmpty()) {
-							chatGroup.appendText("Result Summary:\n" + String.join("\n", finalResult.getFileChanges()), colorUser, SWT.NORMAL);
-						}
-
 						chatGroup.appendText("Final Response: " + finalResult.getResponse(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						feedbackGroup.showSatisfaction(true); updateScrolledContent();
@@ -722,10 +718,6 @@ public class AiChatPage extends AEvoPage {
 					}
 					if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
-
-						if (!summary.isEmpty()) {
-							chatGroup.appendText("Result Summary: " + summary, colorUser, SWT.NORMAL);
-						}
 
 						chatGroup.appendText("Final Response: " + modeLabel + " session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
