@@ -51,32 +51,75 @@ public class FeedbackGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Session Interaction & Feedback", 1, false);
 
+        // 1. Satisfaction Box
         satisfactionBox = SWTFactory.createComposite(group, 5);
-
         SWTFactory.createLabel(satisfactionBox, "Rate Session (1-5):");
         satisfactionScale = new Scale(satisfactionBox, SWT.HORIZONTAL);
         satisfactionScale.setMinimum(1);
         satisfactionScale.setMaximum(5);
         satisfactionScale.setSelection(3);
-        GridData gd=new GridData(GridData.FILL_HORIZONTAL);
+        GridData gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
         satisfactionScale.setLayoutData(gd);
         SWTFactory.createLabel(satisfactionBox); // Spacer
 
         SWTFactory.createLabel(satisfactionBox, "Session Feedback:");
         satisfactionCommentsText = SWTFactory.createText(satisfactionBox, "", SWT.BORDER | SWT.SINGLE);  
-        gd=new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 3;
+        gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 2;
         satisfactionCommentsText.setLayoutData(gd);
-        SWTFactory.createLabel(satisfactionBox); // Spacer
         
-        promptLabel = SWTFactory.createLabel(satisfactionBox, "", SWT.WRAP);
-        inputText = SWTFactory.createText(satisfactionBox, "", SWT.BORDER);       
-        gd=new GridData(GridData.FILL_HORIZONTAL);
+        Button submitSatButton = toolkit.createButton(satisfactionBox, "Submit Feedback", SWT.PUSH);
+        submitSatButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.submitFeedback(satisfactionScale.getSelection(), satisfactionCommentsText.getText());
+            }
+        });
+        SWTFactory.createLabel(satisfactionBox); // Spacer
+
+        // 2. Approval Box
+        approvalBox = SWTFactory.createComposite(group, 5);
+        SWTFactory.createLabel(approvalBox, "Action Required:");
+        
+        Button approveButton = toolkit.createButton(approvalBox, "Approve", SWT.PUSH);
+        approveButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.provideApproval(true);
+            }
+        });
+
+        Button rejectButton = toolkit.createButton(approvalBox, "Reject", SWT.PUSH);
+        rejectButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.provideApproval(false);
+            }
+        });
+
+        Button peerReviewBtn = toolkit.createButton(approvalBox, "Peer Review", SWT.PUSH);
+        peerReviewBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.handleReview();
+            }
+        });
+        SWTFactory.createLabel(approvalBox); // Spacer
+
+        // 3. Input Box
+        inputBox = SWTFactory.createComposite(group, 5);
+        promptLabel = SWTFactory.createLabel(inputBox, "Input Required:", SWT.WRAP);
+        gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 1;
+        promptLabel.setLayoutData(gd);
+
+        inputText = SWTFactory.createText(inputBox, "", SWT.BORDER);
+        gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
         inputText.setLayoutData(gd);
 
-        Button submitButton = SWTFactory.createButton(satisfactionBox, "Submit");
+        Button submitButton = toolkit.createButton(inputBox, "Send", SWT.PUSH);
         submitButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -85,108 +128,108 @@ public class FeedbackGroup extends AEvoGroup {
             }
         });
 
-
-        approvalBox = SWTFactory.createComposite(group, 5);
-        
-        Button submitSatButton = SWTFactory.createButton(approvalBox, "Submit Feedback");
-        submitSatButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.submitFeedback(satisfactionScale.getSelection(), satisfactionCommentsText.getText());
-            }
-        });
-
-        Button peerReviewBtn = SWTFactory.createButton(approvalBox, "Peer Review");
-        peerReviewBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.handleReview();
-            }
-        });
-        
-        Button approveButton = SWTFactory.createButton(approvalBox, "Approve");
-        approveButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.provideApproval(true);
-            }
-        });
-
-        Button rejectButton = SWTFactory.createButton(approvalBox, "Reject");
-        rejectButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.provideApproval(false);
-            }
-        });
-
-        Button reviewButton = SWTFactory.createButton(approvalBox, "Review");
-        reviewButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.handleReview();
-            }
-        });
+        // Ensure all are hidden initially
+        satisfactionBox.setVisible(false);
+        ((GridData) satisfactionBox.getLayoutData()).exclude = true;
+        approvalBox.setVisible(false);
+        ((GridData) approvalBox.getLayoutData()).exclude = true;
+        inputBox.setVisible(false);
+        ((GridData) inputBox.getLayoutData()).exclude = true;
     }
 
     public void showSatisfaction(boolean visible) {
-        if (satisfactionBox.isDisposed()) return;
-        satisfactionBox.setVisible(visible);
-        ((GridData) satisfactionBox.getLayoutData()).exclude = !visible;
+        if (satisfactionBox == null || satisfactionBox.isDisposed()) return;
         if (visible) {
+            updateVisibility(satisfactionBox);
             page.expandFeedbackSection();
+        } else {
+            satisfactionBox.setVisible(false);
+            ((GridData) satisfactionBox.getLayoutData()).exclude = true;
+            updateVisibility(null);
         }
-        updateVisibility();
     }
 
     public void showApproval(String message) {
-        if (approvalBox.isDisposed()) return;
-        if (message != null) {
-            message = message.replaceAll("(?s)<think>.*?</think>", "").trim();
-        }
-       
-        approvalBox.setVisible(true);
-        ((GridData) approvalBox.getLayoutData()).exclude = false;
+        if (approvalBox == null || approvalBox.isDisposed()) return;
+        updateVisibility(approvalBox);
         page.expandFeedbackSection();
-        updateVisibility();
     }
 
     public void hideApproval() {
-        if (approvalBox.isDisposed()) return;
+        if (approvalBox == null || approvalBox.isDisposed()) return;
         approvalBox.setVisible(false);
         ((GridData) approvalBox.getLayoutData()).exclude = true;
-        updateVisibility();
+        updateVisibility(null);
     }
 
     public void showInput(String message) {
-        if (inputBox.isDisposed()) return;
+        if (inputBox == null || inputBox.isDisposed()) return;
         if (message != null) {
             message = message.replaceAll("(?s)<think>.*?</think>", "").trim();
+            if (message.length() > 100) message = message.substring(0, 97) + "...";
+            promptLabel.setText(message);
         }
-        promptLabel.setText(message);
-        inputBox.setVisible(true);
-        ((GridData) inputBox.getLayoutData()).exclude = false;
+        updateVisibility(inputBox);
         inputText.setFocus();
         page.expandFeedbackSection();
-        updateVisibility();
     }
 
     public void hideInput() {
-        if (inputBox.isDisposed()) return;
+        if (inputBox == null || inputBox.isDisposed()) return;
         inputBox.setVisible(false);
         ((GridData) inputBox.getLayoutData()).exclude = true;
-        updateVisibility();
+        updateVisibility(null);
+    }
+
+    private void updateVisibility(Composite visibleBox) {
+        if (group == null || group.isDisposed()) return;
+
+        if (visibleBox != null) {
+            // Hide others
+            if (satisfactionBox != null && satisfactionBox != visibleBox) {
+                satisfactionBox.setVisible(false);
+                ((GridData) satisfactionBox.getLayoutData()).exclude = true;
+            }
+            if (approvalBox != null && approvalBox != visibleBox) {
+                approvalBox.setVisible(false);
+                ((GridData) approvalBox.getLayoutData()).exclude = true;
+            }
+            if (inputBox != null && inputBox != visibleBox) {
+                inputBox.setVisible(false);
+                ((GridData) inputBox.getLayoutData()).exclude = true;
+            }
+
+            // Show this one
+            visibleBox.setVisible(true);
+            ((GridData) visibleBox.getLayoutData()).exclude = false;
+        }
+
+        boolean anyVisible = (satisfactionBox != null && satisfactionBox.getVisible()) ||
+                             (approvalBox != null && approvalBox.getVisible()) ||
+                             (inputBox != null && inputBox.getVisible());
+
+        group.setVisible(anyVisible);
+        ((GridData) group.getLayoutData()).exclude = !anyVisible;
+
+        if (group.getParent() instanceof Section) {
+            Section section = (Section) group.getParent();
+            section.setVisible(anyVisible);
+            Object layoutData = section.getLayoutData();
+            if (layoutData instanceof GridData) {
+                ((GridData) layoutData).exclude = !anyVisible;
+            }
+            if (!anyVisible) {
+                section.setExpanded(false);
+            } else if (!section.isExpanded()) {
+                section.setExpanded(true);
+            }
+        }
+
+        page.updateScrolledContent();
     }
 
     public void updateVisibility() {
-        if (section == null || section.isDisposed()) return;
-        boolean anyVisible = satisfactionBox.getVisible() || approvalBox.getVisible() || inputBox.getVisible();
-        section.setVisible(anyVisible);
-        ((GridData) section.getLayoutData()).exclude = !anyVisible;
-        if (!anyVisible) {
-            section.setExpanded(false);
-        }
-        page.updateScrolledContent();
+        updateVisibility(null);
     }
 
     public boolean isSatisfactionVisible() { return satisfactionBox != null && !satisfactionBox.isDisposed() && satisfactionBox.getVisible(); }

@@ -844,12 +844,14 @@ public class AiChatPage extends AEvoPage {
 			ThreadState state = threadStates.get(threadId);
 			if (state != null && state.currentContext != null) {
 				if (state.currentContext.isWaitingForInput()) {
-					provideInput("Approved");
+					provideInput(threadId, "Approved");
+				} else if (state.currentContext.isWaitingForApproval()) {
+					provideApproval(threadId, true);
 				} else if (state.activeTaskId != null) {
-					// Check if TaskResult is waiting for approval
+					// Check if TaskResult is waiting for approval (legacy OrchestratorServiceImpl tasks)
 					TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
 					if (result != null && result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
-						provideApproval(true);
+						provideApproval(threadId, true);
 					}
 				}
 			}
@@ -871,19 +873,25 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void provideApproval(boolean approved) {
-		if (approved) {
+		provideApproval(getCurrentThreadName(), approved);
+	}
+
+	public void provideApproval(String threadId, boolean approved) {
+		if (approved && threadId.equals(getCurrentThreadName())) {
 			chatGroup.markLastWaitingAsApproved();
 		}
-		ThreadState state = getCurrentThreadState();
+		ThreadState state = getThreadState(threadId);
 		if (state.orchestrationThread != null) {
 			String taskId = state.activeTaskId != null ? state.activeTaskId : orchestrator.getId();
 			OrchestratorServiceImpl.getInstance().provideApproval(taskId, approved);
 		}
 		if (state.currentContext != null) {
 			state.currentContext.provideApproval(approved);
-			feedbackGroup.hideApproval();
-			updateModeDisplay();
-			updateScrolledContent();
+			if (threadId.equals(getCurrentThreadName())) {
+				feedbackGroup.hideApproval();
+				updateModeDisplay();
+				updateScrolledContent();
+			}
 		}
 	}
 
@@ -986,19 +994,27 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void provideInput(String input) {
-		if (assistAdapter != null) assistAdapter.closeProposalPopup();
-		instructionsGroup.resetBackground();
-		clearWaitingMessages();
-		ThreadState state = getCurrentThreadState();
+		provideInput(getCurrentThreadName(), input);
+	}
+
+	public void provideInput(String threadId, String input) {
+		if (threadId.equals(getCurrentThreadName())) {
+			if (assistAdapter != null) assistAdapter.closeProposalPopup();
+			instructionsGroup.resetBackground();
+			clearWaitingMessages();
+		}
+		ThreadState state = getThreadState(threadId);
 		if (state.orchestrationThread != null) {
 			String taskId = state.activeTaskId != null ? state.activeTaskId : orchestrator.getId();
 			OrchestratorServiceImpl.getInstance().provideInput(taskId, input);
 		}
 		if (state.currentContext != null) {
 			state.currentContext.provideInput(input);
-			feedbackGroup.hideInput();
-			updateModeDisplay();
-			updateScrolledContent();
+			if (threadId.equals(getCurrentThreadName())) {
+				feedbackGroup.hideInput();
+				updateModeDisplay();
+				updateScrolledContent();
+			}
 		}
 	}
 

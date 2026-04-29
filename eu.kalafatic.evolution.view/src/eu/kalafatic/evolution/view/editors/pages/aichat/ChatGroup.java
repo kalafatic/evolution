@@ -392,6 +392,15 @@ public class ChatGroup extends AEvoGroup {
                 content.toLowerCase().contains("ambiguous")) {
                 agentType = "waiting";
             }
+
+        if ("waiting".equals(agentType)) {
+            // Downgrade previous waiting messages to avoid multiple pulsing bubbles
+            for (ChatMessage existing : thread.getMessages()) {
+                if ("waiting".equals(existing.getAgentType())) {
+                    existing.setAgentType("response");
+                }
+            }
+        }
         } else if (trimmedText.startsWith("Evolution: ")) {
             sender = "Evo";
             content = trimmedText.substring(11);

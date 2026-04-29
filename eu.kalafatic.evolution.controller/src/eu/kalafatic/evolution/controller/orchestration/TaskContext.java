@@ -184,6 +184,10 @@ public class TaskContext {
         return inputFuture != null && !inputFuture.isDone();
     }
 
+    public boolean isWaitingForApproval() {
+        return approvalFuture != null && !approvalFuture.isDone();
+    }
+
     public boolean isPaused() {
         return paused;
     }
