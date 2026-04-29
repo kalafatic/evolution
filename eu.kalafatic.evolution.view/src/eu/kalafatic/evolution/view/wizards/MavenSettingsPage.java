@@ -48,6 +48,7 @@ public class MavenSettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Profiles (comma separated):");
         profilesText = new Text(container, SWT.BORDER);
         profilesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        profilesText.setText("evo");
 
         mavenDecorator = new ControlDecoration(goalsText, SWT.TOP | SWT.LEFT);
         mavenDecorator.setImage(FieldDecorationRegistry.getDefault()

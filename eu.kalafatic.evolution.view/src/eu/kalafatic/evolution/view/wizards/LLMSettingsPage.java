@@ -34,7 +34,8 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class LLMSettingsPage extends AWizardPage {
-    private Text modelText, tempText;
+    private Combo modelCombo;
+    private Text tempText;
     private Button skipCheck;
     private ControlDecoration modelDecorator;
     
@@ -136,24 +137,30 @@ public class LLMSettingsPage extends AWizardPage {
 
                     // Update models based on mode
                     java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLlmModels(orchestrator, aiMode);
-                    String current = modelText.getText();
-                    modelText.setText(""); // clear
+                    String current = modelCombo.getText();
+                    modelCombo.removeAll(); // clear
                     for (String m : models) {
-                        if (m.equals(current)) {
-                            modelText.setText(m);
+                        modelCombo.add(m);
+                    }
+
+                    // Restore current if still exists
+                    for (int i = 0; i < modelCombo.getItemCount(); i++) {
+                        if (modelCombo.getItem(i).equals(current)) {
+                            modelCombo.select(i);
                             break;
                         }
                     }
-                    if (modelText.getText().isEmpty() && !models.isEmpty()) {
-                        modelText.setText(models.get(0));
+
+                    if (modelCombo.getText().isEmpty() && modelCombo.getItemCount() > 0) {
+                        modelCombo.select(0);
                     }
                             
                     boolean remoteVisible = aiMode == AiMode.HYBRID || aiMode == AiMode.REMOTE;
                     remoteLabel.setVisible(remoteVisible);
                     aiRemoteCombo.setVisible(remoteVisible);
                     
-                    
-                    groupLinks.setVisible(remoteVisible);
+                    groupLinks.setVisible(true);
+                    groupLinks.setEnabled(aiMode != AiMode.LOCAL);
                     
                     groupMode.layout(true, true);
                     groupLinks.layout(true, true);
@@ -162,17 +169,21 @@ public class LLMSettingsPage extends AWizardPage {
         });
 
         new Label(groupLinks, SWT.NONE).setText("LLM Model:");
-        modelText = new Text(groupLinks, SWT.BORDER);
-        modelText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        modelText.setText("gpt-4o");
+        modelCombo = new Combo(groupLinks, SWT.DROP_DOWN | SWT.READ_ONLY);
+        modelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        modelDecorator = new ControlDecoration(modelText, SWT.TOP | SWT.LEFT);
+        modelDecorator = new ControlDecoration(modelCombo, SWT.TOP | SWT.LEFT);
         modelDecorator.setImage(FieldDecorationRegistry.getDefault()
                 .getFieldDecoration(FieldDecorationRegistry.DEC_WARNING).getImage());
         modelDecorator.setDescriptionText("Model name is required. Use 'Setup LLM...' link to configure.");
         modelDecorator.setShowOnlyOnFocus(false);
 
-        modelText.addModifyListener(e -> validateModel());
+        modelCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                validateModel();
+            }
+        });
 
         new Label(groupLinks, SWT.NONE).setText("Temperature:");
         tempText = new Text(groupLinks, SWT.BORDER);
@@ -190,7 +201,7 @@ public class LLMSettingsPage extends AWizardPage {
                 SetupOllamaModelWizard wizard = new SetupOllamaModelWizard(tempOrch);
                 WizardDialog dialog = new WizardDialog(getShell(), wizard);
                 if (dialog.open() == WizardDialog.OK) {
-                    modelText.setText(tempOrch.getOllama().getModel());
+                    setModelComboText(tempOrch.getOllama().getModel());
                 }
             }
         });
@@ -209,7 +220,7 @@ public class LLMSettingsPage extends AWizardPage {
                 SetupLLMWizard wizard = new SetupLLMWizard(tempOrch);
                 WizardDialog dialog = new WizardDialog(getShell(), wizard);
                 if (dialog.open() == WizardDialog.OK) {
-                    modelText.setText(tempOrch.getLlm().getModel());
+                    setModelComboText(tempOrch.getLlm().getModel());
                     tempText.setText(String.valueOf(tempOrch.getLlm().getTemperature()));
                 }
             }
@@ -225,23 +236,48 @@ public class LLMSettingsPage extends AWizardPage {
     @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
-        if (visible && orchestrator != null && orchestrator.getOllama() != null) {
-            String ollamaModel = orchestrator.getOllama().getModel();
-            if (ollamaModel != null && !ollamaModel.isEmpty() && (modelText.getText().equals("gpt-4o") || modelText.getText().isEmpty())) {
-                modelText.setText(ollamaModel);
+        if (visible && orchestrator != null) {
+            if (modelCombo.getItemCount() == 0) {
+                AiMode aiMode = orchestrator.getAiMode();
+                java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLlmModels(orchestrator, aiMode);
+                for (String m : models) {
+                    modelCombo.add(m);
+                }
+            }
+
+            if (orchestrator.getOllama() != null) {
+                String ollamaModel = orchestrator.getOllama().getModel();
+                if (ollamaModel != null && !ollamaModel.isEmpty() && (modelCombo.getText().equals("gpt-4o") || modelCombo.getText().isEmpty())) {
+                    setModelComboText(ollamaModel);
+                }
+            }
+
+            if (modelCombo.getText().isEmpty()) {
+                setModelComboText("gpt-4o");
             }
         }
     }
 
+    private void setModelComboText(String model) {
+        if (model == null || model.isEmpty()) return;
+        int index = modelCombo.indexOf(model);
+        if (index == -1) {
+            modelCombo.add(model);
+            index = modelCombo.indexOf(model);
+        }
+        modelCombo.select(index);
+        validateModel();
+    }
+
     private void validateModel() {
-        if (modelText.getText().isEmpty()) {
+        if (modelCombo.getText().isEmpty()) {
             modelDecorator.show();
         } else {
             modelDecorator.hide();
         }
     }
 
-    public String getLlmModel() { return modelText.getText(); }
+    public String getLlmModel() { return modelCombo.getText(); }
     public String getTemperature() { return tempText.getText(); }
     public boolean isSkipped() { return skipCheck.getSelection(); }
 }
