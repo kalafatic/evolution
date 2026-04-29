@@ -183,9 +183,10 @@ public class MultiPageEditor extends MultiPageEditorPart {
         ProjectModelManager modelManager = ProjectModelManager.getInstance();
         IEditorInput input = getEditorInput();
         if (input instanceof IFileEditorInput) {
-            setPartName(((IFileEditorInput) input).getFile().getProject().getName());
+            IFile file = ((IFileEditorInput) input).getFile();
+            setPartName(file.getProject().getName());
             try {
-                orchestrator = modelManager.loadOrchestrator(((IFileEditorInput) input).getFile());
+                orchestrator = modelManager.loadOrchestrator(file);
                 if (orchestrator != null) {
                     resource = orchestrator.eResource();
                 }

@@ -213,17 +213,13 @@ public class OllamaSettingsPage extends AWizardPage {
 	}
 
 	private Combo selectModel(Composite parent) {
-		List<OllamaModel> models = loadModels(); // Load models to populate the combo
+		List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLlmModels(orchestrator, eu.kalafatic.evolution.model.orchestration.AiMode.LOCAL);
 		
 		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);	
 		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		
 		if (models != null) {
-			Set<String> uniqueModels = new LinkedHashSet<>();
-		    for (OllamaModel f : models) {
-			uniqueModels.add(f.getName());
-		    }
-		    for (String name : uniqueModels) {
+		    for (String name : models) {
 			combo.add(name);
 		    }
 		}

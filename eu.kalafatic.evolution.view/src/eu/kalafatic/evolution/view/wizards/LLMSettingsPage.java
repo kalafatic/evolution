@@ -133,6 +133,20 @@ public class LLMSettingsPage extends AWizardPage {
                 if (orchestrator != null) {
                 	AiMode aiMode = AiMode.get(aiModeCombo.getSelectionIndex());
                     orchestrator.setAiMode(aiMode);
+
+                    // Update models based on mode
+                    java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLlmModels(orchestrator, aiMode);
+                    String current = modelText.getText();
+                    modelText.setText(""); // clear
+                    for (String m : models) {
+                        if (m.equals(current)) {
+                            modelText.setText(m);
+                            break;
+                        }
+                    }
+                    if (modelText.getText().isEmpty() && !models.isEmpty()) {
+                        modelText.setText(models.get(0));
+                    }
                             
                     boolean remoteVisible = aiMode == AiMode.HYBRID || aiMode == AiMode.REMOTE;
                     remoteLabel.setVisible(remoteVisible);
