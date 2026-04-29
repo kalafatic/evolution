@@ -179,18 +179,24 @@ public class AiChatPage extends AEvoPage {
 
 		Runnable timer = new Runnable() {
 			public void run() {
-				if (!content.isDisposed()) {
-					String id = orchestrator != null ? orchestrator.getId() : null;
-					if (id != null) {
-						double progress = OrchestrationStatusManager.getInstance().getProgress(id);
-						String status = OrchestrationStatusManager.getInstance().getStatus(id);
-						systemStatusGroup.updateProgress(status, (int) (progress * 100));
+				Display.getDefault().asyncExec(() -> {
+					if (!content.isDisposed()) {
+						String id = orchestrator != null ? orchestrator.getId() : null;
+						if (id != null) {
+							double progress = OrchestrationStatusManager.getInstance().getProgress(id);
+							String status = OrchestrationStatusManager.getInstance().getStatus(id);
+							systemStatusGroup.updateProgress(status, (int) (progress * 100));
+						}
+						Display.getDefault().timerExec(500, this);
 					}
-					Display.getDefault().timerExec(500, this);
-				}
+				});
 			}
 		};
-		Display.getDefault().timerExec(500, timer);
+		Display.getDefault().asyncExec(() -> {
+			if (!content.isDisposed()) {
+				Display.getDefault().timerExec(500, timer);
+			}
+		});
 
 		updateStatusInfo();
 		updateModeDisplay();

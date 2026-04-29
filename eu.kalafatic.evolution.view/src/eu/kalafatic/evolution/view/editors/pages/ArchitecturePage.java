@@ -66,8 +66,11 @@ public class ArchitecturePage extends Composite {
     }
 
     private void scheduleRefresh() {
-        Display.getDefault().timerExec(-1, refreshRunnable); // Cancel previous
-        Display.getDefault().timerExec(500, refreshRunnable); // Debounce
+        Display.getDefault().asyncExec(() -> {
+            if (isDisposed()) return;
+            Display.getDefault().timerExec(-1, refreshRunnable); // Cancel previous
+            Display.getDefault().timerExec(500, refreshRunnable); // Debounce
+        });
     }
 
     private void createControlPanel() {

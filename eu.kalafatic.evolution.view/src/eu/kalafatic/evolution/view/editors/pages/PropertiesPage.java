@@ -80,13 +80,19 @@ public class PropertiesPage extends AEvoPage {
 		});
 		Runnable timer = new Runnable() {
 			@Override public void run() {
-				if (!statusCanvas.isDisposed()) {
-					statusCanvas.redraw();
-					Display.getDefault().timerExec(1000, this);
-				}
+				Display.getDefault().asyncExec(() -> {
+					if (!statusCanvas.isDisposed()) {
+						statusCanvas.redraw();
+						Display.getDefault().timerExec(1000, this);
+					}
+				});
 			}
 		};
-		Display.getDefault().timerExec(1000, timer);
+		Display.getDefault().asyncExec(() -> {
+			if (!statusCanvas.isDisposed()) {
+				Display.getDefault().timerExec(1000, timer);
+			}
+		});
 
 		orchestratorGroup = new OrchestratorGroup(toolkit, comp, editor, orchestrator);
 		llmSettingsGroup = new LlmSettingsGroup(toolkit, comp, editor, orchestrator);

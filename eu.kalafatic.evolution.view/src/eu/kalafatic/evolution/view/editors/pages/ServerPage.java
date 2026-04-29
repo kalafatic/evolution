@@ -119,13 +119,18 @@ public class ServerPage extends AEvoPage {
     }
 
     private void startTimer() {
-        Display.getDefault().timerExec(5000, new Runnable() {
-            @Override
-            public void run() {
-                if (isDisposed()) return;
-                pollServerStatus();
-                Display.getDefault().timerExec(5000, this);
-            }
+        Display.getDefault().asyncExec(() -> {
+            if (isDisposed()) return;
+            Display.getDefault().timerExec(5000, new Runnable() {
+                @Override
+                public void run() {
+                    Display.getDefault().asyncExec(() -> {
+                        if (isDisposed()) return;
+                        pollServerStatus();
+                        Display.getDefault().timerExec(5000, this);
+                    });
+                }
+            });
         });
     }
 
