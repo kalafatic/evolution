@@ -272,6 +272,9 @@ public class IterationManager {
         String goal = context.getOrchestrator().getSelfDevSession() != null ?
                      context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
 
+        // Ensure we have at least one commit so we can branch
+        gitManager.ensureInitialCommit();
+
         String originalBranch = gitManager.getCurrentBranch();
         String snapshotBranch = "snapshot/" + iteration.getId() + "-" + System.currentTimeMillis();
 

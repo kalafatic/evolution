@@ -24,15 +24,30 @@ public class JsonUtils {
         // Strip <think> blocks
         text = text.replaceAll("(?is)<think>.*?</think>", "");
 
-        int start = text.indexOf("{");
-        int end = text.lastIndexOf("}");
+        int firstStart = text.indexOf("{");
+        int lastEnd = text.lastIndexOf("}");
 
-        if (start != -1 && end != -1 && end > start) {
-            String jsonPart = text.substring(start, end + 1);
-            try {
-                return new JSONObject(jsonPart);
-            } catch (JSONException e) {
-                return null;
+        if (firstStart == -1 || lastEnd == -1 || lastEnd <= firstStart) {
+            return null;
+        }
+
+        // Try simple extraction first (greedy)
+        String fullPart = text.substring(firstStart, lastEnd + 1);
+        try {
+            return new JSONObject(fullPart);
+        } catch (JSONException e) {
+            // Greedy failed, likely multiple objects. Attempt to find the first valid one.
+            int searchPos = firstStart;
+            while (searchPos < lastEnd) {
+                int end = text.indexOf("}", searchPos);
+                if (end == -1) break;
+
+                String candidate = text.substring(firstStart, end + 1);
+                try {
+                    return new JSONObject(candidate);
+                } catch (JSONException ex) {
+                    searchPos = end + 1;
+                }
             }
         }
         return null;
