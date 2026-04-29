@@ -11,6 +11,7 @@ import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.controller.log.LoggingService;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
 import eu.kalafatic.evolution.controller.agents.ArchitectAgent;
+import eu.kalafatic.evolution.controller.agents.ConstraintAgent;
 import eu.kalafatic.evolution.controller.agents.FinalResponseAgent;
 import eu.kalafatic.evolution.controller.agents.FileAgent;
 import eu.kalafatic.evolution.controller.agents.GeneralAgent;
@@ -48,6 +49,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     private AnalyticAgent analyticAgent = new AnalyticAgent();
     private PlannerAgent planner = new PlannerAgent();
     private ReviewerAgent reviewer = new ReviewerAgent();
+    private ConstraintAgent constraintAgent = new ConstraintAgent();
     private RepairAgent repairAgent = new RepairAgent();
     private ProposalConsolidatorAgent consolidator = new ProposalConsolidatorAgent();
     private FinalResponseAgent finalResponseAgent = new FinalResponseAgent();
@@ -70,6 +72,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
         availableAgents.add(new QualityAgent());
         availableAgents.add(new ObservabilityAgent());
         availableAgents.add(repairAgent);
+        availableAgents.add(constraintAgent);
     }
 
     @Override
@@ -491,11 +494,22 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
                 }
 
-                // 3. VERIFY: ReviewerAgent evaluates the result
+                // 3. VERIFY: ReviewerAgent and ConstraintAgent evaluate the result
                 task.setStatus(TaskStatus.VERIFYING);
                 context.setCurrentPhase("VERIFY");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 3 - Verifying...");
+
                 JSONObject evaluation = reviewer.evaluate(result, task.getName(), context);
+
+                // Architectural Guardrail
+                if (evaluation.optBoolean("success", false)) {
+                    JSONObject constraintEval = constraintAgent.evaluate(result, task.getName(), context);
+                    if (!constraintEval.optBoolean("success", false)) {
+                        context.log("Evo-Orchestrator-" + task.getName() + ": Architectural violation detected by ConstraintAgent.");
+                        evaluation = constraintEval; // Override with constraint failure
+                    }
+                }
+
                 logger.debug(context, "Evaluation result", evaluation.toString());
 
                 if (evaluation.optBoolean("success", false)) {
