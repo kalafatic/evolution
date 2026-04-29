@@ -306,7 +306,9 @@ public class ProjectModelManager {
      */
     public List<String> getLlmModels(Orchestrator orchestrator, AiMode mode) {
         List<String> models = new ArrayList<>();
-        if (mode == AiMode.LOCAL || mode == AiMode.HYBRID) {
+        if (mode == null) return models;
+
+        if (mode.getValue() == AiMode.LOCAL_VALUE || mode.getValue() == AiMode.HYBRID_VALUE) {
             String ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
             OllamaService ollama = new OllamaService(ollamaUrl, null);
             try {
@@ -318,7 +320,7 @@ public class ProjectModelManager {
             }
         }
 
-        if (mode == AiMode.REMOTE || mode == AiMode.HYBRID) {
+        if (mode.getValue() == AiMode.REMOTE_VALUE || mode.getValue() == AiMode.HYBRID_VALUE) {
             // Placeholder for remote models (e.g. OpenAI, Gemini)
             // In a real implementation, we would fetch these from the respective providers
             models.add("gpt-4o");
