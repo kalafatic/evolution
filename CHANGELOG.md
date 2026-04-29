@@ -37,3 +37,12 @@
     - **Routing**: Refactored `LlmRouter` to use local models as 'Context Builders' and cloud LLMs as 'Reasoners' in HYBRID mode.
     - **Documentation**: Updated `architecture.md` and `PROJECT_SPECIFICATION.md` to reflect the new technical design.
 - **Traceability**: `iterations/18/plan.json`
+
+## [Iteration 19] - Resilient Routing and Repair Agent
+- **Goal**: Improve platform robustness through offline fallback and specialized error recovery.
+- **Changes**:
+    - **Routing**: Implemented automatic fallback to `LOCAL` mode in `LlmRouter` when `REMOTE` or `HYBRID` requests fail.
+    - **Agents**: Created `RepairAgent` specialized in analyzing build logs and providing surgical fixes.
+    - **Orchestration**: Integrated `RepairAgent` into the `EvolutionOrchestrator` PEV loop to handle technical failures (Maven, Shell, File).
+    - **Documentation**: Created `docs/IMPROVEMENTS_ANALYSIS.md` with detailed architectural analysis and roadmap.
+- **Traceability**: `iterations/19/plan.json`

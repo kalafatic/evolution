@@ -34,22 +34,32 @@ public class LlmRouter {
         AiMode mode = orchestrator.getAiMode();
         if (context != null) context.log("LlmRouter: Routing request in " + mode + " mode.");
 
-        if (mode == AiMode.REMOTE) {
-            return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
-        } else if (mode == AiMode.HYBRID) {
-            // HYBRID: Local Context Builder + Cloud Reasoner
-            if (context != null) context.log("LlmRouter-Hybrid: Step 1 - Building system context locally...");
-            // 1. Build context using local model (scans files, gathers state)
-            String augmentedPrompt = buildContextLocally(orchestrator, prompt, temperature, proxyUrl, context);
+        try {
+            if (mode == AiMode.REMOTE) {
+                return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            } else if (mode == AiMode.HYBRID) {
+                // HYBRID: Local Context Builder + Cloud Reasoner
+                if (context != null) context.log("LlmRouter-Hybrid: Step 1 - Building system context locally...");
+                // 1. Build context using local model (scans files, gathers state)
+                String augmentedPrompt = buildContextLocally(orchestrator, prompt, temperature, proxyUrl, context);
 
-            if (context != null) context.log("LlmRouter-Hybrid: Step 2 - Executing cloud reasoning...");
-            // 2. Execute reasoning using cloud model
-            String remoteResponse = sendRemoteRequest(orchestrator, augmentedPrompt, temperature, proxyUrl, context);
+                if (context != null) context.log("LlmRouter-Hybrid: Step 2 - Executing cloud reasoning...");
+                // 2. Execute reasoning using cloud model
+                String remoteResponse = sendRemoteRequest(orchestrator, augmentedPrompt, temperature, proxyUrl, context);
 
-            if (context != null) context.log("LlmRouter-Hybrid: Step 3 - Verifying response locally...");
-            // 3. Optional: Verify/Sanitize response locally
-            return verifyResponseLocally(orchestrator, remoteResponse, temperature, proxyUrl, context);
-        } else {
+                if (context != null) context.log("LlmRouter-Hybrid: Step 3 - Verifying response locally...");
+                // 3. Optional: Verify/Sanitize response locally
+                return verifyResponseLocally(orchestrator, remoteResponse, temperature, proxyUrl, context);
+            }
+        } catch (Exception e) {
+            if (context != null) {
+                context.log("LlmRouter-Fallback: Remote/Hybrid request failed: " + e.getMessage());
+                context.log("LlmRouter-Fallback: Attempting automatic fallback to LOCAL mode...");
+            }
+            // Fallback to local mode logic below
+        }
+
+        {
             // LOCAL, ollama+selected local model
             String model = orchestrator.getLocalModel();
             if (model != null && !model.isEmpty()) {

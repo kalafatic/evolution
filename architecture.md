@@ -14,7 +14,8 @@ Every prompt/iteration follows this cycle:
 
 ## 3. System Blueprint
 - **Orchestration**: `EvolutionOrchestrator` implements a strict **Plan–Execute–Verify (PEV)** loop for every task.
-- **Routing**: `LlmRouter` uses a **Hybrid Context Builder** approach (Local Ollama gathers repository context, Cloud LLM handles reasoning/coding).
+- **Routing**: `LlmRouter` uses a **Hybrid Context Builder** approach with **Automatic Local Fallback**. If remote providers fail, the system degrades gracefully to local Ollama.
+- **Repair Loop**: Specialized `RepairAgent` for build and technical failure recovery during the PEV loop.
 - **Self-Dev Supervisor**: `SelfDevSupervisor` coordinates the iterative cycles, branch management, and automatic rollbacks.
 - **Traceability**: Strict enforcement of `@evo` markers in code and `plan.json` in `iterations/<id>/`.
 - **UI**: Multi-page editor in Eclipse with specialized tabs for Chat, Approval, and Flow visualization.
@@ -22,4 +23,5 @@ Every prompt/iteration follows this cycle:
 ## 4. Key Constraints
 - **Fail-Fast**: Any validation error (missing markers, unplanned files) terminates the build immediately.
 - **Atomic Changes**: Prefer many small, successful iterations over one large, complex change.
+- **Resilience**: The system must prefer local execution (degraded mode) over total failure when remote LLMs are unavailable.
 - **Traceability**: All self-developed code MUST be traceable back to an iteration and a reason.

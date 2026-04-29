@@ -22,6 +22,7 @@ import eu.kalafatic.evolution.controller.agents.ObservabilityAgent;
 import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent;
 import eu.kalafatic.evolution.controller.agents.QualityAgent;
+import eu.kalafatic.evolution.controller.agents.RepairAgent;
 import eu.kalafatic.evolution.controller.agents.ReviewerAgent;
 import eu.kalafatic.evolution.controller.agents.StructureAgent;
 import eu.kalafatic.evolution.controller.agents.TerminalAgent;
@@ -47,6 +48,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     private AnalyticAgent analyticAgent = new AnalyticAgent();
     private PlannerAgent planner = new PlannerAgent();
     private ReviewerAgent reviewer = new ReviewerAgent();
+    private RepairAgent repairAgent = new RepairAgent();
     private ProposalConsolidatorAgent consolidator = new ProposalConsolidatorAgent();
     private FinalResponseAgent finalResponseAgent = new FinalResponseAgent();
     private final List<IAgent> availableAgents = new ArrayList<>();
@@ -67,6 +69,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
         availableAgents.add(new WebSearchAgent());
         availableAgents.add(new QualityAgent());
         availableAgents.add(new ObservabilityAgent());
+        availableAgents.add(repairAgent);
     }
 
     @Override
@@ -411,9 +414,16 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 1 - Planning...");
 
                 String mutationStrategy = "initial";
+                IAgent currentAgent = agent;
+
                 if (lastFeedback != null) {
-                    if (lastFeedback.toLowerCase().contains("exception") || lastFeedback.toLowerCase().contains("error")) {
+                    if (lastFeedback.toLowerCase().contains("exception") || lastFeedback.toLowerCase().contains("error") || lastFeedback.toLowerCase().contains("fail")) {
                         mutationStrategy = "Syntactic fix (Self-Correction)";
+                        // If it's a technical failure, use RepairAgent for the next attempt
+                        if (task.getType().equalsIgnoreCase("maven") || task.getType().equalsIgnoreCase("shell") || task.getType().equalsIgnoreCase("file")) {
+                            currentAgent = repairAgent;
+                            context.log("Evo-Orchestrator-Darwin: Technical failure detected. Engaging RepairAgent.");
+                        }
                     } else if (lastFeedback.toLowerCase().contains("test") || lastFeedback.toLowerCase().contains("verify")) {
                         mutationStrategy = "Logic fix (Behavioral-Correction)";
                     } else {
@@ -424,7 +434,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 String planInstruction = "Create a structured JSON plan with: 'steps' (array), 'targetFiles' (array), 'strategy' (string), and optional 'implementation' (string - the actual code if known). " +
                         "Mutation Strategy: " + mutationStrategy + ". Feedback: " + (lastFeedback != null ? lastFeedback : "none");
 
-                String localPlan = agent.process(task.getDescription() + "\nGOAL: " + task.getGoal() + "\nINSTRUCTION: " + planInstruction, context, lastFeedback);
+                String localPlan = currentAgent.process(task.getDescription() + "\nGOAL: " + task.getGoal() + "\nINSTRUCTION: " + planInstruction, context, lastFeedback);
                 task.setPlan(localPlan);
                 logger.debug(context, "Generated plan", localPlan);
 
