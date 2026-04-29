@@ -131,11 +131,7 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
         String ext = file.getFileExtension();
         if ("xml".equals(ext) || "evo".equals(ext)) {
             try {
-                URI uri = URI.createPlatformResourceURI(file.getFullPath().toString(), true);
-                Resource resource = resourceSet.getResource(uri, true);
-                if (!resource.getContents().isEmpty() && resource.getContents().get(0) instanceof EvoProject) {
-                    return (EvoProject) resource.getContents().get(0);
-                }
+                return eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().loadProject(file);
             } catch (Exception e) {
                 // Ignore
             }

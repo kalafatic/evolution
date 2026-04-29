@@ -55,30 +55,62 @@ public class ProjectModelManager {
         return resourceSet;
     }
 
-    public EvoProject loadProject(IFile file) throws IOException {
-        URI uri = URI.createPlatformResourceURI(file.getFullPath().toString(), true);
+    /**
+     * Loads a model from the specified URI.
+     * Supports both local and remote URIs.
+     *
+     * @param uri The URI of the model to load.
+     * @return The root EObject of the loaded model.
+     * @throws IOException If the model could not be loaded.
+     */
+    public org.eclipse.emf.ecore.EObject loadModel(URI uri) throws IOException {
         Resource resource = resourceSet.getResource(uri, true);
         if (resource != null && !resource.getContents().isEmpty()) {
-            Object root = resource.getContents().get(0);
-            if (root instanceof EvoProject) {
-                return (EvoProject) root;
-            }
+            return resource.getContents().get(0);
+        }
+        return null;
+    }
+
+    /**
+     * Loads a model from the specified workspace file.
+     *
+     * @param file The workspace file.
+     * @return The root EObject of the loaded model.
+     * @throws IOException If the model could not be loaded.
+     */
+    public org.eclipse.emf.ecore.EObject loadModel(IFile file) throws IOException {
+        URI uri = URI.createPlatformResourceURI(file.getFullPath().toString(), true);
+        return loadModel(uri);
+    }
+
+    /**
+     * Loads a model from the specified URI string.
+     *
+     * @param uriString The URI string (local or remote).
+     * @return The root EObject of the loaded model.
+     * @throws IOException If the model could not be loaded.
+     */
+    public org.eclipse.emf.ecore.EObject loadModel(String uriString) throws IOException {
+        URI uri = URI.createURI(uriString);
+        return loadModel(uri);
+    }
+
+    public EvoProject loadProject(IFile file) throws IOException {
+        org.eclipse.emf.ecore.EObject root = loadModel(file);
+        if (root instanceof EvoProject) {
+            return (EvoProject) root;
         }
         return null;
     }
 
     public Orchestrator loadOrchestrator(IFile file) throws IOException {
-        URI uri = URI.createPlatformResourceURI(file.getFullPath().toString(), true);
-        Resource resource = resourceSet.getResource(uri, true);
-        if (resource != null && !resource.getContents().isEmpty()) {
-            Object root = resource.getContents().get(0);
-            if (root instanceof Orchestrator) {
-                return (Orchestrator) root;
-            } else if (root instanceof EvoProject) {
-                EvoProject project = (EvoProject) root;
-                if (!project.getOrchestrations().isEmpty()) {
-                    return project.getOrchestrations().get(0);
-                }
+        org.eclipse.emf.ecore.EObject root = loadModel(file);
+        if (root instanceof Orchestrator) {
+            return (Orchestrator) root;
+        } else if (root instanceof EvoProject) {
+            EvoProject project = (EvoProject) root;
+            if (!project.getOrchestrations().isEmpty()) {
+                return project.getOrchestrations().get(0);
             }
         }
         return null;
