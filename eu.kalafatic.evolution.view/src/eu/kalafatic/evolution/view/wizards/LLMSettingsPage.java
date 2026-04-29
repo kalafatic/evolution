@@ -110,24 +110,12 @@ public class LLMSettingsPage extends AWizardPage {
             }
         });
 
-        if (orchestrator != null) {
-            aiModeCombo.select(orchestrator.getAiMode().getValue());
-            String remoteModel = orchestrator.getRemoteModel();
-
-            if (remoteModel != null) {
-                int index = aiRemoteCombo.indexOf(remoteModel);
-                if (index >= 0) aiRemoteCombo.select(index);
-            }
-            boolean remoteVisible = orchestrator.getAiMode() == AiMode.HYBRID || orchestrator.getAiMode() == AiMode.REMOTE;
-            remoteLabel.setVisible(remoteVisible);
-            aiRemoteCombo.setVisible(remoteVisible);
-        } else {
-            aiModeCombo.select(0);
-            remoteLabel.setVisible(false);
-            aiRemoteCombo.setVisible(false);
-        }
         final Group groupLinks = SWTFactory.createGroup(container, "Setup", 2);
         
+        new Label(groupLinks, SWT.NONE).setText("LLM Model:");
+        modelCombo = new Combo(groupLinks, SWT.DROP_DOWN | SWT.READ_ONLY);
+        modelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -155,22 +143,49 @@ public class LLMSettingsPage extends AWizardPage {
                         modelCombo.select(0);
                     }
                             
-                    boolean remoteVisible = aiMode == AiMode.HYBRID || aiMode == AiMode.REMOTE;
+                    boolean remoteVisible = aiMode != null && (aiMode.getValue() == AiMode.HYBRID_VALUE || aiMode.getValue() == AiMode.REMOTE_VALUE);
                     remoteLabel.setVisible(remoteVisible);
                     aiRemoteCombo.setVisible(remoteVisible);
                     
                     groupLinks.setVisible(true);
-                    groupLinks.setEnabled(aiMode != AiMode.LOCAL);
+                    groupLinks.setEnabled(aiMode != null && aiMode.getValue() != AiMode.LOCAL_VALUE);
                     
                     groupMode.layout(true, true);
                     groupLinks.layout(true, true);
+                    container.layout(true, true);
                 }
             }
         });
 
-        new Label(groupLinks, SWT.NONE).setText("LLM Model:");
-        modelCombo = new Combo(groupLinks, SWT.DROP_DOWN | SWT.READ_ONLY);
-        modelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        if (orchestrator != null) {
+            aiModeCombo.select(orchestrator.getAiMode().getValue());
+            String remoteModel = orchestrator.getRemoteModel();
+
+            if (remoteModel != null) {
+                int index = aiRemoteCombo.indexOf(remoteModel);
+                if (index >= 0) aiRemoteCombo.select(index);
+            }
+
+            AiMode aiMode = orchestrator.getAiMode();
+            boolean remoteVisible = aiMode.getValue() == AiMode.HYBRID_VALUE || aiMode.getValue() == AiMode.REMOTE_VALUE;
+            remoteLabel.setVisible(remoteVisible);
+            aiRemoteCombo.setVisible(remoteVisible);
+
+            // Initial population of model combo
+            java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLlmModels(orchestrator, aiMode);
+            for (String m : models) {
+                modelCombo.add(m);
+            }
+            if (modelCombo.getItemCount() > 0) {
+                modelCombo.select(0);
+            }
+            groupLinks.setEnabled(aiMode.getValue() != AiMode.LOCAL_VALUE);
+        } else {
+            aiModeCombo.select(0);
+            remoteLabel.setVisible(false);
+            aiRemoteCombo.setVisible(false);
+            groupLinks.setEnabled(false);
+        }
 
         modelDecorator = new ControlDecoration(modelCombo, SWT.TOP | SWT.LEFT);
         modelDecorator.setImage(FieldDecorationRegistry.getDefault()
