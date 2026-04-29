@@ -67,6 +67,16 @@ public class GitManager {
         return shell.execute("git merge " + branchName, projectRoot, context);
     }
 
+    public String createWorktree(String branchName, String path) throws Exception {
+        context.log("[GIT] Creating worktree for branch " + branchName + " at " + path);
+        return shell.execute("git worktree add " + path + " " + branchName, projectRoot, context);
+    }
+
+    public String removeWorktree(String path) throws Exception {
+        context.log("[GIT] Removing worktree at " + path);
+        return shell.execute("git worktree remove --force " + path, projectRoot, context);
+    }
+
     public void forceCheckout(String branchName) throws Exception {
         context.log("[GIT] Force switching to branch: " + branchName);
         shell.execute("git checkout -f " + branchName, projectRoot, context);

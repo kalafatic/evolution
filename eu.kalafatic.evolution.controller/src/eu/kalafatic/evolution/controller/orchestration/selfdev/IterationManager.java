@@ -1,6 +1,12 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -19,6 +25,7 @@ import org.json.JSONObject;
  * @evo:16:A reason=darwin-proposal-logging
  */
 public class IterationManager {
+    private static final ExecutorService variantExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
     private final Iteration iteration;
     private final TaskContext context;
     private final GitManager gitManager;
@@ -131,109 +138,166 @@ public class IterationManager {
     }
 
     private BranchVariant evaluateVariantsInternal(List<BranchVariant> variants, TaskPlanner planner, Iteration iteration) throws Exception {
+        context.log("[DARWIN] Starting parallel evaluation of " + variants.size() + " variants.");
+
         String baseBranch = gitManager.getCurrentBranch();
+
+        // Create branches for all variants first (synchronously on main repo)
+        for (BranchVariant variant : variants) {
+            gitManager.createBranch(variant.getBranchName());
+            gitManager.forceCheckout(baseBranch); // Go back to original branch after creating variant branch
+        }
+
+        List<CompletableFuture<BranchVariant>> futures = variants.stream()
+            .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner), variantExecutor))
+            .collect(Collectors.toList());
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
         BranchVariant bestVariant = null;
         double bestScore = -1.0;
 
-        for (BranchVariant variant : variants) {
-            context.log("[DARWIN] Evaluating variant: " + variant.getStrategy() + " on branch " + variant.getBranchName());
-            try {
-                gitManager.createBranch(variant.getBranchName());
-
-                List<Task> tasks = planner.generateTasksFromVariant(context, variant);
-                if (tasks.isEmpty()) {
-                    context.log("[DARWIN] No tasks for variant " + variant.getBranchName());
-                    variant.setScore(0.0);
-                } else {
-                    boolean success = executor.executeTasks(tasks);
-
-                    // Capture changed files
-                    List<String> changed = tasks.stream()
-                        .filter(t -> "file".equalsIgnoreCase(t.getType()))
-                        .map(Task::getResultSummary)
-                        .filter(path -> path != null && !path.isEmpty())
-                        .distinct()
-                        .collect(Collectors.toList());
-                    variant.setChangedFiles(changed);
-
-                    // Safety Check for SELF_DEV_MODE
-                    if (context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
-                        for (Task t : tasks) {
-                            if ("file".equalsIgnoreCase(t.getType())) {
-                                String taskName = t.getName().toLowerCase();
-                                // Block build config changes unless allowSelfModify is explicitly true (it is for SELF_DEV by default)
-                                if (taskName.contains("pom.xml") && !context.getPlatformMode().isAllowSelfModify()) {
-                                    context.log("[DARWIN] Safety: blocked modification of build config in self-dev mode.");
-                                    throw new Exception("Safety Violation: Self-modification of build config is restricted.");
-                                }
-
-                                // Enforcement of allowed directories/modules
-                                List<String> allowedPaths = context.getPlatformMode().getAllowedPaths();
-                                if (allowedPaths != null && !allowedPaths.isEmpty()) {
-                                    boolean isPathAllowed = false;
-                                    for (String allowed : allowedPaths) {
-                                        if (taskName.contains(allowed.toLowerCase())) {
-                                            isPathAllowed = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!isPathAllowed) {
-                                        context.log("[DARWIN] Safety: Blocked modification outside allowed directories. Task: " + t.getName());
-                                        throw new Exception("Safety Violation: Modification of path outside allowed directories is restricted in SELF_DEV mode.");
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // CRITICAL: Commit changes to the variant branch so they are not lost
-                    if (success) {
-                        try {
-                            gitManager.commit("Darwin Variant Strategy: " + variant.getStrategy());
-                        } catch (Exception e) {
-                            context.log("[DARWIN] Commit warning (expected in some tests): " + e.getMessage());
-                        }
-                    }
-
-                    EvaluationResult result = evaluator.evaluate();
-
-                    variant.setSuccess(result.isSuccess());
-                    if (!result.isSuccess()) {
-                        variant.setErrorMessage(result.getErrors().toString());
-                    }
-
-                    // ENHANCED SCORING GRADIENT
-                    final double WEIGHT_BUILD = 0.2;
-                    final double WEIGHT_TESTS = 0.5;
-                    final double WEIGHT_COVERAGE = 0.1;
-                    final double WEIGHT_SATISFACTION = 0.2;
-                    final double SCORE_FALLBACK = 0.7;
-
-                    double score = 0.0;
-                    if (result.isSuccess()) score += WEIGHT_BUILD;
-                    score += (result.getTestPassRate() * WEIGHT_TESTS);
-                    score += (Math.max(0, result.getCoverageChange()) * WEIGHT_COVERAGE);
-                    score += (result.getUserSatisfaction() / 10.0 * WEIGHT_SATISFACTION);
-
-                    // Fallback for tests that don't mock complex fields but expect success = high score
-                    if (score == 0 && result.isSuccess()) score = SCORE_FALLBACK;
-
-                    variant.setScore(score);
-
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestVariant = variant;
-                    }
-                }
-            } catch (Exception e) {
-                context.log("[DARWIN] Error evaluating variant " + variant.getBranchName() + ": " + e.getMessage());
-                variant.setScore(0.0);
-            } finally {
-                gitManager.forceCheckout(baseBranch);
+        for (CompletableFuture<BranchVariant> future : futures) {
+            BranchVariant variant = future.join();
+            if (variant.getScore() > bestScore) {
+                bestScore = variant.getScore();
+                bestVariant = variant;
             }
         }
 
         return bestVariant;
+    }
+
+    private BranchVariant evaluateVariantParallel(BranchVariant variant, TaskPlanner planner) {
+        File tempDir = null;
+        try {
+            tempDir = Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
+            context.log("[DARWIN] Evaluating variant: " + variant.getStrategy() + " in parallel worktree: " + tempDir.getAbsolutePath());
+
+            gitManager.createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
+
+            TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
+            variantContext.setThreadId(context.getThreadId() + "-variant-" + variant.getId());
+            variantContext.setAutoApprove(true); // Always auto-approve in parallel variant evaluation
+
+            TaskExecutor variantExecutor = new TaskExecutor(variantContext);
+            Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
+
+            List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
+            if (tasks.isEmpty()) {
+                context.log("[DARWIN] No tasks for variant " + variant.getId());
+                variant.setScore(0.0);
+                return variant;
+            }
+
+            boolean success = variantExecutor.executeTasks(tasks);
+
+            // Capture changed files
+            List<String> changed = tasks.stream()
+                .filter(t -> "file".equalsIgnoreCase(t.getType()))
+                .map(Task::getResultSummary)
+                .filter(path -> path != null && !path.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+            variant.setChangedFiles(changed);
+
+            // Safety Check for SELF_DEV_MODE
+            checkSafety(tasks);
+
+            // Commit in worktree if success
+            if (success) {
+                try {
+                    GitManager variantGit = new GitManager(tempDir, variantContext);
+                    variantGit.commit("Darwin Variant Strategy: " + variant.getStrategy());
+                } catch (Exception e) {
+                    context.log("[DARWIN] Commit warning in worktree: " + e.getMessage());
+                }
+            }
+
+            EvaluationResult result = variantEvaluator.evaluate();
+            variant.setSuccess(result.isSuccess());
+            if (!result.isSuccess()) {
+                variant.setErrorMessage(result.getErrors().toString());
+            }
+
+            variant.setScore(calculateScore(result));
+
+            return variant;
+        } catch (Exception e) {
+            context.log("[DARWIN] Error evaluating variant " + variant.getBranchName() + " in parallel: " + e.getMessage());
+            variant.setScore(0.0);
+            variant.setErrorMessage(e.getMessage());
+            return variant;
+        } finally {
+            if (tempDir != null) {
+                try {
+                    gitManager.removeWorktree(tempDir.getAbsolutePath());
+                    deleteDirectory(tempDir);
+                } catch (Exception e) {
+                    context.log("[DARWIN] Cleanup warning for worktree " + tempDir.getAbsolutePath() + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void checkSafety(List<Task> tasks) throws Exception {
+        if (context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
+            for (Task t : tasks) {
+                if ("file".equalsIgnoreCase(t.getType())) {
+                    String taskName = t.getName().toLowerCase();
+                    // Block build config changes unless allowSelfModify is explicitly true (it is for SELF_DEV by default)
+                    if (taskName.contains("pom.xml") && !context.getPlatformMode().isAllowSelfModify()) {
+                        context.log("[DARWIN] Safety: blocked modification of build config in self-dev mode.");
+                        throw new Exception("Safety Violation: Self-modification of build config is restricted.");
+                    }
+
+                    // Enforcement of allowed directories/modules
+                    List<String> allowedPaths = context.getPlatformMode().getAllowedPaths();
+                    if (allowedPaths != null && !allowedPaths.isEmpty()) {
+                        boolean isPathAllowed = false;
+                        for (String allowed : allowedPaths) {
+                            if (taskName.contains(allowed.toLowerCase())) {
+                                isPathAllowed = true;
+                                break;
+                            }
+                        }
+                        if (!isPathAllowed) {
+                            context.log("[DARWIN] Safety: Blocked modification outside allowed directories. Task: " + t.getName());
+                            throw new Exception("Safety Violation: Modification of path outside allowed directories is restricted in SELF_DEV mode.");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private double calculateScore(EvaluationResult result) {
+        // ENHANCED SCORING GRADIENT
+        final double WEIGHT_BUILD = 0.2;
+        final double WEIGHT_TESTS = 0.5;
+        final double WEIGHT_COVERAGE = 0.1;
+        final double WEIGHT_SATISFACTION = 0.2;
+        final double SCORE_FALLBACK = 0.7;
+
+        double score = 0.0;
+        if (result.isSuccess()) score += WEIGHT_BUILD;
+        score += (result.getTestPassRate() * WEIGHT_TESTS);
+        score += (Math.max(0, result.getCoverageChange()) * WEIGHT_COVERAGE);
+        score += (result.getUserSatisfaction() / 10.0 * WEIGHT_SATISFACTION);
+
+        // Fallback for tests that don't mock complex fields but expect success = high score
+        if (score == 0 && result.isSuccess()) score = SCORE_FALLBACK;
+        return score;
+    }
+
+    private void deleteDirectory(File directory) {
+        File[] allContents = directory.listFiles();
+        if (allContents != null) {
+            for (File file : allContents) {
+                deleteDirectory(file);
+            }
+        }
+        directory.delete();
     }
 
     private void logDarwinBranches(List<BranchVariant> variants) {
