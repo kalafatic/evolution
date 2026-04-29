@@ -29,13 +29,18 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.core.commands.operations.IUndoContext;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.ide.IDE;
+import org.eclipse.ui.ide.IGotoMarker;
 import org.eclipse.ui.part.MultiPageEditorPart;
+import org.eclipse.ui.texteditor.ITextEditor;
+import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
+import org.eclipse.ui.views.properties.IPropertySheetPage;
 
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -237,26 +242,28 @@ public class MultiPageEditor extends MultiPageEditorPart {
     @Override
     public void doSave(IProgressMonitor monitor) {
         SubMonitor subMonitor = SubMonitor.convert(monitor, "Saving", 100);
-        if (resource != null) {
-            try {
-                org.eclipse.ui.actions.WorkspaceModifyOperation operation = new org.eclipse.ui.actions.WorkspaceModifyOperation() {
-                    @Override
-                    protected void execute(IProgressMonitor monitor) throws org.eclipse.core.runtime.CoreException, java.lang.reflect.InvocationTargetException {
+        try {
+            org.eclipse.ui.actions.WorkspaceModifyOperation operation = new org.eclipse.ui.actions.WorkspaceModifyOperation() {
+                @Override
+                protected void execute(IProgressMonitor monitor) throws org.eclipse.core.runtime.CoreException {
+                    SubMonitor sub = SubMonitor.convert(monitor, 100);
+                    if (resource != null) {
                         try {
                             ProjectModelManager.getInstance().saveResource(resource);
+                            sub.worked(50);
                         } catch (IOException e) {
                             throw new org.eclipse.core.runtime.CoreException(new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", e.getMessage(), e));
                         }
                     }
-                };
-                operation.run(subMonitor.split( resource != null && textEditor != null ? 50 : 100));
-                setDirty(false);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        if (textEditor != null) {
-            textEditor.doSave(subMonitor.split( resource != null ? 50 : 100));
+                    if (textEditor != null) {
+                        textEditor.doSave(sub.split(50));
+                    }
+                }
+            };
+            operation.run(subMonitor);
+            setDirty(false);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -493,6 +500,32 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void gotoMarker(IMarker marker) {
         setActivePage(1);
         IDE.gotoMarker(textEditor, marker);
+    }
+
+    @Override
+    public <T> T getAdapter(Class<T> key) {
+        if (key.equals(IUndoContext.class)) {
+            if (textEditor != null) {
+                return textEditor.getAdapter(key);
+            }
+        }
+        if (key.equals(IContentOutlinePage.class)) {
+            if (textEditor != null) {
+                return textEditor.getAdapter(key);
+            }
+        }
+        if (key.equals(IPropertySheetPage.class)) {
+            if (textEditor != null) {
+                return textEditor.getAdapter(key);
+            }
+        }
+        if (key.equals(IGotoMarker.class)) {
+            return key.cast(this);
+        }
+        if (key.equals(ITextEditor.class)) {
+            return key.cast(textEditor);
+        }
+        return super.getAdapter(key);
     }
 
     @Override
