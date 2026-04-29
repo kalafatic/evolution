@@ -320,11 +320,16 @@ public class TaskStackPage extends AEvoPage {
         updateUIFromModel();
 
         // Simulate execution
-        Display.getDefault().timerExec(2000, () -> {
+        Display.getDefault().asyncExec(() -> {
             if (isDisposed()) return;
-            task.setStatus(TaskStatus.DONE);
-            task.setResultSummary("Task executed successfully.");
-            updateUIFromModel();
+            Display.getDefault().timerExec(2000, () -> {
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed()) return;
+                    task.setStatus(TaskStatus.DONE);
+                    task.setResultSummary("Task executed successfully.");
+                    updateUIFromModel();
+                });
+            });
         });
     }
 
@@ -339,12 +344,17 @@ public class TaskStackPage extends AEvoPage {
         updateUIFromModel();
 
         // Simulate execution
-        Display.getDefault().timerExec(2000, () -> {
+        Display.getDefault().asyncExec(() -> {
             if (isDisposed()) return;
-            task.setStatus(TaskStatus.DONE);
-            task.setResultSummary("Sub-Task " + (taskIndex + 1) + " done.");
-            updateUIFromModel();
-            executePlanTasks(plan, taskIndex + 1, onComplete);
+            Display.getDefault().timerExec(2000, () -> {
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed()) return;
+                    task.setStatus(TaskStatus.DONE);
+                    task.setResultSummary("Sub-Task " + (taskIndex + 1) + " done.");
+                    updateUIFromModel();
+                    executePlanTasks(plan, taskIndex + 1, onComplete);
+                });
+            });
         });
     }
 

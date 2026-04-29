@@ -268,13 +268,19 @@ public class TestsPage extends AEvoPage {
 		if (isSimulation && iterativeDevelopmentLifecycleGroup.getBrowser() != null && !iterativeDevelopmentLifecycleGroup.getBrowser().isDisposed()) {
 			runIterativeSimulation(iterativeDevelopmentLifecycleGroup.getBrowser(), null, test);
 		} else {
-			Display.getDefault().timerExec(2000, () -> {
-				if (test.eContainer() != null) {
-					TestStatus status = Math.random() > 0.3 ? TestStatus.PASSED : TestStatus.FAILED;
-					test.setStatus(status);
-					for (TestRow row : testRows) if (row.test == test) { row.item.setText(2, status.toString()); break; }
-					refreshBrowser();
-				}
+			Display.getDefault().asyncExec(() -> {
+				if (isDisposed()) return;
+				Display.getDefault().timerExec(2000, () -> {
+					Display.getDefault().asyncExec(() -> {
+						if (isDisposed()) return;
+						if (test.eContainer() != null) {
+							TestStatus status = Math.random() > 0.3 ? TestStatus.PASSED : TestStatus.FAILED;
+							test.setStatus(status);
+							for (TestRow row : testRows) if (row.test == test) { row.item.setText(2, status.toString()); break; }
+							refreshBrowser();
+						}
+					});
+				});
 			});
 		}
 	}
