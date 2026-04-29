@@ -54,16 +54,7 @@ public class GlobalActionsGroup extends AEvoGroup {
         executionModeCombo = SWTFactory.createCombo(group);
         executionModeCombo.add("Sequential");
         executionModeCombo.add("Parallel (Max 3)");
-        executionModeCombo.select(1);
-
-        Button runInUiCheck = toolkit.createButton(group, "Run in UI", SWT.CHECK);
-        runInUiCheck.setSelection(page.isRunInUi());
-        runInUiCheck.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.setRunInUi(runInUiCheck.getSelection());
-            }
-        });
+        executionModeCombo.select(0);
 
         Composite compositeRemote = new Composite(parent, SWT.BORDER);
         compositeRemote.setLayout(new GridLayout(5, false));

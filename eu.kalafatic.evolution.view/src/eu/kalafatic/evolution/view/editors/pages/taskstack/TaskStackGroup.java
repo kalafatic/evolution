@@ -134,7 +134,9 @@ public class TaskStackGroup extends AEvoGroup {
                             break;
                         }
                     }
-                    if (column == 6) { // Result
+                    if (column == 0) { // Run
+                        page.runSingleTask(task);
+                    } else if (column == 6) { // Result
                         editor.openTaskResult(task);
                     } else if (column == 9) { // Edit
                         openTaskEditDialog(task);

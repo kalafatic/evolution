@@ -28,20 +28,26 @@ public class TaskStackPage extends AEvoPage {
 
     private Composite body;
     private boolean isUpdating = false;
-    private boolean runInUi = false;
 
     private GlobalActionsGroup globalActionsGroup;
     private TaskStackGroup taskStackGroup;
-    private java.util.Map<Task, Long> autoExecuteTimes = new java.util.HashMap<>();
-
-    private static final int MAX_PARALLEL_PLANS = 3;
-    private static final int AUTO_EXECUTION_DELAY_MS = 600000; // 10 minutes
+    private List<Task> executionQueue = new ArrayList<>();
+    private Task currentlyExecutingTask = null;
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
         public void notifyChanged(Notification notification) {
             super.notifyChanged(notification);
             if (notification.isTouch()) return;
+
+            if (currentlyExecutingTask != null && notification.getNotifier() == currentlyExecutingTask && notification.getFeatureID(Task.class) == OrchestrationPackage.TASK__STATUS) {
+                TaskStatus newStatus = (TaskStatus) notification.getNewValue();
+                if (newStatus == TaskStatus.DONE || newStatus == TaskStatus.FAILED) {
+                    currentlyExecutingTask = null;
+                    processNextInQueue();
+                }
+            }
+
             if (!isUpdating) {
                 scheduleRefresh();
             }
@@ -256,21 +262,13 @@ public class TaskStackPage extends AEvoPage {
     }
 
     public void executeSelected() {
-        List<Task> selectedPlans = new ArrayList<>();
-        collectSelectedTasks(orchestrator.getTasks(), selectedPlans);
+        List<Task> selectedTasks = new ArrayList<>();
+        collectSelectedTasks(orchestrator.getTasks(), selectedTasks);
 
-        if (selectedPlans.isEmpty()) return;
+        if (selectedTasks.isEmpty()) return;
 
-        if (globalActionsGroup.isParallel()) {
-            for (Task plan : selectedPlans) {
-                long running = orchestrator.getTasks().stream().filter(t -> t.getStatus() == TaskStatus.RUNNING).count();
-                if (running < MAX_PARALLEL_PLANS) {
-                    runPlan(plan);
-                }
-            }
-        } else {
-            runPlansSequentially(selectedPlans, 0);
-        }
+        executionQueue.addAll(selectedTasks);
+        processNextInQueue();
     }
 
     private void collectSelectedTasks(List<Task> tasks, List<Task> collected) {
@@ -282,88 +280,20 @@ public class TaskStackPage extends AEvoPage {
         }
     }
 
-    private void runPlansSequentially(List<Task> plans, int index) {
-        if (index >= plans.size()) return;
-        Task plan = plans.get(index);
-        plan.setStatus(TaskStatus.RUNNING);
-        updateUIFromModel();
-
-        executePlanTasks(plan, 0, () -> {
-            plan.setStatus(TaskStatus.DONE);
-            updateUIFromModel();
-            Display.getDefault().asyncExec(() -> runPlansSequentially(plans, index + 1));
-        });
-    }
-
-    private void runPlan(Task plan) {
-        if (runInUi) {
-            editor.runTaskInChat(plan);
-            return;
-        }
-
-        plan.setStatus(TaskStatus.RUNNING);
-        updateUIFromModel();
-        executePlanTasks(plan, 0, () -> {
-            plan.setStatus(TaskStatus.DONE);
-            plan.setResultSummary("Plan executed successfully.");
-            updateUIFromModel();
-        });
-    }
-
     public void runSingleTask(Task task) {
-        if (runInUi) {
+        if (currentlyExecutingTask == null) {
+            currentlyExecutingTask = task;
             editor.runTaskInChat(task);
-            return;
+        } else {
+            executionQueue.add(task);
         }
-
-        task.setStatus(TaskStatus.RUNNING);
-        updateUIFromModel();
-
-        // Simulate execution
-        Display.getDefault().asyncExec(() -> {
-            if (isDisposed()) return;
-            Display.getDefault().timerExec(2000, () -> {
-                Display.getDefault().asyncExec(() -> {
-                    if (isDisposed()) return;
-                    task.setStatus(TaskStatus.DONE);
-                    task.setResultSummary("Task executed successfully.");
-                    updateUIFromModel();
-                });
-            });
-        });
     }
 
-    private void executePlanTasks(Task plan, int taskIndex, Runnable onComplete) {
-        if (taskIndex >= plan.getSubTasks().size()) {
-            onComplete.run();
-            return;
-        }
+    private void processNextInQueue() {
+        if (currentlyExecutingTask != null || executionQueue.isEmpty()) return;
 
-        Task task = plan.getSubTasks().get(taskIndex);
-        task.setStatus(TaskStatus.RUNNING);
-        updateUIFromModel();
-
-        // Simulate execution
-        Display.getDefault().asyncExec(() -> {
-            if (isDisposed()) return;
-            Display.getDefault().timerExec(2000, () -> {
-                Display.getDefault().asyncExec(() -> {
-                    if (isDisposed()) return;
-                    task.setStatus(TaskStatus.DONE);
-                    task.setResultSummary("Sub-Task " + (taskIndex + 1) + " done.");
-                    updateUIFromModel();
-                    executePlanTasks(plan, taskIndex + 1, onComplete);
-                });
-            });
-        });
-    }
-
-    public boolean isRunInUi() {
-        return runInUi;
-    }
-
-    public void setRunInUi(boolean runInUi) {
-        this.runInUi = runInUi;
+        currentlyExecutingTask = executionQueue.remove(0);
+        editor.runTaskInChat(currentlyExecutingTask);
     }
 
     public void setDirty(boolean dirty) {

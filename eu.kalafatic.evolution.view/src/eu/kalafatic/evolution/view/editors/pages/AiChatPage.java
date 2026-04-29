@@ -461,6 +461,10 @@ public class AiChatPage extends AEvoPage {
 						chatGroup.appendText("Final Response: " + finalResult.getResponse(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						feedbackGroup.showSatisfaction(true); updateScrolledContent();
+						if (state.currentStackTask != null) {
+							state.currentStackTask.setStatus(finalResult.getStatus() == TaskResult.Status.SUCCESS ? eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE : eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+							state.currentStackTask.setResultSummary(finalResult.getResponse());
+						}
 					} else {
 						// Update model silently if not current thread
 						ChatThread targetThread = orchestrator.getAiChat().getThreads().stream().filter(t -> t.getId().equals(threadId)).findFirst().orElse(null);
@@ -471,6 +475,10 @@ public class AiChatPage extends AEvoPage {
 				});
 			} catch (Exception e) {
 				Display.getDefault().asyncExec(() -> {
+					if (state.currentStackTask != null) {
+						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+						state.currentStackTask.setResultSummary("Error: " + e.getMessage());
+					}
 					if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
@@ -712,10 +720,23 @@ public class AiChatPage extends AEvoPage {
 						chatGroup.appendText("Final Response: Self-Development session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						feedbackGroup.showSatisfaction(true); updateScrolledContent();
+						if (state.currentStackTask != null) {
+							state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
+							state.currentStackTask.setResultSummary("Self-Development session finished. Status: " + session.getStatus());
+						}
 					}
 				});
 			} catch (Exception e) {
-				Display.getDefault().asyncExec(() -> { if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) { chatGroup.setThinking(false); chatGroup.appendText("Supervisor Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD); } });
+				Display.getDefault().asyncExec(() -> {
+					if (state.currentStackTask != null) {
+						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+						state.currentStackTask.setResultSummary("Supervisor Error: " + e.getMessage());
+					}
+					if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
+						chatGroup.setThinking(false);
+						chatGroup.appendText("Supervisor Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD);
+					}
+				});
 			} finally {
 				Display.getDefault().asyncExec(() -> {
 					state.isRunning = false;
@@ -888,40 +909,50 @@ public class AiChatPage extends AEvoPage {
 		handleSend();
 	}
 
+	private String getThreadId(eu.kalafatic.evolution.model.orchestration.Task task) {
+		if (task == null) return "Default";
+		if (task.eContainer() instanceof eu.kalafatic.evolution.model.orchestration.Task) {
+			return getThreadId((eu.kalafatic.evolution.model.orchestration.Task) task.eContainer());
+		}
+		return task.getId() != null ? task.getId() : "Default";
+	}
+
 	public void runTask(eu.kalafatic.evolution.model.orchestration.Task task) {
 		if (task == null) return;
 
 		// 1. Switch to thread or create one
-		if (task.getId() != null) {
-			boolean exists = orchestrator.getAiChat().getThreads().stream()
-					.anyMatch(t -> t.getId().equals(task.getId()));
-			if (!exists) {
-				ChatThread newThread = OrchestrationFactory.eINSTANCE.createChatThread();
-				newThread.setId(task.getId());
-				orchestrator.getAiChat().getThreads().add(newThread);
-			}
-			switchThread(task.getId());
-			updateThreadCombo();
+		String threadId = getThreadId(task);
+		boolean exists = orchestrator.getAiChat().getThreads().stream()
+				.anyMatch(t -> t.getId().equals(threadId));
+		if (!exists) {
+			ChatThread newThread = OrchestrationFactory.eINSTANCE.createChatThread();
+			newThread.setId(threadId);
+			orchestrator.getAiChat().getThreads().add(newThread);
 		}
+		switchThread(threadId);
+		updateThreadCombo();
 
 		getCurrentThreadState().currentStackTask = task;
 
 		// 2. Set instructions
-		String prompt = task.getDescription();
+		String prompt = task.getPrompt();
+		if (prompt == null || prompt.isEmpty()) prompt = task.getDescription();
 		if (prompt == null || prompt.isEmpty()) prompt = task.getName();
 		instructionsGroup.setRequest(prompt);
 
 		// 3. Set mode
+		instructionsGroup.setIterative(false);
+		instructionsGroup.setSelfIterative(false);
+		instructionsGroup.setDarwin(false);
+
 		if ("SELF_DEV_MODE".equals(task.getType())) {
 			instructionsGroup.setSelfIterative(true);
 		} else if ("DARWIN_MODE".equals(task.getType())) {
 			instructionsGroup.setDarwin(true);
 		} else if ("ASSISTED_CODING".equals(task.getType())) {
 			instructionsGroup.setIterative(true);
-		} else {
-			instructionsGroup.setIterative(false);
-			instructionsGroup.setSelfIterative(false);
 		}
+		instructionsGroup.updateModel();
 
 		// 4. Send
 		handleSend();
