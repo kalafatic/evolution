@@ -33,24 +33,9 @@ public class AiService {
         return llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
-    // Keep getOllamaModels for UI/Compatibility if needed, but it should ideally be moved too.
-    // However, LlmRouter doesn't have it yet.
-    public String[] getOllamaModels(String baseUrl) {
-        try {
-            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create(baseUrl + (baseUrl.endsWith("/") ? "" : "/") + "api/tags"))
-                    .build();
-            java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
-            org.json.JSONObject jsonResponse = new org.json.JSONObject(response.body());
-            org.json.JSONArray models = jsonResponse.getJSONArray("models");
-            java.util.List<String> modelNames = new java.util.ArrayList<>();
-            for (int i = 0; i < models.length(); i++) {
-                modelNames.add(models.getJSONObject(i).getString("name"));
-            }
-            return modelNames.toArray(new String[0]);
-        } catch (Exception e) {
-            return new String[0];
-        }
+    // Refactored to delegate to ProjectModelManager for unified model loading logic.
+    public String[] getOllamaModels(Orchestrator orchestrator) {
+        java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLlmModels(orchestrator, eu.kalafatic.evolution.model.orchestration.AiMode.LOCAL);
+        return models.toArray(new String[0]);
     }
 }

@@ -387,8 +387,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
     }
 
     public String[] getOllamaModels() {
-        String baseUrl = (getOrchestrator(null) != null && getOrchestrator(null).getOllama() != null)
-                         ? getOrchestrator(null).getOllama().getUrl() : "http://localhost:11434";
-        return aiService.getOllamaModels(baseUrl);
+        Orchestrator orchestrator = getOrchestrator(null);
+        return aiService.getOllamaModels(orchestrator);
     }
 }

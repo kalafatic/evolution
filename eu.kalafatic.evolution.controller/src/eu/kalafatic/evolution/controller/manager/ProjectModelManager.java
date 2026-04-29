@@ -1,10 +1,12 @@
 package eu.kalafatic.evolution.controller.manager;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -13,7 +15,6 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
-import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Compiler;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
@@ -294,5 +295,39 @@ public class ProjectModelManager {
 
     public void updateDarwinMode(Orchestrator orchestrator, boolean darwin) {
 	orchestrator.setDarwinMode(darwin);
+    }
+
+    /**
+     * Fetches available LLM models based on the selected mode.
+     *
+     * @param orchestrator The orchestrator containing configuration (URLs, etc). Can be null.
+     * @param mode The AI mode (LOCAL, REMOTE, HYBRID).
+     * @return A list of model names.
+     */
+    public List<String> getLlmModels(Orchestrator orchestrator, AiMode mode) {
+        List<String> models = new ArrayList<>();
+        if (mode == AiMode.LOCAL || mode == AiMode.HYBRID) {
+            String ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+            OllamaService ollama = new OllamaService(ollamaUrl, null);
+            try {
+                for (OllamaModel m : ollama.loadModels()) {
+                    models.add(m.getName());
+                }
+            } catch (Exception e) {
+                // log or ignore
+            }
+        }
+
+        if (mode == AiMode.REMOTE || mode == AiMode.HYBRID) {
+            // Placeholder for remote models (e.g. OpenAI, Gemini)
+            // In a real implementation, we would fetch these from the respective providers
+            models.add("gpt-4o");
+            models.add("gpt-4o-mini");
+            models.add("gpt-3.5-turbo");
+            models.add("claude-3-5-sonnet-20240620");
+            models.add("gemini-1.5-pro");
+        }
+
+        return models;
     }
 }
