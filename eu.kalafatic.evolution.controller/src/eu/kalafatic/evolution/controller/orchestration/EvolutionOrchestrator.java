@@ -19,6 +19,7 @@ import eu.kalafatic.evolution.controller.agents.JavaDevAgent;
 import eu.kalafatic.evolution.controller.agents.MavenAgent;
 import eu.kalafatic.evolution.controller.agents.ObservabilityAgent;
 import eu.kalafatic.evolution.controller.agents.PlannerAgent;
+import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent;
 import eu.kalafatic.evolution.controller.agents.QualityAgent;
 import eu.kalafatic.evolution.controller.agents.ReviewerAgent;
 import eu.kalafatic.evolution.controller.agents.StructureAgent;
@@ -45,6 +46,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     private AnalyticAgent analyticAgent = new AnalyticAgent();
     private PlannerAgent planner = new PlannerAgent();
     private ReviewerAgent reviewer = new ReviewerAgent();
+    private ProposalConsolidatorAgent consolidator = new ProposalConsolidatorAgent();
     private final List<IAgent> availableAgents = new ArrayList<>();
 
     public EvolutionOrchestrator() {
@@ -154,9 +156,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                     // Only block if critical info is missing and not in SIMPLE_CHAT or AUTO_APPROVE mode
                     if (criticalMissing && clarificationMsg.length() > 0 && !context.isAutoApprove() && assistResult.getMode() != PlatformType.SIMPLE_CHAT) {
-                        context.log("Evo-Orchestrator: Asking for clarification...\n" + clarificationMsg.toString());
+                        String finalClarification = consolidator.consolidate(clarificationMsg.toString(), context);
                         context.log("Evo-Orchestrator-Waiting: Waiting for user clarification...");
-                        String clarification = context.requestInput(clarificationMsg.toString()).get();
+                        String clarification = context.requestInput(finalClarification).get();
                         if (clarification != null && !clarification.isEmpty()) {
                             context.log("Evo-Orchestrator-Clarification: User provided - " + clarification);
                             return execute(request + "\nClarification: " + clarification, context);
@@ -256,20 +258,23 @@ public class EvolutionOrchestrator implements IOrchestrator {
             if (requiresPlanApproval) {
                 // Pause for Plan Approval
                 StringBuilder planSummary = new StringBuilder();
-                planSummary.append("Evo-Orchestrator-Planning: Plan generated. Waiting for user review and approval...\n\n### Proposed Plan:\n");
                 for (int i = 0; i < originalPlannedTasks.size(); i++) {
                     Task t = originalPlannedTasks.get(i);
-                    planSummary.append((i + 1)).append(". [").append(t.getType()).append("] ").append(t.getName()).append("\n");
+                    planSummary.append((i + 1)).append(". ").append(t.getName()).append("\n");
+                    if (t.getDescription() != null && !t.getDescription().isEmpty()) {
+                        planSummary.append("   - ").append(t.getDescription()).append("\n");
+                    }
                 }
-                context.log(planSummary.toString());
+
+                String consolidatedPlan = consolidator.consolidate(planSummary.toString(), context);
+                context.log(consolidatedPlan);
 
                 Boolean planApproved = true;
                 if (!context.isAutoApprove()) {
                     context.log("Evo-Orchestrator-Waiting: Waiting for plan approval...");
                     planApproved = context.requestApproval(TaskContext.PLAN_APPROVAL_MESSAGE).get();
-                    context.log("Evo-Orchestrator-Approval: Plan " + (planApproved != null && planApproved ? "APPROVED" : "REJECTED"));
                 } else {
-			context.log("Evo-Orchestrator-Planning: Auto-approval enabled. Skipping manual approval.");
+                    context.log("Evo-Orchestrator-Planning: Auto-approval enabled. Skipping manual approval.");
                 }
 
                 if (planApproved == null || !planApproved) {
@@ -433,8 +438,6 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                 // Handle Clarification/Proposal stall
                 if (result != null && (result.contains("CLARIFY") || result.contains("[PROPOSAL:"))) {
-                    context.log("Evo-Orchestrator-" + task.getName() + ": Agent requested clarification/proposal: " + result);
-
                     if (context.isAutoApprove()) {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Auto-approval enabled. Skipping agent prompt.");
                         return true;
