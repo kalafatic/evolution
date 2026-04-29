@@ -28,6 +28,7 @@ public class TaskContext {
     private final List<InputListener> inputListeners = new CopyOnWriteArrayList<>();
     private final List<TokenRequestListener> tokenRequestListeners = new CopyOnWriteArrayList<>();
     private final List<String> instructionFiles = new CopyOnWriteArrayList<>();
+    private final FileChangeTracker fileChangeTracker = new FileChangeTracker();
     private String currentTaskName = "Orchestration";
     private String threadId = "Default";
     private String currentTaskId = "Unknown";
@@ -275,5 +276,9 @@ public class TaskContext {
 
     public void setPlatformMode(PlatformMode platformMode) {
         this.platformMode = platformMode;
+    }
+
+    public FileChangeTracker getFileChangeTracker() {
+        return fileChangeTracker;
     }
 }
