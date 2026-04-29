@@ -45,7 +45,21 @@ public class GitManager {
     }
 
     public String getCurrentBranch() throws Exception {
-        return shell.execute("git rev-parse --abbrev-ref HEAD", projectRoot, context).trim();
+        try {
+            return shell.execute("git rev-parse --abbrev-ref HEAD", projectRoot, context).trim();
+        } catch (Exception e) {
+            context.log("[GIT] Warning: Could not determine current branch (repo might be empty). Falling back to 'main'.");
+            return "main";
+        }
+    }
+
+    public void ensureInitialCommit() throws Exception {
+        try {
+            shell.execute("git rev-parse HEAD", projectRoot, context);
+        } catch (Exception e) {
+            context.log("[GIT] Empty repository detected. Creating initial empty commit.");
+            shell.execute("git commit --allow-empty -m \"Initial commit (Evo)\"", projectRoot, context);
+        }
     }
 
     public String merge(String branchName) throws Exception {
