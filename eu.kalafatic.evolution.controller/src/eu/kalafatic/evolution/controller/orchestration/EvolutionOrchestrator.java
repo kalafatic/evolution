@@ -11,6 +11,7 @@ import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.controller.log.LoggingService;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
 import eu.kalafatic.evolution.controller.agents.ArchitectAgent;
+import eu.kalafatic.evolution.controller.agents.FinalResponseAgent;
 import eu.kalafatic.evolution.controller.agents.FileAgent;
 import eu.kalafatic.evolution.controller.agents.GeneralAgent;
 import eu.kalafatic.evolution.controller.agents.GitAgent;
@@ -47,6 +48,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     private PlannerAgent planner = new PlannerAgent();
     private ReviewerAgent reviewer = new ReviewerAgent();
     private ProposalConsolidatorAgent consolidator = new ProposalConsolidatorAgent();
+    private FinalResponseAgent finalResponseAgent = new FinalResponseAgent();
     private final List<IAgent> availableAgents = new ArrayList<>();
 
     public EvolutionOrchestrator() {
@@ -368,7 +370,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             }
 
             updateStatus(context, 1.0, "Completed");
-            String finalResponse = lastResult != null && !lastResult.isEmpty() ? lastResult : "Orchestration successful.";
+            String finalResponse = finalResponseAgent.generateFinalResponse(request, tasks, context);
             state.addMessage("Evo: " + finalResponse);
             context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
             return finalResponse;
