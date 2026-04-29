@@ -95,8 +95,8 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
         context.log("Evo-Planner-Response: " + response);
         context.log("Planner: Received response from AI: " + (response.length() > 100 ? response.substring(0, 100) + "..." : response));
 
-        // Use robust extraction
-        JSONArray jsonArray = JsonUtils.extractJsonArray(response);
+        // Use robust flexible extraction to handle cases where models might return a map of tasks
+        JSONArray jsonArray = JsonUtils.extractJsonArrayFlexible(response);
 
         if (jsonArray == null) {
             context.log("Planner: Warning - AI response is not a JSON array or failed parsing. Using fallback llm task.");
