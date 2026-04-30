@@ -495,6 +495,26 @@
             z-index: 10;
         }
 
+        /* Feedback Level Visibility Rules */
+        body.simple .section-plan,
+        body.simple .section-debug,
+        body.simple .section-timeline,
+        body.simple .message.planner,
+        body.simple .message.architect,
+        body.simple .message.tool,
+        body.simple .message.orchestrator { display: none; }
+
+        body.interactive .section-debug,
+        body.interactive .section-timeline,
+        body.interactive .message.tool,
+        body.interactive .message.orchestrator { display: none; }
+
+        body.advanced .section-timeline { display: none; }
+
+        body.full .section-debug,
+        body.full .section-plan,
+        body.full .section-timeline { display: block; }
+
         #nav-controls {
             position: absolute;
             right: 15px;
@@ -1027,6 +1047,10 @@
         function showThinking(show) {
             document.getElementById('thinking').style.display = show ? 'block' : 'none';
             if (show) scrollToBottom();
+        }
+
+        function setFeedbackLevel(level) {
+            document.body.className = level;
         }
     </script>
 </body>
