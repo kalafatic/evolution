@@ -27,6 +27,10 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.providers.AiProviders;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
+import eu.kalafatic.evolution.controller.security.TokenSecurityService;
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 
 /**
  * Singleton manager for Evolution project models.
@@ -305,29 +309,114 @@ public class ProjectModelManager {
      * @return A list of model names.
      */
     public List<String> getLlmModels(Orchestrator orchestrator, AiMode mode) {
-        List<String> models = new ArrayList<>();
-        if (mode == null) return models;
+        List<String> modelNames = new ArrayList<>();
+        if (mode == null) return modelNames;
 
-        if (mode.getValue() == AiMode.LOCAL_VALUE || mode.getValue() == AiMode.HYBRID_VALUE) {
-            String ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
-            OllamaService ollama = new OllamaService(ollamaUrl, null);
-            try {
-                for (OllamaModel m : ollama.loadModels()) {
-                    models.add(m.getName());
-                }
-            } catch (Exception e) {
-                // log or ignore
+        List<ModelInfo> allModels = getAllModels(orchestrator);
+        for (ModelInfo info : allModels) {
+            if (mode.getValue() == AiMode.LOCAL_VALUE && info.isLocal()) {
+                modelNames.add(info.getName());
+            } else if (mode.getValue() == AiMode.REMOTE_VALUE && !info.isLocal()) {
+                modelNames.add(info.getName());
+            } else if (mode.getValue() == AiMode.HYBRID_VALUE) {
+                modelNames.add(info.getName());
             }
         }
 
-        if (mode.getValue() == AiMode.REMOTE_VALUE || mode.getValue() == AiMode.HYBRID_VALUE) {
-            // Placeholder for remote models (e.g. OpenAI, Gemini)
-            // In a real implementation, we would fetch these from the respective providers
-            models.add("gpt-4o");
-            models.add("gpt-4o-mini");
-            models.add("gpt-3.5-turbo");
-            models.add("claude-3-5-sonnet-20240620");
-            models.add("gemini-1.5-pro");
+        return modelNames;
+    }
+
+    /**
+     * Fetches all available models from all sources.
+     *
+     * @param orchestrator The orchestrator instance.
+     * @return List of ModelInfo objects.
+     */
+    public List<ModelInfo> getAllModels(Orchestrator orchestrator) {
+        List<ModelInfo> models = new ArrayList<>();
+        TokenSecurityService security = TokenSecurityService.getInstance();
+
+        // 1. Load Custom Providers from Model
+        if (orchestrator != null) {
+            for (AIProvider p : orchestrator.getAiProviders()) {
+                String token = security.getToken(p);
+                ModelInfo.ModelState state = (token != null && !token.isEmpty() && !token.equals("YOUR_API_KEY"))
+                        ? ModelInfo.ModelState.OK : ModelInfo.ModelState.NA;
+
+                if (p.getState() != null && !p.getState().isEmpty()) {
+                    try { state = ModelInfo.ModelState.valueOf(p.getState()); } catch (Exception e) {}
+                }
+
+                ModelInfo item = new ModelInfo(state, p.getName(), p.isLocal(), p.getUrl(), token);
+                item.setStateDescription(p.getStateDescription());
+                item.setRating(p.getRating());
+                item.setRatingAnalyze(p.getRatingAnalyze());
+                item.setRatingChat(p.getRatingChat());
+                item.setRatingProgramming(p.getRatingProgramming());
+                item.setProvider(p);
+                models.add(item);
+            }
+        }
+
+        // 2. Load Remote Models from static map (if not explicitly in model as custom)
+        for (String providerName : AiProviders.PROVIDERS.keySet()) {
+            if (models.stream().anyMatch(i -> i.getName().equalsIgnoreCase(providerName))) continue;
+
+            TokenSecurityService.ResolvedProvider resolved = (orchestrator != null)
+                    ? security.resolve(orchestrator, providerName)
+                    : null;
+
+            ModelInfo.ModelState state = (resolved != null && resolved.token != null && !resolved.token.isEmpty() && !"YOUR_API_KEY".equals(resolved.token))
+                    ? ModelInfo.ModelState.OK : ModelInfo.ModelState.NA;
+
+            ModelInfo item = new ModelInfo(state, providerName, false,
+                    (resolved != null) ? resolved.url : "",
+                    (resolved != null) ? resolved.token : "");
+
+            ProviderConfig config = AiProviders.PROVIDERS.get(providerName);
+            if (config != null) {
+                item.setStateDescription("Static provider: " + config.getFormat());
+                if (resolved == null) {
+                    item.setPathOrUrl(config.getEndpointUrl());
+                    item.setToken(config.getApiKey());
+                }
+            }
+
+            models.add(item);
+        }
+
+        // 3. Load Local Models from Ollama
+        String ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+        OllamaService ollamaService = OllamaManager.getInstance().getService(ollamaUrl);
+
+        try {
+            List<OllamaModel> localModels = ollamaService.loadModels();
+            for (OllamaModel m : localModels) {
+                // Only add if not already in models (which contains EMF providers)
+                if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(m.getName()))) {
+                    models.add(new ModelInfo(ModelInfo.ModelState.OK, m.getName(), true, ollamaUrl, null));
+                } else {
+                    // Update state of existing EMF provider if it matches local model
+                    models.stream()
+                        .filter(i -> i.isLocal() && i.getName().equalsIgnoreCase(m.getName()))
+                        .forEach(i -> {
+                            i.setState(ModelInfo.ModelState.OK);
+                            i.setStateDescription("Model found in Ollama.");
+                        });
+                }
+            }
+
+            // Mark EMF local providers NOT found in Ollama
+            models.stream()
+                .filter(i -> i.isLocal() && i.getProvider() != null && i.getState() != ModelInfo.ModelState.OK)
+                .forEach(i -> {
+                    i.setState(ModelInfo.ModelState.ERR);
+                    i.setStateDescription("Model NOT found in Ollama. Please download it.");
+                });
+
+        } catch (Exception e) {
+            // If it fails, maybe Ollama is offline
+            models.add(new ModelInfo(ModelInfo.ModelState.ERR, "Ollama", true, ollamaUrl, null));
         }
 
         return models;

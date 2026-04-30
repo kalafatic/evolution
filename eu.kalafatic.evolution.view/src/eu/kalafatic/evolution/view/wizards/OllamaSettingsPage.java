@@ -64,19 +64,6 @@ public class OllamaSettingsPage extends AWizardPage {
 	private SimpleContentProposalProvider proposalProvider;
 	private Job validationJob;
 	
-	public class OllamaModel {
-	    private String name;
-	    private long size;
-
-	    public OllamaModel(String name, long size) {
-	        this.name = name;
-	        this.size = size;
-	    }
-
-	    public String getName() { return name; }
-	    public long getSize() { return size; }
-	}
-
 	public OllamaSettingsPage() {
 		super("OllamaSettingsPage");
 		setTitle("Ollama Settings");
@@ -432,47 +419,6 @@ public class OllamaSettingsPage extends AWizardPage {
 		}
 	}
 
-	public List<OllamaModel> loadModels() {
-	    List<OllamaModel> result = new ArrayList<>();
-
-	    try {
-	    	
-	        URL url = new URL(defaults.apiUrl + "/api/tags");
-	        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-	        conn.setRequestMethod("GET");
-
-	        BufferedReader reader = new BufferedReader(
-	            new InputStreamReader(conn.getInputStream())
-	        );
-
-	        StringBuilder json = new StringBuilder();
-	        String line;
-
-	        while ((line = reader.readLine()) != null) {
-	            json.append(line);
-	        }
-
-	        reader.close();
-
-	        JSONObject obj = new JSONObject(json.toString());
-	        JSONArray models = obj.getJSONArray("models");
-
-	        for (int i = 0; i < models.length(); i++) {
-	            JSONObject m = models.getJSONObject(i);
-
-	            String name = m.getString("name");
-	            long size = m.optLong("size", 0);
-
-	            result.add(new OllamaModel(name, size));
-	        }
-
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
-
-	    return result;
-	}
-	
 	@Override
 	public void setVisible(boolean visible) {
 		super.setVisible(visible);

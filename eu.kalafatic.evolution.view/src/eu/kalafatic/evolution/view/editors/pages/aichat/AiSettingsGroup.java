@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.view.editors.pages.aichat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -12,13 +13,14 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
-import eu.kalafatic.evolution.controller.manager.OllamaConfigManager;
-import eu.kalafatic.evolution.controller.manager.OllamaModel;
+import eu.kalafatic.evolution.controller.manager.ModelInfo;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -127,20 +129,32 @@ public class AiSettingsGroup extends AEvoGroup {
 
 
 	private Combo selectModel(Composite parent) {
-		List<OllamaModel> models = OllamaConfigManager.loadModels(); // Load models to populate the combo
-		
 		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);	
 		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		
-		if (models != null) {
-			Set<String> uniqueModels = new LinkedHashSet<>();
-		    for (OllamaModel f : models) {
-			uniqueModels.add(f.getName());
-		    }
-		    for (String name : uniqueModels) {
-			combo.add(name);
-		    }
-		}
+
+		CompletableFuture.runAsync(() -> {
+			List<ModelInfo> models = ProjectModelManager.getInstance().getAllModels(orchestrator);
+			Display.getDefault().asyncExec(() -> {
+				if (combo.isDisposed()) return;
+				if (models != null) {
+					Set<String> uniqueModels = new LinkedHashSet<>();
+					for (ModelInfo f : models) {
+						if (f.isLocal()) {
+							uniqueModels.add(f.getName());
+						}
+					}
+					String current = combo.getText();
+					combo.removeAll();
+					for (String name : uniqueModels) {
+						combo.add(name);
+					}
+					if (!current.isEmpty()) {
+						int idx = combo.indexOf(current);
+						if (idx >= 0) combo.select(idx);
+					}
+				}
+			});
+		});
 
 		// selection listener
 		combo.addListener(SWT.Selection, e -> {

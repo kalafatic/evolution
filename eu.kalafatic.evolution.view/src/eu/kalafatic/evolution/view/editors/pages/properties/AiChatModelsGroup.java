@@ -11,6 +11,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import eu.kalafatic.evolution.controller.manager.ModelInfo;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
@@ -86,21 +87,16 @@ public class AiChatModelsGroup extends AEvoGroup {
             }
 
             // Verify local/hybrid models
-            String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://127.0.0.1:11434";
-            eu.kalafatic.evolution.controller.manager.OllamaService ollamaService =
-                eu.kalafatic.evolution.controller.manager.OllamaManager.getInstance().getService(ollamaUrl);
-
             new Thread(() -> {
-                boolean reachable = ollamaService.ping();
-                java.util.List<eu.kalafatic.evolution.controller.manager.OllamaModel> models =
-                    reachable ? ollamaService.loadModels() : java.util.Collections.emptyList();
+                java.util.List<ModelInfo> allModels = ProjectModelManager.getInstance().getAllModels(orchestrator);
+                boolean ollamaOnline = allModels.stream().noneMatch(m -> "Ollama".equals(m.getName()) && m.getState() == ModelInfo.ModelState.ERR);
 
                 Display.getDefault().asyncExec(() -> {
                     if (localModelText.isDisposed()) return;
 
-                    if (reachable) {
-                        verifyOllamaModel(localModel, localModelDecorator, models);
-                        verifyOllamaModel(hybridModel, hybridModelDecorator, models);
+                    if (ollamaOnline) {
+                        verifyOllamaModel(localModel, localModelDecorator, allModels);
+                        verifyOllamaModel(hybridModel, hybridModelDecorator, allModels);
                     } else {
                         localModelDecorator.setDescriptionText("Ollama server offline");
                         localModelDecorator.show();
@@ -122,12 +118,12 @@ public class AiChatModelsGroup extends AEvoGroup {
         }
     }
 
-    private void verifyOllamaModel(String modelName, ControlDecoration decorator, java.util.List<eu.kalafatic.evolution.controller.manager.OllamaModel> models) {
+    private void verifyOllamaModel(String modelName, ControlDecoration decorator, java.util.List<ModelInfo> models) {
         if (modelName == null || modelName.isEmpty()) {
             decorator.hide();
             return;
         }
-        boolean found = models.stream().anyMatch(m -> m.getName().equalsIgnoreCase(modelName));
+        boolean found = models.stream().anyMatch(m -> m.isLocal() && m.getName().equalsIgnoreCase(modelName) && m.getState() == ModelInfo.ModelState.OK);
         if (!found) {
             decorator.setDescriptionText("Model not found in Ollama");
             decorator.show();
