@@ -238,6 +238,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             // 5. Analytic Phase
             String analyzedRequest = analyzeAndClarify(request, context);
+            String finalRequestForPlanner = analyzedRequest + "\n\nCRITICAL: DO NOT CLARIFY. CREATE A TECHNICAL PLAN IMMEDIATELY.";
 
             // 6. Planning (only if new or if context requires a new plan)
             boolean allDone = context.getOrchestrator().getTasks().stream().allMatch(t -> t.getStatus() == TaskStatus.DONE);
@@ -245,7 +246,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             List<Task> originalPlannedTasks;
             if (shouldReplan) {
                 OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Planning...");
-                originalPlannedTasks = planner.plan(analyzedRequest, context);
+                originalPlannedTasks = planner.plan(finalRequestForPlanner, context);
                 OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Finished");
                 // context.getOrchestrator().getTasks().clear(); // Preserve task history
                 context.getOrchestrator().getTasks().addAll(originalPlannedTasks);
