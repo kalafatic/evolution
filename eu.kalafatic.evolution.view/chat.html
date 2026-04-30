@@ -32,9 +32,9 @@
             --reviewer-border: #fecdd3;
             --reviewer-text: #9f1239;
 
-            --analytic-bg: #fef2f2;
-            --analytic-border: #fee2e2;
-            --analytic-text: #991b1b;
+            --analytic-bg: #ffffff;
+            --analytic-border: #e2e8f0;
+            --analytic-text: #1e293b;
 
             --general-bg: #fdf4ff;
             --general-border: #fae8ff;
@@ -512,10 +512,13 @@
         body.simple .section-plan,
         body.simple .section-debug,
         body.simple .section-timeline,
-        body.simple .message.planner,
-        body.simple .message.architect,
-        body.simple .message.tool,
-        body.simple .message.orchestrator { display: none; }
+        body.simple .think-block,
+        body.simple .non-essential { display: none; }
+
+        /* In simple mode, hide all AI messages except those that are user-facing or require interaction */
+        body.simple .message.ai:not(.user):not(.final-response):not(.waiting):not(.error):not(.result-summary) {
+            display: none;
+        }
 
         body.interactive .section-debug,
         body.interactive .section-timeline,
@@ -736,8 +739,32 @@
             thinking: '💭', response: '💬'
         };
 
-        function formatText(text) {
+        function formatText(text, role) {
             if (!text) return "";
+
+            if (role === 'analytic') {
+                try {
+                    // Extract JSON if it's embedded or the whole text
+                    let jsonText = text;
+                    const jsonMatch = text.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        jsonText = jsonMatch[0];
+                    }
+
+                    const analysis = JSON.parse(jsonText);
+                    let html = '<div style="display: flex; flex-direction: column; gap: 4px;">';
+                    if (analysis.category) html += `<div><b>Category:</b> ${analysis.category}</div>`;
+                    if (analysis.objective) html += `<div><b>Objective:</b> ${analysis.objective}</div>`;
+                    if (analysis.scope) html += `<div><b>Scope:</b> ${analysis.scope}</div>`;
+                    if (analysis.isAmbiguous !== undefined) html += `<div><b>Ambiguous:</b> ${analysis.isAmbiguous ? 'Yes' : 'No'}</div>`;
+                    if (analysis.clarificationQuestion) html += `<div><b>Clarification:</b> ${analysis.clarificationQuestion}</div>`;
+                    if (analysis.refinedPrompt) html += `<div style="margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px;"><i>${analysis.refinedPrompt}</i></div>`;
+                    html += '</div>';
+                    return html;
+                } catch (e) {
+                    // Fallback to regular formatting if JSON parsing fails
+                }
+            }
 
             // 1. Extract think blocks and code blocks to avoid escaping them or interfering with markdown
             const thinkBlocks = [];
@@ -792,7 +819,7 @@
 
             // Restore blocks
             text = text.replace(/___THINK_BLOCK_(\d+)___/g, function(match, index) {
-                return '<div class="think-block">' + formatText(thinkBlocks[parseInt(index)]) + '</div>';
+                return '<div class="think-block">' + formatText(thinkBlocks[parseInt(index)], role) + '</div>';
             });
 
             text = text.replace(/___CODE_BLOCK_(\d+)___/g, function(match, index) {
@@ -998,7 +1025,7 @@
 
                     const content = document.createElement('div');
                     content.className = 'bubble-content';
-                    content.innerHTML = formatText(m.text);
+                    content.innerHTML = formatText(m.text, primaryRole);
                     bubble.appendChild(content);
 
                     const actions = document.createElement('div');
@@ -1077,6 +1104,10 @@
         }
 
         function showThinking(show) {
+            if (document.body.className === 'simple') {
+                document.getElementById('thinking').style.display = 'none';
+                return;
+            }
             document.getElementById('thinking').style.display = show ? 'block' : 'none';
             if (show) scrollToBottom();
         }
