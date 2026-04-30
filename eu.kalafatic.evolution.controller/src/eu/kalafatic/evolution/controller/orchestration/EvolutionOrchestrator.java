@@ -302,6 +302,11 @@ public class EvolutionOrchestrator implements IOrchestrator {
             int iterationLimit = context.getPlatformMode().getIterationLimit();
             String lastResult = "";
             for (int i = 0; i < taskCount; i++) {
+                Task task = tasks.get(i);
+                if (task.getStatus() == TaskStatus.DONE || task.getStatus() == TaskStatus.FAILED) {
+                    continue;
+                }
+
                 if (i >= iterationLimit && context.getPlatformMode().getType() != PlatformType.SELF_DEV_MODE) {
                     context.log("Evo-Orchestrator-Mode: Iteration limit reached for " + context.getPlatformMode().getType() + " mode.");
                     break;
@@ -309,7 +314,6 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                 context.checkPause();
                 if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-                Task task = tasks.get(i);
                 context.setCurrentTaskName(task.getName());
 
                 // Check for User Approval
@@ -370,13 +374,26 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                     if (loopTargetIndex != -1) {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Looping back to task ID: " + loopToId);
+                        tasks.get(loopTargetIndex).setStatus(TaskStatus.READY);
                         i = loopTargetIndex - 1; // -1 because the for loop will increment i
                     }
                 }
             }
 
             updateStatus(context, 1.0, "Completed");
-            String finalResponse = finalResponseAgent.generateFinalResponse(request, tasks, context);
+
+            String finalResponse;
+            if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
+                finalResponse = lastResult;
+            } else {
+                try {
+                    finalResponse = finalResponseAgent.generateFinalResponse(request, tasks, context);
+                } catch (Exception e) {
+                    context.log("Evo-Orchestrator-Warning: Final response generation failed: " + e.getMessage());
+                    finalResponse = "Tasks completed. " + lastResult;
+                }
+            }
+
             state.addMessage("Evo: " + finalResponse);
             context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
             return finalResponse;
@@ -698,6 +715,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
         }
 
         // Default to agent reasoning
+        if (preGeneratedContent != null && !preGeneratedContent.isEmpty()) {
+            context.log("Evo-Orchestrator-" + taskName + ": Using pre-generated response for " + agent.getType());
+            return preGeneratedContent;
+        }
         return agent.process(taskName, context, lastFeedback);
     }
 

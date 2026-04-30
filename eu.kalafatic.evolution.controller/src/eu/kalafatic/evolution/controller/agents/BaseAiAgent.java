@@ -65,6 +65,7 @@ public abstract class BaseAiAgent implements IAgent {
     protected String getFooterInstructions() {
         return "SPECIAL DIRECTIVE: If you receive the request 'Execute the simplest working solution.', you MUST immediately provide a minimal, functional implementation of the goal previously discussed in shared memory without asking for any further clarification.\n\n" +
                "Based on the context and the task, provide your response.\n" +
+               "Minimize clarification requests. If a detail is missing but a sensible default can be inferred (e.g., Java for a coding task in a Java project), proceed with that default.\n" +
                "If you need user clarification to proceed with a plan or an action, explicitly ask and suggest options.\n" +
                "Use keywords like 'CREATE' (to suggest proceeding) or 'CLARIFY' (to request more info).\n" +
                "Additionally, you can offer general one-click solutions using the format: [PROPOSAL: Action Label | Explicit Request Text]\n" +
