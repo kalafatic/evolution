@@ -59,8 +59,6 @@ public interface OrchestratorValidator {
 	boolean validateFileConfig(FileConfig value);
 	boolean validateSharedMemory(String value);
 	boolean validateEclipse(Eclipse value);
-	boolean validateIterativeMode(boolean value);
-	boolean validateSelfIterativeMode(boolean value);
 	boolean validateDarwinMode(boolean value);
 	boolean validateAiProviders(EList<AIProvider> value);
 	boolean validateServerSettings(ServerSettings value);

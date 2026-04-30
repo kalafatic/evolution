@@ -274,5 +274,5 @@ public enum LogLevel implements Enumerator {
 	public String toString() {
 		return literal;
 	}
-
+	
 } //LogLevel

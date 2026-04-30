@@ -2984,16 +2984,6 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK_STATUS = 36;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFeedbackLevel()
-	 * @generated
-	 */
-	int FEEDBACK_LEVEL = 38;
-
-	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.LogLevel <em>Log Level</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3002,6 +2992,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	int LOG_LEVEL = 37;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFeedbackLevel()
+	 * @generated
+	 */
+	int FEEDBACK_LEVEL = 38;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SessionType <em>Session Type</em>}' enum.
@@ -5709,16 +5709,6 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getPromptInstructions_SelfIterativeMode();
 
 	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Feedback Level</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
-	 * @generated
-	 */
-	EEnum getFeedbackLevel();
-
-	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5727,6 +5717,26 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EEnum getTaskStatus();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.LogLevel <em>Log Level</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Log Level</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.LogLevel
+	 * @generated
+	 */
+	EEnum getLogLevel();
+
+	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Feedback Level</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
+	 * @generated
+	 */
+	EEnum getFeedbackLevel();
 
 	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.SessionType <em>Session Type</em>}'.
@@ -5817,16 +5827,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EEnum getTestStatus();
-
-	/**
-	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.LogLevel <em>Log Level</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Log Level</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.LogLevel
-	 * @generated
-	 */
-	EEnum getLogLevel();
 
 	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}'.
@@ -6922,7 +6922,7 @@ public interface OrchestrationPackage extends EPackage {
 		EReference AI_CHAT__THREADS = eINSTANCE.getAiChat_Threads();
 
 		/**
-		 * The meta object literal for the '<em><b>Prompt Instructions</b></em>' reference feature.
+		 * The meta object literal for the '<em><b>Prompt Instructions</b></em>' containment reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
@@ -7854,16 +7854,6 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE = eINSTANCE.getPromptInstructions_SelfIterativeMode();
 
 		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFeedbackLevel()
-		 * @generated
-		 */
-		EEnum FEEDBACK_LEVEL = eINSTANCE.getFeedbackLevel();
-
-		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -7872,6 +7862,26 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EEnum TASK_STATUS = eINSTANCE.getTaskStatus();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.LogLevel <em>Log Level</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.LogLevel
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLogLevel()
+		 * @generated
+		 */
+		EEnum LOG_LEVEL = eINSTANCE.getLogLevel();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFeedbackLevel()
+		 * @generated
+		 */
+		EEnum FEEDBACK_LEVEL = eINSTANCE.getFeedbackLevel();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.SessionType <em>Session Type</em>}' enum.
@@ -7962,16 +7972,6 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EEnum TEST_STATUS = eINSTANCE.getTestStatus();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.LogLevel <em>Log Level</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.LogLevel
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLogLevel()
-		 * @generated
-		 */
-		EEnum LOG_LEVEL = eINSTANCE.getLogLevel();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.

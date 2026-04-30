@@ -32,25 +32,25 @@ public class BestPracticesService {
         }
 
         Map<String, String> roleDefaults = new HashMap<>();
-        roleDefaults.put("architect", "# ARCHITECT Best Practices\n\n" +
+        roleDefaults.put("architect", "### ARCHITECT Best Practices\n\n" +
                 "- Design for modularity and high cohesion.\n" +
                 "- Use EMF-based modeling for core domain entities.\n" +
                 "- Follow the 'Separation of Concerns' principle between UI and logic.\n" +
                 "- Prioritize maintainability and extensibility in all design decisions.");
 
-        roleDefaults.put("planner", "# PLANNER Best Practices\n\n" +
+        roleDefaults.put("planner", "### PLANNER Best Practices\n\n" +
                 "- Decompose user requests into atomic, actionable tasks.\n" +
                 "- Handle ambiguity by generating a clarification task (the 'Evo' way).\n" +
                 "- Assign specific agent roles (JavaDev, Tester, etc.) to tasks for better accuracy.\n" +
                 "- Use 'loopToTaskId' for iterative fix-test-improve cycles.");
 
-        roleDefaults.put("agent", "# AGENT Best Practices\n\n" +
+        roleDefaults.put("agent", "### AGENT Best Practices\n\n" +
                 "- Be concise and professional in all communications.\n" +
                 "- Prioritize using available tools over general reasoning for technical tasks.\n" +
                 "- Report errors clearly and suggest potential fixes or workarounds.\n" +
                 "- Always verify the outcome of tool execution.");
 
-        roleDefaults.put("tools", "# TOOLS Best Practices\n\n" +
+        roleDefaults.put("tools", "### TOOLS Best Practices\n\n" +
                 "- Ensure all file paths are normalized and relative to the project root.\n" +
                 "- Request explicit user approval for high-risk actions (e.g., DELETE, SHELL).\n" +
                 "- Log tool execution results, including partial successes or informative failures.\n" +
@@ -79,7 +79,7 @@ public class BestPracticesService {
         }
 
         initializeSpecialFile(specialDir, "iterative_loop.md",
-            "# ITERATIVE LOOP CONTEXT\n\n" +
+            "### ITERATIVE LOOP CONTEXT\n\n" +
             "You are operating in an Iterative Development Loop (OBSERVE -> ANALYZE -> PLAN -> TEST).\n" +
             "1. OBSERVE: Look at the current state, logs, and errors.\n" +
             "2. ANALYZE: Identify the root cause of any issues.\n" +
@@ -87,7 +87,7 @@ public class BestPracticesService {
             "4. TEST: Verify the change. If it fails, start the loop again with the new observation.");
 
         initializeSpecialFile(specialDir, "self_development.md",
-            "# SELF DEVELOPMENT CONTEXT\n\n" +
+            "### SELF DEVELOPMENT CONTEXT\n\n" +
             "You are in Autonomous Self-Development mode.\n" +
             "Your goal is to suggest and implement improvements to your own codebase or project structure.\n" +
             "1. Focus on code quality, performance, and robustness.\n" +

@@ -51,8 +51,11 @@ public class TaskEditDialog extends Dialog {
     @Override
     protected Control createDialogArea(Composite parent) {
         Composite container = (Composite) super.createDialogArea(parent);
-        container.setLayout(new GridLayout(2, false));
-
+        container.setLayout(new GridLayout(2, false));      
+        GridData gridData = new GridData();
+        gridData.widthHint = 600;
+        container.setLayoutData(gridData);
+        
         createLabel(container, "Name:");
         nameText = createText(container, task.getName());
 

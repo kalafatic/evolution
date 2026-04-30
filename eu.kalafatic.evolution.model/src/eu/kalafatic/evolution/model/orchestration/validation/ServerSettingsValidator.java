@@ -16,6 +16,5 @@ public interface ServerSettingsValidator {
 
 	boolean validatePort(int value);
 	boolean validateAutoStart(boolean value);
-
 	boolean validateGitAutomation(boolean value);
 }

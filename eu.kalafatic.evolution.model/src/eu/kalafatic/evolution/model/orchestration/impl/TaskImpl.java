@@ -21,6 +21,7 @@ import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
+import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.EObjectResolvingEList;
 import org.eclipse.emf.ecore.util.InternalEList;
@@ -132,7 +133,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @generated
 	 * @ordered
 	 */
-	protected static final TaskStatus STATUS_EDEFAULT = TaskStatus.PENDING;
+	protected static final TaskStatus STATUS_EDEFAULT = TaskStatus.READY;
 
 	/**
 	 * The cached value of the '{@link #getStatus() <em>Status</em>}' attribute.
@@ -502,7 +503,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @generated
 	 * @ordered
 	 */
-	protected static final LogLevel LOG_LEVEL_EDEFAULT = LogLevel.INFO;
+	protected static final LogLevel LOG_LEVEL_EDEFAULT = LogLevel.TRACE;
 
 	/**
 	 * The cached value of the '{@link #getLogLevel() <em>Log Level</em>}' attribute.
@@ -559,182 +560,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@Override
-	public LogLevel getLogLevel() {
-		return logLevel;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public FeedbackLevel getFeedbackLevel() {
-		return feedbackLevel;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setFeedbackLevel(FeedbackLevel newFeedbackLevel) {
-		FeedbackLevel oldFeedbackLevel = feedbackLevel;
-		feedbackLevel = newFeedbackLevel == null ? FEEDBACK_LEVEL_EDEFAULT : newFeedbackLevel;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__FEEDBACK_LEVEL, oldFeedbackLevel, feedbackLevel));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isAutoEscalate() {
-		return autoEscalate;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setAutoEscalate(boolean newAutoEscalate) {
-		boolean oldAutoEscalate = autoEscalate;
-		autoEscalate = newAutoEscalate;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__AUTO_ESCALATE, oldAutoEscalate, autoEscalate));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setLogLevel(LogLevel newLogLevel) {
-		LogLevel oldLogLevel = logLevel;
-		logLevel = newLogLevel == null ? LOG_LEVEL_EDEFAULT : newLogLevel;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__LOG_LEVEL, oldLogLevel, logLevel));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getPrompt() {
-		return prompt;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setPrompt(String newPrompt) {
-		String oldPrompt = prompt;
-		prompt = newPrompt;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__PROMPT, oldPrompt, prompt));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EList<String> getAttachments() {
-		if (attachments == null) {
-			attachments = new org.eclipse.emf.ecore.util.EDataTypeUniqueEList<String>(String.class, this, OrchestrationPackage.TASK__ATTACHMENTS);
-		}
-		return attachments;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	protected TaskImpl() {
 		super();
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getArtifacts() {
-		return artifacts;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setArtifacts(String newArtifacts) {
-		String oldArtifacts = artifacts;
-		artifacts = newArtifacts;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__ARTIFACTS, oldArtifacts, artifacts));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getGoal() {
-		return goal;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setGoal(String newGoal) {
-		String oldGoal = goal;
-		goal = newGoal;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__GOAL, oldGoal, goal));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getPlan() {
-		return plan;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setPlan(String newPlan) {
-		String oldPlan = plan;
-		plan = newPlan;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__PLAN, oldPlan, plan));
 	}
 
 	/**
@@ -1139,6 +966,180 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		selected = newSelected;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__SELECTED, oldSelected, selected));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getGoal() {
+		return goal;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGoal(String newGoal) {
+		String oldGoal = goal;
+		goal = newGoal;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__GOAL, oldGoal, goal));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getPlan() {
+		return plan;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPlan(String newPlan) {
+		String oldPlan = plan;
+		plan = newPlan;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__PLAN, oldPlan, plan));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getArtifacts() {
+		return artifacts;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setArtifacts(String newArtifacts) {
+		String oldArtifacts = artifacts;
+		artifacts = newArtifacts;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__ARTIFACTS, oldArtifacts, artifacts));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getPrompt() {
+		return prompt;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPrompt(String newPrompt) {
+		String oldPrompt = prompt;
+		prompt = newPrompt;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__PROMPT, oldPrompt, prompt));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<String> getAttachments() {
+		if (attachments == null) {
+			attachments = new EDataTypeUniqueEList<String>(String.class, this, OrchestrationPackage.TASK__ATTACHMENTS);
+		}
+		return attachments;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public LogLevel getLogLevel() {
+		return logLevel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setLogLevel(LogLevel newLogLevel) {
+		LogLevel oldLogLevel = logLevel;
+		logLevel = newLogLevel == null ? LOG_LEVEL_EDEFAULT : newLogLevel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__LOG_LEVEL, oldLogLevel, logLevel));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public FeedbackLevel getFeedbackLevel() {
+		return feedbackLevel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setFeedbackLevel(FeedbackLevel newFeedbackLevel) {
+		FeedbackLevel oldFeedbackLevel = feedbackLevel;
+		feedbackLevel = newFeedbackLevel == null ? FEEDBACK_LEVEL_EDEFAULT : newFeedbackLevel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__FEEDBACK_LEVEL, oldFeedbackLevel, feedbackLevel));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isAutoEscalate() {
+		return autoEscalate;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAutoEscalate(boolean newAutoEscalate) {
+		boolean oldAutoEscalate = autoEscalate;
+		autoEscalate = newAutoEscalate;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__AUTO_ESCALATE, oldAutoEscalate, autoEscalate));
 	}
 
 	/**

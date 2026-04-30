@@ -5,8 +5,8 @@ package eu.kalafatic.evolution.model.orchestration.impl;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.ChatThread;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
-
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
+
 import java.util.Collection;
 
 import org.eclipse.emf.common.notify.Notification;

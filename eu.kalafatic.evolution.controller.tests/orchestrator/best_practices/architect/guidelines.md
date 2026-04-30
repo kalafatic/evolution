@@ -1,4 +1,4 @@
-# ARCHITECT Best Practices
+### ARCHITECT Best Practices
 
 - Design for modularity and high cohesion.
 - Use EMF-based modeling for core domain entities.

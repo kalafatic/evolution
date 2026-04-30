@@ -26,6 +26,14 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute rationale : EString
     Attribute scheduledTime : EString
     Attribute selected : EBoolean
+    Attribute goal : EString
+    Attribute plan : EString
+    Attribute artifacts : EString
+    Attribute prompt : EString
+    Attribute attachments : EString<<0..*>>
+    Attribute logLevel : LogLevel
+    Attribute feedbackLevel : FeedbackLevel
+    Attribute autoEscalate : EBoolean
 
   Class Agent
     Attribute id : EString
@@ -276,11 +284,28 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute selfIterativeMode : EBoolean
 
   Enum TaskStatus
-    Literal PENDING = 0
-    Literal RUNNING = 1
-    Literal DONE = 2
-    Literal FAILED = 3
-    Literal WAITING_FOR_APPROVAL = 4
+    Literal READY = 0
+    Literal PENDING = 1
+    Literal RUNNING = 2
+    Literal DONE = 3
+    Literal FAILED = 4
+    Literal WAITING_FOR_APPROVAL = 5
+    Literal PLANNING = 6
+    Literal EXECUTING = 7
+    Literal VERIFYING = 8
+
+  Enum LogLevel
+    Literal TRACE = 0
+    Literal DEBUG = 1
+    Literal INFO = 2
+    Literal WARN = 3
+    Literal ERROR = 4
+
+  Enum FeedbackLevel
+    Literal SIMPLE = 0
+    Literal INTERACTIVE = 1
+    Literal ADVANCED = 2
+    Literal FULL = 3
 
   Enum SessionType
     Literal HTTPD = 0

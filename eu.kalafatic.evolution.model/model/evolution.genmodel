@@ -8,11 +8,28 @@
   <genPackages prefix="Orchestration" basePackage="eu.kalafatic.evolution.model" disposableProviderFactory="true"
       ecorePackage="evolution.ecore#/">
     <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//TaskStatus">
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/READY"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/PENDING"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/RUNNING"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/DONE"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/FAILED"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/WAITING_FOR_APPROVAL"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/PLANNING"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/EXECUTING"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//TaskStatus/VERIFYING"/>
+    </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//LogLevel">
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//LogLevel/TRACE"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//LogLevel/DEBUG"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//LogLevel/INFO"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//LogLevel/WARN"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//LogLevel/ERROR"/>
+    </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//FeedbackLevel">
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//FeedbackLevel/SIMPLE"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//FeedbackLevel/INTERACTIVE"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//FeedbackLevel/ADVANCED"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//FeedbackLevel/FULL"/>
     </genEnums>
     <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//SessionType">
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SessionType/HTTPD"/>
@@ -89,6 +106,14 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/rationale"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/scheduledTime"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/selected"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/goal"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/plan"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/artifacts"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/prompt"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/attachments"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/logLevel"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/feedbackLevel"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/autoEscalate"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Agent">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Agent/id"/>

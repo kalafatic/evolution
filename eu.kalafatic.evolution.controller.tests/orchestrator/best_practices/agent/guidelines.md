@@ -1,4 +1,4 @@
-# AGENT Best Practices
+### AGENT Best Practices
 
 - Be concise and professional in all communications.
 - Prioritize using available tools over general reasoning for technical tasks.

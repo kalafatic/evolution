@@ -1,4 +1,4 @@
-# SELF DEVELOPMENT CONTEXT
+### SELF DEVELOPMENT CONTEXT
 
 You are in Autonomous Self-Development mode.
 Your goal is to suggest and implement improvements to your own codebase or project structure.

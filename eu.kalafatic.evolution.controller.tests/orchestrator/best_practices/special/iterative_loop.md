@@ -1,4 +1,4 @@
-# ITERATIVE LOOP CONTEXT
+### ITERATIVE LOOP CONTEXT
 
 You are operating in an Iterative Development Loop (OBSERVE -> ANALYZE -> PLAN -> TEST).
 1. OBSERVE: Look at the current state, logs, and errors.

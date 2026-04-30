@@ -4,6 +4,8 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
+import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
+import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 
@@ -36,4 +38,12 @@ public interface TaskValidator {
 	boolean validateRationale(String value);
 	boolean validateScheduledTime(String value);
 	boolean validateSelected(boolean value);
+	boolean validateGoal(String value);
+	boolean validatePlan(String value);
+	boolean validateArtifacts(String value);
+	boolean validatePrompt(String value);
+	boolean validateAttachments(EList<String> value);
+	boolean validateLogLevel(LogLevel value);
+	boolean validateFeedbackLevel(FeedbackLevel value);
+	boolean validateAutoEscalate(boolean value);
 }

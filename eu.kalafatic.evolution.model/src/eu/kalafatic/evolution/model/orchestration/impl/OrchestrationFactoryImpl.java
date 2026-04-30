@@ -19,13 +19,14 @@ import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
+import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
 import eu.kalafatic.evolution.model.orchestration.FileChange;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
-import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.IterationStatus;
 import eu.kalafatic.evolution.model.orchestration.LLM;
+import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
@@ -154,6 +155,10 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 		switch (eDataType.getClassifierID()) {
 			case OrchestrationPackage.TASK_STATUS:
 				return createTaskStatusFromString(eDataType, initialValue);
+			case OrchestrationPackage.LOG_LEVEL:
+				return createLogLevelFromString(eDataType, initialValue);
+			case OrchestrationPackage.FEEDBACK_LEVEL:
+				return createFeedbackLevelFromString(eDataType, initialValue);
 			case OrchestrationPackage.SESSION_TYPE:
 				return createSessionTypeFromString(eDataType, initialValue);
 			case OrchestrationPackage.COMMAND_STATUS:
@@ -172,8 +177,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createSelfDevDecisionFromString(eDataType, initialValue);
 			case OrchestrationPackage.TEST_STATUS:
 				return createTestStatusFromString(eDataType, initialValue);
-			case OrchestrationPackage.LOG_LEVEL:
-				return createLogLevelFromString(eDataType, initialValue);
 			case OrchestrationPackage.REVIEW_DECISION:
 				return createReviewDecisionFromString(eDataType, initialValue);
 			default:
@@ -191,6 +194,10 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 		switch (eDataType.getClassifierID()) {
 			case OrchestrationPackage.TASK_STATUS:
 				return convertTaskStatusToString(eDataType, instanceValue);
+			case OrchestrationPackage.LOG_LEVEL:
+				return convertLogLevelToString(eDataType, instanceValue);
+			case OrchestrationPackage.FEEDBACK_LEVEL:
+				return convertFeedbackLevelToString(eDataType, instanceValue);
 			case OrchestrationPackage.SESSION_TYPE:
 				return convertSessionTypeToString(eDataType, instanceValue);
 			case OrchestrationPackage.COMMAND_STATUS:
@@ -209,33 +216,11 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertSelfDevDecisionToString(eDataType, instanceValue);
 			case OrchestrationPackage.TEST_STATUS:
 				return convertTestStatusToString(eDataType, instanceValue);
-			case OrchestrationPackage.LOG_LEVEL:
-				return convertLogLevelToString(eDataType, instanceValue);
 			case OrchestrationPackage.REVIEW_DECISION:
 				return convertReviewDecisionToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public LogLevel createLogLevelFromString(EDataType eDataType, String initialValue) {
-		LogLevel result = LogLevel.get(initialValue);
-		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
-		return result;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public String convertLogLevelToString(EDataType eDataType, Object instanceValue) {
-		return instanceValue == null ? null : instanceValue.toString();
 	}
 
 	/**
@@ -640,6 +625,46 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	public String convertTaskStatusToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public LogLevel createLogLevelFromString(EDataType eDataType, String initialValue) {
+		LogLevel result = LogLevel.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertLogLevelToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public FeedbackLevel createFeedbackLevelFromString(EDataType eDataType, String initialValue) {
+		FeedbackLevel result = FeedbackLevel.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertFeedbackLevelToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 

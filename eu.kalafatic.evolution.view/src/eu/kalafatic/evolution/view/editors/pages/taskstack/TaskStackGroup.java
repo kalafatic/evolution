@@ -136,9 +136,9 @@ public class TaskStackGroup extends AEvoGroup {
                     }
                     if (column == 0) { // Run
                         page.runSingleTask(task);
-                    } else if (column == 6) { // Result
+                    } else if (column == 7) { // Result
                         editor.openTaskResult(task);
-                    } else if (column == 9) { // Edit
+                    } else if (column == 1) { // Edit
                         openTaskEditDialog(task);
                     }
                 }
@@ -150,14 +150,53 @@ public class TaskStackGroup extends AEvoGroup {
         // Run Column
         TreeViewerColumn runCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
         runCol.getColumn().setText("Run");
-        runCol.getColumn().setWidth(80);
+        runCol.getColumn().setWidth(200);
         runCol.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return "\u25B6"; // Play icon
+            	String name =((Task) element).getId();
+            	name = name != null ? name : ((Task) element).getName();
+                return "\u25B6" + "			"+ name; // Play icon +id
             }
         });
 
+        // Edit Column
+        TreeViewerColumn editCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        editCol.getColumn().setText("Edit");
+        editCol.getColumn().setWidth(40);
+        editCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return "\u270E"; // Pencil icon
+            }
+        });
+        
+        // Prompt Column
+        TreeViewerColumn promptCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        promptCol.getColumn().setText("Prompt");
+        promptCol.getColumn().setWidth(200);
+        promptCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                String prompt = ((Task) element).getPrompt();
+                return prompt != null ? prompt : "";
+            }
+        });
+        promptCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "prompt"));
+        
+        
+        // Attachments Column
+        TreeViewerColumn attachmentsCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        attachmentsCol.getColumn().setText("Attachments");
+        attachmentsCol.getColumn().setWidth(100);
+        attachmentsCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return String.join(", ", ((Task) element).getAttachments());
+            }
+        });
+
+        
         // Timer Column (Commented out)
         /*
         TreeViewerColumn timerCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
@@ -178,7 +217,7 @@ public class TaskStackGroup extends AEvoGroup {
         // Date Column
         TreeViewerColumn dateCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
         dateCol.getColumn().setText("Date");
-        dateCol.getColumn().setWidth(120);
+        dateCol.getColumn().setWidth(100);
         dateCol.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -187,22 +226,36 @@ public class TaskStackGroup extends AEvoGroup {
         });
         dateCol.setEditingSupport(new DateEditingSupport(treeViewer));
 
-        // Thread ID Column
-        TreeViewerColumn idCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
-        idCol.getColumn().setText("Thread ID");
-        idCol.getColumn().setWidth(120);
-        idCol.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                return ((Task) element).getId();
-            }
-        });
-        idCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "id"));
+//        // Thread ID Column
+//        TreeViewerColumn idCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+//        idCol.getColumn().setText("Thread ID");
+//        idCol.getColumn().setWidth(40);
+//        idCol.setLabelProvider(new ColumnLabelProvider() {
+//            @Override
+//            public String getText(Object element) {
+//                return ((Task) element).getId();
+//            }
+//        });
+//        idCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "id"));
+//
+//       
+//        // Tasks Column
+//        TreeViewerColumn nameCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+//        nameCol.getColumn().setText("Tasks");
+//        nameCol.getColumn().setWidth(300);
+//        nameCol.setLabelProvider(new ColumnLabelProvider() {
+//            @Override
+//            public String getText(Object element) {
+//                return ((Task) element).getName();
+//            }
+//        });
+//        nameCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "name"));
 
+        
         // Type Column
         TreeViewerColumn typeCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
         typeCol.getColumn().setText("Type");
-        typeCol.getColumn().setWidth(120);
+        typeCol.getColumn().setWidth(100);
         typeCol.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -212,22 +265,11 @@ public class TaskStackGroup extends AEvoGroup {
         });
         typeCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "type"));
 
-        // Tasks Column
-        TreeViewerColumn nameCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
-        nameCol.getColumn().setText("Tasks");
-        nameCol.getColumn().setWidth(300);
-        nameCol.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                return ((Task) element).getName();
-            }
-        });
-        nameCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "name"));
-
+        
         // State Column
         TreeViewerColumn stateCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
         stateCol.getColumn().setText("State");
-        stateCol.getColumn().setWidth(100);
+        stateCol.getColumn().setWidth(50);
         stateCol.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -242,7 +284,7 @@ public class TaskStackGroup extends AEvoGroup {
         // Result Column
         TreeViewerColumn resultCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
         resultCol.getColumn().setText("Result");
-        resultCol.getColumn().setWidth(300);
+        resultCol.getColumn().setWidth(200);
         resultCol.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -255,40 +297,10 @@ public class TaskStackGroup extends AEvoGroup {
             }
         });
 
-        // Prompt Column
-        TreeViewerColumn promptCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
-        promptCol.getColumn().setText("Prompt");
-        promptCol.getColumn().setWidth(200);
-        promptCol.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                String prompt = ((Task) element).getPrompt();
-                return prompt != null ? prompt : "";
-            }
-        });
-        promptCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "prompt"));
+       
 
-        // Attachments Column
-        TreeViewerColumn attachmentsCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
-        attachmentsCol.getColumn().setText("Attachments");
-        attachmentsCol.getColumn().setWidth(150);
-        attachmentsCol.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                return String.join(", ", ((Task) element).getAttachments());
-            }
-        });
-
-        // Edit Column
-        TreeViewerColumn editCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
-        editCol.getColumn().setText("Edit");
-        editCol.getColumn().setWidth(50);
-        editCol.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                return "\u270E"; // Pencil icon
-            }
-        });
+       
+       
     }
 
     private org.eclipse.swt.graphics.Color getStatusColor(TaskStatus status) {

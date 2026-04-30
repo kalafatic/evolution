@@ -36,11 +36,11 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getGoal <em>Goal</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getPlan <em>Plan</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getArtifacts <em>Artifacts</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getPrompt <em>Prompt</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getAttachments <em>Attachments</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getLogLevel <em>Log Level</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getFeedbackLevel <em>Feedback Level</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isAutoEscalate <em>Auto Escalate</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getPrompt <em>Prompt</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getAttachments <em>Attachments</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getLogLevel <em>Log Level</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getFeedbackLevel <em>Feedback Level</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isAutoEscalate <em>Auto Escalate</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -517,6 +517,18 @@ public interface Task extends EObject {
 	void setPrompt(String value);
 
 	/**
+	 * Returns the value of the '<em><b>Attachments</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Attachments</em>' attribute list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Attachments()
+	 * @model
+	 * @generated
+	 */
+	EList<String> getAttachments();
+
+	/**
 	 * Returns the value of the '<em><b>Log Level</b></em>' attribute.
 	 * The literals are from the enumeration {@link eu.kalafatic.evolution.model.orchestration.LogLevel}.
 	 * <!-- begin-user-doc -->
@@ -588,17 +600,5 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setAutoEscalate(boolean value);
-
-	/**
-	 * Returns the value of the '<em><b>Attachments</b></em>' attribute list.
-	 * The list contents are of type {@link java.lang.String}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Attachments</em>' attribute list.
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Attachments()
-	 * @model
-	 * @generated
-	 */
-	EList<String> getAttachments();
 
 } // Task

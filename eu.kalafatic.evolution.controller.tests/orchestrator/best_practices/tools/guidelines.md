@@ -1,4 +1,4 @@
-# TOOLS Best Practices
+### TOOLS Best Practices
 
 - Ensure all file paths are normalized and relative to the project root.
 - Request explicit user approval for high-risk actions (e.g., DELETE, SHELL).
