@@ -10,6 +10,7 @@ import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
+import org.eclipse.core.commands.operations.ObjectUndoContext;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -95,6 +96,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private TaskContext currentContext;
     private volatile boolean isDirty = false;
     private Resource resource;
+    private IUndoContext undoContext;
     private EditorResourceChangeListener resourceListener;
     private EditorSelectionListener selectionListener;
     private org.eclipse.jface.text.ITextSelection lastTextSelection;
@@ -505,9 +507,17 @@ public class MultiPageEditor extends MultiPageEditorPart {
     @Override
     public <T> T getAdapter(Class<T> key) {
         if (key.equals(IUndoContext.class)) {
+            T adapter = null;
             if (textEditor != null) {
-                return textEditor.getAdapter(key);
+                adapter = textEditor.getAdapter(key);
             }
+            if (adapter == null) {
+                if (undoContext == null) {
+                    undoContext = new ObjectUndoContext(this);
+                }
+                return key.cast(undoContext);
+            }
+            return adapter;
         }
         if (key.equals(IContentOutlinePage.class)) {
             if (textEditor != null) {
