@@ -34,6 +34,14 @@ public class LlmIntentClassifier implements IIntentClassifier {
             return result;
         }
 
+        if (lowerInput.matches("^\\s*(try again|retry|one more time)\\s*[!.]*\\s*$")) {
+            JSONObject result = new JSONObject();
+            result.put("intent", "continue");
+            result.put("confidence", 1.0);
+            result.put("reason", "Fast-track retry intent detection.");
+            return result;
+        }
+
         if (lowerInput.matches(".*\\b(create|fix|add|run|test|generate|write|refactor|modify|delete|check|implement|build)\\b.*")) {
             JSONObject result = new JSONObject();
             result.put("intent", "new");

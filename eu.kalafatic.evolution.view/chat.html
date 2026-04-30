@@ -453,6 +453,12 @@
             color: #64748b;
         }
 
+        .non-essential {
+            font-size: 9px;
+            opacity: 0.6;
+            line-height: 1.3;
+        }
+
         @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Thinking Animation */
@@ -786,6 +792,15 @@
 
             // Inline code
             text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            // Guidelines / Metadata shrinking
+            if (text.includes("PROJECT ROOT:") || text.includes("INSTRUCTIONS:") ||
+                text.includes("BEST PRACTICES &amp; GUIDELINES") ||
+                text.includes("ITERATIVE LOOP CONTEXT") ||
+                text.includes("STATE MODEL:") ||
+                text.includes("FAILURE FINGERPRINTING")) {
+                text = '<div class="non-essential">' + text + '</div>';
+            }
 
             // Bold & Italic
             text = text.replace(/\*\*([^\*]+)\*\*/g, '<b>$1</b>');

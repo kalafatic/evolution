@@ -62,10 +62,13 @@ public class SelfDevSupervisor {
         try {
             int maxIter = session.getMaxIterations();
             if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null &&
-                context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
-                context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations() != -1) {
-                maxIter = context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations();
+                context.getOrchestrator().getAiChat().getPromptInstructions() != null) {
+                int preferred = context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations();
+                if (preferred > 0) {
+                    maxIter = preferred;
+                }
             }
+            session.setMaxIterations(maxIter); // Ensure session model reflects what we are actually using
 
             for (int i = 1; i <= maxIter; i++) {
                 if (session.getStatus() != SelfDevStatus.RUNNING) {
@@ -80,7 +83,15 @@ public class SelfDevSupervisor {
                 session.getIterations().add(iteration);
 
                 IterationManager iterationManager = createIterationManager(iteration);
-                EvaluationResult result = iterationManager.run();
+                EvaluationResult result;
+                try {
+                    result = iterationManager.run();
+                } catch (Exception e) {
+                    context.log("[SUPERVISOR] Iteration " + i + " encountered an error: " + e.getMessage());
+                    result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                    result.setSuccess(false);
+                    result.setDecision(SelfDevDecision.ROLLBACK);
+                }
 
                 if (!result.isSuccess() || result.getDecision() == SelfDevDecision.ROLLBACK) {
                     failureCount++;
@@ -90,6 +101,8 @@ public class SelfDevSupervisor {
                         session.setStatus(SelfDevStatus.FAILED);
                         return; // Exit immediately
                     }
+                    // If we have a critical error but haven't reached MAX_FAILURES, we might want to continue to next iteration
+                    // But usually, a critical error in Darwin mode might need manual intervention or a different approach.
                 }
 
                 if (result.getDecision() == SelfDevDecision.STOP) {
