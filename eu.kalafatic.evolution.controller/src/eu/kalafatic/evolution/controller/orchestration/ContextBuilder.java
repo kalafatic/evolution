@@ -17,9 +17,15 @@ public class ContextBuilder {
     private static final int SMALL_FILE_LIMIT = 4096;
 
     public static ContextPackage build(Task task, TaskContext context) {
+        return build(task, context, 1, null);
+    }
+
+    public static ContextPackage build(Task task, TaskContext context, int attempt, String lastFeedback) {
         ContextPackage pkg = new ContextPackage();
         pkg.setGoal(task.getGoal());
         pkg.setStep(task.getName());
+        pkg.setAttempt(attempt);
+        pkg.setLastFeedback(lastFeedback);
 
         Set<String> scope = selectRelevantFiles(task, context);
         pkg.getScope().addAll(scope);
@@ -164,7 +170,15 @@ public class ContextBuilder {
     public static String buildPrompt(ContextPackage ctx) {
         StringBuilder sb = new StringBuilder();
         sb.append("### GOAL\n").append(ctx.getGoal()).append("\n\n");
-        sb.append("### CURRENT STEP\n").append(ctx.getStep()).append("\n\n");
+        sb.append("### CURRENT STEP\n").append(ctx.getStep());
+        if (ctx.getAttempt() > 1) {
+            sb.append(" (Attempt ").append(ctx.getAttempt()).append(")");
+        }
+        sb.append("\n\n");
+
+        if (ctx.getLastFeedback() != null && !ctx.getLastFeedback().isEmpty()) {
+            sb.append("### PREVIOUS FEEDBACK\n").append(ctx.getLastFeedback()).append("\n\n");
+        }
 
         sb.append("### CONSTRAINTS\n");
         for (String c : ctx.getConstraints()) {

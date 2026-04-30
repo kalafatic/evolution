@@ -239,18 +239,25 @@ public class EvolutionOrchestrator implements IOrchestrator {
             // 5. Analytic Phase
             String analyzedRequest = analyzeAndClarify(request, context);
 
-            // 6. Planning (only if new or if context requires a new plan)
+            // 6. Strategic Planning: Run once per 'new' goal. Plan becomes LOCKED for the session.
             boolean allDone = context.getOrchestrator().getTasks().stream().allMatch(t -> t.getStatus() == TaskStatus.DONE);
-            boolean shouldReplan = "new".equals(intent) || context.getOrchestrator().getTasks().isEmpty() || allDone;
+            boolean shouldReplan = "new".equals(intent) || context.getOrchestrator().getTasks().isEmpty();
+
+            // Darwin Guard: If all tasks are done but intent is not 'new', we might be in a loop or the user is just chatting.
+            if (allDone && !"new".equals(intent) && !"continue".equals(intent)) {
+                context.log("Evo-Orchestrator-Darwin: All tasks done. Locking plan unless new intent detected.");
+                shouldReplan = false;
+            }
+
             List<Task> originalPlannedTasks;
             if (shouldReplan) {
+                context.log("Evo-Orchestrator-Planning: Generating new strategic plan...");
                 OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Planning...");
                 originalPlannedTasks = planner.plan(analyzedRequest, context);
                 OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Finished");
-                // context.getOrchestrator().getTasks().clear(); // Preserve task history
                 context.getOrchestrator().getTasks().addAll(originalPlannedTasks);
             } else {
-                context.log("Evo-Orchestrator-Planning: Continuing with existing plan.");
+                context.log("Evo-Orchestrator-Planning: Strategic plan is LOCKED. Continuing with existing tasks.");
                 originalPlannedTasks = new ArrayList<>(context.getOrchestrator().getTasks());
             }
 
@@ -428,10 +435,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
             }
 
             try {
-                // 1. PLAN: Agent determines how to solve the specific task
+                // 1. PLAN (Tactical): Determine approach for this specific task
                 task.setStatus(TaskStatus.PLANNING);
                 context.setCurrentPhase("PLAN");
-                context.log("Evo-Orchestrator-" + task.getName() + ": Phase 1 - Planning...");
+                context.log("Evo-Orchestrator-" + task.getName() + ": Phase 1 - Tactical Planning...");
 
                 String mutationStrategy = "initial";
                 IAgent currentAgent = agent;
@@ -439,10 +446,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 if (lastFeedback != null) {
                     if (lastFeedback.toLowerCase().contains("exception") || lastFeedback.toLowerCase().contains("error") || lastFeedback.toLowerCase().contains("fail")) {
                         mutationStrategy = "Syntactic fix (Self-Correction)";
-                        // If it's a technical failure, use RepairAgent for the next attempt
                         if (task.getType().equalsIgnoreCase("maven") || task.getType().equalsIgnoreCase("shell") || task.getType().equalsIgnoreCase("file")) {
                             currentAgent = repairAgent;
-                            context.log("Evo-Orchestrator-Darwin: Technical failure detected. Engaging RepairAgent.");
                         }
                     } else if (lastFeedback.toLowerCase().contains("test") || lastFeedback.toLowerCase().contains("verify")) {
                         mutationStrategy = "Logic fix (Behavioral-Correction)";
@@ -451,12 +456,24 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
                 }
 
+                // Tactical Planning: Mutation allows modifying the step (task's tactical plan)
                 String planInstruction = "Create a structured JSON plan with: 'steps' (array), 'targetFiles' (array), 'strategy' (string), and optional 'implementation' (string - the actual code if known). " +
                         "Mutation Strategy: " + mutationStrategy + ". Feedback: " + (lastFeedback != null ? lastFeedback : "none");
 
                 String localPlan = currentAgent.process(task.getDescription() + "\nGOAL: " + task.getGoal() + "\nINSTRUCTION: " + planInstruction, context, lastFeedback);
                 task.setPlan(localPlan);
-                logger.debug(context, "Generated plan", localPlan);
+                logger.debug(context, "Generated tactical plan", localPlan);
+
+                // 2. CONTEXT: Gather minimal tactical context
+                context.setCurrentPhase("CONTEXT");
+                context.log("Evo-Orchestrator-" + task.getName() + ": Phase 2 - Gathering Context...");
+                ContextPackage contextPkg = ContextBuilder.build(task, context, retry, lastFeedback);
+                String contextPrompt = ContextBuilder.buildPrompt(contextPkg);
+
+                // 3. EXECUTE: Perform the action strictly using tactical context
+                task.setStatus(TaskStatus.EXECUTING);
+                context.setCurrentPhase("EXECUTE");
+                context.log("Evo-Orchestrator-" + task.getName() + ": Phase 3 - Executing...");
 
                 // Extract implementation from plan if present to avoid overthinking
                 String preGeneratedContent = null;
@@ -465,15 +482,11 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     if (planJson.has("implementation")) {
                         preGeneratedContent = planJson.getString("implementation");
                     }
-                } catch (Exception e) {
-                    // Not JSON or missing implementation, proceed with normal execution
-                }
+                } catch (Exception e) { }
 
-                // 2. EXECUTE: Agent performs the action
-                task.setStatus(TaskStatus.EXECUTING);
-                context.setCurrentPhase("EXECUTE");
-                context.log("Evo-Orchestrator-" + task.getName() + ": Phase 2 - Executing...");
-                String result = performAction(task, agent, context, lastFeedback, preGeneratedContent);
+                // For LLM-based tasks, we inject the tactical prompt
+                String executionInput = (preGeneratedContent != null) ? preGeneratedContent : contextPrompt;
+                String result = performAction(task, currentAgent, context, lastFeedback, preGeneratedContent != null ? preGeneratedContent : executionInput);
                 task.setResponse(result);
 
                 // Capture Artifacts (result summary + content)
@@ -511,10 +524,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
                 }
 
-                // 3. VERIFY: ReviewerAgent and ConstraintAgent evaluate the result
+                // 4. VERIFY: Evaluate the result
                 task.setStatus(TaskStatus.VERIFYING);
                 context.setCurrentPhase("VERIFY");
-                context.log("Evo-Orchestrator-" + task.getName() + ": Phase 3 - Verifying...");
+                context.log("Evo-Orchestrator-" + task.getName() + ": Phase 4 - Verifying...");
 
                 JSONObject evaluation = reviewer.evaluate(result, task.getName(), context);
 
@@ -523,7 +536,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     JSONObject constraintEval = constraintAgent.evaluate(result, task.getName(), context);
                     if (!constraintEval.optBoolean("success", false)) {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Architectural violation detected by ConstraintAgent.");
-                        evaluation = constraintEval; // Override with constraint failure
+                        evaluation = constraintEval;
                     }
                 }
 
@@ -533,14 +546,32 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     task.setFeedback("Success: " + evaluation.optString("comment", "Task validated."));
                     return true;
                 } else {
-                    // Adaptive logging: increase verbosity on failure (DEBUG = 1)
+                    // 5. ANALYZE: Diagnose the failure
+                    context.setCurrentPhase("ANALYZE");
+                    context.log("Evo-Orchestrator-" + task.getName() + ": Phase 5 - Analyzing failure...");
+                    JSONObject diagnosis = analyticAgent.diagnose(result, evaluation.optString("feedback"), context);
+
+                    // 6. MUTATE: Adjust strategy based on diagnosis
+                    context.setCurrentPhase("MUTATE");
+                    context.log("Evo-Orchestrator-" + task.getName() + ": Phase 6 - Mutating approach...");
+
+                    if (diagnosis.optBoolean("repeatFailure", false)) {
+                        context.log("Evo-Orchestrator-Darwin: Repeated failure detected. Escalating strategy.");
+                        task.setFeedbackLevel(eu.kalafatic.evolution.model.orchestration.FeedbackLevel.ADVANCED);
+                    }
+
+                    String suggested = diagnosis.optString("suggestedStrategy", "RETRY");
+                    if ("REPAIR_AGENT".equals(suggested)) {
+                        agent = repairAgent;
+                    }
+
+                    lastFeedback = "Verification Failed: " + evaluation.optString("feedback") + " (Diagnosis: " + diagnosis.optString("explanation") + ")";
+                    context.log("Evo-Orchestrator-Darwin: Mutation triggered. Feedback: " + lastFeedback);
+                    task.setFeedback("Retry " + retry + ": " + lastFeedback);
+
                     if (task.getLogLevel().getValue() > LogLevel.DEBUG_VALUE) {
                         task.setLogLevel(LogLevel.DEBUG);
                     }
-                    // DARWINIAN MUTATION: Modify approach based on failure
-                    lastFeedback = "Verification Failed: " + evaluation.optString("feedback", "Task failed validation.");
-                    context.log("Evo-Orchestrator-Darwin: Mutation triggered due to failure. Feedback: " + lastFeedback);
-                    task.setFeedback("Retry " + retry + ": " + lastFeedback);
                 }
             } catch (Exception e) {
                 // Adaptive logging: set level to ERROR on exception

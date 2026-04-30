@@ -15,6 +15,8 @@ public class ContextPackage {
     private String code;
     private String dependencies;
     private List<String> constraints = new ArrayList<>();
+    private int attempt;
+    private String lastFeedback;
 
     public String getGoal() {
         return goal;
@@ -64,6 +66,22 @@ public class ContextPackage {
         this.constraints = constraints;
     }
 
+    public int getAttempt() {
+        return attempt;
+    }
+
+    public void setAttempt(int attempt) {
+        this.attempt = attempt;
+    }
+
+    public String getLastFeedback() {
+        return lastFeedback;
+    }
+
+    public void setLastFeedback(String lastFeedback) {
+        this.lastFeedback = lastFeedback;
+    }
+
     public JSONObject toJson() {
         JSONObject json = new JSONObject();
         json.put("goal", goal);
@@ -72,6 +90,8 @@ public class ContextPackage {
         json.put("code", code);
         json.put("dependencies", dependencies);
         json.put("constraints", new JSONArray(constraints));
+        json.put("attempt", attempt);
+        json.put("lastFeedback", lastFeedback);
         return json;
     }
 }
