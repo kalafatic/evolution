@@ -32,6 +32,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
         return "You are a workflow planner for an agentic system (Evo).\n" +
                 "IMPORTANT: You only receive requests that have been classified as ACTION_REQUEST.\n\n" +
                 "PLANNING RULES:\n" +
+                "- Prioritize information provided in the refined prompt and shared memory; do not ask for clarification on details already established (e.g., the programming language).\n" +
                 "- NEVER invent domain data (e.g. if user says 'create file', don't assume a filename if not provided).\n" +
                 "- ONLY use explicit user input or shared memory.\n" +
                 "- If critical data is missing (e.g. filename, command), create a SINGLE clarification task instead of multiple operational steps.\n" +
