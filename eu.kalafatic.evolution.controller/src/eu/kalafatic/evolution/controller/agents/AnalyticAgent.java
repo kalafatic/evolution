@@ -7,9 +7,11 @@ import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 /**
  * Specialized agent for analyzing user prompts to determine intent,
  * category, and identify ambiguities before planning.
+ * It also performs failure diagnosis in the ANALYZE phase of the PEV loop.
  *
- * @evo.lastModified: 14:B
+ * @evo.lastModified: 20:A
  * @evo.origin: self
+ * @evo:20:A reason=architecture-documentation-sync
  */
 public class AnalyticAgent extends BaseAiAgent {
 

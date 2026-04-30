@@ -46,3 +46,13 @@
     - **Orchestration**: Integrated `RepairAgent` into the `EvolutionOrchestrator` PEV loop to handle technical failures (Maven, Shell, File).
     - **Documentation**: Created `docs/IMPROVEMENTS_ANALYSIS.md` with detailed architectural analysis and roadmap.
 - **Traceability**: `iterations/19/plan.json`
+
+## [Iteration 20] - Refinement of Architecture Documentation and Code Traceability
+- **Goal**: Synchronize documentation with the latest technical implementation and improve code traceability.
+- **Changes**:
+    - **Documentation**: Updated `architecture.md` and `PROJECT_SPECIFICATION.md` to define the 6-phase PEV pipeline (PLAN, CONTEXT, EXECUTE, VERIFY, ANALYZE, MUTATE).
+    - **Specialized Agents**: Documented roles of `RepairAgent`, `ConstraintAgent`, and `ProposalConsolidatorAgent`.
+    - **Improvements Analysis**: Refactored `IMPROVEMENTS_ANALYSIS.md` to reflect implemented features like Resilient Routing and Parallel Darwinian Variants.
+    - **Traceability**: Enhanced code traceability with `@evo:20:A` markers across core orchestration and agent classes.
+    - **Hybrid Mode Design**: Created `docs/HYBRID_MODE_DESIGN.md` to document the split-intelligence architecture.
+- **Traceability**: `iterations/20/plan.json`

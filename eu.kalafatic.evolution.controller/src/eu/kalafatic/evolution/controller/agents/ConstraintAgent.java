@@ -7,6 +7,8 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 /**
  * Specialized agent for architectural constraint verification.
  * It ensures that proposed changes align with the DesignModel.
+ *
+ * @evo:20:A reason=architecture-documentation-sync
  */
 public class ConstraintAgent extends BaseAiAgent {
 
