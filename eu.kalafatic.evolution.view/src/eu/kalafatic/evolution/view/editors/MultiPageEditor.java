@@ -385,7 +385,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     public void refreshPages() {
         if (orchestrator == null) return;
         if (aiChatPage != null) aiChatPage.scheduleRefresh();
-        if (architecturePage != null) architecturePage.redraw(); // Redraw enough to trigger model update
+        if (architecturePage != null) architecturePage.scheduleRefresh();
         if (propertiesPage != null) propertiesPage.scheduleRefresh();
         if (toolsPage != null) toolsPage.scheduleRefresh();
         if (taskStackPage != null) taskStackPage.scheduleRefresh();
@@ -496,6 +496,8 @@ public class MultiPageEditor extends MultiPageEditorPart {
             previewPage.sortWords();
         } else if (control == comparePage && comparePage != null) {
             refreshComparePage();
+        } else if (control == architecturePage && architecturePage != null) {
+            architecturePage.scheduleRefresh();
         }
     }
 

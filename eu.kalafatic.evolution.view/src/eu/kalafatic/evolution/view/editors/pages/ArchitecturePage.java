@@ -65,7 +65,7 @@ public class ArchitecturePage extends Composite {
         }
     }
 
-    private void scheduleRefresh() {
+    public void scheduleRefresh() {
         Display.getDefault().asyncExec(() -> {
             if (isDisposed()) return;
             Display.getDefault().timerExec(-1, refreshRunnable); // Cancel previous
@@ -189,15 +189,15 @@ public class ArchitecturePage extends Composite {
 
         if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
             eu.kalafatic.evolution.model.orchestration.SelfDevSession session = orchestrator.getSelfDevSession();
-            model.setName("Self-Development: " + session.getId());
+            model.setName("Self-Development Session: " + (session.getId() != null ? session.getId() : "Active"));
 
             int i = 0;
             for (eu.kalafatic.evolution.model.orchestration.Iteration iter : session.getIterations()) {
                 ComponentRecord comp = new ComponentRecord();
                 comp.setName(iter.getId());
-                comp.setType("Iteration");
-                comp.setX(100 + (i * 200) % 800);
-                comp.setY(100 + (i / 4) * 150);
+                comp.setType("Step");
+                comp.setX(100 + (i * 250) % 750);
+                comp.setY(100 + (i / 3) * 200);
                 model.getComponents().add(comp);
 
                 if (i > 0) {
@@ -209,19 +209,29 @@ public class ArchitecturePage extends Composite {
                 }
                 i++;
             }
-            if (!model.getComponents().isEmpty()) return model;
+            if (model.getComponents().isEmpty()) {
+                ComponentRecord comp = new ComponentRecord();
+                comp.setName("Session Active");
+                comp.setType("Status");
+                comp.setX(100); comp.setY(100);
+                model.getComponents().add(comp);
+            }
+            return model;
         }
 
         if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
-            model.setName("Inferred Architecture (from active tasks)");
+            model.setName("Active Session Tasks");
             int i = 0;
+            boolean hasClassTasks = orchestrator.getTasks().stream()
+                .anyMatch(t -> t.getName().toLowerCase().contains("class") || t.getName().toLowerCase().contains("interface"));
+
             for (eu.kalafatic.evolution.model.orchestration.Task task : orchestrator.getTasks()) {
-                if (task.getName().contains("class") || task.getName().contains("Class") || task.getName().contains("interface")) {
+                if (!hasClassTasks || task.getName().toLowerCase().contains("class") || task.getName().toLowerCase().contains("interface")) {
                     ComponentRecord comp = new ComponentRecord();
                     String name = task.getName().replace("Create", "").replace("create", "").replace("class", "").replace("java", "").replace(".", "").trim();
-                    if (name.isEmpty()) name = "NewClass" + i;
+                    if (name.isEmpty()) name = task.getId() != null ? task.getId() : "Task" + i;
                     comp.setName(name);
-                    comp.setType("Class");
+                    comp.setType(hasClassTasks ? "Class" : "Task");
                     comp.setX(100 + (i * 220) % 660);
                     comp.setY(100 + (i / 3) * 180);
 
@@ -231,13 +241,6 @@ public class ArchitecturePage extends Composite {
                             java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\w+)\\s*\\(").matcher(desc);
                             while (m.find()) {
                                 if (!m.group(1).equalsIgnoreCase("create")) comp.getMethods().add(m.group(1) + "()");
-                            }
-                            if (comp.getMethods().isEmpty()) comp.getMethods().add("inferredMethod()");
-                        }
-                        if (desc.contains("property") || desc.contains("field") || desc.contains(":")) {
-                            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\w+)\\s*:").matcher(desc);
-                            while (m.find()) {
-                                comp.getProperties().add(m.group(1));
                             }
                         }
                     }
