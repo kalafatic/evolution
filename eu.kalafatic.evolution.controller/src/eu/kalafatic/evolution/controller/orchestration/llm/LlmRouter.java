@@ -12,9 +12,11 @@ import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 /**
  * Router that chooses between LLM providers based on orchestrator settings.
  * Implements HYBRID mode with local context building and cloud reasoning.
+ * Features automatic resilient fallback to LOCAL mode on remote failure.
  *
- * @evo.lastModified: 14:B
+ * @evo.lastModified: 20:A
  * @evo.origin: self
+ * @evo:20:A reason=architecture-documentation-sync
  */
 public class LlmRouter {
 
@@ -55,6 +57,7 @@ public class LlmRouter {
                 return verifyResponseLocally(orchestrator, remoteResponse, temperature, proxyUrl, context);
             }
         } catch (Exception e) {
+            // @evo:20:A reason=resilient-routing-fallback
             if (context != null) {
                 context.log("LlmRouter-Fallback: Remote/Hybrid request failed: " + e.getMessage());
                 context.log("LlmRouter-Fallback: Attempting automatic fallback to LOCAL mode...");

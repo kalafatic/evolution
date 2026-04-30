@@ -12,6 +12,11 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 
+/**
+ * Supervisor for autonomous self-development sessions.
+ *
+ * @evo:20:A reason=architecture-documentation-sync
+ */
 public class SelfDevSupervisor {
     private final SelfDevSession session;
     private final TaskContext context;

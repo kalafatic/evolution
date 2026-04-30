@@ -36,9 +36,11 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
 
 /**
  * Core Orchestrator implementation that manages the task lifecycle and execution.
+ * It implements a sophisticated 6-phase PEV (Plan-Execute-Verify) loop for autonomous development.
  *
- * @evo.lastModified: 14:B
+ * @evo.lastModified: 20:A
  * @evo.origin: self
+ * @evo:20:A reason=architecture-documentation-sync
  */
 public class EvolutionOrchestrator implements IOrchestrator {
 
@@ -436,6 +438,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             try {
                 // 1. PLAN (Tactical): Determine approach for this specific task
+                // @evo:20:A reason=6-phase-pev-loop
                 task.setStatus(TaskStatus.PLANNING);
                 context.setCurrentPhase("PLAN");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 1 - Tactical Planning...");
@@ -465,12 +468,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 logger.debug(context, "Generated tactical plan", localPlan);
 
                 // 2. CONTEXT: Gather minimal tactical context
+                // @evo:20:A reason=6-phase-pev-loop
                 context.setCurrentPhase("CONTEXT");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 2 - Gathering Context...");
                 ContextPackage contextPkg = ContextBuilder.build(task, context, retry, lastFeedback);
                 String contextPrompt = ContextBuilder.buildPrompt(contextPkg);
 
                 // 3. EXECUTE: Perform the action strictly using tactical context
+                // @evo:20:A reason=6-phase-pev-loop
                 task.setStatus(TaskStatus.EXECUTING);
                 context.setCurrentPhase("EXECUTE");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 3 - Executing...");
@@ -525,6 +530,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 }
 
                 // 4. VERIFY: Evaluate the result
+                // @evo:20:A reason=6-phase-pev-loop
                 task.setStatus(TaskStatus.VERIFYING);
                 context.setCurrentPhase("VERIFY");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 4 - Verifying...");
@@ -547,11 +553,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     return true;
                 } else {
                     // 5. ANALYZE: Diagnose the failure
+                    // @evo:20:A reason=6-phase-pev-loop
                     context.setCurrentPhase("ANALYZE");
                     context.log("Evo-Orchestrator-" + task.getName() + ": Phase 5 - Analyzing failure...");
                     JSONObject diagnosis = analyticAgent.diagnose(result, evaluation.optString("feedback"), context);
 
                     // 6. MUTATE: Adjust strategy based on diagnosis
+                    // @evo:20:A reason=6-phase-pev-loop
                     context.setCurrentPhase("MUTATE");
                     context.log("Evo-Orchestrator-" + task.getName() + ": Phase 6 - Mutating approach...");
 

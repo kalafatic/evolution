@@ -7,6 +7,8 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
 /**
  * Specialized agent for fixing build failures and technical errors.
  * It analyzes logs and provides surgical code corrections.
+ *
+ * @evo:20:A reason=architecture-documentation-sync
  */
 public class RepairAgent extends BaseAiAgent {
 

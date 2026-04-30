@@ -22,7 +22,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
+ * Manages individual self-development iterations.
+ *
  * @evo:16:A reason=darwin-proposal-logging
+ * @evo:20:A reason=architecture-documentation-sync
  */
 public class IterationManager {
     private static final ExecutorService variantExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));

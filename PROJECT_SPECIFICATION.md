@@ -25,12 +25,14 @@ The Evolution Project is an agentic, AI-driven development environment integrate
 - **EvolutionOrchestrator**: Implements the multi-stage task lifecycle:
     1. **Planning**: `PlannerAgent` decomposes natural language requests into a sequence of `Task` objects.
     2. **Approval Pause**: Mandatory execution block using `CompletableFuture` after planning.
-    3. **Plan–Execute–Verify (PEV) Loop**: Every task follows an internal 3-phase cycle:
-        - **Plan**: Agent creates a structured JSON plan (steps, target files, strategy).
-        - **Execute**: Agent performs the task using tools or reasoning; technical outputs are stored in `artifacts`.
-        - **Verify**: `ReviewerAgent` evaluates results.
-    4. **Darwinian Mutation**: On verification failure, the system selects a mutation strategy (e.g., Syntactic vs. Logic fix) based on failure type and retries with a modified plan.
-    5. **Task-Level Approval**: Optional pause before sensitive operations.
+    3. **Plan–Execute–Verify (PEV) Loop**: Every task follows a sophisticated **6-phase** internal cycle:
+        - **PLAN (Tactical)**: Agent creates a structured JSON plan (steps, target files, strategy).
+        - **CONTEXT**: `ContextBuilder` gathers minimal deterministic context (code/dependencies).
+        - **EXECUTE**: Agent performs the task; technical outputs are stored in `artifacts`.
+        - **VERIFY**: `ReviewerAgent` and `ConstraintAgent` evaluate results against goals and architectural guardrails.
+        - **ANALYZE**: `AnalyticAgent` diagnoses failures for root causes and repetitive patterns.
+        - **MUTATE**: System selects a mutation strategy (e.g., Self-Correction via `RepairAgent` or Escalation) and retries.
+    4. **Task-Level Approval**: Optional pause before sensitive operations.
 - **LlmRouter**: The central dispatching hub.
     - **HYBRID Mode (Context Builder Pattern)**: A signature 3-step sequence:
         1. **Local Context Builder**: Ollama gathers repository context, technical briefings, and constraints.
@@ -99,7 +101,7 @@ Managed by the `SelfDevSupervisor`, this loop allows the system to improve itsel
 ## 5. Strategic Roadmap: Future Enhancements
 
 1.  **Visual Git Diff Integration**: Embed a side-by-side diff viewer in the `ApprovalPage` to review code changes before iteration commits.
-2.  **Correction Loop (RepairAgent)**: Instead of immediate rollback on task failure, trigger a specialized agent to analyze logs and propose a surgical fix.
+2.  **Parallel Darwinian Variants**: Implement true evolutionary selection by spawning multiple variant branches in parallel during the EXECUTE phase.
 3.  **Step-by-Step Execution Mode**: A toggle to pause after *every* task in the self-development loop, allowing granular user oversight.
 4.  **Telemetry & Rationale**: Implement the `rationale` attribute in the model so the AI can explain *why* it proposed specific improvements, visible in a dedicated panel.
-5.  **Degraded Offline Fallback**: Enable `LlmRouter` to automatically switch to `LOCAL` mode if remote providers become unreachable during a session.
+5.  **Knowledge Graph**: Build a structured shared memory (Knowledge Graph) to persist architectural insights across sessions.
