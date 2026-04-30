@@ -23,13 +23,13 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
-import eu.kalafatic.evolution.controller.manager.ModelInfo;
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.controller.tools.ShellTool;
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -42,7 +42,7 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 public class ModelsGroup extends AEvoGroup {
 
     private TableViewer viewer;
-    private List<ModelInfo> modelItems = new ArrayList<>();
+    private List<AIProvider> modelItems = new ArrayList<>();
     private eu.kalafatic.evolution.view.editors.pages.PropertiesPage page;
 
     public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, eu.kalafatic.evolution.view.editors.pages.PropertiesPage page) {
@@ -146,12 +146,12 @@ public class ModelsGroup extends AEvoGroup {
         });
 	}
 
-    private Color getModelColor(ModelInfo item) {
-        if (item.getState() == ModelInfo.ModelState.ERR) return lightRed;
-        if (item.getState() == ModelInfo.ModelState.NA) return lightOrange;
-        if (item.getState() == ModelInfo.ModelState.OK) {
+    private Color getModelColor(AIProvider item) {
+        if ("ERR".equals(item.getState())) return lightRed;
+        if ("NA".equals(item.getState())) return lightOrange;
+        if ("OK".equals(item.getState())) {
             String name = item.getName().toLowerCase();
-            if (item.isHybrid()) return lightCyan;
+            if (ProjectModelManager.getInstance().isHybrid(item)) return lightCyan;
             if (name.endsWith(":instruct")) return lightPurple;
             if (name.endsWith(":chat")) return lightBlue;
             return lightGreen;
@@ -168,15 +168,16 @@ public class ModelsGroup extends AEvoGroup {
         colState.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return ((ModelInfo) element).getState().toString();
+                String s = ((AIProvider) element).getState();
+                return s != null ? s : "NA";
             }
             @Override
             public String getToolTipText(Object element) {
-                return ((ModelInfo) element).getStateDescription();
+                return ((AIProvider) element).getStateDescription();
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((ModelInfo) element);
+                return getModelColor((AIProvider) element);
             }
         });
         org.eclipse.jface.viewers.ColumnViewerToolTipSupport.enableFor(viewer);
@@ -186,11 +187,11 @@ public class ModelsGroup extends AEvoGroup {
         colName.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return ((ModelInfo) element).getName();
+                return ((AIProvider) element).getName();
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((ModelInfo) element);
+                return getModelColor((AIProvider) element);
             }
         });
 
@@ -199,13 +200,13 @@ public class ModelsGroup extends AEvoGroup {
         colLocal.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                ModelInfo item = (ModelInfo) element;
-                if (item.isHybrid()) return "Hybrid";
+                AIProvider item = (AIProvider) element;
+                if (ProjectModelManager.getInstance().isHybrid(item)) return "Hybrid";
                 return (item.isLocal()) ? "Local" : "Remote";
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((ModelInfo) element);
+                return getModelColor((AIProvider) element);
             }
         });
 
@@ -214,11 +215,11 @@ public class ModelsGroup extends AEvoGroup {
         colPath.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return ((ModelInfo) element).getPathOrUrl();
+                return ((AIProvider) element).getUrl();
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((ModelInfo) element);
+                return getModelColor((AIProvider) element);
             }
         });
 
@@ -227,13 +228,13 @@ public class ModelsGroup extends AEvoGroup {
         colToken.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                String t = ((ModelInfo) element).getToken();
+                String t = ((AIProvider) element).getApiKey();
                 if (t == null || t.isEmpty() || t.equals("YOUR_API_KEY")) return "";
                 return "****";
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((ModelInfo) element);
+                return getModelColor((AIProvider) element);
             }
         });
 
@@ -242,12 +243,12 @@ public class ModelsGroup extends AEvoGroup {
         colRating.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                ModelInfo item = (ModelInfo) element;
+                AIProvider item = (AIProvider) element;
                 return String.format("%d (A:%d/CH:%d/P:%d)", item.getRating(), item.getRatingAnalyze(), item.getRatingChat(), item.getRatingProgramming());
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((ModelInfo) element);
+                return getModelColor((AIProvider) element);
             }
         });
 
@@ -294,15 +295,17 @@ public class ModelsGroup extends AEvoGroup {
 
         @Override
         public int compare(org.eclipse.jface.viewers.Viewer viewer, Object e1, Object e2) {
-            ModelInfo m1 = (ModelInfo) e1;
-            ModelInfo m2 = (ModelInfo) e2;
+            AIProvider m1 = (AIProvider) e1;
+            AIProvider m2 = (AIProvider) e2;
             int rc = 0;
             switch (propertyIndex) {
             case 0: // Name
                 rc = m1.getName().compareToIgnoreCase(m2.getName());
                 break;
             case 1: // State
-                rc = m1.getState().toString().compareTo(m2.getState().toString());
+                String s1 = m1.getState() != null ? m1.getState() : "";
+                String s2 = m2.getState() != null ? m2.getState() : "";
+                rc = s1.compareTo(s2);
                 break;
             case 2: // Rating
                 rc = Integer.compare(m1.getRating(), m2.getRating());
@@ -392,19 +395,23 @@ public class ModelsGroup extends AEvoGroup {
     private void handleEditModel() {
         IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
         if (selection.isEmpty()) return;
-        ModelInfo item = (ModelInfo) selection.getFirstElement();
+        AIProvider item = (AIProvider) selection.getFirstElement();
         if (item.isLocal()) {
             MessageDialog.openInformation(group.getShell(), "Edit", "Local Ollama models cannot be edited here.");
             return;
         }
 
-        eu.kalafatic.evolution.model.orchestration.AIProvider provider = item.getProvider();
+        // We need to find the REAL provider in the model if it exists
+        AIProvider provider = orchestrator.getAiProviders().stream()
+                .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
+                .findFirst().orElse(null);
+
         boolean isNew = false;
         if (provider == null) {
             // It's a static provider, create a model entry for it
             provider = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
             provider.setName(item.getName());
-            provider.setUrl(item.getPathOrUrl());
+            provider.setUrl(item.getUrl());
             ProviderConfig config = AiProviders.PROVIDERS.get(item.getName().toLowerCase());
             if (config != null) {
                 provider.setDefaultModel(config.getDefaultModel());
@@ -426,15 +433,14 @@ public class ModelsGroup extends AEvoGroup {
     private void handleTestModel() {
         IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
         if (selection.isEmpty()) return;
-        ModelInfo item = (ModelInfo) selection.getFirstElement();
-        if (item.getProvider() == null) {
-            MessageDialog.openWarning(group.getShell(), "Test Model", "Only custom or local models with provider entries can be tested.");
-            return;
-        }
+        AIProvider item = (AIProvider) selection.getFirstElement();
 
-        final eu.kalafatic.evolution.model.orchestration.AIProvider provider = item.getProvider();
+        // Find real provider or use a temporary one for testing
+        final AIProvider providerToTest = orchestrator.getAiProviders().stream()
+                .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
+                .findFirst().orElse(item);
 
-        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Testing Model: " + provider.getName()) {
+        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Testing Model: " + providerToTest.getName()) {
             @Override
             protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
                 try {
@@ -447,15 +453,15 @@ public class ModelsGroup extends AEvoGroup {
                     }
 
                     TaskContext context = new TaskContext(orchestrator, projectRoot);
-                    service.evaluateModel(orchestrator, provider, context);
+                    service.evaluateModel(orchestrator, providerToTest, context);
 
                     Display.getDefault().asyncExec(() -> {
                         refreshUI();
                         editor.setDirty(true);
                         MessageDialog.openInformation(group.getShell(), "Test Complete",
-                                "Evaluation finished for " + provider.getName() + ".\n" +
-                                "Overall: " + provider.getRating() + "\n" +
-                                "A: " + provider.getRatingAnalyze() + " CH: " + provider.getRatingChat() + " P: " + provider.getRatingProgramming());
+                                "Evaluation finished for " + providerToTest.getName() + ".\n" +
+                                "Overall: " + providerToTest.getRating() + "\n" +
+                                "A: " + providerToTest.getRatingAnalyze() + " CH: " + providerToTest.getRatingChat() + " P: " + providerToTest.getRatingProgramming());
                     });
                     return org.eclipse.core.runtime.Status.OK_STATUS;
                 } catch (Exception e) {
@@ -472,7 +478,7 @@ public class ModelsGroup extends AEvoGroup {
     private void handleUseModel() {
         IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
         if (selection.isEmpty()) return;
-        ModelInfo item = (ModelInfo) selection.getFirstElement();
+        AIProvider item = (AIProvider) selection.getFirstElement();
 
         if (orchestrator != null) {
             ProjectModelManager modelManager = ProjectModelManager.getInstance();
@@ -494,7 +500,7 @@ public class ModelsGroup extends AEvoGroup {
     private void handleRemoveModel() {
         IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
         if (selection.isEmpty()) return;
-        ModelInfo item = (ModelInfo) selection.getFirstElement();
+        AIProvider item = (AIProvider) selection.getFirstElement();
 
         if (item.isLocal()) {
             if (MessageDialog.openConfirm(group.getShell(), "Remove Local Model",
@@ -505,8 +511,12 @@ public class ModelsGroup extends AEvoGroup {
             if (MessageDialog.openConfirm(group.getShell(), "Remove Remote Model",
                     "Remove remote model configuration for: " + item.getName() + "?")) {
                 if (orchestrator != null) {
-                    if (item.getProvider() != null) {
-                        orchestrator.getAiProviders().remove(item.getProvider());
+                    AIProvider realProvider = orchestrator.getAiProviders().stream()
+                            .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
+                            .findFirst().orElse(null);
+
+                    if (realProvider != null) {
+                        orchestrator.getAiProviders().remove(realProvider);
                         editor.setDirty(true);
                         refreshUI();
                     } else if (item.getName().equalsIgnoreCase(orchestrator.getRemoteModel())) {
@@ -550,7 +560,7 @@ public class ModelsGroup extends AEvoGroup {
 
 	public void load() {
         CompletableFuture.runAsync(() -> {
-            List<ModelInfo> allModels = ProjectModelManager.getInstance().getAllModels(orchestrator);
+            List<AIProvider> allModels = ProjectModelManager.getInstance().getAllModels(orchestrator);
             Display.getDefault().asyncExec(() -> {
                 if (viewer.getControl().isDisposed()) return;
                 this.modelItems = allModels;

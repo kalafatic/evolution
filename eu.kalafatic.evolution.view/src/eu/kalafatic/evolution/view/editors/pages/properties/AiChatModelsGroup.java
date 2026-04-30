@@ -11,10 +11,10 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
-import eu.kalafatic.evolution.controller.manager.ModelInfo;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -88,8 +88,8 @@ public class AiChatModelsGroup extends AEvoGroup {
 
             // Verify local/hybrid models
             new Thread(() -> {
-                java.util.List<ModelInfo> allModels = ProjectModelManager.getInstance().getAllModels(orchestrator);
-                boolean ollamaOnline = allModels.stream().noneMatch(m -> "Ollama".equals(m.getName()) && m.getState() == ModelInfo.ModelState.ERR);
+                java.util.List<AIProvider> allModels = ProjectModelManager.getInstance().getAllModels(orchestrator);
+                boolean ollamaOnline = allModels.stream().noneMatch(m -> "Ollama".equals(m.getName()) && "ERR".equals(m.getState()));
 
                 Display.getDefault().asyncExec(() -> {
                     if (localModelText.isDisposed()) return;
@@ -118,12 +118,12 @@ public class AiChatModelsGroup extends AEvoGroup {
         }
     }
 
-    private void verifyOllamaModel(String modelName, ControlDecoration decorator, java.util.List<ModelInfo> models) {
+    private void verifyOllamaModel(String modelName, ControlDecoration decorator, java.util.List<AIProvider> models) {
         if (modelName == null || modelName.isEmpty()) {
             decorator.hide();
             return;
         }
-        boolean found = models.stream().anyMatch(m -> m.isLocal() && m.getName().equalsIgnoreCase(modelName) && m.getState() == ModelInfo.ModelState.OK);
+        boolean found = models.stream().anyMatch(m -> m.isLocal() && m.getName().equalsIgnoreCase(modelName) && "OK".equals(m.getState()));
         if (!found) {
             decorator.setDescriptionText("Model not found in Ollama");
             decorator.show();

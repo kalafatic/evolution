@@ -19,9 +19,9 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
-import eu.kalafatic.evolution.controller.manager.ModelInfo;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -133,12 +133,12 @@ public class AiSettingsGroup extends AEvoGroup {
 		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 		CompletableFuture.runAsync(() -> {
-			List<ModelInfo> models = ProjectModelManager.getInstance().getAllModels(orchestrator);
+			List<AIProvider> models = ProjectModelManager.getInstance().getAllModels(orchestrator);
 			Display.getDefault().asyncExec(() -> {
 				if (combo.isDisposed()) return;
 				if (models != null) {
 					Set<String> uniqueModels = new LinkedHashSet<>();
-					for (ModelInfo f : models) {
+					for (AIProvider f : models) {
 						if (f.isLocal()) {
 							uniqueModels.add(f.getName());
 						}
