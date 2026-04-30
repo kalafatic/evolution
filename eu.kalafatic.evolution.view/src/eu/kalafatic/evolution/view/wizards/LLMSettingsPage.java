@@ -148,7 +148,7 @@ public class LLMSettingsPage extends AWizardPage {
                     aiRemoteCombo.setVisible(remoteVisible);
                     
                     groupLinks.setVisible(true);
-                    groupLinks.setEnabled(true);
+                    groupLinks.setEnabled(aiMode != null && aiMode.getValue() != AiMode.LOCAL_VALUE);
                     
                     groupMode.layout(true, true);
                     groupLinks.layout(true, true);
@@ -179,12 +179,12 @@ public class LLMSettingsPage extends AWizardPage {
             if (modelCombo.getItemCount() > 0) {
                 modelCombo.select(0);
             }
-            groupLinks.setEnabled(true);
+            groupLinks.setEnabled(aiMode.getValue() != AiMode.LOCAL_VALUE);
         } else {
             aiModeCombo.select(0);
             remoteLabel.setVisible(false);
             aiRemoteCombo.setVisible(false);
-            groupLinks.setEnabled(true);
+            groupLinks.setEnabled(false);
         }
 
         modelDecorator = new ControlDecoration(modelCombo, SWT.TOP | SWT.LEFT);
