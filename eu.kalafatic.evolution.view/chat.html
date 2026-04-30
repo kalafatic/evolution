@@ -846,17 +846,24 @@
         function selectAll() {
             let text = '';
             document.querySelectorAll('.message').forEach(m => {
-                const sender = m.querySelector('.sender').innerText;
-                const timestamp = m.querySelector('.timestamp').innerText;
-                const bubble = m.querySelector('.bubble-content');
+                const senderEl = m.querySelector('.sender');
+                const timeEl = m.querySelector('.timestamp');
+                const bubbleEl = m.querySelector('.bubble-content') || m.querySelector('.branch-container');
 
-                // Clone the bubble to remove non-text elements like copy buttons
-                const clone = bubble.cloneNode(true);
-                clone.querySelectorAll('.copy-btn').forEach(btn => btn.remove());
+                if (senderEl && bubbleEl) {
+                    const sender = senderEl.innerText;
+                    const timestamp = timeEl ? timeEl.innerText : '';
 
-                text += sender + ' [' + timestamp + ']: ' + clone.innerText + '\n\n';
+                    // Clone the bubble to remove non-text elements like copy buttons
+                    const clone = bubbleEl.cloneNode(true);
+                    clone.querySelectorAll('.copy-btn, .branch-btn, .action-btn').forEach(btn => btn.remove());
+
+                    text += sender + ' [' + timestamp + ']: ' + clone.innerText.trim() + '\n\n';
+                }
             });
-            JavaHandler('copy', '-1', text.trim());
+            if (text) {
+                JavaHandler('copy', '-1', text.trim());
+            }
         }
 
         function toggleAll() {

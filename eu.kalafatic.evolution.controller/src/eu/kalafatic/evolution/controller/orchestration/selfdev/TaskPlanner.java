@@ -36,7 +36,7 @@ public class TaskPlanner extends BaseAiAgent {
             task.setName(action.getOperation() + " " + action.getTarget());
 
             String type = "llm";
-            if ("file".equalsIgnoreCase(action.getDomain())) type = "file";
+            if ("file".equalsIgnoreCase(action.getDomain()) || "class".equalsIgnoreCase(action.getDomain())) type = "file";
             else if ("build".equalsIgnoreCase(action.getDomain())) type = "maven";
             else if ("structure".equalsIgnoreCase(action.getDomain())) type = "structure";
             else if ("test".equalsIgnoreCase(action.getDomain())) type = "maven"; // usually 'mvn test'

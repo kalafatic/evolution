@@ -186,6 +186,32 @@ public class ArchitecturePage extends Composite {
 
     private DesignModel createDefaultModel() {
         DesignModel model = new DesignModel();
+
+        if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
+            eu.kalafatic.evolution.model.orchestration.SelfDevSession session = orchestrator.getSelfDevSession();
+            model.setName("Self-Development: " + session.getId());
+
+            int i = 0;
+            for (eu.kalafatic.evolution.model.orchestration.Iteration iter : session.getIterations()) {
+                ComponentRecord comp = new ComponentRecord();
+                comp.setName(iter.getId());
+                comp.setType("Iteration");
+                comp.setX(100 + (i * 200) % 800);
+                comp.setY(100 + (i / 4) * 150);
+                model.getComponents().add(comp);
+
+                if (i > 0) {
+                    RelationshipRecord rel = new RelationshipRecord();
+                    rel.setFrom(session.getIterations().get(i - 1).getId());
+                    rel.setTo(iter.getId());
+                    rel.setType("evolves");
+                    model.getRelationships().add(rel);
+                }
+                i++;
+            }
+            if (!model.getComponents().isEmpty()) return model;
+        }
+
         if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
             model.setName("Inferred Architecture (from active tasks)");
             int i = 0;

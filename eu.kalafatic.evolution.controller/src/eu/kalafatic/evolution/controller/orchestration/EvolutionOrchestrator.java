@@ -247,7 +247,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Planning...");
                 originalPlannedTasks = planner.plan(analyzedRequest, context);
                 OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Finished");
-                context.getOrchestrator().getTasks().clear();
+                // context.getOrchestrator().getTasks().clear(); // Preserve task history
                 context.getOrchestrator().getTasks().addAll(originalPlannedTasks);
             } else {
                 context.log("Evo-Orchestrator-Planning: Continuing with existing plan.");

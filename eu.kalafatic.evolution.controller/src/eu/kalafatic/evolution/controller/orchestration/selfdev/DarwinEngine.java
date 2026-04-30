@@ -78,6 +78,7 @@ public class DarwinEngine extends BaseAiAgent {
     @Override
     protected String getFooterInstructions() {
         return "Output MUST be a valid JSON array of 2-3 objects. Each object is a structured PROPOSAL for a state transition.\n" +
+               "CRITICAL: Do NOT include any conversation, explanation, or <think> tags. ONLY return the JSON array.\n" +
                "Schema:\n" +
                "[\n" +
                "  {\n" +
