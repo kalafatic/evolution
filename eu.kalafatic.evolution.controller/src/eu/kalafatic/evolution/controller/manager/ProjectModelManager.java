@@ -395,6 +395,20 @@ public class ProjectModelManager {
                     item.setDefaultModel(config.getDefaultModel());
                     item.setFormat(config.getFormat());
                 }
+
+                // Also add the default model from the static config as an available model
+                String defaultModel = config.getDefaultModel();
+                if (defaultModel != null && !defaultModel.isEmpty() && !models.stream().anyMatch(m -> defaultModel.equalsIgnoreCase(m.getName()))) {
+                    AIProvider modelItem = factory.createAIProvider();
+                    modelItem.setName(defaultModel);
+                    modelItem.setLocal(false);
+                    modelItem.setUrl(item.getUrl());
+                    modelItem.setApiKey(item.getApiKey());
+                    modelItem.setState(item.getState());
+                    modelItem.setFormat(item.getFormat());
+                    modelItem.setStateDescription("Model from static provider: " + providerName);
+                    models.add(modelItem);
+                }
             }
 
             models.add(item);
