@@ -322,14 +322,49 @@ public class AiChatPage extends AEvoPage {
 		String request = instructionsGroup.getRequest();
 		if (request.isEmpty()) return;
 		ThreadState state = getCurrentThreadState();
-		if (state.currentContext != null && state.currentContext.isWaitingForInput()) {
+
+		// Check if we are waiting for user input or approval and unblock via chat if possible
+		boolean isWaiting = false;
+		if (state.currentContext != null) {
+			isWaiting = state.currentContext.isWaitingForInput() || state.currentContext.isWaitingForApproval();
+		} else if (state.activeTaskId != null) {
+			TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
+			if (result != null) {
+				isWaiting = result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT || result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL;
+			}
+		}
+
+		if (isWaiting) {
+			String lower = request.toLowerCase().trim();
+			boolean isApproval = false;
+			if (state.currentContext != null) isApproval = state.currentContext.isWaitingForApproval();
+			else {
+				TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
+				if (result != null) isApproval = result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL;
+			}
+
+			if (isApproval) {
+				if (lower.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$") || lower.contains("approve variant")) {
+					provideApproval(true);
+					instructionsGroup.setRequest("");
+					return;
+				} else if (lower.matches("^(no|n|reject|stop|cancel|abort)$")) {
+					provideApproval(false);
+					instructionsGroup.setRequest("");
+					return;
+				}
+			}
+
 			provideInput(request);
 			instructionsGroup.setRequest("");
 			return;
 		}
+
 		if (currentThread == null) initializeThreads();
 	
-		if (orchestrator != null && (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode() || orchestrator.isDarwinMode()))) {
+		// Only start Self-Dev Supervisor if Self-Development mode is explicitly checked.
+		// Darwin mode alone should use standard orchestration unless self-dev is also on.
+		if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
 			startSelfDevAction(request);
 			return;
 		}
@@ -652,9 +687,9 @@ public class AiChatPage extends AEvoPage {
 			return;
 		}
 		final String finalRequest = request;
-		boolean isDarwin = orchestrator != null && orchestrator.isDarwinMode();
 		boolean isSelfDev = orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode();
-		final String modeLabel = isSelfDev ? "SELF-DEV" : (isDarwin ? "DARWIN" : "EVO");
+		boolean isDarwin = orchestrator != null && orchestrator.isDarwinMode();
+		final String modeLabel = isDarwin ? "DARWIN" : (isSelfDev ? "SELF-DEV" : "EVO");
 		String idPrefix = isSelfDev ? "selfdev-" : (isDarwin ? "darwin-" : "chat-");
 
 		if (orchestrator != null) {

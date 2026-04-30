@@ -156,6 +156,12 @@ public class JsonUtils {
                     Object val = obj.get(key);
                     if (val instanceof JSONObject) {
                         arr.put(val);
+                    } else if (val instanceof JSONArray) {
+                        // If one of the keys is an array, merge its contents
+                        JSONArray subArr = (JSONArray) val;
+                        for (int i = 0; i < subArr.length(); i++) {
+                            arr.put(subArr.get(i));
+                        }
                     }
                 }
                 if (arr.length() > 0) return arr;
