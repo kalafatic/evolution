@@ -936,7 +936,7 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void handleClarify() {
-		instructionsGroup.focusAndHighlight(colorLightOrange);
+		instructionsGroup.focusAndHighlight(colorLightOrange, colorWaiting);
 		chatGroup.focusWaitingMessage();
 		expandFeedbackSection();
 	}
@@ -956,7 +956,7 @@ public class AiChatPage extends AEvoPage {
 		String current = instructionsGroup.getRequest();
 		String quote = "> " + text.replace("\n", "\n> ") + "\n\n";
 		instructionsGroup.setRequest(current + (current.isEmpty() ? "" : "\n\n") + quote);
-		instructionsGroup.focusAndHighlight(colorWhite);
+		instructionsGroup.focusAndHighlight(colorWhite, null);
 	}
 
 	public void handleOpenDiff(String path) {

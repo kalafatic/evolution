@@ -186,6 +186,11 @@
             transition: all 0.2s; background: var(--ai-bg); border: 1px solid var(--border);
             cursor: pointer;
             color: var(--ai-text);
+            width: fit-content;
+            max-width: 100%;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            overflow: hidden;
         }
 
         /* Role Specific Styles */
@@ -431,6 +436,8 @@
             font-family: 'Fira Code', 'JetBrains Mono', monospace;
             font-size: 12px; margin: 8px 0; border: 1px solid #1e293b;
             position: relative;
+            max-width: 100%;
+            box-sizing: border-box;
         }
         code {
             font-family: 'Fira Code', monospace; background: rgba(0,0,0,0.05);
@@ -764,6 +771,9 @@
 
             // General proposal link [PROPOSAL: Label | Request]
             text = text.replace(/\[PROPOSAL:\s*(.*?)\s*\|\s*(.*?)\s*\]/g, '<a class="link-go" onclick="event.stopPropagation(); JavaHandler(\'executeProposal\', \'-1\', \'$2\')"><b>$1</b></a>');
+
+            // Proposal: print to console
+            text = text.replace(/\bprint to console\b/gi, '<a class="link-go" onclick="event.stopPropagation(); JavaHandler(\'executeProposal\', \'-1\', \'print to console\')">$&</a>');
 
             // File link [FILE: path]
             text = text.replace(/\[FILE:\s*(.*?)\s*\]/g, '<a onclick="event.stopPropagation(); JavaHandler(\'openDiff\', \'-1\', \'$1\')"><b>$1</b></a>');
