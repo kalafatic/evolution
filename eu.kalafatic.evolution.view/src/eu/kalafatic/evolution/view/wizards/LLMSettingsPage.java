@@ -39,7 +39,6 @@ public class LLMSettingsPage extends AWizardPage {
     private Button skipCheck;
     private ControlDecoration modelDecorator;
     
-    private Orchestrator orchestrator;
     private StyledText requestText;
     private StyledText responseText;
     private Label ollamaStatusLabel;
