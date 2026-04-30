@@ -435,12 +435,10 @@ public class ChatGroup extends AEvoGroup {
             }
         }
 
-        if ("waiting".equals(agentType)) {
-            // Downgrade previous waiting messages to avoid multiple pulsing bubbles
-            for (ChatMessage existing : thread.getMessages()) {
-                if ("waiting".equals(existing.getAgentType())) {
-                    existing.setAgentType("response");
-                }
+        // Downgrade previous waiting messages to avoid multiple pulsing bubbles
+        for (ChatMessage existing : thread.getMessages()) {
+            if (existing.getAgentType() != null && existing.getAgentType().contains("waiting")) {
+                existing.setAgentType("response");
             }
         }
 

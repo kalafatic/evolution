@@ -259,16 +259,20 @@ public class InstructionsGroup extends AEvoGroup {
     public String getRequest() { return requestText.getText().trim(); }
     public void setRequest(String text) { requestText.setText(text); }
 
-    public void focusAndHighlight(Color color) {
+    public void focusAndHighlight(Color bgColor, Color fgColor) {
         if (requestText != null && !requestText.isDisposed()) {
             requestText.setFocus();
-            requestText.setBackground(color);
+            requestText.setBackground(bgColor);
+            if (fgColor != null) {
+                requestText.setForeground(fgColor);
+            }
         }
     }
 
     public void resetBackground() {
         if (requestText != null && !requestText.isDisposed()) {
             requestText.setBackground(null);
+            requestText.setForeground(null);
         }
     }
     public boolean isIterative() { return iterativeCheck.getSelection(); }
