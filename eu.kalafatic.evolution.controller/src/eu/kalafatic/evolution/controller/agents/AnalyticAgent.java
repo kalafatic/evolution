@@ -20,32 +20,25 @@ public class AnalyticAgent extends BaseAiAgent {
     @Override
     // @evo:14:B reason=flexible-analysis
     protected String getAgentInstructions() {
-        return "You are a Specialized Analytic Agent for an AI Orchestration system (Evo).\n" +
-                "Your goal is to deeply analyze the user's prompt BEFORE any planning or execution happens.\n\n" +
+        return "You are an Analytic Agent. Your goal is to analyze the user's prompt for the Orchestrator.\n\n" +
                 "ANALYSIS CRITERIA:\n" +
-                "1. CATEGORY: Determine if the request is CODING (writing/fixing code), RESEARCH (gathering info/analyzing files), " +
-                "TOOL_USE (running maven, git, shell), or CHAT (general conversation/greetings).\n" +
-                "2. OBJECTIVE: What is the main thing the user wants to achieve?\n" +
-                "3. AMBIGUITY: Is the request clear enough to execute? \n" +
-                "   - Example of ambiguous: 'fix the bug' (which bug? where?).\n" +
-                "   - Example of clear: 'Create a Java class that prints \"Hi\"'. In such cases, DO NOT MARK AS AMBIGUOUS. Instead, infer sensible default names and paths (e.g., src/main/java/HelloWorld.java) in your refinedPrompt.\n" +
-                "   - CRITICAL: If the user explicitly provides a filename (e.g., 'a.java', 'Test.java'), you MUST use that exact filename in your refinedPrompt and objective. DO NOT substitute it with inferred defaults.\n" +
-                "   - Mandatory clarification is ONLY required for destructive actions (DELETE) with missing targets or highly vague requests where no reasonable default can be inferred.\n" +
-                "   - NOTE: Simple greetings (e.g., 'hi', 'hello', 'good morning') are NEVER ambiguous. Categorize them as CHAT.\n" +
-                "4. MISSING INFORMATION: List specific details needed to proceed. If you inferred defaults, list them here as well.\n\n" +
-                "OUTPUT FORMAT:\n" +
-                "You MUST output a valid JSON object. Ensure no duplicate keys are present. All fields are REQUIRED.\n" +
-                "Schema:\n" +
+                "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.\n" +
+                "2. SCOPE: Determine if the request is ATOMIC (single file, simple fix) or ARCHITECTURAL (system design, multiple modules).\n" +
+                "3. AMBIGUITY:\n" +
+                "   - For ATOMIC tasks: Technical tasks with implied defaults (e.g., 'create class') are NOT ambiguous. Just proceed with defaults (e.g., src/Main.java).\n" +
+                "   - For ARCHITECTURAL tasks: Asking for 'purpose', 'usage' or 'big picture' IS encouraged if it helps build a better system model.\n" +
+                "4. REFINED PROMPT: Create a version of the prompt that reflects the scope.\n" +
+                "   - For ATOMIC: Keep it technical and concise.\n" +
+                "   - For ARCHITECTURAL: Incorporate known context while leaving room for architectural decisions.\n\n" +
+                "OUTPUT JSON:\n" +
                 "{\n" +
-                "  \"category\": \"CODING\"|\"RESEARCH\"|\"TOOL_USE\"|\"CHAT\",\n" +
-                "  \"objective\": \"Brief summary of the goal\",\n" +
+                "  \"category\": \"...\",\n" +
+                "  \"objective\": \"...\",\n" +
                 "  \"isAmbiguous\": boolean,\n" +
-                "  \"missingInformation\": [\"list\", \"of\", \"missing\", \"details\"],\n" +
-                "  \"clarificationQuestion\": \"A polite question to ask the user if the request is ambiguous.\",\n" +
-                "  \"refinedPrompt\": \"An improved version of the prompt based on your analysis (including inferred defaults if any)\"\n" +
-                "}\n\n" +
-                "If the request is clear (including all CHAT requests and requests where defaults can be inferred), set isAmbiguous to false and missingInformation to an empty array (or list of inferred defaults).\n" +
-                "If the user says 'Execute the simplest working solution.', set isAmbiguous to false and use the refinedPrompt to reconstruct the original goal from shared memory.";
+                "  \"missingInformation\": [],\n" +
+                "  \"clarificationQuestion\": \"(Leave empty if isAmbiguous is false)\",\n" +
+                "  \"refinedPrompt\": \"(Prompt for the planner)\"\n" +
+                "}";
     }
 
     @Override
