@@ -284,13 +284,31 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__LOG_LEVEL = 23;
 
 	/**
+	 * The feature id for the '<em><b>Feedback Level</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__FEEDBACK_LEVEL = 24;
+
+	/**
+	 * The feature id for the '<em><b>Auto Escalate</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__AUTO_ESCALATE = 25;
+
+	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 24;
+	int TASK_FEATURE_COUNT = 26;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -2966,6 +2984,16 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK_STATUS = 36;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFeedbackLevel()
+	 * @generated
+	 */
+	int FEEDBACK_LEVEL = 38;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.LogLevel <em>Log Level</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2983,7 +3011,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionType()
 	 * @generated
 	 */
-	int SESSION_TYPE = 38;
+	int SESSION_TYPE = 39;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
@@ -2993,7 +3021,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
 	 * @generated
 	 */
-	int COMMAND_STATUS = 39;
+	int COMMAND_STATUS = 40;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
@@ -3003,7 +3031,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
 	 * @generated
 	 */
-	int EXECUTION_MODE = 40;
+	int EXECUTION_MODE = 41;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
@@ -3013,7 +3041,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
 	 * @generated
 	 */
-	int NEURON_TYPE = 41;
+	int NEURON_TYPE = 42;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
@@ -3023,7 +3051,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
 	 * @generated
 	 */
-	int AI_MODE = 42;
+	int AI_MODE = 43;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
@@ -3033,7 +3061,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
 	 * @generated
 	 */
-	int SELF_DEV_STATUS = 43;
+	int SELF_DEV_STATUS = 44;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
@@ -3043,7 +3071,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
 	 * @generated
 	 */
-	int ITERATION_STATUS = 44;
+	int ITERATION_STATUS = 45;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
@@ -3053,7 +3081,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
 	 * @generated
 	 */
-	int SELF_DEV_DECISION = 45;
+	int SELF_DEV_DECISION = 46;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
@@ -3063,7 +3091,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
 	 * @generated
 	 */
-	int TEST_STATUS = 46;
+	int TEST_STATUS = 47;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
@@ -3073,7 +3101,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
 	 * @generated
 	 */
-	int REVIEW_DECISION = 47;
+	int REVIEW_DECISION = 48;
 
 
 	/**
@@ -3349,6 +3377,28 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getTask_LogLevel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getFeedbackLevel <em>Feedback Level</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Feedback Level</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getFeedbackLevel()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_FeedbackLevel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isAutoEscalate <em>Auto Escalate</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Auto Escalate</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#isAutoEscalate()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_AutoEscalate();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
@@ -5659,6 +5709,16 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getPromptInstructions_SelfIterativeMode();
 
 	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Feedback Level</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
+	 * @generated
+	 */
+	EEnum getFeedbackLevel();
+
+	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -6002,6 +6062,22 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__LOG_LEVEL = eINSTANCE.getTask_LogLevel();
+
+		/**
+		 * The meta object literal for the '<em><b>Feedback Level</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__FEEDBACK_LEVEL = eINSTANCE.getTask_FeedbackLevel();
+
+		/**
+		 * The meta object literal for the '<em><b>Auto Escalate</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__AUTO_ESCALATE = eINSTANCE.getTask_AutoEscalate();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.
@@ -7776,6 +7852,16 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE = eINSTANCE.getPromptInstructions_SelfIterativeMode();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFeedbackLevel()
+		 * @generated
+		 */
+		EEnum FEEDBACK_LEVEL = eINSTANCE.getFeedbackLevel();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.

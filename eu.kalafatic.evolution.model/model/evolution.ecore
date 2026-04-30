@@ -20,6 +20,12 @@
     <eLiterals name="WARN" value="3"/>
     <eLiterals name="ERROR" value="4"/>
   </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="FeedbackLevel">
+    <eLiterals name="SIMPLE"/>
+    <eLiterals name="INTERACTIVE" value="1"/>
+    <eLiterals name="ADVANCED" value="2"/>
+    <eLiterals name="FULL" value="3"/>
+  </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Task">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -48,6 +54,9 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="attachments" upperBound="-1"
         eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="logLevel" eType="#//LogLevel"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="feedbackLevel" eType="#//FeedbackLevel"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="autoEscalate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Agent">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
