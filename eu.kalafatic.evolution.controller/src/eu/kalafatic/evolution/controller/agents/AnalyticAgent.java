@@ -23,11 +23,13 @@ public class AnalyticAgent extends BaseAiAgent {
         return "You are an Analytic Agent. Your goal is to analyze the user's prompt for the Orchestrator.\n\n" +
                 "ANALYSIS CRITERIA:\n" +
                 "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.\n" +
-                "2. AMBIGUITY: Is it clear? Greetings (hi, hello) are NEVER ambiguous. Technical tasks with implied defaults (e.g., 'create class') are NOT ambiguous.\n" +
-                "3. REFINED PROMPT: Create a technically concise version of the prompt. \n" +
-                "   - DO NOT add educational context, purpose, or intended use.\n" +
-                "   - DO NOT ask for clarification unless the request is fundamentally missing a target (e.g., 'delete file' without a name).\n" +
-                "   - Infer sensible defaults (e.g., src/Main.java) and put them in the refinedPrompt.\n\n" +
+                "2. SCOPE: Determine if the request is ATOMIC (single file, simple fix) or ARCHITECTURAL (system design, multiple modules).\n" +
+                "3. AMBIGUITY:\n" +
+                "   - For ATOMIC tasks: Technical tasks with implied defaults (e.g., 'create class') are NOT ambiguous. Just proceed with defaults (e.g., src/Main.java).\n" +
+                "   - For ARCHITECTURAL tasks: Asking for 'purpose', 'usage' or 'big picture' IS encouraged if it helps build a better system model.\n" +
+                "4. REFINED PROMPT: Create a version of the prompt that reflects the scope.\n" +
+                "   - For ATOMIC: Keep it technical and concise.\n" +
+                "   - For ARCHITECTURAL: Incorporate known context while leaving room for architectural decisions.\n\n" +
                 "OUTPUT JSON:\n" +
                 "{\n" +
                 "  \"category\": \"...\",\n" +
@@ -35,7 +37,7 @@ public class AnalyticAgent extends BaseAiAgent {
                 "  \"isAmbiguous\": boolean,\n" +
                 "  \"missingInformation\": [],\n" +
                 "  \"clarificationQuestion\": \"(Leave empty if isAmbiguous is false)\",\n" +
-                "  \"refinedPrompt\": \"(Concise technical prompt)\"\n" +
+                "  \"refinedPrompt\": \"(Prompt for the planner)\"\n" +
                 "}";
     }
 

@@ -29,15 +29,16 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are a workflow planner. Your goal is to CREATE A PLAN, NOT ASK QUESTIONS.\n\n" +
+        return "You are a workflow planner for Evo, an architect-first AI system.\n\n" +
                 "RULES:\n" +
-                "- DO NOT ask for 'purpose', 'intended use', or 'application'. Just implement the request.\n" +
-                "- DO NOT use 'General: Request Clarification' tasks if there is any way to proceed with sensible defaults.\n" +
-                "- Trust the refined prompt and shared memory. If details (like language) are there, USE THEM.\n" +
+                "- MVP FIRST: Always start with a working implementation of the immediate technical request. Don't block execution with questions.\n" +
+                "- BIG PICTURE: For architectural tasks, you MAY add a final 'Architect: Review & Expand' task to solicit feedback on purpose/usage AFTER the initial work is planned.\n" +
+                "- ITERATION: If a task is complex, plan it in small, verifiable steps. Use 'loopToTaskId' for iterative improvement.\n" +
+                "- Trust the refined prompt and shared memory for technical details (language, paths).\n" +
                 "- Task names MUST start with agent types: 'JavaDev: [Action]', 'Tester: [Action]', 'Architect: [Action]', etc.\n" +
                 "- Task types: 'llm', 'file' (Task name: 'Write <path>'), 'shell', 'git', 'maven', 'approval'.\n\n" +
                 "JSON Schema:\n" +
-                "[ { \"id\": \"t1\", \"name\": \"Agent: Action\", \"description\": \"...\", \"taskType\": \"...\", \"approvalRequired\": true|false, \"loopToTaskId\": \"none\" } ]";
+                "[ { \"id\": \"t1\", \"name\": \"Agent: Action\", \"description\": \"...\", \"taskType\": \"...\", \"approvalRequired\": boolean, \"loopToTaskId\": \"none\" } ]";
     }
 
     @Override

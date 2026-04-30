@@ -65,8 +65,7 @@ public abstract class BaseAiAgent implements IAgent {
     protected String getFooterInstructions() {
         return "SPECIAL DIRECTIVE: If you receive the request 'Execute the simplest working solution.', you MUST immediately provide a minimal, functional implementation of the goal previously discussed in shared memory without asking for any further clarification.\n\n" +
                "Based on the context and the task, provide your response.\n" +
-               "CRITICAL: DO NOT ASK FOR CLARIFICATION on purpose, intended use, or application. If a detail is missing, proceed with the most logical technical default.\n" +
-               "Minimize all other clarification requests.\n" +
+               "MVP DIRECTIVE: For atomic technical tasks, minimize clarification. Use sensible defaults and JUST IMPLEMENT. However, for architecture or design tasks, feel free to ask about 'purpose' or 'big picture' if it aids better modeling.\n" +
                "Additionally, you can offer general one-click solutions using the format: [PROPOSAL: Action Label | Explicit Request Text]\n" +
                "Example: 'I can help you with that. [PROPOSAL: Create a test class | Create a JUnit 5 test class for the current Main.java file]'.\n\n" +
                "For coding tasks, you can provide a structured JSON plan with an 'implementation' field containing the final code. This prevents redundant processing.\n\n" +
