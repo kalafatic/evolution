@@ -2,6 +2,9 @@ package eu.kalafatic.evolution.controller.orchestration.llm;
 
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.controller.orchestration.ContextBuilder;
+import eu.kalafatic.evolution.controller.orchestration.ContextPackage;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
@@ -123,6 +126,44 @@ public class LlmRouter {
     }
 
     private String buildContextLocally(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        // 1. Deterministic Context Building (Filesystem + Heuristics)
+        if (context != null) {
+            String taskId = context.getCurrentTaskId();
+            Task task = orchestrator.getTasks().stream()
+                    .filter(t -> t.getId().equals(taskId))
+                    .findFirst().orElse(null);
+
+            if (task != null) {
+                context.log("LlmRouter-Hybrid: Building deterministic context package for task: " + task.getName());
+                ContextPackage pkg = ContextBuilder.build(task, context);
+                String deterministicPrompt = ContextBuilder.buildPrompt(pkg);
+
+                // If the package contains meaningful code/scope, use it as the base
+                if (pkg.getCode() != null && !pkg.getCode().isEmpty()) {
+                    context.log("LlmRouter-Hybrid: Deterministic context built (" + pkg.getScope().size() + " files).");
+
+                    // Optional: Refine with local LLM if hybrid model is specified
+                    String hybridModel = orchestrator.getHybridModel();
+                    if (hybridModel != null && !hybridModel.isEmpty()) {
+                        context.log("LlmRouter-Hybrid: Refining context with local model: " + hybridModel);
+                        String refinementPrompt = "You are a context refiner. Review the following technical context and the original goal. " +
+                                "Enhance the context with any additional insights or specific details from your local knowledge that might help the reasoning model.\n\n" +
+                                deterministicPrompt + "\n\n" +
+                                "Original Request: " + prompt;
+
+                        if (orchestrator.getOllama() == null) {
+                            orchestrator.setOllama(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOllama());
+                        }
+                        orchestrator.getOllama().setModel(hybridModel);
+                        return ollamaProvider.sendRequest(orchestrator, refinementPrompt, temperature, proxyUrl, context);
+                    }
+
+                    return deterministicPrompt;
+                }
+            }
+        }
+
+        // 2. Fallback to Local LLM Reasoning for context (original logic)
         String hybridModel = orchestrator.getHybridModel();
         if (hybridModel != null && !hybridModel.isEmpty()) {
             if (orchestrator.getOllama() == null) {
