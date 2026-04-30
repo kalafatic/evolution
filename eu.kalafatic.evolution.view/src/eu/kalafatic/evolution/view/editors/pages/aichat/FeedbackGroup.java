@@ -14,6 +14,7 @@ import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
+import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -37,6 +38,12 @@ public class FeedbackGroup extends AEvoGroup {
     private Label promptLabel;
     private Text inputText;
 
+    // Feedback Level controls
+    private Button[] levelButtons;
+    private Button autoEscalateCheck;
+    private Label autoStatusLabel;
+    private boolean isUpdating = false;
+
     public FeedbackGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiChatPage page) {
         super(editor, orchestrator);
         this.page = page;
@@ -45,7 +52,27 @@ public class FeedbackGroup extends AEvoGroup {
 
     @Override
     protected void refreshUI() {
-        // Managed by AiChatPage specifically
+        if (orchestrator == null || orchestrator.getTasks().isEmpty()) return;
+        isUpdating = true;
+        eu.kalafatic.evolution.model.orchestration.Task task = orchestrator.getTasks().get(0);
+        FeedbackLevel level = task.getFeedbackLevel();
+        if (levelButtons != null) {
+            for (int i = 0; i < levelButtons.length; i++) {
+                levelButtons[i].setSelection(FeedbackLevel.values()[i] == level);
+            }
+        }
+        if (autoEscalateCheck != null) {
+            autoEscalateCheck.setSelection(task.isAutoEscalate());
+        }
+
+        // Update (auto) status
+        if (task.isAutoEscalate() && level.getValue() > FeedbackLevel.SIMPLE_VALUE) {
+            setAutoStatus(level.getName() + " (auto)");
+        } else {
+            setAutoStatus("");
+        }
+
+        isUpdating = false;
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
@@ -128,7 +155,56 @@ public class FeedbackGroup extends AEvoGroup {
             }
         });
 
-        // Ensure all are hidden initially
+        // 4. Feedback Level Controls (Always Visible inside the group)
+        Composite levelBox = toolkit.createComposite(group);
+        org.eclipse.swt.layout.GridLayout levelLayout = new org.eclipse.swt.layout.GridLayout(4, false);
+        levelLayout.marginHeight = 2; levelLayout.marginWidth = 0;
+        levelBox.setLayout(levelLayout);
+        levelBox.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        toolkit.createLabel(levelBox, "Feedback Depth:");
+
+        Composite segmentedControl = toolkit.createComposite(levelBox);
+        org.eclipse.swt.layout.RowLayout rowLayout = new org.eclipse.swt.layout.RowLayout(SWT.HORIZONTAL);
+        rowLayout.spacing = 0;
+        rowLayout.marginHeight = 0;
+        segmentedControl.setLayout(rowLayout);
+
+        FeedbackLevel[] levels = FeedbackLevel.values();
+        levelButtons = new Button[levels.length];
+
+        for (int i = 0; i < levels.length; i++) {
+            final FeedbackLevel level = levels[i];
+            levelButtons[i] = toolkit.createButton(segmentedControl, level.getName(), SWT.TOGGLE);
+            final int index = i;
+            levelButtons[i].addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    if (isUpdating) return;
+                    updateLevelSelection(index);
+                    page.handleFeedbackLevelChange(level);
+                }
+            });
+        }
+
+        autoEscalateCheck = toolkit.createButton(levelBox, "Auto Escalation", SWT.CHECK);
+        autoEscalateCheck.setToolTipText("Automatically increase feedback level during failures.");
+        autoEscalateCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (isUpdating) return;
+                if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
+                    orchestrator.getTasks().get(0).setAutoEscalate(autoEscalateCheck.getSelection());
+                    editor.setDirty(true);
+                }
+            }
+        });
+
+        autoStatusLabel = toolkit.createLabel(levelBox, "");
+        autoStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        autoStatusLabel.setForeground(group.getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY));
+
+        // Ensure boxes are hidden initially, but the group itself might be visible now due to Level control
         satisfactionBox.setVisible(false);
         setExclude(satisfactionBox, true);
         approvalBox.setVisible(false);
@@ -189,6 +265,20 @@ public class FeedbackGroup extends AEvoGroup {
         }
     }
 
+    private void updateLevelSelection(int selectedIndex) {
+        isUpdating = true;
+        for (int i = 0; i < levelButtons.length; i++) {
+            levelButtons[i].setSelection(i == selectedIndex);
+        }
+        isUpdating = false;
+    }
+
+    public void setAutoStatus(String text) {
+        if (autoStatusLabel != null && !autoStatusLabel.isDisposed()) {
+            autoStatusLabel.setText(text != null ? text : "");
+        }
+    }
+
     private void updateVisibility(Composite visibleBox) {
         if (group == null || group.isDisposed()) return;
 
@@ -216,20 +306,16 @@ public class FeedbackGroup extends AEvoGroup {
                              (approvalBox != null && approvalBox.getVisible()) ||
                              (inputBox != null && inputBox.getVisible());
 
-        group.setVisible(anyVisible);
-        setExclude(group, !anyVisible);
+        // Group is always visible now as it contains Feedback Depth controls
+        group.setVisible(true);
+        setExclude(group, false);
 
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();
-            section.setVisible(anyVisible);
+            section.setVisible(true);
             Object layoutData = section.getLayoutData();
             if (layoutData instanceof GridData) {
-                ((GridData) layoutData).exclude = !anyVisible;
-            }
-            if (!anyVisible) {
-                section.setExpanded(false);
-            } else if (!section.isExpanded()) {
-                section.setExpanded(true);
+                ((GridData) layoutData).exclude = false;
             }
         }
 

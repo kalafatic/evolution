@@ -2,6 +2,7 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
+import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
 import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Task;
@@ -56,6 +57,8 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getPrompt <em>Prompt</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getAttachments <em>Attachments</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getLogLevel <em>Log Level</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getFeedbackLevel <em>Feedback Level</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isAutoEscalate <em>Auto Escalate</em>}</li>
  * </ul>
  *
  * @generated
@@ -512,6 +515,46 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected LogLevel logLevel = LOG_LEVEL_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getFeedbackLevel() <em>Feedback Level</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getFeedbackLevel()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final FeedbackLevel FEEDBACK_LEVEL_EDEFAULT = FeedbackLevel.SIMPLE;
+
+	/**
+	 * The cached value of the '{@link #getFeedbackLevel() <em>Feedback Level</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getFeedbackLevel()
+	 * @generated
+	 * @ordered
+	 */
+	protected FeedbackLevel feedbackLevel = FEEDBACK_LEVEL_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isAutoEscalate() <em>Auto Escalate</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isAutoEscalate()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean AUTO_ESCALATE_EDEFAULT = true;
+
+	/**
+	 * The cached value of the '{@link #isAutoEscalate() <em>Auto Escalate</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isAutoEscalate()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean autoEscalate = AUTO_ESCALATE_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -519,6 +562,52 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	public LogLevel getLogLevel() {
 		return logLevel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public FeedbackLevel getFeedbackLevel() {
+		return feedbackLevel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setFeedbackLevel(FeedbackLevel newFeedbackLevel) {
+		FeedbackLevel oldFeedbackLevel = feedbackLevel;
+		feedbackLevel = newFeedbackLevel == null ? FEEDBACK_LEVEL_EDEFAULT : newFeedbackLevel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__FEEDBACK_LEVEL, oldFeedbackLevel, feedbackLevel));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isAutoEscalate() {
+		return autoEscalate;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAutoEscalate(boolean newAutoEscalate) {
+		boolean oldAutoEscalate = autoEscalate;
+		autoEscalate = newAutoEscalate;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__AUTO_ESCALATE, oldAutoEscalate, autoEscalate));
 	}
 
 	/**
@@ -1122,6 +1211,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getAttachments();
 			case OrchestrationPackage.TASK__LOG_LEVEL:
 				return getLogLevel();
+			case OrchestrationPackage.TASK__FEEDBACK_LEVEL:
+				return getFeedbackLevel();
+			case OrchestrationPackage.TASK__AUTO_ESCALATE:
+				return isAutoEscalate();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1210,6 +1303,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__LOG_LEVEL:
 				setLogLevel((LogLevel)newValue);
 				return;
+			case OrchestrationPackage.TASK__FEEDBACK_LEVEL:
+				setFeedbackLevel((FeedbackLevel)newValue);
+				return;
+			case OrchestrationPackage.TASK__AUTO_ESCALATE:
+				setAutoEscalate((Boolean)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1294,6 +1393,12 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__LOG_LEVEL:
 				setLogLevel(LOG_LEVEL_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__FEEDBACK_LEVEL:
+				setFeedbackLevel(FEEDBACK_LEVEL_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__AUTO_ESCALATE:
+				setAutoEscalate(AUTO_ESCALATE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1354,6 +1459,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return attachments != null && !attachments.isEmpty();
 			case OrchestrationPackage.TASK__LOG_LEVEL:
 				return logLevel != LOG_LEVEL_EDEFAULT;
+			case OrchestrationPackage.TASK__FEEDBACK_LEVEL:
+				return feedbackLevel != FEEDBACK_LEVEL_EDEFAULT;
+			case OrchestrationPackage.TASK__AUTO_ESCALATE:
+				return autoEscalate != AUTO_ESCALATE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1412,6 +1521,10 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(attachments);
 		result.append(", logLevel: ");
 		result.append(logLevel);
+		result.append(", feedbackLevel: ");
+		result.append(feedbackLevel);
+		result.append(", autoEscalate: ");
+		result.append(autoEscalate);
 		result.append(')');
 		return result.toString();
 	}

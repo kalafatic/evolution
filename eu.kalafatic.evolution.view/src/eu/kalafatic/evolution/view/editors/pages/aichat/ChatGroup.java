@@ -27,6 +27,7 @@ import org.json.JSONObject;
 
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.ChatThread;
+import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -443,9 +444,19 @@ public class ChatGroup extends AEvoGroup {
             }
         }
 
+        // Wrap content in sections for progressive disclosure
+        String finalContent = content;
+        if (agentType.equals("planner")) {
+            finalContent = "<div class='section-plan'>" + content + "</div>";
+        } else if (agentType.equals("tool") || agentType.equals("orchestrator")) {
+            finalContent = "<div class='section-debug'>" + content + "</div>";
+        } else if (trimmedText.startsWith("Evo: Initializing orchestration...") || trimmedText.contains("Supervisor loop")) {
+             finalContent = "<div class='section-timeline'>" + content + "</div>";
+        }
+
         try {
             final String fSender = sender;
-            final String fContent = content;
+            final String fContent = finalContent;
             final String fAgentType = agentType;
             final String fHexColor = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
             final boolean isBold = (style & SWT.BOLD) != 0;
@@ -523,6 +534,11 @@ public class ChatGroup extends AEvoGroup {
         browser.execute("showThinking(" + show + ");");
     }
 
+    public void setFeedbackLevel(FeedbackLevel level) {
+        if (!isLoaded || browser.isDisposed() || level == null) return;
+        browser.execute("setFeedbackLevel('" + level.getName().toLowerCase() + "');");
+    }
+
     public void focusWaitingMessage() {
         if (!isLoaded || browser.isDisposed()) return;
         browser.execute("scrollToLastWaiting();");
@@ -531,6 +547,9 @@ public class ChatGroup extends AEvoGroup {
     private void refreshBrowser() {
         if (!isLoaded || browser.isDisposed()) return;
         refreshGitStatus();
+        if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
+            setFeedbackLevel(orchestrator.getTasks().get(0).getFeedbackLevel());
+        }
         JSONArray array = new JSONArray();
         if (currentThread != null) {
             for (ChatMessage m : currentThread.getMessages()) {

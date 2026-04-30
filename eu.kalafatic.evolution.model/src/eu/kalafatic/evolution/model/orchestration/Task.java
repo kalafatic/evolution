@@ -39,6 +39,8 @@ import org.eclipse.emf.ecore.EObject;
 	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getPrompt <em>Prompt</em>}</li>
 	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getAttachments <em>Attachments</em>}</li>
 	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getLogLevel <em>Log Level</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getFeedbackLevel <em>Feedback Level</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isAutoEscalate <em>Auto Escalate</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -538,6 +540,54 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setLogLevel(LogLevel value);
+
+	/**
+	 * Returns the value of the '<em><b>Feedback Level</b></em>' attribute.
+	 * The literals are from the enumeration {@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Feedback Level</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
+	 * @see #setFeedbackLevel(FeedbackLevel)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_FeedbackLevel()
+	 * @model
+	 * @generated
+	 */
+	FeedbackLevel getFeedbackLevel();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getFeedbackLevel <em>Feedback Level</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Feedback Level</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.FeedbackLevel
+	 * @see #getFeedbackLevel()
+	 * @generated
+	 */
+	void setFeedbackLevel(FeedbackLevel value);
+
+	/**
+	 * Returns the value of the '<em><b>Auto Escalate</b></em>' attribute.
+	 * The default value is <code>"true"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Auto Escalate</em>' attribute.
+	 * @see #setAutoEscalate(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_AutoEscalate()
+	 * @model default="true"
+	 * @generated
+	 */
+	boolean isAutoEscalate();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#isAutoEscalate <em>Auto Escalate</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Auto Escalate</em>' attribute.
+	 * @see #isAutoEscalate()
+	 * @generated
+	 */
+	void setAutoEscalate(boolean value);
 
 	/**
 	 * Returns the value of the '<em><b>Attachments</b></em>' attribute list.

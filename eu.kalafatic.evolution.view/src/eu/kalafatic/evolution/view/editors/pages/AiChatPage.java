@@ -58,6 +58,7 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import eu.kalafatic.evolution.controller.manager.EnvironmentSuggestionService;
+import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -821,6 +822,7 @@ public class AiChatPage extends AEvoPage {
 			isUpdating = true;
 			aiSettingsGroup.updateUI();
 			instructionsGroup.updateUI();
+			if (feedbackGroup != null) feedbackGroup.updateUI();
 			updateStatusInfo();
 			updateModeDisplay();
 			isUpdating = false;
@@ -941,6 +943,18 @@ public class AiChatPage extends AEvoPage {
 	public void handleExecuteProposal(String request) {
 		instructionsGroup.setRequest(request);
 		handleSend();
+	}
+
+	public void handleFeedbackLevelChange(FeedbackLevel level) {
+		if (orchestrator != null) {
+			List<eu.kalafatic.evolution.model.orchestration.Task> tasks = orchestrator.getTasks();
+			if (!tasks.isEmpty()) {
+				tasks.get(0).setFeedbackLevel(level);
+			}
+			chatGroup.setFeedbackLevel(level);
+			editor.setDirty(true);
+			updateScrolledContent();
+		}
 	}
 
 	private String getThreadId(eu.kalafatic.evolution.model.orchestration.Task task) {
