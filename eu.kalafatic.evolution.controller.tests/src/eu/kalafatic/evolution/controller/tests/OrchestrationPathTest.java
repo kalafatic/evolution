@@ -35,7 +35,7 @@ public class OrchestrationPathTest {
         // However, EvolutionOrchestrator.execute is complex because it calls AI.
 
         // Let's use reflection to test performAction directly for 'file' type.
-        Method method = EvolutionOrchestrator.class.getDeclaredMethod("performAction", Task.class, IAgent.class, TaskContext.class, String.class);
+        Method method = EvolutionOrchestrator.class.getDeclaredMethod("performAction", Task.class, IAgent.class, TaskContext.class, String.class, String.class);
         method.setAccessible(true);
 
         Task task = OrchestrationFactory.eINSTANCE.createTask();
@@ -58,7 +58,7 @@ public class OrchestrationPathTest {
 
         for (String absPath : absolutePaths) {
             task.setName(absPath);
-            String result = (String) method.invoke(orchestrator, task, mockAgent, context, null);
+            String result = (String) method.invoke(orchestrator, task, mockAgent, context, null, null);
             assertTrue("Should succeed for " + absPath + " but got: " + result, result.startsWith("SUCCESS: Wrote file path/to/file.java"));
 
             File expectedFile = new File(tempDir, "path/to/file.java");
