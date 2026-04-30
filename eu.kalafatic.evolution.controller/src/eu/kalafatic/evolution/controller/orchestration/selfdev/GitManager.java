@@ -16,14 +16,25 @@ public class GitManager {
     }
 
     public String createBranch(String branchName) throws Exception {
-        context.log("[GIT] Creating and switching to branch: " + branchName);
-        // Use a safer command execution pattern if available in ShellTool, but sticking to provided ShellTool API for now.
-        return shell.execute("git checkout -b " + branchName, projectRoot, context);
+        if (!isGitRepository()) {
+            context.log("[GIT] Warning: Not a git repository. Skipping branch creation.");
+            return "Skipped (not a git repo)";
+        }
+
+        String actualBranchName = branchName;
+        if (branchExists(branchName)) {
+            actualBranchName = branchName + "-" + System.currentTimeMillis();
+            context.log("[GIT] Branch " + branchName + " already exists. Using " + actualBranchName);
+        }
+
+        context.log("[GIT] Creating and switching to branch: " + actualBranchName);
+        return shell.execute("git checkout -b \"" + actualBranchName + "\"", projectRoot, context);
     }
 
     public String checkout(String branchName) throws Exception {
+        if (!isGitRepository()) return "Skipped";
         context.log("[GIT] Switching to branch: " + branchName);
-        return shell.execute("git checkout " + branchName, projectRoot, context);
+        return shell.execute("git checkout \"" + branchName + "\"", projectRoot, context);
     }
 
     public String commit(String message) throws Exception {
@@ -40,8 +51,9 @@ public class GitManager {
     }
 
     public String deleteBranch(String branchName) throws Exception {
+        if (!isGitRepository()) return "Skipped";
         context.log("[GIT] Deleting branch: " + branchName);
-        return shell.execute("git branch -D " + branchName, projectRoot, context);
+        return shell.execute("git branch -D \"" + branchName + "\"", projectRoot, context);
     }
 
     public String getCurrentBranch() throws Exception {
@@ -63,13 +75,15 @@ public class GitManager {
     }
 
     public String merge(String branchName) throws Exception {
+        if (!isGitRepository()) return "Skipped";
         context.log("[GIT] Merging branch: " + branchName);
-        return shell.execute("git merge " + branchName, projectRoot, context);
+        return shell.execute("git merge \"" + branchName + "\"", projectRoot, context);
     }
 
     public String createWorktree(String branchName, String path) throws Exception {
+        if (!isGitRepository()) return "Skipped";
         context.log("[GIT] Creating worktree for branch " + branchName + " at " + path);
-        return shell.execute("git worktree add " + path + " " + branchName, projectRoot, context);
+        return shell.execute("git worktree add \"" + path + "\" \"" + branchName + "\"", projectRoot, context);
     }
 
     public String removeWorktree(String path) throws Exception {
@@ -78,7 +92,22 @@ public class GitManager {
     }
 
     public void forceCheckout(String branchName) throws Exception {
+        if (!isGitRepository()) return;
         context.log("[GIT] Force switching to branch: " + branchName);
-        shell.execute("git checkout -f " + branchName, projectRoot, context);
+        shell.execute("git checkout -f \"" + branchName + "\"", projectRoot, context);
+    }
+
+    public boolean isGitRepository() {
+        File gitDir = new File(projectRoot, ".git");
+        return gitDir.exists() && gitDir.isDirectory();
+    }
+
+    private boolean branchExists(String branchName) {
+        try {
+            String output = shell.execute("git branch --list \"" + branchName + "\"", projectRoot, context);
+            return output != null && !output.trim().isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

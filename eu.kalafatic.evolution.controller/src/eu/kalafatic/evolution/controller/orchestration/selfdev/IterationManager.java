@@ -57,12 +57,16 @@ public class IterationManager {
 
     public EvaluationResult run() throws Exception {
         PlatformMode mode = context.getPlatformMode();
-        if (mode != null && mode.getType() == PlatformType.DARWIN_MODE) {
-            return runDarwin();
-        } else if (mode != null && mode.getType() == PlatformType.SELF_DEV_MODE) {
-            return runDarwin(); // Self-dev uses Darwin loop
-        } else if (context.getOrchestrator().isDarwinMode()) {
-            return runDarwin();
+        boolean darwinEnabled = (mode != null && (mode.getType() == PlatformType.DARWIN_MODE || mode.getType() == PlatformType.SELF_DEV_MODE))
+                                || context.getOrchestrator().isDarwinMode();
+
+        if (darwinEnabled) {
+            if (gitManager.isGitRepository()) {
+                return runDarwin();
+            } else {
+                context.log("[ITERATION] Darwin mode requested but Git not available. Falling back to iterative flow.");
+                return runIterative();
+            }
         } else {
             return runIterative();
         }
@@ -361,6 +365,17 @@ public class IterationManager {
 
             List<BranchVariant> variants = darwinEngine.generateVariants(goal, snapshot, failureMemory, trajectory);
             logDarwinBranches(variants);
+
+            // Darwin Pause: If not auto-approve, wait for user to select/approve a variant or proceed
+            if (!context.isAutoApprove()) {
+                context.log("[DARWIN] Pausing for variant review. Approve to continue with parallel evaluation.");
+                try {
+                    context.requestApproval("Darwin generated " + variants.size() + " variants. Please review them in the chat and approve to start evaluation.").get();
+                } catch (Exception e) {
+                    context.log("[DARWIN] Approval cancelled or failed. Stopping iteration.");
+                    throw new Exception("Darwin evaluation cancelled by user.");
+                }
+            }
 
             iteration.setPhase("PLAN");
             // Ensure we start variants from the snapshot
