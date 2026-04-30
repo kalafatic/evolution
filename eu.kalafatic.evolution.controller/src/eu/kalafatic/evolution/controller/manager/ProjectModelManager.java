@@ -308,26 +308,34 @@ public class ProjectModelManager {
         List<String> models = new ArrayList<>();
         if (mode == null) return models;
 
-        if (mode.getValue() == AiMode.LOCAL_VALUE || mode.getValue() == AiMode.HYBRID_VALUE) {
+        int modeVal = mode.getValue();
+
+        if (modeVal == AiMode.LOCAL_VALUE || modeVal == AiMode.HYBRID_VALUE) {
             String ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
             OllamaService ollama = new OllamaService(ollamaUrl, null);
             try {
-                for (OllamaModel m : ollama.loadModels()) {
-                    models.add(m.getName());
+                List<OllamaModel> ollamaModels = ollama.loadModels();
+                if (ollamaModels != null) {
+                    for (OllamaModel m : ollamaModels) {
+                        models.add(m.getName());
+                    }
                 }
             } catch (Exception e) {
                 // log or ignore
             }
         }
 
-        if (mode.getValue() == AiMode.REMOTE_VALUE || mode.getValue() == AiMode.HYBRID_VALUE) {
-            // Placeholder for remote models (e.g. OpenAI, Gemini)
-            // In a real implementation, we would fetch these from the respective providers
+        if (modeVal == AiMode.REMOTE_VALUE || modeVal == AiMode.HYBRID_VALUE) {
+            // Remote models
             models.add("gpt-4o");
             models.add("gpt-4o-mini");
             models.add("gpt-3.5-turbo");
             models.add("claude-3-5-sonnet-20240620");
+            models.add("claude-3-7-sonnet-latest");
             models.add("gemini-1.5-pro");
+            models.add("gemini-2.0-flash");
+            models.add("deepseek-chat");
+            models.add("deepseek-reasoner");
         }
 
         return models;

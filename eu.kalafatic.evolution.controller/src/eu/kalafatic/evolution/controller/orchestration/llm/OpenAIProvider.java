@@ -31,7 +31,9 @@ public class OpenAIProvider implements ILlmProvider {
 
         String token = (resolved != null) ? resolved.token : null;
         String apiUrl = (resolved != null && resolved.url != null) ? resolved.url : DEFAULT_OPENAI_URL;
-        String model = (resolved != null && resolved.model != null) ? resolved.model : orchestrator.getOpenAiModel();
+        String model = (resolved != null && resolved.model != null) ? resolved.model :
+                       (orchestrator.getLlm() != null && orchestrator.getLlm().getModel() != null && !orchestrator.getLlm().getModel().isEmpty()) ?
+                       orchestrator.getLlm().getModel() : orchestrator.getOpenAiModel();
 
         if (token == null || token.isEmpty() || "YOUR_API_KEY".equals(token)) {
             if (context != null) {
