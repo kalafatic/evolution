@@ -143,6 +143,13 @@ public class SelfDevSupervisor {
 
             if (analysis.optBoolean("isAmbiguous", false)) {
                 String question = analysis.optString("clarificationQuestion", "The request is ambiguous. Can you please provide more details?");
+
+                // If Darwin mode is enabled, we bypass blocking clarification and let the DarwinEngine handle ambiguity via variants.
+                if (context.getOrchestrator().isDarwinMode()) {
+                    context.log("[SUPERVISOR] Request identified as ambiguous, but Darwin mode is active. Bypassing clarification to generate variants.");
+                    return analysis.optString("refinedPrompt", request);
+                }
+
                 context.log("[SUPERVISOR] Request is ambiguous. Asking for clarification...");
 
                 if (context.isAutoApprove()) {

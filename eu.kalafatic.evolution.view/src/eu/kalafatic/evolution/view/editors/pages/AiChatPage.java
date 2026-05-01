@@ -362,9 +362,9 @@ public class AiChatPage extends AEvoPage {
 
 		if (currentThread == null) initializeThreads();
 	
-		// Only start Self-Dev Supervisor if Self-Development mode is explicitly checked.
-		// Darwin mode alone should use standard orchestration unless self-dev is also on.
-		if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
+		// Start Self-Dev Supervisor if Self-Development OR Darwin mode is enabled.
+		if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
+		    (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode() || orchestrator.isDarwinMode())) {
 			startSelfDevAction(request);
 			return;
 		}

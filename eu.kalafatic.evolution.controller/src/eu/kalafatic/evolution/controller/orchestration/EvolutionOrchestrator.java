@@ -769,6 +769,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             if (analysis.optBoolean("isAmbiguous", false)) {
                 String question = analysis.optString("clarificationQuestion", "The request is ambiguous. Can you please provide more details?");
+
+                // If Darwin mode is enabled, we bypass blocking clarification and let the DarwinEngine handle ambiguity via variants.
+                if (context.getOrchestrator().isDarwinMode()) {
+                    context.log("Evo-Orchestrator-Analysis: Request identified as ambiguous, but Darwin mode is active. Bypassing clarification.");
+                    return analysis.optString("refinedPrompt", request);
+                }
+
                 context.log("Evo-Orchestrator-Analysis: Request is ambiguous. Question: " + question);
 
                 if (context.isAutoApprove()) {

@@ -34,7 +34,8 @@ public class AnalyticAgent extends BaseAiAgent {
                 "1. ROOT CAUSE: Identify if the failure is syntactic (compile error), logical (test failed), or an environment issue.\n" +
                 "2. CYCLE DETECTION: Check if the current result/feedback is identical or highly similar to previous attempts.\n" +
                 "3. STRATEGY: Suggest if we should 'RETRY' with a different approach, use 'REPAIR_AGENT' for surgical fixes, or 'ESCALATE' if stuck in a cycle.\n\n" +
-                "OUTPUT JSON (New Request):\n" +
+                "OUTPUT JSON (Choose ONLY ONE based on the input context):\n" +
+                "1. If analyzing a NEW REQUEST, output only this structure:\n" +
                 "{\n" +
                 "  \"category\": \"...\",\n" +
                 "  \"objective\": \"...\",\n" +
@@ -43,7 +44,7 @@ public class AnalyticAgent extends BaseAiAgent {
                 "  \"clarificationQuestion\": \"...\",\n" +
                 "  \"refinedPrompt\": \"...\"\n" +
                 "}\n\n" +
-                "OUTPUT JSON (Diagnosis):\n" +
+                "2. If performing a DIAGNOSIS of a failure, output only this structure:\n" +
                 "{\n" +
                 "  \"rootCause\": \"...\",\n" +
                 "  \"repeatFailure\": boolean,\n" +
