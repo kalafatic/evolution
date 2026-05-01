@@ -327,6 +327,40 @@ public class ProjectModelManager {
     }
 
     /**
+     * Returns names of local models from available sources.
+     *
+     * @param orchestrator The orchestrator instance.
+     * @return List of local model names.
+     */
+    public List<String> getLocalModelNames(Orchestrator orchestrator) {
+        List<String> names = new ArrayList<>();
+        List<AIProvider> all = getAllModels(orchestrator);
+        for (AIProvider p : all) {
+            if (p.isLocal()) {
+                names.add(p.getName());
+            }
+        }
+        return names;
+    }
+
+    /**
+     * Returns names of remote, cloud, and hybrid models from available sources.
+     *
+     * @param orchestrator The orchestrator instance.
+     * @return List of remote/hybrid model names.
+     */
+    public List<String> getRemoteModelNames(Orchestrator orchestrator) {
+        List<String> names = new ArrayList<>();
+        List<AIProvider> all = getAllModels(orchestrator);
+        for (AIProvider p : all) {
+            if (!p.isLocal() || isHybrid(p)) {
+                names.add(p.getName());
+            }
+        }
+        return names;
+    }
+
+    /**
      * Fetches all available models from all sources.
      *
      * @param orchestrator The orchestrator instance.

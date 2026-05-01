@@ -270,9 +270,7 @@ public class AiChatPage extends AEvoPage {
 		case HYBRID: modeIndicatorLabel.setBackground(colorHybrid); break;
 		case REMOTE: modeIndicatorLabel.setBackground(colorRemote); break;
 		}
-		boolean remoteVisible = mode == AiMode.HYBRID || mode == AiMode.REMOTE;
 		if (aiSettingsGroup != null) {
-			SWTFactory.setControlEnabled(remoteVisible, true, aiSettingsGroup.getRemoteComposite().getChildren());
 			updateScrolledContent();
 		}
 	}
@@ -281,6 +279,14 @@ public class AiChatPage extends AEvoPage {
 		if (orchestrator == null || isUpdating) return;
 		isUpdating = true;
 		orchestrator.setAiMode(AiMode.get(aiSettingsGroup.getAiModeIndex()));
+
+		String localModel = aiSettingsGroup.getLocalModel();
+		orchestrator.setLocalModel(localModel);
+		orchestrator.setHybridModel(localModel);
+		if (orchestrator.getOllama() != null) {
+			orchestrator.getOllama().setModel(localModel);
+		}
+
 		String remoteModel = aiSettingsGroup.getRemoteModel();
 		orchestrator.setRemoteModel(remoteModel);
 		ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel);
