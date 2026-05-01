@@ -176,9 +176,9 @@ public class OrchestratorFlowTest {
         plannerField.setAccessible(true);
         injectMockIntoAgent((IAgent) plannerField.get(engine), mock);
 
-        Field reviewerField = EvolutionOrchestrator.class.getDeclaredField("reviewer");
-        reviewerField.setAccessible(true);
-        injectMockIntoAgent((IAgent) reviewerField.get(engine), mock);
+        Field validatorField = EvolutionOrchestrator.class.getDeclaredField("validator");
+        validatorField.setAccessible(true);
+        injectMockIntoAgent((IAgent) validatorField.get(engine), mock);
 
         Field intentClassifierField = EvolutionOrchestrator.class.getDeclaredField("intentClassifier");
         intentClassifierField.setAccessible(true);

@@ -265,9 +265,9 @@ public class SelfDevFlowTest {
         plannerField.setAccessible(true);
         injectMockIntoAgent((IAgent) plannerField.get(engine), mock);
 
-        Field reviewerField = EvolutionOrchestrator.class.getDeclaredField("reviewer");
-        reviewerField.setAccessible(true);
-        injectMockIntoAgent((IAgent) reviewerField.get(engine), mock);
+        Field validatorField = EvolutionOrchestrator.class.getDeclaredField("validator");
+        validatorField.setAccessible(true);
+        injectMockIntoAgent((IAgent) validatorField.get(engine), mock);
 
         Field agentsField = EvolutionOrchestrator.class.getDeclaredField("availableAgents");
         agentsField.setAccessible(true);

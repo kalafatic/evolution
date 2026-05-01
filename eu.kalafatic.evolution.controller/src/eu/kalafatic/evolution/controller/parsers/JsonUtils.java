@@ -30,30 +30,79 @@ public class JsonUtils {
         int firstStart = text.indexOf("{");
         int lastEnd = text.lastIndexOf("}");
 
-        if (firstStart == -1 || lastEnd == -1 || lastEnd <= firstStart) {
-            return null;
-        }
+        if (firstStart != -1 && lastEnd != -1 && lastEnd > firstStart) {
+            // Try simple extraction first (greedy)
+            String fullPart = text.substring(firstStart, lastEnd + 1);
+            try {
+                return new JSONObject(fullPart);
+            } catch (JSONException e) {
+                // Greedy failed, likely multiple objects. Attempt to find the first valid one.
+                int searchPos = firstStart;
+                while (searchPos < lastEnd) {
+                    int end = text.indexOf("}", searchPos);
+                    if (end == -1) break;
 
-        // Try simple extraction first (greedy)
-        String fullPart = text.substring(firstStart, lastEnd + 1);
-        try {
-            return new JSONObject(fullPart);
-        } catch (JSONException e) {
-            // Greedy failed, likely multiple objects. Attempt to find the first valid one.
-            int searchPos = firstStart;
-            while (searchPos < lastEnd) {
-                int end = text.indexOf("}", searchPos);
-                if (end == -1) break;
-
-                String candidate = text.substring(firstStart, end + 1);
-                try {
-                    return new JSONObject(candidate);
-                } catch (JSONException ex) {
-                    searchPos = end + 1;
+                    String candidate = text.substring(firstStart, end + 1);
+                    try {
+                        return new JSONObject(candidate);
+                    } catch (JSONException ex) {
+                        searchPos = end + 1;
+                    }
                 }
             }
         }
-        return null;
+
+        // Final fallback: try to parse key-value pairs if standard JSON extraction failed or no braces found
+        return attemptKeyValueParsing(text);
+    }
+
+    /**
+     * Fallback for small models that output "Key: Value" lines instead of JSON.
+     */
+    private static JSONObject attemptKeyValueParsing(String text) {
+        JSONObject obj = new JSONObject();
+        String[] lines = text.split("\\r?\\n");
+        boolean foundAny = false;
+        for (String line : lines) {
+            line = line.trim();
+            if (line.isEmpty() || line.startsWith("#") || line.startsWith("-")) continue;
+
+            int colonPos = line.indexOf(":");
+            if (colonPos > 0 && colonPos < line.length() - 1) {
+                String rawKey = line.substring(0, colonPos).trim();
+                String value = line.substring(colonPos + 1).trim();
+
+                // Clean up key (remove quotes, dots, etc.)
+                String key = rawKey.replaceAll("^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$", "");
+
+                if (!key.isEmpty()) {
+                    // Normalize known keys to avoid case-sensitivity issues with fallbacks
+                    String normalizedKey = normalizeKey(key);
+
+                    // Try to parse value as boolean or number if possible
+                    if ("true".equalsIgnoreCase(value)) obj.put(normalizedKey, true);
+                    else if ("false".equalsIgnoreCase(value)) obj.put(normalizedKey, false);
+                    else if (value.matches("-?\\d+")) obj.put(normalizedKey, Integer.parseInt(value));
+                    else if (value.matches("-?\\d*\\.\\d+")) obj.put(normalizedKey, Double.parseDouble(value));
+                    else obj.put(normalizedKey, value);
+                    foundAny = true;
+                }
+            }
+        }
+        return foundAny ? obj : null;
+    }
+
+    private static String normalizeKey(String key) {
+        if ("isambiguous".equalsIgnoreCase(key)) return "isAmbiguous";
+        if ("refinedprompt".equalsIgnoreCase(key)) return "refinedPrompt";
+        if ("objective".equalsIgnoreCase(key)) return "objective";
+        if ("category".equalsIgnoreCase(key)) return "category";
+        if ("missinginformation".equalsIgnoreCase(key)) return "missingInformation";
+        if ("clarificationquestion".equalsIgnoreCase(key)) return "clarificationQuestion";
+        if ("rootcause".equalsIgnoreCase(key)) return "rootCause";
+        if ("repeatfailure".equalsIgnoreCase(key)) return "repeatFailure";
+        if ("suggestedstrategy".equalsIgnoreCase(key)) return "suggestedStrategy";
+        return key;
     }
 
     /**

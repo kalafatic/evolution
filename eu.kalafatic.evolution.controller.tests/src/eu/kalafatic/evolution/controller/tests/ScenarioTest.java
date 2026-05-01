@@ -294,9 +294,9 @@ public class ScenarioTest {
         plannerField.setAccessible(true);
         injectMockIntoAgent(plannerField.get(engine), mock);
 
-        Field reviewerField = EvolutionOrchestrator.class.getDeclaredField("reviewer");
-        reviewerField.setAccessible(true);
-        injectMockIntoAgent(reviewerField.get(engine), mock);
+        Field validatorField = EvolutionOrchestrator.class.getDeclaredField("validator");
+        validatorField.setAccessible(true);
+        injectMockIntoAgent(validatorField.get(engine), mock);
 
         Field agentsField = EvolutionOrchestrator.class.getDeclaredField("availableAgents");
         agentsField.setAccessible(true);
