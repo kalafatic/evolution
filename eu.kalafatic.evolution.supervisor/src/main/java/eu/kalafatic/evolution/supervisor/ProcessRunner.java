@@ -25,14 +25,20 @@ public class ProcessRunner {
         }
     }
 
-    public boolean runRCP(File variantDir, String jarName) {
+    public boolean runRCP(File variantDir, String jarName, String statePath) {
         System.out.println("[RUN] Running RCP in " + variantDir.getAbsolutePath());
         List<String> command = new ArrayList<>();
         command.add("java");
+        if (statePath != null) {
+            command.add("-Dstate=" + statePath);
+        }
         command.add("-jar");
         command.add(jarName);
         command.add("--mode=SELF_DEV");
         command.add("--variant=" + variantDir.getAbsolutePath());
+        if (statePath != null) {
+            command.add("--state=" + statePath);
+        }
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(variantDir);

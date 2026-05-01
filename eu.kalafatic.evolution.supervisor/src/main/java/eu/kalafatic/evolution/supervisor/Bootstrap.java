@@ -4,6 +4,7 @@ public class Bootstrap {
     private String sourcePath;
     private String targetPath;
     private String action;
+    private String statePath;
 
     public Bootstrap() {}
 
@@ -15,4 +16,7 @@ public class Bootstrap {
 
     public String getAction() { return action; }
     public void setAction(String action) { this.action = action; }
+
+    public String getStatePath() { return statePath; }
+    public void setStatePath(String statePath) { this.statePath = statePath; }
 }

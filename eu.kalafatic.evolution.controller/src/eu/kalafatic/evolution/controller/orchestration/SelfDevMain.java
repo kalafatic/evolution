@@ -6,6 +6,11 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
+import eu.kalafatic.evolution.controller.orchestration.AutonomyLevel;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
@@ -18,23 +23,49 @@ public class SelfDevMain {
     public static void main(String[] args) {
         String mode = null;
         File variantDir = null;
+        String statePath = null;
 
         for (String arg : args) {
             if (arg.startsWith("--mode=")) {
                 mode = arg.substring(7);
             } else if (arg.startsWith("--variant=")) {
                 variantDir = new File(arg.substring(10));
+            } else if (arg.startsWith("--state=")) {
+                statePath = arg.substring(8);
             }
         }
 
+        if (statePath == null) {
+            statePath = System.getProperty("state");
+        }
+        if (statePath == null) {
+            statePath = System.getenv("EVO_STATE");
+        }
+
         if (!"SELF_DEV".equals(mode) || variantDir == null) {
-            System.err.println("Usage: --mode=SELF_DEV --variant=<path>");
+            System.err.println("Usage: --mode=SELF_DEV --variant=<path> [--state=<path>]");
             System.exit(1);
         }
 
         System.out.println("[RCP] Standalone SELF_DEV mode starting in: " + variantDir.getAbsolutePath());
+        if (statePath != null) {
+            System.out.println("[RCP] Using state from: " + statePath);
+        }
 
         try {
+            ObjectMapper mapper = new ObjectMapper();
+            String goal = "Continue self-development and structural improvement.";
+
+            if (statePath != null) {
+                File stateFile = new File(statePath);
+                if (stateFile.exists()) {
+                    ObjectNode stateNode = (ObjectNode) mapper.readTree(stateFile);
+                    if (stateNode.has("goal")) {
+                        goal = stateNode.get("goal").asText();
+                    }
+                }
+            }
+
             // Setup minimal Orchestrator context
             Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
             
@@ -58,7 +89,7 @@ public class SelfDevMain {
             context.setPlatformMode(new PlatformMode(PlatformType.SELF_DEV_MODE, AutonomyLevel.HIGH, 1, true));
 
             EvolutionOrchestrator evo = new EvolutionOrchestrator();
-            String response = evo.execute("Continue self-development and structural improvement.", context);
+            String response = evo.execute(goal, context);
 
             // Compute real score based on build/test status in context
             double score = response.toLowerCase().contains("error") ? 0.0 : 0.8;
