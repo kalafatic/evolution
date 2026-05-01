@@ -29,7 +29,10 @@ public class AnalyticAgent extends BaseAiAgent {
                 "3. AMBIGUITY:\n" +
                 "   - For ATOMIC tasks: Technical tasks with implied defaults (e.g., 'create class') are NOT ambiguous. Just proceed with defaults (e.g., src/Main.java).\n" +
                 "   - For ARCHITECTURAL tasks: Asking for 'purpose', 'usage' or 'big picture' IS encouraged if it helps build a better system model.\n" +
-                "4. REFINED PROMPT: Create a version of the prompt that reflects the scope.\n\n" +
+                "   - IF isAmbiguous is false, 'clarificationQuestion' and 'missingInformation' MUST be empty/empty array.\n" +
+                "4. REFINED PROMPT:\n" +
+                "   - Create a version of the prompt that reflects the scope and incorporates all assumed technical defaults.\n" +
+                "   - It must be a clear, actionable instruction for the Task Planner.\n\n" +
                 "DIAGNOSIS CRITERIA (for failures):\n" +
                 "1. ROOT CAUSE: Identify if the failure is syntactic (compile error), logical (test failed), or an environment issue.\n" +
                 "2. CYCLE DETECTION: Check if the current result/feedback is identical or highly similar to previous attempts.\n" +

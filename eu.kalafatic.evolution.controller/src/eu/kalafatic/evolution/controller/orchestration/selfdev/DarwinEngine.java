@@ -185,7 +185,7 @@ public class DarwinEngine extends BaseAiAgent {
             v.setStrategy(obj.getString("strategy"));
             v.setScore(obj.optDouble("score", 0.0));
             String suffix = obj.getString("suffix");
-            v.setBranchName("exp/" + sanitize(goal) + "/" + suffix);
+            v.setBranchName("exp/" + sanitize(goal) + "/" + sanitize(suffix));
 
             // Parse Actions
             JSONArray actionsArr = obj.optJSONArray("actions");
@@ -232,6 +232,11 @@ public class DarwinEngine extends BaseAiAgent {
     }
 
     private String sanitize(String s) {
-        return s.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").substring(0, Math.min(s.length(), 20));
+        if (s == null || s.isEmpty()) return "unnamed";
+        String sanitized = s.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-");
+        if (sanitized.startsWith("-")) sanitized = sanitized.substring(1);
+        if (sanitized.endsWith("-")) sanitized = sanitized.substring(0, sanitized.length() - 1);
+        if (sanitized.isEmpty()) return "unnamed";
+        return sanitized.substring(0, Math.min(sanitized.length(), 30));
     }
 }
