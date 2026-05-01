@@ -107,12 +107,18 @@ public class EvolutionServer extends NanoHTTPD {
             request.getContext().put("branch", json.getString("branch"));
         }
 
-        TaskResult result = OrchestratorServiceImpl.getInstance().execute(request);
-        return newFixedLengthResponse(Response.Status.OK, "application/json",
-            new JSONObject().put("id", result.getId()).put("status", result.getStatus().toString()).toString());
+        OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(request);
+
+        JSONObject jsonRes = new JSONObject();
+        jsonRes.put("summary", response.getSummary());
+        jsonRes.put("type", response.getResultType().toString());
+        if (response.getContent() != null) jsonRes.put("content", response.getContent());
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", jsonRes.toString());
     }
 
     private Response handleGetTask(String id) {
+        // Legacy support
         TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(id);
         if (result == null) {
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json",

@@ -40,9 +40,12 @@ public class ExampleMain {
         String request = "Create a simple HelloWorld Java project with a pom.xml and a Main.java class that prints 'Hello Evolution'.";
 
         try {
-            String result = engine.execute(request, context);
+            TaskRequest taskRequest = new TaskRequest(request, tempDir);
+            taskRequest.getContext().put("orchestrator", orchestrator);
+            OrchestratorResponse orchResponse = engine.handle(taskRequest, context);
+
             System.out.println("\n--- Execution Result ---");
-            System.out.println(result);
+            System.out.println(orchResponse.getSummary());
 
             System.out.println("\n--- Execution Logs ---");
             context.getLogs().forEach(System.out::println);

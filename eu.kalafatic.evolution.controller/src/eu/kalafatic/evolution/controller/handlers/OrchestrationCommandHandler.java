@@ -17,6 +17,7 @@ import eu.kalafatic.evolution.controller.manager.TrainingManager;
 import eu.kalafatic.evolution.controller.engine.NeuronEngine;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import java.io.BufferedReader;
 import java.io.File;
@@ -98,7 +99,9 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         context.appendSharedMemory("Initial Request: " + orchestrator.getAiChat().getPrompt());
 
         EvolutionOrchestrator core = new EvolutionOrchestrator();
-        core.execute(orchestrator.getAiChat().getPrompt(), context);
+        TaskRequest request = new TaskRequest(orchestrator.getAiChat().getPrompt(), project.getLocation().toFile());
+        request.getContext().put("orchestrator", orchestrator);
+        core.handle(request, context);
 
         OrchestrationStatusManager.getInstance().updateStatus(id, 1.0, "Completed");
         monitor.done();

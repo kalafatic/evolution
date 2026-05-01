@@ -12,6 +12,13 @@ public interface OrchestratorService {
     TaskResult execute(TaskRequest request);
 
     /**
+     * Executes an orchestration task and returns a unified response.
+     * @param request The task request.
+     * @return The orchestrator response.
+     */
+    OrchestratorResponse handle(TaskRequest request);
+
+    /**
      * Gets the current result of a task.
      * @param id The task ID.
      * @return The task result.

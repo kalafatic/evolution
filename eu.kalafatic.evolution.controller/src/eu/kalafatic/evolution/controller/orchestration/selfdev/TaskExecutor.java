@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.util.List;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 
@@ -21,10 +22,18 @@ public class TaskExecutor {
                 context.log("[EXECUTOR] Executing task: " + task.getName());
                 task.setStatus(TaskStatus.RUNNING);
 
-                // Use the new executeTask method to run the atomic task directly
-                String result = orchestrator.executeTask(task, context);
+                // Use the new handle method to run the atomic task directly
+                TaskRequest request = new TaskRequest(task.getName(), context.getProjectRoot());
+                request.getContext().put("orchestrator", context.getOrchestrator());
+                request.getContext().put("taskContext", context);
 
-                task.setResponse(result);
+                eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse orchResponse = orchestrator.handle(request, context);
+
+                if (orchResponse.getResultType() == eu.kalafatic.evolution.controller.orchestration.ResultType.ERROR) {
+                    throw new Exception(orchResponse.getContent());
+                }
+
+                task.setResponse(orchResponse.getSummary());
                 context.log("[EXECUTOR] Task completed: " + task.getName());
             } catch (Exception e) {
                 task.setStatus(TaskStatus.FAILED);

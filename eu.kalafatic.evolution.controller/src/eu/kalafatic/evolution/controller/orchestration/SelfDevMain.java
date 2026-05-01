@@ -100,10 +100,13 @@ public class SelfDevMain {
             context.setPlatformMode(new PlatformMode(PlatformType.SELF_DEV_MODE, AutonomyLevel.HIGH, 1, true));
 
             EvolutionOrchestrator evo = new EvolutionOrchestrator();
-            String response = evo.execute(goal, context);
+            TaskRequest taskRequest = new TaskRequest(goal, variantDir);
+            OrchestratorResponse orchResponse = evo.handle(taskRequest, context);
+
+            String response = orchResponse.getSummary();
 
             // Compute real score based on build/test status in context
-            double score = response.toLowerCase().contains("error") ? 0.0 : 0.8;
+            double score = (orchResponse.getResultType() == ResultType.ERROR || response.toLowerCase().contains("error")) ? 0.0 : 0.8;
 
             ObjectNode resultNode = mapper.createObjectNode();
             resultNode.put("status", "OK");
