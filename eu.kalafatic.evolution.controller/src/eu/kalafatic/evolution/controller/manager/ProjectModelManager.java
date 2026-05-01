@@ -314,11 +314,13 @@ public class ProjectModelManager {
 
         List<AIProvider> allModels = getAllModels(orchestrator);
         for (AIProvider info : allModels) {
-            if (mode.getValue() == AiMode.LOCAL_VALUE && info.isLocal()) {
+            if (mode == AiMode.LOCAL && info.isLocal() && !isProxy(info)) {
                 modelNames.add(info.getName());
-            } else if (mode.getValue() == AiMode.REMOTE_VALUE && !info.isLocal()) {
+            } else if (mode == AiMode.REMOTE && !info.isLocal()) {
                 modelNames.add(info.getName());
-            } else if (mode.getValue() == AiMode.HYBRID_VALUE) {
+            } else if (mode == AiMode.HYBRID) {
+                modelNames.add(info.getName());
+            } else if (mode == AiMode.PROXY && isProxy(info)) {
                 modelNames.add(info.getName());
             }
         }
@@ -336,7 +338,7 @@ public class ProjectModelManager {
         List<String> names = new ArrayList<>();
         List<AIProvider> all = getAllModels(orchestrator);
         for (AIProvider p : all) {
-            if (p.isLocal()) {
+            if (p.isLocal() && !isProxy(p)) {
                 names.add(p.getName());
             }
         }
@@ -353,7 +355,7 @@ public class ProjectModelManager {
         List<String> names = new ArrayList<>();
         List<AIProvider> all = getAllModels(orchestrator);
         for (AIProvider p : all) {
-            if (!p.isLocal() || isHybrid(p)) {
+            if (!p.isLocal() || isHybrid(p) || isProxy(p)) {
                 names.add(p.getName());
             }
         }
@@ -510,5 +512,12 @@ public class ProjectModelManager {
             }
         }
         return false;
+    }
+
+    /**
+     * Helper to check if a provider is a proxy model.
+     */
+    public boolean isProxy(AIProvider provider) {
+        return provider.getName() != null && provider.getName().toLowerCase().endsWith(":cloud");
     }
 }

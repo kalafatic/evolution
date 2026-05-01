@@ -3314,6 +3314,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		executionModeEEnum = createEEnum(EXECUTION_MODE);
 		neuronTypeEEnum = createEEnum(NEURON_TYPE);
 		aiModeEEnum = createEEnum(AI_MODE);
+
 		selfDevStatusEEnum = createEEnum(SELF_DEV_STATUS);
 		iterationStatusEEnum = createEEnum(ITERATION_STATUS);
 		selfDevDecisionEEnum = createEEnum(SELF_DEV_DECISION);
@@ -3681,6 +3682,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(aiModeEEnum, AiMode.LOCAL);
 		addEEnumLiteral(aiModeEEnum, AiMode.HYBRID);
 		addEEnumLiteral(aiModeEEnum, AiMode.REMOTE);
+		addEEnumLiteral(aiModeEEnum, AiMode.PROXY);
 
 		initEEnum(selfDevStatusEEnum, SelfDevStatus.class, "SelfDevStatus");
 		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.RUNNING);

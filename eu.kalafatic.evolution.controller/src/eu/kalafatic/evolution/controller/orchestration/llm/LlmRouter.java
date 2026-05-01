@@ -42,6 +42,9 @@ public class LlmRouter {
         try {
             if (mode == AiMode.REMOTE) {
                 return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            } else if (mode == AiMode.PROXY) {
+                if (context != null) context.log("LlmRouter-Proxy: Routing via Ollama proxy...");
+                return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
             } else if (mode == AiMode.HYBRID) {
                 // HYBRID: Local Context Builder + Cloud Reasoner
                 if (context != null) context.log("LlmRouter-Hybrid: Step 1 - Building system context locally...");
@@ -65,21 +68,23 @@ public class LlmRouter {
             // Fallback to local mode logic below
         }
 
-        {
-            // LOCAL, ollama+selected local model
-            String model = orchestrator.getLocalModel();
-            if (model != null && !model.isEmpty()) {
-                if (orchestrator.getOllama() == null) {
-                    orchestrator.setOllama(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOllama());
-                }
-                orchestrator.getOllama().setModel(model);
-            } else if (orchestrator.getOllama() != null) {
-                model = orchestrator.getOllama().getModel();
-            }
+        return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
+    }
 
-            if (context != null) context.log("LlmRouter-Local: Using Ollama model: " + (model != null && !model.isEmpty() ? model : "default"));
-            return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+    private String sendLocalRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        // LOCAL, ollama+selected local model
+        String model = orchestrator.getLocalModel();
+        if (model != null && !model.isEmpty()) {
+            if (orchestrator.getOllama() == null) {
+                orchestrator.setOllama(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOllama());
+            }
+            orchestrator.getOllama().setModel(model);
+        } else if (orchestrator.getOllama() != null) {
+            model = orchestrator.getOllama().getModel();
         }
+
+        if (context != null) context.log("LlmRouter-Local: Using Ollama model: " + (model != null && !model.isEmpty() ? model : "default"));
+        return ollamaProvider.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
     private String sendRemoteRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {

@@ -103,6 +103,7 @@ public class AiSettingsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.syncModelWithUI();
+                refreshUI();
             }
         });
 
@@ -130,36 +131,11 @@ public class AiSettingsGroup extends AEvoGroup {
 		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);	
 		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		CompletableFuture.runAsync(() -> {
-			List<AIProvider> models = ProjectModelManager.getInstance().getAllModels(orchestrator);
-			Display.getDefault().asyncExec(() -> {
-				if (combo.isDisposed()) return;
-				if (models != null) {
-					Set<String> uniqueModels = new LinkedHashSet<>();
-					for (AIProvider f : models) {
-						if (f.isLocal()) {
-							uniqueModels.add(f.getName());
-						}
-					}
-					String current = combo.getText();
-					combo.removeAll();
-					for (String name : uniqueModels) {
-						combo.add(name);
-					}
-					if (!current.isEmpty()) {
-						int idx = combo.indexOf(current);
-						if (idx >= 0) combo.select(idx);
-					}
-				}
-			});
-		});
-
 		// selection listener
 		combo.addListener(SWT.Selection, e -> {
 		    int index = combo.getSelectionIndex();
 		    if (index >= 0) {
 			String selectedName = combo.getItem(index);
-			//modelText.setText(selectedName);
 		        System.out.println("Selected: " + selectedName);
 		        page.syncModelWithUI();
 		    }
@@ -170,9 +146,10 @@ public class AiSettingsGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (orchestrator != null) {
-            aiModeCombo.select(orchestrator.getAiMode().getValue());
+            AiMode mode = orchestrator.getAiMode();
+            aiModeCombo.select(mode.getValue());
 
-            // 1. Populate AI Remote combo
+            // 1. Populate AI Remote combo (contains all non-local models)
             String currentRemote = aiRemoteCombo.getText();
             aiRemoteCombo.removeAll();
             List<String> remoteModels = ProjectModelManager.getInstance().getRemoteModelNames(orchestrator);
@@ -193,17 +170,24 @@ public class AiSettingsGroup extends AEvoGroup {
             }
 
             eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
-                    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().resolve(orchestrator, remoteModel);
+                    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().resolve(orchestrator, aiRemoteCombo.getText());
 
             remoteTokenText.setText((resolved != null && resolved.token != null) ? resolved.token : "");
             remoteUrlText.setText((resolved != null && resolved.url != null) ? resolved.url : "");
 
-            // 2. Populate Local Model combo
+            // 2. Populate Model combo (filtered by mode)
             if (localModelCombo != null) {
                 String currentLocal = localModelCombo.getText();
                 localModelCombo.removeAll();
-                List<String> localModels = ProjectModelManager.getInstance().getLocalModelNames(orchestrator);
-                for (String n : localModels) localModelCombo.add(n);
+
+                List<String> modelsToShow;
+                if (mode == AiMode.PROXY) {
+                    modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
+                } else {
+                    modelsToShow = ProjectModelManager.getInstance().getLocalModelNames(orchestrator);
+                }
+
+                for (String n : modelsToShow) localModelCombo.add(n);
 
                 if (!currentLocal.isEmpty()) {
                     int idx = localModelCombo.indexOf(currentLocal);
@@ -211,6 +195,7 @@ public class AiSettingsGroup extends AEvoGroup {
                 }
 
                 String model = orchestrator.getLocalModel();
+
                 if (model == null || model.isEmpty()) {
                     if (orchestrator.getOllama() != null) model = orchestrator.getOllama().getModel();
                 }
