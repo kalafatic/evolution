@@ -75,7 +75,7 @@ public class Supervisor {
                             // In this case, we'll look for a JAR in the variant directory or target
                             String jarName = findJar(variant);
                             if (jarName != null) {
-                                if (runner.runRCP(variant, jarName)) {
+                                if (runner.runRCP(variant, jarName, stateFile)) {
                                     try {
                                         Result result = reader.readResult(new File(variant, "result.json"));
                                         System.out.println("[RESULT] " + variant.getName() + " -> " + result);

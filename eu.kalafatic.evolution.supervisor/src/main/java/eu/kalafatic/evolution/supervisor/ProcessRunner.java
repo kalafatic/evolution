@@ -25,7 +25,7 @@ public class ProcessRunner {
         }
     }
 
-    public boolean runRCP(File variantDir, String jarName) {
+    public boolean runRCP(File variantDir, String jarName, File stateFile) {
         System.out.println("[RUN] Running RCP in " + variantDir.getAbsolutePath());
         List<String> command = new ArrayList<>();
         command.add("java");
@@ -34,13 +34,17 @@ public class ProcessRunner {
         command.add("--mode=SELF_DEV");
         command.add("--variant=" + variantDir.getAbsolutePath());
 
-        // Check for state.json in variant or parent iteration directory
-        File stateFile = new File(variantDir, "state.json");
-        if (!stateFile.exists()) {
-            stateFile = new File(variantDir.getParentFile(), "state.json");
-        }
-        if (stateFile.exists()) {
+        if (stateFile != null && stateFile.exists()) {
             command.add("--state=" + stateFile.getAbsolutePath());
+        } else {
+            // Fallback: Check for state.json in variant or parent iteration directory
+            File localState = new File(variantDir, "state.json");
+            if (!localState.exists()) {
+                localState = new File(variantDir.getParentFile(), "state.json");
+            }
+            if (localState.exists()) {
+                command.add("--state=" + localState.getAbsolutePath());
+            }
         }
 
         ProcessBuilder pb = new ProcessBuilder(command);
