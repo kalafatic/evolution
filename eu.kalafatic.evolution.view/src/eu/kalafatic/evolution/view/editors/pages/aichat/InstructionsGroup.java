@@ -259,6 +259,13 @@ public class InstructionsGroup extends AEvoGroup {
     public String getRequest() { return requestText.getText().trim(); }
     public void setRequest(String text) { requestText.setText(text); }
 
+    public void setCaretToEnd() {
+        if (requestText != null && !requestText.isDisposed()) {
+            requestText.setSelection(requestText.getCharCount());
+            requestText.setFocus();
+        }
+    }
+
     public void focusAndHighlight(Color bgColor, Color fgColor) {
         if (requestText != null && !requestText.isDisposed()) {
             requestText.setFocus();

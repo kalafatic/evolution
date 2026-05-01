@@ -781,7 +781,7 @@
                             addField("Explanation", analysis.explanation);
 
                             if (analysis.refinedPrompt) {
-                                html += `<div style="margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px;"><i>${escapeHtml(analysis.refinedPrompt)}</i></div>`;
+                                html += `<div style="margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px;"><a class="link-go" onclick="event.stopPropagation(); JavaHandler('executeProposal', '-1', '${escapeJs(analysis.refinedPrompt)}')"><b>${escapeHtml(analysis.refinedPrompt)}</b></a></div>`;
                             }
                             html += '</div>';
                             return html;
