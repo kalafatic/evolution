@@ -112,7 +112,7 @@ public class OllamaProvider implements ILlmProvider {
         }
 
         AiMode mode = orchestrator.getAiMode();
-        if (mode == AiMode.LOCAL) {
+        if (mode == AiMode.LOCAL || mode == AiMode.PROXY) {
             orchestrator.setLocalModel(newModel);
         } else if (mode == AiMode.HYBRID) {
             orchestrator.setHybridModel(newModel);
