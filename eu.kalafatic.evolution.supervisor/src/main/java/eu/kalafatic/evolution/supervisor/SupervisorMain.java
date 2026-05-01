@@ -11,7 +11,7 @@ public class SupervisorMain {
 
         System.out.println("[CONFIG] Base Directory: " + baseDir.getAbsolutePath());
 
-        Supervisor supervisor = new Supervisor(baseDir);
+        SelfDevSupervisor supervisor = new SelfDevSupervisor(baseDir);
         supervisor.run();
 
         System.out.println("=== EVO AI SUPERVISOR FINISHED ===");

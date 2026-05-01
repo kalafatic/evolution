@@ -67,3 +67,13 @@
     - **Progress Tracking**: Implemented progress-based anti-loop mechanism in the PEV cycle.
     - **Documentation**: Updated `architecture.md` with refined blueprint and pseudo-code.
 - **Traceability**: `iterations/21/plan.json`
+
+## [Iteration 22] - Self-Development Bootstrap Flow and Supervisor Unification
+- **Goal**: Implement minimal bootstrap flow to trigger external Supervisor for build/restart and unify supervisor logic.
+- **Changes**:
+    - **Bootstrap**: Created `bootstrap.json` contract and `SelfDevBootstrapController` to trigger external Supervisor process.
+    - **Unification**: Renamed external `Supervisor` to `SelfDevSupervisor` and aligned logic with internal supervisor.
+    - **Handoff**: Implemented handoff logic in Controller's `SelfDevSupervisor` to delegate build/restart phases to external process.
+    - **UI**: Updated `IterationPage` with dynamic polling, session status/progress labels, and integrated "Self-Dev Loop" controls.
+    - **Navigation**: Added `showArchitecturePage()` and `showIterationPage()` to `MultiPageEditor`.
+- **Traceability**: `iterations/22/plan.json`

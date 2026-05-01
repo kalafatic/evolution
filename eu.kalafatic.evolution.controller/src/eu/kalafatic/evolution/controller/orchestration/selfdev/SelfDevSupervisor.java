@@ -16,6 +16,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
  * Supervisor for autonomous self-development sessions.
  *
  * @evo:20:A reason=architecture-documentation-sync
+ * @evo:22:A reason=external-supervisor-handoff
  */
 public class SelfDevSupervisor {
     private final SelfDevSession session;
@@ -23,10 +24,12 @@ public class SelfDevSupervisor {
     protected final AnalyticAgent analyticAgent = new AnalyticAgent();
     protected final LlmIntentClassifier intentClassifier = new LlmIntentClassifier();
     private static final int MAX_FAILURES = 3;
+    private final SelfDevBootstrapController bootstrapController;
 
     public SelfDevSupervisor(SelfDevSession session, TaskContext context) {
         this.session = session;
         this.context = context;
+        this.bootstrapController = new SelfDevBootstrapController(context.getProjectRoot());
     }
 
     public void startSession() {
@@ -117,7 +120,27 @@ public class SelfDevSupervisor {
                 }
 
                 restartManager.persistAndPrepareForRestart();
-                restartManager.restartIfNeeded();
+
+                // If we need a real restart via external Supervisor
+                if (context.getOrchestrator().isDarwinMode()) {
+                    context.log("[SUPERVISOR] Delegating build and restart to external Supervisor...");
+                    try {
+                        bootstrapController.startBootstrap();
+
+                        // Small wait to allow external supervisor to take over
+                        Thread.sleep(2000);
+
+                        // In external mode, the external supervisor takes over the iteration loop.
+                        // This internal loop can stop or wait.
+                        session.setStatus(SelfDevStatus.COMPLETED);
+                        context.log("[SUPERVISOR] Handoff complete. Stopping internal supervisor.");
+                        break;
+                    } catch (Exception e) {
+                        context.log("[SUPERVISOR] Bootstrap failed: " + e.getMessage());
+                    }
+                } else {
+                    restartManager.restartIfNeeded();
+                }
             }
 
             if (session.getStatus() == SelfDevStatus.RUNNING) {

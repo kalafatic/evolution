@@ -28,6 +28,13 @@ public class ResultReader {
         return mapper.readValue(file, EvoPlan.class);
     }
 
+    public Bootstrap readBootstrap(File file) throws IOException {
+        if (!file.exists()) {
+            throw new IOException("Bootstrap file missing: " + file.getAbsolutePath());
+        }
+        return mapper.readValue(file, Bootstrap.class);
+    }
+
     public void writeState(File file, State state) throws IOException {
         mapper.writerWithDefaultPrettyPrinter().writeValue(file, state);
     }
