@@ -3,6 +3,8 @@ package eu.kalafatic.evolution.controller.orchestration;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import org.json.JSONObject;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevProtocol;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -21,6 +23,7 @@ public class TaskContext {
     public static final String PLAN_APPROVAL_MESSAGE = "Plan review required. Please verify and modify the task list in the Approval tab.";
     private final Orchestrator orchestrator;
     private final File projectRoot;
+    private final SelfDevProtocol protocol;
     private final Map<String, String> state = new ConcurrentHashMap<>();
     private final List<String> logs = Collections.synchronizedList(new ArrayList<>());
     private final List<LogListener> listeners = new CopyOnWriteArrayList<>();
@@ -60,6 +63,7 @@ public class TaskContext {
     public TaskContext(Orchestrator orchestrator, File projectRoot) {
         this.orchestrator = orchestrator;
         this.projectRoot = projectRoot;
+        this.protocol = new SelfDevProtocol(projectRoot);
     }
 
     public List<String> getInstructionFiles() {
@@ -217,11 +221,23 @@ public class TaskContext {
     }
 
     public void checkPause() {
-        if (paused) {
+        boolean externalPause = false;
+        JSONObject control = protocol.readControl();
+        if (control != null) {
+            externalPause = control.optBoolean("pause", false);
+        }
+
+        if (paused || externalPause) {
             synchronized (pauseLock) {
-                while (paused) {
+                while (paused || externalPause) {
                     try {
-                        pauseLock.wait();
+                        pauseLock.wait(2000); // Poll external pause every 2s
+                        control = protocol.readControl();
+                        if (control != null) {
+                            externalPause = control.optBoolean("pause", false);
+                        } else {
+                            externalPause = false;
+                        }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         break;
@@ -279,5 +295,9 @@ public class TaskContext {
 
     public FileChangeTracker getFileChangeTracker() {
         return fileChangeTracker;
+    }
+
+    public SelfDevProtocol getProtocol() {
+        return protocol;
     }
 }
