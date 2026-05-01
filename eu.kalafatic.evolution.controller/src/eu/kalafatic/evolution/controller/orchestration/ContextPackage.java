@@ -11,6 +11,7 @@ import org.json.JSONObject;
 public class ContextPackage {
     private String goal;
     private String step;
+    private ArchitectureContext architectureContext;
     private List<String> scope = new ArrayList<>();
     private String code;
     private String dependencies;
@@ -32,6 +33,14 @@ public class ContextPackage {
 
     public void setStep(String step) {
         this.step = step;
+    }
+
+    public ArchitectureContext getArchitectureContext() {
+        return architectureContext;
+    }
+
+    public void setArchitectureContext(ArchitectureContext architectureContext) {
+        this.architectureContext = architectureContext;
     }
 
     public List<String> getScope() {
@@ -86,6 +95,9 @@ public class ContextPackage {
         JSONObject json = new JSONObject();
         json.put("goal", goal);
         json.put("step", step);
+        if (architectureContext != null) {
+            json.put("architecture", architectureContext.toJson());
+        }
         json.put("scope", new JSONArray(scope));
         json.put("code", code);
         json.put("dependencies", dependencies);

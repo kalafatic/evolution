@@ -16,14 +16,39 @@ Every prompt/iteration follows this cycle:
 - **Orchestration**: `EvolutionOrchestrator` implements a 6-phase **Plan–Execute–Verify (PEV)** loop for every task:
     1.  **PLAN (Tactical)**: Determine the specific technical approach for the task.
     2.  **CONTEXT**: Gather minimal, relevant code and dependency context via `ContextBuilder`.
-    3.  **EXECUTE**: Perform the action (file write, shell command, etc.).
-    4.  **VERIFY**: Evaluate the result using `ReviewerAgent` and `ConstraintAgent`.
-    5.  **ANALYZE**: If failed, diagnose the root cause using `AnalyticAgent`.
+    3.  **EXECUTE**:
+        - **GeneratePatch**: LLM generates the `ChangeUnit`.
+        - **ApplyPatch**: Supervisor-level application (signaled by Orchestrator).
+    4.  **VERIFY**: Evaluate the result using the unified `ValidatorAgent`.
+    5.  **ANALYZE**: If failed, diagnose the root cause and check **PROGRESS** (IMPROVED/SAME/WORSE) using `AnalyticAgent`.
     6.  **MUTATE**: Adjust strategy (Self-Correction, Repair, or Escalation) based on diagnosis.
+
+### PEV Loop Pseudo-code
+```python
+def pev_loop(task):
+    for attempt in range(MAX_RETRIES):
+        # 1. PLAN
+        plan = agent.plan(task)
+        # 2. CONTEXT
+        context = ContextBuilder.build(task, arch_context)
+        # 3. EXECUTE
+        patch = agent.generatePatch(context, plan)
+        change_unit = ChangeUnit(patch)
+        result = applyPatch(change_unit)
+        # 4. VERIFY
+        eval = Validator.evaluate(result)
+        if eval.success: return DONE
+        # 5. ANALYZE
+        diagnosis = AnalyticAgent.diagnose(result, eval.feedback)
+        # 6. MUTATE
+        strategy = diagnosis.suggestedStrategy
+        if diagnosis.progress == "SAME": escalate_strategy()
+```
 - **Specialized Agents**:
+    - `ValidatorAgent`: Unified role merging `ReviewerAgent` and `ConstraintAgent`.
+    - `AnalyticAgent`: Handles both pre-planning intent analysis and post-failure progress-aware diagnosis.
     - `RepairAgent`: Specialized in surgical fixes for build and technical failures.
-    - `ConstraintAgent`: Enforces architectural guardrails by verifying changes against the `DesignModel`.
-    - `ProposalConsolidatorAgent`: Unifies and deduplicates agent proposals for streamlined user approval.
+    - `ProposalConsolidatorAgent`: Unifies and deduplicates agent proposals with deterministic risk-aware logic.
 - **Routing**: `LlmRouter` uses a **Hybrid Context Builder** approach (see `docs/HYBRID_MODE_DESIGN.md`) with **Automatic Local Fallback**. If remote providers fail, the system degrades gracefully to local Ollama.
 - **Repair Loop**: Integration of `RepairAgent` into the PEV cycle for automated error recovery.
 - **Self-Dev Supervisor**: `SelfDevSupervisor` coordinates the iterative cycles, branch management, and automatic rollbacks.

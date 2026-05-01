@@ -24,7 +24,7 @@ import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent;
 import eu.kalafatic.evolution.controller.agents.QualityAgent;
 import eu.kalafatic.evolution.controller.agents.RepairAgent;
-import eu.kalafatic.evolution.controller.agents.ReviewerAgent;
+import eu.kalafatic.evolution.controller.agents.ValidatorAgent;
 import eu.kalafatic.evolution.controller.agents.StructureAgent;
 import eu.kalafatic.evolution.controller.agents.TerminalAgent;
 import eu.kalafatic.evolution.controller.agents.TesterAgent;
@@ -50,8 +50,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     private ContextAssistant contextAssistant = new ContextAssistant();
     private AnalyticAgent analyticAgent = new AnalyticAgent();
     private PlannerAgent planner = new PlannerAgent();
-    private ReviewerAgent reviewer = new ReviewerAgent();
-    private ConstraintAgent constraintAgent = new ConstraintAgent();
+    private ValidatorAgent validator = new ValidatorAgent();
     private RepairAgent repairAgent = new RepairAgent();
     private ProposalConsolidatorAgent consolidator = new ProposalConsolidatorAgent();
     private FinalResponseAgent finalResponseAgent = new FinalResponseAgent();
@@ -63,7 +62,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
         availableAgents.add(new ArchitectAgent());
         availableAgents.add(new JavaDevAgent());
         availableAgents.add(new TesterAgent());
-        availableAgents.add(new ReviewerAgent());
+        availableAgents.add(validator);
         availableAgents.add(new GeneralAgent());
         availableAgents.add(new TerminalAgent());
         availableAgents.add(new FileAgent());
@@ -74,7 +73,6 @@ public class EvolutionOrchestrator implements IOrchestrator {
         availableAgents.add(new QualityAgent());
         availableAgents.add(new ObservabilityAgent());
         availableAgents.add(repairAgent);
-        availableAgents.add(constraintAgent);
     }
 
     @Override
@@ -475,27 +473,29 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 String contextPrompt = ContextBuilder.buildPrompt(contextPkg);
 
                 // 3. EXECUTE: Perform the action strictly using tactical context
-                // @evo:20:A reason=6-phase-pev-loop
+                // @evo:21:A reason=split-execute-phase
                 task.setStatus(TaskStatus.EXECUTING);
                 context.setCurrentPhase("EXECUTE");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 3 - Executing...");
 
-                // Extract implementation from plan if present to avoid overthinking
-                String preGeneratedContent = null;
-                try {
-                    JSONObject planJson = new JSONObject(localPlan);
-                    if (planJson.has("implementation")) {
-                        preGeneratedContent = planJson.getString("implementation");
-                    }
-                } catch (Exception e) { }
+                // 3a. GeneratePatch (LLM responsibility)
+                String patch = generatePatch(task, currentAgent, context, lastFeedback, localPlan, contextPrompt);
 
-                // For LLM-based tasks, we inject the tactical prompt
-                String executionInput = (preGeneratedContent != null) ? preGeneratedContent : contextPrompt;
-                String result = performAction(task, currentAgent, context, lastFeedback, preGeneratedContent != null ? preGeneratedContent : executionInput);
+                // Wrap into ChangeUnit
+                ChangeUnit change = new ChangeUnit();
+                change.setPatch(patch);
+                change.setReason("@evo:" + context.getCurrentIteration());
+                // Simple file extraction for ChangeUnit (placeholder logic)
+                if (task.getType().equalsIgnoreCase("file")) {
+                    change.getFiles().add(task.getName());
+                }
+
+                // 3b. ApplyPatch (Local / Supervisor responsibility - triggered here)
+                String result = applyPatch(task, currentAgent, context, lastFeedback, patch);
                 task.setResponse(result);
 
-                // Capture Artifacts (result summary + content)
-                task.setArtifacts("RESULT:\n" + result + "\nFEEDBACK: " + (lastFeedback != null ? lastFeedback : "N/A"));
+                // Capture Artifacts (result summary + ChangeUnit)
+                task.setArtifacts(change.toJson().toString());
 
                 // Handle Clarification/Proposal stall
                 if (result != null && (result.contains("CLARIFY") || result.contains("[PROPOSAL:"))) {
@@ -530,21 +530,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 }
 
                 // 4. VERIFY: Evaluate the result
-                // @evo:20:A reason=6-phase-pev-loop
+                // @evo:21:A reason=unified-validator-role
                 task.setStatus(TaskStatus.VERIFYING);
                 context.setCurrentPhase("VERIFY");
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 4 - Verifying...");
 
-                JSONObject evaluation = reviewer.evaluate(result, task.getName(), context);
-
-                // Architectural Guardrail
-                if (evaluation.optBoolean("success", false)) {
-                    JSONObject constraintEval = constraintAgent.evaluate(result, task.getName(), context);
-                    if (!constraintEval.optBoolean("success", false)) {
-                        context.log("Evo-Orchestrator-" + task.getName() + ": Architectural violation detected by ConstraintAgent.");
-                        evaluation = constraintEval;
-                    }
-                }
+                JSONObject evaluation = validator.evaluate(change, task.getName(), context);
 
                 logger.debug(context, "Evaluation result", evaluation.toString());
 
@@ -563,9 +554,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     context.setCurrentPhase("MUTATE");
                     context.log("Evo-Orchestrator-" + task.getName() + ": Phase 6 - Mutating approach...");
 
-                    if (diagnosis.optBoolean("repeatFailure", false)) {
-                        context.log("Evo-Orchestrator-Darwin: Repeated failure detected. Escalating strategy.");
+                    if (diagnosis.optBoolean("repeatFailure", false) || "SAME".equals(diagnosis.optString("progress"))) {
+                        context.log("Evo-Orchestrator-Darwin: Repeated failure or NO PROGRESS detected. Escalating strategy.");
                         task.setFeedbackLevel(eu.kalafatic.evolution.model.orchestration.FeedbackLevel.ADVANCED);
+                    }
+
+                    if ("WORSE".equals(diagnosis.optString("progress"))) {
+                        context.log("Evo-Orchestrator-Darwin: Situation worsened. Forcing repair or fallback.");
                     }
 
                     String suggested = diagnosis.optString("suggestedStrategy", "RETRY");
@@ -622,142 +617,108 @@ public class EvolutionOrchestrator implements IOrchestrator {
         return false;
     }
 
-    private String performAction(Task task, IAgent agent, TaskContext context, String lastFeedback, String preGeneratedContent) throws Exception {
+    /**
+     * Conceptual Step 3a: GeneratePatch (LLM responsibility)
+     */
+    private String generatePatch(Task task, IAgent agent, TaskContext context, String lastFeedback, String localPlan, String contextPrompt) throws Exception {
         String taskType = task.getType();
         String taskName = task.getName();
         String taskDescription = task.getDescription();
         String processInput = (taskDescription != null && !taskDescription.isEmpty()) ? taskDescription : taskName;
 
-        // Check if task maps directly to a tool
+        // Extract implementation from plan if present to avoid overthinking
+        String preGeneratedContent = null;
+        try {
+            JSONObject planJson = new JSONObject(localPlan);
+            if (planJson.has("implementation")) {
+                preGeneratedContent = planJson.getString("implementation");
+            }
+        } catch (Exception e) { }
+
+        if (preGeneratedContent != null && !preGeneratedContent.isEmpty()) {
+            context.log("Evo-Orchestrator-" + taskName + ": Using pre-generated patch from PLAN phase.");
+            return preGeneratedContent;
+        }
+
+        if ("file".equalsIgnoreCase(taskType)) {
+            context.log("Evo-Orchestrator-" + taskName + ": Generating file content/patch via " + agent.getType());
+            return agent.process(processInput, context, lastFeedback);
+        }
+
+        // For non-file tasks (maven, git, shell), the "patch" is the command itself or the refined instruction
+        return contextPrompt;
+    }
+
+    /**
+     * Conceptual Step 3b: ApplyPatch (Local / Supervisor responsibility - signaled here)
+     */
+    private String applyPatch(Task task, IAgent agent, TaskContext context, String lastFeedback, String patch) throws Exception {
+        String taskType = task.getType();
+        String taskName = task.getName();
+
         if ("file".equalsIgnoreCase(taskType)) {
             FileTool fileTool = new FileTool();
-
-            // Robust path extraction from task name
             String path = taskName.replaceFirst("(?i)^(.+:\\s*)?(Write|Create|Generate|Update|Modify|Delete)(\\s+file)?\\s+", "").trim();
-
-            // Strip quotes if present
-            if ((path.startsWith("'") && path.endsWith("'")) || (path.startsWith("\"") && path.endsWith("\""))) {
-                path = path.substring(1, path.length() - 1);
-            }
-
-            // Refine path: strip trailing descriptive suffixes (e.g., "with hi", "containing class X")
+            path = path.replaceFirst("^([a-zA-Z]:)?(/|\\\\)+", "").replace("\\", "/");
             path = path.split("(?i)\\s+(with|to|for|using|based|containing|in|at)\\s+")[0];
 
             if (taskName.toLowerCase().startsWith("delete")) {
-                task.setResultSummary("I deleted the file: [FILE:" + path + "]");
                 context.log("Evo-Orchestrator-" + taskName + ": File deletion request for " + path + ". Waiting for user approval...");
                 Boolean approved = true;
                 if (!context.isAutoApprove()) {
-                    context.log("Evo-Orchestrator-Waiting: Waiting for file deletion approval: " + path);
                     approved = context.requestApproval("[DELETE] Approve deletion of file: " + path + "?").get();
-                    context.log("Evo-Orchestrator-Approval: Deletion of " + path + " " + (approved != null && approved ? "APPROVED" : "REJECTED"));
                 }
-                if (approved == null || !approved) {
-                    throw new Exception("File deletion rejected by user: " + path);
-                }
-                try {
-                    String existingContent = fileTool.execute("READ " + path, context.getProjectRoot(), context);
-                    task.setRationale(existingContent);
-                    context.log("Evo-Orchestrator-" + taskName + ": Capture rationale from " + path);
-                } catch (Exception e) {
-                    context.log("Evo-Orchestrator-" + taskName + ": Could not read " + path);
-                }
+                if (approved == null || !approved) throw new Exception("File deletion rejected by user: " + path);
                 return fileTool.execute("DELETE " + path, context.getProjectRoot(), context);
             }
-
-            // JavaDev/Architect will generate content first
-            String content = preGeneratedContent;
-            if (content == null || content.isEmpty()) {
-                context.log("Evo-Orchestrator-" + taskName + ": " + agent.getType() + " agent processing " + path);
-                content = agent.process(processInput, context, lastFeedback);
-            } else {
-                context.log("Evo-Orchestrator-" + taskName + ": Using pre-generated content from PLAN phase for " + path);
-            }
-
-            // If the agent returned a clarification or proposal instead of file content, return it now
-            if (content != null && (content.contains("CLARIFY") || content.contains("[PROPOSAL:"))) {
-                return content;
-            }
-
-            context.log("Evo-Orchestrator-" + taskName + ": Implementation content ready (" + content.length() + " chars) for " + path);
 
             // Check for significant deletions
             try {
                 String existingContent = fileTool.execute("READ " + path, context.getProjectRoot(), context);
-                task.setRationale(existingContent);
                 if (existingContent != null && !existingContent.isEmpty()) {
                     int existingLen = existingContent.length();
-                    int newLen = content.length();
+                    int newLen = patch.length();
                     if (newLen < existingLen * 0.8) {
                         double deletionPercent = (1.0 - (double)newLen / existingLen) * 100;
                         context.log("Evo-Orchestrator-" + taskName + ": Significant deletion detected (" + String.format("%.1f", deletionPercent) + "%) for " + path + ". Waiting for user approval...");
                         Boolean approved = true;
                         if (!context.isAutoApprove()) {
-                            context.log("Evo-Orchestrator-Waiting: Waiting for significant deletion approval: " + path);
                             approved = context.requestApproval("[Significant deletion] Content of " + path + " will be reduced by " + String.format("%.1f", deletionPercent) + "%. Approve?").get();
-                            context.log("Evo-Orchestrator-Approval: Significant deletion of " + path + " " + (approved != null && approved ? "APPROVED" : "REJECTED"));
                         }
-                        if (approved == null || !approved) {
-                            throw new Exception("Significant content reduction rejected by user for: " + path);
-                        }
+                        if (approved == null || !approved) throw new Exception("Significant content reduction rejected by user for: " + path);
                     }
                 }
-            } catch (Exception e) {
-                // File might not exist, which is fine for new files
-            }
+            } catch (Exception e) {}
 
-            // Sanitize path: remove leading slashes and drive letters (e.g., C:/)
-            path = path.replaceFirst("^([a-zA-Z]:)?(/|\\\\)+", "");
-            // Normalize path: replace backslashes with forward slashes
-            path = path.replace("\\", "/");
-            String writeResult = fileTool.execute("WRITE " + path + "\n" + content, context.getProjectRoot(), context);
-            task.setResultSummary("I created/updated the file: [FILE:" + path + "]. It can be opened and verified in the project explorer.");
-            context.log("Evo-Orchestrator-" + taskName + ": File write result - " + writeResult);
-            return writeResult + "\nCONTENT:\n" + content;
+            String writeResult = fileTool.execute("WRITE " + path + "\n" + patch, context.getProjectRoot(), context);
+            task.setResultSummary("I created/updated the file: [FILE:" + path + "]");
+            return writeResult + "\nCONTENT:\n" + patch;
         } else if ("maven".equalsIgnoreCase(taskType)) {
+            context.log("Evo-Orchestrator-" + taskName + ": Signaling Supervisor for Maven build...");
             MavenTool mavenTool = new MavenTool();
-            String res = mavenTool.execute(taskName, context.getProjectRoot(), context);
-            task.setResultSummary("Maven: " + taskName + " executed. Result: " + (res.length() > 50 ? res.substring(0, 47) + "..." : res));
-            return res;
+            return mavenTool.execute(taskName, context.getProjectRoot(), context);
         } else if ("git".equalsIgnoreCase(taskType)) {
             if (taskName.toLowerCase().matches(".*\\b(pr|pull request)\\b.*")) {
                 context.log("Evo-Orchestrator-" + taskName + ": Waiting for user approval for PR...");
                 Boolean approved = true;
                 if (!context.isAutoApprove()) {
-                    context.log("Evo-Orchestrator-Waiting: Waiting for PR approval...");
                     approved = context.requestApproval("[PR] Approve Pull Request creation? Task: " + taskName).get();
-                    context.log("Evo-Orchestrator-Approval: PR " + (approved != null && approved ? "APPROVED" : "REJECTED"));
                 }
-                if (approved == null || !approved) {
-                    throw new Exception("PR rejected by user: " + taskName);
-                }
+                if (approved == null || !approved) throw new Exception("PR rejected by user: " + taskName);
             }
             GitTool gitTool = new GitTool();
-            String res = gitTool.execute(taskName, context.getProjectRoot(), context);
-            task.setResultSummary("Git: " + taskName + " executed.");
-            return res;
+            return gitTool.execute(taskName, context.getProjectRoot(), context);
         } else if ("shell".equalsIgnoreCase(taskType)) {
             context.log("Evo-Orchestrator-" + taskName + ": Waiting for user approval for command...");
             Boolean approved = true;
             if (!context.isAutoApprove()) {
-                context.log("Evo-Orchestrator-Waiting: Waiting for shell command approval: " + taskName);
                 approved = context.requestApproval("Approve terminal command: " + taskName + "?").get();
-                context.log("Evo-Orchestrator-Approval: Shell command " + taskName + " " + (approved != null && approved ? "APPROVED" : "REJECTED"));
             }
-            if (approved == null || !approved) {
-                throw new Exception("Terminal command rejected by user: " + taskName);
-            }
+            if (approved == null || !approved) throw new Exception("Terminal command rejected by user: " + taskName);
             ShellTool shellTool = new ShellTool();
-            String res = shellTool.execute(taskName, context.getProjectRoot(), context);
-            task.setResultSummary("Shell: " + taskName + " executed.");
-            return res;
+            return shellTool.execute(taskName, context.getProjectRoot(), context);
         }
 
-        // Default to agent reasoning
-        if (preGeneratedContent != null && !preGeneratedContent.isEmpty()) {
-            context.log("Evo-Orchestrator-" + taskName + ": Using pre-generated response for " + agent.getType());
-            return preGeneratedContent;
-        }
         return agent.process(taskName, context, lastFeedback);
     }
 

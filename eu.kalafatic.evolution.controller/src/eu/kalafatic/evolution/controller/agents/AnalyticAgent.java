@@ -9,9 +9,9 @@ import eu.kalafatic.evolution.controller.parsers.JsonUtils;
  * category, and identify ambiguities before planning.
  * It also performs failure diagnosis in the ANALYZE phase of the PEV loop.
  *
- * @evo.lastModified: 20:A
+ * @evo.lastModified: 21:A
  * @evo.origin: self
- * @evo:20:A reason=architecture-documentation-sync
+ * @evo:21:A reason=progress-tracking-diagnosis
  */
 public class AnalyticAgent extends BaseAiAgent {
 
@@ -33,7 +33,8 @@ public class AnalyticAgent extends BaseAiAgent {
                 "DIAGNOSIS CRITERIA (for failures):\n" +
                 "1. ROOT CAUSE: Identify if the failure is syntactic (compile error), logical (test failed), or an environment issue.\n" +
                 "2. CYCLE DETECTION: Check if the current result/feedback is identical or highly similar to previous attempts.\n" +
-                "3. STRATEGY: Suggest if we should 'RETRY' with a different approach, use 'REPAIR_AGENT' for surgical fixes, or 'ESCALATE' if stuck in a cycle.\n\n" +
+                "3. PROGRESS: Compare with previous attempt. Evaluate if the situation is IMPROVED, SAME, or WORSE.\n" +
+                "4. STRATEGY: Suggest if we should 'RETRY' with a different approach, use 'REPAIR_AGENT' for surgical fixes, or 'ESCALATE' if stuck in a cycle.\n\n" +
                 "OUTPUT JSON (Choose ONLY ONE based on the input context):\n" +
                 "1. If analyzing a NEW REQUEST, output only this structure:\n" +
                 "{\n" +
@@ -48,6 +49,7 @@ public class AnalyticAgent extends BaseAiAgent {
                 "{\n" +
                 "  \"rootCause\": \"...\",\n" +
                 "  \"repeatFailure\": boolean,\n" +
+                "  \"progress\": \"IMPROVED | SAME | WORSE\",\n" +
                 "  \"suggestedStrategy\": \"RETRY | REPAIR_AGENT | ESCALATE\",\n" +
                 "  \"explanation\": \"...\"\n" +
                 "}";
