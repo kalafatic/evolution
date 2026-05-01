@@ -42,10 +42,10 @@ public class SelfDevMain {
             String goal = "Continue self-development and structural improvement.";
 
             if (stateFile != null && stateFile.exists()) {
-                System.out.println("[RCP] Loading state from: " + stateFile.getAbsolutePath());
                 com.fasterxml.jackson.databind.JsonNode state = mapper.readTree(stateFile);
-                if (state.has("goal")) goal = state.get("goal").asText();
-                // Optionally load context from state.contextPath if needed for complex setups
+                if (state.has("goal")) {
+                    goal = state.get("goal").asText();
+                }
             }
 
             // Setup minimal Orchestrator context

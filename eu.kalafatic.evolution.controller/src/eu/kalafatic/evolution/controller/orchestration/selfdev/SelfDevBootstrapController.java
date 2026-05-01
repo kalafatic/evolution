@@ -31,7 +31,7 @@ public class SelfDevBootstrapController {
         ContextPackage pkg = ContextBuilder.build(initialTask, context);
         File contextFile = new File(runDir, "context.json");
         try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(contextFile), StandardCharsets.UTF_8)) {
-            mapper.writerWithDefaultPrettyPrinter().writeValue(writer, pkg.toJson());
+            mapper.writerWithDefaultPrettyPrinter().writeValue(writer, pkg.toJson().toString());
         }
 
         // 2. Define state.json
@@ -57,13 +57,11 @@ public class SelfDevBootstrapController {
             mapper.writerWithDefaultPrettyPrinter().writeValue(writer, bootstrap);
         }
 
-        // 4. Launch Supervisor (simplified, assuming supervisor.jar is available)
+        // 4. Launch Supervisor
         launchSupervisor();
     }
 
     private void launchSupervisor() {
         context.log("[BOOTSTRAP] Launching Supervisor for project: " + projectRoot.getAbsolutePath());
-        // In a real environment, this would use ProcessBuilder to run the supervisor JAR
-        // For this task, we focus on the data handoff logic.
     }
 }

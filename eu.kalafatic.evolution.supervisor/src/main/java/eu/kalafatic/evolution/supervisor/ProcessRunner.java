@@ -36,15 +36,6 @@ public class ProcessRunner {
 
         if (stateFile != null && stateFile.exists()) {
             command.add("--state=" + stateFile.getAbsolutePath());
-        } else {
-            // Fallback: Check for state.json in variant or parent iteration directory
-            File localState = new File(variantDir, "state.json");
-            if (!localState.exists()) {
-                localState = new File(variantDir.getParentFile(), "state.json");
-            }
-            if (localState.exists()) {
-                command.add("--state=" + localState.getAbsolutePath());
-            }
         }
 
         ProcessBuilder pb = new ProcessBuilder(command);
