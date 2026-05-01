@@ -26,6 +26,7 @@ public class SelfDevSupervisor {
 
         try {
             while (true) {
+                String handoffStatePath = null;
                 // Check bootstrap/state
                 if (bootstrapFile.exists()) {
                     System.out.println("[SUPERVISOR] Bootstrap contract detected.");
@@ -33,6 +34,7 @@ public class SelfDevSupervisor {
                     System.out.println("[SUPERVISOR] Source: " + bootstrap.getSourcePath());
                     System.out.println("[SUPERVISOR] Target: " + bootstrap.getTargetPath());
                     System.out.println("[SUPERVISOR] Action: " + bootstrap.getAction());
+                    handoffStatePath = bootstrap.getStatePath();
                 }
 
                 if (!stateFile.exists()) {
@@ -83,7 +85,9 @@ public class SelfDevSupervisor {
                             String jarName = findJar(variant);
                             if (jarName != null) {
                                 updateStatus(statusFile, "RUNNING", variant.getName());
-                                if (runner.runRCP(variant, jarName)) {
+                                // Use handoff state if available, otherwise variant-specific result
+                                String stateToPass = handoffStatePath != null ? handoffStatePath : stateFile.getAbsolutePath();
+                                if (runner.runRCP(variant, jarName, stateToPass)) {
                                     try {
                                         Result result = reader.readResult(new File(variant, "result.json"));
                                         System.out.println("[RESULT] " + variant.getName() + " -> " + result);

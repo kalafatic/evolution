@@ -136,7 +136,7 @@ public class IterationPage extends AEvoPage {
         }
         if (projectRoot != null) {
             this.memoryService = new IterationMemoryService(projectRoot);
-            this.bootstrapController = new SelfDevBootstrapController(projectRoot);
+            this.bootstrapController = new SelfDevBootstrapController(projectRoot, orchestrator);
         }
     }
 
@@ -268,11 +268,14 @@ public class IterationPage extends AEvoPage {
     private void handleSelfDevAction(SelfDevRow row, int columnIndex) {
         if (columnIndex == 0) { // Action
             if ("Self-Dev Loop".equals(row.name)) {
-                if (internalSupervisorThread != null && internalSupervisorThread.isAlive()) {
-                    internalSupervisorThread.interrupt();
-                    if (bootstrapController != null) bootstrapController.stopBootstrap();
-                } else {
-                    startInternalSupervisor();
+                if (bootstrapController != null && bootstrapController.isRunning()) {
+                    bootstrapController.stopBootstrap();
+                } else if (bootstrapController != null) {
+                    try {
+                        bootstrapController.startBootstrap();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             } else {
                 if ("running".equals(row.status)) {
