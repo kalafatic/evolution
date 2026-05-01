@@ -22,24 +22,18 @@ public class AnalyticAgent extends BaseAiAgent {
     @Override
     // @evo:14:B reason=flexible-analysis
     protected String getAgentInstructions() {
-        return "You are an Analytic Agent. Your goal is to analyze the user's prompt or a task failure for the Orchestrator.\n\n" +
+        return "Role: Analytic Agent. Goal: Analyze user prompt or task failure.\n\n" +
+                "STRICT OUTPUT RULE: You MUST output ONLY a single JSON object. No preamble, no conversational text.\n\n" +
                 "ANALYSIS CRITERIA (for new requests):\n" +
                 "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.\n" +
-                "2. SCOPE: Determine if the request is ATOMIC (single file, simple fix) or ARCHITECTURAL (system design, multiple modules).\n" +
-                "3. AMBIGUITY:\n" +
-                "   - For ATOMIC tasks: Technical tasks with implied defaults (e.g., 'create class') are NOT ambiguous. Just proceed with defaults (e.g., src/Main.java).\n" +
-                "   - For ARCHITECTURAL tasks: Asking for 'purpose', 'usage' or 'big picture' IS encouraged if it helps build a better system model.\n" +
-                "   - IF isAmbiguous is false, 'clarificationQuestion' and 'missingInformation' MUST be empty/empty array.\n" +
-                "4. REFINED PROMPT:\n" +
-                "   - Create a version of the prompt that reflects the scope and incorporates all assumed technical defaults.\n" +
-                "   - It must be a clear, actionable instruction for the Task Planner.\n\n" +
+                "2. AMBIGUITY: ATOMIC tasks (e.g., 'create class') are NOT ambiguous. If not ambiguous, 'clarificationQuestion' and 'missingInformation' MUST be empty.\n" +
+                "3. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults.\n\n" +
                 "DIAGNOSIS CRITERIA (for failures):\n" +
-                "1. ROOT CAUSE: Identify if the failure is syntactic (compile error), logical (test failed), or an environment issue.\n" +
-                "2. CYCLE DETECTION: Check if the current result/feedback is identical or highly similar to previous attempts.\n" +
-                "3. PROGRESS: Compare with previous attempt. Evaluate if the situation is IMPROVED, SAME, or WORSE.\n" +
-                "4. STRATEGY: Suggest if we should 'RETRY' with a different approach, use 'REPAIR_AGENT' for surgical fixes, or 'ESCALATE' if stuck in a cycle.\n\n" +
-                "OUTPUT JSON (Choose ONLY ONE based on the input context):\n" +
-                "1. If analyzing a NEW REQUEST, output only this structure:\n" +
+                "1. ROOT CAUSE: syntactic, logical, or environment.\n" +
+                "2. PROGRESS: IMPROVED, SAME, or WORSE compared to previous attempt.\n" +
+                "3. STRATEGY: RETRY, REPAIR_AGENT, or ESCALATE.\n\n" +
+                "OUTPUT SCHEMA (Choose ONLY ONE):\n" +
+                "NEW REQUEST:\n" +
                 "{\n" +
                 "  \"category\": \"...\",\n" +
                 "  \"objective\": \"...\",\n" +
@@ -47,8 +41,8 @@ public class AnalyticAgent extends BaseAiAgent {
                 "  \"missingInformation\": [],\n" +
                 "  \"clarificationQuestion\": \"...\",\n" +
                 "  \"refinedPrompt\": \"...\"\n" +
-                "}\n\n" +
-                "2. If performing a DIAGNOSIS of a failure, output only this structure:\n" +
+                "}\n" +
+                "DIAGNOSIS:\n" +
                 "{\n" +
                 "  \"rootCause\": \"...\",\n" +
                 "  \"repeatFailure\": boolean,\n" +

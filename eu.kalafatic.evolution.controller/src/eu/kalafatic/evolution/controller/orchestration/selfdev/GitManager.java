@@ -28,32 +28,32 @@ public class GitManager {
         }
 
         context.log("[GIT] Creating and switching to branch: " + actualBranchName);
-        return shell.execute("git checkout -b \"" + actualBranchName + "\"", projectRoot, context);
+        return executeWithRetry("git checkout -b \"" + actualBranchName + "\"");
     }
 
     public String checkout(String branchName) throws Exception {
         if (!isGitRepository()) return "Skipped";
         context.log("[GIT] Switching to branch: " + branchName);
-        return shell.execute("git checkout \"" + branchName + "\"", projectRoot, context);
+        return executeWithRetry("git checkout \"" + branchName + "\"");
     }
 
     public String commit(String message) throws Exception {
         context.log("[GIT] Committing changes: " + message);
-        shell.execute("git add .", projectRoot, context);
+        executeWithRetry("git add .");
         // Sanitize message to avoid shell injection
         String safeMessage = message.replace("\"", "\\\"");
-        return shell.execute("git commit -m \"" + safeMessage + "\"", projectRoot, context);
+        return executeWithRetry("git commit -m \"" + safeMessage + "\"");
     }
 
     public String rollback() throws Exception {
         context.log("[GIT] Rolling back changes (hard reset)");
-        return shell.execute("git reset --hard HEAD", projectRoot, context);
+        return executeWithRetry("git reset --hard HEAD");
     }
 
     public String deleteBranch(String branchName) throws Exception {
         if (!isGitRepository()) return "Skipped";
         context.log("[GIT] Deleting branch: " + branchName);
-        return shell.execute("git branch -D \"" + branchName + "\"", projectRoot, context);
+        return executeWithRetry("git branch -D \"" + branchName + "\"");
     }
 
     public String getCurrentBranch() throws Exception {
@@ -67,34 +67,34 @@ public class GitManager {
 
     public void ensureInitialCommit() throws Exception {
         try {
-            shell.execute("git rev-parse HEAD", projectRoot, context);
+            executeWithRetry("git rev-parse HEAD");
         } catch (Exception e) {
             context.log("[GIT] Empty repository detected. Creating initial empty commit.");
-            shell.execute("git commit --allow-empty -m \"Initial commit (Evo)\"", projectRoot, context);
+            executeWithRetry("git commit --allow-empty -m \"Initial commit (Evo)\"");
         }
     }
 
     public String merge(String branchName) throws Exception {
         if (!isGitRepository()) return "Skipped";
         context.log("[GIT] Merging branch: " + branchName);
-        return shell.execute("git merge \"" + branchName + "\"", projectRoot, context);
+        return executeWithRetry("git merge \"" + branchName + "\"");
     }
 
     public String createWorktree(String branchName, String path) throws Exception {
         if (!isGitRepository()) return "Skipped";
         context.log("[GIT] Creating worktree for branch " + branchName + " at " + path);
-        return shell.execute("git worktree add \"" + path + "\" \"" + branchName + "\"", projectRoot, context);
+        return executeWithRetry("git worktree add \"" + path + "\" \"" + branchName + "\"");
     }
 
     public String removeWorktree(String path) throws Exception {
         context.log("[GIT] Removing worktree at " + path);
-        return shell.execute("git worktree remove --force " + path, projectRoot, context);
+        return executeWithRetry("git worktree remove --force " + path);
     }
 
     public void forceCheckout(String branchName) throws Exception {
         if (!isGitRepository()) return;
         context.log("[GIT] Force switching to branch: " + branchName);
-        shell.execute("git checkout -f \"" + branchName + "\"", projectRoot, context);
+        executeWithRetry("git checkout -f \"" + branchName + "\"");
     }
 
     public boolean isGitRepository() {
@@ -108,6 +108,42 @@ public class GitManager {
             return output != null && !output.trim().isEmpty();
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private String executeWithRetry(String command) throws Exception {
+        int maxRetries = 3;
+        int delay = 1000;
+        Exception lastException = null;
+
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                checkAndRemoveLock();
+                return shell.execute(command, projectRoot, context);
+            } catch (Exception e) {
+                lastException = e;
+                if (e.getMessage() != null && e.getMessage().contains("index.lock")) {
+                    context.log("[GIT] index.lock detected. Retrying (" + (i + 1) + "/" + maxRetries + ")...");
+                    Thread.sleep(delay);
+                } else {
+                    throw e;
+                }
+            }
+        }
+        throw lastException;
+    }
+
+    private void checkAndRemoveLock() {
+        File lockFile = new File(projectRoot, ".git/index.lock");
+        if (lockFile.exists()) {
+            // Check if it's "stale" - e.g. older than 30 seconds
+            long age = System.currentTimeMillis() - lockFile.lastModified();
+            if (age > 30000) {
+                context.log("[GIT] Found stale index.lock (age: " + age + "ms). Removing it.");
+                if (!lockFile.delete()) {
+                    context.log("[GIT] Warning: Failed to delete stale index.lock");
+                }
+            }
         }
     }
 }

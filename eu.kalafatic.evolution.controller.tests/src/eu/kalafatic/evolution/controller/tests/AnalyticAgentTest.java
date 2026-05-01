@@ -111,6 +111,25 @@ public class AnalyticAgentTest {
         assertEquals("CHAT", analysis.getString("category"));
     }
 
+    @Test
+    public void testRecoveryFromNonJsonResponse() throws Exception {
+        AnalyticAgent agent = new AnalyticAgent();
+        injectMockLlm(agent, mockLlm);
+
+        // Simulate a small model outputting text instead of JSON
+        String response = "Category: CODING\n" +
+                "Objective: Create class\n" +
+                "isAmbiguous: false\n" +
+                "RefinedPrompt: Create a Java class PrintText that prints a string.";
+        mockLlm.setResponse(response);
+
+        JSONObject analysis = agent.analyze("create print class", context);
+        assertNotNull(analysis);
+        assertEquals("CODING", analysis.getString("category"));
+        assertFalse(analysis.getBoolean("isAmbiguous")); // Verified: normalizeKey ensures CamelCase
+        assertTrue(analysis.getString("refinedPrompt").contains("PrintText"));
+    }
+
     private void injectMockLlm(AnalyticAgent agent, ILlmProvider mock) throws Exception {
         Field serviceField = AnalyticAgent.class.getSuperclass().getDeclaredField("aiService");
         serviceField.setAccessible(true);
