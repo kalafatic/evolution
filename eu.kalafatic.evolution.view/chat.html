@@ -1092,13 +1092,26 @@
                 const branchContainer = document.createElement('div');
                 branchContainer.className = 'branch-container';
 
-                data.variants.forEach(v => {
+                data.variants.forEach((v, index) => {
                     const column = document.createElement('div');
                     column.className = 'branch-column' + (v.isBest ? ' best' : '');
 
+                    // Dynamic background and border based on score
+                    const score = v.score || 0;
+                    const percentage = Math.round(score * 100);
+
+                    // Score-based green gradient (Dark to Light)
+                    // Highest score (e.g. 1.0) -> Darker green background/border
+                    // Lowest score (e.g. 0.0) -> Very light green background
+                    const alpha = 0.05 + (score * 0.15); // background opacity
+                    const borderAlpha = 0.3 + (score * 0.7); // border opacity
+
+                    column.style.backgroundColor = `rgba(22, 163, 74, ${alpha})`;
+                    column.style.borderColor = `rgba(22, 163, 74, ${borderAlpha})`;
+
                     const header = document.createElement('div');
                     header.className = 'branch-header';
-                    header.innerHTML = `<span>${v.id}</span>${v.isBest ? '<span>🏆</span>' : ''}`;
+                    header.innerHTML = `<span>${index + 1}. ${v.id}</span><span style="color: #16a34a; font-weight: 900;">${percentage}%</span>`;
 
                     const strategy = document.createElement('div');
                     strategy.className = 'branch-strategy';

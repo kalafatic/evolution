@@ -309,13 +309,20 @@ public class IterationManager {
 
     private void logDarwinBranches(List<BranchVariant> variants) {
         try {
+            // Sort variants by predicted score DESC
+            List<BranchVariant> sorted = variants.stream()
+                .sorted((v1, v2) -> Double.compare(v2.getScore(), v1.getScore()))
+                .collect(Collectors.toList());
+
             JSONObject root = new JSONObject();
             JSONArray variantsArr = new JSONArray();
-            for (BranchVariant v : variants) {
+            for (int i = 0; i < sorted.size(); i++) {
+                BranchVariant v = sorted.get(i);
                 JSONObject vObj = new JSONObject();
                 vObj.put("id", v.getId());
                 vObj.put("strategy", v.getStrategy());
-                vObj.put("isBest", false);
+                vObj.put("score", v.getScore());
+                vObj.put("isBest", i == 0); // Highest score is best
                 vObj.put("isApproved", false);
 
                 JSONArray actionsArr = new JSONArray();

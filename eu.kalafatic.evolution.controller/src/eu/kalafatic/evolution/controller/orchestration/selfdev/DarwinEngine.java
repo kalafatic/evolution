@@ -84,6 +84,7 @@ public class DarwinEngine extends BaseAiAgent {
                "  {\n" +
                "    \"id\": \"string-id\",\n" +
                "    \"strategy\": \"<high-level intent>\",\n" +
+               "    \"score\": 0.0-1.0, // Predicted probability of success/correctness\n" +
                "    \"suffix\": \"<short string for branch name>\",\n" +
                "    \"actions\": [\n" +
                "      {\n" +
@@ -182,6 +183,7 @@ public class DarwinEngine extends BaseAiAgent {
             BranchVariant v = new BranchVariant();
             v.setId(obj.optString("id", "v" + i));
             v.setStrategy(obj.getString("strategy"));
+            v.setScore(obj.optDouble("score", 0.0));
             String suffix = obj.getString("suffix");
             v.setBranchName("exp/" + sanitize(goal) + "/" + suffix);
 
