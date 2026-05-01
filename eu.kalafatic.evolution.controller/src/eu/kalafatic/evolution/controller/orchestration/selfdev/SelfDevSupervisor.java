@@ -29,7 +29,7 @@ public class SelfDevSupervisor {
     public SelfDevSupervisor(SelfDevSession session, TaskContext context) {
         this.session = session;
         this.context = context;
-        this.bootstrapController = new SelfDevBootstrapController(context.getProjectRoot());
+        this.bootstrapController = new SelfDevBootstrapController(context.getProjectRoot(), context.getOrchestrator());
     }
 
     public void startSession() {

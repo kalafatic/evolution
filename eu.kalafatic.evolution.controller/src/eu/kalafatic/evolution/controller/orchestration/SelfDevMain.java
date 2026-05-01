@@ -6,6 +6,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
@@ -55,6 +56,7 @@ public class SelfDevMain {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String goal = "Continue self-development and structural improvement.";
+            int iteration = 0;
 
             if (statePath != null) {
                 File stateFile = new File(statePath);
@@ -62,6 +64,9 @@ public class SelfDevMain {
                     ObjectNode stateNode = (ObjectNode) mapper.readTree(stateFile);
                     if (stateNode.has("goal")) {
                         goal = stateNode.get("goal").asText();
+                    }
+                    if (stateNode.has("iteration")) {
+                        iteration = stateNode.get("iteration").asInt();
                     }
                 }
             }
@@ -78,11 +83,17 @@ public class SelfDevMain {
         		orchestrator.getAiChat().setPromptInstructions(promptInstructions);
         	}        
         	
-           
-        	
-        	
             promptInstructions.setSelfIterativeMode(true);
             promptInstructions.setAutoApprove(true);
+
+            // Populate SelfDevSession to track iteration
+            SelfDevSession session = OrchestrationFactory.eINSTANCE.createSelfDevSession();
+            session.setId("self-dev-main");
+            session.setInitialRequest(goal);
+            for (int i = 0; i < iteration; i++) {
+                session.getIterations().add(OrchestrationFactory.eINSTANCE.createIteration());
+            }
+            orchestrator.setSelfDevSession(session);
 
             TaskContext context = new TaskContext(orchestrator, variantDir);
             context.setAutoApprove(true);
@@ -94,7 +105,6 @@ public class SelfDevMain {
             // Compute real score based on build/test status in context
             double score = response.toLowerCase().contains("error") ? 0.0 : 0.8;
 
-            ObjectMapper mapper = new ObjectMapper();
             ObjectNode resultNode = mapper.createObjectNode();
             resultNode.put("status", "OK");
             resultNode.put("score", score);
