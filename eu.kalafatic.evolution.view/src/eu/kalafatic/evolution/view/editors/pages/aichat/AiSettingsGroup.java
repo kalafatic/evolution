@@ -35,6 +35,7 @@ public class AiSettingsGroup extends AEvoGroup {
 	
     private Combo aiModeCombo;
     private Combo aiRemoteCombo;
+    private Combo localModelCombo;
     private Text remoteTokenText, remoteUrlText;
     private Composite compositeLocal, compositeRemote;
     private AiChatPage page;
@@ -59,11 +60,9 @@ public class AiSettingsGroup extends AEvoGroup {
       
         
         SWTFactory.createLabel(compositeLocal,"Model:");	    	
-    	selectModel(compositeLocal);
+	localModelCombo = selectModel(compositeLocal);
     	SWTFactory.createLabel(compositeLocal, "");
     	
-    	compositeLocal.setEnabled(AiMode.LOCAL.equals(orchestrator.getAiMode()));	
-        
         
         compositeRemote = SWTFactory.createComposite(group, SWT.BORDER, 3);
         SWTFactory.createLabel(compositeRemote, "AI Remote:");
@@ -104,7 +103,6 @@ public class AiSettingsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.syncModelWithUI();
-                compositeLocal.setEnabled(AiMode.LOCAL.equals(AiMode.get(aiModeCombo.getSelectionIndex())));
             }
         });
 
@@ -163,6 +161,7 @@ public class AiSettingsGroup extends AEvoGroup {
 			String selectedName = combo.getItem(index);
 			//modelText.setText(selectedName);
 		        System.out.println("Selected: " + selectedName);
+		        page.syncModelWithUI();
 		    }
 		});
 		return combo;
@@ -173,19 +172,14 @@ public class AiSettingsGroup extends AEvoGroup {
         if (orchestrator != null) {
             aiModeCombo.select(orchestrator.getAiMode().getValue());
 
-            // Populate AI Remote combo with model and static providers
-            String current = aiRemoteCombo.getText();
+            // 1. Populate AI Remote combo
+            String currentRemote = aiRemoteCombo.getText();
             aiRemoteCombo.removeAll();
-            java.util.Set<String> names = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-            names.addAll(AiProviders.PROVIDERS.keySet());
-            if (orchestrator.getAiProviders() != null) {
-                for (eu.kalafatic.evolution.model.orchestration.AIProvider p : orchestrator.getAiProviders()) {
-                    names.add(p.getName());
-                }
-            }
-            for (String n : names) aiRemoteCombo.add(n);
-            if (!current.isEmpty()) {
-                int idx = aiRemoteCombo.indexOf(current);
+            List<String> remoteModels = ProjectModelManager.getInstance().getRemoteModelNames(orchestrator);
+            for (String n : remoteModels) aiRemoteCombo.add(n);
+
+            if (!currentRemote.isEmpty()) {
+                int idx = aiRemoteCombo.indexOf(currentRemote);
                 if (idx >= 0) aiRemoteCombo.select(idx);
             }
 
@@ -204,13 +198,32 @@ public class AiSettingsGroup extends AEvoGroup {
             remoteTokenText.setText((resolved != null && resolved.token != null) ? resolved.token : "");
             remoteUrlText.setText((resolved != null && resolved.url != null) ? resolved.url : "");
 
-            AiMode mode = orchestrator.getAiMode();
-            boolean remoteEnabled = mode == AiMode.HYBRID || mode == AiMode.REMOTE;
-            SWTFactory.setControlEnabled(remoteEnabled, true, compositeRemote.getChildren());
+            // 2. Populate Local Model combo
+            if (localModelCombo != null) {
+                String currentLocal = localModelCombo.getText();
+                localModelCombo.removeAll();
+                List<String> localModels = ProjectModelManager.getInstance().getLocalModelNames(orchestrator);
+                for (String n : localModels) localModelCombo.add(n);
+
+                if (!currentLocal.isEmpty()) {
+                    int idx = localModelCombo.indexOf(currentLocal);
+                    if (idx >= 0) localModelCombo.select(idx);
+                }
+
+                String model = orchestrator.getLocalModel();
+                if (model == null || model.isEmpty()) {
+                    if (orchestrator.getOllama() != null) model = orchestrator.getOllama().getModel();
+                }
+                if (model != null) {
+                    int idx = localModelCombo.indexOf(model);
+                    if (idx >= 0) localModelCombo.select(idx);
+                }
+            }
         }
     }
 
     public int getAiModeIndex() { return aiModeCombo.getSelectionIndex(); }
+    public String getLocalModel() { return localModelCombo != null ? localModelCombo.getText() : ""; }
     public String getRemoteModel() { return aiRemoteCombo.getText(); }
     public String getRemoteToken() { return remoteTokenText.getText(); }
     public String getRemoteUrl() { return remoteUrlText.getText(); }

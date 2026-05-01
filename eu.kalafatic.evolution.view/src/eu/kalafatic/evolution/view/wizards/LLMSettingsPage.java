@@ -104,7 +104,6 @@ public class LLMSettingsPage extends AWizardPage {
             public void widgetSelected(SelectionEvent e) {
                 if (orchestrator != null) {
                     orchestrator.setRemoteModel(aiRemoteCombo.getText());
-                    
                 }
             }
         });
@@ -121,37 +120,6 @@ public class LLMSettingsPage extends AWizardPage {
                 if (orchestrator != null) {
                 	AiMode aiMode = AiMode.get(aiModeCombo.getSelectionIndex());
                     orchestrator.setAiMode(aiMode);
-
-                    // Update models based on mode
-                    java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLlmModels(orchestrator, aiMode);
-                    String current = modelCombo.getText();
-                    modelCombo.removeAll(); // clear
-                    for (String m : models) {
-                        modelCombo.add(m);
-                    }
-
-                    // Restore current if still exists
-                    for (int i = 0; i < modelCombo.getItemCount(); i++) {
-                        if (modelCombo.getItem(i).equals(current)) {
-                            modelCombo.select(i);
-                            break;
-                        }
-                    }
-
-                    if (modelCombo.getText().isEmpty() && modelCombo.getItemCount() > 0) {
-                        modelCombo.select(0);
-                    }
-                            
-                    boolean remoteVisible = aiMode != null && (aiMode.getValue() == AiMode.HYBRID_VALUE || aiMode.getValue() == AiMode.REMOTE_VALUE);
-                    remoteLabel.setVisible(remoteVisible);
-                    aiRemoteCombo.setVisible(remoteVisible);
-                    
-                    groupLinks.setVisible(true);
-                    groupLinks.setEnabled(true);
-                    
-                    groupMode.layout(true, true);
-                    groupLinks.layout(true, true);
-                    container.layout(true, true);
                 }
             }
         });
@@ -165,24 +133,35 @@ public class LLMSettingsPage extends AWizardPage {
                 if (index >= 0) aiRemoteCombo.select(index);
             }
 
-            AiMode aiMode = orchestrator.getAiMode();
-            boolean remoteVisible = aiMode.getValue() == AiMode.HYBRID_VALUE || aiMode.getValue() == AiMode.REMOTE_VALUE;
-            remoteLabel.setVisible(remoteVisible);
-            aiRemoteCombo.setVisible(remoteVisible);
+            // Initial population of remote combo
+            aiRemoteCombo.removeAll();
+            java.util.List<String> remoteModels = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getRemoteModelNames(orchestrator);
+            for (String m : remoteModels) {
+                aiRemoteCombo.add(m);
+            }
+            if (remoteModel != null) {
+                int index = aiRemoteCombo.indexOf(remoteModel);
+                if (index >= 0) aiRemoteCombo.select(index);
+            }
 
             // Initial population of model combo
-            java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLlmModels(orchestrator, aiMode);
+            modelCombo.removeAll();
+            java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLocalModelNames(orchestrator);
             for (String m : models) {
                 modelCombo.add(m);
             }
-            if (modelCombo.getItemCount() > 0) {
+
+            String localModel = orchestrator.getLocalModel();
+            if (localModel != null) {
+                int index = modelCombo.indexOf(localModel);
+                if (index >= 0) modelCombo.select(index);
+            }
+            if (modelCombo.getSelectionIndex() == -1 && modelCombo.getItemCount() > 0) {
                 modelCombo.select(0);
             }
             groupLinks.setEnabled(true);
         } else {
             aiModeCombo.select(0);
-            remoteLabel.setVisible(false);
-            aiRemoteCombo.setVisible(false);
             groupLinks.setEnabled(true);
         }
 
@@ -252,22 +231,28 @@ public class LLMSettingsPage extends AWizardPage {
         super.setVisible(visible);
         if (visible && orchestrator != null) {
             if (modelCombo.getItemCount() == 0) {
-                AiMode aiMode = orchestrator.getAiMode();
-                java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLlmModels(orchestrator, aiMode);
+                java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLocalModelNames(orchestrator);
                 for (String m : models) {
                     modelCombo.add(m);
                 }
             }
 
+            if (aiRemoteCombo.getItemCount() == 0) {
+                java.util.List<String> remoteModels = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getRemoteModelNames(orchestrator);
+                for (String m : remoteModels) {
+                    aiRemoteCombo.add(m);
+                }
+            }
+
             if (orchestrator.getOllama() != null) {
                 String ollamaModel = orchestrator.getOllama().getModel();
-                if (ollamaModel != null && !ollamaModel.isEmpty() && (modelCombo.getText().equals("gpt-4o") || modelCombo.getText().isEmpty())) {
+                if (ollamaModel != null && !ollamaModel.isEmpty() && modelCombo.getText().isEmpty()) {
                     setModelComboText(ollamaModel);
                 }
             }
 
             if (modelCombo.getText().isEmpty()) {
-                setModelComboText("gpt-4o");
+                if (modelCombo.getItemCount() > 0) modelCombo.select(0);
             }
         }
     }
