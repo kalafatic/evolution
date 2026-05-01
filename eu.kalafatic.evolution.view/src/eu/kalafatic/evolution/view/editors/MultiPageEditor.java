@@ -456,6 +456,14 @@ public class MultiPageEditor extends MultiPageEditorPart {
         setActivePageByControl(aiChatPage);
     }
 
+    public void showArchitecturePage() {
+        setActivePageByControl(architecturePage);
+    }
+
+    public void showIterationPage() {
+        setActivePageByControl(iterationPage);
+    }
+
     public void runTaskInChat(Task task) {
         if (aiChatPage != null) {
             showAiChatPage();
