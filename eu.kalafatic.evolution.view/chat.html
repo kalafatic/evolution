@@ -88,9 +88,9 @@
             --tool-border: #e2e8f0;
             --tool-text: #475569;
 
-            --waiting-bg: #ffedd5; /* Very Light Orange */
+            --waiting-bg: #fed7aa; /* Light Orange (Orange 200) */
             --waiting-border: #f97316;
-            --waiting-text: #9a3412;
+            --waiting-text: #7c2d12; /* Darker orange-brown for contrast (Orange 900) */
 
             --error-bg: #fee2e2; /* Light Red */
             --error-border: #dc2626;
@@ -742,33 +742,41 @@
         function formatText(text, role) {
             if (!text) return "";
 
-            if (role === 'analytic' || role === 'waiting' || role === 'response' || role === 'thinking') {
+            if (role === 'analytic' || role === 'waiting' || role === 'response' || role === 'thinking' || role === 'darwin') {
                 if (text.includes('{') && text.includes('}')) {
                     try {
-                        // Extract JSON if it's embedded or the whole text
-                        let jsonText = text;
-                        const jsonMatch = text.match(/\{[\s\S]*\}/);
+                        // Extract JSON if it's embedded or the whole text, stripping markdown code blocks if necessary
+                        let jsonText = text.trim();
+                        if (jsonText.startsWith('```')) {
+                            jsonText = jsonText.replace(/^```[a-z]*\n/i, '').replace(/\n```$/i, '');
+                        }
+                        const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
                         if (jsonMatch) {
                             jsonText = jsonMatch[0];
                         }
 
                         const analysis = JSON.parse(jsonText);
 
-                        // Check if it looks like one of our expected JSON structures
-                        if (analysis.category || analysis.objective || analysis.rootCause || analysis.clarificationQuestion) {
-                            let html = '<div style="display: flex; flex-direction: column; gap: 4px;">';
+                        // Flexible JSON rendering
+                        let html = '<div style="display: flex; flex-direction: column; gap: 4px;">';
+                        let hasRelevantFields = false;
 
-                            const addField = (label, value) => {
-                                if (value !== undefined && value !== null && value !== "") {
-                                    html += `<div><b>${label}:</b> ${escapeHtml(String(value))}</div>`;
-                                }
-                            };
+                        const addField = (label, value) => {
+                            if (value !== undefined && value !== null && value !== "") {
+                                if (Array.isArray(value) && value.length === 0) return;
+                                html += `<div><b>${label}:</b> ${escapeHtml(String(value))}</div>`;
+                                hasRelevantFields = true;
+                            }
+                        };
 
+                        // Check for known structures but allow fallback to generic iteration
+                        if (analysis.category || analysis.objective || analysis.rootCause || analysis.clarificationQuestion || analysis.explanation) {
                             addField("Category", analysis.category);
                             addField("Objective", analysis.objective);
                             addField("Scope", analysis.scope);
                             if (analysis.isAmbiguous !== undefined) {
                                 html += `<div><b>Ambiguous:</b> ${analysis.isAmbiguous ? 'Yes' : 'No'}</div>`;
+                                hasRelevantFields = true;
                             }
                             addField("Clarification", analysis.clarificationQuestion);
 
@@ -776,13 +784,30 @@
                             addField("Root Cause", analysis.rootCause);
                             if (analysis.repeatFailure !== undefined) {
                                 html += `<div><b>Repeat Failure:</b> ${analysis.repeatFailure ? 'Yes' : 'No'}</div>`;
+                                hasRelevantFields = true;
                             }
                             addField("Strategy", analysis.suggestedStrategy);
                             addField("Explanation", analysis.explanation);
 
                             if (analysis.refinedPrompt) {
                                 html += `<div style="margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px;"><a class="link-go" onclick="event.stopPropagation(); JavaHandler('executeProposal', '-1', '${escapeJs(analysis.refinedPrompt)}')"><b>${escapeHtml(analysis.refinedPrompt)}</b></a></div>`;
+                                hasRelevantFields = true;
                             }
+                        } else {
+                            // Fallback: Generic iteration for other JSON structures
+                            for (const key in analysis) {
+                                if (analysis.hasOwnProperty(key)) {
+                                    const value = analysis[key];
+                                    if (typeof value === 'object' && value !== null) {
+                                        addField(key, JSON.stringify(value));
+                                    } else {
+                                        addField(key, value);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (hasRelevantFields) {
                             html += '</div>';
                             return html;
                         }
@@ -1010,13 +1035,18 @@
             const wrapper = document.getElementById('messages-wrapper');
             const wasAtBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 100;
 
-            // Sort messages so that 'waiting' status is always at the end
+            // Sort messages so that 'waiting' status (active) is always at the end
             const sortedMessages = [...messages].sort((a, b) => {
-                const aWaiting = (a.agentType || '').toLowerCase().includes('waiting');
-                const bWaiting = (b.agentType || '').toLowerCase().includes('waiting');
+                const aRole = (a.agentType || '').toLowerCase();
+                const bRole = (b.agentType || '').toLowerCase();
+                const aWaiting = aRole.includes('waiting') && !aRole.includes('approved');
+                const bWaiting = bRole.includes('waiting') && !bRole.includes('approved');
+
                 if (aWaiting && !bWaiting) return 1;
                 if (!aWaiting && bWaiting) return -1;
-                return 0;
+
+                // Keep original order for same status
+                return (a.index || 0) - (b.index || 0);
             });
 
             wrapper.innerHTML = '';
