@@ -129,18 +129,15 @@ public class IterationPage extends AEvoPage {
     }
 
     private void createControl() {
-        Composite container = toolkit.createComposite(this);
-        container.setLayout(new GridLayout(1, false));
+        Composite container = SWTFactory.createComposite(this, 1);
         container.setLayoutData(new GridData(GridData.FILL_BOTH));
         this.setContent(container);
 
         // Top Bar
-        Composite topBar = toolkit.createComposite(container);
-        topBar.setLayout(new GridLayout(4, false));
-        topBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        Composite topBar = SWTFactory.createComposite(container, 4);
 
         prevBtn = toolkit.createButton(topBar, "< Prev", SWT.PUSH);
-        iterationLabel = toolkit.createLabel(topBar, "Iteration: N/A");
+        iterationLabel = SWTFactory.createLabel(topBar, "Iteration: N/A");
         iterationLabel.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
         nextBtn = toolkit.createButton(topBar, "Next >", SWT.PUSH);
 
@@ -167,9 +164,9 @@ public class IterationPage extends AEvoPage {
         // 1. Branches Section
         Composite branchesComp = SWTFactory.createExpandableGroup(toolkit, container, "Branches", 1, true);
 
-        goalLabel = toolkit.createLabel(branchesComp, "Goal: ");
+        goalLabel = SWTFactory.createLabel(branchesComp, "Goal: ");
         goalLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        resultLabel = toolkit.createLabel(branchesComp, "Result: ");
+        resultLabel = SWTFactory.createLabel(branchesComp, "Result: ");
         resultLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         branchTable = new TableViewer(branchesComp, SWT.BORDER | SWT.FULL_SELECTION);
@@ -190,16 +187,15 @@ public class IterationPage extends AEvoPage {
         });
 
         // Flow View
-        toolkit.createLabel(branchesComp, "Evolution Flow:");
-        flowComposite = toolkit.createComposite(branchesComp);
-        flowComposite.setLayout(new GridLayout(11, false)); // 6 steps + 5 arrows
+        SWTFactory.createLabel(branchesComp, "Evolution Flow:");
+        flowComposite = SWTFactory.createComposite(branchesComp, 11);
         flowComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         for (int i = 0; i < 6; i++) {
-            flowSteps[i] = toolkit.createLabel(flowComposite, stepNames[i], SWT.CENTER);
+            flowSteps[i] = SWTFactory.createLabel(flowComposite, stepNames[i], SWT.CENTER);
             flowSteps[i].setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false));
             if (i < 5) {
-                Label arrow = toolkit.createLabel(flowComposite, "\u2192", SWT.CENTER);
+                Label arrow = SWTFactory.createLabel(flowComposite, "\u2192", SWT.CENTER);
                 arrow.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
             }
         }
@@ -229,18 +225,7 @@ public class IterationPage extends AEvoPage {
         sdData.add(new SelfDevRow("RCP EVO", "path", "ready"));
         selfDevTable.setInput(sdData);
 
-        sdTable.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (e.item != null && e.item.getData() instanceof SelfDevRow) {
-                    SelfDevRow row = (SelfDevRow) e.item.getData();
-                    Table table = (Table) e.widget;
-                    int columnIndex = table.getSelectionIndex(); // This is not reliable for column
-                }
-            }
-        });
-
-        // Better: use mouseDown to detect column
+        // use mouseDown to detect column
         sdTable.addListener(SWT.MouseDown, event -> {
             org.eclipse.swt.graphics.Point pt = new org.eclipse.swt.graphics.Point(event.x, event.y);
             org.eclipse.swt.widgets.TableItem item = sdTable.getItem(pt);
