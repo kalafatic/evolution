@@ -5,123 +5,49 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Supervisor for autonomous self-development sessions.
+ * Acts as the executor: builds, starts, and stops the Worker (RCP).
+ * Follows a file-based protocol via command.json and state.json.
+ */
 public class SelfDevSupervisor {
-    private static final com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
     private final File baseDir;
-    private final ResultReader reader = new ResultReader();
     private final ProcessRunner runner = new ProcessRunner();
+    private final SelfDevProtocol protocol;
+    private final ResultReader reader = new ResultReader();
     private final EvoValidator validator = new EvoValidator();
     private final IterationManager iterationManager;
 
     public SelfDevSupervisor(File baseDir) {
         this.baseDir = baseDir;
+        this.protocol = new SelfDevProtocol(baseDir);
         this.iterationManager = new IterationManager(baseDir);
     }
 
     public void run() {
-        File bootstrapFile = new File(baseDir, "self-dev-run/bootstrap.json");
-        File stateFile = new File(baseDir, "self-dev.json");
-        File workspaceDir = new File(baseDir, "workspace");
-        File statusFile = new File(baseDir, "self-dev-run/status.json");
-
+        System.out.println("[SUPERVISOR] Starting monitoring loop...");
         try {
             while (true) {
-                String handoffStatePath = null;
-                // Check bootstrap/state
-                if (bootstrapFile.exists()) {
-                    System.out.println("[SUPERVISOR] Bootstrap contract detected.");
-                    Bootstrap bootstrap = reader.readBootstrap(bootstrapFile);
-                    System.out.println("[SUPERVISOR] Source: " + bootstrap.getSourcePath());
-                    System.out.println("[SUPERVISOR] Target: " + bootstrap.getTargetPath());
-                    System.out.println("[SUPERVISOR] Action: " + bootstrap.getAction());
-                    handoffStatePath = bootstrap.getStatePath();
+                // 1. Check for legacy/bootstrap triggers (Adaptation)
+                checkLegacyTriggers();
+
+                // 2. Check for new Protocol Commands (Primary)
+                SelfDevProtocol.Command command = protocol.readCommand();
+                if (command != null) {
+                    System.out.println("[SUPERVISOR] Command received: " + command.action + " (iter: " + command.iteration + ")");
+                    handleCommand(command);
+                    protocol.clearCommand();
                 }
 
-                if (!stateFile.exists()) {
-                    System.out.println("[SUPERVISOR] Waiting for state file: " + stateFile.getAbsolutePath());
-                    Thread.sleep(2000);
-                    continue;
-                }
-
-                State state = reader.readState(stateFile);
-                if (!state.isActive()) {
-                    System.out.println("[SUPERVISOR] Self-dev inactive. Exiting.");
-                    updateStatus(statusFile, "STOPPED", null);
+                // 3. Check for Control overrides
+                SelfDevProtocol.Control control = protocol.readControl();
+                if (control != null && "STOP".equals(control.forceAction)) {
+                    System.out.println("[SUPERVISOR] Stop command received. Exiting.");
+                    runner.stopRCP();
                     break;
                 }
 
-                updateStatus(statusFile, "STARTING", null);
-                System.out.println("\n[SUPERVISOR] Starting Iteration: " + state.getIteration());
-                File iterDir = iterationManager.prepareIteration(state.getIteration());
-
-                Map<String, Result> variantResults = new HashMap<>();
-                File[] variants = iterDir.listFiles(File::isDirectory);
-                if (variants != null) {
-                    for (File variant : variants) {
-                        System.out.println("\n[VARIANT] Processing " + variant.getName());
-                        updateStatus(statusFile, "BUILDING", variant.getName());
-
-                        // Load and validate plan
-                        try {
-                            File planFile = new File(variant, "plan.json");
-                            if (!planFile.exists()) {
-                                // Try iteration directory
-                                planFile = new File(iterDir, "plan.json");
-                            }
-                            if (planFile.exists()) {
-                                EvoPlan plan = reader.readPlan(planFile);
-                                validator.validate(variant, plan);
-                            } else {
-                                System.out.println("[WARNING] No plan.json found for variant " + variant.getName() + ". Skipping validation.");
-                            }
-                        } catch (IOException e) {
-                            System.err.println("[ERROR] Failed to read or validate plan for " + variant.getName() + ": " + e.getMessage());
-                            System.exit(1);
-                        }
-
-                        if (runner.runBuild(variant)) {
-                            // Assume the JAR is produced in target/app.jar (adjust if needed)
-                            // In this case, we'll look for a JAR in the variant directory or target
-                            String jarName = findJar(variant);
-                            if (jarName != null) {
-                                updateStatus(statusFile, "RUNNING", variant.getName());
-                                // Use handoff state if available, otherwise variant-specific result
-                                String stateToPass = handoffStatePath != null ? handoffStatePath : stateFile.getAbsolutePath();
-                                if (runner.runRCP(variant, jarName, stateToPass)) {
-                                    try {
-                                        Result result = reader.readResult(new File(variant, "result.json"));
-                                        System.out.println("[RESULT] " + variant.getName() + " -> " + result);
-                                        variantResults.put(variant.getName(), result);
-                                    } catch (IOException e) {
-                                        System.err.println("[ERROR] Failed to read result.json for " + variant.getName());
-                                    }
-                                } else {
-                                    System.err.println("[RUN] Failed for " + variant.getName());
-                                }
-                            } else {
-                                System.err.println("[BUILD] No JAR found for " + variant.getName());
-                            }
-                        } else {
-                            System.err.println("[BUILD] Failed for " + variant.getName());
-                        }
-                    }
-                }
-
-                updateStatus(statusFile, "EVALUATING", null);
-                String winner = evaluate(variantResults);
-                if (winner != null) {
-                    System.out.println("\n[WINNER] Selected " + winner);
-                    iterationManager.promoteVariant(new File(iterDir, winner), workspaceDir);
-                } else {
-                    System.out.println("\n[REJECT] No variant met acceptance criteria.");
-                }
-
-                state.setIteration(state.getIteration() + 1);
-                reader.writeState(stateFile, state);
-
-                // For demonstration, break if not in a persistent loop or after handoff
-                // In production this would wait for new state changes
-                Thread.sleep(5000);
+                Thread.sleep(2000);
             }
         } catch (Exception e) {
             System.err.println("[CRITICAL] Supervisor loop failed: " + e.getMessage());
@@ -129,29 +55,74 @@ public class SelfDevSupervisor {
         }
     }
 
-    private String evaluate(Map<String, Result> results) {
-        String bestVariant = null;
-        double maxScore = 0.7; // Threshold
-
-        for (Map.Entry<String, Result> entry : results.entrySet()) {
-            Result r = entry.getValue();
-            if ("OK".equalsIgnoreCase(r.getStatus()) && r.getScore() > maxScore) {
-                maxScore = r.getScore();
-                bestVariant = entry.getKey();
+    private void checkLegacyTriggers() {
+        File bootstrapFile = new File(baseDir, "self-dev-run/bootstrap.json");
+        if (bootstrapFile.exists()) {
+            try {
+                Bootstrap bootstrap = reader.readBootstrap(bootstrapFile);
+                if ("BUILD_AND_START".equals(bootstrap.getAction())) {
+                    System.out.println("[SUPERVISOR] Legacy bootstrap detected. Converting to protocol command.");
+                    handleCommand(newProtocolCommand("BUILD_AND_RUN", 0));
+                    bootstrapFile.delete();
+                }
+            } catch (IOException e) {
+                System.err.println("[SUPERVISOR] Failed to read bootstrap: " + e.getMessage());
             }
         }
-        return bestVariant;
     }
 
-    private void updateStatus(File statusFile, String phase, String instanceId) {
-        try {
-            java.util.Map<String, Object> status = new java.util.HashMap<>();
-            status.put("phase", phase);
-            if (instanceId != null) status.put("instanceId", instanceId);
-            mapper.writeValue(statusFile, status);
-        } catch (IOException e) {
-            System.err.println("[ERROR] Failed to update status: " + e.getMessage());
+    private SelfDevProtocol.Command newProtocolCommand(String action, int iteration) {
+        SelfDevProtocol.Command cmd = new SelfDevProtocol.Command();
+        cmd.action = action;
+        cmd.iteration = iteration;
+        return cmd;
+    }
+
+    private void handleCommand(SelfDevProtocol.Command command) {
+        if ("BUILD_AND_RUN".equals(command.action)) {
+            buildAndRun(command.iteration);
+        } else if ("RESTART".equals(command.action)) {
+            restart(command.iteration);
+        } else if ("NONE".equals(command.action)) {
+            System.out.println("[SUPERVISOR] NONE action received. Doing nothing.");
         }
+    }
+
+    private void buildAndRun(int iteration) {
+        protocol.updateState(iteration, "BUILDING", "RUNNING", "Building project", 0.1);
+        if (runner.runBuild(baseDir)) {
+            protocol.updateState(iteration, "STARTING", "RUNNING", "Starting RCP", 0.5);
+            String jarName = findJar(baseDir);
+            if (jarName != null) {
+                File stateFile = new File(baseDir, "self-dev-run/state.json");
+                runner.runRCP(baseDir, jarName, stateFile.getAbsolutePath());
+            } else {
+                protocol.updateState(iteration, "ERROR", "FAILED", "No JAR found after build", 0.0);
+            }
+        } else {
+            protocol.updateState(iteration, "ERROR", "FAILED", "Build failed", 0.0);
+        }
+    }
+
+    private void restart(int iteration) {
+        System.out.println("[SUPERVISOR] Restarting RCP for iteration " + iteration);
+
+        // 0. Stop current RCP
+        runner.stopRCP();
+
+        // 1. Apply patch
+        SelfDevProtocol.Patch patch = protocol.readPatch();
+        if (patch != null && patch.diff != null && !patch.diff.isEmpty()) {
+            System.out.println("[SUPERVISOR] Applying patch with " + patch.files.size() + " files");
+            protocol.updateState(iteration, "APPLYING_PATCH", "RUNNING", "Applying patch", 0.05);
+            if (!runner.applyPatch(baseDir, patch.diff)) {
+                protocol.updateState(iteration, "ERROR", "FAILED", "Failed to apply patch", 0.0);
+                return;
+            }
+        }
+
+        // 2. Build and Run
+        buildAndRun(iteration);
     }
 
     private String findJar(File variantDir) {
@@ -162,6 +133,21 @@ public class SelfDevSupervisor {
                 return files[0].getAbsolutePath();
             }
         }
+        // Fallback for current project structure if not in target
         return null;
+    }
+
+    // Keep legacy evaluation logic if needed by other components, though Worker now owns this.
+    public String evaluate(Map<String, Result> results) {
+        String bestVariant = null;
+        double maxScore = 0.7; // Threshold
+        for (Map.Entry<String, Result> entry : results.entrySet()) {
+            Result r = entry.getValue();
+            if ("OK".equalsIgnoreCase(r.getStatus()) && r.getScore() > maxScore) {
+                maxScore = r.getScore();
+                bestVariant = entry.getKey();
+            }
+        }
+        return bestVariant;
     }
 }

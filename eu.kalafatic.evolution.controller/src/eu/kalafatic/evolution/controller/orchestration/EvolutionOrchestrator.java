@@ -438,6 +438,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
             context.setCurrentIteration(retry);
             context.log("Evo-Orchestrator-" + task.getName() + ": PEV Attempt " + retry);
 
+            int iter = context.getOrchestrator().getSelfDevSession() != null ?
+                    context.getOrchestrator().getSelfDevSession().getIterations().size() : 1;
+
             // Adaptive logging: increase verbosity on retries (DEBUG = 1)
             if (retry > 1 && task.getLogLevel().getValue() > LogLevel.DEBUG_VALUE) {
                 task.setLogLevel(LogLevel.DEBUG);
@@ -449,6 +452,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 // @evo:20:A reason=6-phase-pev-loop
                 task.setStatus(TaskStatus.PLANNING);
                 context.setCurrentPhase("PLAN");
+                context.getProtocol().updateState(iter, "PLAN", "RUNNING", "Phase 1 - Tactical Planning", 0.1);
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 1 - Tactical Planning...");
 
                 String mutationStrategy = "initial";
@@ -478,6 +482,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 // 2. CONTEXT: Gather minimal tactical context
                 // @evo:20:A reason=6-phase-pev-loop
                 context.setCurrentPhase("CONTEXT");
+                context.getProtocol().updateState(iter, "CONTEXT", "RUNNING", "Phase 2 - Gathering Context", 0.2);
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 2 - Gathering Context...");
                 ContextPackage contextPkg = ContextBuilder.build(task, context, retry, lastFeedback);
                 String contextPrompt = ContextBuilder.buildPrompt(contextPkg);
@@ -486,6 +491,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 // @evo:21:A reason=split-execute-phase
                 task.setStatus(TaskStatus.EXECUTING);
                 context.setCurrentPhase("EXECUTE");
+                context.getProtocol().updateState(iter, "EXECUTE", "RUNNING", "Phase 3 - Executing", 0.4);
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 3 - Executing...");
 
                 // 3a. GeneratePatch (LLM responsibility)
@@ -543,6 +549,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 // @evo:21:A reason=unified-validator-role
                 task.setStatus(TaskStatus.VERIFYING);
                 context.setCurrentPhase("VERIFY");
+                context.getProtocol().updateState(iter, "VERIFY", "RUNNING", "Phase 4 - Verifying", 0.6);
                 context.log("Evo-Orchestrator-" + task.getName() + ": Phase 4 - Verifying...");
 
                 JSONObject evaluation = validator.evaluate(change, task.getName(), context);
@@ -556,12 +563,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     // 5. ANALYZE: Diagnose the failure
                     // @evo:20:A reason=6-phase-pev-loop
                     context.setCurrentPhase("ANALYZE");
+                    context.getProtocol().updateState(iter, "ANALYZE", "RUNNING", "Phase 5 - Analyzing failure", 0.8);
                     context.log("Evo-Orchestrator-" + task.getName() + ": Phase 5 - Analyzing failure...");
                     JSONObject diagnosis = analyticAgent.diagnose(result, evaluation.optString("feedback"), context);
 
                     // 6. MUTATE: Adjust strategy based on diagnosis
                     // @evo:20:A reason=6-phase-pev-loop
                     context.setCurrentPhase("MUTATE");
+                    context.getProtocol().updateState(iter, "MUTATE", "RUNNING", "Phase 6 - Mutating approach", 0.9);
                     context.log("Evo-Orchestrator-" + task.getName() + ": Phase 6 - Mutating approach...");
 
                     if (diagnosis.optBoolean("repeatFailure", false) || "SAME".equals(diagnosis.optString("progress"))) {
@@ -814,34 +823,30 @@ public class EvolutionOrchestrator implements IOrchestrator {
         context.log("[RCP] Initiating Self-Development Handoff to Supervisor...");
         try {
             File projectRoot = context.getProjectRoot();
-            File runDir = new File(projectRoot, "self-dev-run");
-            if (!runDir.exists()) runDir.mkdirs();
+            int iter = context.getOrchestrator().getSelfDevSession() != null ?
+                    context.getOrchestrator().getSelfDevSession().getIterations().size() : 1;
 
             // 1. Generate patch.json
             GitVersionControlProvider vcs = new GitVersionControlProvider();
             String diff = vcs.getDiff(projectRoot, "HEAD");
             List<String> changedFiles = vcs.getChangedFiles(projectRoot, "HEAD");
 
-            JSONObject patch = new JSONObject();
-            patch.put("iteration", context.getOrchestrator().getSelfDevSession() != null ?
-                context.getOrchestrator().getSelfDevSession().getIterations().size() : 0);
-            patch.put("files", new JSONArray(changedFiles));
-            patch.put("diff", diff);
-            patch.put("summary", summary);
-
-            Files.write(new File(runDir, "patch.json").toPath(), patch.toString(4).getBytes());
+            context.getProtocol().writePatch(iter, changedFiles, diff, summary);
             context.log("[RCP] patch.json generated.");
 
-            // 2. Generate status.json signal
-            JSONObject status = new JSONObject();
-            status.put("phase", "WAITING_FOR_SUPERVISOR");
-            status.put("action", "APPLY_PATCH_AND_RESTART");
-            Files.write(new File(runDir, "status.json").toPath(), status.toString(4).getBytes());
-            context.log("[RCP] status.json signal written.");
+            // 2. Write command.json signal
+            context.getProtocol().writeCommand("RESTART", iter);
+            context.log("[RCP] command.json (RESTART) signal written.");
 
-            // 3. Clean Shutdown
+            // 3. Update state.json
+            context.getProtocol().updateState(iter, "DONE", "RUNNING", "Waiting for Supervisor to restart", 1.0);
+
+            // 4. Clean Shutdown
             context.log("[RCP] Shutting down for Supervisor to take over...");
-            System.exit(0);
+            new Thread(() -> {
+                try { Thread.sleep(1000); } catch (InterruptedException e) {}
+                System.exit(0);
+            }).start();
         } catch (Exception e) {
             context.log("[RCP] Handoff failed: " + e.getMessage());
         }
