@@ -1,14 +1,15 @@
 package eu.kalafatic.evolution.controller.agents;
 
-import eu.kalafatic.evolution.controller.tools.ShellTool;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.tools.ToolFactory;
 
 /**
  * Agent specialized in Terminal operations.
  */
 public class TerminalAgent extends BaseAiAgent {
     public TerminalAgent() {
-        super("Terminal", "Terminal");
-        addTool(new ShellTool());
+        super(EvolutionConstants.AGENT_TERMINAL, EvolutionConstants.AGENT_TERMINAL);
+        addTool(ToolFactory.getTool(EvolutionConstants.TOOL_SHELL));
     }
 
     @Override

@@ -22,6 +22,8 @@ The Evolution Project is an agentic, AI-driven development environment integrate
 - **SelfDevSession**: Manages the state of autonomous improvement loops, containing multiple `Iteration` objects, each tracking its own `Task` list and `EvaluationResult`.
 
 ### 2.2 Controller Logic (Orchestration Engine)
+- **EvolutionConstants**: Centralized repository for system-wide constants (Agent types, tool names, default parameters).
+- **ToolFactory & AgentFactory**: Architectural registries that decouple component creation from their usage, following the Factory Pattern.
 - **EvolutionOrchestrator**: Implements the multi-stage task lifecycle:
     1. **Planning**: `PlannerAgent` decomposes natural language requests into a sequence of `Task` objects.
     2. **Approval Pause**: Mandatory execution block using `CompletableFuture` after planning.

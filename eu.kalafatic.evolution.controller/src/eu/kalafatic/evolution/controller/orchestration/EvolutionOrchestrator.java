@@ -12,30 +12,25 @@ import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.controller.log.LoggingService;
+import eu.kalafatic.evolution.controller.agents.AgentFactory;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
 import eu.kalafatic.evolution.controller.agents.ArchitectAgent;
-import eu.kalafatic.evolution.controller.agents.ConstraintAgent;
 import eu.kalafatic.evolution.controller.agents.FinalResponseAgent;
-import eu.kalafatic.evolution.controller.agents.FileAgent;
 import eu.kalafatic.evolution.controller.agents.GeneralAgent;
-import eu.kalafatic.evolution.controller.agents.GitAgent;
 import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.agents.JavaDevAgent;
-import eu.kalafatic.evolution.controller.agents.MavenAgent;
 import eu.kalafatic.evolution.controller.agents.ObservabilityAgent;
 import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent;
 import eu.kalafatic.evolution.controller.agents.QualityAgent;
 import eu.kalafatic.evolution.controller.agents.RepairAgent;
-import eu.kalafatic.evolution.controller.agents.ValidatorAgent;
 import eu.kalafatic.evolution.controller.agents.StructureAgent;
-import eu.kalafatic.evolution.controller.agents.TerminalAgent;
 import eu.kalafatic.evolution.controller.agents.TesterAgent;
-import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
+import eu.kalafatic.evolution.controller.agents.ValidatorAgent;
 import eu.kalafatic.evolution.controller.tools.FileTool;
-import eu.kalafatic.evolution.controller.tools.GitTool;
-import eu.kalafatic.evolution.controller.tools.MavenTool;
-import eu.kalafatic.evolution.controller.tools.ShellTool;
+import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.tools.ToolFactory;
 import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
 
 /**
@@ -48,35 +43,28 @@ import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
  */
 public class EvolutionOrchestrator implements IOrchestrator {
 
-    private static final int MAX_RETRIES = 3;
+    private static final int MAX_RETRIES = EvolutionConstants.MAX_TASK_RETRIES;
     private IIntentClassifier intentClassifier = new LlmIntentClassifier();
     private IPolicyEngine policyEngine = new RuleBasedPolicyEngine();
     private ContextAssistant contextAssistant = new ContextAssistant();
-    private AnalyticAgent analyticAgent = new AnalyticAgent();
-    private PlannerAgent planner = new PlannerAgent();
-    private ValidatorAgent validator = new ValidatorAgent();
-    private RepairAgent repairAgent = new RepairAgent();
-    private ProposalConsolidatorAgent consolidator = new ProposalConsolidatorAgent();
-    private FinalResponseAgent finalResponseAgent = new FinalResponseAgent();
+    private AnalyticAgent analyticAgent;
+    private PlannerAgent planner;
+    private ValidatorAgent validator;
+    private RepairAgent repairAgent;
+    private ProposalConsolidatorAgent consolidator;
+    private FinalResponseAgent finalResponseAgent;
     private final List<IAgent> availableAgents = new ArrayList<>();
 
     public EvolutionOrchestrator() {
-        // Initialize default agents
-        availableAgents.add(analyticAgent);
-        availableAgents.add(new ArchitectAgent());
-        availableAgents.add(new JavaDevAgent());
-        availableAgents.add(new TesterAgent());
-        availableAgents.add(validator);
-        availableAgents.add(new GeneralAgent());
-        availableAgents.add(new TerminalAgent());
-        availableAgents.add(new FileAgent());
-        availableAgents.add(new MavenAgent());
-        availableAgents.add(new GitAgent());
-        availableAgents.add(new StructureAgent());
-        availableAgents.add(new WebSearchAgent());
-        availableAgents.add(new QualityAgent());
-        availableAgents.add(new ObservabilityAgent());
-        availableAgents.add(repairAgent);
+        // Initialize from Factory
+        availableAgents.addAll(AgentFactory.getAllAgents());
+
+        analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
+        validator = (ValidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_VALIDATOR);
+        repairAgent = (RepairAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_REPAIR);
+        planner = (PlannerAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_PLANNER);
+        consolidator = (ProposalConsolidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_PROPOSAL_CONSOLIDATOR);
+        finalResponseAgent = (FinalResponseAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_FINAL_RESPONSE);
     }
 
     @Override
@@ -752,12 +740,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     approved = context.requestApproval("[DELETE] Approve deletion of file: " + path + "?").get();
                 }
                 if (approved == null || !approved) throw new Exception("File deletion rejected by user: " + path);
-                return fileTool.execute("DELETE " + path, context.getProjectRoot(), context);
+                return ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("DELETE " + path, context.getProjectRoot(), context);
             }
 
             // Check for significant deletions
             try {
-                String existingContent = fileTool.execute("READ " + path, context.getProjectRoot(), context);
+                String existingContent = ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("READ " + path, context.getProjectRoot(), context);
                 if (existingContent != null && !existingContent.isEmpty()) {
                     int existingLen = existingContent.length();
                     int newLen = patch.length();
@@ -773,14 +761,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 }
             } catch (Exception e) {}
 
-            String writeResult = fileTool.execute("WRITE " + path + "\n" + patch, context.getProjectRoot(), context);
+            String writeResult = ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("WRITE " + path + "\n" + patch, context.getProjectRoot(), context);
             task.setResultSummary("I created/updated the file: [FILE:" + path + "]");
             return writeResult + "\nCONTENT:\n" + patch;
-        } else if ("maven".equalsIgnoreCase(taskType)) {
+        } else if (EvolutionConstants.TASK_MAVEN.equalsIgnoreCase(taskType)) {
             context.log("Evo-Orchestrator-" + taskName + ": Signaling Supervisor for Maven build...");
-            MavenTool mavenTool = new MavenTool();
-            return mavenTool.execute(taskName, context.getProjectRoot(), context);
-        } else if ("git".equalsIgnoreCase(taskType)) {
+            return ToolFactory.getTool(EvolutionConstants.TOOL_MAVEN).execute(taskName, context.getProjectRoot(), context);
+        } else if (EvolutionConstants.TASK_GIT.equalsIgnoreCase(taskType)) {
             if (taskName.toLowerCase().matches(".*\\b(pr|pull request)\\b.*")) {
                 context.log("Evo-Orchestrator-" + taskName + ": Waiting for user approval for PR...");
                 Boolean approved = true;
@@ -789,17 +776,15 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 }
                 if (approved == null || !approved) throw new Exception("PR rejected by user: " + taskName);
             }
-            GitTool gitTool = new GitTool();
-            return gitTool.execute(taskName, context.getProjectRoot(), context);
-        } else if ("shell".equalsIgnoreCase(taskType)) {
+            return ToolFactory.getTool(EvolutionConstants.TOOL_GIT).execute(taskName, context.getProjectRoot(), context);
+        } else if (EvolutionConstants.TASK_SHELL.equalsIgnoreCase(taskType)) {
             context.log("Evo-Orchestrator-" + taskName + ": Waiting for user approval for command...");
             Boolean approved = true;
             if (!context.isAutoApprove()) {
                 approved = context.requestApproval("Approve terminal command: " + taskName + "?").get();
             }
             if (approved == null || !approved) throw new Exception("Terminal command rejected by user: " + taskName);
-            ShellTool shellTool = new ShellTool();
-            return shellTool.execute(taskName, context.getProjectRoot(), context);
+            return ToolFactory.getTool(EvolutionConstants.TOOL_SHELL).execute(taskName, context.getProjectRoot(), context);
         }
 
         return agent.process(taskName, context, lastFeedback);
@@ -865,22 +850,23 @@ public class EvolutionOrchestrator implements IOrchestrator {
             }
         }
 
-        // 2. Map task types to specialized agents (using exact matches for clarity)
-        if (type.equals("terminal") || type.equals("shell")) return availableAgents.stream().filter(a -> a instanceof TerminalAgent).findFirst().orElse(availableAgents.get(0));
-        if (type.equals("file")) return availableAgents.stream().filter(a -> a instanceof FileAgent).findFirst().orElse(availableAgents.get(0));
-        if (type.equals("maven")) return availableAgents.stream().filter(a -> a instanceof MavenAgent).findFirst().orElse(availableAgents.get(0));
-        if (type.contains("git")) return availableAgents.stream().filter(a -> a instanceof GitAgent).findFirst().orElse(availableAgents.get(0));
-        if (type.contains("structure") || type.contains("tree")) return availableAgents.stream().filter(a -> a instanceof StructureAgent).findFirst().orElse(availableAgents.get(0));
-        if (type.contains("search") || type.contains("web")) return availableAgents.stream().filter(a -> a instanceof WebSearchAgent).findFirst().orElse(availableAgents.get(0));
-        if (type.contains("quality") || type.contains("linter") || type.contains("checkstyle")) return availableAgents.stream().filter(a -> a instanceof QualityAgent).findFirst().orElse(availableAgents.get(0));
-        if (type.contains("observability") || type.contains("log") || type.contains("tail")) return availableAgents.stream().filter(a -> a instanceof ObservabilityAgent).findFirst().orElse(availableAgents.get(0));
+        // 2. Map task types to specialized agents
+        if (type.equals(EvolutionConstants.TASK_TERMINAL) || type.equals(EvolutionConstants.TASK_SHELL)) return AgentFactory.getAgent(EvolutionConstants.AGENT_TERMINAL);
+        if (type.equals(EvolutionConstants.TASK_FILE)) return AgentFactory.getAgent(EvolutionConstants.AGENT_FILE);
+        if (type.equals(EvolutionConstants.TASK_MAVEN)) return AgentFactory.getAgent(EvolutionConstants.AGENT_MAVEN);
+        if (type.contains(EvolutionConstants.TASK_GIT)) return AgentFactory.getAgent(EvolutionConstants.AGENT_GIT);
+        if (type.contains("structure") || type.contains("tree")) return AgentFactory.getAgent(EvolutionConstants.AGENT_STRUCTURE);
+        if (type.contains("search") || type.contains("web")) return AgentFactory.getAgent(EvolutionConstants.AGENT_WEB_SEARCH);
+        if (type.contains("quality") || type.contains("linter") || type.contains("checkstyle")) return AgentFactory.getAgent(EvolutionConstants.AGENT_QUALITY);
+        if (type.contains("observability") || type.contains("log") || type.contains("tail")) return AgentFactory.getAgent(EvolutionConstants.AGENT_OBSERVABILITY);
 
-        if (type.contains("test")) return availableAgents.stream().filter(a -> a instanceof TesterAgent).findFirst().orElse(availableAgents.get(2));
-        if (type.contains("java")) return availableAgents.stream().filter(a -> a instanceof JavaDevAgent).findFirst().orElse(availableAgents.get(1));
-        if (type.contains("arch") || type.contains("design")) return availableAgents.stream().filter(a -> a instanceof ArchitectAgent).findFirst().orElse(availableAgents.get(0));
+        if (type.contains("test")) return AgentFactory.getAgent(EvolutionConstants.AGENT_TESTER);
+        if (type.contains("java")) return AgentFactory.getAgent(EvolutionConstants.AGENT_JAVA_DEV);
+        if (type.contains("arch") || type.contains("design")) return AgentFactory.getAgent(EvolutionConstants.AGENT_ARCHITECT);
 
         // Default to General Agent for reasoning or unknown tasks
-        return availableAgents.stream().filter(a -> a instanceof GeneralAgent).findFirst().orElse(availableAgents.get(availableAgents.size() - 1));
+        IAgent general = AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
+        return general != null ? general : AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
     }
 
     private void performSelfDevHandoff(TaskContext context, String summary) {

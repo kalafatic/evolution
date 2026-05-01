@@ -1,22 +1,19 @@
 package eu.kalafatic.evolution.controller.agents;
 
-import eu.kalafatic.evolution.controller.tools.EclipseTool;
-import eu.kalafatic.evolution.controller.tools.FileTool;
-import eu.kalafatic.evolution.controller.tools.GitTool;
-import eu.kalafatic.evolution.controller.tools.MavenTool;
-import eu.kalafatic.evolution.controller.tools.ShellTool;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.tools.ToolFactory;
 
 /**
  * Specialized agent for Java development tasks.
  */
 public class JavaDevAgent extends BaseAiAgent {
     public JavaDevAgent() {
-        super("JavaDev", "JavaDev");
-        addTool(new FileTool());
-        addTool(new MavenTool());
-        addTool(new GitTool());
-        addTool(new ShellTool());
-        addTool(new EclipseTool());
+        super(EvolutionConstants.AGENT_JAVA_DEV, EvolutionConstants.AGENT_JAVA_DEV);
+        addTool(ToolFactory.getTool(EvolutionConstants.TOOL_FILE));
+        addTool(ToolFactory.getTool(EvolutionConstants.TOOL_MAVEN));
+        addTool(ToolFactory.getTool(EvolutionConstants.TOOL_GIT));
+        addTool(ToolFactory.getTool(EvolutionConstants.TOOL_SHELL));
+        addTool(ToolFactory.getTool(EvolutionConstants.TOOL_ECLIPSE));
     }
 
     @Override

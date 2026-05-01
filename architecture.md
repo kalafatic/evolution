@@ -45,10 +45,14 @@ def pev_loop(task):
         if diagnosis.progress == "SAME": escalate_strategy()
 ```
 - **Specialized Agents**:
+    - `AgentFactory`: Centralized registry and factory for all AI agents.
     - `ValidatorAgent`: Unified role merging `ReviewerAgent` and `ConstraintAgent`.
     - `AnalyticAgent`: Handles both pre-planning intent analysis and post-failure progress-aware diagnosis.
     - `RepairAgent`: Specialized in surgical fixes for build and technical failures.
     - `ProposalConsolidatorAgent`: Unifies and deduplicates agent proposals with deterministic risk-aware logic.
+- **Tools Architecture**:
+    - `ToolFactory`: Centralized registry and factory for all system tools (File, Maven, Git, Shell, etc.).
+    - `ShellTool`: Robust execution engine with security whitelisting, timeouts, and resource limits.
 - **Routing**: `LlmRouter` uses a **Hybrid Context Builder** approach (see `docs/HYBRID_MODE_DESIGN.md`) with **Automatic Local Fallback**. If remote providers fail, the system degrades gracefully to local Ollama.
 - **Repair Loop**: Integration of `RepairAgent` into the PEV cycle for automated error recovery.
 - **Self-Dev Supervisor**: `SelfDevSupervisor` coordinates the iterative cycles, branch management, and automatic rollbacks.
