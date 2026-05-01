@@ -21,6 +21,26 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
     @Override
+    public OrchestratorResponse handle(TaskRequest request) {
+        final Orchestrator inputOrchModel = (Orchestrator) request.getContext().get("orchestrator");
+        TaskContext context = (TaskContext) request.getContext().get("taskContext");
+        if (context == null) {
+            context = new TaskContext(inputOrchModel, request.getProjectRoot());
+        }
+
+        try {
+            EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
+            return evolutionOrchestrator.handle(request, context);
+        } catch (Exception e) {
+            OrchestratorResponse response = new OrchestratorResponse();
+            response.setResultType(ResultType.ERROR);
+            response.setSummary("Error: " + e.getMessage());
+            response.setContent(e.getMessage());
+            return response;
+        }
+    }
+
+    @Override
     public TaskResult execute(TaskRequest request) {
         final Orchestrator inputOrchModel = (Orchestrator) request.getContext().get("orchestrator");
         String taskId = (inputOrchModel != null && inputOrchModel.getId() != null && !inputOrchModel.getId().isEmpty()) ?
@@ -119,12 +139,12 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     }
                 }
 
-                String response = evolutionOrchestrator.execute(request.getPrompt(), context);
+                OrchestratorResponse orchResponse = evolutionOrchestrator.handle(request, context);
 
-                result.setResponse(response);
+                result.setResponse(orchResponse.getSummary());
 
                 // Git Integration: Commit
-                if (promptInstructions.isGitAutomation() && result.getStatus() == TaskResult.Status.SUCCESS) {
+                if (orchResponse.getResultType() != ResultType.ERROR && promptInstructions.isGitAutomation() && result.getStatus() == TaskResult.Status.SUCCESS) {
                     try {
                         context.log("GIT: Committing changes");
                         GitTool gitTool = new GitTool();

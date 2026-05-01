@@ -80,7 +80,18 @@ public class EvolutionOrchestrator implements IOrchestrator {
     }
 
     @Override
-    // @evo:14:B reason=traceability-support
+    @Deprecated
+    public String execute(String request, TaskContext context) throws Exception {
+        TaskRequest taskRequest = new TaskRequest(request, context.getProjectRoot());
+        OrchestratorResponse response = handle(taskRequest, context);
+        if (response.getResultType() == ResultType.ERROR) {
+            throw new Exception(response.getContent());
+        }
+        return response.getSummary();
+    }
+
+    @Override
+    @Deprecated
     public String executeTask(Task task, TaskContext context) throws Exception {
         context.setCurrentTaskName(task.getName());
         context.log("Evo-Orchestrator-" + task.getName() + ": Executing single task");
@@ -94,8 +105,11 @@ public class EvolutionOrchestrator implements IOrchestrator {
     }
 
     @Override
-    // @evo:14:B reason=traceability-support
-    public String execute(String request, TaskContext context) throws Exception {
+    public OrchestratorResponse handle(TaskRequest taskRequest, TaskContext context) throws Exception {
+        String request = taskRequest.getPrompt();
+        OrchestratorResponse response = new OrchestratorResponse();
+        response.setResultType(ResultType.CHAT);
+
         try {
             context.setCurrentTaskName("Initialization");
             context.log("Evo-Orchestrator-Initialization: Starting request - " + request);
@@ -109,7 +123,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 String greeting = "Hello! I'm Evo, your AI software engineer. How can I help you today?";
                 state.addMessage("Evo: " + greeting);
                 context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
-                return greeting;
+                response.setSummary(greeting);
+                response.setContent(greeting);
+                return response;
             }
 
             // 2. Context Assist Layer + Mode Routing (Internal Guard)
@@ -173,7 +189,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
                         String clarification = context.requestInput(finalClarification).get();
                         if (clarification != null && !clarification.isEmpty()) {
                             context.log("Evo-Orchestrator-Clarification: User provided - " + clarification);
-                            return execute(request + "\nClarification: " + clarification, context);
+                            taskRequest.setPrompt(request + "\nClarification: " + clarification);
+                            return handle(taskRequest, context);
                         }
                     } else if (clarificationMsg.length() > 0) {
                         // Non-blocking hints
@@ -193,9 +210,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
                         .filter(a -> a instanceof GeneralAgent)
                         .findFirst()
                         .orElse(new GeneralAgent());
-                String response = chatAgent.process(request, context, null);
-                state.addMessage("Evo: " + response);
+                String chatResponse = chatAgent.process(request, context, null);
+                state.addMessage("Evo: " + chatResponse);
                 context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
+
+                response.setSummary(chatResponse);
+                response.setContent(chatResponse);
                 return response;
             }
 
@@ -218,7 +238,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 context.log("Evo-Orchestrator-Policy: Action blocked or handled directly.");
                 state.addMessage("Evo: " + policyResponse);
                 context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
-                return policyResponse;
+                response.setSummary(policyResponse);
+                response.setContent(policyResponse);
+                return response;
             }
 
             // 3. Goal Update
@@ -413,10 +435,43 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 performSelfDevHandoff(context, finalResponse);
             }
 
-            return finalResponse;
+            // --- Unified Response Population ---
+            eu.kalafatic.evolution.model.orchestration.FeedbackLevel feedbackLevel = eu.kalafatic.evolution.model.orchestration.FeedbackLevel.SIMPLE;
+            if (!tasks.isEmpty()) {
+                feedbackLevel = tasks.get(0).getFeedbackLevel();
+            } else if (context.getOrchestrator().getTasks() != null && !context.getOrchestrator().getTasks().isEmpty()) {
+                feedbackLevel = context.getOrchestrator().getTasks().get(0).getFeedbackLevel();
+            }
+
+            response.setSummary(finalResponse);
+
+            if (feedbackLevel.getValue() >= eu.kalafatic.evolution.model.orchestration.FeedbackLevel.INTERACTIVE_VALUE) {
+                response.setContent(finalResponse);
+            }
+
+            if (feedbackLevel.getValue() >= eu.kalafatic.evolution.model.orchestration.FeedbackLevel.ADVANCED_VALUE) {
+                JSONArray tasksJson = new JSONArray();
+                for (Task t : tasks) {
+                    JSONObject tObj = new JSONObject();
+                    tObj.put("id", t.getId());
+                    tObj.put("name", t.getName());
+                    tObj.put("status", t.getStatus().toString());
+                    tasksJson.put(tObj);
+                }
+                response.getMetadata().put("plannedTasks", tasksJson.toString());
+            }
+
+            if (feedbackLevel.getValue() >= eu.kalafatic.evolution.model.orchestration.FeedbackLevel.FULL_VALUE) {
+                response.setDebugLogs(new ArrayList<>(context.getLogs()));
+            }
+
+            return response;
         } catch (Exception e) {
             context.log("Evo-Orchestrator-Error: " + e.getMessage());
-            throw e;
+            response.setResultType(ResultType.ERROR);
+            response.setSummary("Error: " + e.getMessage());
+            response.setContent(e.getMessage());
+            return response;
         } finally {
             OrchestrationStatusManager.getInstance().updateAgentStatus("Planner", "Idle");
             for (IAgent agent : availableAgents) {
@@ -521,7 +576,16 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     }
 
                     context.log("Evo-Orchestrator-Waiting: Waiting for agent-requested clarification...");
-                    String clarification = context.requestInput(result).get();
+
+                    // Enforce Task 3: Move Proposal Consolidation INTO Orchestrator
+                    String consolidatedResult = result;
+                    try {
+                        consolidatedResult = consolidator.consolidate(result, context);
+                    } catch (Exception e) {
+                        context.log("Evo-Orchestrator-Warning: Proposal consolidation failed, using raw result.");
+                    }
+
+                    String clarification = context.requestInput(consolidatedResult).get();
                     if (clarification != null) {
                         context.log("Evo-Orchestrator-" + task.getName() + ": Received clarification: " + clarification);
                         lastFeedback = "User Response: " + clarification;

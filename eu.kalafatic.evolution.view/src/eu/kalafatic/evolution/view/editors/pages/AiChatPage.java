@@ -35,6 +35,8 @@ import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
+import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
+import eu.kalafatic.evolution.controller.orchestration.ResultType;
 import eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
@@ -397,122 +399,74 @@ public class AiChatPage extends AEvoPage {
 		String threadId = getCurrentThreadName();
 		taskRequest.getContext().put("threadId", threadId);
 
+		TaskContext context = new TaskContext(orchestrator, getProjectRoot());
+		context.setThreadId(threadId);
+		state.currentContext = context;
+
+		context.addLogListener(log -> Display.getDefault().asyncExec(() -> {
+			if (!chatGroup.isDisposed()) {
+				processLogEntry(log, threadId);
+				if (threadId.equals(getCurrentThreadName())) chatGroup.incrementLogCount();
+			}
+		}));
+		context.addApprovalListener(msg -> Display.getDefault().asyncExec(() -> {
+			if (!threadId.equals(getCurrentThreadName())) return;
+			if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
+				modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
+				modeIndicatorLabel.setBackground(colorWaiting);
+			}
+			feedbackGroup.showApproval(msg); updateScrolledContent();
+		}));
+		context.addInputListener(msg -> Display.getDefault().asyncExec(() -> {
+			if (!threadId.equals(getCurrentThreadName())) return;
+			if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
+				modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
+				modeIndicatorLabel.setBackground(colorWaiting);
+			}
+			handleClarify();
+			feedbackGroup.showInput(msg); updateScrolledContent();
+		}));
+
+		taskRequest.getContext().put("taskContext", context);
+
 		state.orchestrationThread = new Thread(() -> {
 			try {
-				TaskResult result = OrchestratorServiceImpl.getInstance().execute(taskRequest);
-				state.activeTaskId = result.getId();
-				String taskId = state.activeTaskId;
-				int lastProcessedIndex = 0;
-				boolean approvalShown = false;
-				boolean inputShown = false;
+				eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(taskRequest);
 
-				// Monitor logs and result
-				while (result.getStatus() == TaskResult.Status.RUNNING ||
-				       result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL ||
-				       result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
-
-				    if (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL && !approvalShown) {
-				        final String msg = result.getWaitingMessage();
-				        Display.getDefault().asyncExec(() -> {
-							if (!threadId.equals(getCurrentThreadName())) return;
-				            if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-				                modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
-				                modeIndicatorLabel.setBackground(colorWaiting);
-				            }
-				            feedbackGroup.showApproval(msg); updateScrolledContent();
-				        });
-				        approvalShown = true;
-				    } else if (result.getStatus() != TaskResult.Status.WAITING_FOR_APPROVAL && approvalShown) {
-					Display.getDefault().asyncExec(() -> {
-						if (!threadId.equals(getCurrentThreadName())) return;
-						updateModeDisplay(); feedbackGroup.hideApproval();
-					});
-					approvalShown = false;
-				    }
-
-				    if (result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT && !inputShown) {
-				        final String msg = result.getWaitingMessage();
-				        Display.getDefault().asyncExec(() -> {
-							if (!threadId.equals(getCurrentThreadName())) return;
-				            if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-				                modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
-				                modeIndicatorLabel.setBackground(colorWaiting);
-				            }
-				            handleClarify();
-				            feedbackGroup.showInput(msg); updateScrolledContent();
-				        });
-				        inputShown = true;
-				    } else if (result.getStatus() != TaskResult.Status.WAITING_FOR_INPUT && inputShown) {
-					Display.getDefault().asyncExec(() -> {
-						if (!threadId.equals(getCurrentThreadName())) return;
-						updateModeDisplay(); feedbackGroup.hideInput();
-					});
-					inputShown = false;
-				    }
-
-				    // Poll logs
-				    int toIndex = result.getLogs().size();
-				    if (lastProcessedIndex < toIndex) {
-				        final List<String> newLogs = new java.util.ArrayList<>(result.getLogs().subList(lastProcessedIndex, toIndex));
-				        lastProcessedIndex = toIndex; // Update immediately to avoid duplicate processing
-				        if (!newLogs.isEmpty()) {
-				            Display.getDefault().asyncExec(() -> {
-				                for (String log : newLogs) {
-				                    processLogEntry(log, threadId);
-				                    if (threadId.equals(getCurrentThreadName())) chatGroup.incrementLogCount();
-				                }
-				            });
-				        }
-				    }
-
-				    Thread.sleep(500);
-				    result = OrchestratorServiceImpl.getInstance().getTaskResult(taskId);
-				    if (result == null) break;
-				}
-
-				// Final log drain
-				if (result != null) {
-					final TaskResult finalRes = result;
-					Display.getDefault().asyncExec(() -> {
-						if (state.currentStackTask != null) {
-							state.currentStackTask.setStatus(finalRes.getStatus() == TaskResult.Status.SUCCESS ? eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE : eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
-							state.currentStackTask.setResultSummary(finalRes.getResponse());
-						}
-					});
-					int toIndex = result.getLogs().size();
-					if (lastProcessedIndex < toIndex) {
-						final List<String> newLogs = new java.util.ArrayList<>(result.getLogs().subList(lastProcessedIndex, toIndex));
-						Display.getDefault().asyncExec(() -> {
-							for (String log : newLogs) {
-								processLogEntry(log, threadId);
-								if (threadId.equals(getCurrentThreadName())) chatGroup.incrementLogCount();
-							}
-						});
-					}
-				}
-
-				final TaskResult finalResult = result;
 				Display.getDefault().asyncExec(() -> {
 					if (threadId.equals(getCurrentThreadName())) instructionsGroup.resetBackground();
-					if (state.currentStackTask != null) {
-						state.currentStackTask.setStatus(finalResult.getStatus() == TaskResult.Status.SUCCESS ? eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE : eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
-						state.currentStackTask.setResultSummary(finalResult.getResponse());
+
+					if (response.getResultType() == eu.kalafatic.evolution.controller.orchestration.ResultType.ERROR) {
+						if (state.currentStackTask != null) {
+							state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+							state.currentStackTask.setResultSummary("Error: " + response.getSummary());
+						}
+						if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
+							chatGroup.setThinking(false);
+							chatGroup.appendText("\n\nError: " + response.getContent(), colorError, SWT.BOLD);
+						}
+						return;
 					}
+
+					if (state.currentStackTask != null) {
+						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
+						state.currentStackTask.setResultSummary(response.getSummary());
+					}
+
 					if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
+						chatGroup.appendText("Final Response: " + response.getSummary(), colorEvolution, SWT.BOLD);
 
-						chatGroup.appendText("Final Response: " + finalResult.getResponse(), colorEvolution, SWT.BOLD);
+						if (response.getContent() != null && !response.getContent().equals(response.getSummary())) {
+							chatGroup.appendText("\n" + response.getContent(), colorEvolution, SWT.NORMAL);
+						}
+
 						editor.setDirty(true);
 						feedbackGroup.showSatisfaction(true); updateScrolledContent();
-						if (state.currentStackTask != null) {
-							state.currentStackTask.setStatus(finalResult.getStatus() == TaskResult.Status.SUCCESS ? eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE : eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
-							state.currentStackTask.setResultSummary(finalResult.getResponse());
-						}
 					} else {
-						// Update model silently if not current thread
 						ChatThread targetThread = orchestrator.getAiChat().getThreads().stream().filter(t -> t.getId().equals(threadId)).findFirst().orElse(null);
 						if (targetThread != null) {
-							chatGroup.appendTextToThread(targetThread, "Final Response: " + finalResult.getResponse(), colorEvolution, SWT.BOLD);
+							chatGroup.appendTextToThread(targetThread, "Final Response: " + response.getSummary(), colorEvolution, SWT.BOLD);
 						}
 					}
 				});
