@@ -1,8 +1,11 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import java.util.ArrayList;
+import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.LogLevel;
@@ -33,6 +36,7 @@ import eu.kalafatic.evolution.controller.tools.FileTool;
 import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.evolution.controller.tools.MavenTool;
 import eu.kalafatic.evolution.controller.tools.ShellTool;
+import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
 
 /**
  * Core Orchestrator implementation that manages the task lifecycle and execution.
@@ -403,6 +407,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             state.addMessage("Evo: " + finalResponse);
             context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
+
+            // Self-Development Handoff
+            if (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
+                performSelfDevHandoff(context, finalResponse);
+            }
+
             return finalResponse;
         } catch (Exception e) {
             context.log("Evo-Orchestrator-Error: " + e.getMessage());
@@ -798,6 +808,43 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
         // Default to General Agent for reasoning or unknown tasks
         return availableAgents.stream().filter(a -> a instanceof GeneralAgent).findFirst().orElse(availableAgents.get(availableAgents.size() - 1));
+    }
+
+    private void performSelfDevHandoff(TaskContext context, String summary) {
+        context.log("[RCP] Initiating Self-Development Handoff to Supervisor...");
+        try {
+            File projectRoot = context.getProjectRoot();
+            File runDir = new File(projectRoot, "self-dev-run");
+            if (!runDir.exists()) runDir.mkdirs();
+
+            // 1. Generate patch.json
+            GitVersionControlProvider vcs = new GitVersionControlProvider();
+            String diff = vcs.getDiff(projectRoot, "HEAD");
+            List<String> changedFiles = vcs.getChangedFiles(projectRoot, "HEAD");
+
+            JSONObject patch = new JSONObject();
+            patch.put("iteration", context.getOrchestrator().getSelfDevSession() != null ?
+                context.getOrchestrator().getSelfDevSession().getIterations().size() : 0);
+            patch.put("files", new JSONArray(changedFiles));
+            patch.put("diff", diff);
+            patch.put("summary", summary);
+
+            Files.write(new File(runDir, "patch.json").toPath(), patch.toString(4).getBytes());
+            context.log("[RCP] patch.json generated.");
+
+            // 2. Generate status.json signal
+            JSONObject status = new JSONObject();
+            status.put("phase", "WAITING_FOR_SUPERVISOR");
+            status.put("action", "APPLY_PATCH_AND_RESTART");
+            Files.write(new File(runDir, "status.json").toPath(), status.toString(4).getBytes());
+            context.log("[RCP] status.json signal written.");
+
+            // 3. Clean Shutdown
+            context.log("[RCP] Shutting down for Supervisor to take over...");
+            System.exit(0);
+        } catch (Exception e) {
+            context.log("[RCP] Handoff failed: " + e.getMessage());
+        }
     }
 
     private void updateStatus(TaskContext context, double progress, String message) {
