@@ -38,9 +38,12 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 
 import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevBootstrapController;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
@@ -248,10 +251,41 @@ public class IterationPage extends AEvoPage {
                 row.status = "running";
             } else {
                 row.status = "running";
+                if ("Supervisor".equals(row.name)) {
+                    startSupervisorBootstrap();
+                }
             }
             selfDevTable.refresh(row);
         } else if (columnIndex == 1) { // Edit
             // Open edit dialog or similar
+        }
+    }
+
+    private void startSupervisorBootstrap() {
+        try {
+            File projectRoot = null;
+            if (orchestrator != null && orchestrator.eResource() != null) {
+                org.eclipse.emf.common.util.URI uri = orchestrator.eResource().getURI();
+                if (uri.isPlatformResource()) {
+                    org.eclipse.core.resources.IResource res = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().findMember(uri.toPlatformString(true));
+                    if (res != null) projectRoot = res.getProject().getLocation().toFile();
+                } else if (uri.isFile()) {
+                    projectRoot = new File(uri.toFileString()).getParentFile();
+                }
+            }
+
+            if (projectRoot != null) {
+                TaskContext context = new TaskContext(orchestrator, projectRoot);
+                SelfDevBootstrapController bootstrapController = new SelfDevBootstrapController(projectRoot, context);
+
+                Task initialTask = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createTask();
+                initialTask.setGoal("self-development");
+                initialTask.setName("Initial Self-Dev Task");
+
+                bootstrapController.bootstrap(initialTask);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

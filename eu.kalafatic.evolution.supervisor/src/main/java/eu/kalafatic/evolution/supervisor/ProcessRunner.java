@@ -34,6 +34,15 @@ public class ProcessRunner {
         command.add("--mode=SELF_DEV");
         command.add("--variant=" + variantDir.getAbsolutePath());
 
+        // Check for state.json in variant or parent iteration directory
+        File stateFile = new File(variantDir, "state.json");
+        if (!stateFile.exists()) {
+            stateFile = new File(variantDir.getParentFile(), "state.json");
+        }
+        if (stateFile.exists()) {
+            command.add("--state=" + stateFile.getAbsolutePath());
+        }
+
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(variantDir);
         pb.inheritIO();

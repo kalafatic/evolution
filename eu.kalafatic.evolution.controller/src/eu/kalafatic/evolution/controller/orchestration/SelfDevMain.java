@@ -18,23 +18,36 @@ public class SelfDevMain {
     public static void main(String[] args) {
         String mode = null;
         File variantDir = null;
+        File stateFile = null;
 
         for (String arg : args) {
             if (arg.startsWith("--mode=")) {
                 mode = arg.substring(7);
             } else if (arg.startsWith("--variant=")) {
                 variantDir = new File(arg.substring(10));
+            } else if (arg.startsWith("--state=")) {
+                stateFile = new File(arg.substring(8));
             }
         }
 
         if (!"SELF_DEV".equals(mode) || variantDir == null) {
-            System.err.println("Usage: --mode=SELF_DEV --variant=<path>");
+            System.err.println("Usage: --mode=SELF_DEV --variant=<path> [--state=<path>]");
             System.exit(1);
         }
 
         System.out.println("[RCP] Standalone SELF_DEV mode starting in: " + variantDir.getAbsolutePath());
 
         try {
+            ObjectMapper mapper = new ObjectMapper();
+            String goal = "Continue self-development and structural improvement.";
+
+            if (stateFile != null && stateFile.exists()) {
+                System.out.println("[RCP] Loading state from: " + stateFile.getAbsolutePath());
+                com.fasterxml.jackson.databind.JsonNode state = mapper.readTree(stateFile);
+                if (state.has("goal")) goal = state.get("goal").asText();
+                // Optionally load context from state.contextPath if needed for complex setups
+            }
+
             // Setup minimal Orchestrator context
             Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
             
@@ -47,9 +60,6 @@ public class SelfDevMain {
         		orchestrator.getAiChat().setPromptInstructions(promptInstructions);
         	}        
         	
-           
-        	
-        	
             promptInstructions.setSelfIterativeMode(true);
             promptInstructions.setAutoApprove(true);
 
@@ -58,12 +68,11 @@ public class SelfDevMain {
             context.setPlatformMode(new PlatformMode(PlatformType.SELF_DEV_MODE, AutonomyLevel.HIGH, 1, true));
 
             EvolutionOrchestrator evo = new EvolutionOrchestrator();
-            String response = evo.execute("Continue self-development and structural improvement.", context);
+            String response = evo.execute(goal, context);
 
             // Compute real score based on build/test status in context
             double score = response.toLowerCase().contains("error") ? 0.0 : 0.8;
 
-            ObjectMapper mapper = new ObjectMapper();
             ObjectNode resultNode = mapper.createObjectNode();
             resultNode.put("status", "OK");
             resultNode.put("score", score);

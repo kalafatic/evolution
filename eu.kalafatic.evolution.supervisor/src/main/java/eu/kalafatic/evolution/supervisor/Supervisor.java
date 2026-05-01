@@ -18,7 +18,21 @@ public class Supervisor {
     }
 
     public void run() {
+        File bootstrapFile = new File(baseDir, "self-dev-run/bootstrap.json");
         File stateFile = new File(baseDir, "self-dev.json");
+
+        if (bootstrapFile.exists()) {
+            try {
+                com.fasterxml.jackson.databind.JsonNode bootstrap = new com.fasterxml.jackson.databind.ObjectMapper().readTree(bootstrapFile);
+                if (bootstrap.has("statePath")) {
+                    stateFile = new File(bootstrap.get("statePath").asText());
+                    System.out.println("[SUPERVISOR] Using statePath from bootstrap: " + stateFile.getAbsolutePath());
+                }
+            } catch (IOException e) {
+                System.err.println("[WARNING] Failed to read bootstrap.json: " + e.getMessage());
+            }
+        }
+
         File workspaceDir = new File(baseDir, "workspace");
 
         try {
