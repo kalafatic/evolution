@@ -3,11 +3,14 @@ package eu.kalafatic.evolution.view.editors.pages;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -17,6 +20,7 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -33,12 +37,26 @@ import org.json.JSONObject;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 
+import eu.kalafatic.evolution.view.factories.SWTFactory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
 public class IterationPage extends AEvoPage {
+
+    private static class SelfDevRow {
+        String name;
+        String path;
+        String status;
+
+        SelfDevRow(String name, String path, String status) {
+            this.name = name;
+            this.path = path;
+            this.status = status;
+        }
+    }
 
     private IterationMemoryService memoryService;
 
@@ -53,8 +71,11 @@ public class IterationPage extends AEvoPage {
     private Button nextBtn;
 
     private TableViewer branchTable;
+    private TableViewer selfDevTable;
     private Composite flowComposite;
     private StyledText logText;
+
+    private ImageRegistry imageRegistry;
 
     private Label[] flowSteps = new Label[6];
     private String[] stepNames = {"PLAN", "CODE", "TEST", "SCORE", "SELECT", "MERGE"};
@@ -63,9 +84,26 @@ public class IterationPage extends AEvoPage {
         super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
 
+        initImageRegistry();
         initMemoryService();
         createControl();
         refreshData();
+    }
+
+    private void initImageRegistry() {
+        this.imageRegistry = new ImageRegistry(Display.getDefault());
+        registerImage("play", "eu.kalafatic.utils", "icons/actions/play.png");
+        registerImage("pause", "eu.kalafatic.utils", "icons/actions/pause.png");
+        registerImage("stop", "eu.kalafatic.utils", "icons/actions/stop.png");
+        registerImage("resume", "eu.kalafatic.utils", "icons/actions/restart.png");
+        registerImage("edit", "eu.kalafatic.utils", "icons/ovr16/write.gif");
+    }
+
+    private void registerImage(String key, String pluginId, String path) {
+        ImageDescriptor desc = Activator.getImageDescriptor(pluginId, path);
+        if (desc != null) {
+            imageRegistry.put(key, desc);
+        }
     }
 
     private void initMemoryService() {
@@ -126,25 +164,15 @@ public class IterationPage extends AEvoPage {
             }
         });
 
-        Composite infoComp = toolkit.createComposite(container);
-        infoComp.setLayout(new GridLayout(1, false));
-        infoComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        // 1. Branches Section
+        Composite branchesComp = SWTFactory.createExpandableGroup(toolkit, container, "Branches", 1, true);
 
-        goalLabel = toolkit.createLabel(infoComp, "Goal: ");
+        goalLabel = toolkit.createLabel(branchesComp, "Goal: ");
         goalLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        resultLabel = toolkit.createLabel(infoComp, "Result: ");
+        resultLabel = toolkit.createLabel(branchesComp, "Result: ");
         resultLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        // Branch Table
-        Section branchSection = toolkit.createSection(container, Section.TITLE_BAR);
-        branchSection.setText("Branches");
-        branchSection.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        Composite branchComp = toolkit.createComposite(branchSection);
-        branchComp.setLayout(new GridLayout(1, false));
-        branchSection.setClient(branchComp);
-
-        branchTable = new TableViewer(branchComp, SWT.BORDER | SWT.FULL_SELECTION);
+        branchTable = new TableViewer(branchesComp, SWT.BORDER | SWT.FULL_SELECTION);
         Table table = branchTable.getTable();
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
@@ -162,13 +190,10 @@ public class IterationPage extends AEvoPage {
         });
 
         // Flow View
-        Section flowSection = toolkit.createSection(container, Section.TITLE_BAR);
-        flowSection.setText("Flow");
-        flowSection.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        flowComposite = toolkit.createComposite(flowSection);
+        toolkit.createLabel(branchesComp, "Evolution Flow:");
+        flowComposite = toolkit.createComposite(branchesComp);
         flowComposite.setLayout(new GridLayout(11, false)); // 6 steps + 5 arrows
-        flowSection.setClient(flowComposite);
+        flowComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         for (int i = 0; i < 6; i++) {
             flowSteps[i] = toolkit.createLabel(flowComposite, stepNames[i], SWT.CENTER);
@@ -179,18 +204,70 @@ public class IterationPage extends AEvoPage {
             }
         }
 
-        // Log Area
-        Section logSection = toolkit.createSection(container, Section.TITLE_BAR | Section.EXPANDED);
-        logSection.setText("Log (selected branch)");
-        logSection.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-        Composite logComp = toolkit.createComposite(logSection);
-        logComp.setLayout(new GridLayout(1, false));
-        logSection.setClient(logComp);
+        // 2. Logs Section
+        Composite logComp = SWTFactory.createExpandableGroup(toolkit, container, "Logs", 1, true, true);
 
         logText = new StyledText(logComp, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
         logText.setLayoutData(new GridData(GridData.FILL_BOTH));
         logText.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+
+        // 3. Self-Development Section
+        Composite selfDevComp = SWTFactory.createExpandableGroup(toolkit, container, "Self-Development", 1, true);
+
+        selfDevTable = new TableViewer(selfDevComp, SWT.BORDER | SWT.FULL_SELECTION);
+        Table sdTable = selfDevTable.getTable();
+        sdTable.setHeaderVisible(true);
+        sdTable.setLinesVisible(true);
+        GridData gdSdTable = new GridData(GridData.FILL_HORIZONTAL);
+        gdSdTable.heightHint = 80;
+        sdTable.setLayoutData(gdSdTable);
+
+        createSelfDevColumns();
+        selfDevTable.setContentProvider(ArrayContentProvider.getInstance());
+        List<SelfDevRow> sdData = new ArrayList<>();
+        sdData.add(new SelfDevRow("Supervisor", "path", "ready"));
+        sdData.add(new SelfDevRow("RCP EVO", "path", "ready"));
+        selfDevTable.setInput(sdData);
+
+        sdTable.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (e.item != null && e.item.getData() instanceof SelfDevRow) {
+                    SelfDevRow row = (SelfDevRow) e.item.getData();
+                    Table table = (Table) e.widget;
+                    int columnIndex = table.getSelectionIndex(); // This is not reliable for column
+                }
+            }
+        });
+
+        // Better: use mouseDown to detect column
+        sdTable.addListener(SWT.MouseDown, event -> {
+            org.eclipse.swt.graphics.Point pt = new org.eclipse.swt.graphics.Point(event.x, event.y);
+            org.eclipse.swt.widgets.TableItem item = sdTable.getItem(pt);
+            if (item != null) {
+                for (int i = 0; i < sdTable.getColumnCount(); i++) {
+                    org.eclipse.swt.graphics.Rectangle rect = item.getBounds(i);
+                    if (rect.contains(pt)) {
+                        handleSelfDevAction((SelfDevRow) item.getData(), i);
+                    }
+                }
+            }
+        });
+    }
+
+    private void handleSelfDevAction(SelfDevRow row, int columnIndex) {
+        if (columnIndex == 0) { // Action
+            if ("running".equals(row.status)) {
+                row.status = "paused";
+            } else if ("paused".equals(row.status)) {
+                row.status = "running";
+            } else {
+                row.status = "running";
+            }
+            selfDevTable.refresh(row);
+        } else if (columnIndex == 1) { // Edit
+            // Open edit dialog or similar
+        }
     }
 
     private void createColumns() {
@@ -234,8 +311,79 @@ public class IterationPage extends AEvoPage {
         });
     }
 
+    private void createSelfDevColumns() {
+        String[] titles = { "Action", "Edit", "Name", "Path/URL", "Status" };
+        int[] bounds = { 100, 50, 100, 250, 100 };
+
+        TableViewerColumn col = createTableViewerColumn(selfDevTable, titles[0], bounds[0], 0);
+        col.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                SelfDevRow row = (SelfDevRow) element;
+                if ("running".equals(row.status)) {
+                    return "\u23F8 \u23F9"; // pause stop
+                } else if ("paused".equals(row.status)) {
+                    return "\u25B6 \u23F9"; // play stop
+                } else {
+                    return "\u25B6"; // play
+                }
+            }
+            @Override
+            public Image getImage(Object element) {
+                SelfDevRow row = (SelfDevRow) element;
+                if ("running".equals(row.status)) {
+                    return imageRegistry.get("pause");
+                } else if ("paused".equals(row.status)) {
+                    return imageRegistry.get("play");
+                } else {
+                    return imageRegistry.get("play");
+                }
+            }
+        });
+
+        col = createTableViewerColumn(selfDevTable, titles[1], bounds[1], 1);
+        col.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return ""; // Icon only
+            }
+            @Override
+            public Image getImage(Object element) {
+                return imageRegistry.get("edit");
+            }
+        });
+
+        col = createTableViewerColumn(selfDevTable, titles[2], bounds[2], 2);
+        col.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return ((SelfDevRow) element).name;
+            }
+        });
+
+        col = createTableViewerColumn(selfDevTable, titles[3], bounds[3], 3);
+        col.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return ((SelfDevRow) element).path;
+            }
+        });
+
+        col = createTableViewerColumn(selfDevTable, titles[4], bounds[4], 4);
+        col.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return ((SelfDevRow) element).status;
+            }
+        });
+    }
+
     private TableViewerColumn createTableViewerColumn(String title, int bound, final int colNumber) {
-        final TableViewerColumn viewerColumn = new TableViewerColumn(branchTable, SWT.NONE);
+        return createTableViewerColumn(branchTable, title, bound, colNumber);
+    }
+
+    private TableViewerColumn createTableViewerColumn(TableViewer viewer, String title, int bound, final int colNumber) {
+        final TableViewerColumn viewerColumn = new TableViewerColumn(viewer, SWT.NONE);
         final org.eclipse.swt.widgets.TableColumn column = viewerColumn.getColumn();
         column.setText(title);
         column.setWidth(bound);
@@ -357,6 +505,9 @@ public class IterationPage extends AEvoPage {
 
     @Override
     public void dispose() {
+        if (imageRegistry != null) {
+            imageRegistry.dispose();
+        }
         if (toolkit != null) toolkit.dispose();
         super.dispose();
     }
