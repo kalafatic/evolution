@@ -40,6 +40,7 @@ import org.eclipse.ui.forms.widgets.Section;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevBootstrapController;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -59,6 +60,8 @@ public class IterationPage extends AEvoPage {
     }
 
     private IterationMemoryService memoryService;
+    private SelfDevBootstrapController bootstrapController;
+    private File projectRoot;
 
     private Map<Integer, List<IterationRecord>> iterationsMap = new TreeMap<>();
     private List<Integer> iterationNumbers = new ArrayList<>();
@@ -107,7 +110,7 @@ public class IterationPage extends AEvoPage {
     }
 
     private void initMemoryService() {
-        File projectRoot = null;
+        this.projectRoot = null;
         if (orchestrator != null && orchestrator.eResource() != null) {
             org.eclipse.emf.common.util.URI uri = orchestrator.eResource().getURI();
             if (uri.isPlatformResource()) {
@@ -125,6 +128,7 @@ public class IterationPage extends AEvoPage {
         }
         if (projectRoot != null) {
             this.memoryService = new IterationMemoryService(projectRoot);
+            this.bootstrapController = new SelfDevBootstrapController(projectRoot);
         }
     }
 
@@ -242,14 +246,26 @@ public class IterationPage extends AEvoPage {
 
     private void handleSelfDevAction(SelfDevRow row, int columnIndex) {
         if (columnIndex == 0) { // Action
-            if ("running".equals(row.status)) {
-                row.status = "paused";
-            } else if ("paused".equals(row.status)) {
-                row.status = "running";
+            if ("Supervisor".equals(row.name)) {
+                if (bootstrapController != null) {
+                    try {
+                        bootstrapController.startBootstrap();
+                        row.status = "starting";
+                        selfDevTable.refresh(row);
+                    } catch (java.io.IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             } else {
-                row.status = "running";
+                if ("running".equals(row.status)) {
+                    row.status = "paused";
+                } else if ("paused".equals(row.status)) {
+                    row.status = "running";
+                } else {
+                    row.status = "running";
+                }
+                selfDevTable.refresh(row);
             }
-            selfDevTable.refresh(row);
         } else if (columnIndex == 1) { // Edit
             // Open edit dialog or similar
         }
@@ -392,6 +408,7 @@ public class IterationPage extends AEvoPage {
     }
 
     private void updateUI() {
+        updateSelfDevStatus();
         if (currentIterationIndex < 0 || currentIterationIndex >= iterationNumbers.size()) {
             iterationLabel.setText("Iteration: N/A");
             goalLabel.setText("Goal: ");
@@ -471,6 +488,29 @@ public class IterationPage extends AEvoPage {
             }
         }
         flowComposite.layout();
+    }
+
+    private void updateSelfDevStatus() {
+        if (bootstrapController == null) return;
+        JSONObject status = bootstrapController.getStatus();
+        if (status != null) {
+            String phase = status.optString("phase", "ready");
+            Object input = selfDevTable.getInput();
+            if (input instanceof List) {
+                List<SelfDevRow> rows = (List<SelfDevRow>) input;
+                for (SelfDevRow row : rows) {
+                    if ("Supervisor".equals(row.name)) {
+                        row.status = phase.toLowerCase();
+                        break;
+                    }
+                }
+                Display.getDefault().asyncExec(() -> {
+                    if (!selfDevTable.getTable().isDisposed()) {
+                        selfDevTable.refresh();
+                    }
+                });
+            }
+        }
     }
 
     @Override
