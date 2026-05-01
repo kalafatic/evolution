@@ -957,6 +957,7 @@ public class AiChatPage extends AEvoPage {
 		String quote = "> " + text.replace("\n", "\n> ") + "\n\n";
 		instructionsGroup.setRequest(current + (current.isEmpty() ? "" : "\n\n") + quote);
 		instructionsGroup.focusAndHighlight(colorWhite, null);
+		instructionsGroup.setCaretToEnd();
 	}
 
 	public void handleOpenDiff(String path) {
