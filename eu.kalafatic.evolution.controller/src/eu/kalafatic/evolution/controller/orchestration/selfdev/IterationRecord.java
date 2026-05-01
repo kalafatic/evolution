@@ -2,6 +2,8 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.List;
 
+import eu.kalafatic.evolution.model.orchestration.IterationStatus;
+
 public class IterationRecord {
     private int iteration;
     private String goal;
@@ -15,6 +17,7 @@ public class IterationRecord {
     private int attempt;
     private double score;
     private long timestamp;
+    private String status;
 
     public int getIteration() { return iteration; }
     public void setIteration(int iteration) { this.iteration = iteration; }
@@ -51,4 +54,11 @@ public class IterationRecord {
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+	
+    public String getStatus() {
+		return status;
+	}
+	public void setStatus(String string) {
+		this.status = status;
+	}
 }

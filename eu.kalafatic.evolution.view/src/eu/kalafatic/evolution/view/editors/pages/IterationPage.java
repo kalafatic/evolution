@@ -247,6 +247,7 @@ public class IterationPage extends AEvoPage {
         selfDevTable.setContentProvider(ArrayContentProvider.getInstance());
         List<SelfDevRow> sdData = new ArrayList<>();
         sdData.add(new SelfDevRow("Self-Dev Loop", "orchestrator", "ready"));
+        sdData.add(new SelfDevRow("Evo RCP", "/xx/", "ready"));
         selfDevTable.setInput(sdData);
 
         // use mouseDown to detect column

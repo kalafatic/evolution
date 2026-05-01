@@ -553,9 +553,14 @@ public class ModelsGroup extends AEvoGroup {
 
     @Override
     protected void refreshUI() {
-        if (orchestrator == null) return;
-        if (viewer == null || viewer.getControl().isDisposed()) return;
-        viewer.refresh();
+        try {
+			if (orchestrator == null) return;
+			if (viewer == null || viewer.getControl().isDisposed()) return;
+			viewer.refresh();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
 	public void load() {
@@ -565,7 +570,7 @@ public class ModelsGroup extends AEvoGroup {
                 if (viewer.getControl().isDisposed()) return;
                 this.modelItems = allModels;
                 viewer.setInput(modelItems);
-                viewer.refresh();
+                refreshUI();
             });
         });
 	}
