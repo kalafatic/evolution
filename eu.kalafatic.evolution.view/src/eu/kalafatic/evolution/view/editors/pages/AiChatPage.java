@@ -936,7 +936,7 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void handleClarify() {
-		instructionsGroup.focusAndHighlight(colorLightOrange, colorWaiting);
+		instructionsGroup.focusAndHighlight(colorLightOrange, null);
 		chatGroup.focusWaitingMessage();
 		expandFeedbackSection();
 	}
