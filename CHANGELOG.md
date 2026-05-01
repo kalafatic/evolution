@@ -56,3 +56,14 @@
     - **Traceability**: Enhanced code traceability with `@evo:20:A` markers across core orchestration and agent classes.
     - **Hybrid Mode Design**: Created `docs/HYBRID_MODE_DESIGN.md` to document the split-intelligence architecture.
 - **Traceability**: `iterations/20/plan.json`
+
+## [Iteration 21] - Architectural Refinement and Boundary Enforcement
+- **Goal**: Reduce complexity, eliminate loops, and strengthen component boundaries.
+- **Changes**:
+    - **Infrastructure**: Introduced `ArchitectureContext` and `ChangeUnit` as explicit units of context and change.
+    - **Agents**: Created unified `ValidatorAgent` and enhanced `AnalyticAgent` with progress-aware diagnosis (IMPROVED/SAME/WORSE).
+    - **PEV Loop**: Refactored EXECUTE phase into distinct `GeneratePatch` and `ApplyPatch` conceptual steps.
+    - **Boundary Enforcement**: Clarified Orchestrator vs Supervisor roles; Orchestrator only signals long-running operations.
+    - **Progress Tracking**: Implemented progress-based anti-loop mechanism in the PEV cycle.
+    - **Documentation**: Updated `architecture.md` with refined blueprint and pseudo-code.
+- **Traceability**: `iterations/21/plan.json`

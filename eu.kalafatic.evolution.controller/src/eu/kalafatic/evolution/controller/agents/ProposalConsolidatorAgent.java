@@ -5,7 +5,7 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 /**
  * Specialized agent for consolidating and deduplicating proposals or clarification requests.
  *
- * @evo:20:A reason=architecture-documentation-sync
+ * @evo:21:A reason=simplify-proposal-logic
  */
 public class ProposalConsolidatorAgent extends BaseAiAgent {
 
@@ -28,6 +28,8 @@ public class ProposalConsolidatorAgent extends BaseAiAgent {
                "* No duplicates\n" +
                "* No agent names\n" +
                "* Focus on decisions, not discussion\n" +
+               "* PREFER: Smallest diffs and lowest risk.\n" +
+               "* MUST: Match current plan step.\n" +
                "* Optional: Add [HIGH / MEDIUM / LOW impact]\n" +
                "* If there are conflicts: clearly highlight them\n";
     }

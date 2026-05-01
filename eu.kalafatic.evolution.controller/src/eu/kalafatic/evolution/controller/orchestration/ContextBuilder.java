@@ -27,6 +27,14 @@ public class ContextBuilder {
         pkg.setAttempt(attempt);
         pkg.setLastFeedback(lastFeedback);
 
+        // Architecture Context (replaces large architecture.md reading)
+        ArchitectureContext arch = new ArchitectureContext();
+        arch.getKeyRules().add("DO NOT rewrite or replace existing components (Orchestrator, Agents, ContextBuilder, Supervisor)");
+        arch.getKeyRules().add("Align responsibilities and simplify interactions");
+        arch.getKeyRules().add("Preserve all working behavior");
+        arch.setCurrentFocus(task.getName());
+        pkg.setArchitectureContext(arch);
+
         Set<String> scope = selectRelevantFiles(task, context);
         pkg.getScope().addAll(scope);
 
@@ -170,6 +178,17 @@ public class ContextBuilder {
     public static String buildPrompt(ContextPackage ctx) {
         StringBuilder sb = new StringBuilder();
         sb.append("### GOAL\n").append(ctx.getGoal()).append("\n\n");
+
+        if (ctx.getArchitectureContext() != null) {
+            sb.append("### ARCHITECTURE CONTEXT\n");
+            sb.append("Focus: ").append(ctx.getArchitectureContext().getCurrentFocus()).append("\n");
+            sb.append("Rules:\n");
+            for (String rule : ctx.getArchitectureContext().getKeyRules()) {
+                sb.append("- ").append(rule).append("\n");
+            }
+            sb.append("\n");
+        }
+
         sb.append("### CURRENT STEP\n").append(ctx.getStep());
         if (ctx.getAttempt() > 1) {
             sb.append(" (Attempt ").append(ctx.getAttempt()).append(")");
