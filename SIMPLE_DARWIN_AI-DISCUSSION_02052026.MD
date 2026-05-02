@@ -187,3 +187,125 @@ single-thinker + multiple executors
 
 /** JULES */
 This discussion highlights the "Orchestrator is too smart" problem in Simple Darwin mode. By making the Orchestrator a "Dumb Executor" as ChatGPT suggests, we can force it to trust the tasks provided by the DarwinEngine/TaskPlanner duo, effectively removing the middle-thinking layer that currently plagues the Simple Darwin trace.
+
+/** CHATGPT */
+That’s a good interpretation layer, but it still has one subtle architectural risk:
+
+❗ You are trying to fix a state machine problem with data flags on tasks
+
+That helps locally, but it does not fully enforce the authority chain you actually need.
+
+🧠 1. What’s correct in the Jules response
+
+Yes, these parts are solid:
+
+✔ Orchestrator should NOT re-plan
+✔ TaskPlanner already owns decomposition
+✔ DarwinEngine owns strategy
+✔ Execution layer should be deterministic
+✔ Token/logic drift is real
+
+So directionally: correct.
+
+⚠️ 2. What’s still wrong (important)
+
+This part:
+
+introduce immutability via flags like isAnalyzed, isDecomposed
+
+is not sufficient as a control mechanism
+
+Why?
+
+Because:
+
+flags are descriptive, not enforcing
+
+So you get:
+
+Orchestrator ignoring flags
+agents mis-setting flags
+duplicated reasoning paths
+
+👉 You are still relying on behavior discipline instead of structural constraints
+
+🔥 3. Core issue (the real root)
+
+Your system problem is NOT:
+
+missing metadata
+
+It is:
+
+no hard state ownership boundary
+
+🧱 4. Correct model (state-first, not flag-first)
+
+Instead of:
+
+task.isAnalyzed = true
+
+You need:
+
+STATE MACHINE owns transitions
+Example:
+WRONG (current thinking)
+Task says: “I am analyzed”
+Orchestrator decides what that means
+CORRECT (deterministic)
+STATE = PLAN_LOCKED
+→ analysis is forbidden
+→ no component can override
+🧠 5. Why this matters for your Darwin system
+
+Your Darwin loop depends on:
+
+generate variants
+evaluate
+select
+mutate
+
+If any layer can “reinterpret state”, you get:
+
+infinite re-analysis loops
+duplicate planning
+drift between layers
+🔥 6. Clean correction to Jules critique
+
+A stronger version would be:
+
+✔ Corrected architectural statement
+
+The issue is not lack of immutability flags, but lack of a centralized state authority governing phase transitions.
+Instead of annotating tasks with isAnalyzed or isDecomposed, the system should enforce a strict state machine where each phase transition locks behavior across all layers.
+The Orchestrator must not interpret task metadata, only enforce execution rules based on global system state.
+
+🧠 7. Minimal fix (aligned with your architecture)
+
+Keep your existing model, but add:
+
+SystemState (single source of truth)
+And enforce:
+TaskPlanner writes plan → sets PLAN_LOCKED
+Orchestrator checks ONLY SystemState
+DarwinEngine can only mutate in MUTATION state
+💡 8. Key insight (this unlocks everything)
+
+You are moving from:
+
+object-driven AI orchestration
+
+to:
+
+state-driven deterministic evolution machine
+
+Flags (isAnalyzed) are:
+
+local hints
+
+State machine is:
+
+global authority
+
+/** JULES */
+In Simple Darwin mode, the transition to a `PLAN_LOCKED` state after the DarwinEngine selection is critical. Currently, the Orchestrator "thinks" because it hasn't been structurally told that the thinking phase is over. Shifting to a state-driven machine ensures the Orchestrator remains a dumb executor of the strategy, eliminating the logic drift identified in the Simple Darwin analysis.
