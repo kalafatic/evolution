@@ -110,6 +110,56 @@ public class ApprovalPage extends AEvoPage {
 		TableViewerColumn colStatus = new TableViewerColumn(tableViewer, SWT.NONE);
 		colStatus.getColumn().setText("Status"); colStatus.getColumn().setWidth(100);
 		colStatus.setLabelProvider(new ColumnLabelProvider() { @Override public String getText(Object element) { return ((Task)element).getStatus().toString(); } });
+
+		TableViewerColumn colIterative = new TableViewerColumn(tableViewer, SWT.NONE);
+		colIterative.getColumn().setText("Iterative"); colIterative.getColumn().setWidth(70);
+		colIterative.setLabelProvider(new ColumnLabelProvider() { @Override public String getText(Object element) { return ((Task)element).isIterativeMode() ? "YES" : "NO"; } });
+		colIterative.setEditingSupport(new org.eclipse.jface.viewers.EditingSupport(tableViewer) {
+			@Override protected void setValue(Object element, Object value) { ((Task)element).setIterativeMode((Boolean)value); editor.setDirty(true); tableViewer.update(element, null); }
+			@Override protected Object getValue(Object element) { return ((Task)element).isIterativeMode(); }
+			@Override protected org.eclipse.jface.viewers.CellEditor getCellEditor(Object element) { return new org.eclipse.jface.viewers.CheckboxCellEditor(tableViewer.getTable()); }
+			@Override protected boolean canEdit(Object element) { return true; }
+		});
+
+		TableViewerColumn colSelfDev = new TableViewerColumn(tableViewer, SWT.NONE);
+		colSelfDev.getColumn().setText("Self-Dev"); colSelfDev.getColumn().setWidth(70);
+		colSelfDev.setLabelProvider(new ColumnLabelProvider() { @Override public String getText(Object element) { return ((Task)element).isSelfIterativeMode() ? "YES" : "NO"; } });
+		colSelfDev.setEditingSupport(new org.eclipse.jface.viewers.EditingSupport(tableViewer) {
+			@Override protected void setValue(Object element, Object value) { ((Task)element).setSelfIterativeMode((Boolean)value); editor.setDirty(true); tableViewer.update(element, null); }
+			@Override protected Object getValue(Object element) { return ((Task)element).isSelfIterativeMode(); }
+			@Override protected org.eclipse.jface.viewers.CellEditor getCellEditor(Object element) { return new org.eclipse.jface.viewers.CheckboxCellEditor(tableViewer.getTable()); }
+			@Override protected boolean canEdit(Object element) { return true; }
+		});
+
+		TableViewerColumn colDarwin = new TableViewerColumn(tableViewer, SWT.NONE);
+		colDarwin.getColumn().setText("Darwin"); colDarwin.getColumn().setWidth(70);
+		colDarwin.setLabelProvider(new ColumnLabelProvider() { @Override public String getText(Object element) { return ((Task)element).isDarwinMode() ? "YES" : "NO"; } });
+		colDarwin.setEditingSupport(new org.eclipse.jface.viewers.EditingSupport(tableViewer) {
+			@Override protected void setValue(Object element, Object value) { ((Task)element).setDarwinMode((Boolean)value); editor.setDirty(true); tableViewer.update(element, null); }
+			@Override protected Object getValue(Object element) { return ((Task)element).isDarwinMode(); }
+			@Override protected org.eclipse.jface.viewers.CellEditor getCellEditor(Object element) { return new org.eclipse.jface.viewers.CheckboxCellEditor(tableViewer.getTable()); }
+			@Override protected boolean canEdit(Object element) { return true; }
+		});
+
+		TableViewerColumn colAutoGit = new TableViewerColumn(tableViewer, SWT.NONE);
+		colAutoGit.getColumn().setText("Auto-Git"); colAutoGit.getColumn().setWidth(70);
+		colAutoGit.setLabelProvider(new ColumnLabelProvider() { @Override public String getText(Object element) { return ((Task)element).isGitAutomation() ? "YES" : "NO"; } });
+		colAutoGit.setEditingSupport(new org.eclipse.jface.viewers.EditingSupport(tableViewer) {
+			@Override protected void setValue(Object element, Object value) { ((Task)element).setGitAutomation((Boolean)value); editor.setDirty(true); tableViewer.update(element, null); }
+			@Override protected Object getValue(Object element) { return ((Task)element).isGitAutomation(); }
+			@Override protected org.eclipse.jface.viewers.CellEditor getCellEditor(Object element) { return new org.eclipse.jface.viewers.CheckboxCellEditor(tableViewer.getTable()); }
+			@Override protected boolean canEdit(Object element) { return true; }
+		});
+
+		TableViewerColumn colMaxIter = new TableViewerColumn(tableViewer, SWT.NONE);
+		colMaxIter.getColumn().setText("Max Iter"); colMaxIter.getColumn().setWidth(70);
+		colMaxIter.setLabelProvider(new ColumnLabelProvider() { @Override public String getText(Object element) { return String.valueOf(((Task)element).getMaxIterations()); } });
+		colMaxIter.setEditingSupport(new org.eclipse.jface.viewers.EditingSupport(tableViewer) {
+			@Override protected void setValue(Object element, Object value) { try { ((Task)element).setMaxIterations(Integer.parseInt(String.valueOf(value))); editor.setDirty(true); tableViewer.update(element, null); } catch (Exception e) {} }
+			@Override protected Object getValue(Object element) { return String.valueOf(((Task)element).getMaxIterations()); }
+			@Override protected org.eclipse.jface.viewers.CellEditor getCellEditor(Object element) { return new org.eclipse.jface.viewers.TextCellEditor(tableViewer.getTable()); }
+			@Override protected boolean canEdit(Object element) { return true; }
+		});
 	}
 
 	public void handleMoveTask(int direction) {

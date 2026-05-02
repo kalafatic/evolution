@@ -38,6 +38,106 @@ import org.eclipse.emf.ecore.util.InternalEList;
  */
 public class ChatThreadImpl extends MinimalEObjectImpl.Container implements ChatThread {
 	/**
+	 * The default value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean iterativeMode = ITERATIVE_MODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSelfIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean SELF_ITERATIVE_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSelfIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isDarwinMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean DARWIN_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isDarwinMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean darwinMode = DARWIN_MODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isGitAutomation()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean GIT_AUTOMATION_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isGitAutomation()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean gitAutomation = GIT_AUTOMATION_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getMaxIterations() <em>Max Iterations</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMaxIterations()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int MAX_ITERATIONS_EDEFAULT = -1;
+
+	/**
+	 * The cached value of the '{@link #getMaxIterations() <em>Max Iterations</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMaxIterations()
+	 * @generated
+	 * @ordered
+	 */
+	protected int maxIterations = MAX_ITERATIONS_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getId() <em>Id</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -84,6 +184,121 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.CHAT_THREAD;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isIterativeMode() {
+		return iterativeMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setIterativeMode(boolean newIterativeMode) {
+		boolean oldIterativeMode = iterativeMode;
+		iterativeMode = newIterativeMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__ITERATIVE_MODE, oldIterativeMode, iterativeMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isSelfIterativeMode() {
+		return selfIterativeMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSelfIterativeMode(boolean newSelfIterativeMode) {
+		boolean oldSelfIterativeMode = selfIterativeMode;
+		selfIterativeMode = newSelfIterativeMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isDarwinMode() {
+		return darwinMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setDarwinMode(boolean newDarwinMode) {
+		boolean oldDarwinMode = darwinMode;
+		darwinMode = newDarwinMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__DARWIN_MODE, oldDarwinMode, darwinMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isGitAutomation() {
+		return gitAutomation;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGitAutomation(boolean newGitAutomation) {
+		boolean oldGitAutomation = gitAutomation;
+		gitAutomation = newGitAutomation;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__GIT_AUTOMATION, oldGitAutomation, gitAutomation));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getMaxIterations() {
+		return maxIterations;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setMaxIterations(int newMaxIterations) {
+		int oldMaxIterations = maxIterations;
+		maxIterations = newMaxIterations;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__MAX_ITERATIONS, oldMaxIterations, maxIterations));
 	}
 
 	/**
@@ -144,6 +359,16 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
+			case OrchestrationPackage.CHAT_THREAD__ITERATIVE_MODE:
+				return isIterativeMode();
+			case OrchestrationPackage.CHAT_THREAD__SELF_ITERATIVE_MODE:
+				return isSelfIterativeMode();
+			case OrchestrationPackage.CHAT_THREAD__DARWIN_MODE:
+				return isDarwinMode();
+			case OrchestrationPackage.CHAT_THREAD__GIT_AUTOMATION:
+				return isGitAutomation();
+			case OrchestrationPackage.CHAT_THREAD__MAX_ITERATIONS:
+				return getMaxIterations();
 			case OrchestrationPackage.CHAT_THREAD__ID:
 				return getId();
 			case OrchestrationPackage.CHAT_THREAD__MESSAGES:
@@ -161,6 +386,21 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
+			case OrchestrationPackage.CHAT_THREAD__ITERATIVE_MODE:
+				setIterativeMode((Boolean)newValue);
+				return;
+			case OrchestrationPackage.CHAT_THREAD__SELF_ITERATIVE_MODE:
+				setSelfIterativeMode((Boolean)newValue);
+				return;
+			case OrchestrationPackage.CHAT_THREAD__DARWIN_MODE:
+				setDarwinMode((Boolean)newValue);
+				return;
+			case OrchestrationPackage.CHAT_THREAD__GIT_AUTOMATION:
+				setGitAutomation((Boolean)newValue);
+				return;
+			case OrchestrationPackage.CHAT_THREAD__MAX_ITERATIONS:
+				setMaxIterations((Integer)newValue);
+				return;
 			case OrchestrationPackage.CHAT_THREAD__ID:
 				setId((String)newValue);
 				return;
@@ -180,6 +420,21 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
+			case OrchestrationPackage.CHAT_THREAD__ITERATIVE_MODE:
+				setIterativeMode(ITERATIVE_MODE_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHAT_THREAD__SELF_ITERATIVE_MODE:
+				setSelfIterativeMode(SELF_ITERATIVE_MODE_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHAT_THREAD__DARWIN_MODE:
+				setDarwinMode(DARWIN_MODE_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHAT_THREAD__GIT_AUTOMATION:
+				setGitAutomation(GIT_AUTOMATION_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHAT_THREAD__MAX_ITERATIONS:
+				setMaxIterations(MAX_ITERATIONS_EDEFAULT);
+				return;
 			case OrchestrationPackage.CHAT_THREAD__ID:
 				setId(ID_EDEFAULT);
 				return;
@@ -198,6 +453,16 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
+			case OrchestrationPackage.CHAT_THREAD__ITERATIVE_MODE:
+				return iterativeMode != ITERATIVE_MODE_EDEFAULT;
+			case OrchestrationPackage.CHAT_THREAD__SELF_ITERATIVE_MODE:
+				return selfIterativeMode != SELF_ITERATIVE_MODE_EDEFAULT;
+			case OrchestrationPackage.CHAT_THREAD__DARWIN_MODE:
+				return darwinMode != DARWIN_MODE_EDEFAULT;
+			case OrchestrationPackage.CHAT_THREAD__GIT_AUTOMATION:
+				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
+			case OrchestrationPackage.CHAT_THREAD__MAX_ITERATIONS:
+				return maxIterations != MAX_ITERATIONS_EDEFAULT;
 			case OrchestrationPackage.CHAT_THREAD__ID:
 				return ID_EDEFAULT == null ? id != null : !ID_EDEFAULT.equals(id);
 			case OrchestrationPackage.CHAT_THREAD__MESSAGES:
@@ -216,7 +481,17 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 		if (eIsProxy()) return super.toString();
 
 		StringBuilder result = new StringBuilder(super.toString());
-		result.append(" (id: ");
+		result.append(" (iterativeMode: ");
+		result.append(iterativeMode);
+		result.append(", selfIterativeMode: ");
+		result.append(selfIterativeMode);
+		result.append(", darwinMode: ");
+		result.append(darwinMode);
+		result.append(", gitAutomation: ");
+		result.append(gitAutomation);
+		result.append(", maxIterations: ");
+		result.append(maxIterations);
+		result.append(", id: ");
 		result.append(id);
 		result.append(')');
 		return result.toString();

@@ -309,6 +309,15 @@ public class AiChatPage extends AEvoPage {
         promptInstructions.setIterativeMode(instructionsGroup.isIterative());
         promptInstructions.setSelfIterativeMode(instructionsGroup.isSelfIterative());
         orchestrator.setDarwinMode(instructionsGroup.isDarwin());
+
+        if (currentThread != null) {
+            currentThread.setIterativeMode(instructionsGroup.isIterative());
+            currentThread.setSelfIterativeMode(instructionsGroup.isSelfIterative());
+            currentThread.setDarwinMode(instructionsGroup.isDarwin());
+            currentThread.setGitAutomation(instructionsGroup.isGitAutomationCheck());
+            currentThread.setMaxIterations(instructionsGroup.getMaxIterations());
+        }
+
         boolean wasAutoApprove = promptInstructions.isAutoApprove();
         boolean isAutoApprove = instructionsGroup.isAutoApprove();
         promptInstructions.setAutoApprove(isAutoApprove);
@@ -985,9 +994,11 @@ public class AiChatPage extends AEvoPage {
 		instructionsGroup.setRequest(prompt);
 
 		// 3. Set mode
-		instructionsGroup.setIterative(false);
-		instructionsGroup.setSelfIterative(false);
-		instructionsGroup.setDarwin(false);
+		instructionsGroup.setIterative(task.isIterativeMode());
+		instructionsGroup.setSelfIterative(task.isSelfIterativeMode());
+		instructionsGroup.setDarwin(task.isDarwinMode());
+		instructionsGroup.setGitAutomation(task.isGitAutomation());
+		instructionsGroup.setMaxIterations(task.getMaxIterations());
 
 		if ("SELF_DEV_MODE".equals(task.getType())) {
 			instructionsGroup.setSelfIterative(true);
@@ -1070,6 +1081,8 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public String getCurrentThreadName() { return currentThread != null ? currentThread.getId() : "Default"; }
+
+	public ChatThread getCurrentThread() { return currentThread; }
 
 	public MultiPageEditor getEditor() { return editor; }
 

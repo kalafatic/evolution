@@ -224,14 +224,25 @@ public class InstructionsGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (orchestrator != null) {
-            darwinCheck.setSelection(orchestrator.isDarwinMode());
+            eu.kalafatic.evolution.model.orchestration.ChatThread thread = page.getCurrentThread();
+            if (thread != null) {
+                iterativeCheck.setSelection(thread.isIterativeMode());
+                selfIterativeCheck.setSelection(thread.isSelfIterativeMode());
+                darwinCheck.setSelection(thread.isDarwinMode());
+                gitAutomationCheck.setSelection(thread.isGitAutomation());
+                maxIterationsSpinner.setSelection(thread.getMaxIterations());
+            } else {
+                darwinCheck.setSelection(orchestrator.isDarwinMode());
+                if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
+                    PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
+                    iterativeCheck.setSelection(promptInstructions.isIterativeMode());
+                    selfIterativeCheck.setSelection(promptInstructions.isSelfIterativeMode());
+                    gitAutomationCheck.setSelection(promptInstructions.isGitAutomation());
+                    maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
+                }
+            }
             if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
-                PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
-                iterativeCheck.setSelection(promptInstructions.isIterativeMode());
-                selfIterativeCheck.setSelection(promptInstructions.isSelfIterativeMode());
-                autoApproveCheck.setSelection(promptInstructions.isAutoApprove());
-                gitAutomationCheck.setSelection(promptInstructions.isGitAutomation());
-                maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
+                autoApproveCheck.setSelection(orchestrator.getAiChat().getPromptInstructions().isAutoApprove());
             }
         }
     }
@@ -239,17 +250,25 @@ public class InstructionsGroup extends AEvoGroup {
     @Override
     public void updateModel() {
         if (orchestrator != null) {
+            eu.kalafatic.evolution.model.orchestration.ChatThread thread = page.getCurrentThread();
+            if (thread != null) {
+                thread.setIterativeMode(iterativeCheck.getSelection());
+                thread.setSelfIterativeMode(selfIterativeCheck.getSelection());
+                thread.setDarwinMode(darwinCheck.getSelection());
+                thread.setGitAutomation(gitAutomationCheck.getSelection());
+                thread.setMaxIterations(maxIterationsSpinner.getSelection());
+            }
+
             orchestrator.setDarwinMode(darwinCheck.getSelection());
-        	if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
-        	
-        	PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
-        	
-        	if (promptInstructions == null) {
-        		promptInstructions = OrchestrationFactory.eINSTANCE.createPromptInstructions();
-        		orchestrator.getAiChat().setPromptInstructions(promptInstructions);
-        	}        	
-        	promptInstructions.setIterativeMode(iterativeCheck.getSelection());
-        	promptInstructions.setSelfIterativeMode(selfIterativeCheck.getSelection());
+            if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+
+            PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
+            if (promptInstructions == null) {
+                promptInstructions = OrchestrationFactory.eINSTANCE.createPromptInstructions();
+                orchestrator.getAiChat().setPromptInstructions(promptInstructions);
+            }
+            promptInstructions.setIterativeMode(iterativeCheck.getSelection());
+            promptInstructions.setSelfIterativeMode(selfIterativeCheck.getSelection());
             promptInstructions.setAutoApprove(autoApproveCheck.getSelection());
             promptInstructions.setGitAutomation(gitAutomationCheck.getSelection());
             promptInstructions.setPreferredMaxIterations(maxIterationsSpinner.getSelection());
@@ -300,7 +319,13 @@ public class InstructionsGroup extends AEvoGroup {
     }
     public boolean isAutoApprove() { return autoApproveCheck.getSelection(); }
     public int getMaxIterations() { return maxIterationsSpinner.getSelection(); }
+    public void setMaxIterations(int maxIterations) {
+        maxIterationsSpinner.setSelection(maxIterations);
+    }
     public boolean isGitAutomationCheck() { return gitAutomationCheck.getSelection(); }
+    public void setGitAutomation(boolean gitAutomation) {
+        gitAutomationCheck.setSelection(gitAutomation);
+    }
 
     public void setOrchestrationRunning(boolean running) {
         sendButton.setEnabled(!running);

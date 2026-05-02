@@ -743,6 +743,56 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EAttribute getTask_IterativeMode() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(26);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EAttribute getTask_SelfIterativeMode() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(27);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EAttribute getTask_DarwinMode() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(28);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EAttribute getTask_GitAutomation() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(29);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EAttribute getTask_MaxIterations() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(30);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	@Override
@@ -2723,6 +2773,56 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EAttribute getChatThread_IterativeMode() {
+		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EAttribute getChatThread_SelfIterativeMode() {
+		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EAttribute getChatThread_DarwinMode() {
+		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EAttribute getChatThread_GitAutomation() {
+		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated NOT
+	 */
+	@Override
+	public EAttribute getChatThread_MaxIterations() {
+		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	@Override
@@ -3022,7 +3122,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * guarded to have no affect on any invocation but its first.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated
+	 * @generated NOT
 	 */
 	public void createPackageContents() {
 		if (isCreated) return;
@@ -3056,6 +3156,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(taskEClass, TASK__LOG_LEVEL);
 		createEAttribute(taskEClass, TASK__FEEDBACK_LEVEL);
 		createEAttribute(taskEClass, TASK__AUTO_ESCALATE);
+		createEAttribute(taskEClass, TASK__ITERATIVE_MODE);
+		createEAttribute(taskEClass, TASK__SELF_ITERATIVE_MODE);
+		createEAttribute(taskEClass, TASK__DARWIN_MODE);
+		createEAttribute(taskEClass, TASK__GIT_AUTOMATION);
+		createEAttribute(taskEClass, TASK__MAX_ITERATIONS);
 
 		agentEClass = createEClass(AGENT);
 		createEAttribute(agentEClass, AGENT__ID);
@@ -3287,6 +3392,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		chatThreadEClass = createEClass(CHAT_THREAD);
 		createEAttribute(chatThreadEClass, CHAT_THREAD__ID);
 		createEReference(chatThreadEClass, CHAT_THREAD__MESSAGES);
+		createEAttribute(chatThreadEClass, CHAT_THREAD__ITERATIVE_MODE);
+		createEAttribute(chatThreadEClass, CHAT_THREAD__SELF_ITERATIVE_MODE);
+		createEAttribute(chatThreadEClass, CHAT_THREAD__DARWIN_MODE);
+		createEAttribute(chatThreadEClass, CHAT_THREAD__GIT_AUTOMATION);
+		createEAttribute(chatThreadEClass, CHAT_THREAD__MAX_ITERATIONS);
 
 		chatMessageEClass = createEClass(CHAT_MESSAGE);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__INDEX);
@@ -3334,7 +3444,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * method is guarded to have no affect on any invocation but its first.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated
+	 * @generated NOT
 	 */
 	public void initializePackageContents() {
 		if (isInitialized) return;
@@ -3383,6 +3493,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getTask_LogLevel(), this.getLogLevel(), "logLevel", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_FeedbackLevel(), this.getFeedbackLevel(), "feedbackLevel", null, 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getTask_AutoEscalate(), ecorePackage.getEBoolean(), "autoEscalate", "true", 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_DarwinMode(), ecorePackage.getEBoolean(), "darwinMode", "false", 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", "false", 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getTask_MaxIterations(), ecorePackage.getEInt(), "maxIterations", "-1", 0, 1, Task.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(agentEClass, Agent.class, "Agent", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getAgent_Id(), ecorePackage.getEString(), "id", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -3614,6 +3729,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEClass(chatThreadEClass, ChatThread.class, "ChatThread", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getChatThread_Id(), ecorePackage.getEString(), "id", null, 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getChatThread_Messages(), this.getChatMessage(), null, "messages", null, 0, -1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatThread_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatThread_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatThread_DarwinMode(), ecorePackage.getEBoolean(), "darwinMode", "false", 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatThread_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", "false", 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatThread_MaxIterations(), ecorePackage.getEInt(), "maxIterations", "-1", 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(chatMessageEClass, ChatMessage.class, "ChatMessage", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getChatMessage_Index(), ecorePackage.getEInt(), "index", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
