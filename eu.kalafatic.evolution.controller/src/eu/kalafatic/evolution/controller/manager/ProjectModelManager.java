@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.manager;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -302,25 +303,35 @@ public class ProjectModelManager {
     }
 
     /**
-     * Fetches available LLM models based on the selected mode.
+     * Fetches available LLM models based on the selected mode(s).
      *
      * @param orchestrator The orchestrator containing configuration (URLs, etc). Can be null.
-     * @param mode The AI mode (LOCAL, REMOTE, HYBRID).
+     * @param modes The AI modes to filter by (LOCAL, REMOTE, HYBRID, PROXY).
      * @return A list of model names.
      */
-    public List<String> getLlmModels(Orchestrator orchestrator, AiMode mode) {
+    public List<String> getLlmModels(Orchestrator orchestrator, AiMode... modes) {
         List<String> modelNames = new ArrayList<>();
-        if (mode == null) return modelNames;
+        if (modes == null || modes.length == 0) return modelNames;
 
+        List<AiMode> modeList = Arrays.asList(modes);
         List<AIProvider> allModels = getAllModels(orchestrator);
+
         for (AIProvider info : allModels) {
-            if (mode == AiMode.LOCAL && info.isLocal() && !isProxy(info)) {
-                modelNames.add(info.getName());
-            } else if (mode == AiMode.REMOTE && !info.isLocal()) {
-                modelNames.add(info.getName());
-            } else if (mode == AiMode.HYBRID) {
-                modelNames.add(info.getName());
-            } else if (mode == AiMode.PROXY && isProxy(info)) {
+            boolean include = false;
+            if (modeList.contains(AiMode.LOCAL) && info.isLocal() && !isProxy(info)) {
+                include = true;
+            }
+            if (modeList.contains(AiMode.PROXY) && isProxy(info)) {
+                include = true;
+            }
+            if (modeList.contains(AiMode.REMOTE) && !info.isLocal()) {
+                include = true;
+            }
+            if (modeList.contains(AiMode.HYBRID) && info.isLocal() && !isProxy(info)) {
+                include = true;
+            }
+
+            if (include) {
                 modelNames.add(info.getName());
             }
         }
@@ -335,14 +346,7 @@ public class ProjectModelManager {
      * @return List of local model names.
      */
     public List<String> getLocalModelNames(Orchestrator orchestrator) {
-        List<String> names = new ArrayList<>();
-        List<AIProvider> all = getAllModels(orchestrator);
-        for (AIProvider p : all) {
-            if (p.isLocal() && !isProxy(p)) {
-                names.add(p.getName());
-            }
-        }
-        return names;
+        return getLlmModels(orchestrator, AiMode.LOCAL);
     }
 
     /**
@@ -352,14 +356,7 @@ public class ProjectModelManager {
      * @return List of remote/hybrid model names.
      */
     public List<String> getRemoteModelNames(Orchestrator orchestrator) {
-        List<String> names = new ArrayList<>();
-        List<AIProvider> all = getAllModels(orchestrator);
-        for (AIProvider p : all) {
-            if (!p.isLocal() || isHybrid(p) || isProxy(p)) {
-                names.add(p.getName());
-            }
-        }
-        return names;
+        return getLlmModels(orchestrator, AiMode.REMOTE);
     }
 
     /**

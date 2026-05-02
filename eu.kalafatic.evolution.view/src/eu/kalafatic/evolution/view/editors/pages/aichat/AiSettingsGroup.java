@@ -152,7 +152,7 @@ public class AiSettingsGroup extends AEvoGroup {
             // 1. Populate AI Remote combo (contains all non-local models)
             String currentRemote = aiRemoteCombo.getText();
             aiRemoteCombo.removeAll();
-            List<String> remoteModels = ProjectModelManager.getInstance().getRemoteModelNames(orchestrator);
+            List<String> remoteModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.REMOTE);
             for (String n : remoteModels) aiRemoteCombo.add(n);
 
             if (!currentRemote.isEmpty()) {
@@ -184,7 +184,7 @@ public class AiSettingsGroup extends AEvoGroup {
                 if (mode == AiMode.PROXY) {
                     modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
                 } else {
-                    modelsToShow = ProjectModelManager.getInstance().getLocalModelNames(orchestrator);
+                    modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.LOCAL, AiMode.HYBRID);
                 }
 
                 for (String n : modelsToShow) localModelCombo.add(n);

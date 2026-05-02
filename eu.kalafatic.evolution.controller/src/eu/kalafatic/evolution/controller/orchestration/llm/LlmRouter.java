@@ -40,8 +40,8 @@ public class LlmRouter {
         if (context != null) context.log("LlmRouter: Routing request in " + mode + " mode.");
 
         try {
-            if (mode == AiMode.REMOTE) {
-                return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            if (mode == AiMode.LOCAL) {
+                return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
             } else if (mode == AiMode.PROXY) {
                 if (context != null) context.log("LlmRouter-Proxy: Routing via Ollama proxy...");
                 return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
@@ -58,6 +58,8 @@ public class LlmRouter {
                 if (context != null) context.log("LlmRouter-Hybrid: Step 3 - Verifying response locally...");
                 // 3. Optional: Verify/Sanitize response locally
                 return verifyResponseLocally(orchestrator, remoteResponse, temperature, proxyUrl, context);
+            } else if (mode == AiMode.REMOTE) {
+                return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
             }
         } catch (Exception e) {
             // @evo:20:A reason=resilient-routing-fallback
