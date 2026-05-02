@@ -26,11 +26,11 @@ public class LlmIntentClassifier implements IIntentClassifier {
             return result;
         }
 
-        if (lowerInput.matches("^\\s*(yes|ok|okay|proceed|go ahead|yep|sure)\\s*[!.]*\\s*$")) {
+        if (lowerInput.matches("^\\s*(yes|ok|okay|proceed|go ahead|yep|sure|approve|approved|reject|rejected|cancel|variant)\\s*[!.]*\\s*$") || lowerInput.contains("approve variant")) {
             JSONObject result = new JSONObject();
             result.put("intent", "continue");
             result.put("confidence", 1.0);
-            result.put("reason", "Fast-track confirmation detection.");
+            result.put("reason", "Fast-track confirmation/decision detection.");
             return result;
         }
 

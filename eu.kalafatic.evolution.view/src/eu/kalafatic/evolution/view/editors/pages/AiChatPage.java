@@ -638,9 +638,11 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	private void startSelfDevAction(String request) {
+		ThreadState state = getCurrentThreadState();
+		if (state.isRunning) return;
+
 		instructionsGroup.resetBackground();
 		if (request == null || request.isEmpty()) request = "Analyze the project and suggest improvements.";
-		ThreadState state = getCurrentThreadState();
 		if (state.currentContext != null && state.currentContext.isWaitingForInput()) {
 			provideInput(request);
 			instructionsGroup.setRequest("");
@@ -672,7 +674,7 @@ public class AiChatPage extends AEvoPage {
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
 				context.setThreadId(threadId);
 				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
-				context.setPlatformMode(new eu.kalafatic.evolution.controller.orchestration.ModeRouter().routeFast(finalRequest, orchestrator));
+				context.setPlatformMode(new eu.kalafatic.evolution.controller.orchestration.ModeRouter().route(finalRequest, orchestrator));
 				state.currentContext = context;
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) processLogEntry(log, threadId); }));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {

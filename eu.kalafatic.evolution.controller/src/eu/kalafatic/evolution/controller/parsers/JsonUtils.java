@@ -169,18 +169,53 @@ public class JsonUtils {
         int firstBracket = text.indexOf("[");
         int firstBrace = text.indexOf("{");
 
-        // If bracket is first, try standard array extraction
+        // 1. Try standard array extraction if [ is present and before {
         if (firstBracket != -1 && (firstBrace == -1 || firstBracket < firstBrace)) {
             JSONArray arr = extractJsonArray(text);
             if (arr != null && arr.length() > 0) return arr;
         }
 
-        // If brace is first or array extraction failed/empty, try object extraction and conversion
+        // 2. Try to find multiple JSON objects and wrap them into an array
+        JSONArray multiObjArr = new JSONArray();
+        int searchPos = 0;
+        while (searchPos < text.length()) {
+            int start = text.indexOf("{", searchPos);
+            if (start == -1) break;
+
+            // Try to find the matching closing brace
+            int braceCount = 0;
+            int end = -1;
+            for (int i = start; i < text.length(); i++) {
+                char c = text.charAt(i);
+                if (c == '{') braceCount++;
+                else if (c == '}') braceCount--;
+
+                if (braceCount == 0) {
+                    end = i;
+                    break;
+                }
+            }
+
+            if (end != -1) {
+                String candidate = text.substring(start, end + 1);
+                try {
+                    JSONObject obj = new JSONObject(candidate);
+                    multiObjArr.put(obj);
+                    searchPos = end + 1;
+                } catch (JSONException e) {
+                    searchPos = start + 1;
+                }
+            } else {
+                break;
+            }
+        }
+        if (multiObjArr.length() > 0) return multiObjArr;
+
+        // 3. Fallback: try object extraction and conversion if only one object was found or step 2 failed
         if (firstBrace != -1) {
             JSONObject obj = extractJsonObject(text);
             if (obj != null) {
                 // If the object contains a single key that is an array, return that array
-                // (e.g. {"tasks": [...]})
                 if (obj.length() == 1) {
                     String key = (String) obj.keys().next();
                     Object val = obj.get(key);
@@ -193,7 +228,7 @@ public class JsonUtils {
                 List<String> keys = new ArrayList<>();
                 obj.keys().forEachRemaining(k -> keys.add((String) k));
 
-                // Sort keys if they appear to be numeric to preserve LLM intended order
+                // Sort keys if they appear to be numeric
                 boolean allNumeric = keys.stream().allMatch(k -> k.matches("\\d+"));
                 if (allNumeric) {
                     keys.sort((a, b) -> Integer.compare(Integer.parseInt(a), Integer.parseInt(b)));
@@ -206,7 +241,6 @@ public class JsonUtils {
                     if (val instanceof JSONObject) {
                         arr.put(val);
                     } else if (val instanceof JSONArray) {
-                        // If one of the keys is an array, merge its contents
                         JSONArray subArr = (JSONArray) val;
                         for (int i = 0; i < subArr.length(); i++) {
                             arr.put(subArr.get(i));
@@ -217,7 +251,6 @@ public class JsonUtils {
             }
         }
 
-        // Final fallback: try array extraction again (in case it was after an object)
         return extractJsonArray(text);
     }
 }
