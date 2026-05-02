@@ -307,5 +307,116 @@ State machine is:
 
 global authority
 
+/** CHATGPT */
+This is a strong and actually correct direction, but it still has one subtle architectural refinement needed to make it robust under real iterative load.
+
+I’ll tighten it without changing your intent.
+
+🧠 1. What’s already correct
+
+Your conclusions are solid:
+
+✔ State machine authority
+Yes — this is the real fix.
+
+✔ Dumb executor model
+Yes — Orchestrator should not “think”.
+
+✔ Logic unification
+Yes — multiple entry paths must converge.
+
+So the direction is correct.
+
+⚠️ 2. The missing piece (critical)
+
+All three points still assume:
+
+“if we define roles correctly, the system will behave correctly”
+
+But your system is already showing that:
+
+behavior ≠ structure
+
+Meaning:
+
+even correct roles still re-introduce planning
+even “dumb executor” layers start re-interpreting state
+🔥 3. The real missing concept: SINGLE TRANSITION CONTROLLER
+
+You don’t just need:
+
+state machine authority
+
+You need:
+
+a single transition engine that is the ONLY place allowed to change state
+
+Right model:
+IterationManager = State Transition Authority
+
+NOT:
+Orchestrator
+TaskPlanner
+DarwinEngine
+UI
+
+🧱 4. Correct architecture (clean version)
+🟢 IterationManager (ONLY state writer)
+owns state transitions
+enforces phase rules
+prevents re-entry
+🔵 DarwinEngine (strategy only)
+generates plan candidates
+no execution awareness
+no state mutation
+🔴 Orchestrator (pure executor)
+executes given plan
+no interpretation
+no decision-making
+🟡 UI
+observes state only
+optionally triggers “start iteration”
+
+⚠️ 5. Important correction to your “dumb executor” idea
+
+You wrote:
+Orchestrator should be a deterministic tool executor
+✔ correct
+
+BUT:
+👉 It must also be state-ignorant except for gating
+Meaning:
+IF state != EXECUTING → do nothing
+
+NOT:
+IF state == PLAN_LOCKED → decide how to execute safely
+
+🧠 6. Why your system was drifting before
+
+Because:
+multiple components were allowed to interpret "what phase means"
+
+So you got:
+re-analysis in Orchestrator
+re-planning in TaskPlanner
+re-evaluation in DarwinEngine
+
+🔥 7. Your corrected conclusions (tight version)
+
+Here is a refined version of your text:
+
+✔ Improved Architectural Conclusions
+State Transition Authority: All system state changes must be centralized in a single IterationManager. No component (including Orchestrator, TaskPlanner, or DarwinEngine) is allowed to mutate or reinterpret system state independently.
+Pure Execution Layer: The EvolutionOrchestrator must operate as a stateless executor, consuming only finalized plans and executing them deterministically without planning, interpretation, or re-analysis.
+Strategy Isolation: The DarwinEngine is strictly responsible for generating and evaluating candidate plans but is prohibited from interacting with execution or state transition logic.
+Unified Iteration Flow: All entry points (UI, Supervisor, debug triggers) must converge into a single iteration pipeline managed by IterationManager to prevent divergence between execution contexts.
+
+💡 8. Key insight (this is your breakthrough point)
+
+What you are building is no longer:
+multi-agent orchestration
+It is:
+a deterministic state-transition-driven evolutionary kernel
+
 /** JULES */
-In Simple Darwin mode, the transition to a `PLAN_LOCKED` state after the DarwinEngine selection is critical. Currently, the Orchestrator "thinks" because it hasn't been structurally told that the thinking phase is over. Shifting to a state-driven machine ensures the Orchestrator remains a dumb executor of the strategy, eliminating the logic drift identified in the Simple Darwin analysis.
+In Simple Darwin mode, the transition to a `PLAN_LOCKED` state after the DarwinEngine selection is critical. Currently, the Orchestrator "thinks" because it hasn't been structurally told that the thinking phase is over. Shifting to a state-driven machine where `IterationManager` is the sole Transition Authority ensuring the Orchestrator is state-ignorant prevents the component-level re-interpretation that currently degrades the Darwinian flow.
