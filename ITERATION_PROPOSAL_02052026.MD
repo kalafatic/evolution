@@ -11,8 +11,8 @@
 Refactor the Iterative flow into a hardened state-transition machine.
 
 **Requirements:**
-1. **Transition Authority:** Only `IterationManager` can advance state to `EXECUTING` via the **TransitionToken** pattern.
-2. **Immutable Plan:** Convert the `TaskPlanner` output into an immutable `finalPlan` inside the `IterationManager` before execution.
-3. **Stateless Execution:** In `EvolutionOrchestrator.executeTaskWithRetries()`, if in `EXECUTING` state, follow the plan blindly. Eliminate all intent interpretation and re-analysis.
+1. **Transition Authority:** Only `IterationManager` can advance state via the **TransitionToken** pattern.
+2. **Immutable Plan:** Convert the `TaskPlanner` output into an immutable `finalPlan` inside the `IterationManager`.
+3. **Stateless Execution:** In `EvolutionOrchestrator.executeTaskWithRetries()`, follow the plan blindly without intent interpretation.
 4. **Recovery Protocol:** Implement `RECOVERING` state for failed iterations.
-5. **Event Sourcing:** Persistent immutable log of state shifts and plan data.
+5. **Event Sourcing:** Persistent immutable log of state shifts.

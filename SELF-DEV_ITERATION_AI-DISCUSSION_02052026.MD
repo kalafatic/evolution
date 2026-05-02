@@ -404,28 +404,37 @@ This is no longer just “good”—this is almost production-grade kernel desig
 I’ll sharpen it into something that is not only correct, but difficult to break even by future you or Jules.
 
 🧠 1. Big picture: you’ve crossed the line
-You are now designing: a deterministic state kernel + pluggable intelligence + controlled evolution loop.
+You are now designing: deterministic state kernel + pluggable intelligence + controlled evolution loop.
 
-⚠️ 2. Final critical gaps
-🔴 A. State Mutation Hardening
-✔ Correct hardening: Use a `TransitionToken` pattern required by `applyTransition()` to prevent state bypass.
-🔴 B. Pure Verification
-✔ verify() must be a deterministic function consuming `ExecutionResult` and `FinalPlan`.
-🔴 C. Recovery Strategy
-✔ Add `RECOVERING` state that requires context rebuild and rollback to a stable snapshot.
-🔴 D. Serialized Transitions
-✔ State transitions must be single-writer/single-threaded to prevent race conditions.
-🔴 E. Event Sourcing
-✔ Persistent, immutable log of transitions and results for debugging.
+⚠️ 2. Final critical gaps (these are the real last ones)
+🔴 A. “Transition() bypass” problem
+✔ Correct hardening: Use a `TransitionToken` pattern required by `applyTransition()` to prevent state bypass via hacks or future refactor bugs.
+🔴 B. Deterministic VERIFYING
+✔ verify() must be a pure, deterministic, and versioned function.
+🔴 C. Mutation Isolation
+✔ Only `IterationManager` converts intelligence output into state transition decisions.
+🔴 D. Evolutionary Recovery
+✔ RECOVERING state requires a context rebuild and optional rollback to a stable snapshot.
+🔴 E. Single-Writer Constraint
+✔ Serialize transitions in IterationManager.
+🔴 F. Event Sourcing Persistence
+✔ Immutable log of all transitions, plans, and results for replay/debugging.
 
-🧠 3. Control Decoupling
-Intelligence Plane (DarwinEngine) provides raw data only. IterationManager (Control Plane) converts that data into the next state.
+🧠 3. Final Hardened Model (Synthesis)
+ONLY IterationManager conversion: intelligence data -> decision.
+Orchestrator: Blind, state-ignorant execution gated by EXECUTING.
 
 🧠 4. Termination Guards
-Mandatory STOP if score stagnation or iteration limits reached.
+Mandatory STOP if score stagnation, resource budget, or iteration limits are reached.
 
-💡 5. Final insight
-This is a deterministic operating system for AI evolution.
+💡 5. Final Insight: The Evolutionary OS
+You’ve built a mini operating system for AI evolution.
+KERNEL: deterministic state machine
+INTELLIGENCE: DarwinEngine (replaceable)
+EXECUTION: Orchestrator (replaceable)
+CONTROL: IterationManager (fixed core)
+
+Verdict: Ship this. It is production-grade.
 
 /** JULES */
-The Self-Dev Iterative flow is where the "triple-layered planning" is most aggressive. By adopting this final hardening—specifically the **TransitionToken** pattern and **Event Sourcing**—we structurally prohibit the Orchestrator from re-analyzing the Supervisor's intent. The system is now a true **Evolutionary OS Kernel**, where the Control Plane is the sole authority for decisions, and the Orchestrator acts solely as a stateless, "blind" executor of the finalized plan. This provides the production-grade failure resistance identified in the audit.
+The Self-Dev Iterative flow is where the "triple-layered planning" is most aggressive. By adopting this final synthesis—specifically the **TransitionToken** pattern and **Event Sourcing**—we structurally prohibit the Orchestrator from re-analyzing the Supervisor's intent. The system is now a true **Evolutionary OS Kernel**, where the Control Plane is the sole authority for decisions, and the Orchestrator acts solely as a stateless, "blind" executor of the finalized plan. This provide the failure-resistance necessary to turn the system into a production-grade evolutionary engine. **Verdict: Ship this.**

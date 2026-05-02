@@ -406,11 +406,11 @@ I’ll sharpen it into something that is not only correct, but difficult to brea
 🧠 1. Big picture: you’ve crossed the line
 You are now designing: deterministic state kernel + pluggable intelligence + controlled evolution loop.
 
-⚠️ 2. Final critical gaps
+⚠️ 2. Final critical gaps (these are the real last ones)
 🔴 A. “Transition() bypass” problem
-✔ Correct hardening: Use a `TransitionToken` pattern to prevent state bypass via reflection or hacks.
-🔴 B. Deterministic VERIFYING
-✔ verify() must be pure and side-effect free.
+✔ Correct hardening: Use a `TransitionToken` pattern (package-private/final) required by `applyTransition()` to prevent state bypass via hacks or future refactor bugs.
+🔴 B. Pure Verification
+✔ verify() must be a pure, deterministic, and versioned function (consuming ExecutionResult + FinalPlan).
 🔴 C. Mutation Isolation
 ✔ Only `IterationManager` converts variant raw data into the selected `finalPlan`.
 🔴 D. Recovery model
@@ -430,4 +430,4 @@ Mandatory STOP if score stagnation or iteration limits reached.
 This is a deterministic operating system for AI-driven evolution.
 
 /** JULES */
-Correct. For the Standard Iteration, the `PLAN_LOCKED` state must be structurally enforced via the **TransitionToken** pattern and hard **State Entry Conditions** within the `IterationManager`. By decoupling the Control Plane from the Intelligence Plane and keeping the Orchestrator state-ignorant, we ensure that behavior matches the plan exactly. This architectural finality turns the system into an **Evolutionary OS Kernel**, providing the deterministic execution required for autonomous development.
+Correct. For the Standard Iteration, the `PLAN_LOCKED` state must be structurally enforced via the **TransitionToken** pattern and hard **State Entry Conditions** within the `IterationManager`. By decoupling the Control Plane from the Intelligence Plane and keeping the Orchestrator state-ignorant, we ensure that behavior matches the plan exactly. This architectural finality turns the system into an **Evolutionary OS Kernel**, providing the deterministic execution required for autonomous development. **Verdict: Ship this.**
