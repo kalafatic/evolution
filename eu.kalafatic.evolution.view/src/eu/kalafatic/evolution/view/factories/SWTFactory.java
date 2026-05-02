@@ -88,11 +88,20 @@ public class SWTFactory {
 	public static Button createButton(Composite parent, String text) {
 		return createButton(parent, text, BUTTON_WIDTH);
 	}
-
+	
 	public static Button createButton(Composite parent, String text, int widthHint) {
 		GridData gd = new GridData();
 		gd.widthHint = widthHint;
 		Button btn = new Button(parent, SWT.PUSH);
+		btn.setLayoutData(gd);
+		btn.setText(text);
+		return btn;
+	}
+	
+	public static Button createButton(Composite parent, String text, int style, int widthHint) {
+		GridData gd = new GridData();
+		gd.widthHint = widthHint;
+		Button btn = new Button(parent,style);
 		btn.setLayoutData(gd);
 		btn.setText(text);
 		return btn;

@@ -43,6 +43,7 @@ public class FeedbackGroup extends AEvoGroup {
     private Button autoEscalateCheck;
     private Label autoStatusLabel;
     private boolean isUpdating = false;
+	private Composite feedbackBox;
 
     public FeedbackGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiChatPage page) {
         super(editor, orchestrator);
@@ -79,37 +80,30 @@ public class FeedbackGroup extends AEvoGroup {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Session Interaction & Feedback", 1, false);
 
         // 1. Satisfaction Box
-        satisfactionBox = SWTFactory.createComposite(group, 5);
-        SWTFactory.createLabel(satisfactionBox, "Rate Session (1-5):");
+        satisfactionBox = SWTFactory.createComposite(group, 2);
+        SWTFactory.createLabel(satisfactionBox, "Rate Session (1-5):");        
         satisfactionScale = new Scale(satisfactionBox, SWT.HORIZONTAL);
         satisfactionScale.setMinimum(1);
         satisfactionScale.setMaximum(5);
-        satisfactionScale.setSelection(3);
-        GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 3;
-        satisfactionScale.setLayoutData(gd);
-        SWTFactory.createLabel(satisfactionBox); // Spacer
-
-        SWTFactory.createLabel(satisfactionBox, "Session Feedback:");
-        satisfactionCommentsText = SWTFactory.createText(satisfactionBox, "", SWT.BORDER | SWT.SINGLE);  
-        gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 2;
-        satisfactionCommentsText.setLayoutData(gd);
+        satisfactionScale.setSelection(3);       
+        satisfactionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         
-        Button submitSatButton = toolkit.createButton(satisfactionBox, "Submit Feedback", SWT.PUSH);
+        feedbackBox = SWTFactory.createComposite(group, 3);        
+        SWTFactory.createLabel(feedbackBox, "Session Feedback:");
+        satisfactionCommentsText = SWTFactory.createText(feedbackBox, "", SWT.BORDER | SWT.SINGLE);         
+        Button submitSatButton = SWTFactory.createButton(feedbackBox, "Submit Feedback");
         submitSatButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.submitFeedback(satisfactionScale.getSelection(), satisfactionCommentsText.getText());
             }
         });
-        SWTFactory.createLabel(satisfactionBox); // Spacer
-
+      
         // 2. Approval Box
-        approvalBox = SWTFactory.createComposite(group, 5);
+        approvalBox = SWTFactory.createComposite(group, 4);
         SWTFactory.createLabel(approvalBox, "Action Required:");
         
-        Button approveButton = toolkit.createButton(approvalBox, "Approve", SWT.PUSH);
+        Button approveButton = SWTFactory.createButton(approvalBox, "Approve");
         approveButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -117,7 +111,7 @@ public class FeedbackGroup extends AEvoGroup {
             }
         });
 
-        Button rejectButton = toolkit.createButton(approvalBox, "Reject", SWT.PUSH);
+        Button rejectButton = SWTFactory.createButton(approvalBox, "Reject");
         rejectButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -125,7 +119,7 @@ public class FeedbackGroup extends AEvoGroup {
             }
         });
 
-        Button peerReviewBtn = toolkit.createButton(approvalBox, "Peer Review", SWT.PUSH);
+        Button peerReviewBtn = SWTFactory.createButton(approvalBox, "Peer Review");
         peerReviewBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -135,18 +129,12 @@ public class FeedbackGroup extends AEvoGroup {
         SWTFactory.createLabel(approvalBox); // Spacer
 
         // 3. Input Box
-        inputBox = SWTFactory.createComposite(group, 5);
+        inputBox = SWTFactory.createComposite(group, 3);
         promptLabel = SWTFactory.createLabel(inputBox, "Input Required:", SWT.WRAP);
-        gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 1;
-        promptLabel.setLayoutData(gd);
 
         inputText = SWTFactory.createText(inputBox, "", SWT.BORDER);
-        gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 3;
-        inputText.setLayoutData(gd);
 
-        Button submitButton = toolkit.createButton(inputBox, "Send", SWT.PUSH);
+        Button submitButton = SWTFactory.createButton(inputBox, "Send", SWT.PUSH);
         submitButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -156,26 +144,19 @@ public class FeedbackGroup extends AEvoGroup {
         });
 
         // 4. Feedback Level Controls (Always Visible inside the group)
-        Composite levelBox = toolkit.createComposite(group);
-        org.eclipse.swt.layout.GridLayout levelLayout = new org.eclipse.swt.layout.GridLayout(4, false);
-        levelLayout.marginHeight = 2; levelLayout.marginWidth = 0;
-        levelBox.setLayout(levelLayout);
-        levelBox.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        Composite levelBox = SWTFactory.createComposite(group, 3);
+       
 
-        toolkit.createLabel(levelBox, "Feedback Depth:");
+        SWTFactory.createLabel(levelBox, "Feedback Depth:");
 
-        Composite segmentedControl = toolkit.createComposite(levelBox);
-        org.eclipse.swt.layout.RowLayout rowLayout = new org.eclipse.swt.layout.RowLayout(SWT.HORIZONTAL);
-        rowLayout.spacing = 0;
-        rowLayout.marginHeight = 0;
-        segmentedControl.setLayout(rowLayout);
-
+        Composite segmentedControl = SWTFactory.createComposite(levelBox, SWT.BORDER, 4);
+        
         FeedbackLevel[] levels = FeedbackLevel.values();
         levelButtons = new Button[levels.length];
 
         for (int i = 0; i < levels.length; i++) {
             final FeedbackLevel level = levels[i];
-            levelButtons[i] = toolkit.createButton(segmentedControl, level.getName(), SWT.TOGGLE);
+            levelButtons[i] = SWTFactory.createButton(segmentedControl, level.getName(), SWT.CHECK, SWTFactory.BUTTON_WIDTH);
             final int index = i;
             levelButtons[i].addSelectionListener(new SelectionAdapter() {
                 @Override
@@ -187,7 +168,7 @@ public class FeedbackGroup extends AEvoGroup {
             });
         }
 
-        autoEscalateCheck = toolkit.createButton(levelBox, "Auto Escalation", SWT.CHECK);
+        autoEscalateCheck = SWTFactory.createButton(levelBox, "Auto Escalation", SWT.CHECK, SWTFactory.BUTTON_WIDTH);
         autoEscalateCheck.setToolTipText("Automatically increase feedback level during failures.");
         autoEscalateCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -199,18 +180,6 @@ public class FeedbackGroup extends AEvoGroup {
                 }
             }
         });
-
-        autoStatusLabel = toolkit.createLabel(levelBox, "");
-        autoStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        autoStatusLabel.setForeground(group.getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY));
-
-        // Ensure boxes are hidden initially, but the group itself might be visible now due to Level control
-        satisfactionBox.setVisible(false);
-        setExclude(satisfactionBox, true);
-        approvalBox.setVisible(false);
-        setExclude(approvalBox, true);
-        inputBox.setVisible(false);
-        setExclude(inputBox, true);
     }
 
     public void showSatisfaction(boolean visible) {
