@@ -12,4 +12,5 @@ public interface VersionControlProvider {
     void checkoutBranch(File workingDir, String branchName) throws Exception;
     void commitChanges(File workingDir, String message) throws Exception;
     void push(File workingDir) throws Exception;
+    void revertFile(File workingDir, String filePath) throws Exception;
 }

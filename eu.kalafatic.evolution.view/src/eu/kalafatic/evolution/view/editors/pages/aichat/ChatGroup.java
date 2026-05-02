@@ -151,6 +151,93 @@ public class ChatGroup extends AEvoGroup {
         }).start();
     }
 
+    private void revertGitFile(String filePath) {
+        if (page == null) return;
+        File projectRoot = page.getProjectRoot();
+        if (projectRoot == null) return;
+
+        new Thread(() -> {
+            try {
+                eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider gitProvider = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+                gitProvider.revertFile(projectRoot, filePath);
+                refreshGitStatus();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private void openInComparePage(String filePath) {
+        if (page == null) return;
+
+        Display.getDefault().asyncExec(() -> {
+            try {
+                org.eclipse.core.resources.IProject project = null;
+                if (editor.getEditorInput() instanceof org.eclipse.ui.IFileEditorInput) {
+                    project = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput()).getFile().getProject();
+                }
+                if (project != null) {
+                    org.eclipse.core.resources.IFile file = project.getFile(new org.eclipse.core.runtime.Path(filePath));
+                    if (file.exists()) {
+                        editor.showComparePage(file);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void downloadChangesAsZip() {
+        if (page == null) return;
+        File projectRoot = page.getProjectRoot();
+        if (projectRoot == null) return;
+
+        Display.getDefault().asyncExec(() -> {
+            org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(page.getShell(), SWT.SAVE);
+            dialog.setFilterExtensions(new String[]{"*.zip"});
+            dialog.setFileName("changes_" + System.currentTimeMillis() + ".zip");
+            String zipPath = dialog.open();
+            if (zipPath != null) {
+                new Thread(() -> {
+                    try {
+                        eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider gitProvider = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+                        List<String> files = gitProvider.getChangedFiles(projectRoot, "HEAD");
+                        if (files.isEmpty()) {
+                            Display.getDefault().asyncExec(() -> {
+                                org.eclipse.swt.widgets.MessageBox mb = new org.eclipse.swt.widgets.MessageBox(page.getShell(), SWT.ICON_WARNING | SWT.OK);
+                                mb.setText("No Changes");
+                                mb.setMessage("No changed files to include in ZIP.");
+                                mb.open();
+                            });
+                            return;
+                        }
+
+                        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipPath))) {
+                            for (String filePath : files) {
+                                File file = new File(projectRoot, filePath);
+                                if (file.exists() && file.isFile()) {
+                                    zos.putNextEntry(new java.util.zip.ZipEntry(filePath));
+                                    java.nio.file.Files.copy(file.toPath(), zos);
+                                    zos.closeEntry();
+                                }
+                            }
+                        }
+
+                        Display.getDefault().asyncExec(() -> {
+                            org.eclipse.swt.widgets.MessageBox mb = new org.eclipse.swt.widgets.MessageBox(page.getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                            mb.setText("ZIP Created");
+                            mb.setMessage("Successfully created ZIP with " + files.size() + " files at:\n" + zipPath);
+                            mb.open();
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }).start();
+            }
+        });
+    }
+
     private void commitGitChanges(String message) {
         if (page == null) return;
         File projectRoot = page.getProjectRoot();
@@ -237,6 +324,21 @@ public class ChatGroup extends AEvoGroup {
                             break;
                         case "commitGit":
                             commitGitChanges(text);
+                            break;
+                        case "revertFile":
+                            ChatGroup.this.revertGitFile(text);
+                            break;
+                        case "downloadZip":
+                            ChatGroup.this.downloadChangesAsZip();
+                            break;
+                        case "openInWorkspace":
+                            page.handleOpenDiff(text);
+                            break;
+                        case "openInReviewEditor":
+                            ChatGroup.this.openInComparePage(text);
+                            break;
+                        case "openPeerReview":
+                            editor.showPeerReviewPage();
                             break;
                     }
                 } catch (Exception e) {
