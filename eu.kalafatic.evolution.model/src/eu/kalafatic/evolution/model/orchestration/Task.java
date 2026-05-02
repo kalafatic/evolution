@@ -49,6 +49,116 @@ import org.eclipse.emf.ecore.EObject;
  */
 public interface Task extends EObject {
 	/**
+	 * Returns the value of the '<em><b>Iterative Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Iterative Mode</em>' attribute.
+	 * @see #setIterativeMode(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_IterativeMode()
+	 * @model defaultValueLiteral="false"
+	 * @generated
+	 */
+	boolean isIterativeMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#isIterativeMode <em>Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Iterative Mode</em>' attribute.
+	 * @see #isIterativeMode()
+	 * @generated
+	 */
+	void setIterativeMode(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Self Iterative Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Self Iterative Mode</em>' attribute.
+	 * @see #setSelfIterativeMode(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_SelfIterativeMode()
+	 * @model defaultValueLiteral="false"
+	 * @generated
+	 */
+	boolean isSelfIterativeMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#isSelfIterativeMode <em>Self Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Self Iterative Mode</em>' attribute.
+	 * @see #isSelfIterativeMode()
+	 * @generated
+	 */
+	void setSelfIterativeMode(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Darwin Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Darwin Mode</em>' attribute.
+	 * @see #setDarwinMode(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_DarwinMode()
+	 * @model defaultValueLiteral="false"
+	 * @generated
+	 */
+	boolean isDarwinMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#isDarwinMode <em>Darwin Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Darwin Mode</em>' attribute.
+	 * @see #isDarwinMode()
+	 * @generated
+	 */
+	void setDarwinMode(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Git Automation</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Git Automation</em>' attribute.
+	 * @see #setGitAutomation(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_GitAutomation()
+	 * @model defaultValueLiteral="false"
+	 * @generated
+	 */
+	boolean isGitAutomation();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#isGitAutomation <em>Git Automation</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Git Automation</em>' attribute.
+	 * @see #isGitAutomation()
+	 * @generated
+	 */
+	void setGitAutomation(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Max Iterations</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Max Iterations</em>' attribute.
+	 * @see #setMaxIterations(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_MaxIterations()
+	 * @model defaultValueLiteral="-1"
+	 * @generated
+	 */
+	int getMaxIterations();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getMaxIterations <em>Max Iterations</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Max Iterations</em>' attribute.
+	 * @see #getMaxIterations()
+	 * @generated
+	 */
+	void setMaxIterations(int value);
+
+	/**
 	 * Returns the value of the '<em><b>Id</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
