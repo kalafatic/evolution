@@ -307,9 +307,6 @@ State machine is:
 
 global authority
 
-/** JULES */
-Correct. The pivot from "object-driven flags" to a "state-driven deterministic evolution machine" is the essential correction. The flags I proposed are mere metadata; they lack the teeth of a global state machine like `PLAN_LOCKED`. In the Darwin flow, the transition from variant selection to execution must be an immutable state shift that strips the Orchestrator of its "thinking" privileges. This architectural enforcement ensures that the strategy selected by the `DarwinEngine` is precisely the one executed by the tools, without accidental re-interpretation.
-
 /** CHAT-GPT */
 This is architecturally very strong, but I’ll tighten it one level further so it becomes implementation-safe and cannot silently drift back into “agent thinking” later.
 
@@ -400,93 +397,55 @@ You are designing:
 
 a state-transition kernel with external intelligence plugged in
 
+That’s a much stronger and more stable architecture class.
+
 /** CHAT-GPT */
-This is now very close to production-grade architecture. You’ve moved from “idea” → “enforceable system.”
+This is no longer just “good”—this is almost production-grade kernel design. What you’ve written would survive real Darwin load if you lock down a few last edges.
 
-I’ll tighten just a few remaining edges so it becomes failure-resistant under real iterative/Darwin load (where things usually break).
+I’ll sharpen it into something that is not only correct, but difficult to break even by future you or Jules.
 
-🧠 1. What is now excellent
-You’ve successfully achieved:
-✔ State machine with explicit transitions
-✔ Single transition authority (IterationManager)
-✔ Stateless execution layer
-✔ Mode projections (this is a big win)
-✔ Logging for traceability
+🧠 1. Big picture: you’ve crossed the line
+You are now designing:
+deterministic state kernel + pluggable intelligence + controlled evolution loop
+That’s a very different class of system than what you started with—and you’re handling it correctly.
 
-👉 This is no longer an AI system—it’s a kernel with pluggable intelligence, which is exactly right.
+⚠️ 2. Final critical gaps (these are the real last ones)
+🔴 A. “Transition() bypass” problem
+✔ Correct hardening: Make state immutable outside IterationManager AND make mutation impossible without context token.
+🔒 Strong pattern: Use a `TransitionToken` required by `applyTransition()`.
 
-⚠️ 2. Remaining weak points (small but critical)
-❌ Issue 1: Missing “ENTRY invariants”
-Right now you define transitions, but not what must be true BEFORE entering a state.
-Example: PLAN_LOCKED → EXECUTING
-👉 But nothing enforces: finalPlan != null
+🔴 B. Deterministic VERIFYING
+✔ Correct model: `EvaluationResult verify(ExecutionResult result, FinalPlan plan);`.
+verify() must be: pure, deterministic, and versioned.
 
-❌ Issue 2: VERIFYING is under-defined
-You wrote: EXECUTING → VERIFYING → DONE | MUTATING
-👉 But: Who produces verification result? What defines success vs failure?
-Without this, Darwin loop becomes inconsistent again.
+🔴 C. Mutation Isolation
+✔ Correct split: DarwinEngine generates/evaluates candidates; IterationManager selects. Never allow DarwinEngine to influence transitions directly.
 
-❌ Issue 3: MUTATING is not isolated enough
-Right now: VERIFYING → MUTATING → PLAN_LOCKED
-👉 Risk: mutation logic may leak into planning; DarwinEngine may start influencing transitions again
+🔴 D. Recovery model
+✔ Add rule: RECOVERING must rebuild context and optionally rollback.
 
-🔥 3. Final hardening (minimal additions, big impact)
-🧱 Add 1: State ENTRY CONDITIONS (mandatory)
-Extend Phase 1 with:
-STATE ENTRY RULES:
-ANALYZING:
-  - input exists
-PLAN_LOCKED:
-  - finalPlan != null
-EXECUTING:
-  - finalPlan != null
-VERIFYING:
-  - executionResult != null
-MUTATING:
-  - evaluationResult != null
+🔴 E. Concurrency
+✔ State machine must be single-writer (IterationManager = single-threaded queue).
 
-👉 Enforce in IterationManager.transition():
-validateTransition(from, to);
-validateStateEntry(to, context);
+🔴 F. Persistence (Event Sourcing)
+✔ Store iteration_id/ as a log of transitions, plans, and results. This gives you replay and evolution visualization.
 
-🧱 Add 2: VERIFYING contract (make it deterministic)
-Define:
-VERIFYING:
-  input: executionResult
-  output: evaluationResult (success | failure + score)
+🧠 3. Final hardened model (clean version)
+States: INIT, ANALYZING, PLAN_LOCKED, EXECUTING, VERIFYING, MUTATING, DONE, FAILED, RECOVERING.
+ONLY IterationManager changes state and interprets results.
+Orchestrator: executes only.
+DarwinEngine: generates + evaluates only.
+Verifier: pure function.
 
-👉 Important rule: ONLY IterationManager decides:
-success → DONE
-failure → MUTATING
+🧠 4. Termination Guards
+STOP if: max_iterations reached, time_budget exceeded, or score stagnation detected.
 
-🧱 Add 3: MUTATION isolation rule
-Define explicitly:
-MUTATING:
-  - consumes evaluationResult
-  - produces NEW plan candidates
-  - MUST NOT execute anything
-👉 This prevents: DarwinEngine → execution influence
-
-🧠 4. Refined transition model (final form)
-INIT → ANALYZING → PLAN_LOCKED → EXECUTING → VERIFYING → DONE | MUTATING → PLAN_LOCKED (loop)
-
-With hard guarantees:
-No execution outside EXECUTING
-No planning outside ANALYZING/MUTATING
-No decisions outside IterationManager
-
-🧠 5. Mode projections (now fully correct)
-Now your projections become strictly enforceable:
-Simple Chat: INIT → DONE
-Standard Iteration: INIT → ANALYZING → PLAN_LOCKED → EXECUTING → DONE
-Darwin: INIT → ANALYZING → PLAN_LOCKED → EXECUTING → VERIFYING → MUTATING → loop
-
-💡 6. Final architectural insight (this is your real end-state)
-You’ve now built:
-STATE MACHINE = control plane
-DARWIN ENGINE = intelligence plane
-ORCHESTRATOR = execution plane
-👉 And most importantly: ONLY ONE place converts data → decision
+💡 5. Final insight (this is your real system now)
+You’ve built a mini operating system for AI evolution.
+KERNEL: deterministic state machine
+INTELLIGENCE: DarwinEngine (replaceable)
+EXECUTION: Orchestrator (replaceable)
+CONTROL: IterationManager (fixed core)
 
 /** JULES */
-This is the final destination. The transition from "multi-agent orchestration" to a "state-transition kernel with external intelligence" is now structurally complete. By enforcing **State Entry Conditions** and a deterministic **Verifying Contract**, we ensure that only the `IterationManager` (the Control Plane) can convert data into decisions. The Orchestrator and DarwinEngine are now physically prohibited from crossing the trust boundary. This architecture classes the system as a "Closed-Loop State Transition Machine," providing the final failure-resistance needed for production-grade autonomous development.
+This final hardening transforms the system into a true **Evolutionary OS Kernel**. By implementing the **TransitionToken** pattern and **Event Sourcing**, we move from behavioral trust to structural enforcement. The decoupling of the Intelligence Plane (DarwinEngine) from the Control Plane (IterationManager) ensures that decisions are always deterministic and reproducible. This architecture is failure-resistant and provides the necessary invariants (Entry Conditions, Termination Guards, Single-Writer status) to scale the autonomous Darwin loop safely.

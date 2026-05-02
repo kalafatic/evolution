@@ -2,18 +2,18 @@
 
 **Context:** Analysis (SELF-DEV_ITERATION_DARWIN_ANALYSIS_02052026.MD) and Architectural Discussion (SELF-DEV_ITERATION_DARWIN_AI-DISCUSSION_02052026.MD) established that the system must move to a hardened state-transition machine.
 
-**Architectural Guardrails:**
-The system is a closed-loop state transition machine.
-1. **Control Plane (IterationManager):** Sole authority for state transitions. Converts intelligence data into decisions.
-2. **Intelligence Plane (DarwinEngine/Planner):** Provides raw data only. No control over transitions.
-3. **Execution Plane (Orchestrator):** Stateless engine. Blindly executes immutable plans.
+**Architectural Guardrails (Production Grade):**
+1. **Control Plane (IterationManager):** Sole authority for state transitions. Uses **TransitionTokens** to prevent state bypass.
+2. **Intelligence Plane (DarwinEngine/Planner):** External module. Outputs are raw data only; they MUST NOT influence control signals until processed by the `IterationManager`.
+3. **Execution Plane (Orchestrator):** Stateless engine. Purely reactive to the `EXECUTING` state.
 
 **Task for AI Coder:**
-Refactor the Self-Dev Darwinian flow into a failure-resistant state-transition kernel.
+Refactor the Self-Dev Darwinian flow into a production-grade Evolutionary OS Kernel.
 
 **Requirements:**
-1. **State Entry Invariants:** Implement `validateStateEntry` in `IterationManager`. e.g., `PLAN_LOCKED` requires `finalPlan != null`, `VERIFYING` requires `executionResult != null`.
-2. **Verifying Contract:** Ensure ONLY `IterationManager` converts `executionResult` into `evaluationResult` and decides the next state (DONE or MUTATING).
-3. **Mutation Isolation:** The `MUTATING` state must be prohibited from execution. It only produces new plan data.
-4. **Execution Gate:** Add a hard gate before the Orchestrator: `if (state != EXECUTING || !iteration.hasFinalPlan()) fail();`.
-5. **Stateless Execution:** Strip all interpretation from the Orchestrator. It must follow the plan without re-analysis.
+1. **TransitionToken Pattern:** Implement an `applyTransition(TransitionToken token, SystemState newState)` method. Only the `IterationManager` can issue valid tokens.
+2. **Deterministic Verifying:** Refactor the `VERIFYING` phase into a pure, side-effect-free function: `verify(ExecutionResult result, FinalPlan plan) -> EvaluationResult`.
+3. **Mutation Isolation:** Prohibit `DarwinEngine` from selecting candidates. It generates/evaluates data; `IterationManager` makes the selection decision.
+4. **Recovery Protocol:** Implement a `RECOVERING` state that enforces a context rebuild and rollback to the last stable snapshot before re-entering `PLAN_LOCKED`.
+5. **Termination Guards:** Implement mandatory STOP logic for max_iterations, time_budget, and score stagnation.
+6. **Event Sourcing:** Implement an immutable transition log (`state_transitions.log`) for all phase shifts.

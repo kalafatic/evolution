@@ -1,19 +1,19 @@
 # FIX PROMPT: Darwin Iteration Optimization
 
-**Context:** Analysis (ITERATION_DARWIN_TRACE_ANALYSIS_02052026.MD) and Architectural Discussion (ITERATION_DARWIN_TRACE_AI-DISCUSSION_02052026.MD) revealed redundant intent classification and tactical planning. The system must transition to a hardened state-transition machine.
+**Context:** Analysis (ITERATION_DARWIN_TRACE_ANALYSIS_02052026.MD) and Architectural Discussion (ITERATION_DARWIN_TRACE_AI-DISCUSSION_02052026.MD) revealed redundant intent classification and tactical planning. The system must transition to a hardened Evolutionary OS Kernel.
 
-**Architectural Guardrails:**
-The system is a closed-loop state transition machine.
-1. **Control Plane (IterationManager):** Sole authority for state transitions.
-2. **Intelligence Plane (DarwinEngine):** Provides raw data only.
+**Architectural Guardrails (Production Grade):**
+1. **Control Plane (IterationManager):** Sole authority for state transitions. Uses **TransitionTokens**.
+2. **Intelligence Plane (DarwinEngine):** Raw data only. Side-effect free.
 3. **Execution Plane (Orchestrator):** Stateless engine. Blindly executes immutable plans.
 
 **Task for AI Coder:**
-Refactor the Darwin execution flow into a failure-resistant state-transition machine.
+Refactor the Darwin execution flow into a production-grade state-transition machine.
 
 **Requirements:**
-1. **State Entry Invariants:** Implement mandatory `validateStateEntry` checks in `IterationManager` (e.g., `PLAN_LOCKED` requires `finalPlan != null`).
-2. **Verifying Contract:** Ensure ONLY `IterationManager` converts execution data into success/failure decisions and scores.
-3. **Execution Gating:** Add a hard gate before the Orchestrator runs: `if (state != EXECUTING || !iteration.hasFinalPlan()) fail();`.
-4. **Stateless Execution:** Strip all interpretation from the Orchestrator. It must follow the finalized plan without re-analysis.
-5. **Decouple Intelligence:** DarwinEngine must have no knowledge of execution state transitions.
+1. **TransitionToken Pattern:** Hardened transition logic preventing state bypass.
+2. **Deterministic Verifying:** Refactor `VERIFYING` phase into a pure deterministic function.
+3. **Control Gating:** Only `IterationManager` converts variant data into the selected `finalPlan`.
+4. **Stateless Execution:** Strip all interpretation from the Orchestrator. It follows the finalized plan without re-analysis.
+5. **Termination Guards:** Implement mandatory STOP logic for score stagnation and iteration limits.
+6. **Event Sourcing:** Implement an immutable transition log for auditability.
