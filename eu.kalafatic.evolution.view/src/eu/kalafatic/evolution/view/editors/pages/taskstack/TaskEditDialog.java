@@ -32,6 +32,11 @@ public class TaskEditDialog extends Dialog {
     private Text goalText;
     private Text descriptionText;
     private Button approvalCheck;
+    private Button iterativeCheck;
+    private Button selfIterativeCheck;
+    private Button darwinCheck;
+    private Button autoGitCheck;
+    private Text maxIterationsText;
     private ListViewer attachmentsViewer;
     private List<String> attachmentsList;
 
@@ -84,6 +89,25 @@ public class TaskEditDialog extends Dialog {
         createLabel(container, "Approval Required:");
         approvalCheck = new Button(container, SWT.CHECK);
         approvalCheck.setSelection(task.isApprovalRequired());
+
+        createLabel(container, "Iterative Mode:");
+        iterativeCheck = new Button(container, SWT.CHECK);
+        iterativeCheck.setSelection(task.isIterativeMode());
+
+        createLabel(container, "Self-Iterative (Self-Dev):");
+        selfIterativeCheck = new Button(container, SWT.CHECK);
+        selfIterativeCheck.setSelection(task.isSelfIterativeMode());
+
+        createLabel(container, "Darwin Mode:");
+        darwinCheck = new Button(container, SWT.CHECK);
+        darwinCheck.setSelection(task.isDarwinMode());
+
+        createLabel(container, "Git Automation:");
+        autoGitCheck = new Button(container, SWT.CHECK);
+        autoGitCheck.setSelection(task.isGitAutomation());
+
+        createLabel(container, "Max Iterations:");
+        maxIterationsText = createText(container, String.valueOf(task.getMaxIterations()));
 
         createLabel(container, "Attachments:");
         Composite attachComp = new Composite(container, SWT.NONE);
@@ -147,6 +171,13 @@ public class TaskEditDialog extends Dialog {
         task.setGoal(goalText.getText());
         task.setDescription(descriptionText.getText());
         task.setApprovalRequired(approvalCheck.getSelection());
+        task.setIterativeMode(iterativeCheck.getSelection());
+        task.setSelfIterativeMode(selfIterativeCheck.getSelection());
+        task.setDarwinMode(darwinCheck.getSelection());
+        task.setGitAutomation(autoGitCheck.getSelection());
+        try {
+            task.setMaxIterations(Integer.parseInt(maxIterationsText.getText()));
+        } catch (NumberFormatException e) {}
         task.getAttachments().clear();
         task.getAttachments().addAll(attachmentsList);
 

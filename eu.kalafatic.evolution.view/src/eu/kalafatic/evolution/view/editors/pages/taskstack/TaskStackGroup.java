@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors.pages.taskstack;
 
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.CheckboxCellEditor;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.viewers.ICheckStateProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -136,7 +137,7 @@ public class TaskStackGroup extends AEvoGroup {
                     }
                     if (column == 0) { // Run
                         page.runSingleTask(task);
-                    } else if (column == 7) { // Result
+                    } else if (column == 12) { // Result
                         editor.openTaskResult(task);
                     } else if (column == 1) { // Edit
                         openTaskEditDialog(task);
@@ -265,7 +266,98 @@ public class TaskStackGroup extends AEvoGroup {
         });
         typeCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "type"));
 
-        
+        // Iterative Column
+        TreeViewerColumn iterativeCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        iterativeCol.getColumn().setText("Iterative");
+        iterativeCol.getColumn().setWidth(70);
+        iterativeCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override public String getText(Object element) { return ((Task) element).isIterativeMode() ? "YES" : "NO"; }
+        });
+        iterativeCol.setEditingSupport(new EditingSupport(treeViewer) {
+            @Override protected CellEditor getCellEditor(Object element) { return new CheckboxCellEditor(treeViewer.getTree()); }
+            @Override protected boolean canEdit(Object element) { return true; }
+            @Override protected Object getValue(Object element) { return ((Task) element).isIterativeMode(); }
+            @Override protected void setValue(Object element, Object value) {
+                ((Task) element).setIterativeMode((Boolean) value);
+                treeViewer.update(element, null);
+                page.setDirty(true);
+            }
+        });
+
+        // Self-Dev Column
+        TreeViewerColumn selfDevCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        selfDevCol.getColumn().setText("Self-Dev");
+        selfDevCol.getColumn().setWidth(70);
+        selfDevCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override public String getText(Object element) { return ((Task) element).isSelfIterativeMode() ? "YES" : "NO"; }
+        });
+        selfDevCol.setEditingSupport(new EditingSupport(treeViewer) {
+            @Override protected CellEditor getCellEditor(Object element) { return new CheckboxCellEditor(treeViewer.getTree()); }
+            @Override protected boolean canEdit(Object element) { return true; }
+            @Override protected Object getValue(Object element) { return ((Task) element).isSelfIterativeMode(); }
+            @Override protected void setValue(Object element, Object value) {
+                ((Task) element).setSelfIterativeMode((Boolean) value);
+                treeViewer.update(element, null);
+                page.setDirty(true);
+            }
+        });
+
+        // Darwin Column
+        TreeViewerColumn darwinCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        darwinCol.getColumn().setText("Darwin");
+        darwinCol.getColumn().setWidth(70);
+        darwinCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override public String getText(Object element) { return ((Task) element).isDarwinMode() ? "YES" : "NO"; }
+        });
+        darwinCol.setEditingSupport(new EditingSupport(treeViewer) {
+            @Override protected CellEditor getCellEditor(Object element) { return new CheckboxCellEditor(treeViewer.getTree()); }
+            @Override protected boolean canEdit(Object element) { return true; }
+            @Override protected Object getValue(Object element) { return ((Task) element).isDarwinMode(); }
+            @Override protected void setValue(Object element, Object value) {
+                ((Task) element).setDarwinMode((Boolean) value);
+                treeViewer.update(element, null);
+                page.setDirty(true);
+            }
+        });
+
+        // Auto-Git Column
+        TreeViewerColumn autoGitCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        autoGitCol.getColumn().setText("Auto-Git");
+        autoGitCol.getColumn().setWidth(70);
+        autoGitCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override public String getText(Object element) { return ((Task) element).isGitAutomation() ? "YES" : "NO"; }
+        });
+        autoGitCol.setEditingSupport(new EditingSupport(treeViewer) {
+            @Override protected CellEditor getCellEditor(Object element) { return new CheckboxCellEditor(treeViewer.getTree()); }
+            @Override protected boolean canEdit(Object element) { return true; }
+            @Override protected Object getValue(Object element) { return ((Task) element).isGitAutomation(); }
+            @Override protected void setValue(Object element, Object value) {
+                ((Task) element).setGitAutomation((Boolean) value);
+                treeViewer.update(element, null);
+                page.setDirty(true);
+            }
+        });
+
+        // Max Iterations Column
+        TreeViewerColumn maxIterCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        maxIterCol.getColumn().setText("Max Iter");
+        maxIterCol.getColumn().setWidth(70);
+        maxIterCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override public String getText(Object element) { return String.valueOf(((Task) element).getMaxIterations()); }
+        });
+        maxIterCol.setEditingSupport(new EditingSupport(treeViewer) {
+            @Override protected CellEditor getCellEditor(Object element) { return new TextCellEditor(treeViewer.getTree()); }
+            @Override protected boolean canEdit(Object element) { return true; }
+            @Override protected Object getValue(Object element) { return String.valueOf(((Task) element).getMaxIterations()); }
+            @Override protected void setValue(Object element, Object value) {
+                try {
+                    ((Task) element).setMaxIterations(Integer.parseInt(String.valueOf(value)));
+                    treeViewer.update(element, null);
+                    page.setDirty(true);
+                } catch (NumberFormatException e) {}
+            }
+        });
+
         // State Column
         TreeViewerColumn stateCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
         stateCol.getColumn().setText("State");
