@@ -3,14 +3,31 @@ package eu.kalafatic.evolution.controller.tools;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
- * Tool for executing shell commands.
+ * Tool for executing shell commands with security and resource management.
+ *
+ * @evo:1:1 reason=merge-shelltool-improvements
  */
 public class ShellTool implements ITool {
+
+    private static final Set<String> ALLOWED_COMMANDS = Set.of(
+        "mvn", "mvn.cmd", "git", "ls", "pwd", "cd", "mkdir", "echo",
+        "ollama", "gcc", "g++", "make", "cmake", "java", "javac",
+        "curl", "sh", "bash"
+    );
+
+    private static final long DEFAULT_TIMEOUT_SECONDS = 300; // Increased to 5 mins for long builds
+    private static final long MAX_OUTPUT_SIZE = 5 * 1024 * 1024; // 5MB limit
+
     @Override
     public String getName() {
         return "ShellTool";
@@ -18,34 +35,29 @@ public class ShellTool implements ITool {
 
     @Override
     public String execute(String command, File workingDir, TaskContext context) throws Exception {
+        if (command == null || command.isBlank()) {
+            throw new IllegalArgumentException("Empty command");
+        }
+
+        List<String> cmdList = parseArguments(command);
+        if (cmdList.isEmpty()) {
+            throw new IllegalArgumentException("Malformed command");
+        }
+
+        String baseCmd = cmdList.get(0).toLowerCase();
+        validateCommand(baseCmd);
+
         if (context != null) {
-            context.log("Tool [ShellTool]: Running " + command);
+            context.log("Tool [ShellTool]: Running " + String.join(" ", cmdList));
         }
 
-        // Basic whitelist for safer execution
-        String firstArg = command.split("\\s+")[0].toLowerCase();
-        if (!isWhitelisted(firstArg)) {
-            throw new Exception("Security Violation: Command '" + firstArg + "' is not whitelisted for ShellTool.");
-        }
-
-        // Handle quoted arguments for git commit and other commands
-        java.util.List<String> cmdList = new java.util.ArrayList<>();
-        // Updated regex to handle both single and double quotes
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("([^\"'\\s]\\S*|\".+?\"|'.+?')\\s*").matcher(command);
-        while (m.find()) {
-            String arg = m.group(1);
-            if ((arg.startsWith("\"") && arg.endsWith("\"")) || (arg.startsWith("'") && arg.endsWith("'"))) {
-                arg = arg.substring(1, arg.length() - 1);
-            }
-            cmdList.add(arg);
-        }
-
-        ProcessBuilder processBuilder = new ProcessBuilder(cmdList);
+        ProcessBuilder pb = new ProcessBuilder(cmdList);
         if (workingDir != null) {
-            processBuilder.directory(workingDir);
+            pb.directory(workingDir);
         }
-        processBuilder.redirectErrorStream(true);
-        Process process = processBuilder.start();
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+
         StringBuilder output = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
@@ -54,26 +66,49 @@ public class ShellTool implements ITool {
                 if (context != null) {
                     context.consoleLog(line);
                 }
+
+                // Safety: Cap output size
+                if (output.length() > MAX_OUTPUT_SIZE) {
+                    process.destroyForcibly();
+                    String truncated = output.substring(0, (int) MAX_OUTPUT_SIZE) + "\n[Error: Output exceeded " + (MAX_OUTPUT_SIZE / (1024 * 1024)) + "MB limit. Process killed.]";
+                    return truncated;
+                }
             }
-            int exitCode = process.waitFor();
+
+            // Timeout handling
+            boolean finished = process.waitFor(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new Exception("Command timed out after " + DEFAULT_TIMEOUT_SECONDS + "s: " + command);
+            }
+
             String finalOutput = output.toString().trim();
-            if (exitCode != 0) {
-                throw new Exception("Shell command failed (exit code " + exitCode + "):\n" + finalOutput);
+            if (process.exitValue() != 0) {
+                throw new Exception("Shell command failed (exit code " + process.exitValue() + "):\n" + finalOutput);
             }
             return finalOutput;
         }
     }
 
-    private boolean isWhitelisted(String command) {
-        return command.equals("mvn") || command.equals("mvn.cmd") ||
-               command.equals("git") || command.equals("ls") ||
-               command.equals("pwd") || command.equals("cd") ||
-               command.equals("mkdir") || command.equals("echo") ||
-               command.equals("ollama") ||
-               command.equals("gcc") || command.equals("g++") ||
-               command.equals("make") || command.equals("cmake") ||
-               command.equals("java") || command.equals("javac") ||
-               command.equals("curl") || command.equals("sh") ||
-               command.equals("bash");
+    private void validateCommand(String baseCmd) throws SecurityException {
+        // Prevent recursive shell nesting if it's considered dangerous in specific contexts,
+        // but here we keep sh/bash for flexibility as long as they are whitelisted.
+        if (!ALLOWED_COMMANDS.contains(baseCmd)) {
+            throw new SecurityException("Security Violation: Command '" + baseCmd + "' is not in the allowed policy for ShellTool.");
+        }
+    }
+
+    private List<String> parseArguments(String command) {
+        List<String> list = new ArrayList<>();
+        // Improved regex to handle both single and double quotes
+        Matcher m = Pattern.compile("([^\"'\\s]\\S*|\".+?\"|'.+?')\\s*").matcher(command);
+        while (m.find()) {
+            String arg = m.group(1);
+            if ((arg.startsWith("\"") && arg.endsWith("\"")) || (arg.startsWith("'") && arg.endsWith("'"))) {
+                arg = arg.substring(1, arg.length() - 1);
+            }
+            list.add(arg);
+        }
+        return list;
     }
 }

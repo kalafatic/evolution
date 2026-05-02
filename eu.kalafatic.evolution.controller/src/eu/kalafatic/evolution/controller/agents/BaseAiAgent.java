@@ -11,6 +11,7 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
 import eu.kalafatic.evolution.controller.orchestration.util.DataScrubber;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.services.BestPracticesService;
 import eu.kalafatic.evolution.controller.services.NeuronContextService;
 import eu.kalafatic.evolution.controller.tools.ITool;
@@ -187,7 +188,7 @@ public abstract class BaseAiAgent implements IAgent {
         context.log("Evo-" + type + "-Thinking: " + prompt);
 
         // Routing via LlmRouter
-        float temperature = 0.7f;
+        float temperature = EvolutionConstants.DEFAULT_TEMPERATURE;
         if (orchestrator.getLlm() != null) {
             temperature = (float) orchestrator.getLlm().getTemperature();
         }

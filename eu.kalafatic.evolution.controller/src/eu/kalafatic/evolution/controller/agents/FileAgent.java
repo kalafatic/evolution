@@ -1,14 +1,15 @@
 package eu.kalafatic.evolution.controller.agents;
 
-import eu.kalafatic.evolution.controller.tools.FileTool;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.tools.ToolFactory;
 
 /**
  * Agent specialized in File operations.
  */
 public class FileAgent extends BaseAiAgent {
     public FileAgent() {
-        super("File", "File");
-        addTool(new FileTool());
+        super(EvolutionConstants.AGENT_FILE, EvolutionConstants.AGENT_FILE);
+        addTool(ToolFactory.getTool(EvolutionConstants.TOOL_FILE));
     }
 
     @Override
