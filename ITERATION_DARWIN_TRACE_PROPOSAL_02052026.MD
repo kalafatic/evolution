@@ -4,15 +4,16 @@
 
 **Architectural Guardrails:**
 The system is a closed-loop state transition machine, not an AI agent system. All behavior is governed by explicit state transitions rather than distributed reasoning across components.
-- The **IterationManager** is the sole authority responsible for interpreting intelligence outputs, converting evaluation results into state transitions, and advancing the system through lifecycle phases.
-- The **EvolutionOrchestrator** operates as a strictly stateless execution engine. It consumes only finalized, immutable plans and executes them deterministically without performing interpretation, planning, or evaluation.
-- The **DarwinEngine** functions as an external intelligence module responsible solely for generating and evaluating candidate plans. Its outputs are treated as raw data.
+- **Sole Transition Authority:** Only the **IterationManager** can advance or mutate system state. It converts intelligence outputs into control signals.
+- **State-Ignorant Executor:** The **EvolutionOrchestrator** consumes finalized, immutable plans and executes them blindly if gated by the global `EXECUTING` state. It performs NO semantic interpretation of intent.
+- **Intelligence Gating:** **DarwinEngine** outputs are raw data; they have no influence on behavior until processed by the Transition Authority.
 
 **Task for AI Coder:**
-Refactor the Darwin execution flow to adhere to these guardrails.
+Refactor the Darwin execution flow into a hardened state-transition machine.
 
 **Requirements:**
-1. **Bypass Orchestrator Analysis:** Modify `EvolutionOrchestrator.handle()` to act as a blind executor. If the system state is `EXECUTING`, it must consume the immutable plan without performing any intent classification or analysis.
-2. **Centralize Transitions:** Ensure `IterationManager` is the ONLY component allowed to advance system state.
-3. **Eliminate Redundant Evaluation:** Reuse variant evaluation results as the final result instead of re-running evaluation after merge.
-4. **Decouple Reasoning:** Prohibit the Orchestrator from semantically interpreting task intent once execution has started.
+1. **Transition Table Enforcement:** Implement a mandatory `isValidTransition` check in `IterationManager` based on: `INIT -> ANALYZING -> PLAN_LOCKED -> EXECUTING -> VERIFYING -> DONE|MUTATING`.
+2. **Execution Gating:** Add a gate before the Orchestrator runs: `if (state != EXECUTING || !iteration.hasFinalPlan()) fail();`.
+3. **Stateless Execution:** Strip the Orchestrator of its tactical autonomy. It must follow the plan without re-analysis once the state is `EXECUTING`.
+4. **Intelligence Decoupling:** Modify the flow so that `DarwinEngine` variants are returned to `IterationManager` as raw data. `IterationManager` must perform the selection and state shift.
+5. **Transition Logging:** Implement mandatory `[STATE] FROM -> TO (Reason)` logging.
