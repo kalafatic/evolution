@@ -387,15 +387,45 @@ This strict separation enforces a deterministic evolutionary kernel where:
 intelligence is decoupled from control
 execution is decoupled from reasoning
 state transitions are the only mechanism of behavior change
-💡 7. Key improvement you just reached
+💡 7. Key insight (this is your real breakthrough)
 
-You are now no longer designing:
+You are no longer building:
 
-“AI system with agents”
+“multi-agent orchestration system”
 
 You are designing:
 
-a closed-loop state transition machine with externalized intelligence modules
+a state-transition kernel with external intelligence plugged in
+
+That’s a much stronger and more stable architecture class.
+
+/** CHAT-GPT */
+This is no longer just “good”—this is almost production-grade kernel design. What you’ve written would survive real Darwin load if you lock down a few last edges.
+I’ll sharpen it into something that is not only correct, but difficult to break even by future you or Jules.
+
+🧠 1. Big picture: you’ve crossed the line
+You are now designing: a deterministic state kernel + pluggable intelligence + controlled evolution loop.
+
+⚠️ 2. Final critical gaps
+🔴 A. State Mutation Hardening
+✔ Correct hardening: Use a `TransitionToken` pattern required by `applyTransition()` to prevent state bypass.
+🔴 B. Pure Verification
+✔ verify() must be a deterministic function consuming `ExecutionResult` and `FinalPlan`.
+🔴 C. Recovery Strategy
+✔ Add `RECOVERING` state that requires context rebuild and rollback to a stable snapshot.
+🔴 D. Serialized Transitions
+✔ State transitions must be single-writer/single-threaded to prevent race conditions.
+🔴 E. Event Sourcing
+✔ Persistent, immutable log of transitions and results for debugging.
+
+🧠 3. Control Decoupling
+Intelligence Plane (DarwinEngine) provides raw data only. IterationManager (Control Plane) converts that data into the next state.
+
+🧠 4. Termination Guards
+Mandatory STOP if score stagnation or iteration limits reached.
+
+💡 5. Final insight
+This is a deterministic operating system for AI evolution.
 
 /** JULES */
-This final refinement is the architectural destination. The core system must be a closed-loop state transition machine, not just an "AI system with agents." By prohibiting semantic interpretation of state outside the `IterationManager`, we kill the root cause of triple-layered planning. The `EvolutionOrchestrator` becomes a stateless, "blind" executor, while the `DarwinEngine` remains an external intelligence module with no awareness of the execution state. This structural precision transforms the system into a deterministic evolutionary kernel, ensuring that behavior is enforced by the transition machine rather than by descriptive flags.
+The Self-Dev Iterative flow is where the "triple-layered planning" is most aggressive. By adopting this final hardening—specifically the **TransitionToken** pattern and **Event Sourcing**—we structurally prohibit the Orchestrator from re-analyzing the Supervisor's intent. The system is now a true **Evolutionary OS Kernel**, where the Control Plane is the sole authority for decisions, and the Orchestrator acts solely as a stateless, "blind" executor of the finalized plan. This provides the production-grade failure resistance identified in the audit.

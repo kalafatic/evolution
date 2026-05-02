@@ -1,19 +1,19 @@
 # FIX PROMPT: Simple Darwin Flow Unification
 
-**Context:** Analysis (SIMPLE_DARWIN_ANALYSIS_02052026.MD) and Architectural Discussion (SIMPLE_DARWIN_AI-DISCUSSION_02052026.MD) identified logic drift between Chat-initiated Darwin and Supervisor-initiated Darwin.
+**Context:** Analysis (SIMPLE_DARWIN_ANALYSIS_02052026.MD) and Architectural Discussion (SIMPLE_DARWIN_AI-DISCUSSION_02052026.MD) identified logic drift. The system must move to a unified Evolutionary OS Kernel.
 
-**Architectural Guardrails:**
-The system is a closed-loop state transition machine, not an AI agent system. All behavior is governed by explicit state transitions rather than distributed reasoning across components.
-- **Sole Transition Authority:** Only the **IterationManager** can advance or mutate system state. It converts intelligence outputs into control signals.
-- **State-Ignorant Executor:** The **EvolutionOrchestrator** consumes finalized, immutable plans and executes them blindly if gated by the global `EXECUTING` state. It performs NO semantic interpretation of intent.
-- **Intelligence Gating:** **DarwinEngine** outputs are raw data; they have no influence on behavior until processed by the Transition Authority.
+**Architectural Guardrails (Production Grade):**
+1. **Control Plane (IterationManager):** Sole transition authority. Uses **TransitionTokens**.
+2. **Intelligence Plane (DarwinEngine):** Raw data only.
+3. **Execution Plane (Orchestrator):** Stateless engine. Blind execution.
 
 **Task for AI Coder:**
-Unify Darwin execution logic under the `IterationManager` as a deterministic state machine.
+Unify Darwin execution logic under the `IterationManager` as a failure-resistant state machine.
 
 **Requirements:**
-1. **Unified Entry Point:** Refactor `AiChatPage` to delegate Darwin requests to `IterationManager`. Eliminate redundant reasoning in the Orchestrator.
-2. **Transition Table Enforcement:** Implement mandatory `isValidTransition` check in `IterationManager` (INIT -> ANALYZING -> PLAN_LOCKED -> EXECUTING -> VERIFYING -> DONE).
-3. **Intelligence Decoupling:** `DarwinEngine` variants must be returned as raw data to `IterationManager`, which then "locks" the selected plan.
-4. **Stateless Orchestrator:** The Orchestrator must execute the locked plan blindly once the system enters the `EXECUTING` state.
-5. **Transition Logging:** Implement mandatory `[STATE] FROM -> TO (Reason)` logging.
+1. **Unification:** Delegate all Darwin requests to `IterationManager`. Remove redundant reasoning in the Orchestrator.
+2. **Hardened Transitions:** Implement the **TransitionToken** pattern for state changes.
+3. **Pure Verification:** Refactor `VERIFYING` to be a pure function of execution result and plan.
+4. **Control Gating:** Only `IterationManager` selects the best candidate; `DarwinEngine` only provides evaluations.
+5. **Stateless Execution:** The Orchestrator blindly executes the plan once state is `EXECUTING`.
+6. **Event Sourcing:** Persistent log of all transitions, variant generations, and selections.
