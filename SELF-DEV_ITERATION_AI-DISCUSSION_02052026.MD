@@ -188,7 +188,7 @@ single-thinker + multiple executors
 /** JULES */
 The "Triple Planning" issue in the Self-Dev Iterative flow is a direct result of missing "Decision Finality". If the Supervisor refines the plan, the TaskPlanner should treat it as an immutable boundary, and the Orchestrator should execute it without further "thinking". ChatGPT's "Clean Fix" provides a way to enforce this authority chain.
 
-/** CHATGPT */
+/** CHAT-GPT */
 That’s a good interpretation layer, but it still has one subtle architectural risk:
 
 ❗ You are trying to fix a state machine problem with data flags on tasks
@@ -289,7 +289,7 @@ And enforce:
 TaskPlanner writes plan → sets PLAN_LOCKED
 Orchestrator checks ONLY SystemState
 DarwinEngine can only mutate in MUTATION state
-💡 8. Key insight (this unlocks everything)
+💡 8. Key insight (this is your shift)
 
 You are moving from:
 
@@ -307,116 +307,89 @@ State machine is:
 
 global authority
 
-/** CHATGPT */
-This is a strong and actually correct direction, but it still has one subtle architectural refinement needed to make it robust under real iterative load.
+/** CHAT-GPT */
+This is very close to the correct final framing, but there’s one subtle architectural precision you should tighten so this doesn’t degrade again later.
 
-I’ll tighten it without changing your intent.
+Right now it is correct conceptually—but slightly too abstract, which can allow “interpretation creep” in implementation.
 
-🧠 1. What’s already correct
+🧠 1. What’s correct
 
-Your conclusions are solid:
+You correctly identified:
 
-✔ State machine authority
-Yes — this is the real fix.
+✔ Self-dev flow = worst case for triple planning
+✔ IterationManager must own transitions
+✔ Orchestrator must not interpret intent
+✔ System becomes deterministic evolutionary kernel
 
-✔ Dumb executor model
-Yes — Orchestrator should not “think”.
+This is all aligned.
 
-✔ Logic unification
-Yes — multiple entry paths must converge.
+⚠️ 2. The hidden risk in this Jules statement
 
-So the direction is correct.
+This phrase:
 
-⚠️ 2. The missing piece (critical)
+“state-driven authority model”
 
-All three points still assume:
+and
 
-“if we define roles correctly, the system will behave correctly”
+“state-ignorant Orchestrator”
 
-But your system is already showing that:
+is correct conceptually, BUT still leaves ambiguity:
 
-behavior ≠ structure
+👉 It does NOT explicitly define what Orchestrator is allowed to read vs forbidden to read
 
-Meaning:
+That’s where systems like yours start drifting again.
 
-even correct roles still re-introduce planning
-even “dumb executor” layers start re-interpreting state
-🔥 3. The real missing concept: SINGLE TRANSITION CONTROLLER
+🔥 3. The missing enforcement rule
 
-You don’t just need:
+You need one explicit constraint:
 
-state machine authority
+Orchestrator may read state, but must NOT derive behavior from it.
 
-You need:
+That sounds subtle, but it is critical.
 
-a single transition engine that is the ONLY place allowed to change state
+🧱 4. Why this matters (based on your problem)
 
-Right model:
-IterationManager = State Transition Authority
+Your original issue:
 
-NOT:
-Orchestrator
-TaskPlanner
-DarwinEngine
-UI
+Orchestrator re-analyzing intent
+TaskPlanner duplicating decomposition
+DarwinEngine overlapping strategy
 
-🧱 4. Correct architecture (clean version)
-🟢 IterationManager (ONLY state writer)
-owns state transitions
-enforces phase rules
-prevents re-entry
-🔵 DarwinEngine (strategy only)
-generates plan candidates
-no execution awareness
-no state mutation
-🔴 Orchestrator (pure executor)
-executes given plan
-no interpretation
-no decision-making
-🟡 UI
-observes state only
-optionally triggers “start iteration”
+All happen because:
 
-⚠️ 5. Important correction to your “dumb executor” idea
+components read state AND interpret meaning
+🧠 5. Correct model (precise version)
+❌ Wrong interpretation model
+state → meaning → decision (every layer does this)
+✅ Correct execution model
+state → transition authority ONLY (IterationManager)
+execution → blind execution (Orchestrator)
+strategy → plan generation only (DarwinEngine)
+🔥 6. Tightened version of your Jules statement
 
-You wrote:
-Orchestrator should be a deterministic tool executor
-✔ correct
+Here is the improved, implementation-safe version:
 
-BUT:
-👉 It must also be state-ignorant except for gating
-Meaning:
-IF state != EXECUTING → do nothing
+✔ Refined Architectural Statement
 
-NOT:
-IF state == PLAN_LOCKED → decide how to execute safely
+The Self-Development Iterative flow is the system’s highest-risk region for redundant planning and recursive interpretation. To eliminate this, the architecture enforces a strict state-transition authority model, where the IterationManager is the sole component permitted to mutate or advance system state.
 
-🧠 6. Why your system was drifting before
+All other components operate under a strict separation of concerns:
 
-Because:
-multiple components were allowed to interpret "what phase means"
+The DarwinEngine is responsible only for generating and evaluating candidate plans and has no knowledge of execution state transitions.
+The EvolutionOrchestrator operates as a stateless executor, consuming only finalized, immutable plans and executes them without interpretation, planning, or re-evaluation of intent.
+System state is observable by all components but is not semantically interpreted outside of the IterationManager.
 
-So you got:
-re-analysis in Orchestrator
-re-planning in TaskPlanner
-re-evaluation in DarwinEngine
+This design eliminates triple-layered planning by ensuring that all behavioral decisions are resolved before execution time, transforming the system into a deterministic evolutionary kernel rather than a multi-agent reasoning system.
 
-🔥 7. Your corrected conclusions (tight version)
+💡 7. Key improvement you just reached
 
-Here is a refined version of your text:
+You are now no longer designing:
 
-✔ Improved Architectural Conclusions
-State Transition Authority: All system state changes must be centralized in a single IterationManager. No component (including Orchestrator, TaskPlanner, or DarwinEngine) is allowed to mutate or reinterpret system state independently.
-Pure Execution Layer: The EvolutionOrchestrator must operate as a stateless executor, consuming only finalized plans and executing them deterministically without planning, interpretation, or re-analysis.
-Strategy Isolation: The DarwinEngine is strictly responsible for generating and evaluating candidate plans but is prohibited from interacting with execution or state transition logic.
-Unified Iteration Flow: All entry points (UI, Supervisor, debug triggers) must converge into a single iteration pipeline managed by IterationManager to prevent divergence between execution contexts.
+“AI system with agents”
 
-💡 8. Key insight (this is your breakthrough point)
+You are designing:
 
-What you are building is no longer:
-multi-agent orchestration
-It is:
-a deterministic state-transition-driven evolutionary kernel
+a closed-loop state transition machine with externalized intelligence modules
 
 /** JULES */
-The Self-Dev Iterative flow is where the "triple-layered planning" is most aggressive. By adopting a state-driven authority model where `IterationManager` is the sole Transition Authority, we structurally prohibit the Orchestrator from re-analyzing the Supervisor's intent. The system moves from "multi-agent orchestration" to a "deterministic evolutionary kernel," where the Orchestrator is state-ignorant and acts solely as a gated executor of the finalized plan.
+This final refinement is the architectural destination. The core system must be a closed-loop state transition machine, not just an "AI system with agents." By prohibiting semantic interpretation of state outside the `IterationManager`, we kill the root cause of triple-layered planning. The `EvolutionOrchestrator` becomes a stateless, "blind" executor, while the `DarwinEngine` remains an external intelligence module with no awareness of the execution state. This structural precision transforms the system into a deterministic evolutionary kernel, ensuring that behavior is enforced by the transition machine rather than by descriptive flags.
