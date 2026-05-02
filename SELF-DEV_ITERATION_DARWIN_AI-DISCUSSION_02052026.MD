@@ -186,7 +186,7 @@ single-thinker + multiple executors
 👉 Everything else = tools
 
 /** JULES */
-This critique is sharp and accurate. The lack of an "authority chain" is precisely why the trace analysis showed the Orchestrator re-analyzing intents for tasks already decomposed by the TaskPlanner. By explicitly introducing a "trust boundary" via an immutability contract (e.g., `isAnalyzed`, `isDecomposed` flags), we can shift the Orchestrator from being a "smart" autonomous agent to a "dumb" deterministic executor for pre-planned workflows. This transition will significantly reduce token overhead and prevent logic drift between the strategic layer (DarwinEngine) and the tactical execution layer.
+This discussion clarifies that in the most complex flow (Self-Dev Darwin), the system is most vulnerable to redundancy due to a broken authority chain. By implementing the "Single-Thinker" (DarwinEngine) model and treating the Orchestrator as a deterministic executor, we establish the "Trust Boundary" needed to stabilize the entire self-development loop.
 
 /** CHAT-GPT */
 That’s a good interpretation layer, but it still has one subtle architectural risk:
@@ -395,125 +395,97 @@ You are no longer building:
 
 You are designing:
 
-a closed-loop state transition machine with externalized intelligence modules
+a state-transition kernel with external intelligence plugged in
+
+That’s a much stronger and more stable architecture class.
 
 /** CHAT-GPT */
-This is a very strong roadmap—clear, layered, and aligned with everything we converged on. But there are two subtle gaps that will bite you during implementation if you don’t tighten them now.
+This is now very close to production-grade architecture. You’ve moved from “idea” → “enforceable system.”
 
-I’ll refine it so it becomes execution-proof, not just architecturally correct.
+I’ll tighten just a few remaining edges so it becomes failure-resistant under real iterative/Darwin load (where things usually break).
 
-🧠 1. What you got absolutely right
-✔ Superset-first approach → correct (this is the right strategy)
-✔ Phase separation → clean and logical
-✔ IterationManager as authority → critical
-✔ Orchestrator simplification → necessary
-✔ Entry point unification → prevents drift
+🧠 1. What is now excellent
+You’ve successfully achieved:
+✔ State machine with explicit transitions
+✔ Single transition authority (IterationManager)
+✔ Stateless execution layer
+✔ Mode projections (this is a big win)
+✔ Logging for traceability
 
-You’re essentially defining a kernel architecture, which is exactly the right abstraction.
+👉 This is no longer an AI system—it’s a kernel with pluggable intelligence, which is exactly right.
 
-⚠️ 2. Two hidden risks
-❌ Risk 1: “State defined” ≠ “State enforced”
-In Phase 1 you define:
-SystemState (INIT, ANALYZING, PLAN_LOCKED, EXECUTING, VERIFYING, DONE)
+⚠️ 2. Remaining weak points (small but critical)
+❌ Issue 1: Missing “ENTRY invariants”
+Right now you define transitions, but not what must be true BEFORE entering a state.
+Example: PLAN_LOCKED → EXECUTING
+👉 But nothing enforces: finalPlan != null
 
-👉 But nothing yet prevents illegal transitions like:
-EXECUTING → ANALYZING ❌
-PLAN_LOCKED → ANALYZING ❌
+❌ Issue 2: VERIFYING is under-defined
+You wrote: EXECUTING → VERIFYING → DONE | MUTATING
+👉 But: Who produces verification result? What defines success vs failure?
+Without this, Darwin loop becomes inconsistent again.
 
-❌ Risk 2: “Blind executor” still depends on correct inputs
-If finalPlan is wrong or inconsistent:
-Orchestrator.executeBlindly()
-→ system breaks silently
+❌ Issue 3: MUTATING is not isolated enough
+Right now: VERIFYING → MUTATING → PLAN_LOCKED
+👉 Risk: mutation logic may leak into planning; DarwinEngine may start influencing transitions again
 
-👉 You need a gate before execution, not inside Orchestrator.
+🔥 3. Final hardening (minimal additions, big impact)
+🧱 Add 1: State ENTRY CONDITIONS (mandatory)
+Extend Phase 1 with:
+STATE ENTRY RULES:
+ANALYZING:
+  - input exists
+PLAN_LOCKED:
+  - finalPlan != null
+EXECUTING:
+  - finalPlan != null
+VERIFYING:
+  - executionResult != null
+MUTATING:
+  - evaluationResult != null
 
-🔥 3. Critical refinement (small but powerful)
-🧱 Add: Transition Table (Phase 1.5)
-Right after defining SystemState, add:
-VALID TRANSITIONS ONLY:
-INIT → ANALYZING
-ANALYZING → PLAN_LOCKED
-PLAN_LOCKED → EXECUTING
-EXECUTING → VERIFYING
-VERIFYING → DONE | MUTATING
-MUTATING → PLAN_LOCKED
+👉 Enforce in IterationManager.transition():
+validateTransition(from, to);
+validateStateEntry(to, context);
 
-👉 Enforce inside IterationManager:
-if (!isValidTransition(currentState, nextState)) {
-    throw new IllegalStateException("Invalid transition");
-}
+🧱 Add 2: VERIFYING contract (make it deterministic)
+Define:
+VERIFYING:
+  input: executionResult
+  output: evaluationResult (success | failure + score)
 
-🧱 Add: Execution Gate (Phase 3.5)
-Before Orchestrator runs:
-if (!iteration.hasFinalPlan()) fail();
-if (state != EXECUTING) return;
+👉 Important rule: ONLY IterationManager decides:
+success → DONE
+failure → MUTATING
 
-👉 This ensures:
-Orchestrator = dumb
-IterationManager = safe
+🧱 Add 3: MUTATION isolation rule
+Define explicitly:
+MUTATING:
+  - consumes evaluationResult
+  - produces NEW plan candidates
+  - MUST NOT execute anything
+👉 This prevents: DarwinEngine → execution influence
 
-🧠 4. Refined roadmap (tightened)
-🔹 PHASE 1 — Evolutionary Kernel (Model)
-Add:
-SystemState
-finalPlan
-VALID TRANSITION TABLE (MANDATORY)
+🧠 4. Refined transition model (final form)
+INIT → ANALYZING → PLAN_LOCKED → EXECUTING → VERIFYING → DONE | MUTATING → PLAN_LOCKED (loop)
 
-🔹 PHASE 2 — IterationManager (Authority)
-Add:
-transition(current, next)
-validateTransition()
-ONLY place where state changes
+With hard guarantees:
+No execution outside EXECUTING
+No planning outside ANALYZING/MUTATING
+No decisions outside IterationManager
 
-🔹 PHASE 3 — Orchestrator (Executor)
-Add:
-IF state == EXECUTING AND finalPlan → execute
-ELSE → do nothing
+🧠 5. Mode projections (now fully correct)
+Now your projections become strictly enforceable:
+Simple Chat: INIT → DONE
+Standard Iteration: INIT → ANALYZING → PLAN_LOCKED → EXECUTING → DONE
+Darwin: INIT → ANALYZING → PLAN_LOCKED → EXECUTING → VERIFYING → MUTATING → loop
 
-REMOVE:
-intent classification
-re-analysis
-planning logic
-
-🔹 PHASE 4 — Convergence
-All entry points:
-UI / Supervisor → IterationManager.start()
-
-🧠 5. One more improvement (high value)
-Add Transition Logging (mandatory for debugging)
-Example:
-[STATE] PLAN_LOCKED → EXECUTING (reason: plan finalized)
-[STATE] EXECUTING → VERIFYING (reason: execution finished)
-
-👉 This will solve your earlier:
-“hard to debug cycles”
-
-💡 6. Final architectural insight
-Your statement:
-“other modes become subsets”
-✔ correct, but more precisely:
-ALL modes = projections of the same state machine
-
-Examples:
-Simple Chat:
-INIT → DONE
-Iteration:
-INIT → ANALYZING → PLAN_LOCKED → EXECUTING → DONE
-Darwin:
-INIT → ANALYZING → PLAN_LOCKED → EXECUTING → VERIFYING → MUTATING → loop
-
-🚀 7. Final verdict
-Your roadmap is:
-✔ architecturally correct
-✔ scalable
-✔ aligned with your system goals
-
-After adding:
-transition validation
-execution gating
-logging
-
-👉 it becomes robust enough for self-development loops
+💡 6. Final architectural insight (this is your real end-state)
+You’ve now built:
+STATE MACHINE = control plane
+DARWIN ENGINE = intelligence plane
+ORCHESTRATOR = execution plane
+👉 And most importantly: ONLY ONE place converts data → decision
 
 /** JULES */
-This discussion clarifies that in the most complex flow (Self-Dev Darwin), the system is most vulnerable to redundancy due to a broken authority chain. By implementing the "Single-Thinker" (DarwinEngine) model and treating the Orchestrator as a deterministic executor, we establish the "Trust Boundary" needed to stabilize the entire self-development loop. Shifting to an **execution-proof state transition machine** where the `IterationManager` is the sole Transition Authority prevents component-level re-interpretation. Every mode—from Simple Chat to Self-Dev Darwin—is now a specific **projection** of this same underlying state machine, ensuring structural enforcement of the authority chain.
+Correct. The pivot from "multi-agent orchestration" to a "state-transition kernel with external intelligence" is the final destination. By enforcing **State Entry Conditions** and a deterministic **Verifying Contract**, we ensure that only the `IterationManager` (the Control Plane) can convert intelligence data into decisions. This structural precision transforms the system into a failure-resistant, production-grade evolutionary engine where intelligence is decoupled from control and execution remains purely reactive.

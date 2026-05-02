@@ -387,15 +387,105 @@ This strict separation enforces a deterministic evolutionary kernel where:
 intelligence is decoupled from control
 execution is decoupled from reasoning
 state transitions are the only mechanism of behavior change
-💡 7. Key improvement you just reached
+💡 7. Key insight (this is your real breakthrough)
 
-You are now no longer designing:
+You are no longer building:
 
-“AI system with agents”
+“multi-agent orchestration system”
 
 You are designing:
 
-a closed-loop state transition machine with externalized intelligence modules
+a state-transition kernel with external intelligence plugged in
+
+That’s a much stronger and more stable architecture class.
+
+/** CHAT-GPT */
+This is now very close to production-grade architecture. You’ve moved from “idea” → “enforceable system.”
+
+I’ll tighten just a few remaining edges so it becomes failure-resistant under real iterative/Darwin load (where things usually break).
+
+🧠 1. What is now excellent
+You’ve successfully achieved:
+✔ State machine with explicit transitions
+✔ Single transition authority (IterationManager)
+✔ Stateless execution layer
+✔ Mode projections (this is a big win)
+✔ Logging for traceability
+
+👉 This is no longer an AI system—it’s a kernel with pluggable intelligence, which is exactly right.
+
+⚠️ 2. Remaining weak points (small but critical)
+❌ Issue 1: Missing “ENTRY invariants”
+Right now you define transitions, but not what must be true BEFORE entering a state.
+Example: PLAN_LOCKED → EXECUTING
+👉 But nothing enforces: finalPlan != null
+
+❌ Issue 2: VERIFYING is under-defined
+You wrote: EXECUTING → VERIFYING → DONE | MUTATING
+👉 But: Who produces verification result? What defines success vs failure?
+Without this, Darwin loop becomes inconsistent again.
+
+❌ Issue 3: MUTATING is not isolated enough
+Right now: VERIFYING → MUTATING → PLAN_LOCKED
+👉 Risk: mutation logic may leak into planning; DarwinEngine may start influencing transitions again
+
+🔥 3. Final hardening (minimal additions, big impact)
+🧱 Add 1: State ENTRY CONDITIONS (mandatory)
+Extend Phase 1 with:
+STATE ENTRY RULES:
+ANALYZING:
+  - input exists
+PLAN_LOCKED:
+  - finalPlan != null
+EXECUTING:
+  - finalPlan != null
+VERIFYING:
+  - executionResult != null
+MUTATING:
+  - evaluationResult != null
+
+👉 Enforce in IterationManager.transition():
+validateTransition(from, to);
+validateStateEntry(to, context);
+
+🧱 Add 2: VERIFYING contract (make it deterministic)
+Define:
+VERIFYING:
+  input: executionResult
+  output: evaluationResult (success | failure + score)
+
+👉 Important rule: ONLY IterationManager decides:
+success → DONE
+failure → MUTATING
+
+🧱 Add 3: MUTATION isolation rule
+Define explicitly:
+MUTATING:
+  - consumes evaluationResult
+  - produces NEW plan candidates
+  - MUST NOT execute anything
+👉 This prevents: DarwinEngine → execution influence
+
+🧠 4. Refined transition model (final form)
+INIT → ANALYZING → PLAN_LOCKED → EXECUTING → VERIFYING → DONE | MUTATING → PLAN_LOCKED (loop)
+
+With hard guarantees:
+No execution outside EXECUTING
+No planning outside ANALYZING/MUTATING
+No decisions outside IterationManager
+
+🧠 5. Mode projections (now fully correct)
+Now your projections become strictly enforceable:
+Simple Chat: INIT → DONE
+Standard Iteration: INIT → ANALYZING → PLAN_LOCKED → EXECUTING → DONE
+Darwin: INIT → ANALYZING → PLAN_LOCKED → EXECUTING → VERIFYING → MUTATING → loop
+
+💡 6. Final architectural insight (this is your real end-state)
+You’ve now built:
+STATE MACHINE = control plane
+DARWIN ENGINE = intelligence plane
+ORCHESTRATOR = execution plane
+👉 And most importantly: ONLY ONE place converts data → decision
 
 /** JULES */
-This final refinement is the architectural destination. The core system must be a closed-loop state transition machine, not just an "AI system with agents." By prohibiting semantic interpretation of state outside the `IterationManager`, we kill the root cause of triple-layered planning. The `EvolutionOrchestrator` becomes a stateless, "blind" executor, while the `DarwinEngine` remains an external intelligence module with no awareness of the execution state. This structural precision transforms the system into a deterministic evolutionary kernel, ensuring that behavior is enforced by the transition machine rather than by descriptive flags.
+Correct. The Self-Dev Iterative flow is where the "triple-layered planning" is most aggressive. By adopting a state-driven authority model with hard **State Entry Conditions** and a deterministic **Verifying Contract**, we structurally prohibit the Orchestrator from re-analyzing the Supervisor's intent. The system moves from "multi-agent orchestration" to a "state-transition kernel with external intelligence," where the Orchestrator acts solely as a gated executor of the finalized plan. This architectural finality ensures that behavior is enforced by the transition machine rather than by descriptive flags.
