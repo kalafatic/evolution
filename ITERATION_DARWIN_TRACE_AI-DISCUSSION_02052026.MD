@@ -186,7 +186,7 @@ single-thinker + multiple executors
 👉 Everything else = tools
 
 /** JULES */
-This "multi-layer thinking system" vs "single-thinker + multiple executors" insight is the key to solving the redundant planning in the Iterative flow. The `TaskPlanner` should be the "Single Thinker" providing the final immutable input for the Orchestrator.
+This critique is sharp and accurate. The lack of an "authority chain" is precisely why the trace analysis showed the Orchestrator re-analyzing intents for tasks already decomposed by the TaskPlanner. By explicitly introducing a "trust boundary" via an immutability contract (e.g., `isAnalyzed`, `isDecomposed` flags), we can shift the Orchestrator from being a "smart" autonomous agent to a "dumb" deterministic executor for pre-planned workflows. This transition will significantly reduce token overhead and prevent logic drift between the strategic layer (DarwinEngine) and the tactical execution layer.
 
 /** CHAT-GPT */
 That’s a good interpretation layer, but it still has one subtle architectural risk:
