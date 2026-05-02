@@ -36,17 +36,34 @@ public class JsonUtils {
             try {
                 return new JSONObject(fullPart);
             } catch (JSONException e) {
-                // Greedy failed, likely multiple objects. Attempt to find the first valid one.
+                // Greedy failed, likely multiple objects or nested content.
+                // Attempt to find the first valid one using balanced brace matching.
                 int searchPos = firstStart;
-                while (searchPos < lastEnd) {
-                    int end = text.indexOf("}", searchPos);
-                    if (end == -1) break;
+                while (searchPos <= lastEnd) {
+                    int start = text.indexOf("{", searchPos);
+                    if (start == -1) break;
 
-                    String candidate = text.substring(firstStart, end + 1);
-                    try {
-                        return new JSONObject(candidate);
-                    } catch (JSONException ex) {
-                        searchPos = end + 1;
+                    int braceCount = 0;
+                    int end = -1;
+                    for (int i = start; i < text.length(); i++) {
+                        char c = text.charAt(i);
+                        if (c == '{') braceCount++;
+                        else if (c == '}') braceCount--;
+                        if (braceCount == 0) {
+                            end = i;
+                            break;
+                        }
+                    }
+
+                    if (end != -1) {
+                        String candidate = text.substring(start, end + 1);
+                        try {
+                            return new JSONObject(candidate);
+                        } catch (JSONException ex) {
+                            searchPos = start + 1;
+                        }
+                    } else {
+                        break;
                     }
                 }
             }
@@ -209,7 +226,7 @@ public class JsonUtils {
                 break;
             }
         }
-        if (multiObjArr.length() > 0) return multiObjArr;
+        if (multiObjArr.length() > 1) return multiObjArr;
 
         // 3. Fallback: try object extraction and conversion if only one object was found or step 2 failed
         if (firstBrace != -1) {
