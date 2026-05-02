@@ -659,7 +659,8 @@ public class AiChatPage extends AEvoPage {
 			if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) orchestrator.setId(idPrefix + System.currentTimeMillis());
 		}
 		chatGroup.appendText("User [" + modeLabel + "]: " + finalRequest, colorUser, SWT.BOLD);
-		chatGroup.appendText("\n\nEvo: Initializing " + modeLabel + " Supervisor loop...", colorEvolution, SWT.ITALIC | SWT.BOLD);
+		String loopSuffix = (isSelfDev) ? " Supervisor loop" : " loop";
+		chatGroup.appendText("\n\nEvo: Initializing " + modeLabel + loopSuffix + "...", colorEvolution, SWT.ITALIC | SWT.BOLD);
 		instructionsGroup.setRequest("");
 		state.isRunning = true;
 		instructionsGroup.setOrchestrationRunning(true);
@@ -671,6 +672,7 @@ public class AiChatPage extends AEvoPage {
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
 				context.setThreadId(threadId);
 				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
+				context.setPlatformMode(new eu.kalafatic.evolution.controller.orchestration.ModeRouter().routeFast(finalRequest, orchestrator));
 				state.currentContext = context;
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) processLogEntry(log, threadId); }));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
