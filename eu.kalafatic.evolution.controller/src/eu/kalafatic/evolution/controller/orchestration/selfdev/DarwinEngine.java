@@ -179,12 +179,16 @@ public class DarwinEngine extends BaseAiAgent {
 
         List<BranchVariant> variants = new ArrayList<>();
         for (int i = 0; i < array.length(); i++) {
-            JSONObject obj = array.getJSONObject(i);
+            JSONObject obj = array.optJSONObject(i);
+            if (obj == null) {
+                context.log("[DARWIN] WARNING: Variant at index " + i + " is not a JSON object. Skipping.");
+                continue;
+            }
             BranchVariant v = new BranchVariant();
             v.setId(obj.optString("id", "v" + i));
-            v.setStrategy(obj.getString("strategy"));
+            v.setStrategy(obj.optString("strategy", "unknown"));
             v.setScore(obj.optDouble("score", 0.0));
-            String suffix = obj.getString("suffix");
+            String suffix = obj.optString("suffix", "variant-" + i);
             v.setBranchName("exp/" + sanitize(goal) + "/" + sanitize(suffix));
 
             // Parse Actions

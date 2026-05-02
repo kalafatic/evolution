@@ -320,7 +320,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
             // 2. Execution Loop
             int taskCount = tasks.size();
-            int iterationLimit = context.getPlatformMode().getIterationLimit();
+            int iterationLimit = context.getPlatformMode() != null ? context.getPlatformMode().getIterationLimit() : 3;
             String lastResult = "";
             for (int i = 0; i < taskCount; i++) {
                 Task task = tasks.get(i);
@@ -328,7 +328,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
                     continue;
                 }
 
-                if (i >= iterationLimit && context.getPlatformMode().getType() != PlatformType.SELF_DEV_MODE) {
+                if (context.getPlatformMode() != null && i >= iterationLimit && context.getPlatformMode().getType() != PlatformType.SELF_DEV_MODE) {
                     context.log("Evo-Orchestrator-Mode: Iteration limit reached for " + context.getPlatformMode().getType() + " mode.");
                     break;
                 }
@@ -404,7 +404,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             updateStatus(context, 1.0, "Completed");
 
             String finalResponse;
-            if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
+            if (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
                 finalResponse = lastResult;
             } else {
                 try {
