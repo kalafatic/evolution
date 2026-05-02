@@ -186,6 +186,7 @@ public class IterationManager {
             TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
             variantContext.setThreadId(context.getThreadId() + "-variant-" + variant.getId());
             variantContext.setAutoApprove(true); // Always auto-approve in parallel variant evaluation
+            variantContext.setPlatformMode(context.getPlatformMode());
 
             TaskExecutor variantExecutor = new TaskExecutor(variantContext);
             Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
@@ -248,7 +249,7 @@ public class IterationManager {
     }
 
     private void checkSafety(List<Task> tasks) throws Exception {
-        if (context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
+        if (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
             for (Task t : tasks) {
                 if ("file".equalsIgnoreCase(t.getType())) {
                     String taskName = t.getName().toLowerCase();

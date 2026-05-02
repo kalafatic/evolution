@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import org.json.JSONObject;
+import eu.kalafatic.evolution.controller.orchestration.ModeRouter;
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.LlmIntentClassifier;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
@@ -33,7 +35,11 @@ public class SelfDevSupervisor {
     }
 
     public void startSession() {
-        context.log("[SUPERVISOR] Starting Self-Development Session: " + session.getId());
+        if (context.getPlatformMode() == null) {
+            context.setPlatformMode(new ModeRouter().routeFast(session.getInitialRequest(), context.getOrchestrator()));
+        }
+        String modeName = (context.getPlatformMode() != null) ? context.getPlatformMode().getType().toString().replace("_", " ") : "Self-Development";
+        context.log("[SUPERVISOR] Starting " + modeName + " Session: " + session.getId());
 
         // Analytic Phase for the initial request
         try {
@@ -122,7 +128,7 @@ public class SelfDevSupervisor {
                 restartManager.persistAndPrepareForRestart();
 
                 // If we need a real restart via external Supervisor
-                if (context.getOrchestrator().isDarwinMode()) {
+                if (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
                     context.log("[SUPERVISOR] Delegating build and restart to external Supervisor...");
                     try {
                         bootstrapController.startBootstrap();
