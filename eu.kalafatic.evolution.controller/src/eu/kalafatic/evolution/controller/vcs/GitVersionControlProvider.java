@@ -110,6 +110,11 @@ public class GitVersionControlProvider implements VersionControlProvider {
         shell.execute("git push", workingDir, null);
     }
 
+    @Override
+    public void revertFile(File workingDir, String filePath) throws Exception {
+        shell.execute("git checkout HEAD -- " + quote(filePath), workingDir, null);
+    }
+
     private boolean isHeadValid(File workingDir) {
         try {
             shell.execute("git rev-parse HEAD", workingDir, null);
