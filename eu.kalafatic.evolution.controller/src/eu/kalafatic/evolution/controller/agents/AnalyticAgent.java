@@ -23,17 +23,17 @@ public class AnalyticAgent extends BaseAiAgent {
     // @evo:14:B reason=flexible-analysis
     protected String getAgentInstructions() {
         return "Role: Analytic Agent. Goal: Analyze user prompt or task failure.\n\n" +
-                "STRICT OUTPUT RULE: You MUST output ONLY a single JSON object. No preamble, no conversational text.\n\n" +
+                "STRICT OUTPUT RULE: You MUST output ONLY a single JSON object. No preamble, no conversational text. Never output two JSON objects.\n\n" +
                 "ANALYSIS CRITERIA (for new requests):\n" +
                 "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.\n" +
-                "2. AMBIGUITY: ATOMIC tasks (e.g., 'create class') are NOT ambiguous. If not ambiguous, 'clarificationQuestion' and 'missingInformation' MUST be empty.\n" +
-                "3. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults.\n\n" +
+                "2. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion' and 'missingInformation' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.\n" +
+                "3. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults. It should stay faithful to the original intent.\n\n" +
                 "DIAGNOSIS CRITERIA (for failures):\n" +
                 "1. ROOT CAUSE: syntactic, logical, or environment.\n" +
                 "2. PROGRESS: IMPROVED, SAME, or WORSE compared to previous attempt.\n" +
                 "3. STRATEGY: RETRY, REPAIR_AGENT, or ESCALATE.\n\n" +
-                "OUTPUT SCHEMA (Choose ONLY ONE):\n" +
-                "NEW REQUEST:\n" +
+                "OUTPUT SCHEMA (Choose ONLY ONE based on the task - either NEW REQUEST or DIAGNOSIS):\n" +
+                "NEW REQUEST (for fresh prompts):\n" +
                 "{\n" +
                 "  \"category\": \"...\",\n" +
                 "  \"objective\": \"...\",\n" +
@@ -42,7 +42,7 @@ public class AnalyticAgent extends BaseAiAgent {
                 "  \"clarificationQuestion\": \"...\",\n" +
                 "  \"refinedPrompt\": \"...\"\n" +
                 "}\n" +
-                "DIAGNOSIS:\n" +
+                "DIAGNOSIS (for failure analysis):\n" +
                 "{\n" +
                 "  \"rootCause\": \"...\",\n" +
                 "  \"repeatFailure\": boolean,\n" +
@@ -70,13 +70,28 @@ public class AnalyticAgent extends BaseAiAgent {
         context.log("Evo-Analytic-Diagnosis-Response: " + response);
 
         JSONObject diagnosis = JsonUtils.extractJsonObject(response);
-        if (diagnosis == null) {
-            context.log("Evo-Analytic: ERROR - Failed to extract JSON diagnosis. Returning fallback.");
+
+        // If we got multiple objects, try to find the one that looks like a diagnosis
+        if (diagnosis != null && !diagnosis.has("rootCause") && response.contains("rootCause")) {
+            // The greedy or first-match extraction failed to get the diagnosis object
+            // Use extractJsonArrayFlexible to get all objects and pick the right one
+            org.json.JSONArray all = JsonUtils.extractJsonArrayFlexible(response);
+            for (int i = 0; i < all.length(); i++) {
+                JSONObject obj = all.optJSONObject(i);
+                if (obj != null && (obj.has("rootCause") || obj.has("suggestedStrategy"))) {
+                    diagnosis = obj;
+                    break;
+                }
+            }
+        }
+
+        if (diagnosis == null || (!diagnosis.has("rootCause") && !diagnosis.has("suggestedStrategy"))) {
+            context.log("Evo-Analytic: ERROR - Failed to extract valid JSON diagnosis. Returning fallback.");
             diagnosis = new JSONObject();
             diagnosis.put("rootCause", "Unknown");
             diagnosis.put("repeatFailure", false);
             diagnosis.put("suggestedStrategy", "RETRY");
-            diagnosis.put("explanation", "Failed to parse AI response.");
+            diagnosis.put("explanation", "Failed to parse AI response as diagnosis: " + response);
         }
         return diagnosis;
     }
@@ -89,8 +104,21 @@ public class AnalyticAgent extends BaseAiAgent {
         context.log("Evo-Analytic-Response: " + response);
 
         JSONObject analysis = JsonUtils.extractJsonObject(response);
-        if (analysis == null) {
-            context.log("Evo-Analytic: ERROR - Failed to extract JSON analysis. Returning fallback.");
+
+        // Handle multiple objects if necessary
+        if (analysis != null && !analysis.has("category") && response.contains("category")) {
+            org.json.JSONArray all = JsonUtils.extractJsonArrayFlexible(response);
+            for (int i = 0; i < all.length(); i++) {
+                JSONObject obj = all.optJSONObject(i);
+                if (obj != null && obj.has("category")) {
+                    analysis = obj;
+                    break;
+                }
+            }
+        }
+
+        if (analysis == null || !analysis.has("category")) {
+            context.log("Evo-Analytic: ERROR - Failed to extract valid JSON analysis. Returning fallback.");
             analysis = new JSONObject();
             analysis.put("category", "CHAT");
             analysis.put("objective", prompt);
