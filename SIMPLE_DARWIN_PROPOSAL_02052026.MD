@@ -1,11 +1,12 @@
 # FIX PROMPT: Simple Darwin Flow Unification
 
-**Context:** Analysis (SIMPLE_DARWIN_ANALYSIS_02052026.MD) found a functional discrepancy between Darwin mode in the Chat UI and the Iteration Manager. The Chat UI currently uses a single PEV loop instead of the robust branch-and-select strategy.
+**Context:** Analysis (SIMPLE_DARWIN_ANALYSIS_02052026.MD) and Architectural Discussion (SIMPLE_DARWIN_AI-DISCUSSION_02052026.MD) identified a fundamental logic drift between Chat-Darwin and Supervisor-Darwin. The system must move to a state-transition kernel model where the `IterationManager` is the sole Transition Authority.
 
 **Task for AI Coder:**
-Unify the Darwin execution logic to use `IterationManager` regardless of where it is triggered.
+Unify all Darwinian execution logic under the `IterationManager` as a deterministic state machine.
 
 **Requirements:**
-1. **Refactor AiChatPage:** Modify `startSelfDevAction` in `AiChatPage.java` to always utilize the `SelfDevSupervisor` and `IterationManager` when `DarwinMode` is active.
-2. **Standardize Task Context:** Ensure the `TaskContext` correctly propagates the "Single Task" intent to the `IterationManager` so it can run a one-off Darwin cycle instead of an infinite loop.
-3. **Bridge Orchestrator:** If the Orchestrator receives a request with Darwin mode enabled, it should ideally delegate to a local instance of `IterationManager` instead of running its internal `executeTaskWithRetries` logic directly.
+1. **Unify Entry Points:** Refactor `AiChatPage.startSelfDevAction` to delegate Chat-initiated Darwin requests to the `IterationManager`. Remove the internal PEV loop fallback in the Orchestrator.
+2. **Transition Authority:** Ensure `IterationManager` is the ONLY component allowed to advance state from `ANALYZE` to `PLAN` and `EXECUTE`.
+3. **Intelligence Gating:** Modify the flow so that `DarwinEngine` variants are returned to `IterationManager` as raw data. `IterationManager` must then perform the selection and "lock" the plan into the system state before triggering execution.
+4. **Stateless Orchestrator:** Ensure the Orchestrator executes the resulting tasks blindly, without performing any additional reasoning or planning, once the `IterationManager` has transitioned the system to `EXECUTING`.

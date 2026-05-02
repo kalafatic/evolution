@@ -186,7 +186,7 @@ single-thinker + multiple executors
 👉 Everything else = tools
 
 /** JULES */
-This critique is sharp and accurate. The lack of an "authority chain" is precisely why the trace analysis showed the Orchestrator re-analyzing intents for tasks already decomposed by the TaskPlanner. By explicitly introducing a "trust boundary" via an immutability contract (e.g., `isAnalyzed`, `isDecomposed` flags), we can shift the Orchestrator from being a "smart" autonomous agent to a "dumb" deterministic executor for pre-planned workflows. This transition will significantly reduce token overhead and prevent logic drift between the strategic layer (DarwinEngine) and the tactical execution layer.
+The "Redundant Orchestrator Analysis" finding is most visible here. Simple Chat should be the ultimate "trust" path where the intent is already known (CHAT). ChatGPT's point about "Decision Finality" means that once the ModeRouter classifies a request as SIMPLE_CHAT, the Orchestrator should immediately trust that classification and skip all subsequent intent gates.
 
 /** CHAT-GPT */
 That’s a good interpretation layer, but it still has one subtle architectural risk:
@@ -308,56 +308,55 @@ State machine is:
 global authority
 
 /** CHAT-GPT */
-This is very close to the correct final framing, but there’s one subtle architectural precision you should tighten so this doesn’t degrade again later.
+This is architecturally very strong, but I’ll tighten it one level further so it becomes implementation-safe and cannot silently drift back into “agent thinking” later.
 
-Right now it is correct conceptually—but slightly too abstract, which can allow “interpretation creep” in implementation.
+Right now it’s correct in principle—but still slightly “philosophical”, not yet fully constraint-hard.
 
-🧠 1. What’s correct
+🧠 1. What is already correct
 
-You correctly identified:
+You now have the right foundation:
 
-✔ Self-dev flow = worst case for triple planning
-✔ IterationManager must own transitions
-✔ Orchestrator must not interpret intent
-✔ System becomes deterministic evolutionary kernel
+✔ Closed-loop state machine (correct abstraction level)
+✔ IterationManager = sole authority (good)
+✔ Orchestrator = blind executor (correct)
+✔ DarwinEngine = external intelligence (correct separation)
+✔ No semantic state interpretation outside transition layer (key insight)
 
-This is all aligned.
+This is essentially the final architectural direction.
 
-⚠️ 2. The hidden risk in this Jules statement
+⚠️ 2. The remaining hidden risk
 
-This phrase:
+This phrase is still slightly dangerous:
 
-“state-driven authority model”
+“DarwinEngine remains an external intelligence module”
 
-and
+Because it does NOT explicitly restrict:
 
-“state-ignorant Orchestrator”
+whether it can influence execution indirectly
+whether it can trigger reinterpretation through outputs
+whether its “evaluation results” can be reinterpreted downstream
 
-is correct conceptually, BUT still leaves ambiguity:
+👉 In systems like yours, ambiguity always re-enters through outputs, not ownership
 
-👉 It does NOT explicitly define what Orchestrator is allowed to read vs forbidden to read
+🔥 3. The missing invariant (critical)
 
-That’s where systems like yours start drifting again.
+You need one final hard rule:
 
-🔥 3. The missing enforcement rule
+Only IterationManager may convert intelligence output into state transition decisions.
 
-You need one explicit constraint:
+Everything else is “data”, not “control signal”.
 
-Orchestrator may read state, but must NOT derive behavior from it.
-
-That sounds subtle, but it is critical.
-
-🧱 4. Why this matters (based on your problem)
+🧱 4. Why this matters for your triple-planning problem
 
 Your original issue:
 
-Orchestrator re-analyzing intent
-TaskPlanner duplicating decomposition
-DarwinEngine overlapping strategy
+TaskPlanner re-decomposes
+Orchestrator re-interprets
+DarwinEngine re-evaluates execution meaning
 
-All happen because:
+This happens because:
 
-components read state AND interpret meaning
+intelligence outputs are treated as semi-decision inputs
 🧠 5. Correct model (precise version)
 ❌ Wrong interpretation model
 state → meaning → decision (every layer does this)
@@ -365,22 +364,29 @@ state → meaning → decision (every layer does this)
 state → transition authority ONLY (IterationManager)
 execution → blind execution (Orchestrator)
 strategy → plan generation only (DarwinEngine)
-🔥 6. Tightened version of your Jules statement
+🔒 6. Hardened final version of your Jules statement
 
-Here is the improved, implementation-safe version:
+Here is the fully constraint-safe version:
 
-✔ Refined Architectural Statement
+✔ Final Architectural Refinement
 
-The Self-Development Iterative flow is the system’s highest-risk region for redundant planning and recursive interpretation. To eliminate this, the architecture enforces a strict state-transition authority model, where the IterationManager is the sole component permitted to mutate or advance system state.
+The system is a closed-loop state transition machine, not an AI agent system. All behavior is governed by explicit state transitions rather than distributed reasoning across components.
 
-All other components operate under a strict separation of concerns:
+The IterationManager is the sole authority responsible for:
 
-The DarwinEngine is responsible only for generating and evaluating candidate plans and has no knowledge of execution state transitions.
-The EvolutionOrchestrator operates as a stateless executor, consuming only finalized, immutable plans and executes them without interpretation, planning, or re-evaluation of intent.
-System state is observable by all components but is not semantically interpreted outside of the IterationManager.
+interpreting intelligence outputs
+converting evaluation results into state transitions
+advancing the system through lifecycle phases
 
-This design eliminates triple-layered planning by ensuring that all behavioral decisions are resolved before execution time, transforming the system into a deterministic evolutionary kernel rather than a multi-agent reasoning system.
+The EvolutionOrchestrator operates as a strictly stateless execution engine. It consumes only finalized, immutable plans and executes them deterministically without performing interpretation, planning, or evaluation.
 
+The DarwinEngine functions as an external intelligence module responsible solely for generating and evaluating candidate plans. Its outputs are treated as raw data and have no direct influence on system behavior until explicitly processed by the IterationManager.
+
+This strict separation enforces a deterministic evolutionary kernel where:
+
+intelligence is decoupled from control
+execution is decoupled from reasoning
+state transitions are the only mechanism of behavior change
 💡 7. Key improvement you just reached
 
 You are now no longer designing:
