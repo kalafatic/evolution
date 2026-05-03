@@ -8,12 +8,12 @@
 3. **Execution Plane (Orchestrator):** Stateless engine. Blind execution.
 
 **Task for AI Coder:**
-Unify Darwin execution logic under the `IterationManager` as a failure-resistant state machine.
+Unify Darwin execution logic under the `IterationManager` as a deterministic state machine.
 
 **Requirements:**
 1. **Unification:** Delegate all Darwin requests to `IterationManager`. Remove redundant reasoning in the Orchestrator.
 2. **Hardened Transitions:** Implement the **TransitionToken** pattern for state changes.
-3. **Pure Verification:** Refactor `VERIFYING` to be a pure function of execution result and plan.
-4. **Control Gating:** Only `IterationManager` selects the best candidate; `DarwinEngine` only provides evaluations.
+3. **Pure Verification:** Refactor `VERIFYING` to be a pure deterministic function.
+4. **Control Gating:** Only `IterationManager` selects the best candidate.
 5. **Stateless Execution:** The Orchestrator blindly executes the plan once state is `EXECUTING`.
-6. **Event Sourcing:** Persistent log of all transitions, variant generations, and selections.
+6. **Event Sourcing:** Persistent log of transitions, variants, and selections.
