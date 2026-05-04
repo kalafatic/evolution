@@ -29,8 +29,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         }
 
         try {
-            EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
-            return evolutionOrchestrator.handle(request, context);
+            KernelFacade kernel = new KernelFacade();
+            return kernel.handle(request, context);
         } catch (Exception e) {
             OrchestratorResponse response = new OrchestratorResponse();
             response.setResultType(ResultType.ERROR);
@@ -53,7 +53,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
         executor.submit(() -> {
             try {
-                EvolutionOrchestrator evolutionOrchestrator = new EvolutionOrchestrator();
+                KernelFacade kernel = new KernelFacade();
                 Orchestrator orchModel = inputOrchModel;
 
                 // We might need a real Orchestrator EMF object here if the system depends on it
@@ -139,7 +139,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     }
                 }
 
-                OrchestratorResponse orchResponse = evolutionOrchestrator.handle(request, context);
+                OrchestratorResponse orchResponse = kernel.handle(request, context);
 
                 result.setResponse(orchResponse.getSummary());
 
