@@ -69,7 +69,8 @@ public class GitManager {
         try {
             executeWithRetry("git rev-parse HEAD");
         } catch (Exception e) {
-            context.log("[GIT] Empty repository detected. Creating initial empty commit.");
+            context.log("[GIT] Empty repository detected. Creating initial commit.");
+            executeWithRetry("git add .");
             executeWithRetry("git commit --allow-empty -m \"Initial commit (Evo)\"");
         }
     }
