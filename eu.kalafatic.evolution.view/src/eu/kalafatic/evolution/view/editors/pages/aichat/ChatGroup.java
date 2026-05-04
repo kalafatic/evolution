@@ -382,12 +382,9 @@ public class ChatGroup extends AEvoGroup {
             String agentType = msg.getAgentType();
             if (agentType == null) agentType = "ai";
 
-            // If it was waiting, change it back to what it likely was
-            if ("waiting".equals(agentType)) {
-                agentType = "final-response";
-            } else if (agentType.startsWith("waiting ")) {
-                 agentType = agentType.replace("waiting ", "");
-            }
+            // Clean up waiting status
+            agentType = agentType.replace("waiting", "").trim();
+            if (agentType.isEmpty()) agentType = "final-response";
 
             if (!agentType.contains("approved")) {
                 msg.setAgentType(agentType + " approved");
@@ -403,6 +400,23 @@ public class ChatGroup extends AEvoGroup {
                 ChatMessage msg = messages.get(i);
                 if (msg.getAgentType() != null && msg.getAgentType().contains("waiting")) {
                     handleApprove(i);
+                    return;
+                }
+            }
+        }
+    }
+
+    public void markLastAiMessageAsWaiting() {
+        if (currentThread != null) {
+            List<ChatMessage> messages = currentThread.getMessages();
+            for (int i = messages.size() - 1; i >= 0; i--) {
+                ChatMessage msg = messages.get(i);
+                String agentType = msg.getAgentType();
+                if (agentType != null && !agentType.contains("user") && !agentType.contains("approved")) {
+                    if (!agentType.contains("waiting")) {
+                        msg.setAgentType(agentType + " waiting");
+                    }
+                    refreshBrowser();
                     return;
                 }
             }
@@ -492,8 +506,11 @@ public class ChatGroup extends AEvoGroup {
                 content.toLowerCase().contains("clarify") ||
                 content.toLowerCase().contains("clarification") ||
                 content.contains("[PROPOSAL:") ||
-                content.toLowerCase().contains("ambiguous")) {
-                agentType = "waiting";
+                content.toLowerCase().contains("ambiguous") ||
+                content.toLowerCase().contains("approve") ||
+                content.toLowerCase().contains("approval") ||
+                content.toLowerCase().contains("proceed?")) {
+                agentType += " waiting";
             }
         } else if (trimmedText.startsWith("Evolution: ")) {
             sender = "Evo";
