@@ -14,4 +14,6 @@ public interface IIntentClassifier {
      * @throws Exception if classification fails.
      */
     JSONObject classify(String input, TaskContext context) throws Exception;
+
+    void setAiService(AiService aiService);
 }

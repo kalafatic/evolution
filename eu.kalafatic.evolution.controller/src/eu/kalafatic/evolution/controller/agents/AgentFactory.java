@@ -20,7 +20,9 @@ public class AgentFactory {
         registerDefaultAgents();
     }
 
-    private static void registerDefaultAgents() {
+    public static synchronized void registerDefaultAgents() {
+        // Clear existing to avoid state contamination between tests
+        agents.clear();
         registerAgent(EvolutionConstants.AGENT_ANALYTIC, new AnalyticAgent());
         registerAgent(EvolutionConstants.AGENT_ARCHITECT, new ArchitectAgent());
         registerAgent(EvolutionConstants.AGENT_JAVA_DEV, new JavaDevAgent());

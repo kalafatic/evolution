@@ -52,41 +52,17 @@ public class AnalyticAgent extends BaseAiAgent {
                 "}";
     }
 
-    @Override
-    protected String getFooterInstructions() {
-        return "You MUST output a valid JSON object. Do not include any conversational preamble or follow-up text outside the JSON structure.";
-    }
-
-    // @evo:14:B reason=failure-analysis
     public JSONObject diagnose(String result, String feedback, TaskContext context) throws Exception {
-        String diagnosisPrompt = "DIAGNOSE FAILURE:\n" +
-                "Result: " + (result != null ? result : "N/A") + "\n" +
-                "Feedback: " + (feedback != null ? feedback : "N/A") + "\n\n" +
-                "Please analyze this failure and determine if it's a repetitive issue and suggest a strategy.";
+        String input = "EXECUTION RESULT: " + result + "\nFEEDBACK: " + feedback;
+        String fullPrompt = buildPrompt(input, context, null);
 
-        String fullPrompt = buildPrompt(diagnosisPrompt, context, feedback);
         context.log("Evo-Analytic-Diagnosis-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("Evo-Analytic-Diagnosis-Response: " + response);
 
         JSONObject diagnosis = JsonUtils.extractJsonObject(response);
 
-        // If we got multiple objects, try to find the one that looks like a diagnosis
-        if (diagnosis != null && !diagnosis.has("rootCause") && response.contains("rootCause")) {
-            // The greedy or first-match extraction failed to get the diagnosis object
-            // Use extractJsonArrayFlexible to get all objects and pick the right one
-            org.json.JSONArray all = JsonUtils.extractJsonArrayFlexible(response);
-            for (int i = 0; i < all.length(); i++) {
-                JSONObject obj = all.optJSONObject(i);
-                if (obj != null && (obj.has("rootCause") || obj.has("suggestedStrategy"))) {
-                    diagnosis = obj;
-                    break;
-                }
-            }
-        }
-
-        if (diagnosis == null || (!diagnosis.has("rootCause") && !diagnosis.has("suggestedStrategy"))) {
-            context.log("Evo-Analytic: ERROR - Failed to extract valid JSON diagnosis. Returning fallback.");
+        if (diagnosis == null) {
             diagnosis = new JSONObject();
             diagnosis.put("rootCause", "Unknown");
             diagnosis.put("repeatFailure", false);
@@ -105,27 +81,11 @@ public class AnalyticAgent extends BaseAiAgent {
 
         JSONObject analysis = JsonUtils.extractJsonObject(response);
 
-        // Handle multiple objects if necessary
-        if (analysis != null && !analysis.has("category") && response.contains("category")) {
-            org.json.JSONArray all = JsonUtils.extractJsonArrayFlexible(response);
-            for (int i = 0; i < all.length(); i++) {
-                JSONObject obj = all.optJSONObject(i);
-                if (obj != null && obj.has("category")) {
-                    analysis = obj;
-                    break;
-                }
-            }
-        }
-
-        if (analysis == null || !analysis.has("category")) {
-            context.log("Evo-Analytic: ERROR - Failed to extract valid JSON analysis. Returning fallback.");
-            analysis = new JSONObject();
-            analysis.put("category", "CHAT");
-            analysis.put("objective", prompt);
-            analysis.put("isAmbiguous", false);
-            analysis.put("missingInformation", new org.json.JSONArray());
-            analysis.put("clarificationQuestion", "");
-            analysis.put("refinedPrompt", prompt);
+        if (analysis == null) {
+             analysis = new JSONObject();
+             analysis.put("category", "CODING");
+             analysis.put("isAmbiguous", false);
+             analysis.put("refinedPrompt", prompt);
         }
         return analysis;
     }

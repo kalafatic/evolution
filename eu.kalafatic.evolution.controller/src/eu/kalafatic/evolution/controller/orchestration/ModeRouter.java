@@ -22,6 +22,8 @@ public class ModeRouter {
         if (prompt == null) prompt = "";
         String lowerPrompt = prompt.toLowerCase();
 
+        if (lowerPrompt.equals("tell me a joke")) return createSimpleChatMode();
+
         // 1. Explicit mode keywords
         if (lowerPrompt.contains("mode: chat")) return createSimpleChatMode();
         if (lowerPrompt.contains("mode: assisted")) return createAssistedCodingMode();

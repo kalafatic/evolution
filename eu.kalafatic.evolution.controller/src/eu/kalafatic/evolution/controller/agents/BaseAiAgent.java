@@ -25,7 +25,7 @@ public abstract class BaseAiAgent implements IAgent {
     protected final List<ITool> tools = new ArrayList<>();
     protected final LlmRouter llmRouter = new LlmRouter();
     
-    protected final AiService aiService = new AiService();
+    protected AiService aiService = new AiService();
     protected BestPracticesService bestPracticesService;
     protected NeuronContextService neuronContextService;
 
@@ -50,165 +50,49 @@ public abstract class BaseAiAgent implements IAgent {
     }
 
     public void addTool(ITool tool) {
-        tools.add(tool);
+        if (tool != null) {
+            this.tools.add(tool);
+        }
     }
 
-    /**
-     * Specific instructions for the agent type.
-     * @return Agent-specific instructions.
-     */
-    protected abstract String getAgentInstructions();
-
-    /**
-     * Optional footer instructions for the agent (e.g. JSON format).
-     * @return Footer instructions.
-     */
-    protected String getFooterInstructions() {
-        return "SPECIAL DIRECTIVE: If you receive the request 'Execute the simplest working solution.', you MUST immediately provide a minimal, functional implementation of the goal previously discussed in shared memory without asking for any further clarification.\n\n" +
-               "Based on the context and the task, provide your response.\n" +
-               "MVP DIRECTIVE: For atomic technical tasks, minimize clarification. Use sensible defaults and JUST IMPLEMENT. However, for architecture or design tasks, feel free to ask about 'purpose' or 'big picture' if it aids better modeling.\n" +
-               "Additionally, you can offer general one-click solutions using the format: [PROPOSAL: Action Label | Explicit Request Text]\n" +
-               "Example: 'I can help you with that. [PROPOSAL: Create a test class | Create a JUnit 5 test class for the current Main.java file]'.\n\n" +
-               "For coding tasks, you can provide a structured JSON plan with an 'implementation' field containing the final code. This prevents redundant processing.\n\n" +
-               "You can also link to specific files in your response using the format: [FILE:path/to/file]\n" +
-               "Example: 'I have updated the logic in [FILE:src/Main.java].'";
+    public void setAiService(AiService aiService) {
+        this.aiService = aiService;
     }
 
-    protected String buildPrompt(String taskDescription, TaskContext context, String lastFeedback) {
-        Orchestrator orchestrator = context.getOrchestrator();
-
-        // Initialize services if needed
-        if (bestPracticesService == null) {
-            bestPracticesService = new BestPracticesService(orchestrator, context.getProjectRoot());
-        }
-        if (neuronContextService == null) {
-            neuronContextService = new NeuronContextService(orchestrator, context.getProjectRoot());
-        }
-
-        // 1. Fetch MCP context if enabled
-        String mcpContext = "";
-        String mcpUrl = orchestrator.getMcpServerUrl();
-        if (mcpUrl != null && !mcpUrl.isEmpty()) {
-            try {
-                McpClient mcpClient = new McpClient(mcpUrl);
-                mcpClient.initialize();
-                mcpContext = "\nMCP Local Context: " + mcpClient.listResources();
-            } catch (Exception e) {
-                // Log but continue
-            }
-        }
-
-        String projectRootPath = context.getProjectRoot() != null ? context.getProjectRoot().getAbsolutePath() : "Unknown";
-
+    protected String buildPrompt(String request, TaskContext context, String lastFeedback) {
         StringBuilder sb = new StringBuilder();
-        sb.append("You are acting as a ").append(type).append(" Agent.\n");
-        sb.append("PROJECT ROOT: ").append(projectRootPath).append("\n");
+        sb.append("Role: ").append(type).append("\n");
+        sb.append("PROJECT ROOT: ").append(context.getProjectRoot().getAbsolutePath()).append("\n\n");
 
-        String memory = context.getSharedMemory();
-        if (memory != null && !memory.isEmpty()) {
-            sb.append("\n--- SHARED MEMORY (HISTORY) ---\n");
-            sb.append(memory).append("\n");
-            sb.append("--- END SHARED MEMORY ---\n");
+        sb.append("INSTRUCTIONS:\n").append(getAgentInstructions()).append("\n\n");
+
+        if (lastFeedback != null) {
+            sb.append("### PREVIOUS FEEDBACK (FAILURE RECOVERY)\n").append(lastFeedback).append("\n\n");
         }
 
-        if (!mcpContext.isEmpty()) {
-            sb.append(mcpContext).append("\n");
-        }
+        sb.append("CURRENT TASK:\n").append(request).append("\n\n");
 
-        sb.append("\nINSTRUCTIONS:\n").append(getAgentInstructions()).append("\n");
-
-        // Best Practices injection
-        String bp = bestPracticesService.getCombinedPractices();
-        if (bp != null && !bp.isEmpty()) {
-            sb.append("\n").append(bp).append("\n");
-        }
-
-        // Special Context injection
-        if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
-            if (orchestrator.getAiChat().getPromptInstructions().isIterativeMode()) {
-                String ic = bestPracticesService.getSpecialContext("iterative_loop.md");
-                if (ic != null && !ic.isEmpty()) {
-                    sb.append("\n--- ITERATIVE LOOP CONTEXT ---\n").append(ic).append("\n--- END ITERATIVE LOOP CONTEXT ---\n");
-                }
-            }
-            if (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
-                String sc = bestPracticesService.getSpecialContext("self_development.md");
-                if (sc != null && !sc.isEmpty()) {
-                    sb.append("\n--- SELF DEVELOPMENT CONTEXT ---\n").append(sc).append("\n--- END SELF DEVELOPMENT CONTEXT ---\n");
-                }
-            }
-        }
-
-        // Neuron Context injection
-        String nc = neuronContextService.getLearnedContext();
-        if (nc != null && !nc.isEmpty()) {
-            sb.append("\n").append(nc).append("\n");
-        }
-
-        // External Instruction Files
-        List<String> extFiles = context.getInstructionFiles();
-        if (extFiles != null && !extFiles.isEmpty()) {
-            sb.append("\n--- EXTERNAL INSTRUCTIONS ---\n");
-            for (String filePath : extFiles) {
-                try {
-                    String content = Files.readString(Paths.get(filePath));
-                    sb.append("File: ").append(new File(filePath).getName()).append("\n");
-                    sb.append(content).append("\n\n");
-                } catch (Exception e) {
-                    sb.append("Error reading instruction file: ").append(filePath).append(" (").append(e.getMessage()).append(")\n");
-                }
-            }
-            sb.append("--- END EXTERNAL INSTRUCTIONS ---\n");
-        }
-
-        if (lastFeedback != null && !lastFeedback.isEmpty()) {
-            sb.append("\n--- PREVIOUS ATTEMPT FAILED ---\n");
-            sb.append("Feedback: ").append(lastFeedback).append("\n");
-            sb.append("Please correct your approach based on this feedback.\n");
-        }
-
-        sb.append("\nCURRENT TASK:\n").append(taskDescription).append("\n");
-
-        sb.append("\nFINAL DIRECTIVE:\n").append(getFooterInstructions());
+        String footer = getFooterInstructions();
+        if (footer != null) sb.append("FINAL DIRECTIVE:\n").append(footer);
 
         return sb.toString();
     }
 
+    protected abstract String getAgentInstructions();
+
     @Override
-    public String process(String taskDescription, TaskContext context, String lastFeedback) throws Exception {
-        Orchestrator orchestrator = context.getOrchestrator();
-        String prompt = buildPrompt(taskDescription, context, lastFeedback);
-
-        // Data Scrubbing if online
-        if (!orchestrator.isOfflineMode()) {
-            prompt = DataScrubber.scrub(prompt);
-        }
-
-        context.log("Evo-" + type + "-" + context.getCurrentTaskName() + ": Processing task");
-        context.log("Evo-" + type + "-Thinking: " + prompt);
-
-        // Routing via LlmRouter
-        float temperature = EvolutionConstants.DEFAULT_TEMPERATURE;
-        if (orchestrator.getLlm() != null) {
-            temperature = (float) orchestrator.getLlm().getTemperature();
-        }
-
-        String proxyUrl = (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null;
-        String response = llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
-        context.log("Evo-" + type + "-Response: " + response);
-
-        return cleanResponse(response);
+    public String process(String request, TaskContext context, String lastFeedback) throws Exception {
+        String prompt = buildPrompt(request, context, lastFeedback);
+        return aiService.sendRequest(context.getOrchestrator(), prompt, context);
     }
 
-    protected String cleanResponse(String response) {
-        if (response == null) return null;
+    protected String getFooterInstructions() { return null; }
 
-        // Strip <think> blocks
-        String cleaned = response.replaceAll("(?is)<think>.*?</think>", "");
-
-        String trimmed = cleaned.trim();
-        int firstBackticks = trimmed.indexOf("```");
-        if (firstBackticks != -1) {
+    protected String extractContent(String response) {
+        if (response == null) return "";
+        String trimmed = response.trim();
+        if (trimmed.startsWith("```")) {
+            int firstBackticks = trimmed.indexOf("```");
             int firstNewline = trimmed.indexOf("\n", firstBackticks);
             int lastBackticks = trimmed.lastIndexOf("```");
             if (firstNewline != -1 && lastBackticks > firstNewline) {

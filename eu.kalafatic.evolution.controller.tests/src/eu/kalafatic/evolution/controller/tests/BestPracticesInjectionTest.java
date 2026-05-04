@@ -21,6 +21,8 @@ public class BestPracticesInjectionTest {
     public void setUp() throws Exception {
         tempRoot = Files.createTempDirectory("bp-inject-test").toFile();
         orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
         context = new TaskContext(orchestrator, tempRoot);
     }
 

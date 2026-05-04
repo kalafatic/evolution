@@ -19,6 +19,13 @@ public class ValidatorAgent extends BaseAiAgent {
     }
 
     @Override
+    public void setAiService(eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
+        super.setAiService(aiService);
+        reviewer.setAiService(aiService);
+        constraintAgent.setAiService(aiService);
+    }
+
+    @Override
     protected String getAgentInstructions() {
         return "You are a unified Validator. Your goal is to ensure that task outputs are both correct AND follow architectural guardrails.";
     }
