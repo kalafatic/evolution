@@ -73,7 +73,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
             List<Task> tasks = new ArrayList<>(context.getOrchestrator().getTasks());
             String lastResult = "";
 
-            if (tasks.isEmpty() && kernelState == SystemState.EXECUTING) {
+            if (tasks.isEmpty() && (kernelState == SystemState.EXECUTING || kernelState == SystemState.INIT)) {
                  // Fallback for direct prompt execution if no tasks planned
                  GeneralAgent chatAgent = (GeneralAgent) availableAgents.stream()
                         .filter(a -> a instanceof GeneralAgent)
