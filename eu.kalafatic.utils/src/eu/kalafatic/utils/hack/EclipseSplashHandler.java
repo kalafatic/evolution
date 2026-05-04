@@ -148,13 +148,17 @@ public class EclipseSplashHandler extends BasicSplashHandler {
 		try {
 			content.addPaintListener(new PaintListener() {
 
-				int x = getBounds().width - 45;
+				int x = getBounds().width - 80;
 				int y = 10;
 
 				@Override
 				public void paintControl(PaintEvent e) {
+					String displayVersion = version;
+					if (displayVersion != null && displayVersion.endsWith(".qualifier")) {
+						displayVersion = displayVersion.substring(0, displayVersion.length() - ".qualifier".length());
+					}
 					e.gc.setForeground(foreground);
-					e.gc.drawText("v " + version, x, y, true);
+					e.gc.drawText("v " + displayVersion, x, y, true);
 				}
 			});
 		} catch (Exception e) {

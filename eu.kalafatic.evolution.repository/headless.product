@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Evolution Headless" uid="headless" id="eu.kalafatic.evolution.controller.headless" application="eu.kalafatic.evolution.controller.application.HeadlessApplication" version="2.6.1.qualifier" type="bundles" includeLaunchers="true" autoIncludeRequirements="true">
+<product name="Evolution Headless" uid="headless" id="eu.kalafatic.evolution.controller.headless" application="eu.kalafatic.evolution.controller.application.HeadlessApplication" version="2.6.5.qualifier" type="bundles" includeLaunchers="true" autoIncludeRequirements="true">
 
    <configIni use="default">
    </configIni>

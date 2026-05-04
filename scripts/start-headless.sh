@@ -4,9 +4,9 @@
 PORT=${1:-48080}
 
 # Build classpath from target jars and local libs
-CP="eu.kalafatic.evolution.controller/target/eu.kalafatic.evolution.controller-2.6.1-SNAPSHOT.jar"
-CP="$CP:eu.kalafatic.evolution.model/target/eu.kalafatic.evolution.model-2.6.1-SNAPSHOT.jar"
-CP="$CP:eu.kalafatic.utils/target/eu.kalafatic.utils-2.6.1-SNAPSHOT.jar"
+CP="eu.kalafatic.evolution.controller/target/eu.kalafatic.evolution.controller-2.6.5-SNAPSHOT.jar"
+CP="$CP:eu.kalafatic.evolution.model/target/eu.kalafatic.evolution.model-2.6.5-SNAPSHOT.jar"
+CP="$CP:eu.kalafatic.utils/target/eu.kalafatic.utils-2.6.5-SNAPSHOT.jar"
 
 # Add bundled libs from controller
 for jar in eu.kalafatic.evolution.controller/lib/*.jar; do
