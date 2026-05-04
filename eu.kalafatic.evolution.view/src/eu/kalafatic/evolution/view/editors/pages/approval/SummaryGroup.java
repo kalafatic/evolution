@@ -14,7 +14,7 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 
 public class SummaryGroup extends AEvoGroup {
-    private Label sessionIdLabel, statusLabel, iterationsLabel, branchLabel, rationaleLabel;
+    private org.eclipse.swt.widgets.Text rationaleText;
 
     public SummaryGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(editor, orchestrator);
@@ -28,52 +28,27 @@ public class SummaryGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Approval Summary", 2, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "AI Rationale & Plan", 1, true);
 
-        SWTFactory.createLabel(group, "Session ID:");
-        sessionIdLabel = toolkit.createLabel(group, "");
-        sessionIdLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        SWTFactory.createLabel(group, "Status:");
-        statusLabel = toolkit.createLabel(group, "");
-        statusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        SWTFactory.createLabel(group, "Iterations:");
-        iterationsLabel = toolkit.createLabel(group, "");
-        iterationsLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        SWTFactory.createLabel(group, "Git Branch:");
-        branchLabel = toolkit.createLabel(group, "");
-        branchLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        SWTFactory.createLabel(group, "AI Rationale:");
-        rationaleLabel = toolkit.createLabel(group, "", SWT.WRAP);
+        SWTFactory.createLabel(group, "Rationale and Strategy:");
+        rationaleText = new org.eclipse.swt.widgets.Text(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP | SWT.READ_ONLY);
         GridData rationaleGD = new GridData(GridData.FILL_HORIZONTAL);
-        rationaleGD.heightHint = 26;
-        rationaleLabel.setLayoutData(rationaleGD);
+        rationaleGD.heightHint = 80;
+        rationaleText.setLayoutData(rationaleGD);
+        rationaleText.setBackground(group.getDisplay().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
     }
 
     private void updateUI(Orchestrator orchestrator) {
         if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
             SelfDevSession session = orchestrator.getSelfDevSession();
-            sessionIdLabel.setText(session.getId() != null ? session.getId() : "N/A");
-            statusLabel.setText(session.getStatus() != null ? session.getStatus().toString() : "N/A");
-            iterationsLabel.setText(String.valueOf(session.getIterations().size()) + " / " + session.getMaxIterations());
-
             if (!session.getIterations().isEmpty()) {
                 Iteration last = session.getIterations().get(session.getIterations().size() - 1);
-                branchLabel.setText(last.getBranchName() != null ? last.getBranchName() : "N/A");
-                rationaleLabel.setText(last.getRationale() != null ? last.getRationale() : (session.getRationale() != null ? session.getRationale() : "No rationale provided."));
+                rationaleText.setText(last.getRationale() != null ? last.getRationale() : (session.getRationale() != null ? session.getRationale() : "No rationale provided."));
             } else {
-                branchLabel.setText("N/A");
-                rationaleLabel.setText("N/A");
+                rationaleText.setText(session.getRationale() != null ? session.getRationale() : "No rationale provided.");
             }
         } else {
-            sessionIdLabel.setText("No active session");
-            statusLabel.setText("N/A");
-            iterationsLabel.setText("0 / 0");
-            branchLabel.setText("N/A");
-            rationaleLabel.setText("N/A");
+            rationaleText.setText("No active session rationale.");
         }
     }
 }

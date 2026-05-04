@@ -35,6 +35,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.approval.*;
+import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 public class ApprovalPage extends AEvoPage {
 	private boolean isLoaded = false;
@@ -43,6 +44,7 @@ public class ApprovalPage extends AEvoPage {
 	private String lastJson = "";
 
 	private SummaryGroup summaryGroup;
+	private SelfDevSessionGroup sessionGroup;
 	private ReviewGroup reviewGroup;
 	private FeedbackGroup feedbackGroup;
 	private ProposedTasksGroup proposedTasksGroup;
@@ -68,13 +70,17 @@ public class ApprovalPage extends AEvoPage {
 		comp.setLayout(new GridLayout(1, false));
 
 		summaryGroup = new SummaryGroup(toolkit, comp, editor, orchestrator);
+		sessionGroup = new SelfDevSessionGroup(toolkit, comp, editor, orchestrator);
 		reviewGroup = new ReviewGroup(toolkit, comp, editor, orchestrator);
 		feedbackGroup = new FeedbackGroup(toolkit, comp, editor, orchestrator);
 		proposedTasksGroup = new ProposedTasksGroup(toolkit, comp, editor, orchestrator, this);
 		vizGroup = new VizGroup(toolkit, comp, editor, orchestrator, this);
 
 		// Dynamic Architecture Visualization in Approval Page
-		Composite archComp = toolkit.createComposite(comp);
+		Composite archGroup = SWTFactory.createExpandableGroup(toolkit, comp, "Architecture Visualization", 1, true);
+		archGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		Composite archComp = toolkit.createComposite(archGroup);
 		archComp.setLayout(new org.eclipse.swt.layout.FillLayout());
 		GridData archGd = new GridData(GridData.FILL_HORIZONTAL);
 		archGd.heightHint = 400;
@@ -184,6 +190,7 @@ public class ApprovalPage extends AEvoPage {
 	protected void refreshUI() {
 		if (isDisposed()) return;
 		summaryGroup.updateUI();
+		sessionGroup.updateUI();
 		reviewGroup.updateUI();
 		feedbackGroup.updateUI();
 		proposedTasksGroup.updateUI();
@@ -338,23 +345,23 @@ public class ApprovalPage extends AEvoPage {
 				+ ".loop-node.active { animation: pulse 2s infinite ease-in-out; }"
 				+ "</style></head><body>"
 				+ "<div class='session-info' id='info'>AI Network Structure</div>"
-				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs>"
+				+ "<svg id='canvas' viewBox='0 0 1000 650'><defs>"
 				+ "<marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker>"
 				+ "<marker id='loop-arrow' markerWidth='6' markerHeight='4' refX='6' refY='2' orient='auto'><polygon points='0 0, 6 2, 0 4' fill='#94a3b8'/></marker>"
 				+ "</defs>"
-				+ "<rect class='loop-bg' x='10' y='10' width='220' height='220' />"
-				+ "<g id='loop-diagram' transform='translate(120, 120)'></g>"
-				+ "<g id='viewport' transform='translate(280, 20)'></g></svg>"
+				+ "<rect class='loop-bg' x='10' y='10' width='230' height='230' />"
+				+ "<g id='loop-diagram' transform='translate(125, 125)'></g>"
+				+ "<g id='viewport' transform='translate(260, 20)'></g></svg>"
 				+ "<script>"
 				+ "var viewport = document.getElementById('viewport');"
 				+ "var currentZoom = 1.0;"
 				+ "function applyZoom(factor) {"
 				+ "  currentZoom *= factor;"
-				+ "  viewport.setAttribute('transform', 'translate(280, 20) scale(' + currentZoom + ')');"
+				+ "  viewport.setAttribute('transform', 'translate(260, 20) scale(' + currentZoom + ')');"
 				+ "}"
 				+ "function resetZoom() {"
 				+ "  currentZoom = 1.0;"
-				+ "  viewport.setAttribute('transform', 'translate(280, 20)');"
+				+ "  viewport.setAttribute('transform', 'translate(260, 20)');"
 				+ "}"
 				+ "function updateGraph(data) {"
 				+ "  viewport.innerHTML = '';"
