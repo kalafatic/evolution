@@ -114,6 +114,8 @@ public class JsonUtils {
         if ("refinedprompt".equalsIgnoreCase(key)) return "refinedPrompt";
         if ("objective".equalsIgnoreCase(key)) return "objective";
         if ("category".equalsIgnoreCase(key)) return "category";
+        if ("intent".equalsIgnoreCase(key)) return "intent";
+        if ("confidence".equalsIgnoreCase(key)) return "confidence";
         if ("missinginformation".equalsIgnoreCase(key)) return "missingInformation";
         if ("clarificationquestion".equalsIgnoreCase(key)) return "clarificationQuestion";
         if ("rootcause".equalsIgnoreCase(key)) return "rootCause";

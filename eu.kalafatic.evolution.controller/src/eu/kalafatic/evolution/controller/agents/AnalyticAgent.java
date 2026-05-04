@@ -26,8 +26,9 @@ public class AnalyticAgent extends BaseAiAgent {
                 "STRICT OUTPUT RULE: You MUST output ONLY a single JSON object. No preamble, no conversational text. Never output two JSON objects.\n\n" +
                 "ANALYSIS CRITERIA (for new requests):\n" +
                 "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.\n" +
-                "2. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion' and 'missingInformation' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.\n" +
-                "3. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults. It should stay faithful to the original intent.\n\n" +
+                "2. INTENT: 'new' (task request), 'continue' (follow-up), 'chat' (greeting/casual), 'unclear'.\n" +
+                "3. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion' and 'missingInformation' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.\n" +
+                "4. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults. It should stay faithful to the original intent.\n\n" +
                 "DIAGNOSIS CRITERIA (for failures):\n" +
                 "1. ROOT CAUSE: syntactic, logical, or environment.\n" +
                 "2. PROGRESS: IMPROVED, SAME, or WORSE compared to previous attempt.\n" +
@@ -35,6 +36,8 @@ public class AnalyticAgent extends BaseAiAgent {
                 "OUTPUT SCHEMA (Choose ONLY ONE based on the task - either NEW REQUEST or DIAGNOSIS):\n" +
                 "NEW REQUEST (for fresh prompts):\n" +
                 "{\n" +
+                "  \"intent\": \"new | continue | chat | unclear\",\n" +
+                "  \"confidence\": 0.0-1.0,\n" +
                 "  \"category\": \"...\",\n" +
                 "  \"objective\": \"...\",\n" +
                 "  \"isAmbiguous\": boolean,\n" +
@@ -83,10 +86,21 @@ public class AnalyticAgent extends BaseAiAgent {
 
         if (analysis == null) {
              analysis = new JSONObject();
+             analysis.put("intent", "new");
+             analysis.put("confidence", 1.0);
              analysis.put("category", "CODING");
              analysis.put("isAmbiguous", false);
              analysis.put("refinedPrompt", prompt);
         }
+
+        // Ensure mandatory keys for Policy Engine if not present
+        if (!analysis.has("intent")) {
+            analysis.put("intent", "new");
+        }
+        if (!analysis.has("confidence")) {
+            analysis.put("confidence", 1.0);
+        }
+
         return analysis;
     }
 }
