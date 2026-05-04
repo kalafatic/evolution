@@ -96,7 +96,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private TaskContext currentContext;
     private volatile boolean isDirty = false;
     private Resource resource;
-    private IUndoContext undoContext;
+    private volatile IUndoContext undoContext;
     private EditorResourceChangeListener resourceListener;
     private EditorSelectionListener selectionListener;
     private org.eclipse.jface.text.ITextSelection lastTextSelection;
@@ -160,6 +160,9 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     public MultiPageEditor() {
         super();
+        // Initialize undo context early to prevent AssertionFailedException (null argument)
+        // in OperationHistoryActionHandler when document changes occur during save.
+        undoContext = new ObjectUndoContext(this);
     }
 
     @Override
@@ -520,18 +523,19 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     @Override
     public <T> T getAdapter(Class<T> key) {
-        if (key.equals(IUndoContext.class)) {
-            T adapter = null;
+        if (IUndoContext.class.equals(key)) {
+            // First try to get the context from the nested text editor
             if (textEditor != null) {
-                adapter = textEditor.getAdapter(key);
-            }
-            if (adapter == null) {
-                if (undoContext == null) {
-                    undoContext = new ObjectUndoContext(this);
+                IUndoContext textContext = textEditor.getAdapter(IUndoContext.class);
+                if (textContext != null) {
+                    return key.cast(textContext);
                 }
-                return key.cast(undoContext);
             }
-            return adapter;
+            // Fallback to the MultiPageEditor's own undo context
+            if (undoContext == null) {
+                undoContext = new ObjectUndoContext(this);
+            }
+            return key.cast(undoContext);
         }
         if (key.equals(IContentOutlinePage.class)) {
             if (textEditor != null) {
