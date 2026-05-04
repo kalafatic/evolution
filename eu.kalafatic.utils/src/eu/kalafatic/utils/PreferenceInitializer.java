@@ -302,7 +302,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 	 * @return the client id
 	 */
 	private static String getClientID() {
-		String version = "2.6.1";
+		String version = "2.6.5";
 		try {
 			if (Platform.getProduct() != null) {
 				version = Platform.getProduct().getProperty("version");
@@ -311,7 +311,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		}
 
 		if (version == null || "".equals(version.trim())) {
-			version = "2.6.1";
+			version = "2.6.5";
 		}
 		version = version.replace(".", "");
 		return "-GE" + version + "0-000000000000";
