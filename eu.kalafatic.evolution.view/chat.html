@@ -1067,7 +1067,17 @@
         function formatText(text, role) {
             if (!text) return "";
 
-            if (role === 'analytic' || role === 'waiting' || role === 'response' || role === 'thinking' || role === 'darwin') {
+            // Strip any remaining technical markers that might have leaked through
+            text = text.replace(/\[KERNEL\]/g, '')
+                       .replace(/\[STRATEGY\]/g, '')
+                       .replace(/\[ANALYSIS\]/g, '')
+                       .replace(/\[SUPERVISOR\]/g, '')
+                       .replace(/\[EVO\]/g, '')
+                       .replace(/\[DARWIN\]/g, '')
+                       .trim();
+
+            const rolesToFormat = ['analytic', 'waiting', 'response', 'thinking', 'darwin', 'orchestrator', 'ai', 'final-response'];
+            if (rolesToFormat.includes(role)) {
                 if (text.includes('{') && text.includes('}')) {
                     try {
                         // Extract JSON if it's embedded or the whole text, stripping markdown code blocks if necessary

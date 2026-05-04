@@ -561,15 +561,16 @@ public class ChatGroup extends AEvoGroup {
             }
         }
 
-        // Wrap content in sections for progressive disclosure
+        // Clean up technical markers for human-readability
+        content = content.replaceAll("\\[KERNEL\\]", "")
+                        .replaceAll("\\[STRATEGY\\]", "")
+                        .replaceAll("\\[ANALYSIS\\]", "")
+                        .replaceAll("\\[SUPERVISOR\\]", "")
+                        .replaceAll("\\[EVO\\]", "")
+                        .replaceAll("\\[DARWIN\\]", "")
+                        .trim();
+
         String finalContent = content;
-        if (agentType.equals("planner")) {
-            finalContent = "<div class='section-plan'>" + content + "</div>";
-        } else if (agentType.equals("tool") || agentType.equals("orchestrator")) {
-            finalContent = "<div class='section-debug'>" + content + "</div>";
-        } else if (trimmedText.startsWith("Evo: Initializing orchestration...") || trimmedText.contains("Supervisor loop")) {
-             finalContent = "<div class='section-timeline'>" + content + "</div>";
-        }
 
         try {
             final String fSender = sender;

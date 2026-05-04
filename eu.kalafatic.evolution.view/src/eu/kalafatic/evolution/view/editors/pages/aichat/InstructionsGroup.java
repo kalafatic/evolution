@@ -89,7 +89,7 @@ public class InstructionsGroup extends AEvoGroup {
         actionGd.widthHint = 70;
         actionGd.heightHint = 28;
         pauseButton.setLayoutData(actionGd);
-        pauseButton.setEnabled(false);
+        pauseButton.setEnabled(true);
         pauseButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -99,7 +99,7 @@ public class InstructionsGroup extends AEvoGroup {
 
         stopButton = toolkit.createButton(composite, "⏹️ Stop", SWT.PUSH);
         stopButton.setLayoutData(actionGd);
-        stopButton.setEnabled(false);
+        stopButton.setEnabled(true);
         stopButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -329,8 +329,8 @@ public class InstructionsGroup extends AEvoGroup {
 
     public void setOrchestrationRunning(boolean running) {
         sendButton.setEnabled(!running);
-        pauseButton.setEnabled(running);
-        stopButton.setEnabled(running);
+        pauseButton.setEnabled(true);
+        stopButton.setEnabled(true);
         pauseButton.setText("⏸️ Pause");
     }
 
