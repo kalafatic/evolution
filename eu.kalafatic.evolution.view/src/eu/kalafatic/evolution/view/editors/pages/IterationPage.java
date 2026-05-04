@@ -38,6 +38,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 
 import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.evolution.view.editors.pages.iteration.SelfDevEditDialog;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevBootstrapController;
@@ -51,6 +52,9 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 public class IterationPage extends AEvoPage {
 
     private static class SelfDevRow {
+        static final String SELF_DEV_LOOP = "Self-Dev Loop";
+        static final String EVO_RCP = "Evo RCP";
+
         String name;
         String path;
         String status;
@@ -267,7 +271,7 @@ public class IterationPage extends AEvoPage {
 
     private void handleSelfDevAction(SelfDevRow row, int columnIndex) {
         if (columnIndex == 0) { // Action
-            if ("Self-Dev Loop".equals(row.name)) {
+            if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
                 if (bootstrapController != null && bootstrapController.isRunning()) {
                     bootstrapController.stopBootstrap();
                 } else if (bootstrapController != null) {
@@ -288,7 +292,24 @@ public class IterationPage extends AEvoPage {
                 selfDevTable.refresh(row);
             }
         } else if (columnIndex == 1) { // Edit
-            // Open edit dialog or similar
+            if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
+                openSelfDevEditDialog();
+            }
+        }
+    }
+
+    private void openSelfDevEditDialog() {
+        if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
+            SelfDevEditDialog dialog = new SelfDevEditDialog(getShell(), orchestrator.getSelfDevSession(), this);
+            if (dialog.open() == org.eclipse.jface.window.Window.OK) {
+                updateSessionStatus();
+            }
+        }
+    }
+
+    public void setDirty(boolean dirty) {
+        if (editor != null) {
+            editor.setDirty(dirty);
         }
     }
 
@@ -367,11 +388,15 @@ public class IterationPage extends AEvoPage {
         col.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return ""; // Icon only
+                SelfDevRow row = (SelfDevRow) element;
+                if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
+                    return "\u270E"; // Pencil icon
+                }
+                return "";
             }
             @Override
             public Image getImage(Object element) {
-                return imageRegistry.get("edit");
+                return null;
             }
         });
 
@@ -561,7 +586,7 @@ public class IterationPage extends AEvoPage {
             phase = "bootstrapping";
         }
 
-        updateRowStatus("Self-Dev Loop", phase.toLowerCase());
+        updateRowStatus(SelfDevRow.SELF_DEV_LOOP, phase.toLowerCase());
     }
 
     private void updateRowStatus(String name, String status) {
