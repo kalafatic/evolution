@@ -271,6 +271,7 @@ public class IterationManager {
 
         try {
             gitManager.createBranch(snapshotBranch);
+            gitManager.commit("Snapshot for Darwin Variant evaluation");
             transition(SystemState.ANALYZING, context);
 
             Evaluator.Evaluation initialEval = evaluator.evaluateWithSnapshot();
