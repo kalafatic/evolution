@@ -424,6 +424,8 @@ public class AiChatPage extends AEvoPage {
 				modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
 				modeIndicatorLabel.setBackground(colorWaiting);
 			}
+			chatGroup.markLastAiMessageAsWaiting();
+			handleClarify();
 			feedbackGroup.showApproval(msg); updateScrolledContent();
 		}));
 		context.addInputListener(msg -> Display.getDefault().asyncExec(() -> {
@@ -432,6 +434,7 @@ public class AiChatPage extends AEvoPage {
 				modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
 				modeIndicatorLabel.setBackground(colorWaiting);
 			}
+			chatGroup.markLastAiMessageAsWaiting();
 			handleClarify();
 			feedbackGroup.showInput(msg); updateScrolledContent();
 		}));
@@ -692,6 +695,8 @@ public class AiChatPage extends AEvoPage {
 						modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
 						modeIndicatorLabel.setBackground(colorWaiting);
 					}
+					chatGroup.markLastAiMessageAsWaiting();
+					handleClarify();
 					feedbackGroup.showApproval(message); updateScrolledContent();
 				}));
 				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
@@ -700,6 +705,7 @@ public class AiChatPage extends AEvoPage {
 						modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
 						modeIndicatorLabel.setBackground(colorWaiting);
 					}
+					chatGroup.markLastAiMessageAsWaiting();
 					handleClarify();
 					feedbackGroup.showInput(message); updateScrolledContent();
 				}));

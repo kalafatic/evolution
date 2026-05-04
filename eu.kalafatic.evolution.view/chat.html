@@ -88,9 +88,9 @@
             --tool-border: #e2e8f0;
             --tool-text: #475569;
 
-            --waiting-bg: #fed7aa; /* Light Orange (Orange 200) */
-            --waiting-border: #f97316;
-            --waiting-text: #7c2d12; /* Darker orange-brown for contrast (Orange 900) */
+            --waiting-bg: #f97316; /* Strong Orange */
+            --waiting-border: #ea580c;
+            --waiting-text: #ffffff;
 
             --error-bg: #fee2e2; /* Light Red */
             --error-border: #dc2626;
@@ -431,10 +431,10 @@
 
         /* Formatting */
         pre {
-            background: #0f172a; color: #f8fafc; padding: 10px;
+            background: #f8fafc; color: #1e293b; padding: 10px;
             border-radius: 8px; overflow-x: auto;
             font-family: 'Fira Code', 'JetBrains Mono', monospace;
-            font-size: 12px; margin: 8px 0; border: 1px solid #1e293b;
+            font-size: 12px; margin: 8px 0; border: 1px solid #e2e8f0;
             position: relative;
             max-width: 100%;
             box-sizing: border-box;
@@ -1075,7 +1075,7 @@
                         if (jsonText.startsWith('```')) {
                             jsonText = jsonText.replace(/^```[a-z]*\n/i, '').replace(/\n```$/i, '');
                         }
-                        const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+                        const jsonMatch = jsonText.match(/[\{\[][\s\S]*[\}\]]/);
                         if (jsonMatch) {
                             jsonText = jsonMatch[0];
                         }
@@ -1200,7 +1200,7 @@
 
             text = text.replace(/___CODE_BLOCK_(\d+)___/g, function(match, index) {
                 const code = codeBlocks[parseInt(index)];
-                return '<pre><code>' + escapeHtml(code) + '</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.1);border:none;color:white;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;user-select:none;" onclick="event.stopPropagation(); JavaHandler(\'copy\', \'-1\', \'' + escapeJs(code) + '\')">Copy</button></pre>';
+                return '<pre><code>' + escapeHtml(code) + '</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.05);border:none;color:#64748b;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;user-select:none;" onclick="event.stopPropagation(); JavaHandler(\'copy\', \'-1\', \'' + escapeJs(code) + '\')">Copy</button></pre>';
             });
 
             // Inline code
@@ -1438,6 +1438,10 @@
 
             if (wasAtBottom || messages.length === 1) {
                 scrollToBottom();
+            }
+
+            if (messages.some(m => (m.agentType || '').toLowerCase().includes('waiting'))) {
+                scrollToLastWaiting();
             }
         }
 
