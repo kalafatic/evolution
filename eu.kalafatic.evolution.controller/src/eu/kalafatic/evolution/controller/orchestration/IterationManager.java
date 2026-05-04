@@ -117,18 +117,6 @@ public class IterationManager {
             ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
             state.addMessage("User: " + request);
 
-            // 1b. Fast Greeting Detection
-            if (state.getGoal().isEmpty() && request.toLowerCase().matches("^\\s*(hi|hello|hey|greetings|good morning|good afternoon|good evening)\\s*[!.]*\\s*$")
-                && (context.getPlatformMode() == null || context.getPlatformMode().getType() != PlatformType.SIMPLE_CHAT)) {
-                String greeting = "Hello! I'm Evo, your AI software engineer. How can I help you today?";
-                state.addMessage("Evo: " + greeting);
-                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
-                response.setSummary(greeting);
-                response.setContent(greeting);
-                transition(SystemState.DONE, context);
-                return response;
-            }
-
             // 2. Mode Routing
             if (context.getPlatformMode() == null) {
                 ModeRouter router = new ModeRouter();
@@ -157,14 +145,27 @@ public class IterationManager {
                 return response;
             }
 
-            // Intent Gate
-            JSONObject classification = intentClassifier.classify(request, context);
+            // --- Consolidated Kernel Intelligence Entry ---
+            // AnalyticAgent is now the single source of truth for intent, category, and clarification.
+            JSONObject analysis = analyticAgent.analyze(request, context);
 
-            String policyResponse = policyEngine.evaluate(classification, request, context);
+            // 1. Intent/Policy Gate
+            String policyResponse = policyEngine.evaluate(analysis, request, context);
             if (policyResponse != null) {
                 response.setSummary(policyResponse);
                 transition(SystemState.DONE, context);
                 return response;
+            }
+
+            // 2. Clarification Loop (Only for non-Darwin tasks)
+            String analyzedRequest = analysis.optString("refinedPrompt", request);
+            if (analysis.optBoolean("isAmbiguous", false) && !context.getOrchestrator().isDarwinMode() && !context.isAutoApprove()) {
+                String question = analysis.optString("clarificationQuestion", "More details needed.");
+                String clarification = context.requestInput(question).get();
+                if (clarification != null && !clarification.isEmpty()) {
+                    // Recursive re-analysis with clarification
+                    return handle(new TaskRequest(request + "\nClarification: " + clarification, taskRequest.getProjectRoot()));
+                }
             }
 
             // Goal/Darwin Handoff
@@ -175,8 +176,7 @@ public class IterationManager {
                 return response;
             }
 
-            // Strategic Planning
-            String analyzedRequest = analyzeAndClarify(request, context);
+            // 3. Strategic Planning (using already analyzed/clarified request)
             List<Task> tasks = strategicPlanner.plan(analyzedRequest, context);
             context.getOrchestrator().getTasks().addAll(tasks);
             transition(SystemState.PLAN_LOCKED, context);
@@ -385,17 +385,6 @@ public class IterationManager {
         }
     }
 
-    private String analyzeAndClarify(String request, TaskContext context) throws Exception {
-        JSONObject analysis = analyticAgent.analyze(request, context);
-        if (analysis.optBoolean("isAmbiguous", false) && !context.getOrchestrator().isDarwinMode() && !context.isAutoApprove()) {
-            String question = analysis.optString("clarificationQuestion", "More details needed.");
-            String clarification = context.requestInput(question).get();
-            if (clarification != null && !clarification.isEmpty()) {
-                return analyzeAndClarify(request + "\nClarification: " + clarification, context);
-            }
-        }
-        return analysis.optString("refinedPrompt", request);
-    }
 
     private double calculateScore(EvaluationResult result) {
         if (result.isSuccess()) return 0.8 + (result.getTestPassRate() * 0.2);

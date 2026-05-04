@@ -13,12 +13,24 @@ public class RuleBasedPolicyEngine implements IPolicyEngine {
 
     @Override
     public String evaluate(JSONObject classification, String input, TaskContext context) throws Exception {
-        String intent = classification.optString("intent", "unclear").trim().toLowerCase();
+        String intent = classification.optString("intent", "").trim().toLowerCase();
+        String category = classification.optString("category", "").trim().toUpperCase();
         double confidence = classification.optDouble("confidence", 0.0);
         boolean needsClarification = classification.optBoolean("needs_clarification", false);
 
+        // Map AnalyticAgent categories to intent if intent is missing or unclear
+        if (intent.isEmpty() || "unclear".equals(intent)) {
+            if ("CODING".equals(category) || "TOOL_USE".equals(category) || "RESEARCH".equals(category)) {
+                intent = "new";
+                confidence = Math.max(confidence, 0.9);
+            } else if ("CHAT".equals(category)) {
+                intent = "chat";
+                confidence = Math.max(confidence, 0.9);
+            }
+        }
+
         // Robust greeting detection before other checks
-        boolean isGreeting = ("chat".equals(intent) ||
+        boolean isGreeting = ("chat".equals(intent) || "CHAT".equals(category) ||
                              input.toLowerCase().matches("^\\s*(hi|hello|hey|greetings|good morning|good afternoon|good evening)\\s*[!.]*\\s*$"));
 
         if (isGreeting) {
