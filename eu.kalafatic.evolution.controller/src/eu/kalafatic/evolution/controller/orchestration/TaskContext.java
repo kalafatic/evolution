@@ -42,6 +42,7 @@ public class TaskContext {
     private volatile boolean paused = false;
     private volatile boolean autoApprove = false;
     private PlatformMode platformMode = null;
+    private final SystemStateHolder stateHolder = new SystemStateHolder();
     private final Object pauseLock = new Object();
 
     public interface LogListener {
@@ -291,6 +292,10 @@ public class TaskContext {
 
     public void setPlatformMode(PlatformMode platformMode) {
         this.platformMode = platformMode;
+    }
+
+    public SystemStateHolder getStateHolder() {
+        return stateHolder;
     }
 
     public FileChangeTracker getFileChangeTracker() {

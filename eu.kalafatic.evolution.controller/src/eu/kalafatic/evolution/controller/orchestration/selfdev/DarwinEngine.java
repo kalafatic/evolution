@@ -143,9 +143,9 @@ public class DarwinEngine extends BaseAiAgent {
             state.append(stateProvider.getSystemStateSignal());
         }
 
-        state.append("\n--- LEARNING FROM HISTORY ---\n");
         String history = memoryService.getHistoryAnalysis();
         context.log("[DARWIN] History Analysis: " + history);
+        state.append("\n--- LEARNING FROM HISTORY ---\n");
         state.append(history).append("\n");
 
         // Adjust instructions based on PlatformMode

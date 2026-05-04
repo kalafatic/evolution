@@ -20,15 +20,10 @@ public class AiService {
     }
 
     public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl, TaskContext context) throws Exception {
-        float temperature = 0.7f;
-        try {
-            if (orchestrator != null && orchestrator.getLlm() != null) {
-                temperature = orchestrator.getLlm().getTemperature();
-            }
-        } catch (Throwable t) {
-            // Ignore and use default
-        }
+        return sendRequest(orchestrator, prompt, 0.7f, proxyUrl, context);
+    }
 
+    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         // Unified routing via LlmRouter
         return llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }

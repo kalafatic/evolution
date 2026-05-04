@@ -1,0 +1,1843 @@
+[INFO] Scanning for projects...
+[INFO] Tycho Version:  4.0.5 (bc6c4158d7b008797d3e85c0dae0ccd9e50458e5)
+[INFO] Tycho Mode:     extension
+[INFO] Tycho Builder:  maven
+[INFO] Build Threads:  1
+[INFO]
+[INFO] ---< eu.kalafatic.evolution:eu.kalafatic.evolution.controller.tests >---
+[INFO] Building eu.kalafatic.evolution.controller.tests 2.6.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] ------------------------[ eclipse-test-plugin ]-------------------------
+[INFO] ### Using TychoRepositoryTransport for remote P2 access ###
+[INFO]     Cache location:         /home/jules/.m2/repository/.cache/tycho
+[INFO]     Transport mode:         online
+[INFO]     Http Transport type:    Java11Client
+[INFO]     Update mode:            cache first
+[INFO]     Minimum cache duration: 60 minutes
+[INFO]       (you can configure this with -Dtycho.p2.transport.min-cache-minutes=<desired minimum cache duration>)
+[INFO] Downloading from p2: https://download.eclipse.org/releases/2025-12/p2.index
+[INFO] Downloaded from p2: https://download.eclipse.org/releases/2025-12/p2.index (122 bytes at 0 bytes/s)
+[INFO] Adding repository https://download.eclipse.org/releases/2025-12
+[INFO] Downloading from p2: https://download.eclipse.org/technology/epp/packages/2025-12/p2.index
+[INFO] Downloading from p2: https://download.eclipse.org/technology/epp/packages/2025-12/202512041000/p2.index
+[INFO] Downloaded from p2: https://download.eclipse.org/technology/epp/packages/2025-12/202512041000/p2.index (365 bytes at 356 KB/s)
+[INFO] Downloading from p2: https://download.eclipse.org/releases/2025-12/202512101000/p2.index
+[INFO] Downloaded from p2: https://download.eclipse.org/releases/2025-12/202512101000/p2.index (140 bytes at 136 KB/s)
+[INFO] Downloading from p2: https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/latest/p2.index
+[INFO] Downloaded from p2: https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/latest/p2.index (126 bytes at 123 KB/s)
+[INFO] Adding repository https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/latest
+[INFO] Downloading from p2: https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/4.39.0/p2.index
+[INFO] Downloaded from p2: https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/4.39.0/p2.index (172 bytes at 167 KB/s)
+[INFO] Downloading from p2: https://download.eclipse.org/releases/2025-12/p2.index
+[INFO] Downloaded from p2: https://download.eclipse.org/releases/2025-12/p2.index (122 bytes at 119 KB/s)
+[INFO] Downloading from p2: https://download.eclipse.org/technology/epp/packages/2025-12/p2.index
+[INFO] Downloading from p2: https://download.eclipse.org/technology/epp/packages/2025-12/202512041000/p2.index
+[INFO] Downloaded from p2: https://download.eclipse.org/technology/epp/packages/2025-12/202512041000/p2.index (365 bytes at 356 KB/s)
+[INFO] Downloading from p2: https://download.eclipse.org/releases/2025-12/202512101000/p2.index
+[INFO] Downloaded from p2: https://download.eclipse.org/releases/2025-12/202512101000/p2.index (140 bytes at 136 KB/s)
+[INFO] Downloading from p2: https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/latest/p2.index
+[INFO] Downloaded from p2: https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/latest/p2.index (126 bytes at 123 KB/s)
+[INFO] Downloading from p2: https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/4.39.0/p2.index
+[INFO] Downloaded from p2: https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/4.39.0/p2.index (172 bytes at 167 KB/s)
+[WARNING] The following locally built units have been used to resolve project dependencies:
+[WARNING]   eu.kalafatic.utils/2.6.1.202605040344
+[WARNING]   eu.kalafatic.evolution.controller/2.6.1.202605031527
+[WARNING]   eu.kalafatic.evolution.model/2.6.1.202605040344
+[INFO]
+[INFO] --- tycho-surefire:4.0.5:test (default-cli) @ eu.kalafatic.evolution.controller.tests ---
+[INFO] Resolving class path of eu.kalafatic.evolution.controller.tests
+[INFO] Executing test runtime with timeout (seconds): 0, logs, if any, will be placed at: /app/eu.kalafatic.evolution.controller.tests/target/work/data/.metadata/.log
+[INFO] Command line:
+	[/usr/lib/jvm/java-21-openjdk-amd64/bin/java, -Dosgi.noShutdown=false, -Dosgi.os=linux, -Dosgi.ws=gtk, -Dosgi.arch=x86_64, -Dosgi.clean=true, -jar, /home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.equinox.launcher/1.7.100.v20251111-0406/org.eclipse.equinox.launcher-1.7.100.v20251111-0406.jar, -data, /app/eu.kalafatic.evolution.controller.tests/target/work/data, -install, /app/eu.kalafatic.evolution.controller.tests/target/work, -configuration, /app/eu.kalafatic.evolution.controller.tests/target/work/configuration, -application, org.eclipse.tycho.surefire.osgibooter.headlesstest, -testproperties, /app/eu.kalafatic.evolution.controller.tests/target/surefire.properties]
+Running eu.kalafatic.evolution.controller.manager.NeuronServiceTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.093 s -- in eu.kalafatic.evolution.controller.manager.NeuronServiceTest
+eu.kalafatic.evolution.controller.manager.NeuronServiceTest.testWeightedProposals -- Time elapsed: 0.057 s
+eu.kalafatic.evolution.controller.manager.NeuronServiceTest.testLegacyDataFallback -- Time elapsed: 0.001 s
+eu.kalafatic.evolution.controller.manager.NeuronServiceTest.testCategorizedTraining -- Time elapsed: 0.001 s
+Running eu.kalafatic.evolution.controller.tests.EvolutionServerTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.404 s -- in eu.kalafatic.evolution.controller.tests.EvolutionServerTest
+eu.kalafatic.evolution.controller.tests.EvolutionServerTest.testServerStatus -- Time elapsed: 0.349 s
+eu.kalafatic.evolution.controller.tests.EvolutionServerTest.testGitBranches -- Time elapsed: 0.022 s
+Running eu.kalafatic.evolution.controller.tests.JsonRobustnessTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in eu.kalafatic.evolution.controller.tests.JsonRobustnessTest
+eu.kalafatic.evolution.controller.tests.JsonRobustnessTest.testNestedBracesExtraction -- Time elapsed: 0.002 s
+eu.kalafatic.evolution.controller.tests.JsonRobustnessTest.testMultipleConcatenatedObjects -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.JsonRobustnessTest.testBrokenConcatenatedObjects -- Time elapsed: 0.001 s
+Running eu.kalafatic.evolution.controller.tests.HybridModeTest
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.014 s <<< FAILURE! -- in eu.kalafatic.evolution.controller.tests.HybridModeTest
+eu.kalafatic.evolution.controller.tests.HybridModeTest.testHybridThreeStepFlow -- Time elapsed: 0.013 s <<< FAILURE!
+org.junit.ComparisonFailure: expected:<[Final Simplified Response]> but was:<[Large Model Output]>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at eu.kalafatic.evolution.controller.tests.HybridModeTest.testHybridThreeStepFlow(HybridModeTest.java:69)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+Running eu.kalafatic.evolution.controller.tests.PlannerCategorizationTest
+INF >> 03.57.36 >> Core : Planner: Decomposing request - create file a ... [ Log.log():45 ]
+INF >> 03.57.36 >> Core : Planner: Decomposing request - create file a ... [ Log.log():45 ]
+INF >> 03.57.36 >> Core : Planner: Decomposing request - hi ... [ Log.log():45 ]
+INF >> 03.57.36 >> Core : Planner: Safety Guard - Request and context do not clearly contain an action. Returning clarification task. ... [ Log.log():45 ]
+Tests run: 3, Failures: 1, Errors: 2, Skipped: 0, Time elapsed: 0.073 s <<< FAILURE! -- in eu.kalafatic.evolution.controller.tests.PlannerCategorizationTest
+eu.kalafatic.evolution.controller.tests.PlannerCategorizationTest.testCreateFileCategorization -- Time elapsed: 0.065 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "eu.kalafatic.evolution.controller.orchestration.PlatformMode.getType()" because "mode" is null
+	at eu.kalafatic.evolution.controller.agents.PlannerAgent.plan(PlannerAgent.java:68)
+	at eu.kalafatic.evolution.controller.tests.PlannerCategorizationTest.testCreateFileCategorization(PlannerCategorizationTest.java:38)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.PlannerCategorizationTest.testImprovedCategorization -- Time elapsed: 0.001 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "eu.kalafatic.evolution.controller.orchestration.PlatformMode.getType()" because "mode" is null
+	at eu.kalafatic.evolution.controller.agents.PlannerAgent.plan(PlannerAgent.java:68)
+	at eu.kalafatic.evolution.controller.tests.PlannerCategorizationTest.testImprovedCategorization(PlannerCategorizationTest.java:55)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.PlannerCategorizationTest.testGreetingPlanning -- Time elapsed: 0.004 s <<< FAILURE!
+org.junit.ComparisonFailure: expected:<General: [Respond to greeting]> but was:<General: [Ask for clarification]>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at eu.kalafatic.evolution.controller.tests.PlannerCategorizationTest.testGreetingPlanning(PlannerCategorizationTest.java:74)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+Running eu.kalafatic.evolution.controller.tests.EvoProviderTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in eu.kalafatic.evolution.controller.tests.EvoProviderTest
+eu.kalafatic.evolution.controller.tests.EvoProviderTest.testDummy -- Time elapsed: 0.001 s
+Running eu.kalafatic.evolution.controller.tests.OrchestrationPathTest
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.804 s <<< FAILURE! -- in eu.kalafatic.evolution.controller.tests.OrchestrationPathTest
+eu.kalafatic.evolution.controller.tests.OrchestrationPathTest.testPathSanitization -- Time elapsed: 0.803 s <<< ERROR!
+java.lang.NoSuchMethodException: eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator.performAction(eu.kalafatic.evolution.model.orchestration.Task,eu.kalafatic.evolution.controller.agents.IAgent,eu.kalafatic.evolution.controller.orchestration.TaskContext,java.lang.String,java.lang.String)
+	at java.base/java.lang.Class.getDeclaredMethod(Class.java:2850)
+	at eu.kalafatic.evolution.controller.tests.OrchestrationPathTest.testPathSanitization(OrchestrationPathTest.java:38)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+Running eu.kalafatic.evolution.controller.tests.BestPracticesInjectionTest
+Tests run: 4, Failures: 0, Errors: 4, Skipped: 0, Time elapsed: 0.008 s <<< FAILURE! -- in eu.kalafatic.evolution.controller.tests.BestPracticesInjectionTest
+eu.kalafatic.evolution.controller.tests.BestPracticesInjectionTest.testBothInjections -- Time elapsed: 0.001 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "eu.kalafatic.evolution.model.orchestration.AiChat.getPromptInstructions()" because the return value of "eu.kalafatic.evolution.model.orchestration.Orchestrator.getAiChat()" is null
+	at eu.kalafatic.evolution.controller.tests.BestPracticesInjectionTest.testBothInjections(BestPracticesInjectionTest.java:55)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.BestPracticesInjectionTest.testIterativeContextContent -- Time elapsed: 0.001 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "eu.kalafatic.evolution.model.orchestration.AiChat.getPromptInstructions()" because the return value of "eu.kalafatic.evolution.model.orchestration.Orchestrator.getAiChat()" is null
+	at eu.kalafatic.evolution.controller.tests.BestPracticesInjectionTest.testIterativeContextContent(BestPracticesInjectionTest.java:67)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.BestPracticesInjectionTest.testSelfDevelopmentInjection -- Time elapsed: 0 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "eu.kalafatic.evolution.model.orchestration.AiChat.getPromptInstructions()" because the return value of "eu.kalafatic.evolution.model.orchestration.Orchestrator.getAiChat()" is null
+	at eu.kalafatic.evolution.controller.tests.BestPracticesInjectionTest.testSelfDevelopmentInjection(BestPracticesInjectionTest.java:42)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.BestPracticesInjectionTest.testIterativeLoopInjection -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "eu.kalafatic.evolution.model.orchestration.AiChat.getPromptInstructions()" because the return value of "eu.kalafatic.evolution.model.orchestration.Orchestrator.getAiChat()" is null
+	at eu.kalafatic.evolution.controller.tests.BestPracticesInjectionTest.testIterativeLoopInjection(BestPracticesInjectionTest.java:29)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+Running eu.kalafatic.evolution.controller.tests.KernelUnitTest
+INF >> 03.57.37 >> Core : [KERNEL] Transition: INIT -> INIT ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : [KERNEL] Strategic Initialization: Force failure ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : [KERNEL] Transition: INIT -> ANALYZING ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : [KERNEL] Transition: ANALYZING -> EXECUTING ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : [KERNEL] Transition: EXECUTING -> FAILED ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : [KERNEL] Transition: INIT -> INIT ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : [KERNEL] Strategic Initialization: What is the capital of France? ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : [KERNEL] Transition: INIT -> ANALYZING ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : [KERNEL] Transition: ANALYZING -> EXECUTING ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : [KERNEL] Transition: EXECUTING -> DONE ... [ Log.log():45 ]
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.197 s -- in eu.kalafatic.evolution.controller.tests.KernelUnitTest
+eu.kalafatic.evolution.controller.tests.KernelUnitTest.testTransitionToFailedOnException -- Time elapsed: 0.190 s
+eu.kalafatic.evolution.controller.tests.KernelUnitTest.testSimpleChatFlow -- Time elapsed: 0.005 s
+Running eu.kalafatic.evolution.controller.tests.OrchestrationTest
+INF >> 03.57.37 >> Core : test log ... [ Log.log():45 ]
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in eu.kalafatic.evolution.controller.tests.OrchestrationTest
+eu.kalafatic.evolution.controller.tests.OrchestrationTest.testOrchestratorInitialization -- Time elapsed: 0.002 s
+eu.kalafatic.evolution.controller.tests.OrchestrationTest.testTaskContextState -- Time elapsed: 0.001 s
+Running eu.kalafatic.evolution.controller.tests.TaskContextAutoApproveTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in eu.kalafatic.evolution.controller.tests.TaskContextAutoApproveTest
+eu.kalafatic.evolution.controller.tests.TaskContextAutoApproveTest.testAutoApproveFlag -- Time elapsed: 0 s
+Running eu.kalafatic.evolution.controller.tests.DataScrubberTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in eu.kalafatic.evolution.controller.tests.DataScrubberTest
+eu.kalafatic.evolution.controller.tests.DataScrubberTest.testNoScrubbingNeeded -- Time elapsed: 0.001 s
+eu.kalafatic.evolution.controller.tests.DataScrubberTest.testScrubEmail -- Time elapsed: 0.001 s
+eu.kalafatic.evolution.controller.tests.DataScrubberTest.testScrubOpenAiKey -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.DataScrubberTest.testScrubAbsolutePath -- Time elapsed: 0 s
+Running eu.kalafatic.evolution.controller.tests.ModeRouterTest
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in eu.kalafatic.evolution.controller.tests.ModeRouterTest
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testDefaultToChat -- Time elapsed: 0.001 s
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testExplicitDarwinMode -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testExplicitChatMode -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testRouteFastUnknown -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testModelMappingCombinedSelfDevAndDarwin -- Time elapsed: 0.001 s
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testModelMappingDarwin -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testModelMappingSelfIterative -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testExplicitAssistedMode -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testExplicitSelfDevMode -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testRouteFastGreeting -- Time elapsed: 0.001 s
+eu.kalafatic.evolution.controller.tests.ModeRouterTest.testRouteFastCoding -- Time elapsed: 0 s
+Running eu.kalafatic.evolution.controller.tests.LoopingAndApprovalTest
+Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.003 s <<< FAILURE! -- in eu.kalafatic.evolution.controller.tests.LoopingAndApprovalTest
+eu.kalafatic.evolution.controller.tests.LoopingAndApprovalTest.testApprovalMechanism -- Time elapsed: 0.002 s <<< FAILURE!
+java.lang.AssertionError: expected:<PENDING> but was:<READY>
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:120)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at eu.kalafatic.evolution.controller.tests.LoopingAndApprovalTest.testApprovalMechanism(LoopingAndApprovalTest.java:58)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.LoopingAndApprovalTest.testLoopingLogicModel -- Time elapsed: 0 s
+Running eu.kalafatic.evolution.controller.tests.JsonUtilsTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in eu.kalafatic.evolution.controller.tests.JsonUtilsTest
+eu.kalafatic.evolution.controller.tests.JsonUtilsTest.testStripThinkBlocks -- Time elapsed: 0.001 s
+eu.kalafatic.evolution.controller.tests.JsonUtilsTest.testMultipleObjectsGreedy -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.JsonUtilsTest.testExtractNestedArray -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.JsonUtilsTest.testConvertObjectToArray -- Time elapsed: 0.001 s
+Running eu.kalafatic.evolution.controller.tests.PathExtractionTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in eu.kalafatic.evolution.controller.tests.PathExtractionTest
+eu.kalafatic.evolution.controller.tests.PathExtractionTest.testPathExtractionRegex -- Time elapsed: 0.001 s
+Running eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest
+Tests run: 3, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 0.004 s <<< FAILURE! -- in eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest
+eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest.testClarificationWait -- Time elapsed: 0.001 s <<< ERROR!
+java.lang.NoSuchFieldException: planner
+	at java.base/java.lang.Class.getDeclaredField(Class.java:2784)
+	at eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest.injectMocksIntoOrchestrator(OrchestratorFlowTest.java:175)
+	at eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest.testClarificationWait(OrchestratorFlowTest.java:137)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest.testGreetingResponse -- Time elapsed: 0.001 s <<< ERROR!
+java.lang.NoSuchFieldException: planner
+	at java.base/java.lang.Class.getDeclaredField(Class.java:2784)
+	at eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest.injectMocksIntoOrchestrator(OrchestratorFlowTest.java:175)
+	at eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest.testGreetingResponse(OrchestratorFlowTest.java:112)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest.testFullOrchestratorFlow -- Time elapsed: 0 s <<< ERROR!
+java.lang.NoSuchFieldException: planner
+	at java.base/java.lang.Class.getDeclaredField(Class.java:2784)
+	at eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest.injectMocksIntoOrchestrator(OrchestratorFlowTest.java:175)
+	at eu.kalafatic.evolution.controller.tests.OrchestratorFlowTest.testFullOrchestratorFlow(OrchestratorFlowTest.java:63)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+Running eu.kalafatic.evolution.controller.tests.AnalyticAgentTest
+Tests run: 5, Failures: 0, Errors: 5, Skipped: 0, Time elapsed: 0.003 s <<< FAILURE! -- in eu.kalafatic.evolution.controller.tests.AnalyticAgentTest
+eu.kalafatic.evolution.controller.tests.AnalyticAgentTest.testRecoveryFromNonJsonResponse -- Time elapsed: 0.001 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "java.io.File.getAbsolutePath()" because the return value of "eu.kalafatic.evolution.controller.orchestration.TaskContext.getProjectRoot()" is null
+	at eu.kalafatic.evolution.controller.agents.BaseAiAgent.buildPrompt(BaseAiAgent.java:65)
+	at eu.kalafatic.evolution.controller.agents.AnalyticAgent.analyze(AnalyticAgent.java:77)
+	at eu.kalafatic.evolution.controller.tests.AnalyticAgentTest.testRecoveryFromNonJsonResponse(AnalyticAgentTest.java:126)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.AnalyticAgentTest.testGreetingRequest -- Time elapsed: 0 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "java.io.File.getAbsolutePath()" because the return value of "eu.kalafatic.evolution.controller.orchestration.TaskContext.getProjectRoot()" is null
+	at eu.kalafatic.evolution.controller.agents.BaseAiAgent.buildPrompt(BaseAiAgent.java:65)
+	at eu.kalafatic.evolution.controller.agents.AnalyticAgent.analyze(AnalyticAgent.java:77)
+	at eu.kalafatic.evolution.controller.tests.AnalyticAgentTest.testGreetingRequest(AnalyticAgentTest.java:109)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.AnalyticAgentTest.testAmbiguousRequest -- Time elapsed: 0.001 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "java.io.File.getAbsolutePath()" because the return value of "eu.kalafatic.evolution.controller.orchestration.TaskContext.getProjectRoot()" is null
+	at eu.kalafatic.evolution.controller.agents.BaseAiAgent.buildPrompt(BaseAiAgent.java:65)
+	at eu.kalafatic.evolution.controller.agents.AnalyticAgent.analyze(AnalyticAgent.java:77)
+	at eu.kalafatic.evolution.controller.tests.AnalyticAgentTest.testAmbiguousRequest(AnalyticAgentTest.java:43)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.AnalyticAgentTest.testSimplestSolutionDirective -- Time elapsed: 0 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "java.io.File.getAbsolutePath()" because the return value of "eu.kalafatic.evolution.controller.orchestration.TaskContext.getProjectRoot()" is null
+	at eu.kalafatic.evolution.controller.agents.BaseAiAgent.buildPrompt(BaseAiAgent.java:65)
+	at eu.kalafatic.evolution.controller.agents.AnalyticAgent.analyze(AnalyticAgent.java:77)
+	at eu.kalafatic.evolution.controller.tests.AnalyticAgentTest.testSimplestSolutionDirective(AnalyticAgentTest.java:88)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.AnalyticAgentTest.testClearRequest -- Time elapsed: 0 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "java.io.File.getAbsolutePath()" because the return value of "eu.kalafatic.evolution.controller.orchestration.TaskContext.getProjectRoot()" is null
+	at eu.kalafatic.evolution.controller.agents.BaseAiAgent.buildPrompt(BaseAiAgent.java:65)
+	at eu.kalafatic.evolution.controller.agents.AnalyticAgent.analyze(AnalyticAgent.java:77)
+	at eu.kalafatic.evolution.controller.tests.AnalyticAgentTest.testClearRequest(AnalyticAgentTest.java:64)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+Running eu.kalafatic.evolution.controller.tests.ContextBuilderTest
+INF >> 03.57.37 >> Core : Tool [FileTool]: Reading from src/App.java ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : ContextBuilder: Could not read file src/App.java: File not found: src/App.java ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : Tool [FileTool]: Reading from src/Utils.java ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : ContextBuilder: Could not read file src/Utils.java: File not found: src/Utils.java ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : Tool [FileTool]: Reading from MyClass.java ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : Tool [FileTool]: Read 140 bytes from MyClass.java ... [ Log.log():45 ]
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in eu.kalafatic.evolution.controller.tests.ContextBuilderTest
+eu.kalafatic.evolution.controller.tests.ContextBuilderTest.testFileSelectionWithMarkers -- Time elapsed: 0.009 s
+eu.kalafatic.evolution.controller.tests.ContextBuilderTest.testBuildMinimalContext -- Time elapsed: 0.008 s
+eu.kalafatic.evolution.controller.tests.ContextBuilderTest.testBuildPrompt -- Time elapsed: 0.002 s
+Running eu.kalafatic.evolution.controller.tests.BestPracticesServiceTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in eu.kalafatic.evolution.controller.tests.BestPracticesServiceTest
+eu.kalafatic.evolution.controller.tests.BestPracticesServiceTest.testInitialization -- Time elapsed: 0.003 s
+Running eu.kalafatic.evolution.controller.tests.OllamaFallbackTest
+INF >> 03.57.37 >> Core : Ollama: Memory error detected. Attempting fallback... ... [ Log.log():45 ]
+INF >> 03.57.37 >> Core : Ollama: Available memory parsed: 4.9 GiB (5261334937 bytes) ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Ollama: Falling back to model: small-model:latest ... [ Log.log():45 ]
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.206 s -- in eu.kalafatic.evolution.controller.tests.OllamaFallbackTest
+eu.kalafatic.evolution.controller.tests.OllamaFallbackTest.testOllamaFallback -- Time elapsed: 0.204 s
+Running eu.kalafatic.evolution.controller.tests.DarwinEvolutionTest
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git init ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: Using 'master' as the name for the initial branch. This default branch name ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: will change to "main" in Git 3.0. To configure the initial branch name ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: to use in all of your new repositories, which will suppress this warning, ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: call: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: 	git config --global init.defaultBranch <name> ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: 'development'. The just-created branch can be renamed via this command: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: 	git branch -m <name> ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: Disable this message with "git config set advice.defaultBranchName false" ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Initialized empty Git repository in /tmp/darwin-test17176234239898631606/.git/ ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git config user.email test@example.com ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git config user.name Test User ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git add . ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git commit -m Initial commit ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [master (root-commit) cef2bb1] Initial commit ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core :  1 file changed, 1 insertion(+) ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core :  create mode 100644 pom.xml ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Starting DARWIN MODE Session: darwin-session ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [INTENT] Classifying: Improve error handling ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter: Routing request in Local mode. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Local: Using Ollama model: llama3 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Fallback: Remote/Hybrid request failed: null ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Fallback: Attempting automatic fallback to LOCAL mode... ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Local: Using Ollama model: llama3 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Intent Gate error: null ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-Analytic-Thinking: Role: Analytic
+PROJECT ROOT: /tmp/darwin-test17176234239898631606
+
+INSTRUCTIONS:
+Role: Analytic Agent. Goal: Analyze user prompt or task failure.
+
+STRICT OUTPUT RULE: You MUST output ONLY a single JSON object. No preamble, no conversational text. Never output two JSON objects.
+
+ANALYSIS CRITERIA (for new requests):
+1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.
+2. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion' and 'missingInformation' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.
+3. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults. It should stay faithful to the original intent.
+
+DIAGNOSIS CRITERIA (for failures):
+1. ROOT CAUSE: syntactic, logical, or environment.
+2. PROGRESS: IMPROVED, SAME, or WORSE compared to previous attempt.
+3. STRATEGY: RETRY, REPAIR_AGENT, or ESCALATE.
+
+OUTPUT SCHEMA (Choose ONLY ONE based on the task - either NEW REQUEST or DIAGNOSIS):
+NEW REQUEST (for fresh prompts):
+{
+  "category": "...",
+  "objective": "...",
+  "isAmbiguous": boolean,
+  "missingInformation": [],
+  "clarificationQuestion": "...",
+  "refinedPrompt": "..."
+}
+DIAGNOSIS (for failure analysis):
+{
+  "rootCause": "...",
+  "repeatFailure": boolean,
+  "progress": "IMPROVED | SAME | WORSE",
+  "suggestedStrategy": "RETRY | REPAIR_AGENT | ESCALATE",
+  "explanation": "..."
+}
+
+CURRENT TASK:
+Improve error handling
+
+ ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter: Routing request in Local mode. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Local: Using Ollama model: llama3 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Fallback: Remote/Hybrid request failed: null ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Fallback: Attempting automatic fallback to LOCAL mode... ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Local: Using Ollama model: llama3 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Analytic Warning: null. Proceeding with original request. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Starting Iteration 1 of 1 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: INIT -> INIT ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git rev-parse HEAD ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : cef2bb11d718aa3a4963a14f43fc126a7c8f9cc5 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git rev-parse --abbrev-ref HEAD ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : master ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git branch --list snapshot/iteration-1-1777867058215 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [GIT] Creating and switching to branch: snapshot/iteration-1-1777867058215 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git checkout -b snapshot/iteration-1-1777867058215 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Switched to a new branch 'snapshot/iteration-1-1777867058215' ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: INIT -> ANALYZING ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [DARWIN] Generating variants for goal: Improve error handling ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [DARWIN] History Analysis: No previous iteration history available. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-DarwinEngine-Thinking: Role: DarwinEngine
+PROJECT ROOT: /tmp/darwin-test17176234239898631606
+
+INSTRUCTIONS:
+You are an AI operating inside a general-purpose iterative development system.
+Your task is to IMPROVE decision quality and system intelligence by reasoning over STATE and FEEDBACK — not by generating isolated code.
+
+PRIMARY OBJECTIVE:
+→ Do not think in terms of 'code generation'.
+→ Think in terms of: STATE TRANSITIONS, SYSTEM IMPROVEMENT, LONG-TERM EFFECTS.
+→ Each iteration must improve the system state, not just produce code.
+
+STATE MODEL:
+→ Use the provided StateSnapshot (build, tests, coverage) to inform decisions.
+→ Analyze relationships between elements (files, modules, tests, failures, dependencies).
+→ Identify weak points (failures, instability, complexity).
+→ Propose actions that improve overall system health.
+
+FAILURE FINGERPRINTING & ANTI-LOOP:
+→ Avoid repeating actions that lead to the same failure fingerprints.
+→ If a failure is REPEATING (count >= 2), you MUST change your strategy.
+
+HYPOTHESIS-DRIVEN VARIANTS:
+→ Every variant MUST include a hypothesis: a causal explanation of why the proposed changes will lead to the expected effects.
+→ Expected effects must be measurable outcomes (e.g., 'build success', 'test X passes').
+
+TRAJECTORY AWARENESS:
+→ Consider the build/test trends. Prefer variants that improve ANY dimension.
+
+PRIORITY LOGIC:
+→ IF build == FAIL → focus on build fixes.
+→ ELSE IF tests failing → focus on test fixes.
+→ ELSE → refinement.
+
+ITERATION STRATEGY (DARWINIAN):
+→ Generate 2–3 DIFFERENT candidate state transitions.
+→ Each candidate must represent a distinct strategy and target a meaningful system improvement.
+→ Avoid cosmetic changes, repeated failed approaches, or low-impact modifications.
+
+CURRENT TASK:
+Current Goal: Improve error handling
+
+--- CURRENT STATE SNAPSHOT ---
+Build Status: SUCCESS
+Build Errors: 0 ([])
+Tests: 0/0 passed
+
+--- TRAJECTORY ---
+Build Trend: null
+Test Trend: null
+Failure Change: null
+
+--- SYSTEM STATE (DYNAMIC DISCOVERY) ---
+Build System: Maven (Tycho/Standard)
+Project Structure: Flat/Single-module
+Target Environment: Java 21.0.10 on Linux
+
+--- LEARNING FROM HISTORY ---
+
+--- LEARNING FROM HISTORY ---
+No previous iteration history available.
+
+PLATFORM MODE: DARWIN_MODE. Generate 2-3 competing variants.
+
+
+FINAL DIRECTIVE:
+Output MUST be a valid JSON array of 2-3 objects. Each object is a structured PROPOSAL for a state transition.
+CRITICAL: Do NOT include any conversation, explanation, or <think> tags. ONLY return the JSON array.
+Schema:
+[
+  {
+    "id": "string-id",
+    "strategy": "<high-level intent>",
+    "score": 0.0-1.0, // Predicted probability of success/correctness
+    "suffix": "<short string for branch name>",
+    "actions": [
+      {
+        "domain": "file | test | build | structure",
+        "operation": "<operation name, e.g. WRITE, DELETE, MKDIR, TEST, BUILD, ANALYZE>",
+        "target": "<file/module/test path>",
+        "description": "<detailed instruction of what will be done in this specific step>"
+      }
+    ],
+    "hypothesis": {
+      "description": "<causal explanation of why this will work>",
+      "expected_effects": ["<measurable outcome 1>", "<measurable outcome 2>"]
+    },
+    "expected_effect": {
+      "short_term": "...",
+      "long_term": "...",
+      "risk": 0.0-1.0,
+      "reversibility": 0.0-1.0
+    }
+  }
+] ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [MOCK] Call 0 response: {"intent":"new", "confidence":1.0} ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-DarwinEngine-Response: {"intent":"new", "confidence":1.0} ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [DARWIN] ERROR: Failed to extract variants from AI response. Check format. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: ANALYZING -> FAILED ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [GIT] Force switching to branch: master ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git checkout -f master ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Switched to branch 'master' ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [GIT] Rolling back changes (hard reset) ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git reset --hard HEAD ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : HEAD is now at cef2bb1 Initial commit ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Iteration 1 encountered an error: Invalid AI response for variants: {"intent":"new", "confidence":1.0} ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Iteration 1 failed. Total failures: 1 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] Persisting session state before restart... ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] Warning: No EMF resource found for Orchestrator. State not persisted to disk. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] Checking if system restart or reload is needed... ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] System is stable. No restart required for this iteration. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Session completed. Status: COMPLETED ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git init ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: Using 'master' as the name for the initial branch. This default branch name ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: will change to "main" in Git 3.0. To configure the initial branch name ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: to use in all of your new repositories, which will suppress this warning, ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: call: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: 	git config --global init.defaultBranch <name> ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: 'development'. The just-created branch can be renamed via this command: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: 	git branch -m <name> ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: Disable this message with "git config set advice.defaultBranchName false" ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Initialized empty Git repository in /tmp/darwin-test12212157719549157614/.git/ ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git config user.email test@example.com ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git config user.name Test User ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git add . ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git commit -m Initial commit ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [master (root-commit) cef2bb1] Initial commit ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core :  1 file changed, 1 insertion(+) ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core :  create mode 100644 pom.xml ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Starting DARWIN MODE Session: trajectory-session ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [INTENT] Classifying: Refactor code ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter: Routing request in Local mode. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Local: Using Ollama model: llama3 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Fallback: Remote/Hybrid request failed: null ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Fallback: Attempting automatic fallback to LOCAL mode... ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Local: Using Ollama model: llama3 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Intent Gate error: null ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-Analytic-Thinking: Role: Analytic
+PROJECT ROOT: /tmp/darwin-test12212157719549157614
+
+INSTRUCTIONS:
+Role: Analytic Agent. Goal: Analyze user prompt or task failure.
+
+STRICT OUTPUT RULE: You MUST output ONLY a single JSON object. No preamble, no conversational text. Never output two JSON objects.
+
+ANALYSIS CRITERIA (for new requests):
+1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.
+2. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion' and 'missingInformation' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.
+3. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults. It should stay faithful to the original intent.
+
+DIAGNOSIS CRITERIA (for failures):
+1. ROOT CAUSE: syntactic, logical, or environment.
+2. PROGRESS: IMPROVED, SAME, or WORSE compared to previous attempt.
+3. STRATEGY: RETRY, REPAIR_AGENT, or ESCALATE.
+
+OUTPUT SCHEMA (Choose ONLY ONE based on the task - either NEW REQUEST or DIAGNOSIS):
+NEW REQUEST (for fresh prompts):
+{
+  "category": "...",
+  "objective": "...",
+  "isAmbiguous": boolean,
+  "missingInformation": [],
+  "clarificationQuestion": "...",
+  "refinedPrompt": "..."
+}
+DIAGNOSIS (for failure analysis):
+{
+  "rootCause": "...",
+  "repeatFailure": boolean,
+  "progress": "IMPROVED | SAME | WORSE",
+  "suggestedStrategy": "RETRY | REPAIR_AGENT | ESCALATE",
+  "explanation": "..."
+}
+
+CURRENT TASK:
+Refactor code
+
+ ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter: Routing request in Local mode. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Local: Using Ollama model: llama3 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Fallback: Remote/Hybrid request failed: null ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Fallback: Attempting automatic fallback to LOCAL mode... ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : LlmRouter-Local: Using Ollama model: llama3 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Analytic Warning: null. Proceeding with original request. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Starting Iteration 1 of 2 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: INIT -> INIT ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git rev-parse HEAD ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : cef2bb11d718aa3a4963a14f43fc126a7c8f9cc5 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git rev-parse --abbrev-ref HEAD ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : master ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git branch --list snapshot/iteration-1-1777867058346 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [GIT] Creating and switching to branch: snapshot/iteration-1-1777867058346 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git checkout -b snapshot/iteration-1-1777867058346 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Switched to a new branch 'snapshot/iteration-1-1777867058346' ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: INIT -> ANALYZING ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [DARWIN] Generating variants for goal: Refactor code ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [DARWIN] History Analysis: No previous iteration history available. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-DarwinEngine-Thinking: Role: DarwinEngine
+PROJECT ROOT: /tmp/darwin-test12212157719549157614
+
+INSTRUCTIONS:
+You are an AI operating inside a general-purpose iterative development system.
+Your task is to IMPROVE decision quality and system intelligence by reasoning over STATE and FEEDBACK — not by generating isolated code.
+
+PRIMARY OBJECTIVE:
+→ Do not think in terms of 'code generation'.
+→ Think in terms of: STATE TRANSITIONS, SYSTEM IMPROVEMENT, LONG-TERM EFFECTS.
+→ Each iteration must improve the system state, not just produce code.
+
+STATE MODEL:
+→ Use the provided StateSnapshot (build, tests, coverage) to inform decisions.
+→ Analyze relationships between elements (files, modules, tests, failures, dependencies).
+→ Identify weak points (failures, instability, complexity).
+→ Propose actions that improve overall system health.
+
+FAILURE FINGERPRINTING & ANTI-LOOP:
+→ Avoid repeating actions that lead to the same failure fingerprints.
+→ If a failure is REPEATING (count >= 2), you MUST change your strategy.
+
+HYPOTHESIS-DRIVEN VARIANTS:
+→ Every variant MUST include a hypothesis: a causal explanation of why the proposed changes will lead to the expected effects.
+→ Expected effects must be measurable outcomes (e.g., 'build success', 'test X passes').
+
+TRAJECTORY AWARENESS:
+→ Consider the build/test trends. Prefer variants that improve ANY dimension.
+
+PRIORITY LOGIC:
+→ IF build == FAIL → focus on build fixes.
+→ ELSE IF tests failing → focus on test fixes.
+→ ELSE → refinement.
+
+ITERATION STRATEGY (DARWINIAN):
+→ Generate 2–3 DIFFERENT candidate state transitions.
+→ Each candidate must represent a distinct strategy and target a meaningful system improvement.
+→ Avoid cosmetic changes, repeated failed approaches, or low-impact modifications.
+
+CURRENT TASK:
+Current Goal: Refactor code
+
+--- CURRENT STATE SNAPSHOT ---
+Build Status: SUCCESS
+Build Errors: 0 ([])
+Tests: 0/0 passed
+
+--- TRAJECTORY ---
+Build Trend: null
+Test Trend: null
+Failure Change: null
+
+--- SYSTEM STATE (DYNAMIC DISCOVERY) ---
+Build System: Maven (Tycho/Standard)
+Project Structure: Flat/Single-module
+Target Environment: Java 21.0.10 on Linux
+
+--- LEARNING FROM HISTORY ---
+
+--- LEARNING FROM HISTORY ---
+No previous iteration history available.
+
+PLATFORM MODE: DARWIN_MODE. Generate 2-3 competing variants.
+
+
+FINAL DIRECTIVE:
+Output MUST be a valid JSON array of 2-3 objects. Each object is a structured PROPOSAL for a state transition.
+CRITICAL: Do NOT include any conversation, explanation, or <think> tags. ONLY return the JSON array.
+Schema:
+[
+  {
+    "id": "string-id",
+    "strategy": "<high-level intent>",
+    "score": 0.0-1.0, // Predicted probability of success/correctness
+    "suffix": "<short string for branch name>",
+    "actions": [
+      {
+        "domain": "file | test | build | structure",
+        "operation": "<operation name, e.g. WRITE, DELETE, MKDIR, TEST, BUILD, ANALYZE>",
+        "target": "<file/module/test path>",
+        "description": "<detailed instruction of what will be done in this specific step>"
+      }
+    ],
+    "hypothesis": {
+      "description": "<causal explanation of why this will work>",
+      "expected_effects": ["<measurable outcome 1>", "<measurable outcome 2>"]
+    },
+    "expected_effect": {
+      "short_term": "...",
+      "long_term": "...",
+      "risk": 0.0-1.0,
+      "reversibility": 0.0-1.0
+    }
+  }
+] ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [MOCK] Call 0 response: {"intent":"new", "confidence":1.0} ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-DarwinEngine-Response: {"intent":"new", "confidence":1.0} ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [DARWIN] ERROR: Failed to extract variants from AI response. Check format. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: ANALYZING -> FAILED ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [GIT] Force switching to branch: master ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git checkout -f master ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Switched to branch 'master' ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [GIT] Rolling back changes (hard reset) ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git reset --hard HEAD ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : HEAD is now at cef2bb1 Initial commit ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Iteration 1 encountered an error: Invalid AI response for variants: {"intent":"new", "confidence":1.0} ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Iteration 1 failed. Total failures: 1 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] Persisting session state before restart... ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] Warning: No EMF resource found for Orchestrator. State not persisted to disk. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] Checking if system restart or reload is needed... ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] System is stable. No restart required for this iteration. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Starting Iteration 2 of 2 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: FAILED -> INIT ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git rev-parse HEAD ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : cef2bb11d718aa3a4963a14f43fc126a7c8f9cc5 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git rev-parse --abbrev-ref HEAD ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : master ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git branch --list snapshot/iteration-2-1777867058404 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [GIT] Creating and switching to branch: snapshot/iteration-2-1777867058404 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git checkout -b snapshot/iteration-2-1777867058404 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Switched to a new branch 'snapshot/iteration-2-1777867058404' ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: INIT -> ANALYZING ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [DARWIN] Generating variants for goal: Refactor code ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [DARWIN] History Analysis: No previous iteration history available. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-DarwinEngine-Thinking: Role: DarwinEngine
+PROJECT ROOT: /tmp/darwin-test12212157719549157614
+
+INSTRUCTIONS:
+You are an AI operating inside a general-purpose iterative development system.
+Your task is to IMPROVE decision quality and system intelligence by reasoning over STATE and FEEDBACK — not by generating isolated code.
+
+PRIMARY OBJECTIVE:
+→ Do not think in terms of 'code generation'.
+→ Think in terms of: STATE TRANSITIONS, SYSTEM IMPROVEMENT, LONG-TERM EFFECTS.
+→ Each iteration must improve the system state, not just produce code.
+
+STATE MODEL:
+→ Use the provided StateSnapshot (build, tests, coverage) to inform decisions.
+→ Analyze relationships between elements (files, modules, tests, failures, dependencies).
+→ Identify weak points (failures, instability, complexity).
+→ Propose actions that improve overall system health.
+
+FAILURE FINGERPRINTING & ANTI-LOOP:
+→ Avoid repeating actions that lead to the same failure fingerprints.
+→ If a failure is REPEATING (count >= 2), you MUST change your strategy.
+
+HYPOTHESIS-DRIVEN VARIANTS:
+→ Every variant MUST include a hypothesis: a causal explanation of why the proposed changes will lead to the expected effects.
+→ Expected effects must be measurable outcomes (e.g., 'build success', 'test X passes').
+
+TRAJECTORY AWARENESS:
+→ Consider the build/test trends. Prefer variants that improve ANY dimension.
+
+PRIORITY LOGIC:
+→ IF build == FAIL → focus on build fixes.
+→ ELSE IF tests failing → focus on test fixes.
+→ ELSE → refinement.
+
+ITERATION STRATEGY (DARWINIAN):
+→ Generate 2–3 DIFFERENT candidate state transitions.
+→ Each candidate must represent a distinct strategy and target a meaningful system improvement.
+→ Avoid cosmetic changes, repeated failed approaches, or low-impact modifications.
+
+CURRENT TASK:
+Current Goal: Refactor code
+
+--- CURRENT STATE SNAPSHOT ---
+Build Status: SUCCESS
+Build Errors: 0 ([])
+Tests: 0/0 passed
+
+--- TRAJECTORY ---
+Build Trend: null
+Test Trend: null
+Failure Change: null
+
+--- SYSTEM STATE (DYNAMIC DISCOVERY) ---
+Build System: Maven (Tycho/Standard)
+Project Structure: Flat/Single-module
+Target Environment: Java 21.0.10 on Linux
+
+--- LEARNING FROM HISTORY ---
+
+--- LEARNING FROM HISTORY ---
+No previous iteration history available.
+
+PLATFORM MODE: DARWIN_MODE. Generate 2-3 competing variants.
+
+
+FINAL DIRECTIVE:
+Output MUST be a valid JSON array of 2-3 objects. Each object is a structured PROPOSAL for a state transition.
+CRITICAL: Do NOT include any conversation, explanation, or <think> tags. ONLY return the JSON array.
+Schema:
+[
+  {
+    "id": "string-id",
+    "strategy": "<high-level intent>",
+    "score": 0.0-1.0, // Predicted probability of success/correctness
+    "suffix": "<short string for branch name>",
+    "actions": [
+      {
+        "domain": "file | test | build | structure",
+        "operation": "<operation name, e.g. WRITE, DELETE, MKDIR, TEST, BUILD, ANALYZE>",
+        "target": "<file/module/test path>",
+        "description": "<detailed instruction of what will be done in this specific step>"
+      }
+    ],
+    "hypothesis": {
+      "description": "<causal explanation of why this will work>",
+      "expected_effects": ["<measurable outcome 1>", "<measurable outcome 2>"]
+    },
+    "expected_effect": {
+      "short_term": "...",
+      "long_term": "...",
+      "risk": 0.0-1.0,
+      "reversibility": 0.0-1.0
+    }
+  }
+] ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [MOCK] Call 1 response: {"category":"CODING", "isAmbiguous":false, "refinedPrompt":"Refactor code"} ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-DarwinEngine-Response: {"category":"CODING", "isAmbiguous":false, "refinedPrompt":"Refactor code"} ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [DARWIN] ERROR: Failed to extract variants from AI response. Check format. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: ANALYZING -> FAILED ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [GIT] Force switching to branch: master ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git checkout -f master ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Switched to branch 'master' ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [GIT] Rolling back changes (hard reset) ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git reset --hard HEAD ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : HEAD is now at cef2bb1 Initial commit ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Iteration 2 encountered an error: Invalid AI response for variants: {"category":"CODING", "isAmbiguous":false, "refinedPrompt":"Refactor code"} ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Iteration 2 failed. Total failures: 2 ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] Persisting session state before restart... ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] Warning: No EMF resource found for Orchestrator. State not persisted to disk. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] Checking if system restart or reload is needed... ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [RESTART] System is stable. No restart required for this iteration. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [SUPERVISOR] Session completed. Status: COMPLETED ... [ Log.log():45 ]
+Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.354 s <<< FAILURE! -- in eu.kalafatic.evolution.controller.tests.DarwinEvolutionTest
+eu.kalafatic.evolution.controller.tests.DarwinEvolutionTest.testDarwinStateTransition -- Time elapsed: 0.161 s <<< FAILURE!
+java.lang.AssertionError: Validator file should exist
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at eu.kalafatic.evolution.controller.tests.DarwinEvolutionTest.testDarwinStateTransition(DarwinEvolutionTest.java:117)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.DarwinEvolutionTest.testDarwinTrajectoryAwareness -- Time elapsed: 0.191 s
+Running eu.kalafatic.evolution.controller.tests.PlatformModeFunctionalTest
+INF >> 03.57.38 >> Core : Evo-Orchestrator-Kernel: Starting INIT sequence. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-Orchestrator-Kernel: Starting INIT sequence. ... [ Log.log():45 ]
+Tests run: 4, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 0.014 s <<< FAILURE! -- in eu.kalafatic.evolution.controller.tests.PlatformModeFunctionalTest
+eu.kalafatic.evolution.controller.tests.PlatformModeFunctionalTest.testSelfDevMode -- Time elapsed: 0.003 s
+eu.kalafatic.evolution.controller.tests.PlatformModeFunctionalTest.testDarwinModeRouting -- Time elapsed: 0.002 s
+eu.kalafatic.evolution.controller.tests.PlatformModeFunctionalTest.testSimpleChatMode -- Time elapsed: 0.004 s <<< FAILURE!
+java.lang.AssertionError
+	at org.junit.Assert.fail(Assert.java:87)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.junit.Assert.assertTrue(Assert.java:53)
+	at eu.kalafatic.evolution.controller.tests.PlatformModeFunctionalTest.testSimpleChatMode(PlatformModeFunctionalTest.java:62)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+eu.kalafatic.evolution.controller.tests.PlatformModeFunctionalTest.testAssistedCodingMode -- Time elapsed: 0.002 s <<< FAILURE!
+java.lang.AssertionError
+	at org.junit.Assert.fail(Assert.java:87)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.junit.Assert.assertTrue(Assert.java:53)
+	at eu.kalafatic.evolution.controller.tests.PlatformModeFunctionalTest.testAssistedCodingMode(PlatformModeFunctionalTest.java:82)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:316)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeWithRerun(JUnit4Provider.java:240)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:214)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:155)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:137)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:148)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:88)
+	at org.eclipse.tycho.surefire.osgibooter.OsgiSurefireBooter.run(OsgiSurefireBooter.java:140)
+	at org.eclipse.tycho.surefire.osgibooter.HeadlessTestApplication.start(HeadlessTestApplication.java:29)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:219)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:149)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:115)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:467)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:298)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:615)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:563)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1415)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1387)
+
+Running eu.kalafatic.evolution.controller.tests.ScenarioTest
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git init ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: Using 'master' as the name for the initial branch. This default branch name ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: will change to "main" in Git 3.0. To configure the initial branch name ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: to use in all of your new repositories, which will suppress this warning, ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: call: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: 	git config --global init.defaultBranch <name> ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: 'development'. The just-created branch can be renamed via this command: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: 	git branch -m <name> ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : hint: Disable this message with "git config set advice.defaultBranchName false" ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Initialized empty Git repository in /tmp/scenario-test15244729031063381821/.git/ ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git config user.email test@example.com ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git config user.name Test User ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git add . ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [ShellTool]: Running git commit -m Initial commit ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [master (root-commit) cef2bb1] Initial commit ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core :  1 file changed, 1 insertion(+) ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core :  create mode 100644 pom.xml ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: INIT -> INIT ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Strategic Initialization: Write java example ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Platform Mode: ASSISTED_CODING ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: INIT -> ANALYZING ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [INTENT] Classifying: Write java example ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-Analytic-Thinking: Role: Analytic
+PROJECT ROOT: /tmp/scenario-test15244729031063381821
+
+INSTRUCTIONS:
+Role: Analytic Agent. Goal: Analyze user prompt or task failure.
+
+STRICT OUTPUT RULE: You MUST output ONLY a single JSON object. No preamble, no conversational text. Never output two JSON objects.
+
+ANALYSIS CRITERIA (for new requests):
+1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.
+2. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion' and 'missingInformation' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.
+3. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults. It should stay faithful to the original intent.
+
+DIAGNOSIS CRITERIA (for failures):
+1. ROOT CAUSE: syntactic, logical, or environment.
+2. PROGRESS: IMPROVED, SAME, or WORSE compared to previous attempt.
+3. STRATEGY: RETRY, REPAIR_AGENT, or ESCALATE.
+
+OUTPUT SCHEMA (Choose ONLY ONE based on the task - either NEW REQUEST or DIAGNOSIS):
+NEW REQUEST (for fresh prompts):
+{
+  "category": "...",
+  "objective": "...",
+  "isAmbiguous": boolean,
+  "missingInformation": [],
+  "clarificationQuestion": "...",
+  "refinedPrompt": "..."
+}
+DIAGNOSIS (for failure analysis):
+{
+  "rootCause": "...",
+  "repeatFailure": boolean,
+  "progress": "IMPROVED | SAME | WORSE",
+  "suggestedStrategy": "RETRY | REPAIR_AGENT | ESCALATE",
+  "explanation": "..."
+}
+
+CURRENT TASK:
+Write java example
+
+ ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-Analytic-Response: {"category":"CODING", "isAmbiguous":false, "refinedPrompt":"Write java example"} ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Planner: Decomposing request - Write java example ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-Planner-Thinking: Role: Planner
+PROJECT ROOT: /tmp/scenario-test15244729031063381821
+
+INSTRUCTIONS:
+You are a workflow planner for Evo, an architect-first AI system.
+
+RULES:
+- MVP FIRST: Always start with a working implementation of the immediate technical request. Don't block execution with questions.
+- BIG PICTURE: For architectural tasks, you MAY add a final 'Architect: Review & Expand' task to solicit feedback on purpose/usage AFTER the initial work is planned.
+- ITERATION: If a task is complex, plan it in small, verifiable steps. Use 'loopToTaskId' for iterative improvement.
+- Trust the refined prompt and shared memory for technical details (language, paths).
+- Task names MUST start with agent types: 'JavaDev: [Action]', 'Tester: [Action]', 'Architect: [Action]', etc.
+- Task types: 'llm', 'file' (Task name: 'Write <path>'), 'shell', 'git', 'maven', 'approval'.
+
+JSON Schema:
+[ { "id": "t1", "name": "Agent: Action", "description": "...", "taskType": "...", "approvalRequired": boolean, "loopToTaskId": "none" } ]
+
+CURRENT TASK:
+Write java example
+PLATFORM MODE: ASSISTED_CODING. Keep the plan very simple (1-2 tasks max). Focus on the most direct solution.
+
+
+FINAL DIRECTIVE:
+You MUST output a valid JSON array of objects. Do not include any conversational preamble or follow-up text outside the JSON structure. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Evo-Planner-Response: [{"id": "t1", "name": "Write Example.java", "taskType": "file"}] ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Planner: Received response from AI: [{"id": "t1", "name": "Write Example.java", "taskType": "file"}] ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: ANALYZING -> PLAN_LOCKED ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: PLAN_LOCKED -> EXECUTING ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [EXECUTOR] Starting execution of 1 tasks. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [EXECUTOR] Executing task: Write Example.java ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [FileTool]: Reading from Example.java ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : ContextBuilder: Could not read file Example.java: File not found: Example.java ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [FileTool]: Writing to Example.java ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [FileTool]: Wrote 96 bytes to Example.java via java.io.File ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Tool [FileTool]: Wrote file Example.java ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Validator: Starting unified evaluation for Write Example.java ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Reviewer: Evaluation for 'Write Example.java': success=true, comment=Looks good ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : ConstraintAgent: No DesignModel found in shared memory. Skipping deep architectural check. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : Validator: Both review and constraints passed. ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [EXECUTOR] Task completed: Write Example.java ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: EXECUTING -> VERIFYING ... [ Log.log():45 ]
+INF >> 03.57.38 >> Core : [KERNEL] Transition: VERIFYING -> DONE ... [ Log.log():45 ]
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.061 s -- in eu.kalafatic.evolution.controller.tests.ScenarioTest
+eu.kalafatic.evolution.controller.tests.ScenarioTest.testScenario1_SimplePrompt -- Time elapsed: 0.060 s
+Running eu.kalafatic.evolution.controller.tests.NeuronEngineTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in eu.kalafatic.evolution.controller.tests.NeuronEngineTest
+eu.kalafatic.evolution.controller.tests.NeuronEngineTest.testRunTransformer -- Time elapsed: 0.001 s
+eu.kalafatic.evolution.controller.tests.NeuronEngineTest.testRunLSTM -- Time elapsed: 0 s
+eu.kalafatic.evolution.controller.tests.NeuronEngineTest.testRunMLP -- Time elapsed: 0.001 s
+Running eu.kalafatic.evolution.controller.tests.ContextAssistantTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in eu.kalafatic.evolution.controller.tests.ContextAssistantTest
+eu.kalafatic.evolution.controller.tests.ContextAssistantTest.testParseResponse -- Time elapsed: 0 s
+
+Results:
+
+Failures:
+  DarwinEvolutionTest.testDarwinStateTransition:117 Validator file should exist
+  HybridModeTest.testHybridThreeStepFlow:69 expected:<[Final Simplified Response]> but was:<[Large Model Output]>
+  LoopingAndApprovalTest.testApprovalMechanism:58 expected:<PENDING> but was:<READY>
+  PlannerCategorizationTest.testGreetingPlanning:74 expected:<General: [Respond to greeting]> but was:<General: [Ask for clarification]>
+  PlatformModeFunctionalTest.testAssistedCodingMode:82
+  PlatformModeFunctionalTest.testSimpleChatMode:62
+Errors:
+  AnalyticAgentTest.testAmbiguousRequest:43 » NullPointer Cannot invoke "java.io.File.getAbsolutePath()" because the return value of "eu.kalafatic.evolution.controller.orchestration.TaskContext.getProjectRoot()" is null
+  AnalyticAgentTest.testClearRequest:64 » NullPointer Cannot invoke "java.io.File.getAbsolutePath()" because the return value of "eu.kalafatic.evolution.controller.orchestration.TaskContext.getProjectRoot()" is null
+  AnalyticAgentTest.testGreetingRequest:109 » NullPointer Cannot invoke "java.io.File.getAbsolutePath()" because the return value of "eu.kalafatic.evolution.controller.orchestration.TaskContext.getProjectRoot()" is null
+  AnalyticAgentTest.testRecoveryFromNonJsonResponse:126 » NullPointer Cannot invoke "java.io.File.getAbsolutePath()" because the return value of "eu.kalafatic.evolution.controller.orchestration.TaskContext.getProjectRoot()" is null
+  AnalyticAgentTest.testSimplestSolutionDirective:88 » NullPointer Cannot invoke "java.io.File.getAbsolutePath()" because the return value of "eu.kalafatic.evolution.controller.orchestration.TaskContext.getProjectRoot()" is null
+  BestPracticesInjectionTest.testBothInjections:55 NullPointer Cannot invoke "eu.kalafatic.evolution.model.orchestration.AiChat.getPromptInstructions()" because the return value of "eu.kalafatic.evolution.model.orchestration.Orchestrator.getAiChat()" is null
+  BestPracticesInjectionTest.testIterativeContextContent:67 NullPointer Cannot invoke "eu.kalafatic.evolution.model.orchestration.AiChat.getPromptInstructions()" because the return value of "eu.kalafatic.evolution.model.orchestration.Orchestrator.getAiChat()" is null
+  BestPracticesInjectionTest.testIterativeLoopInjection:29 NullPointer Cannot invoke "eu.kalafatic.evolution.model.orchestration.AiChat.getPromptInstructions()" because the return value of "eu.kalafatic.evolution.model.orchestration.Orchestrator.getAiChat()" is null
+  BestPracticesInjectionTest.testSelfDevelopmentInjection:42 NullPointer Cannot invoke "eu.kalafatic.evolution.model.orchestration.AiChat.getPromptInstructions()" because the return value of "eu.kalafatic.evolution.model.orchestration.Orchestrator.getAiChat()" is null
+  OrchestrationPathTest.testPathSanitization:38 » NoSuchMethod eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator.performAction(eu.kalafatic.evolution.model.orchestration.Task,eu.kalafatic.evolution.controller.agents.IAgent,eu.kalafatic.evolution.controller.orchestration.TaskContext,java.lang.String,java.lang.String)
+  OrchestratorFlowTest.testClarificationWait:137->injectMocksIntoOrchestrator:175 » NoSuchField planner
+  OrchestratorFlowTest.testFullOrchestratorFlow:63->injectMocksIntoOrchestrator:175 » NoSuchField planner
+  OrchestratorFlowTest.testGreetingResponse:112->injectMocksIntoOrchestrator:175 » NoSuchField planner
+  PlannerCategorizationTest.testCreateFileCategorization:38 » NullPointer Cannot invoke "eu.kalafatic.evolution.controller.orchestration.PlatformMode.getType()" because "mode" is null
+  PlannerCategorizationTest.testImprovedCategorization:55 » NullPointer Cannot invoke "eu.kalafatic.evolution.controller.orchestration.PlatformMode.getType()" because "mode" is null
+
+Tests run: 69, Failures: 6, Errors: 15, Skipped: 0
+
+[Worker-1: Updating Maven Dependencies] INFO org.eclipse.m2e.core.internal.project.registry.ProjectRegistryRefreshJob - org.eclipse.m2e.core.internal.project.registry.ProjectRegistryRefreshJob was canceled
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  17.730 s
+[INFO] Finished at: 2026-05-04T03:57:39Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.eclipse.tycho:tycho-surefire-plugin:4.0.5:test (default-cli) on project eu.kalafatic.evolution.controller.tests: There are test failures.
+[ERROR]
+[ERROR] Please refer to /app/eu.kalafatic.evolution.controller.tests/target/surefire-reports for the individual test results.
+[ERROR] -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

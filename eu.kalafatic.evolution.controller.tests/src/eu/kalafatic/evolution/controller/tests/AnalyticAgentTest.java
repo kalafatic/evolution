@@ -10,18 +10,22 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.llm.ILlmProvider;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import java.io.File;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
 
 public class AnalyticAgentTest {
 
     private Orchestrator orchestrator;
     private TaskContext context;
     private MockLlmProvider mockLlm;
+    private File tempRoot;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
+        tempRoot = Files.createTempDirectory("analytic-test").toFile();
         orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
-        context = new TaskContext(orchestrator, null);
+        context = new TaskContext(orchestrator, tempRoot);
         mockLlm = new MockLlmProvider();
     }
 

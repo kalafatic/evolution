@@ -1,11 +1,9 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
-import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.ModeRouter;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
-import eu.kalafatic.evolution.controller.orchestration.LlmIntentClassifier;
-import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
-import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
+import eu.kalafatic.evolution.controller.orchestration.IterationManager;
+import eu.kalafatic.evolution.controller.orchestration.KernelFactory;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
@@ -16,15 +14,13 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 
 /**
  * Supervisor for autonomous self-development sessions.
+ * Pure session coordinator. All strategic reasoning delegated to the Kernel.
  *
- * @evo:20:A reason=architecture-documentation-sync
- * @evo:22:A reason=external-supervisor-handoff
+ * @evo:21:A reason=kernel-refactor-alignment
  */
 public class SelfDevSupervisor {
     private final SelfDevSession session;
     private final TaskContext context;
-    protected final AnalyticAgent analyticAgent = new AnalyticAgent();
-    protected final LlmIntentClassifier intentClassifier = new LlmIntentClassifier();
     private static final int MAX_FAILURES = 3;
     private final SelfDevBootstrapController bootstrapController;
 
@@ -41,32 +37,6 @@ public class SelfDevSupervisor {
         String modeName = (context.getPlatformMode() != null) ? context.getPlatformMode().getType().toString().replace("_", " ") : "Self-Development";
         context.log("[SUPERVISOR] Starting " + modeName + " Session: " + session.getId());
 
-        // Analytic Phase for the initial request
-        try {
-            String initialRequest = session.getInitialRequest();
-            if (initialRequest != null && !initialRequest.isEmpty()) {
-                // Intent Gate first
-                JSONObject classification;
-                try {
-                    classification = analyzeIntent(initialRequest);
-                } catch (Exception e) {
-                    context.log("[SUPERVISOR] Intent Gate error: " + e.getMessage());
-                    classification = new JSONObject().put("intent", "new");
-                }
-
-                if ("chat".equals(classification.optString("intent"))) {
-                    context.log("[SUPERVISOR] Request classified as chat. Stopping session.");
-                    session.setStatus(SelfDevStatus.COMPLETED);
-                    return;
-                }
-
-                String refinedRequest = analyzeAndClarify(initialRequest);
-                session.setInitialRequest(refinedRequest);
-            }
-        } catch (Exception e) {
-            context.log("[SUPERVISOR] Analytic Phase warning: " + e.getMessage());
-        }
-
         session.setStatus(SelfDevStatus.RUNNING);
         session.setStartTime(System.currentTimeMillis());
 
@@ -82,7 +52,7 @@ public class SelfDevSupervisor {
                     maxIter = preferred;
                 }
             }
-            session.setMaxIterations(maxIter); // Ensure session model reflects what we are actually using
+            session.setMaxIterations(maxIter);
 
             for (int i = 1; i <= maxIter; i++) {
                 if (session.getStatus() != SelfDevStatus.RUNNING) {
@@ -99,7 +69,9 @@ public class SelfDevSupervisor {
                 IterationManager iterationManager = createIterationManager(iteration);
                 EvaluationResult result;
                 try {
-                    result = iterationManager.run();
+                    // Logic: The IterationManager will handle its own strategic analysis
+                    // if it's the first call or if context is missing a plan.
+                    result = iterationManager.runIteration(iteration);
                 } catch (Exception e) {
                     context.log("[SUPERVISOR] Iteration " + i + " encountered an error: " + e.getMessage());
                     result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -113,10 +85,8 @@ public class SelfDevSupervisor {
                     if (failureCount >= MAX_FAILURES) {
                         context.log("[SUPERVISOR] Max failures (" + MAX_FAILURES + ") reached. Stopping session.");
                         session.setStatus(SelfDevStatus.FAILED);
-                        return; // Exit immediately
+                        return;
                     }
-                    // If we have a critical error but haven't reached MAX_FAILURES, we might want to continue to next iteration
-                    // But usually, a critical error in Darwin mode might need manual intervention or a different approach.
                 }
 
                 if (result.getDecision() == SelfDevDecision.STOP) {
@@ -127,17 +97,11 @@ public class SelfDevSupervisor {
 
                 restartManager.persistAndPrepareForRestart();
 
-                // If we need a real restart via external Supervisor
                 if (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
                     context.log("[SUPERVISOR] Delegating build and restart to external Supervisor...");
                     try {
                         bootstrapController.startBootstrap();
-
-                        // Small wait to allow external supervisor to take over
                         Thread.sleep(2000);
-
-                        // In external mode, the external supervisor takes over the iteration loop.
-                        // This internal loop can stop or wait.
                         session.setStatus(SelfDevStatus.COMPLETED);
                         context.log("[SUPERVISOR] Handoff complete. Stopping internal supervisor.");
                         break;
@@ -160,61 +124,8 @@ public class SelfDevSupervisor {
         }
     }
 
-    protected JSONObject analyzeIntent(String request) throws Exception {
-        return intentClassifier.classify(request, context);
-    }
-
-    private String analyzeAndClarify(String request) throws Exception {
-        OrchestrationStatusManager.getInstance().updateAgentStatus("Analytic", "Analyzing request...");
-        try {
-            JSONObject analysis = analyticAgent.analyze(request, context);
-            context.log("[SUPERVISOR] Analytic Agent identified category: " + analysis.optString("category"));
-
-            if (analysis.optBoolean("isAmbiguous", false)) {
-                String question = analysis.optString("clarificationQuestion", "The request is ambiguous. Can you please provide more details?");
-
-                // If Darwin mode is enabled, we bypass blocking clarification and let the DarwinEngine handle ambiguity via variants.
-                if (context.getOrchestrator().isDarwinMode()) {
-                    context.log("[SUPERVISOR] Request identified as ambiguous, but Darwin mode is active. Bypassing clarification to generate variants.");
-                    return analysis.optString("refinedPrompt", request);
-                }
-
-                context.log("[SUPERVISOR] Request is ambiguous. Asking for clarification...");
-
-                if (context.isAutoApprove()) {
-                    context.log("Evo-Supervisor: Auto-approval enabled. Skipping clarification in headless mode.");
-                    return request;
-                }
-
-                context.log("Evo-Supervisor-Waiting: Waiting for user clarification...");
-                String clarification = context.requestInput(question).get();
-                if (clarification == null || clarification.trim().isEmpty()) {
-                    context.log("[SUPERVISOR] No clarification provided. Proceeding with original request.");
-                    return request;
-                }
-
-                context.log("[SUPERVISOR] Received clarification: " + clarification);
-                context.appendSharedMemory("User Clarification: " + clarification);
-
-                // Recursively analyze with the clarification
-                return analyzeAndClarify(request + "\nClarification: " + clarification);
-            }
-
-            String refined = analysis.optString("refinedPrompt", request);
-            if (!refined.equals(request)) {
-                context.log("[SUPERVISOR] Analytic Agent refined the prompt.");
-            }
-            return refined;
-        } catch (Exception e) {
-            context.log("[SUPERVISOR] Analytic Warning: " + e.getMessage() + ". Proceeding with original request.");
-            return request;
-        } finally {
-            OrchestrationStatusManager.getInstance().updateAgentStatus("Analytic", "Idle");
-        }
-    }
-
     protected IterationManager createIterationManager(Iteration iteration) {
-        return new IterationManager(iteration, context);
+        return KernelFactory.create(context);
     }
 
     public void stopSession() {

@@ -8,11 +8,20 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 
 public class TaskExecutor {
-    private final EvolutionOrchestrator orchestrator = new EvolutionOrchestrator();
+    private final EvolutionOrchestrator orchestrator;
     private final TaskContext context;
 
     public TaskExecutor(TaskContext context) {
+        this(context, new EvolutionOrchestrator());
+    }
+
+    public TaskExecutor(TaskContext context, EvolutionOrchestrator orchestrator) {
         this.context = context;
+        this.orchestrator = orchestrator;
+    }
+
+    public EvolutionOrchestrator getOrchestrator() {
+        return orchestrator;
     }
 
     public boolean executeTasks(List<Task> tasks) {
@@ -27,13 +36,8 @@ public class TaskExecutor {
                 request.getContext().put("orchestrator", context.getOrchestrator());
                 request.getContext().put("taskContext", context);
 
-                eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse orchResponse = orchestrator.handle(request, context);
-
-                if (orchResponse.getResultType() == eu.kalafatic.evolution.controller.orchestration.ResultType.ERROR) {
-                    throw new Exception(orchResponse.getContent());
-                }
-
-                task.setResponse(orchResponse.getSummary());
+                String response = orchestrator.executeTask(task, context);
+                task.setResponse(response);
                 context.log("[EXECUTOR] Task completed: " + task.getName());
             } catch (Exception e) {
                 task.setStatus(TaskStatus.FAILED);
