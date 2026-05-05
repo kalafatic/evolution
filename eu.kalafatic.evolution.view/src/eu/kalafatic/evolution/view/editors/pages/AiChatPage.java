@@ -960,8 +960,10 @@ public class AiChatPage extends AEvoPage {
 		if (file.exists()) {
 			IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
 			if (iFile != null) {
-				editor.refreshNavigator(iFile);
-				editor.showComparePage(iFile);
+				Display.getDefault().asyncExec(() -> {
+					editor.refreshNavigator(iFile);
+					editor.showComparePage(iFile);
+				});
 			}
 		}
 	}
