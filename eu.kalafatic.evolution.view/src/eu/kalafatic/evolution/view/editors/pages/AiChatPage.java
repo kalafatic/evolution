@@ -941,11 +941,26 @@ public class AiChatPage extends AEvoPage {
 
 	public void handleOpenDiff(String path) {
 		if (path == null || path.isEmpty()) return;
+
+		// Strip status prefix if present (e.g. "M src/File.java" -> "src/File.java")
+		if (path.length() > 2 && (path.startsWith("M ") || path.startsWith("A ") || path.startsWith("D "))) {
+		    path = path.substring(2);
+		}
+
 		File projectRoot = getProjectRoot();
 		File file = new File(projectRoot, path);
+
+		// Ensure workspace is in sync before looking for the file
+		try {
+			ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
+		} catch (org.eclipse.core.runtime.CoreException e1) {
+			// Ignore
+		}
+
 		if (file.exists()) {
 			IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
 			if (iFile != null) {
+				editor.refreshNavigator(iFile);
 				editor.showComparePage(iFile);
 			}
 		}

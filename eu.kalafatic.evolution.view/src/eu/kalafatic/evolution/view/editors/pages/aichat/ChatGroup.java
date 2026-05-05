@@ -215,9 +215,15 @@ public class ChatGroup extends AEvoGroup {
 
                         try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipPath))) {
                             for (String filePath : files) {
-                                File file = new File(projectRoot, filePath);
+                                // Strip status prefix if present
+                                String path = filePath;
+                                if (path.length() > 2 && (path.startsWith("M ") || path.startsWith("A ") || path.startsWith("D "))) {
+                                    path = path.substring(2);
+                                }
+
+                                File file = new File(projectRoot, path);
                                 if (file.exists() && file.isFile()) {
-                                    zos.putNextEntry(new java.util.zip.ZipEntry(filePath));
+                                    zos.putNextEntry(new java.util.zip.ZipEntry(path));
                                     java.nio.file.Files.copy(file.toPath(), zos);
                                     zos.closeEntry();
                                 }
@@ -261,8 +267,14 @@ public class ChatGroup extends AEvoGroup {
 
         new Thread(() -> {
             try {
+                // Strip status prefix if present
+                String path = filePath;
+                if (path.length() > 2 && (path.startsWith("M ") || path.startsWith("A ") || path.startsWith("D "))) {
+                    path = path.substring(2);
+                }
+
                 eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider gitProvider = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
-                String diff = gitProvider.getFileDiff(projectRoot, "HEAD", filePath);
+                String diff = gitProvider.getFileDiff(projectRoot, "HEAD", path);
                 Display.getDefault().asyncExec(() -> {
                     if (browser != null && !browser.isDisposed()) {
                         JSONObject json = new JSONObject();
@@ -326,7 +338,12 @@ public class ChatGroup extends AEvoGroup {
                             commitGitChanges(text);
                             break;
                         case "revertFile":
-                            ChatGroup.this.revertGitFile(text);
+                            // Strip status prefix if present
+                            String revertPath = text;
+                            if (revertPath.length() > 2 && (revertPath.startsWith("M ") || revertPath.startsWith("A ") || revertPath.startsWith("D "))) {
+                                revertPath = revertPath.substring(2);
+                            }
+                            ChatGroup.this.revertGitFile(revertPath);
                             break;
                         case "downloadZip":
                             ChatGroup.this.downloadChangesAsZip();
@@ -335,7 +352,12 @@ public class ChatGroup extends AEvoGroup {
                             page.handleOpenDiff(text);
                             break;
                         case "openInReviewEditor":
-                            ChatGroup.this.openInComparePage(text);
+                            // Strip status prefix if present
+                            String reviewPath = text;
+                            if (reviewPath.length() > 2 && (reviewPath.startsWith("M ") || reviewPath.startsWith("A ") || reviewPath.startsWith("D "))) {
+                                reviewPath = reviewPath.substring(2);
+                            }
+                            ChatGroup.this.openInComparePage(reviewPath);
                             break;
                         case "openPeerReview":
                             editor.showPeerReviewPage();

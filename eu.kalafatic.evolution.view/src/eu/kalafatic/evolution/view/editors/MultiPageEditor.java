@@ -378,7 +378,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         this.lastTextSelection = lastTextSelection;
     }
 
-    private void refreshNavigator(IResource resource) {
+    public void refreshNavigator(IResource resource) {
         org.eclipse.ui.IViewPart view = getSite().getPage().findView("eu.kalafatic.views.EvoNavigator");
         if (view instanceof EvoNavigator) {
             ((EvoNavigator) view).refreshAndExpand(resource);
