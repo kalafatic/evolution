@@ -63,6 +63,15 @@
         </div>
     </div>
 
+    <script>
+        // Emergency bootloader: queue calls until modules are ready
+        window._evoQueue = [];
+        window.updateMessages = (m) => window._evoQueue.push({ fn: 'updateMessages', args: [m] });
+        window.updateChanges = (c) => window._evoQueue.push({ fn: 'updateChanges', args: [c] });
+        window.showDiff = (d) => window._evoQueue.push({ fn: 'showDiff', args: [d] });
+        window.showThinking = (s) => window._evoQueue.push({ fn: 'showThinking', args: [s] });
+        window.setFeedbackLevel = (l) => window._evoQueue.push({ fn: 'setFeedbackLevel', args: [l] });
+    </script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

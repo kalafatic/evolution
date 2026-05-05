@@ -65,15 +65,34 @@ window.addEventListener('java:executeProposal', (e) => JavaBridge.call('executeP
 window.addEventListener('java:clarify', () => JavaBridge.call('clarify'));
 
 // Expose global functions for legacy/simple calls from Java or HTML
-window.updateMessages = (messages) => stateStore.setState({ messages });
-window.updateChanges = (files) => stateStore.setState({ changes: files });
-window.showDiff = (data) => {
+const updateMessages = (messages) => stateStore.setState({ messages });
+const updateChanges = (files) => stateStore.setState({ changes: files });
+const showDiff = (data) => {
     const lastDiffs = { ...stateStore.getState().lastDiffs, [data.path]: data.diff };
     stateStore.setState({ lastDiffs });
     changesPanel.showDiff(data);
 };
-window.showThinking = (show) => stateStore.setState({ isThinking: show });
-window.setFeedbackLevel = (level) => stateStore.setState({ feedbackLevel: level });
+const showThinking = (show) => stateStore.setState({ isThinking: show });
+const setFeedbackLevel = (level) => stateStore.setState({ feedbackLevel: level });
+
+window.updateMessages = updateMessages;
+window.updateChanges = updateChanges;
+window.showDiff = showDiff;
+window.showThinking = showThinking;
+window.setFeedbackLevel = setFeedbackLevel;
+
+// Process queued calls from emergency bootloader
+if (window._evoQueue && window._evoQueue.length > 0) {
+    console.log(`Processing ${window._evoQueue.length} queued UI calls`);
+    window._evoQueue.forEach(item => {
+        if (item.fn === 'updateMessages') updateMessages(...item.args);
+        if (item.fn === 'updateChanges') updateChanges(...item.args);
+        if (item.fn === 'showDiff') showDiff(...item.args);
+        if (item.fn === 'showThinking') showThinking(...item.args);
+        if (item.fn === 'setFeedbackLevel') setFeedbackLevel(...item.args);
+    });
+    window._evoQueue = [];
+}
 
 // Navigation & Global Actions
 window.scrollToTop = () => messageList.scrollToTop();
