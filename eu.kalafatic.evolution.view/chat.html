@@ -280,11 +280,11 @@
             max-width: 480px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 12px;
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
-            padding: 24px;
+            padding: 20px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             transition: all 0.2s;
             box-sizing: border-box;
@@ -294,24 +294,36 @@
             border-color: #cbd5e1;
         }
 
+        .branch-column.waiting {
+            background: #f97316;
+            border-color: #ea580c;
+            color: #ffffff;
+        }
+
         .branch-header {
-            font-weight: 800;
-            font-size: 18px;
+            font-weight: 900;
+            font-size: 15px;
             color: #1e293b;
             border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 12px;
-            margin-bottom: 0;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .branch-column.waiting .branch-header {
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .branch-strategy {
-            font-size: 13px;
-            color: #64748b;
-            margin-bottom: 4px;
-            font-style: italic;
-            font-family: serif;
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            line-height: 1.3;
         }
 
         .branch-actions {
@@ -1095,16 +1107,23 @@
 
                         const data = JSON.parse(jsonText);
 
-                        const renderValue = (val) => {
+                        const renderValue = (val, key) => {
                             if (val === null || val === undefined) return "";
                             if (Array.isArray(val)) {
                                 if (val.length === 0) return "";
-                                return `<ul style="margin: 2px 0; padding-left: 15px;">${val.map(item => `<li>${renderValue(item)}</li>`).join('')}</ul>`;
+                                return `<ul style="margin: 2px 0; padding-left: 15px;">${val.map(item => `<li>${renderValue(item, key)}</li>`).join('')}</ul>`;
                             }
                             if (typeof val === 'object') {
-                                return Object.entries(val).map(([k, v]) => `<div><b>${k}:</b> ${renderValue(v)}</div>`).join('');
+                                return Object.entries(val).map(([k, v]) => `<div><b>${k}:</b> ${renderValue(v, k)}</div>`).join('');
                             }
-                            return escapeHtml(String(val));
+                            const strVal = String(val);
+                            const fileKeys = ['files', 'path', 'target', 'file'];
+                            if (fileKeys.includes(key) || (key === 'description' && (strVal.includes('/') || strVal.includes('.')))) {
+                                if (strVal.length > 3 && (strVal.includes('.') || strVal.includes('/'))) {
+                                    return `<a onclick="event.stopPropagation(); JavaHandler('openDiff', '-1', '${escapeJs(strVal)}')"><b>${escapeHtml(strVal)}</b></a>`;
+                                }
+                            }
+                            return escapeHtml(strVal);
                         };
 
                         let html = '<div style="display: flex; flex-direction: column; gap: 6px;">';
@@ -1129,7 +1148,7 @@
                                         html += `<div style="margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px;"><a class="link-go" onclick="event.stopPropagation(); JavaHandler('executeProposal', '-1', '${escapeJs(value)}')"><b>${escapeHtml(value)}</b></a></div>`;
                                     } else {
                                         html += `<div><div style="font-weight: 800; font-size: 10px; color: #64748b; letter-spacing: 0.05em; margin-top: 4px;">${label}</div>`;
-                                        html += `<div style="margin-top: 1px;">${renderValue(value)}</div></div>`;
+                                        html += `<div style="margin-top: 1px;">${renderValue(value, field)}</div></div>`;
                                     }
                                 }
                             });
@@ -1137,7 +1156,7 @@
                             // Other fields
                             Object.entries(data).forEach(([key, val]) => {
                                 if (!topLevelFields.includes(key)) {
-                                    html += `<div><b>${key}:</b> ${renderValue(val)}</div>`;
+                                    html += `<div><b>${key}:</b> ${renderValue(val, key)}</div>`;
                                 }
                             });
                         }
@@ -1414,8 +1433,17 @@
                 const msgContent = document.createElement('div');
                 msgContent.className = 'message-content';
 
-                const isDarwinArray = role.includes('darwin') && m.text.trim().startsWith('[');
-                if (role === 'darwin-branches' || isDarwinArray) {
+                let isDarwin = role.includes('darwin');
+                if (!isDarwin) {
+                    try {
+                        const data = JSON.parse(m.text);
+                        if (data.variants || data.proposals || (Array.isArray(data) && data.length > 0 && data[0].strategy)) {
+                            isDarwin = true;
+                        }
+                    } catch(e) {}
+                }
+
+                if (isDarwin) {
                     renderDarwinBranches(msgContent, m);
                 } else {
                     const bubble = document.createElement('div');
@@ -1466,42 +1494,64 @@
                 const role = (m.agentType || '').toLowerCase();
                 const isWaiting = role.includes('waiting') && !role.includes('approved');
 
-                // Handle both { variants: [...] } and plain array [...]
-                const variants = Array.isArray(data) ? data : (data.variants || []);
+                // Handle various JSON formats: { variants: [...] }, { proposals: [...] }, or plain array [...]
+                const variants = Array.isArray(data) ? data : (data.variants || data.proposals || []);
 
                 const branchContainer = document.createElement('div');
                 branchContainer.className = 'branch-container';
 
                 variants.forEach((v, index) => {
                     const column = document.createElement('div');
-                    column.className = 'branch-column' + (v.isBest ? ' best' : '');
+                    column.className = 'branch-column' + (v.isBest ? ' best' : '') + (isWaiting ? ' waiting' : '');
 
                     const header = document.createElement('div');
                     header.className = 'branch-header';
-                    header.innerHTML = `<span>${index + 1}</span>`;
+                    header.innerHTML = `<span>PROPOSAL ${index + 1}</span>`;
 
                     const strategy = document.createElement('div');
                     strategy.className = 'branch-strategy';
-                    strategy.innerText = v.strategy;
+                    strategy.innerText = v.strategy || v.id || 'Variant';
 
                     const body = document.createElement('div');
-                    body.style.fontSize = '10px';
+                    body.style.fontSize = '12px';
                     body.style.display = 'flex';
                     body.style.flexDirection = 'column';
-                    body.style.gap = '8px';
+                    body.style.gap = '4px';
 
-                    if (v.actions) {
-                        const actions = document.createElement('div');
-                        actions.className = 'branch-actions';
-                        v.actions.forEach(a => {
-                            const item = document.createElement('div');
-                            item.className = 'branch-action-item';
-                            item.innerText = (a.operation || '') + ' ' + (a.target || '');
-                            actions.appendChild(item);
-                        });
-                        body.appendChild(actions);
-                    }
+                    const renderPair = (key, val) => {
+                        if (!val) return '';
+                        let displayVal = val;
+                        if (Array.isArray(val)) {
+                            displayVal = `<ul style="margin: 2px 0; padding-left: 18px; list-style-type: disc;">${val.map(item => `<li style="margin-bottom: 2px;">${typeof item === 'object' ? renderObject(item) : escapeHtml(String(item))}</li>`).join('')}</ul>`;
+                        } else if (typeof val === 'object') {
+                            displayVal = renderObject(val);
+                        } else {
+                            displayVal = escapeHtml(String(val));
+                        }
+                        return `<div style="margin-bottom: 4px;"><span style="font-weight: 800; opacity: 0.9; font-size: 11px; text-transform: lowercase;">${key}:</span> <span style="font-weight: 500;">${displayVal}</span></div>`;
+                    };
 
+                    const renderObject = (obj) => {
+                        return `<div style="padding-left: 12px; border-left: 2px solid rgba(255,255,255,0.2); margin-top: 4px;">` +
+                               Object.entries(obj).map(([k, v]) => renderPair(k, v)).join('') +
+                               `</div>`;
+                    };
+
+                    // Fields to show prominently based on the image
+                    const fields = ['id', 'strategy', 'score', 'suffix', 'actions', 'hypothesis', 'expected_effects', 'expected_effect', 'short_term', 'long_term', 'risk', 'reversibility'];
+
+                    fields.forEach(f => {
+                        if (v[f] && f !== 'strategy') {
+                            body.innerHTML += renderPair(f, v[f]);
+                        }
+                    });
+
+                    // Catch any other fields
+                    Object.entries(v).forEach(([k, val]) => {
+                        if (!fields.includes(k)) {
+                            body.innerHTML += renderPair(k, val);
+                        }
+                    });
 
                     const footer = document.createElement('div');
                     footer.className = 'branch-footer';
@@ -1510,7 +1560,7 @@
                         footer.innerHTML = `<div style="color: #16a34a; font-weight: bold; width: 100%; text-align: center;">APPROVED</div>`;
                     } else {
                         footer.innerHTML = `
-                            <button class="branch-btn" onclick="JavaHandler('copy', '-1', '${escapeJs(v.strategy || '')}')">Copy</button>
+                            <button class="branch-btn" onclick="JavaHandler('copy', '-1', '${escapeJs(JSON.stringify(v))}')">Copy</button>
                             <button class="branch-btn approve" onclick="JavaHandler('executeProposal', '-1', 'Approve variant ${v.id || index}')">Approve</button>
                         `;
                     }
