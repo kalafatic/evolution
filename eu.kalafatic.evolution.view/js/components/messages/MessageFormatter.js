@@ -124,6 +124,11 @@ export const MessageFormatter = {
         text = text.replace(/\bCREATE\b/g, '<a class="link-go" onclick="event.stopPropagation(); window.dispatchEvent(new CustomEvent(\'java:approve\', {detail: -1}))">CREATE</a>');
         text = text.replace(/\bCLARIFY\b/g, '<a class="link-clarify" onclick="event.stopPropagation(); window.dispatchEvent(new CustomEvent(\'java:clarify\'))">CLARIFY</a>');
 
+        // Specific phrase links
+        text = text.replace(/could you tell me a bit more about what you(?:’|'|&#039;)re trying to accomplish\?/g, '<a class="link-clarify" onclick="event.stopPropagation(); window.dispatchEvent(new CustomEvent(\'java:clarify\'))">$&</a>');
+        text = text.replace(/Are you looking for a simple example to get started/g, '<a class="link-go" onclick="event.stopPropagation(); window.dispatchEvent(new CustomEvent(\'java:helloworld\'))">$&</a>');
+        text = text.replace(/are you working on a more complex project that requires a specific file structure\?/g, '<a class="link-clarify" onclick="event.stopPropagation(); window.dispatchEvent(new CustomEvent(\'java:clarify\'))">$&</a>');
+
         // Problem patterns
         const problemPatterns = [/server not running/gi, /model not active/gi, /connection lost/gi, /connection refused/gi, /error during execution/gi, /exception:/gi, /failed/gi];
         problemPatterns.forEach(pattern => {

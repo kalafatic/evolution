@@ -16,7 +16,7 @@ export class DarwinContainer {
         }
 
         const container = document.createElement('div');
-        container.className = 'branch-container';
+        container.className = 'branch-container darwin-container';
 
         try {
             let jsonText = text.trim();

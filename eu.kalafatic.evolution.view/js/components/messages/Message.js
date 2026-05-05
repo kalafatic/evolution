@@ -13,7 +13,9 @@ export class Message {
         const role = (agentType || '').toLowerCase();
         const roles = role.split(' ');
         const primaryRole = roles[0];
-        const isUser = primaryRole === 'user' || sender.toLowerCase().includes('you') || sender.toLowerCase().includes('user');
+
+        const senderLower = (sender || '').toLowerCase();
+        const isUser = primaryRole === 'user' || senderLower.includes('you') || senderLower.includes('user');
 
         const div = document.createElement('div');
         div.className = `message ${isUser ? 'user' : 'ai'} ${role}`;
