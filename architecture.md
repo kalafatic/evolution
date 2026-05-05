@@ -64,3 +64,6 @@ def pev_loop(task):
 - **Atomic Changes**: Prefer many small, successful iterations over one large, complex change.
 - **Resilience**: The system must prefer local execution (degraded mode) over total failure when remote LLMs are unavailable.
 - **Traceability**: All self-developed code MUST be traceable back to an iteration and a reason.
+
+## 5. Architecture Enforcement
+The system follows a strict, deterministic state-transition evolutionary kernel design. All changes MUST adhere to the non-negotiable invariants defined in [ARCHITECTURE_GUIDELINES.MD](ARCHITECTURE_GUIDELINES.MD). Shortcuts, hardcoding, or bypassing the kernel (IterationManager) are strictly forbidden.
