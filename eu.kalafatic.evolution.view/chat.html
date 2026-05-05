@@ -1411,7 +1411,8 @@
                 const msgContent = document.createElement('div');
                 msgContent.className = 'message-content';
 
-                if (role === 'darwin-branches') {
+                const isDarwinArray = role.includes('darwin') && m.text.trim().startsWith('[');
+                if (role === 'darwin-branches' || isDarwinArray) {
                     renderDarwinBranches(msgContent, m);
                 } else {
                     const bubble = document.createElement('div');
@@ -1458,59 +1459,78 @@
 
         function renderDarwinBranches(container, m) {
             try {
-                const data = JSON.parse(m.text);
+                let data = JSON.parse(m.text);
+                const role = (m.agentType || '').toLowerCase();
+                const isWaiting = role.includes('waiting') && !role.includes('approved');
+
+                // Handle both { variants: [...] } and plain array [...]
+                const variants = Array.isArray(data) ? data : (data.variants || []);
+
                 const branchContainer = document.createElement('div');
                 branchContainer.className = 'branch-container';
 
-                data.variants.forEach((v, index) => {
+                variants.forEach((v, index) => {
                     const column = document.createElement('div');
                     column.className = 'branch-column' + (v.isBest ? ' best' : '');
 
-                    // Dynamic background and border based on score
                     const score = v.score || 0;
                     const percentage = Math.round(score * 100);
 
-                    // Score-based green gradient (Dark to Light)
-                    // Highest score (e.g. 1.0) -> Darker green background/border
-                    // Lowest score (e.g. 0.0) -> Very light green background
-                    const alpha = 0.05 + (score * 0.15); // background opacity
-                    const borderAlpha = 0.3 + (score * 0.7); // border opacity
+                    // Dynamic colors based on status (Waiting -> Orange, else -> Green)
+                    const baseColor = isWaiting ? '249, 115, 22' : '22, 163, 74';
+                    const alpha = 0.05 + (score * 0.15);
+                    const borderAlpha = 0.3 + (score * 0.7);
 
-                    column.style.backgroundColor = `rgba(22, 163, 74, ${alpha})`;
-                    column.style.borderColor = `rgba(22, 163, 74, ${borderAlpha})`;
+                    column.style.backgroundColor = `rgba(${baseColor}, ${alpha})`;
+                    column.style.borderColor = `rgba(${baseColor}, ${borderAlpha})`;
 
                     const header = document.createElement('div');
                     header.className = 'branch-header';
-                    header.innerHTML = `<span>${index + 1}. ${v.id}</span><span style="color: #16a34a; font-weight: 900;">${percentage}%</span>`;
+                    header.innerHTML = `<span>${index + 1}. ${v.id || ('v' + index)}</span><span style="color: rgb(${baseColor}); font-weight: 900;">${percentage}%</span>`;
 
                     const strategy = document.createElement('div');
                     strategy.className = 'branch-strategy';
                     strategy.innerText = v.strategy;
 
-                    const actions = document.createElement('div');
-                    actions.className = 'branch-actions';
-                    v.actions.forEach(a => {
-                        const item = document.createElement('div');
-                        item.className = 'branch-action-item';
-                        item.innerText = (a.operation || '') + ' ' + (a.target || '');
-                        actions.appendChild(item);
-                    });
+                    const body = document.createElement('div');
+                    body.style.fontSize = '10px';
+                    body.style.display = 'flex';
+                    body.style.flexDirection = 'column';
+                    body.style.gap = '8px';
+
+                    if (v.actions) {
+                        const actions = document.createElement('div');
+                        actions.className = 'branch-actions';
+                        v.actions.forEach(a => {
+                            const item = document.createElement('div');
+                            item.className = 'branch-action-item';
+                            item.innerText = (a.operation || '') + ' ' + (a.target || '');
+                            actions.appendChild(item);
+                        });
+                        body.appendChild(actions);
+                    }
+
+                    if (v.hypothesis && v.hypothesis.description) {
+                        const hyp = document.createElement('div');
+                        hyp.innerHTML = `<div style="font-weight: bold; color: #64748b; font-size: 9px; text-transform: uppercase;">Hypothesis</div><div>${escapeHtml(v.hypothesis.description)}</div>`;
+                        body.appendChild(hyp);
+                    }
 
                     const footer = document.createElement('div');
                     footer.className = 'branch-footer';
 
-                    if (v.isApproved) {
-                        footer.innerHTML = '<div style="color: #16a34a; font-weight: bold; width: 100%; text-align: center;">APPROVED</div>';
+                    if (v.isApproved || role.includes('approved')) {
+                        footer.innerHTML = `<div style="color: rgb(${baseColor}); font-weight: bold; width: 100%; text-align: center;">APPROVED</div>`;
                     } else {
                         footer.innerHTML = `
-                            <button class="branch-btn" onclick="JavaHandler('copy', '-1', '${escapeJs(v.strategy)}')">Copy</button>
-                            <button class="branch-btn approve" onclick="JavaHandler('executeProposal', '-1', 'Approve variant ${v.id}')">Approve</button>
+                            <button class="branch-btn" onclick="JavaHandler('copy', '-1', '${escapeJs(v.strategy || '')}')">Copy</button>
+                            <button class="branch-btn approve" onclick="JavaHandler('executeProposal', '-1', 'Approve variant ${v.id || index}')">Approve</button>
                         `;
                     }
 
                     column.appendChild(header);
                     column.appendChild(strategy);
-                    column.appendChild(actions);
+                    column.appendChild(body);
                     column.appendChild(footer);
                     branchContainer.appendChild(column);
                 });

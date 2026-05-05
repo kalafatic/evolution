@@ -46,16 +46,26 @@ public class GitVersionControlProvider implements VersionControlProvider {
                 // Untracked file: return the whole content as addition
                 File file = new File(workingDir, filePath);
                 if (file.exists()) {
-                    String content = new String(java.nio.file.Files.readAllBytes(file.toPath()));
+                byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+                String content = new String(bytes);
                     StringBuilder sb = new StringBuilder();
                     sb.append("diff --git a/").append(filePath).append(" b/").append(filePath).append("\n");
                     sb.append("new file mode 100644\n");
                     sb.append("--- /dev/null\n");
                     sb.append("+++ b/").append(filePath).append("\n");
-                    String[] lines = content.split("\n");
-                    sb.append("@@ -0,0 +1,").append(lines.length).append(" @@\n");
-                    for (String line : lines) {
-                        sb.append("+").append(line).append("\n");
+                if (bytes.length == 0) {
+                    sb.append("@@ -0,0 +0,0 @@\n");
+                } else {
+                    String[] lines = content.split("\n", -1);
+                    // Remove last empty element if it was just a trailing newline
+                    int count = lines.length;
+                    if (count > 0 && lines[count-1].isEmpty() && content.endsWith("\n")) {
+                        count--;
+                    }
+                    sb.append("@@ -0,0 +1,").append(count).append(" @@\n");
+                    for (int i = 0; i < count; i++) {
+                        sb.append("+").append(lines[i]).append("\n");
+                    }
                     }
                     return sb.toString();
                 }
@@ -108,9 +118,22 @@ public class GitVersionControlProvider implements VersionControlProvider {
             }
             return files;
         } else {
-            String output = shell.execute("git show --name-only --format= " + quote(commitId), workingDir, null);
+            String output = shell.execute("git show --name-status --format= " + quote(commitId), workingDir, null);
             if (output == null || output.isEmpty()) return new ArrayList<>();
-            return Arrays.asList(output.trim().split("\n"));
+            List<String> files = new ArrayList<>();
+            for (String line : output.split("\n")) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+                String[] parts = line.split("\\s+");
+                if (parts.length >= 2) {
+                    String status = parts[0].substring(0, 1).toUpperCase();
+                    String file = parts[1];
+                    files.add(status + " " + file);
+                } else {
+                    files.add("M " + line);
+                }
+            }
+            return files;
         }
     }
 
