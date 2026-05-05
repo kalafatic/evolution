@@ -121,7 +121,7 @@ export const MessageFormatter = {
         text = this.escapeHtml(text);
 
         // Links and phrases
-        text = text.replace(/\bCREATE\b/g, '<a class="link-go" onclick="event.stopPropagation(); window.dispatchEvent(new CustomEvent(\'java:approve\'))">CREATE</a>');
+        text = text.replace(/\bCREATE\b/g, '<a class="link-go" onclick="event.stopPropagation(); window.dispatchEvent(new CustomEvent(\'java:approve\', {detail: -1}))">CREATE</a>');
         text = text.replace(/\bCLARIFY\b/g, '<a class="link-clarify" onclick="event.stopPropagation(); window.dispatchEvent(new CustomEvent(\'java:clarify\'))">CLARIFY</a>');
 
         // Problem patterns

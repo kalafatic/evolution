@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import java.net.URL;
 import java.util.Collections;
 
+import org.osgi.framework.Bundle;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.swt.SWT;
@@ -134,13 +135,10 @@ public class ChatGroup extends AEvoGroup {
         
         try {
             Bundle bundle = eu.kalafatic.evolution.view.application.Activator.getDefault().getBundle();
-            URL url = FileLocator.find(bundle, new Path("/chat.html"), Collections.EMPTY_MAP);
-            if (url != null) {
-                URL fileUrl = FileLocator.toFileURL(url);
-                browser.setUrl(fileUrl.toString());
-            } else {
-                throw new Exception("Template /chat.html not found in bundle");
-            }
+            // This ensures all bundle resources (including js and css) are extracted to the filesystem
+            URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
+            URL chatUrl = new URL(bundleRoot, "chat.html");
+            browser.setUrl(chatUrl.toString());
         } catch (Exception e) {
             System.err.println("Failed to load chat.html via setUrl: " + e.getMessage());
             String html = loadHtmlTemplate("/chat.html");
