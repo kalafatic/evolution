@@ -513,7 +513,7 @@ public class ChatGroup extends AEvoGroup {
             else if (agentSource.contains("darwinengine")) agentType = "darwin";
 
             if (agentSource.contains("thinking")) agentType = "thinking";
-            else if (agentSource.contains("response")) agentType = "response";
+            else if (agentSource.contains("response") && !agentType.equals("darwin")) agentType = "response";
         } else if (trimmedText.startsWith("You: ")) {
             sender = "You";
             content = trimmedText.substring(5);
@@ -563,7 +563,7 @@ public class ChatGroup extends AEvoGroup {
             else if (senderLower.contains("-darwinengine-")) agentType = "darwin";
 
             if (senderLower.contains("-thinking")) agentType = "thinking";
-            else if (senderLower.contains("-response")) agentType = "response";
+            else if (senderLower.contains("-response") && !agentType.equals("darwin")) agentType = "response";
         } else if (trimmedText.startsWith("Evolution: ")) {
             sender = "Evo";
             content = trimmedText.substring(11);
