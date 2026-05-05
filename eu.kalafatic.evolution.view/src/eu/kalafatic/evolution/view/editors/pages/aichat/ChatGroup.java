@@ -7,6 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import java.net.URL;
+import java.util.Collections;
+
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
@@ -126,8 +131,14 @@ public class ChatGroup extends AEvoGroup {
     private void setupBrowser(Browser browser) {
         setupJavaScriptBridges();
         
-        String html = loadHtmlTemplate("/chat.html");
-        browser.setText(html);
+        try {
+            URL url = FileLocator.find(org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.view"), new Path("/chat.html"), Collections.EMPTY_MAP);
+            URL fileUrl = FileLocator.toFileURL(url);
+            browser.setUrl(fileUrl.toString());
+        } catch (Exception e) {
+            String html = loadHtmlTemplate("/chat.html");
+            browser.setText(html);
+        }
     }
 
     private void refreshGitStatus() {
