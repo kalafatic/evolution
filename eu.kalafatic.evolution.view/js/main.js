@@ -82,17 +82,22 @@ window.showThinking = showThinking;
 window.setFeedbackLevel = setFeedbackLevel;
 
 // Process queued calls from emergency bootloader
-if (window._evoQueue && window._evoQueue.length > 0) {
-    console.log(`Processing ${window._evoQueue.length} queued UI calls`);
-    window._evoQueue.forEach(item => {
-        if (item.fn === 'updateMessages') updateMessages(...item.args);
-        if (item.fn === 'updateChanges') updateChanges(...item.args);
-        if (item.fn === 'showDiff') showDiff(...item.args);
-        if (item.fn === 'showThinking') showThinking(...item.args);
-        if (item.fn === 'setFeedbackLevel') setFeedbackLevel(...item.args);
-    });
-    window._evoQueue = [];
-}
+const processQueue = () => {
+    if (window._evoQueue && window._evoQueue.length > 0) {
+        console.log(`Processing ${window._evoQueue.length} queued UI calls`);
+        window._evoQueue.forEach(item => {
+            if (typeof window[item.fn] === 'function') {
+                window[item.fn](...item.args);
+            } else {
+                console.warn(`Queued function ${item.fn} not found in window`);
+            }
+        });
+        window._evoQueue = [];
+    }
+};
+
+// Small delay to ensure all global assignments are done
+setTimeout(processQueue, 50);
 
 // Navigation & Global Actions
 window.scrollToTop = () => messageList.scrollToTop();

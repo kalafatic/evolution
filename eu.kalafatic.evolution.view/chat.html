@@ -903,11 +903,19 @@
     <script>
         // Emergency bootloader: queue calls until modules are ready
         window._evoQueue = [];
-        window.updateMessages = (m) => window._evoQueue.push({ fn: 'updateMessages', args: [m] });
-        window.updateChanges = (c) => window._evoQueue.push({ fn: 'updateChanges', args: [c] });
-        window.showDiff = (d) => window._evoQueue.push({ fn: 'showDiff', args: [d] });
-        window.showThinking = (s) => window._evoQueue.push({ fn: 'showThinking', args: [s] });
-        window.setFeedbackLevel = (l) => window._evoQueue.push({ fn: 'setFeedbackLevel', args: [l] });
+        const queue = (fn) => (...args) => window._evoQueue.push({ fn, args });
+
+        window.updateMessages = queue('updateMessages');
+        window.updateChanges = queue('updateChanges');
+        window.showDiff = queue('showDiff');
+        window.showThinking = queue('showThinking');
+        window.setFeedbackLevel = queue('setFeedbackLevel');
+        window.scrollToTop = queue('scrollToTop');
+        window.scrollToBottom = queue('scrollToBottom');
+        window.scrollToLastWaiting = queue('scrollToLastWaiting');
+        window.toggleAll = queue('toggleAll');
+        window.selectAll = queue('selectAll');
+        window.quoteSelection = queue('quoteSelection');
     </script>
     <script type="module" src="./js/main.js"></script>
 </body>
