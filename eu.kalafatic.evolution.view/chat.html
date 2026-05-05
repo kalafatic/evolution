@@ -1059,7 +1059,7 @@
             javadev: '💻', tester: '🧪', reviewer: '⚖️', tool: '⚙️',
             analytic: '🔍', general: '🧠', terminal: '📟', file: '📂',
             maven: '📦', git: '🌿', structure: '🌳', websearch: '🌐',
-            quality: '✨', observability: '📊', orchestrator: '🎼',
+            quality: '✨', observability: '📊', orchestrator: '🎼', darwin: '🧬',
             'final-response': '✅', 'result-summary': 'ℹ️', waiting: '❓', error: '❌',
             thinking: '💭', response: '💬'
         };
@@ -1090,62 +1090,57 @@
                             jsonText = jsonMatch[0];
                         }
 
-                        const analysis = JSON.parse(jsonText);
+                        const data = JSON.parse(jsonText);
 
-                        // Flexible JSON rendering
-                        let html = '<div style="display: flex; flex-direction: column; gap: 4px;">';
-                        let hasRelevantFields = false;
-
-                        const addField = (label, value) => {
-                            if (value !== undefined && value !== null && value !== "") {
-                                if (Array.isArray(value) && value.length === 0) return;
-                                html += `<div><b>${label}:</b> ${escapeHtml(String(value))}</div>`;
-                                hasRelevantFields = true;
+                        const renderValue = (val) => {
+                            if (val === null || val === undefined) return "";
+                            if (Array.isArray(val)) {
+                                if (val.length === 0) return "";
+                                return `<ul style="margin: 2px 0; padding-left: 15px;">${val.map(item => `<li>${renderValue(item)}</li>`).join('')}</ul>`;
                             }
+                            if (typeof val === 'object') {
+                                return Object.entries(val).map(([k, v]) => `<div><b>${k}:</b> ${renderValue(v)}</div>`).join('');
+                            }
+                            return escapeHtml(String(val));
                         };
 
-                        // Check for known structures but allow fallback to generic iteration
-                        if (analysis.category || analysis.objective || analysis.rootCause || analysis.clarificationQuestion || analysis.explanation) {
-                            addField("Category", analysis.category);
-                            addField("Objective", analysis.objective);
-                            addField("Scope", analysis.scope);
-                            if (analysis.isAmbiguous !== undefined) {
-                                html += `<div><b>Ambiguous:</b> ${analysis.isAmbiguous ? 'Yes' : 'No'}</div>`;
-                                hasRelevantFields = true;
-                            }
-                            addField("Clarification", analysis.clarificationQuestion);
+                        let html = '<div style="display: flex; flex-direction: column; gap: 6px;">';
 
-                            // Diagnosis fields
-                            addField("Root Cause", analysis.rootCause);
-                            if (analysis.repeatFailure !== undefined) {
-                                html += `<div><b>Repeat Failure:</b> ${analysis.repeatFailure ? 'Yes' : 'No'}</div>`;
-                                hasRelevantFields = true;
-                            }
-                            addField("Strategy", analysis.suggestedStrategy);
-                            addField("Explanation", analysis.explanation);
-
-                            if (analysis.refinedPrompt) {
-                                html += `<div style="margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px;"><a class="link-go" onclick="event.stopPropagation(); JavaHandler('executeProposal', '-1', '${escapeJs(analysis.refinedPrompt)}')"><b>${escapeHtml(analysis.refinedPrompt)}</b></a></div>`;
-                                hasRelevantFields = true;
-                            }
+                        if (Array.isArray(data)) {
+                            data.forEach((item, idx) => {
+                                html += `<div style="border-bottom: 1px solid var(--border); padding-bottom: 4px;">`;
+                                html += `<div style="font-weight: bold; color: var(--orchestrator-text); margin-bottom: 2px;">PROPOSAL ${idx + 1}</div>`;
+                                html += renderValue(item);
+                                html += `</div>`;
+                            });
                         } else {
-                            // Fallback: Generic iteration for other JSON structures
-                            for (const key in analysis) {
-                                if (analysis.hasOwnProperty(key)) {
-                                    const value = analysis[key];
-                                    if (typeof value === 'object' && value !== null) {
-                                        addField(key, JSON.stringify(value));
+                            // Known high-level fields rendering (Jules-style)
+                            const topLevelFields = ['workDone', 'plan', 'files', 'troubles', 'category', 'objective', 'strategy', 'rootCause', 'clarificationQuestion', 'explanation', 'refinedPrompt'];
+
+                            topLevelFields.forEach(field => {
+                                if (data[field]) {
+                                    let label = field.replace(/([A-Z])/g, ' $1').toUpperCase();
+                                    let value = data[field];
+
+                                    if (field === 'refinedPrompt') {
+                                        html += `<div style="margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px;"><a class="link-go" onclick="event.stopPropagation(); JavaHandler('executeProposal', '-1', '${escapeJs(value)}')"><b>${escapeHtml(value)}</b></a></div>`;
                                     } else {
-                                        addField(key, value);
+                                        html += `<div><div style="font-weight: 800; font-size: 10px; color: #64748b; letter-spacing: 0.05em; margin-top: 4px;">${label}</div>`;
+                                        html += `<div style="margin-top: 1px;">${renderValue(value)}</div></div>`;
                                     }
                                 }
-                            }
+                            });
+
+                            // Other fields
+                            Object.entries(data).forEach(([key, val]) => {
+                                if (!topLevelFields.includes(key)) {
+                                    html += `<div><b>${key}:</b> ${renderValue(val)}</div>`;
+                                }
+                            });
                         }
 
-                        if (hasRelevantFields) {
-                            html += '</div>';
-                            return html;
-                        }
+                        html += '</div>';
+                        return html;
                     } catch (e) {
                         // Fallback to regular formatting if JSON parsing fails
                     }
