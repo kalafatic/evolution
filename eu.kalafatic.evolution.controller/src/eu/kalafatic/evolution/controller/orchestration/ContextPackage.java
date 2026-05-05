@@ -18,6 +18,15 @@ public class ContextPackage {
     private List<String> constraints = new ArrayList<>();
     private int attempt;
     private String lastFeedback;
+    private TaskContext taskContext;
+
+    public TaskContext getTaskContext() {
+        return taskContext;
+    }
+
+    public void setTaskContext(TaskContext taskContext) {
+        this.taskContext = taskContext;
+    }
 
     public String getGoal() {
         return goal;

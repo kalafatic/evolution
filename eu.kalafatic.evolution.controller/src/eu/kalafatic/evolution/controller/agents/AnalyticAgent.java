@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.agents;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.controller.orchestration.ContextBuilder;
 
 /**
  * Specialized agent for analyzing user prompts to determine intent,
@@ -57,48 +58,28 @@ public class AnalyticAgent extends BaseAiAgent {
 
     public JSONObject diagnose(String result, String feedback, TaskContext context) throws Exception {
         String input = "EXECUTION RESULT: " + result + "\nFEEDBACK: " + feedback;
-        String fullPrompt = buildPrompt(input, context, null);
+        String fullPrompt = ContextBuilder.buildStrategicPrompt(type, getAgentInstructions(), getFooterInstructions(), input, context, null);
 
         context.log("Evo-Analytic-Diagnosis-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("Evo-Analytic-Diagnosis-Response: " + response);
 
-        JSONObject diagnosis = JsonUtils.extractJsonObject(response);
-
-        if (diagnosis == null) {
-            diagnosis = new JSONObject();
-            diagnosis.put("rootCause", "Unknown");
-            diagnosis.put("repeatFailure", false);
-            diagnosis.put("suggestedStrategy", "RETRY");
-            diagnosis.put("explanation", "Failed to parse AI response as diagnosis: " + response);
-        }
-        return diagnosis;
+        return JsonUtils.extractJsonObject(response);
     }
 
     // @evo:14:B reason=traceability-support
     public JSONObject analyze(String prompt, TaskContext context) throws Exception {
-        String fullPrompt = buildPrompt(prompt, context, null);
+        String fullPrompt = ContextBuilder.buildStrategicPrompt(type, getAgentInstructions(), getFooterInstructions(), prompt, context, null);
         context.log("Evo-Analytic-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("Evo-Analytic-Response: " + response);
 
         JSONObject analysis = JsonUtils.extractJsonObject(response);
 
-        if (analysis == null) {
-             analysis = new JSONObject();
-             analysis.put("intent", "new");
-             analysis.put("confidence", 1.0);
-             analysis.put("category", "CODING");
-             analysis.put("isAmbiguous", false);
-             analysis.put("refinedPrompt", prompt);
-        }
-
-        // Ensure mandatory keys for Policy Engine if not present
-        if (!analysis.has("intent")) {
-            analysis.put("intent", "new");
-        }
-        if (!analysis.has("confidence")) {
-            analysis.put("confidence", 1.0);
+        // Strict contract: return null if invalid structure. No auto-fixing or fallbacks here.
+        if (analysis == null || !analysis.has("intent")) {
+            context.log("Analytic: ERROR - Invalid output structure. Failing contract.");
+            return null;
         }
 
         return analysis;

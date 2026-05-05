@@ -127,7 +127,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
         return task.getResponse();
     }
 
-    private boolean executeTaskWithRetries(Task task, TaskContext context) throws Exception {
+    protected boolean executeTaskWithRetries(Task task, TaskContext context) throws Exception {
         IAgent agent = findAgentForTask(task, context);
         if (agent instanceof BaseAiAgent) {
             ((BaseAiAgent)agent).setAiService(aiService);
@@ -170,17 +170,24 @@ public class EvolutionOrchestrator implements IOrchestrator {
         return false;
     }
 
-    private String generatePatch(Task task, IAgent agent, TaskContext context, String lastFeedback, String localPlan, String contextPrompt) throws Exception {
+    protected String generatePatch(Task task, IAgent agent, TaskContext context, String lastFeedback, String localPlan, String contextPrompt) throws Exception {
         if ("file".equalsIgnoreCase(task.getType())) return agent.process(task.getDescription(), context, lastFeedback);
         return contextPrompt;
     }
 
-    private String applyPatch(Task task, IAgent agent, TaskContext context, String lastFeedback, String patch) throws Exception {
+    protected String applyPatch(Task task, IAgent agent, TaskContext context, String lastFeedback, String patch) throws Exception {
         String taskType = task.getType();
         String taskName = task.getName();
 
         if ("file".equalsIgnoreCase(taskType)) {
-            String path = taskName.replaceFirst("(?i)^.*(Write|Create|Update)\s+", "").trim().split(" ")[0];
+            // Robust path extraction: strip verbs and optional "file" keyword
+            String path = taskName.replaceFirst("(?i)^(.+:\\s*)?(Write|Create|Generate|Update|Modify|Add|Delete)(\\s+file)?\\s+", "").trim().split(" ")[0];
+
+            // Path Sanitization: Ensure absolute paths or drive letters are stripped to be relative to project root
+            path = path.replaceFirst("^([a-zA-Z]:)?([/\\\\]+)", "");
+            // Standardize separators for cross-platform consistency in tests
+            path = path.replace("\\", "/");
+
             return ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("WRITE " + path + "\n" + patch, context.getProjectRoot(), context);
         } else if (EvolutionConstants.TASK_MAVEN.equalsIgnoreCase(taskType)) {
             return ToolFactory.getTool(EvolutionConstants.TOOL_MAVEN).execute(taskName, context.getProjectRoot(), context);
@@ -193,9 +200,18 @@ public class EvolutionOrchestrator implements IOrchestrator {
     }
 
     private IAgent findAgentForTask(Task task, TaskContext context) {
-        String type = task.getType().toLowerCase();
-        if (type.equals(EvolutionConstants.TASK_FILE)) return AgentFactory.getAgent(EvolutionConstants.AGENT_FILE);
-        if (type.equals(EvolutionConstants.TASK_MAVEN)) return AgentFactory.getAgent(EvolutionConstants.AGENT_MAVEN);
+        String type = task.getType();
+        if (type == null) return AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
+
+        // Standardized routing: Trust the type provided by the Intelligence plane
+        IAgent specializedAgent = AgentFactory.getAgent(type);
+        if (specializedAgent != null) return specializedAgent;
+
+        // Fallback for generic types to specialized agents
+        String lowerType = type.toLowerCase();
+        if (lowerType.equals(EvolutionConstants.TASK_FILE)) return AgentFactory.getAgent(EvolutionConstants.AGENT_FILE);
+        if (lowerType.equals(EvolutionConstants.TASK_MAVEN)) return AgentFactory.getAgent(EvolutionConstants.AGENT_MAVEN);
+
         return AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
     }
 }

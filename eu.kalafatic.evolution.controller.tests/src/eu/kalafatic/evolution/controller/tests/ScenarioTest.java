@@ -95,8 +95,7 @@ public class ScenarioTest {
         String evalResponse = "{\"success\": true, \"comment\": \"Looks good\"}";
 
         mockLlm.setResponseSequence(new String[] {
-            "{\"intent\":\"new\", \"confidence\":1.0}", // Intent Classifier
-            "{\"category\":\"CODING\", \"isAmbiguous\":false, \"refinedPrompt\":\"Write java example\"}", // Analytic
+            "{\"intent\":\"new\", \"confidence\":1.0, \"category\":\"CODING\", \"isAmbiguous\":false, \"refinedPrompt\":\"Write java example\"}", // Analytic
             planResponse, // Planner
             javaCode,     // JavaDev (Execution)
             evalResponse  // Validator -> Reviewer (Execution)

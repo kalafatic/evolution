@@ -15,6 +15,7 @@ import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.services.BestPracticesService;
 import eu.kalafatic.evolution.controller.services.NeuronContextService;
 import eu.kalafatic.evolution.controller.tools.ITool;
+import eu.kalafatic.evolution.controller.orchestration.ContextBuilder;
 
 /**
  * Base AI Agent that wraps existing AI model/chat code.
@@ -60,22 +61,7 @@ public abstract class BaseAiAgent implements IAgent {
     }
 
     protected String buildPrompt(String request, TaskContext context, String lastFeedback) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Role: ").append(type).append("\n");
-        sb.append("PROJECT ROOT: ").append(context.getProjectRoot().getAbsolutePath()).append("\n\n");
-
-        sb.append("INSTRUCTIONS:\n").append(getAgentInstructions()).append("\n\n");
-
-        if (lastFeedback != null) {
-            sb.append("### PREVIOUS FEEDBACK (FAILURE RECOVERY)\n").append(lastFeedback).append("\n\n");
-        }
-
-        sb.append("CURRENT TASK:\n").append(request).append("\n\n");
-
-        String footer = getFooterInstructions();
-        if (footer != null) sb.append("FINAL DIRECTIVE:\n").append(footer);
-
-        return sb.toString();
+        return ContextBuilder.buildStrategicPrompt(type, getAgentInstructions(), getFooterInstructions(), request, context, lastFeedback);
     }
 
     protected abstract String getAgentInstructions();

@@ -122,13 +122,11 @@ public class IterationManager {
                 ModeRouter router = new ModeRouter();
                 PlatformMode mode = router.route(request, context.getOrchestrator());
                 context.setPlatformMode(mode);
-                context.log("Platform Mode: " + mode.getType());
             }
+            context.log("Platform Mode: " + context.getPlatformMode().getType());
 
             // 3. Strategic Planning & Execution
-            transition(SystemState.ANALYZING, context);
-
-            // SIMPLE_CHAT Mode - handled after ANALYZING start to keep flow consistent
+            // SIMPLE_CHAT Mode - handled before ANALYZING start to keep flow consistent
             if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
                 transition(SystemState.EXECUTING, context);
                 GeneralAgent chatAgent = (GeneralAgent) availableAgents.stream()
@@ -146,8 +144,17 @@ public class IterationManager {
             }
 
             // --- Consolidated Kernel Intelligence Entry ---
+            transition(SystemState.ANALYZING, context);
+
             // AnalyticAgent is now the single source of truth for intent, category, and clarification.
             JSONObject analysis = analyticAgent.analyze(request, context);
+            if (analysis == null) {
+                context.log("Kernel: AnalyticAgent failed contract. Failing orchestration.");
+                transition(SystemState.FAILED, context);
+                response.setResultType(ResultType.ERROR);
+                response.setContent("Strategic analysis failed: Invalid agent output contract.");
+                return response;
+            }
 
             // 1. Intent/Policy Gate
             String policyResponse = policyEngine.evaluate(analysis, request, context);
@@ -177,7 +184,30 @@ public class IterationManager {
             }
 
             // 3. Strategic Planning (using already analyzed/clarified request)
-            List<Task> tasks = strategicPlanner.plan(analyzedRequest, context);
+            // Centralized Behavioral Tuning based on Mode
+            String strategyRequest = analyzedRequest;
+            if (context.getPlatformMode().getType() == PlatformType.ASSISTED_CODING) {
+                strategyRequest += "\nPLATFORM MODE: ASSISTED_CODING. Keep the plan very simple (1-2 tasks max). Focus on the most direct solution.\n";
+            } else if (context.getPlatformMode().getType() == PlatformType.DARWIN_MODE) {
+                strategyRequest += "\nPLATFORM MODE: DARWIN_MODE. Provide a comprehensive multi-step plan for evaluation.\n";
+            }
+
+            List<Task> tasks = strategicPlanner.plan(strategyRequest, context);
+
+            // Centralized Fallback Strategy (Kernel-level decision)
+            if (tasks == null) {
+                context.log("Kernel: PlannerAgent failed contract. Failing orchestration.");
+                transition(SystemState.FAILED, context);
+                response.setResultType(ResultType.ERROR);
+                response.setContent("Planning failed: Invalid agent output contract.");
+                return response;
+            }
+
+            if (tasks.isEmpty()) {
+                context.log("Planner returned empty task list. Using Kernel Fallback Strategy.");
+                tasks = resolveFallbackTasks(analyzedRequest, context);
+            }
+
             context.getOrchestrator().getTasks().addAll(tasks);
             transition(SystemState.PLAN_LOCKED, context);
 
@@ -404,6 +434,47 @@ public class IterationManager {
             for (File file : allContents) deleteDirectory(file);
         }
         directory.delete();
+    }
+
+    private List<Task> resolveFallbackTasks(String request, TaskContext context) {
+        List<Task> fallbackTasks = new ArrayList<>();
+        Task task = OrchestrationFactory.eINSTANCE.createTask();
+        task.setId("task-fallback");
+        task.setDescription(request);
+        task.setApprovalRequired(false);
+
+        // Heuristic agent resolution (Moved from Planner to Kernel)
+        String agentRole = "General";
+        String taskType = "llm";
+        String reqLower = request.toLowerCase();
+
+        if (reqLower.contains("java") || reqLower.contains("class") || reqLower.contains("method")) {
+            agentRole = "JavaDev";
+        } else if (reqLower.contains("test") || reqLower.contains("junit")) {
+            agentRole = "Tester";
+        } else if (reqLower.contains("pom.xml") || reqLower.contains("maven") || reqLower.contains("build")) {
+            agentRole = "Maven";
+        } else if (reqLower.contains("git") || reqLower.contains("commit") || reqLower.contains("branch")) {
+            agentRole = "Git";
+        }
+
+        // Detect file writing intent
+        if (reqLower.contains("write") || reqLower.contains("create file") || reqLower.contains("save to")) {
+            java.util.regex.Pattern p = java.util.regex.Pattern.compile("([\\w/\\\\\\.-]+\\.[a-zA-Z0-9]+)");
+            java.util.regex.Matcher m = p.matcher(request);
+            if (m.find()) {
+                taskType = "file";
+                task.setName("Write " + m.group(1));
+            } else {
+                task.setName("Process Request");
+            }
+        } else {
+            task.setName("Process Request");
+        }
+
+        task.setType("llm".equals(taskType) ? agentRole : taskType);
+        fallbackTasks.add(task);
+        return fallbackTasks;
     }
 
     private Trajectory computeTrajectory(StateSnapshot current) {

@@ -6,8 +6,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.File;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.controller.tools.FileTool;
+import eu.kalafatic.evolution.controller.services.BestPracticesService;
 
 /**
  * Builds a minimal ContextPackage from a Task.
@@ -22,6 +25,7 @@ public class ContextBuilder {
 
     public static ContextPackage build(Task task, TaskContext context, int attempt, String lastFeedback) {
         ContextPackage pkg = new ContextPackage();
+        pkg.setTaskContext(context);
         pkg.setGoal(task.getGoal());
         pkg.setStep(task.getName());
         pkg.setAttempt(attempt);
@@ -209,10 +213,71 @@ public class ContextBuilder {
         sb.append("### RELEVANT CODE\n");
         sb.append("```java\n").append(ctx.getCode()).append("\n```\n\n");
 
+        // Best Practices Injection (Kernel-centralized enrichment)
+        if (ctx.getTaskContext() != null && ctx.getTaskContext().getOrchestrator() != null && ctx.getTaskContext().getOrchestrator().getAiChat() != null) {
+            PromptInstructions pi = ctx.getTaskContext().getOrchestrator().getAiChat().getPromptInstructions();
+            if (pi != null && (pi.isIterativeMode() || pi.isSelfIterativeMode())) {
+                BestPracticesService bp = new BestPracticesService(ctx.getTaskContext().getOrchestrator(), ctx.getTaskContext().getProjectRoot() != null ? ctx.getTaskContext().getProjectRoot() : new File("."));
+                sb.append("### BEST PRACTICES\n");
+                if (pi.isIterativeMode()) {
+                    sb.append("--- ITERATIVE LOOP CONTEXT ---\n");
+                    sb.append(bp.getSpecialContext("iterative_loop.md")).append("\n");
+                }
+                if (pi.isSelfIterativeMode()) {
+                    sb.append("--- SELF DEVELOPMENT CONTEXT ---\n");
+                    sb.append(bp.getSpecialContext("self_development.md")).append("\n");
+                }
+                sb.append("\n");
+            }
+        }
+
         sb.append("### INSTRUCTION\n");
         sb.append("Based on the context above, perform the task described in 'CURRENT STEP'.\n");
         sb.append("Return ONLY the modified code or a diff that can be applied to the relevant files.\n");
         sb.append("Keep the implementation minimal and robust.\n");
+
+        return sb.toString();
+    }
+
+    /**
+     * Builds a prompt for strategic agents (Analytic, Planner) including best practices.
+     */
+    public static String buildStrategicPrompt(String role, String instructions, String footer, String request, TaskContext context, String lastFeedback) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Role: ").append(role).append("\n");
+        if (context.getProjectRoot() != null) {
+            sb.append("PROJECT ROOT: ").append(context.getProjectRoot().getAbsolutePath()).append("\n\n");
+        }
+
+        sb.append("INSTRUCTIONS:\n").append(instructions).append("\n\n");
+
+        // Best Practices Injection
+        if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
+            PromptInstructions pi = context.getOrchestrator().getAiChat().getPromptInstructions();
+            if (pi != null && (pi.isIterativeMode() || pi.isSelfIterativeMode())) {
+                BestPracticesService bp = new BestPracticesService(context.getOrchestrator(), context.getProjectRoot() != null ? context.getProjectRoot() : new File("."));
+                sb.append("### BEST PRACTICES\n");
+                if (pi.isIterativeMode()) {
+                    sb.append("--- ITERATIVE LOOP CONTEXT ---\n");
+                    sb.append(bp.getSpecialContext("iterative_loop.md")).append("\n");
+                }
+                if (pi.isSelfIterativeMode()) {
+                    sb.append("--- SELF DEVELOPMENT CONTEXT ---\n");
+                    sb.append(bp.getSpecialContext("self_development.md")).append("\n");
+                }
+                sb.append("\n");
+            }
+        }
+
+        if (lastFeedback != null && !lastFeedback.isEmpty()) {
+            sb.append("### PREVIOUS FEEDBACK (FAILURE RECOVERY)\n").append(lastFeedback).append("\n\n");
+        }
+
+        sb.append("CURRENT TASK:\n").append(request).append("\n\n");
+
+        if (footer != null && !footer.isEmpty()) {
+            sb.append("FINAL DIRECTIVE:\n").append(footer);
+        }
 
         return sb.toString();
     }

@@ -121,7 +121,7 @@ public class AnalyticAgentTest {
         injectMockLlm(agent, mockLlm);
 
         // Simulate a small model outputting text instead of JSON
-        String response = "Category: CODING\n" +
+        String response = "intent: new\nCategory: CODING\n" +
                 "Objective: Create class\n" +
                 "isAmbiguous: false\n" +
                 "RefinedPrompt: Create a Java class PrintText that prints a string.";
