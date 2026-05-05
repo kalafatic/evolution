@@ -132,10 +132,16 @@ public class ChatGroup extends AEvoGroup {
         setupJavaScriptBridges();
         
         try {
-            URL url = FileLocator.find(org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.view"), new Path("/chat.html"), Collections.EMPTY_MAP);
-            URL fileUrl = FileLocator.toFileURL(url);
-            browser.setUrl(fileUrl.toString());
+            Bundle bundle = eu.kalafatic.evolution.view.application.Activator.getDefault().getBundle();
+            URL url = FileLocator.find(bundle, new Path("/chat.html"), Collections.EMPTY_MAP);
+            if (url != null) {
+                URL fileUrl = FileLocator.toFileURL(url);
+                browser.setUrl(fileUrl.toString());
+            } else {
+                throw new Exception("Template /chat.html not found in bundle");
+            }
         } catch (Exception e) {
+            System.err.println("Failed to load chat.html via setUrl: " + e.getMessage());
             String html = loadHtmlTemplate("/chat.html");
             browser.setText(html);
         }
