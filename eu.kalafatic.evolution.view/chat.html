@@ -892,9 +892,12 @@
 
                 // Parse "STATUS PATH" if provided, else assume "M PATH"
                 if (fileInfo.includes(' ')) {
-                    const parts = fileInfo.split(' ');
-                    status = parts[0].toUpperCase();
-                    path = parts[1];
+                    const statusPart = fileInfo.substring(0, 2).trim();
+                    const pathPart = fileInfo.substring(2).trim();
+                    if (statusPart && pathPart) {
+                        status = statusPart.toUpperCase();
+                        path = pathPart;
+                    }
                 }
 
                 const item = document.createElement('div');
@@ -1559,9 +1562,10 @@
                     if (v.isApproved || role.includes('approved')) {
                         footer.innerHTML = `<div style="color: #16a34a; font-weight: bold; width: 100%; text-align: center;">APPROVED</div>`;
                     } else {
+                        const approveBtn = isWaiting ? `<button class="branch-btn approve" onclick="event.stopPropagation(); JavaHandler('executeProposal', '-1', 'Approve variant ${v.id || index}')">Approve</button>` : '';
                         footer.innerHTML = `
                             <button class="branch-btn" onclick="JavaHandler('copy', '-1', '${escapeJs(JSON.stringify(v))}')">Copy</button>
-                            <button class="branch-btn approve" onclick="JavaHandler('executeProposal', '-1', 'Approve variant ${v.id || index}')">Approve</button>
+                            ${approveBtn}
                         `;
                     }
 
