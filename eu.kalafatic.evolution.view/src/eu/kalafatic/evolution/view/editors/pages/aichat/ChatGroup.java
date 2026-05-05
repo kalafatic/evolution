@@ -514,7 +514,7 @@ public class ChatGroup extends AEvoGroup {
             if (senderLower.contains("-thinking")) agentType = "thinking";
             else if (senderLower.contains("-response")) agentType = "response";
 
-            if (content.toLowerCase().startsWith("[darwin]")) {
+            if (content.toLowerCase().startsWith("[darwin]") || senderLower.contains("-darwinengine-")) {
                 agentType = "darwin";
             }
 
@@ -531,7 +531,8 @@ public class ChatGroup extends AEvoGroup {
                 content.toLowerCase().contains("ambiguous") ||
                 content.toLowerCase().contains("approve") ||
                 content.toLowerCase().contains("approval") ||
-                content.toLowerCase().contains("proceed?")) {
+                content.toLowerCase().contains("proceed?") ||
+                agentType.contains("darwin")) {
                 agentType += " waiting";
             }
         } else if (trimmedText.startsWith("Evolution: ")) {
