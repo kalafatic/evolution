@@ -313,6 +313,10 @@ public class ChatGroup extends AEvoGroup {
                             handleApprove(index);
                             page.provideApproval(true);
                             break;
+                        case "approveDarwinVariant":
+                            handleApproveDarwinVariant(index, text);
+                            page.handleExecuteProposal("Approve variant " + text);
+                            break;
                         case "create":
                             page.provideApproval(true);
                             break;
@@ -410,6 +414,22 @@ public class ChatGroup extends AEvoGroup {
 
             if (!agentType.contains("approved")) {
                 msg.setAgentType(agentType + " approved");
+            }
+            refreshBrowser();
+        }
+    }
+
+    public void handleApproveDarwinVariant(int index, String variantId) {
+        if (currentThread != null && index >= 0 && index < currentThread.getMessages().size()) {
+            ChatMessage msg = currentThread.getMessages().get(index);
+            String agentType = msg.getAgentType();
+            if (agentType == null) agentType = "darwin";
+
+            agentType = agentType.replace("waiting", "").trim();
+            if (agentType.isEmpty()) agentType = "darwin";
+
+            if (!agentType.contains("approved")) {
+                msg.setAgentType(agentType + " approved:" + variantId);
             }
             refreshBrowser();
         }

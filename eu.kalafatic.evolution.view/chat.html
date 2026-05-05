@@ -129,6 +129,31 @@
             user-select: none;
         }
 
+        .branch-column.rejected {
+            background: #fff5f5 !important;
+            border-color: #feb2b2 !important;
+            color: #9b2c2c !important;
+            opacity: 0.7;
+            position: relative;
+        }
+
+        .branch-column.rejected::after {
+            content: 'REJECTED';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 40px;
+            font-weight: 900;
+            color: rgba(229, 62, 62, 0.15);
+            border: 5px solid rgba(229, 62, 62, 0.15);
+            padding: 4px 16px;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 5;
+            user-select: none;
+        }
+
         .message.approved .bubble::after {
             content: 'APPROVED';
             position: absolute;
@@ -1548,6 +1573,10 @@
                 const role = (m.agentType || '').toLowerCase();
                 const isWaiting = role.includes('waiting') && !role.includes('approved');
                 const isApproved = role.includes('approved');
+                let approvedVariantId = null;
+                if (isApproved && role.includes(':')) {
+                    approvedVariantId = role.split(':').pop().trim();
+                }
 
                 // Handle various JSON formats: { variants: [...] }, { proposals: [...] }, or plain array [...]
                 const variants = Array.isArray(data) ? data : (data.variants || data.proposals || []);
@@ -1556,10 +1585,15 @@
                 branchContainer.className = 'branch-container';
 
                 variants.forEach((v, index) => {
+                    const vId = String(v.id || index);
+                    const isThisApproved = isApproved && (approvedVariantId === null || approvedVariantId === vId);
+                    const isThisRejected = isApproved && approvedVariantId !== null && approvedVariantId !== vId;
+
                     const column = document.createElement('div');
                     column.className = 'branch-column' + (v.isBest ? ' best' : '') +
                                      (isWaiting ? ' waiting' : '') +
-                                     (isApproved ? ' approved' : '');
+                                     (isThisApproved ? ' approved' : '') +
+                                     (isThisRejected ? ' rejected' : '');
 
                     const header = document.createElement('div');
                     header.className = 'branch-header';
@@ -1622,10 +1656,12 @@
                     const footer = document.createElement('div');
                     footer.className = 'branch-footer';
 
-                    if (v.isApproved || isApproved) {
+                    if (v.isApproved || isThisApproved) {
                         footer.innerHTML = `<div style="color: #16a34a; font-weight: bold; width: 100%; text-align: center;">APPROVED</div>`;
+                    } else if (isThisRejected) {
+                         footer.innerHTML = `<div style="color: #dc2626; font-weight: bold; width: 100%; text-align: center;">REJECTED</div>`;
                     } else {
-                        const approveBtn = isWaiting ? `<button class="branch-btn approve" onclick="event.stopPropagation(); JavaHandler('executeProposal', '-1', 'Approve variant ${v.id || index}')">Approve</button>` : '';
+                        const approveBtn = isWaiting ? `<button class="branch-btn approve" onclick="event.stopPropagation(); JavaHandler('approveDarwinVariant', '${m.index}', '${vId}')">Approve</button>` : '';
                         footer.innerHTML = `
                             <button class="branch-btn" onclick="JavaHandler('copy', '-1', '${escapeJs(JSON.stringify(v))}')">Copy</button>
                             ${approveBtn}
