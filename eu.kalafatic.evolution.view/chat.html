@@ -1430,8 +1430,14 @@
 
                     const actions = document.createElement('div');
                     actions.className = 'actions';
+
+                    let approveBtn = '';
+                    if (role.includes('waiting') && !role.includes('approved')) {
+                        approveBtn = `<button class="action-btn approve" title="Approve" onclick="event.stopPropagation(); JavaHandler('approve', '${m.index}', '')">✅</button>`;
+                    }
+
                     actions.innerHTML = `
-                        <button class="action-btn approve" title="Approve" onclick="event.stopPropagation(); JavaHandler('approve', '${m.index}', '')">✅</button>
+                        ${approveBtn}
                         <button class="action-btn" title="Quote" onclick="event.stopPropagation(); JavaHandler('quote', '${m.index}', '${escapeJs(m.text)}')">”</button>
                         <button class="action-btn" title="Copy Message" onclick="event.stopPropagation(); JavaHandler('copy', '${m.index}', '${escapeJs(m.text)}')">📋</button>
                         <button class="action-btn" title="Collapse/Expand" onclick="event.stopPropagation(); toggleCollapse(${m.index})">↕️</button>
