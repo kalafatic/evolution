@@ -30,8 +30,13 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorSite;
+import org.eclipse.core.commands.operations.IOperationHistory;
 import org.eclipse.core.commands.operations.IUndoContext;
+import org.eclipse.core.commands.operations.OperationHistoryFactory;
+import org.eclipse.ui.IEditorActionBarContributor;
 import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.part.MultiPageEditorActionBarContributor;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.PartInitException;
@@ -96,7 +101,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private TaskContext currentContext;
     private volatile boolean isDirty = false;
     private Resource resource;
-    private IUndoContext undoContext;
+    private volatile IUndoContext undoContext;
     private EditorResourceChangeListener resourceListener;
     private EditorSelectionListener selectionListener;
     private org.eclipse.jface.text.ITextSelection lastTextSelection;
@@ -160,6 +165,18 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     public MultiPageEditor() {
         super();
+        // Initialize undo context early to prevent AssertionFailedException (null argument)
+        // in OperationHistoryActionHandler when document changes occur during save.
+        undoContext = new ObjectUndoContext(this);
+    }
+
+    @Override
+    public void init(IEditorSite site, IEditorInput input) throws PartInitException {
+        // Ensure undo context is initialized before the platform tries to access it
+        if (undoContext == null) {
+            undoContext = new ObjectUndoContext(this);
+        }
+        super.init(site, input);
     }
 
     @Override
@@ -178,7 +195,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 aiChatPage = AiChatPageFactory.createAiChatPage(this, orchestrator);
                 architecturePage = ArchitecturePageFactory.createArchitecturePage(this, orchestrator);
 
-                textEditor = new TextEditor();
+                textEditor = new NestedTextEditor();
                 int index = addPage(textEditor, getEditorInput());
                 setPageText(index, "Editor");
 
@@ -308,6 +325,12 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (lightPurple != null && !lightPurple.isDisposed()) lightPurple.dispose();
         if (lightCyan != null && !lightCyan.isDisposed()) lightCyan.dispose();
 
+        // Dispose of the undo context and clean up the operation history
+        if (undoContext != null) {
+            IOperationHistory history = OperationHistoryFactory.getOperationHistory();
+            history.dispose(undoContext, true, true, true);
+        }
+
         super.dispose();
     }
 
@@ -375,7 +398,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         this.lastTextSelection = lastTextSelection;
     }
 
-    private void refreshNavigator(IResource resource) {
+    public void refreshNavigator(IResource resource) {
         org.eclipse.ui.IViewPart view = getSite().getPage().findView("eu.kalafatic.views.EvoNavigator");
         if (view instanceof EvoNavigator) {
             ((EvoNavigator) view).refreshAndExpand(resource);
@@ -503,6 +526,14 @@ public class MultiPageEditor extends MultiPageEditorPart {
     @Override
     protected void pageChange(int newPageIndex) {
         super.pageChange(newPageIndex);
+
+        // Update the action bar contributor to ensure the platform's global actions
+        // (like Undo/Redo) track the active editor in the multi-page context.
+        IEditorActionBarContributor contributor = getEditorSite().getActionBarContributor();
+        if (contributor instanceof MultiPageEditorActionBarContributor) {
+            ((MultiPageEditorActionBarContributor) contributor).setActivePage(getEditor(newPageIndex));
+        }
+
         Control control = getControl(newPageIndex);
         if (control == previewPage && previewPage != null) {
             previewPage.sortWords();
@@ -520,18 +551,11 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     @Override
     public <T> T getAdapter(Class<T> key) {
-        if (key.equals(IUndoContext.class)) {
-            T adapter = null;
-            if (textEditor != null) {
-                adapter = textEditor.getAdapter(key);
+        if (IUndoContext.class.equals(key)) {
+            if (undoContext == null) {
+                undoContext = new ObjectUndoContext(this);
             }
-            if (adapter == null) {
-                if (undoContext == null) {
-                    undoContext = new ObjectUndoContext(this);
-                }
-                return key.cast(undoContext);
-            }
-            return adapter;
+            return key.cast(undoContext);
         }
         if (key.equals(IContentOutlinePage.class)) {
             if (textEditor != null) {
@@ -625,5 +649,20 @@ public class MultiPageEditor extends MultiPageEditorPart {
      */
     public AiChatPage getAiChatPage() {
         return aiChatPage;
+    }
+
+    /**
+     * Nested text editor that explicitly delegates its undo context to the parent MultiPageEditor.
+     * This ensures that document changes in the text editor are correctly attributed to the
+     * shared undo history, avoiding the null context crash in OperationHistoryActionHandler.
+     */
+    private class NestedTextEditor extends TextEditor {
+        @Override
+        public <T> T getAdapter(Class<T> adapter) {
+            if (IUndoContext.class.equals(adapter)) {
+                return adapter.cast(MultiPageEditor.this.undoContext);
+            }
+            return super.getAdapter(adapter);
+        }
     }
 }

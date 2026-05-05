@@ -25,27 +25,16 @@ public class TaskExecutor {
     }
 
     public boolean executeTasks(List<Task> tasks) {
-        context.log("[EXECUTOR] Starting execution of " + tasks.size() + " tasks.");
-        for (Task task : tasks) {
-            try {
-                context.log("[EXECUTOR] Executing task: " + task.getName());
-                task.setStatus(TaskStatus.RUNNING);
-
-                // Use the new handle method to run the atomic task directly
-                TaskRequest request = new TaskRequest(task.getName(), context.getProjectRoot());
-                request.getContext().put("orchestrator", context.getOrchestrator());
-                request.getContext().put("taskContext", context);
-
-                String response = orchestrator.executeTask(task, context);
-                task.setResponse(response);
-                context.log("[EXECUTOR] Task completed: " + task.getName());
-            } catch (Exception e) {
-                task.setStatus(TaskStatus.FAILED);
-                task.setFeedback("Execution error: " + e.getMessage());
-                context.log("[EXECUTOR] Task failed: " + task.getName() + ". Error: " + e.getMessage());
-                return false; // Stop execution on first failure
-            }
+        context.log("[EXECUTOR] Routing " + tasks.size() + " tasks to the Kernel Control Plane.");
+        try {
+            // TaskExecutor is a helper that MUST route back through the IterationManager
+            // to preserve the "Single Transition Authority" and PEV lifecycle.
+            eu.kalafatic.evolution.controller.orchestration.IterationManager kernel =
+                eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(context);
+            return kernel.executeTasksWithRetries(tasks);
+        } catch (Exception e) {
+            context.log("[EXECUTOR] Kernel execution failed: " + e.getMessage());
+            return false;
         }
-        return true;
     }
 }

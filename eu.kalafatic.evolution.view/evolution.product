@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="AI Evolution" uid="evolution" id="eu.kalafatic.evolution.view.product" application="org.eclipse.e4.ui.workbench.swt.E4Application" version="2.6.1.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
+<product name="AI Evolution" uid="evolution" id="eu.kalafatic.evolution.view.product" application="org.eclipse.e4.ui.workbench.swt.E4Application" version="2.6.5.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
 
    <configIni use="default">
    </configIni>

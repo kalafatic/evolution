@@ -61,6 +61,11 @@ public class DiffViewerGroup extends AEvoGroup {
     }
 
     public void setFilePath(String path) {
+        // Strip status prefix if present
+        if (path != null && path.length() > 2 && (path.startsWith("M ") || path.startsWith("A ") || path.startsWith("D "))) {
+            path = path.substring(2);
+        }
+
         IProject project = null;
         if (editor.getEditorInput() instanceof IFileEditorInput) {
             project = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject();

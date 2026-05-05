@@ -7,6 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import java.net.URL;
+import java.util.Collections;
+
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
@@ -126,8 +131,20 @@ public class ChatGroup extends AEvoGroup {
     private void setupBrowser(Browser browser) {
         setupJavaScriptBridges();
         
-        String html = loadHtmlTemplate("/chat.html");
-        browser.setText(html);
+        try {
+            Bundle bundle = eu.kalafatic.evolution.view.application.Activator.getDefault().getBundle();
+            URL url = FileLocator.find(bundle, new Path("/chat.html"), Collections.EMPTY_MAP);
+            if (url != null) {
+                URL fileUrl = FileLocator.toFileURL(url);
+                browser.setUrl(fileUrl.toString());
+            } else {
+                throw new Exception("Template /chat.html not found in bundle");
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load chat.html via setUrl: " + e.getMessage());
+            String html = loadHtmlTemplate("/chat.html");
+            browser.setText(html);
+        }
     }
 
     private void refreshGitStatus() {
@@ -215,9 +232,15 @@ public class ChatGroup extends AEvoGroup {
 
                         try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipPath))) {
                             for (String filePath : files) {
-                                File file = new File(projectRoot, filePath);
+                                // Strip status prefix if present
+                                String path = filePath;
+                                if (path.length() > 2 && (path.startsWith("M ") || path.startsWith("A ") || path.startsWith("D "))) {
+                                    path = path.substring(2);
+                                }
+
+                                File file = new File(projectRoot, path);
                                 if (file.exists() && file.isFile()) {
-                                    zos.putNextEntry(new java.util.zip.ZipEntry(filePath));
+                                    zos.putNextEntry(new java.util.zip.ZipEntry(path));
                                     java.nio.file.Files.copy(file.toPath(), zos);
                                     zos.closeEntry();
                                 }
@@ -261,8 +284,14 @@ public class ChatGroup extends AEvoGroup {
 
         new Thread(() -> {
             try {
+                // Strip status prefix if present
+                String path = filePath;
+                if (path.length() > 2 && (path.startsWith("M ") || path.startsWith("A ") || path.startsWith("D "))) {
+                    path = path.substring(2);
+                }
+
                 eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider gitProvider = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
-                String diff = gitProvider.getFileDiff(projectRoot, "HEAD", filePath);
+                String diff = gitProvider.getFileDiff(projectRoot, "HEAD", path);
                 Display.getDefault().asyncExec(() -> {
                     if (browser != null && !browser.isDisposed()) {
                         JSONObject json = new JSONObject();
@@ -301,6 +330,10 @@ public class ChatGroup extends AEvoGroup {
                             handleApprove(index);
                             page.provideApproval(true);
                             break;
+                        case "approveDarwinVariant":
+                            handleApproveDarwinVariant(index, text);
+                            page.handleExecuteProposal("Approve variant " + text);
+                            break;
                         case "create":
                             page.provideApproval(true);
                             break;
@@ -326,7 +359,12 @@ public class ChatGroup extends AEvoGroup {
                             commitGitChanges(text);
                             break;
                         case "revertFile":
-                            ChatGroup.this.revertGitFile(text);
+                            // Strip status prefix if present
+                            String revertPath = text;
+                            if (revertPath.length() > 2 && (revertPath.startsWith("M ") || revertPath.startsWith("A ") || revertPath.startsWith("D "))) {
+                                revertPath = revertPath.substring(2);
+                            }
+                            ChatGroup.this.revertGitFile(revertPath);
                             break;
                         case "downloadZip":
                             ChatGroup.this.downloadChangesAsZip();
@@ -335,7 +373,12 @@ public class ChatGroup extends AEvoGroup {
                             page.handleOpenDiff(text);
                             break;
                         case "openInReviewEditor":
-                            ChatGroup.this.openInComparePage(text);
+                            // Strip status prefix if present
+                            String reviewPath = text;
+                            if (reviewPath.length() > 2 && (reviewPath.startsWith("M ") || reviewPath.startsWith("A ") || reviewPath.startsWith("D "))) {
+                                reviewPath = reviewPath.substring(2);
+                            }
+                            ChatGroup.this.openInComparePage(reviewPath);
                             break;
                         case "openPeerReview":
                             editor.showPeerReviewPage();
@@ -393,6 +436,22 @@ public class ChatGroup extends AEvoGroup {
         }
     }
 
+    public void handleApproveDarwinVariant(int index, String variantId) {
+        if (currentThread != null && index >= 0 && index < currentThread.getMessages().size()) {
+            ChatMessage msg = currentThread.getMessages().get(index);
+            String agentType = msg.getAgentType();
+            if (agentType == null) agentType = "darwin";
+
+            agentType = agentType.replace("waiting", "").trim();
+            if (agentType.isEmpty()) agentType = "darwin";
+
+            if (!agentType.contains("approved")) {
+                msg.setAgentType(agentType + " approved:" + variantId);
+            }
+            refreshBrowser();
+        }
+    }
+
     public void markLastWaitingAsApproved() {
         if (currentThread != null) {
             List<ChatMessage> messages = currentThread.getMessages();
@@ -441,7 +500,58 @@ public class ChatGroup extends AEvoGroup {
         String sender = "Evo";
         String content = trimmedText;
         String agentType = "ai";
-        if (trimmedText.startsWith("You: ")) {
+        String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+        // Match patterns like:
+        // USER [DARWIN] [12:14:11]: create java class...
+        // EVO [12:14:11]: Initializing DARWIN loop...
+        // TOOL [SHELLTOOL] [12:14:11]: Running git...
+        // LLMROUTER-LOCAL [12:14:14]: Using Ollama...
+        // EVO-DARWINENGINE-THINKING [12:14:14]: Role: DarwinEngine...
+        java.util.regex.Pattern logPattern = java.util.regex.Pattern.compile("^([A-Z][A-Z0-9-]*)(?:\\s+\\[([^\\]]*)\\])?(?:\\s+\\[(\\d{2}:\\d{2}:\\d{2})\\])?:\\s*([\\s\\S]*)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher matcher = logPattern.matcher(trimmedText);
+
+        if (matcher.find()) {
+            sender = matcher.group(1);
+            String extra = matcher.group(2);
+            String foundTime = matcher.group(3);
+            content = matcher.group(4);
+
+            if (extra != null && extra.matches("\\d{2}:\\d{2}:\\d{2}") && foundTime == null) {
+                foundTime = extra;
+                extra = null;
+            }
+
+            if (foundTime != null) timestamp = foundTime;
+
+            String senderUpper = sender.toUpperCase();
+            if (senderUpper.startsWith("USER")) agentType = "user";
+            else if (senderUpper.startsWith("EVO")) agentType = "ai";
+            else if (senderUpper.startsWith("TOOL")) agentType = "tool";
+            else if (senderUpper.startsWith("LLMROUTER")) agentType = "orchestrator";
+
+            String agentSource = (sender + (extra != null ? "-" + extra : "")).toLowerCase();
+            if (agentSource.contains("planner")) agentType = "planner";
+            else if (agentSource.contains("architect")) agentType = "architect";
+            else if (agentSource.contains("javadev")) agentType = "javadev";
+            else if (agentSource.contains("tester")) agentType = "tester";
+            else if (agentSource.contains("reviewer")) agentType = "reviewer";
+            else if (agentSource.contains("analytic") || agentSource.contains("analysis")) agentType = "analytic";
+            else if (agentSource.contains("general")) agentType = "general";
+            else if (agentSource.contains("terminal")) agentType = "terminal";
+            else if (agentSource.contains("file")) agentType = "file";
+            else if (agentSource.contains("maven")) agentType = "maven";
+            else if (agentSource.contains("git")) agentType = "git";
+            else if (agentSource.contains("structure")) agentType = "structure";
+            else if (agentSource.contains("websearch")) agentType = "websearch";
+            else if (agentSource.contains("quality")) agentType = "quality";
+            else if (agentSource.contains("observability")) agentType = "observability";
+            else if (agentSource.contains("orchestrator")) agentType = "orchestrator";
+            else if (agentSource.contains("darwinengine")) agentType = "darwin";
+
+            if (agentSource.contains("thinking")) agentType = "thinking";
+            else if (agentSource.contains("response") && !agentType.equals("darwin")) agentType = "response";
+        } else if (trimmedText.startsWith("You: ")) {
             sender = "You";
             content = trimmedText.substring(5);
             agentType = "user";
@@ -490,28 +600,7 @@ public class ChatGroup extends AEvoGroup {
             else if (senderLower.contains("-darwinengine-")) agentType = "darwin";
 
             if (senderLower.contains("-thinking")) agentType = "thinking";
-            else if (senderLower.contains("-response")) agentType = "response";
-
-            if (content.toLowerCase().startsWith("[darwin]")) {
-                agentType = "darwin";
-            }
-
-            if (content.contains("[DARWIN_BRANCHES]")) {
-		agentType = "darwin-branches";
-		content = content.replace("[DARWIN_BRANCHES]", "").trim();
-            }
-
-            if (content.toLowerCase().contains("waiting for user") ||
-                content.toLowerCase().contains("guidance?") ||
-                content.toLowerCase().contains("clarify") ||
-                content.toLowerCase().contains("clarification") ||
-                content.contains("[PROPOSAL:") ||
-                content.toLowerCase().contains("ambiguous") ||
-                content.toLowerCase().contains("approve") ||
-                content.toLowerCase().contains("approval") ||
-                content.toLowerCase().contains("proceed?")) {
-                agentType += " waiting";
-            }
+            else if (senderLower.contains("-response") && !agentType.equals("darwin")) agentType = "response";
         } else if (trimmedText.startsWith("Evolution: ")) {
             sender = "Evo";
             content = trimmedText.substring(11);
@@ -554,6 +643,33 @@ public class ChatGroup extends AEvoGroup {
             }
         }
 
+        if (content.contains("[DARWIN_BRANCHES]")) {
+            agentType = "darwin-branches";
+            content = content.replace("[DARWIN_BRANCHES]", "").trim();
+        } else if (content.toLowerCase().startsWith("[darwin]") || sender.toLowerCase().contains("-darwinengine-") || sender.toLowerCase().equals("evo-darwinengine")) {
+            if (!agentType.equals("thinking")) {
+                agentType = "darwin";
+            }
+        }
+
+        boolean needsApproval = content.toLowerCase().contains("waiting for user") ||
+            content.toLowerCase().contains("guidance?") ||
+            content.toLowerCase().contains("clarify") ||
+            content.toLowerCase().contains("clarification") ||
+            content.contains("[PROPOSAL:") ||
+            content.toLowerCase().contains("ambiguous") ||
+            content.toLowerCase().contains("approve") ||
+            content.toLowerCase().contains("approval") ||
+            content.toLowerCase().contains("proceed?");
+
+        if (agentType.equals("darwin-branches")) {
+            needsApproval = true;
+        }
+
+        if (needsApproval && !agentType.contains("waiting") && !agentType.contains("user")) {
+            agentType += " waiting";
+        }
+
         // Downgrade previous waiting messages to avoid multiple pulsing bubbles
         for (ChatMessage existing : thread.getMessages()) {
             if (existing.getAgentType() != null && existing.getAgentType().contains("waiting")) {
@@ -579,8 +695,7 @@ public class ChatGroup extends AEvoGroup {
             final String fHexColor = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
             final boolean isBold = (style & SWT.BOLD) != 0;
             final boolean isItalic = (style & SWT.ITALIC) != 0;
-            final String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-
+            final String fTimestamp = timestamp;
             Display.getDefault().asyncExec(() -> {
                 try {
                     ChatMessage msg = OrchestrationFactory.eINSTANCE.createChatMessage();
@@ -591,7 +706,7 @@ public class ChatGroup extends AEvoGroup {
                     msg.setIsBold(isBold);
                     msg.setIsItalic(isItalic);
                     msg.setAgentType(fAgentType);
-                    msg.setTimestamp(timestamp);
+                    msg.setTimestamp(fTimestamp);
                     thread.getMessages().add(msg);
 
                     if (thread == currentThread) {

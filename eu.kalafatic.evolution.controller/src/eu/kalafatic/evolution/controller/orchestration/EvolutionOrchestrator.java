@@ -90,13 +90,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
                 context.setCurrentTaskName(task.getName());
                 task.setStatus(TaskStatus.RUNNING);
 
-                boolean success = executeTaskWithRetries(task, context);
-                if (!success) {
-                    task.setStatus(TaskStatus.FAILED);
-                    throw new Exception("Task failed: " + task.getName());
-                }
+                lastResult = executeTaskInternal(task, context);
                 task.setStatus(TaskStatus.DONE);
-                lastResult = task.getResponse();
             }
 
             response.setSummary(lastResult);
@@ -122,9 +117,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
         if (kernelState != SystemState.EXECUTING && kernelState != SystemState.INIT) {
              throw new IllegalStateException("Kernel violation: Orchestrator executeTask() must be gated by the Control Plane. State: " + kernelState);
         }
-        boolean success = executeTaskWithRetries(task, context);
-        if (!success) throw new Exception("Task failed: " + task.getName());
-        return task.getResponse();
+        return executeTaskInternal(task, context);
     }
 
     protected boolean executeTaskWithRetries(Task task, TaskContext context) throws Exception {
@@ -132,42 +125,19 @@ public class EvolutionOrchestrator implements IOrchestrator {
         if (agent instanceof BaseAiAgent) {
             ((BaseAiAgent)agent).setAiService(aiService);
         }
-        String lastFeedback = null;
-        LoggingService logger = LoggingService.getInstance();
 
-        for (int retry = 1; retry <= MAX_RETRIES; retry++) {
-            context.checkPause();
-            context.setCurrentIteration(retry);
+        context.checkPause();
 
-            try {
-                // Simplified PEV for blind executor
-                // 1. Context
-                ContextPackage contextPkg = ContextBuilder.build(task, context, retry, lastFeedback);
-                String contextPrompt = ContextBuilder.buildPrompt(contextPkg);
+        // 1. Context
+        ContextPackage contextPkg = ContextBuilder.build(task, context, 1, task.getFeedback());
+        String contextPrompt = ContextBuilder.buildPrompt(contextPkg);
 
-                // 2. Execute (Generate + Apply)
-                String patch = generatePatch(task, agent, context, lastFeedback, task.getPlan(), contextPrompt);
-                String result = applyPatch(task, agent, context, lastFeedback, patch);
-                task.setResponse(result);
+        // 2. Execute (Generate + Apply)
+        String patch = generatePatch(task, agent, context, task.getFeedback(), task.getPlan(), contextPrompt);
+        String result = applyPatch(task, agent, context, task.getFeedback(), patch);
+        task.setResponse(result);
 
-                // 3. Verify
-                ChangeUnit change = new ChangeUnit();
-                change.setPatch(patch);
-                validator.setAiService(aiService);
-                JSONObject evaluation = validator.evaluate(change, task.getName(), context);
-
-                if (evaluation.optBoolean("success", false)) {
-                    return true;
-                } else {
-                    lastFeedback = "Verification Failed: " + evaluation.optString("feedback");
-                    JSONObject diagnosis = analyticAgent.diagnose(result, evaluation.optString("feedback"), context);
-                    if ("REPAIR_AGENT".equals(diagnosis.optString("suggestedStrategy"))) agent = repairAgent;
-                }
-            } catch (Exception e) {
-                lastFeedback = "Exception: " + e.getMessage();
-            }
-        }
-        return false;
+        return result;
     }
 
     protected String generatePatch(Task task, IAgent agent, TaskContext context, String lastFeedback, String localPlan, String contextPrompt) throws Exception {

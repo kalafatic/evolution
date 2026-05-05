@@ -25,9 +25,13 @@ public class KernelFacade implements IOrchestrator {
 
     @Override
     public String executeTask(Task task, TaskContext context) throws Exception {
-        // Direct task execution is delegated to the blind executor,
-        // but still goes through the facade for consistency if needed.
-        EvolutionOrchestrator executor = new EvolutionOrchestrator();
-        return executor.executeTask(task, context);
+        // Direct task execution is still routed through IterationManager
+        // to ensure the system is in the correct state (EXECUTING).
+        IterationManager kernel = KernelFactory.create(context);
+        java.util.List<Task> tasks = new java.util.ArrayList<>();
+        tasks.add(task);
+        boolean success = kernel.executeTasksWithRetries(tasks);
+        if (!success) throw new Exception("Task failed: " + task.getName());
+        return task.getResponse();
     }
 }

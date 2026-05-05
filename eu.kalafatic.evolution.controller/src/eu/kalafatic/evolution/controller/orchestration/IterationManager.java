@@ -59,6 +59,8 @@ public class IterationManager {
     private final AnalyticAgent analyticAgent;
     private final PlannerAgent strategicPlanner;
     private final FinalResponseAgent finalResponseAgent;
+    private final eu.kalafatic.evolution.controller.agents.ValidatorAgent validator;
+    private final eu.kalafatic.evolution.controller.agents.RepairAgent repairAgent;
     private final List<IAgent> availableAgents = new ArrayList<>();
 
     private Iteration currentIterationModel;
@@ -85,12 +87,16 @@ public class IterationManager {
         analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
         strategicPlanner = (PlannerAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_PLANNER);
         finalResponseAgent = (FinalResponseAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_FINAL_RESPONSE);
+        validator = (eu.kalafatic.evolution.controller.agents.ValidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_VALIDATOR);
+        repairAgent = (eu.kalafatic.evolution.controller.agents.RepairAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_REPAIR);
 
         // Ensure agents use the provided AiService
         intentClassifier.setAiService(aiService);
         analyticAgent.setAiService(aiService);
         strategicPlanner.setAiService(aiService);
         finalResponseAgent.setAiService(aiService);
+        validator.setAiService(aiService);
+        repairAgent.setAiService(aiService);
         darwinEngine.setAiService(aiService);
         taskExecutor.getOrchestrator().setAiService(aiService);
         availableAgents.forEach(a -> {
@@ -212,8 +218,7 @@ public class IterationManager {
             transition(SystemState.PLAN_LOCKED, context);
 
             // Execution
-            transition(SystemState.EXECUTING, context);
-            boolean success = taskExecutor.executeTasks(tasks);
+            boolean success = executeTasksWithRetries(tasks);
 
             transition(SystemState.VERIFYING, context);
             String finalResponse = finalResponseAgent.generateFinalResponse(request, tasks, context);
@@ -263,8 +268,7 @@ public class IterationManager {
             List<Task> tasks = taskPlanner.generateTasks(context, goal);
             transition(SystemState.PLAN_LOCKED, context);
 
-            transition(SystemState.EXECUTING, context);
-            boolean success = taskExecutor.executeTasks(tasks);
+            boolean success = executeTasksWithRetries(tasks);
 
             transition(SystemState.VERIFYING, context);
             EvaluationResult result = evaluator.evaluate();
@@ -329,6 +333,7 @@ public class IterationManager {
             gitManager.forceCheckout(originalBranch);
             gitManager.merge(bestVariant.getBranchName());
 
+            // Darwin variants are already executed in evaluateVariantsInternal
             transition(SystemState.VERIFYING, context);
             EvaluationResult result = evaluator.evaluate();
             currentIterationModel.setEvaluationResult(result);
@@ -390,12 +395,10 @@ public class IterationManager {
             TaskExecutor variantExecutor = new TaskExecutor(variantContext);
             List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
 
-            TransitionToken token = new TransitionToken();
-            variantContext.getStateHolder().applyTransition(token, SystemState.EXECUTING);
+            IterationManager variantManager = KernelFactory.create(variantContext);
+            boolean success = variantManager.executeTasksWithRetries(tasks);
 
-            boolean success = variantExecutor.executeTasks(tasks);
-
-            variantContext.getStateHolder().applyTransition(token, SystemState.VERIFYING);
+            variant.setSuccess(success);
             Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
             EvaluationResult result = variantEvaluator.evaluate();
 
@@ -488,5 +491,67 @@ public class IterationManager {
 
     public void setPolicyEngine(IPolicyEngine policyEngine) {
         this.policyEngine = policyEngine;
+    }
+
+    /**
+     * Centralized execution loop for tasks. Handles retries, verification, and diagnosis.
+     */
+    public boolean executeTasksWithRetries(List<Task> tasks) throws Exception {
+        context.log("[KERNEL] Starting centralized execution loop for " + tasks.size() + " tasks.");
+
+        for (Task task : tasks) {
+            if (task.getStatus() == eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE) continue;
+
+            context.setCurrentTaskName(task.getName());
+            boolean success = false;
+            int maxRetries = EvolutionConstants.MAX_TASK_RETRIES;
+
+            for (int retry = 1; retry <= maxRetries; retry++) {
+                context.checkPause();
+                context.setCurrentIteration(retry);
+
+                // 1. EXECUTE
+                transition(SystemState.EXECUTING, context);
+                task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.RUNNING);
+                String result = taskExecutor.getOrchestrator().executeTask(task, context);
+
+                // 2. VERIFY
+                transition(SystemState.VERIFYING, context);
+                task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.VERIFYING);
+
+                ChangeUnit change = new ChangeUnit();
+                change.setPatch(task.getResponse()); // Orchestrator sets response
+                JSONObject evaluation = validator.evaluate(change, task.getName(), context);
+
+                if (evaluation.optBoolean("success", false)) {
+                    task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
+                    success = true;
+                    break;
+                } else {
+                    context.log("[KERNEL] Verification failed for task: " + task.getName() + " (Attempt " + retry + ")");
+                    task.setFeedback("Verification Failed: " + evaluation.optString("feedback"));
+
+                    // 3. ANALYZE/DIAGNOSE
+                    transition(SystemState.ANALYZING, context);
+                    JSONObject diagnosis = analyticAgent.diagnose(result, evaluation.optString("feedback"), context);
+
+                    if (retry < maxRetries) {
+                        context.log("[KERNEL] Mutating strategy for retry...");
+                        transition(SystemState.MUTATING, context);
+                        // If AnalyticAgent suggests RepairAgent, we could switch logic here
+                        // For now, we stay in the loop and retry with feedback
+                    } else {
+                        task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
+                        success = false;
+                    }
+                }
+            }
+
+            if (!success) {
+                context.log("[KERNEL] Task failed after " + maxRetries + " attempts: " + task.getName());
+                return false;
+            }
+        }
+        return true;
     }
 }

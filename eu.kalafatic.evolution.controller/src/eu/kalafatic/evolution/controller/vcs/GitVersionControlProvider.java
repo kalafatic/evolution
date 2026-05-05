@@ -40,6 +40,37 @@ public class GitVersionControlProvider implements VersionControlProvider {
     @Override
     public String getFileDiff(File workingDir, String commitId, String filePath) throws Exception {
         if (commitId == null || commitId.isEmpty() || "HEAD".equals(commitId)) {
+            // Check if file is untracked
+            String status = shell.execute("git status --porcelain -- " + quote(filePath), workingDir, null);
+            if (status != null && status.contains("??")) {
+                // Untracked file: return the whole content as addition
+                File file = new File(workingDir, filePath);
+                if (file.exists()) {
+                byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+                String content = new String(bytes);
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("diff --git a/").append(filePath).append(" b/").append(filePath).append("\n");
+                    sb.append("new file mode 100644\n");
+                    sb.append("--- /dev/null\n");
+                    sb.append("+++ b/").append(filePath).append("\n");
+                if (bytes.length == 0) {
+                    sb.append("@@ -0,0 +0,0 @@\n");
+                } else {
+                    String[] lines = content.split("\n", -1);
+                    // Remove last empty element if it was just a trailing newline
+                    int count = lines.length;
+                    if (count > 0 && lines[count-1].isEmpty() && content.endsWith("\n")) {
+                        count--;
+                    }
+                    sb.append("@@ -0,0 +1,").append(count).append(" @@\n");
+                    for (int i = 0; i < count; i++) {
+                        sb.append("+").append(lines[i]).append("\n");
+                    }
+                    }
+                    return sb.toString();
+                }
+            }
+
             if (isHeadValid(workingDir)) {
                 return shell.execute("git diff HEAD -- " + quote(filePath), workingDir, null);
             } else {
@@ -62,35 +93,47 @@ public class GitVersionControlProvider implements VersionControlProvider {
     @Override
     public List<String> getChangedFiles(File workingDir, String commitId) throws Exception {
         if (commitId == null || commitId.isEmpty() || "HEAD".equals(commitId)) {
-            if (isHeadValid(workingDir)) {
-                String output = shell.execute("git diff --name-only HEAD", workingDir, null);
-                if (output == null || output.isEmpty()) return new ArrayList<>();
-                return Arrays.asList(output.trim().split("\n"));
-            } else {
-                String output = shell.execute("git status --porcelain", workingDir, null);
-                if (output == null || output.isEmpty()) return new ArrayList<>();
-                List<String> files = new ArrayList<>();
-                for (String line : output.split("\n")) {
-                    if (line.length() > 3) {
-                        char status1 = line.charAt(0);
-                        char status2 = line.charAt(1);
-                        // Filter out untracked files (status is '??')
-                        if (status1 != '?' || status2 != '?') {
-                            String file = line.substring(3).trim();
-                            // Handle staged renames: "old -> new"
-                            if (file.contains(" -> ")) {
-                                file = file.split(" -> ")[1];
-                            }
-                            files.add(file);
-                        }
+            String output = shell.execute("git status --porcelain", workingDir, null);
+            if (output == null || output.isEmpty()) return new ArrayList<>();
+            List<String> files = new ArrayList<>();
+            for (String line : output.split("\n")) {
+                if (line.length() > 3) {
+                    char s1 = line.charAt(0);
+                    char s2 = line.charAt(1);
+                    String file = line.substring(3).trim();
+                    if (file.contains(" -> ")) {
+                        file = file.split(" -> ")[1];
+                    }
+
+                    if (s1 == 'M' || s2 == 'M') {
+                        files.add("M " + file);
+                    } else if (s1 == 'A' || s2 == 'A' || (s1 == '?' && s2 == '?')) {
+                        files.add("A " + file);
+                    } else if (s1 == 'D' || s2 == 'D') {
+                        files.add("D " + file);
+                    } else if (s1 == 'R' || s2 == 'R') {
+                        files.add("M " + file);
                     }
                 }
-                return files;
             }
+            return files;
         } else {
-            String output = shell.execute("git show --name-only --format= " + quote(commitId), workingDir, null);
+            String output = shell.execute("git show --name-status --format= " + quote(commitId), workingDir, null);
             if (output == null || output.isEmpty()) return new ArrayList<>();
-            return Arrays.asList(output.trim().split("\n"));
+            List<String> files = new ArrayList<>();
+            for (String line : output.split("\n")) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+                String[] parts = line.split("\\s+");
+                if (parts.length >= 2) {
+                    String status = parts[0].substring(0, 1).toUpperCase();
+                    String file = parts[1];
+                    files.add(status + " " + file);
+                } else {
+                    files.add("M " + line);
+                }
+            }
+            return files;
         }
     }
 
