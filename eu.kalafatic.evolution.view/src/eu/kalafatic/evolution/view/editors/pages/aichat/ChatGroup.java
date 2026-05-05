@@ -29,6 +29,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.osgi.framework.Bundle;
 
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.ChatThread;
