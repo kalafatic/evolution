@@ -109,6 +109,24 @@
             background: #eff6ff !important;
             border-color: #3b82f6 !important;
             color: #1e40af !important;
+            position: relative;
+        }
+
+        .branch-column.approved::after {
+            content: 'APPROVED';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 40px;
+            font-weight: 900;
+            color: rgba(59, 130, 246, 0.15);
+            border: 5px solid rgba(59, 130, 246, 0.15);
+            padding: 4px 16px;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 5;
+            user-select: none;
         }
 
         .message.approved .bubble::after {
@@ -298,6 +316,12 @@
             background: #f97316;
             border-color: #ea580c;
             color: #ffffff;
+        }
+
+        .branch-column.approved {
+            background: #eff6ff !important;
+            border-color: #3b82f6 !important;
+            color: #1e40af !important;
         }
 
         .branch-header {
@@ -1523,6 +1547,7 @@
 
                 const role = (m.agentType || '').toLowerCase();
                 const isWaiting = role.includes('waiting') && !role.includes('approved');
+                const isApproved = role.includes('approved');
 
                 // Handle various JSON formats: { variants: [...] }, { proposals: [...] }, or plain array [...]
                 const variants = Array.isArray(data) ? data : (data.variants || data.proposals || []);
@@ -1532,7 +1557,9 @@
 
                 variants.forEach((v, index) => {
                     const column = document.createElement('div');
-                    column.className = 'branch-column' + (v.isBest ? ' best' : '') + (isWaiting ? ' waiting' : '');
+                    column.className = 'branch-column' + (v.isBest ? ' best' : '') +
+                                     (isWaiting ? ' waiting' : '') +
+                                     (isApproved ? ' approved' : '');
 
                     const header = document.createElement('div');
                     header.className = 'branch-header';
@@ -1595,7 +1622,7 @@
                     const footer = document.createElement('div');
                     footer.className = 'branch-footer';
 
-                    if (v.isApproved || role.includes('approved')) {
+                    if (v.isApproved || isApproved) {
                         footer.innerHTML = `<div style="color: #16a34a; font-weight: bold; width: 100%; text-align: center;">APPROVED</div>`;
                     } else {
                         const approveBtn = isWaiting ? `<button class="branch-btn approve" onclick="event.stopPropagation(); JavaHandler('executeProposal', '-1', 'Approve variant ${v.id || index}')">Approve</button>` : '';

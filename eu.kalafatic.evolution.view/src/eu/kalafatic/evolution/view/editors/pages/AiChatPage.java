@@ -894,6 +894,7 @@ public class AiChatPage extends AEvoPage {
 	public void provideApproval(String threadId, boolean approved) {
 		if (approved && threadId.equals(getCurrentThreadName())) {
 			chatGroup.markLastWaitingAsApproved();
+			instructionsGroup.resetBackground();
 		}
 		ThreadState state = getThreadState(threadId);
 		if (state.orchestrationThread != null) {
