@@ -49,6 +49,24 @@ class Message {
             block.appendChild(bubble);
         }
 
+        div.appendChild(header);
+        div.appendChild(msgContent);
+        return div;
+    }
+
+    renderStandard(container, primaryRole) {
+        const { index, text, agentType } = this.data;
+        const role = (agentType || '').toLowerCase();
+
+        const block = document.createElement('div');
+        block.className = 'bubble';
+        block.onclick = () => JavaBridge.call('edit', index, text);
+
+        const content = document.createElement('div');
+        content.className = 'bubble-content';
+        content.innerHTML = MessageFormatter.formatText(text, primaryRole);
+        block.appendChild(content);
+
         const actions = new MessageActions(index, text, role);
 
         contentWrapper.appendChild(header);
