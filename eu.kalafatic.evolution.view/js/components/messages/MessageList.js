@@ -1,105 +1,116 @@
-import Message from './Message.js';
-import DarwinContainer from '../darwin/DarwinContainer.js';
+import { Message } from './Message.js';
 
-class MessageList {
+export class MessageList {
     constructor(containerId, icons) {
         this.container = document.getElementById(containerId);
+        this.wrapper = document.getElementById('messages-wrapper');
         this.icons = icons;
         this.messages = [];
-        this.collapsedIndices = new Set();
     }
 
     update(messages) {
-        this.messages = messages;
-        this.render();
-    }
+        if (!messages) {
+            console.warn('MessageList.update received null/undefined messages');
+            return;
+        }
+        const wasAtBottom = (this.container.scrollHeight - this.container.scrollTop - this.container.clientHeight) < 100;
 
-    render() {
-        const existingElements = this.container.querySelectorAll('.message');
-        const existingIndices = Array.from(existingElements).map(el => parseInt(el.dataset.index));
+        // Sort messages so that 'waiting' status (active) is always at the end
+        const sortedMessages = [...messages].sort((a, b) => {
+            const aRole = (a.agentType || '').toLowerCase();
+            const bRole = (b.agentType || '').toLowerCase();
+            const aWaiting = aRole.includes('waiting') && !aRole.includes('approved');
+            const bWaiting = bRole.includes('waiting') && !bRole.includes('approved');
 
-        this.messages.forEach((msg) => {
-            if (!existingIndices.includes(msg.index)) {
-                const icon = this.icons[msg.agentType.split(' ')[0]] || this.icons.ai;
-                const messageComponent = new Message(msg, icon);
-                const element = messageComponent.render();
-                if (this.collapsedIndices.has(msg.index)) {
-                    element.classList.add('collapsed');
-                }
-                this.container.appendChild(element);
-            } else {
-                const element = this.container.querySelector(`.message[data-index="${msg.index}"]`);
-                if (element) {
-                    const role = (msg.agentType || '').toLowerCase();
-                    const wasApproved = element.classList.contains('approved');
-                    const isApproved = role.includes('approved');
+            if (aWaiting && !bWaiting) return 1;
+            if (!aWaiting && bWaiting) return -1;
 
-                    if (isApproved && !wasApproved) {
-                        element.classList.add('approved');
-                        // Update content for darwin variants to show watermarks
-                        if (role.includes('darwin')) {
-                             const block = element.querySelector('.agent-block');
-                             if (block) {
-                                 block.innerHTML = '';
-                                 const darwin = new DarwinContainer(msg);
-                                 block.appendChild(darwin.render());
-                             }
-                        }
-                    }
-                }
-            }
+            return (a.index || 0) - (b.index || 0);
         });
 
-        const chat = document.getElementById('chat');
-        if (chat.scrollHeight - chat.scrollTop < chat.clientHeight + 200) {
+        // Optimization: Find what changed
+        const newCount = sortedMessages.length;
+        const oldCount = this.messages.length;
+
+        let startIndex = 0;
+        // If it's just new messages appended, don't clear all
+        if (oldCount > 0 && newCount >= oldCount) {
+            let matches = true;
+            for (let i = 0; i < oldCount; i++) {
+                if (JSON.stringify(sortedMessages[i]) !== JSON.stringify(this.messages[i])) {
+                    matches = false;
+                    startIndex = i;
+                    break;
+                }
+            }
+            if (matches) startIndex = oldCount;
+        }
+
+        if (startIndex === 0) {
+            this.wrapper.innerHTML = '';
+        } else {
+            // Remove everything from startIndex onwards
+            while (this.wrapper.children.length > startIndex) {
+                this.wrapper.removeChild(this.wrapper.lastChild);
+            }
+        }
+
+        for (let i = startIndex; i < newCount; i++) {
+            try {
+                const messageComponent = new Message(sortedMessages[i], this.icons);
+                this.wrapper.appendChild(messageComponent.render());
+            } catch (e) {
+                console.error('Failed to render message at index', i, sortedMessages[i], e);
+            }
+        }
+
+        this.messages = sortedMessages;
+
+        if (wasAtBottom || messages.length === 1) {
             this.scrollToBottom();
+        }
+
+        if (messages.some(m => (m.agentType || '').toLowerCase().includes('waiting'))) {
+            this.scrollToLastWaiting();
         }
     }
 
     scrollToBottom() {
-        const chat = document.getElementById('chat');
-        chat.scrollTop = chat.scrollHeight;
+        requestAnimationFrame(() => {
+            this.container.scrollTo({ top: this.container.scrollHeight, behavior: 'smooth' });
+        });
     }
 
     scrollToTop() {
-        const chat = document.getElementById('chat');
-        chat.scrollTop = 0;
+        requestAnimationFrame(() => {
+            this.container.scrollTo({ top: 0, behavior: 'smooth' });
+        });
     }
 
     scrollToLastWaiting() {
-        const waiting = this.container.querySelectorAll('.message.waiting');
-        if (waiting.length > 0) {
-            waiting[waiting.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const messages = document.querySelectorAll('.message.waiting');
+        if (messages.length > 0) {
+            const lastWaiting = messages[messages.length - 1];
+            const bubble = lastWaiting.querySelector('.bubble');
+            lastWaiting.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (bubble) {
+                bubble.classList.add('highlight-waiting');
+                setTimeout(() => bubble.classList.remove('highlight-waiting'), 5000);
+            }
         }
     }
 
     toggleCollapse(index) {
-        if (this.collapsedIndices.has(index)) {
-            this.collapsedIndices.delete(index);
-        } else {
-            this.collapsedIndices.add(index);
-        }
-        const element = this.container.querySelector(`.message[data-index="${index}"]`);
-        if (element) {
-            element.classList.toggle('collapsed');
-        }
+        const msg = document.getElementById('msg-' + index);
+        if (msg) msg.classList.toggle('collapsed');
     }
 
     toggleAll() {
-        const allMessages = this.container.querySelectorAll('.message');
-        const shouldCollapse = Array.from(allMessages).some(el => !el.classList.contains('collapsed'));
-
-        allMessages.forEach(el => {
-            const index = parseInt(el.dataset.index);
-            if (shouldCollapse) {
-                el.classList.add('collapsed');
-                this.collapsedIndices.add(index);
-            } else {
-                el.classList.remove('collapsed');
-                this.collapsedIndices.delete(index);
-            }
+        const messages = document.querySelectorAll('.message');
+        let anyOpen = Array.from(messages).some(m => !m.classList.contains('collapsed'));
+        messages.forEach(m => {
+            if (anyOpen) m.classList.add('collapsed');
+            else m.classList.remove('collapsed');
         });
     }
 }
-
-export default MessageList;

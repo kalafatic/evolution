@@ -1,6 +1,6 @@
-import JavaBridge from '../../core/JavaBridge.js';
+import { MessageFormatter } from './MessageFormatter.js';
 
-class MessageActions {
+export class MessageActions {
     constructor(index, text, role) {
         this.index = index;
         this.text = text;
@@ -8,42 +8,52 @@ class MessageActions {
     }
 
     render() {
-        const container = document.createElement('div');
-        container.className = 'actions';
+        const actions = document.createElement('div');
+        actions.className = 'actions';
 
-        const copyBtn = this.createButton('📋', 'Copy text', () => {
-            window.dispatchEvent(new CustomEvent('java:copy', { detail: this.text }));
-        });
-
-        const quoteBtn = this.createButton('💬', 'Quote message', () => {
-            window.dispatchEvent(new CustomEvent('java:quote', { detail: { index: this.index, text: this.text } }));
-        });
-
-        container.appendChild(copyBtn);
-        container.appendChild(quoteBtn);
-
-        if (this.role.includes('waiting') || this.role.includes('final-response')) {
-            const approveBtn = this.createButton('✅', 'Approve', () => {
+        let approveBtn = '';
+        if (this.role.includes('waiting') && !this.role.includes('approved')) {
+            const btn = document.createElement('button');
+            btn.className = 'action-btn approve';
+            btn.title = 'Approve';
+            btn.textContent = '✅';
+            btn.onclick = (e) => {
+                e.stopPropagation();
                 window.dispatchEvent(new CustomEvent('java:approve', { detail: this.index }));
-            });
-            approveBtn.classList.add('approve');
-            container.appendChild(approveBtn);
+            };
+            actions.appendChild(btn);
         }
 
-        return container;
-    }
-
-    createButton(icon, title, onClick) {
-        const btn = document.createElement('button');
-        btn.className = 'action-btn';
-        btn.textContent = icon;
-        btn.title = title;
-        btn.onclick = (e) => {
+        const quoteBtn = document.createElement('button');
+        quoteBtn.className = 'action-btn';
+        quoteBtn.title = 'Quote';
+        quoteBtn.textContent = '”';
+        quoteBtn.onclick = (e) => {
             e.stopPropagation();
-            onClick();
+            window.dispatchEvent(new CustomEvent('java:quote', { detail: { index: this.index, text: this.text } }));
         };
-        return btn;
+        actions.appendChild(quoteBtn);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'action-btn';
+        copyBtn.title = 'Copy Message';
+        copyBtn.textContent = '📋';
+        copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.dispatchEvent(new CustomEvent('java:copy', { detail: this.text }));
+        };
+        actions.appendChild(copyBtn);
+
+        const collapseBtn = document.createElement('button');
+        collapseBtn.className = 'action-btn';
+        collapseBtn.title = 'Collapse/Expand';
+        collapseBtn.textContent = '↕️';
+        collapseBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.dispatchEvent(new CustomEvent('ui:toggleCollapse', { detail: this.index }));
+        };
+        actions.appendChild(collapseBtn);
+
+        return actions;
     }
 }
-
-export default MessageActions;

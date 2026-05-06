@@ -1,69 +1,79 @@
-import FileItem from './FileItem.js';
-import DiffViewer from './DiffViewer.js';
+import { FileItem } from './FileItem.js';
+import { DiffViewer } from './DiffViewer.js';
+import { JavaBridge } from '../../core/JavaBridge.js';
+import { eventBus } from '../../core/EventBus.js';
 
-class ChangesPanel {
+export class ChangesPanel {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
-        this.files = [];
-        this.lastDiffs = {};
     }
 
     update(files, lastDiffs) {
-        this.files = files;
-        this.lastDiffs = lastDiffs;
-        this.render();
-    }
-
-    render() {
+        if (!this.container) return;
         this.container.innerHTML = '';
-        if (this.files.length === 0) {
-            this.container.innerHTML = '<div style="padding: 20px; color: #94a3b8; text-align: center; font-size: 11px;">No pending changes</div>';
+
+        if (!files || files.length === 0) {
+            this.container.innerHTML = '<div style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 20px;">No changes detected</div>';
             return;
         }
 
-        this.files.forEach(filePath => {
-            const fileItem = new FileItem(filePath, this.lastDiffs[filePath]);
+        files.forEach(fileInfo => {
+            const fileItem = new FileItem(fileInfo, lastDiffs[this.extractPath(fileInfo)]);
             this.container.appendChild(fileItem.render());
         });
     }
 
-    toggleFileDiff(path) {
-        const item = this.container.querySelector(`.file-stack-item[data-path="${path}"]`);
-        if (item) {
-            item.classList.toggle('expanded');
-            if (item.classList.contains('expanded') && !this.lastDiffs[path]) {
-                window.dispatchEvent(new CustomEvent('java:getDiff', { detail: path }));
-            }
+    extractPath(fileInfo) {
+        if (fileInfo.includes(' ')) {
+            return fileInfo.substring(2).trim();
         }
+        return fileInfo;
     }
 
     showDiff(data) {
-        const item = this.container.querySelector(`.file-stack-item[data-path="${data.path}"]`);
-        if (item) {
-            const diffContainer = item.querySelector('.file-diff-inline');
-            if (diffContainer) {
-                diffContainer.innerHTML = DiffViewer.render(data.diff);
+        const path = data.path;
+        const diff = data.diff;
+        const container = document.getElementById(`diff-inline-${path}`);
+        if (!container) return;
+
+        container.innerHTML = '';
+        container.appendChild(DiffViewer.render(data));
+    }
+
+    toggleFileDiff(path) {
+        const item = document.querySelector(`.file-stack-item[data-path="${path}"]`);
+        if (!item) return;
+
+        const isExpanded = item.classList.contains('expanded');
+        if (isExpanded) {
+            item.classList.remove('expanded');
+        } else {
+            item.classList.add('expanded');
+            const diffContainer = document.getElementById(`diff-inline-${path}`);
+            if (diffContainer && diffContainer.innerHTML.includes('Loading diff...')) {
+                JavaBridge.call('getDiff', '-1', path);
             }
         }
     }
 
     toggleAllFiles() {
-        const allItems = this.container.querySelectorAll('.file-stack-item');
-        const shouldExpand = Array.from(allItems).some(el => !el.classList.contains('expanded'));
-        allItems.forEach(el => {
-            if (shouldExpand) el.classList.add('expanded');
-            else el.classList.remove('expanded');
+        const items = document.querySelectorAll('.file-stack-item');
+        const anyCollapsed = Array.from(items).some(i => !i.classList.contains('expanded'));
+        items.forEach(i => {
+            if (anyCollapsed) {
+                if (!i.classList.contains('expanded')) this.toggleFileDiff(i.dataset.path);
+            } else {
+                i.classList.remove('expanded');
+            }
         });
     }
 
     filterFiles(query) {
-        const q = query.toLowerCase();
-        const allItems = this.container.querySelectorAll('.file-stack-item');
-        allItems.forEach(el => {
-            const path = el.dataset.path.toLowerCase();
-            el.style.display = path.includes(q) ? 'block' : 'none';
+        const items = document.querySelectorAll('.file-stack-item');
+        query = query.toLowerCase();
+        items.forEach(i => {
+            const path = i.dataset.path.toLowerCase();
+            i.style.display = path.includes(query) ? 'block' : 'none';
         });
     }
 }
-
-export default ChangesPanel;
