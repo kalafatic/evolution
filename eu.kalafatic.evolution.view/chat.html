@@ -249,8 +249,16 @@
     </style>
 </head>
 <body class="full">
+    <div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-canvas); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s;">
+        <div class="thinking" style="margin-bottom: 20px;">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        <div id="loading-status" style="font-size: 14px; font-weight: bold; color: #64748b;">Initializing AI Chat Kernel...</div>
+    </div>
     <div id="floating-quote-btn" onclick="quoteSelection()">Quote</div>
-    <div style="display: flex; height: 100vh;">
+    <div id="chat-layout" style="display: none; height: 100vh;">
         <div style="flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden;">
             <div class='chat-container' id='chat' style="flex: 1; overflow-y: auto; padding: 8px;">
                 <div id="messages-wrapper" style="display: flex; flex-direction: column; gap: 4px;"></div>
@@ -307,23 +315,7 @@
         </div>
     </div>
 
-    <script>
-        // Emergency bootloader: queue calls until modules are ready
-        window._evoQueue = [];
-        const queue = (fn) => (...args) => window._evoQueue.push({ fn, args });
-
-        window.updateMessages = queue('updateMessages');
-        window.updateChanges = queue('updateChanges');
-        window.showDiff = queue('showDiff');
-        window.showThinking = queue('showThinking');
-        window.setFeedbackLevel = queue('setFeedbackLevel');
-        window.scrollToTop = queue('scrollToTop');
-        window.scrollToBottom = queue('scrollToBottom');
-        window.scrollToLastWaiting = queue('scrollToLastWaiting');
-        window.toggleAll = queue('toggleAll');
-        window.selectAll = queue('selectAll');
-        window.quoteSelection = queue('quoteSelection');
-    </script>
+    <!-- Main Entry Point (ES Module) -->
     <script type="module" src="./js/main.js"></script>
 </body>
 </html>

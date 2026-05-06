@@ -1,48 +1,17 @@
-import { JavaBridge } from '../core/JavaBridge.js';
+import JavaBridge from '../core/JavaBridge.js';
 
-export class SidePanel {
+class SidePanel {
     constructor(panelId) {
         this.panel = document.getElementById(panelId);
-        this.isOpen = true;
-        this.m_pos = 0;
-        this.setupResizer();
-    }
-
-    setupResizer() {
-        const resize_el = document.getElementById("resize-handle");
-        if (!resize_el) return;
-
-        const resize = (e) => {
-            const dx = this.m_pos - e.x;
-            this.m_pos = e.x;
-            const newWidth = (parseInt(getComputedStyle(this.panel, '').width) + dx);
-            if (newWidth > 50) {
-                this.panel.style.width = newWidth + "px";
-            }
-        };
-
-        resize_el.addEventListener("mousedown", (e) => {
-            this.m_pos = e.x;
-            this.panel.style.transition = 'none';
-            document.addEventListener("mousemove", resize, false);
-            document.body.style.cursor = 'col-resize';
-            e.preventDefault();
-        }, false);
-
-        document.addEventListener("mouseup", () => {
-            this.panel.style.transition = 'width 0.3s ease';
-            document.removeEventListener("mousemove", resize, false);
-            document.body.style.cursor = '';
-        }, false);
+        this.contextMenu = document.getElementById('context-menu');
     }
 
     toggle() {
-        if (this.isOpen) {
-            this.panel.style.width = '0px';
-            this.isOpen = false;
+        const currentWidth = this.panel.style.width;
+        if (currentWidth === '0px' || currentWidth === '0') {
+            this.panel.style.width = '320px';
         } else {
-            this.panel.style.width = '250px';
-            this.isOpen = true;
+            this.panel.style.width = '0px';
         }
     }
 
@@ -50,38 +19,43 @@ export class SidePanel {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('ui:contextFileChanged', { detail: path }));
 
-        const menu = document.getElementById('context-menu');
-        menu.style.display = 'block';
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
+        this.contextMenu.style.display = 'block';
+        this.contextMenu.style.left = e.clientX + 'px';
+        this.contextMenu.style.top = e.clientY + 'px';
 
-        const hideMenu = () => {
-            menu.style.display = 'none';
-            document.removeEventListener('click', hideMenu);
+        const closeMenu = () => {
+            this.contextMenu.style.display = 'none';
+            document.removeEventListener('click', closeMenu);
         };
-        document.addEventListener('click', hideMenu);
+        setTimeout(() => document.addEventListener('click', closeMenu), 10);
     }
 
-    menuAction(action, currentContextFile, lastDiff) {
-        if (!currentContextFile) return;
-        switch(action) {
+    menuAction(action, path, diff) {
+        if (!path) return;
+
+        // Strip status prefix if present
+        const relativePath = path.length > 2 && (path.startsWith('M ') || path.startsWith('A ') || path.startsWith('D ')) ? path.substring(2) : path;
+
+        switch (action) {
             case 'workspace':
-                JavaBridge.call('openInWorkspace', '-1', currentContextFile);
+                JavaBridge.call('openInWorkspace', '-1', relativePath);
                 break;
             case 'review':
-                JavaBridge.call('openInReviewEditor', '-1', currentContextFile);
+                JavaBridge.call('openInReviewEditor', '-1', relativePath);
                 break;
             case 'revert':
-                if (confirm(`Are you sure you want to revert changes to ${currentContextFile}?`)) {
-                    JavaBridge.call('revertFile', '-1', currentContextFile);
+                if (confirm('Revert all changes to ' + path + '?')) {
+                    JavaBridge.call('revertFile', '-1', path);
                 }
                 break;
             case 'copyPath':
-                JavaBridge.call('copy', '-1', currentContextFile);
+                JavaBridge.call('copy', '-1', relativePath);
                 break;
             case 'copyDiff':
-                JavaBridge.call('copy', '-1', lastDiff || '');
+                if (diff) JavaBridge.call('copy', '-1', diff);
                 break;
         }
     }
 }
+
+export default SidePanel;
