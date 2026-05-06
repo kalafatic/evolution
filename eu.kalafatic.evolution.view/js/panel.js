@@ -19,7 +19,7 @@ window.ChatApp.Panel = {
             }
 
             const item = document.createElement('div');
-            item.className = 'file-stack-item';
+            item.className = 'file-stack-item' + (status === 'A' ? ' newly-created' : '');
             item.dataset.path = path;
             const fileName = path.split('/').pop();
             const dir = path.substring(0, path.lastIndexOf('/') + 1);

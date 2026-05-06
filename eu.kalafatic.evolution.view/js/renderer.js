@@ -189,35 +189,59 @@ window.ChatApp.Renderer = {
     renderJson: function(data) {
         const renderValue = (val, key) => {
             if (val === null || val === undefined) return "";
-            if (Array.isArray(val)) return `<ul>${val.map(v => `<li>${renderValue(v, key)}</li>`).join('')}</ul>`;
+            if (Array.isArray(val)) {
+                if (val.length === 0) return "";
+                return `<ul>${val.map(v => `<li>${renderValue(v, key)}</li>`).join('')}</ul>`;
+            }
             if (typeof val === 'object') return Object.entries(val).map(([k, v]) => `<div><b>${k}:</b> ${renderValue(v, k)}</div>`).join('');
 
             const str = String(val);
-            if (['files', 'path', 'file'].includes(key) && (str.includes('.') || str.includes('/'))) {
+            if (['files', 'path', 'file', 'target'].includes(key) && (str.includes('.') || str.includes('/'))) {
                 return `<a onclick="window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(str)}')"><b>${window.ChatApp.Utils.escapeHtml(str)}</b></a>`;
             }
             return window.ChatApp.Utils.escapeHtml(str);
         };
 
-        let html = '<div style="display: flex; flex-direction: column; gap: 4px;">';
+        const humanKeys = ['explanation', 'strategy', 'thought', 'objective', 'refinedPrompt', 'rootCause', 'plan', 'workDone', 'summary', 'description', 'hypothesis', 'expected_effects', 'expected_effect'];
+        const technicalKeys = ['id', 'suffix', 'score', 'risk', 'reversibility', 'confidence', 'intent', 'category', 'isAmbiguous', 'missingInformation', 'clarificationQuestion'];
+
+        let html = '<div style="display: flex; flex-direction: column; gap: 6px;">';
         if (Array.isArray(data)) {
             data.forEach((item, idx) => {
-                html += `<div style="border-bottom: 1px solid var(--border); padding-bottom: 4px;"><b>PROPOSAL ${idx+1}</b><br>${renderValue(item)}</div>`;
+                html += `<div style="border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 6px;"><b>PROPOSAL ${idx+1}</b><br>${this.renderJson(item)}</div>`;
             });
         } else {
-            const top = ['workDone', 'plan', 'strategy', 'explanation', 'refinedPrompt'];
-            top.forEach(f => {
+            // First render prioritized human keys
+            humanKeys.forEach(f => {
                 if (data[f]) {
                     if (f === 'refinedPrompt') {
-                        html += `<div><a class="link-go" onclick="window.ChatApp.Actions.callJava('executeProposal', '-1', '${window.ChatApp.Utils.escapeJs(data[f])}')"><b>${window.ChatApp.Utils.escapeHtml(data[f])}</b></a></div>`;
+                        html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">REFINED PROMPT</div><a class="link-go" onclick="window.ChatApp.Actions.callJava('executeProposal', '-1', '${window.ChatApp.Utils.escapeJs(data[f])}')"><b>${window.ChatApp.Utils.escapeHtml(data[f])}</b></a></div>`;
+                    } else if (f === 'hypothesis' && typeof data[f] === 'object') {
+                         html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">HYPOTHESIS</div>${renderValue(data[f].description)}</div>`;
+                         if (data[f].expected_effects) html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">EXPECTED EFFECTS</div>${renderValue(data[f].expected_effects)}</div>`;
+                    } else if (f === 'expected_effect' && typeof data[f] === 'object') {
+                         html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">EXPECTED EFFECT</div>${data[f].short_term || data[f].long_term || ''}</div>`;
                     } else {
-                        html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">${f.toUpperCase()}</div>${renderValue(data[f], f)}</div>`;
+                        html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">${f.toUpperCase().replace('_', ' ')}</div>${renderValue(data[f], f)}</div>`;
                     }
                 }
             });
+
+            // Then render non-technical, non-prioritized keys
             Object.entries(data).forEach(([k, v]) => {
-                if (!top.includes(k)) html += `<div><b>${k}:</b> ${renderValue(v, k)}</div>`;
+                if (!humanKeys.includes(k) && !technicalKeys.includes(k) && k !== 'actions' && k !== 'variants' && k !== 'proposals') {
+                    html += `<div><b>${k}:</b> ${renderValue(v, k)}</div>`;
+                }
             });
+
+            // Special handling for actions array
+            if (data.actions && Array.from(data.actions).length > 0) {
+                html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">ACTIONS</div>`;
+                data.actions.forEach(a => {
+                    html += `<div style="margin-left: 8px; font-size: 11px;">• <b>${a.operation}</b> ${renderValue(a.target, 'target')} - <i>${a.description}</i></div>`;
+                });
+                html += `</div>`;
+            }
         }
         return html + '</div>';
     },
@@ -243,9 +267,13 @@ window.ChatApp.Renderer = {
 
                 const col = document.createElement('div');
                 col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '');
+
+                // Simplified Darwin Header
+                let headerHtml = `<div class="branch-header">PROPOSAL ${index + 1}</div>`;
+                if (v.strategy) headerHtml += `<div class="branch-strategy">${v.strategy}</div>`;
+
                 col.innerHTML = `
-                    <div class="branch-header">PROPOSAL ${index + 1}</div>
-                    <div class="branch-strategy">${v.strategy || 'Variant'}</div>
+                    ${headerHtml}
                     <div class="branch-body" style="font-size: 11px;">${this.renderJson(v)}</div>
                     <div class="branch-footer">
                         ${isThisApproved ? '<div style="color: #16a34a; font-weight: bold;">APPROVED</div>' :

@@ -93,6 +93,11 @@
 .file-stack-item:hover {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
+.file-stack-item.newly-created {
+    border-color: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.2);
+    background: #f0fdf4;
+}
 .file-info {
     padding: 8px 10px;
     display: flex;

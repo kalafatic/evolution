@@ -467,7 +467,15 @@ public class AiChatPage extends AEvoPage {
 
 					if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
-						chatGroup.appendText("Final Response: " + response.getSummary(), colorEvolution, SWT.BOLD);
+
+						String finalMsg = response.getSummary();
+						if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
+							long done = orchestrator.getTasks().stream().filter(t -> t.getStatus() == eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE).count();
+							long total = orchestrator.getTasks().size();
+							finalMsg = "I have completed " + done + " of " + total + " tasks. " + response.getSummary();
+						}
+
+						chatGroup.appendText("Final Response: " + finalMsg, colorEvolution, SWT.BOLD);
 
 						if (response.getContent() != null && !response.getContent().equals(response.getSummary())) {
 							chatGroup.appendText("\n" + response.getContent(), colorEvolution, SWT.NORMAL);
@@ -504,6 +512,19 @@ public class AiChatPage extends AEvoPage {
 								// Force workspace refresh to show new files in navigator
 								try {
 									ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
+
+									// Identify newly created files and highlight in navigator
+									eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider git = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+									List<String> changed = git.getChangedFiles(getProjectRoot(), "HEAD");
+									for (String path : changed) {
+										if (path.startsWith("A ")) {
+											String filePath = path.substring(2);
+											IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new org.eclipse.core.runtime.Path(new File(getProjectRoot(), filePath).getAbsolutePath()));
+											if (iFile != null) {
+												editor.refreshNavigator(iFile);
+											}
+										}
+									}
 								} catch (Exception e) {}
 					}
 					state.orchestrationThread = null;
@@ -740,7 +761,17 @@ public class AiChatPage extends AEvoPage {
 					if (threadId.equals(getCurrentThreadName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 
-						chatGroup.appendText("Final Response: " + modeLabel + " session finished. Status: " + session.getStatus(), colorEvolution, SWT.BOLD);
+						String taskSummary = context.getOrchestrator().getTasks().stream()
+								.filter(t -> t.getResultSummary() != null && !t.getResultSummary().isEmpty())
+								.map(t -> "- " + t.getResultSummary())
+								.collect(Collectors.joining("\n"));
+
+						String finalMsg = modeLabel + " session finished. Status: " + session.getStatus();
+						if (!taskSummary.isEmpty()) {
+							finalMsg += "\n\nAccomplishments:\n" + taskSummary;
+						}
+
+						chatGroup.appendText("Final Response: " + finalMsg, colorEvolution, SWT.BOLD);
 						editor.setDirty(true);
 						feedbackGroup.showSatisfaction(true); updateScrolledContent();
 						if (state.currentStackTask != null) {
@@ -770,6 +801,19 @@ public class AiChatPage extends AEvoPage {
 							// Force workspace refresh to show new files in navigator
 							try {
 								ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
+
+								// Identify newly created files and highlight in navigator
+								eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider git = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+								List<String> changed = git.getChangedFiles(projectRoot, "HEAD");
+								for (String path : changed) {
+									if (path.startsWith("A ")) {
+										String filePath = path.substring(2);
+										IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new org.eclipse.core.runtime.Path(new File(projectRoot, filePath).getAbsolutePath()));
+										if (iFile != null) {
+											editor.refreshNavigator(iFile);
+										}
+									}
+								}
 							} catch (Exception e) {}
 					}
 					state.orchestrationThread = null;
