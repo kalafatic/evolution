@@ -179,7 +179,7 @@ public class ChatGroup extends AEvoGroup {
         }
     }
 
-    private void refreshGitStatus() {
+    public void refreshGitStatus() {
         if (orchestrator == null || page == null) return;
         File projectRoot = page.getProjectRoot();
         if (projectRoot == null) return;
