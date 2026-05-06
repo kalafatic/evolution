@@ -85,6 +85,7 @@ window.addEventListener('java:helloworld', () => JavaBridge.call('helloworld'));
 
 // Expose global functions for Java interaction
 window.updateMessages = (messages) => {
+	console.log("updateMessages called", messages);
     if (window.JavaLog) window.JavaLog(`Updating ${messages.length} messages`);
     stateStore.setState({ messages });
 };

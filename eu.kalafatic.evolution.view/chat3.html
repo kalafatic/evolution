@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AI Chat</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background: #1e1e1e;
+            color: #ddd;
+        }
+
+        .msg {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .user { background: #2d4a7a; }
+        .ai { background: #2a2a2a; }
+        .waiting { border: 1px dashed orange; }
+
+        .meta {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="chat"></div>
+
+<script>
+/* =========================================================
+   🔥 CORE STATE
+========================================================= */
+
+let messageQueue = [];
+let uiReady = false;
+
+/* =========================================================
+   🔥 SAFE JAVA CALL
+========================================================= */
+
+function callJava(action, index, text) {
+    try {
+        if (window.JavaHandler) {
+            JavaHandler(action, String(index ?? ""), text ?? "");
+        } else {
+            console.log("JavaHandler not ready, retry...");
+            setTimeout(() => callJava(action, index, text), 50);
+        }
+    } catch (e) {
+        console.error("Java call failed", e);
+    }
+}
+
+/* =========================================================
+   🔥 LOGGING (optional but useful)
+========================================================= */
+
+function log(msg) {
+    console.log(msg);
+    if (window.JavaLog) {
+        JavaLog(msg);
+    }
+}
+
+/* =========================================================
+   🔥 RENDERING
+========================================================= */
+
+function render(messages) {
+    const root = document.getElementById("chat");
+    if (!root) return;
+
+    root.innerHTML = "";
+
+    messages.forEach(m => {
+        const div = document.createElement("div");
+
+        div.className = "msg " + (m.agentType || "ai");
+
+        if ((m.agentType || "").includes("waiting")) {
+            div.classList.add("waiting");
+        }
+
+        div.innerHTML = `
+            <div><b>${escapeHtml(m.sender)}</b></div>
+            <div>${escapeHtml(m.text)}</div>
+            <div class="meta">${m.timestamp || ""}</div>
+        `;
+
+        root.appendChild(div);
+    });
+
+    // auto-scroll
+    root.scrollTop = root.scrollHeight;
+}
+
+/* =========================================================
+   🔥 PUBLIC API (CALLED FROM JAVA)
+========================================================= */
+
+window.updateMessages = function(messages) {
+    if (!uiReady) {
+        messageQueue = messages;
+        log("Queued messages (UI not ready)");
+        return;
+    }
+
+    render(messages);
+};
+
+/* =========================================================
+   🔥 INIT
+========================================================= */
+
+function init() {
+    log("UI INIT");
+
+    uiReady = true;
+
+    // flush queued messages
+    if (messageQueue && messageQueue.length) {
+        render(messageQueue);
+        messageQueue = [];
+    }
+
+    // notify Java (optional, not required anymore)
+    callJava("ready");
+}
+
+/* =========================================================
+   🔥 UTILS
+========================================================= */
+
+function escapeHtml(text) {
+    if (!text) return "";
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+/* =========================================================
+   🔥 BOOTSTRAP (SWT SAFE)
+========================================================= */
+
+(function bootstrap() {
+    log("INLINE JS STARTED");
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+    } else {
+        init();
+    }
+})();
+</script>
+
+</body>
+</html>

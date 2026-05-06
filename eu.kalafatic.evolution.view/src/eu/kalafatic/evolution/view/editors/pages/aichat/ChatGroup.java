@@ -125,7 +125,14 @@ public class ChatGroup extends AEvoGroup {
             @Override
             public void completed(org.eclipse.swt.browser.ProgressEvent event) {
                 isLoaded = true;
-                refreshBrowser();
+
+                // 🔥 CRITICAL: re-register JS bridge AFTER page load
+                setupJavaScriptBridges();
+
+                // give JS a moment, then refresh
+                Display.getDefault().timerExec(200, () -> {
+                    refreshBrowser();
+                });
             }
         });
 
@@ -147,7 +154,20 @@ public class ChatGroup extends AEvoGroup {
                 // We MUST use FileLocator.toFileURL on the BUNDLE ROOT to ensure all JS/CSS files are extracted.
                 URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
                 URL chatUrl = new URL(bundleRoot, "chat.html");
-                browser.setUrl(chatUrl.toString());
+                //browser.setUrl(chatUrl.toString());
+                
+                String html = loadHtmlTemplate("/chat.html");
+
+             // critical: inject base path so relative JS works
+             //URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
+             String base = bundleRoot.toString();
+
+             html = html.replace(
+                 "<head>",
+                 "<head><base href=\"" + base + "\">"
+             );
+
+             browser.setText(html, true); // trusted = allow scripts
             } else {
                 throw new Exception("Bundle not found");
             }
@@ -816,7 +836,7 @@ public class ChatGroup extends AEvoGroup {
     }
 
     private void refreshBrowser() {
-        if (!isLoaded || !isJsReady || browser.isDisposed()) return;
+    	if (browser.isDisposed()) return;
         refreshGitStatus();
         if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
             setFeedbackLevel(orchestrator.getTasks().get(0).getFeedbackLevel());
@@ -830,7 +850,16 @@ public class ChatGroup extends AEvoGroup {
         }
         String json = array.toString();
         // Pass the JSON object directly to the JS function as suggested
-        browser.execute("if(window.updateMessages) { window.updateMessages(" + json + "); }");
+        //browser.execute("if(window.updateMessages) { window.updateMessages(" + json + "); }");
+  
+        browser.execute(
+                "if(window.updateMessages) {" +
+                "  window.updateMessages(" + json + ");" +
+                "} else {" +
+                "  console.log('updateMessages not ready');" +
+                "}"
+            );
+    
     }
 
     private JSONObject toJsonObject(ChatMessage m) {
