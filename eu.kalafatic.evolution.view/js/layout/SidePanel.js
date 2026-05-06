@@ -7,6 +7,7 @@ class SidePanel {
     }
 
     toggle() {
+        if (!this.panel) return;
         const currentWidth = this.panel.style.width;
         if (currentWidth === '0px' || currentWidth === '0') {
             this.panel.style.width = '320px';
@@ -16,6 +17,7 @@ class SidePanel {
     }
 
     showContextMenu(e, path) {
+        if (!this.contextMenu) return;
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('ui:contextFileChanged', { detail: path }));
 

@@ -15,6 +15,10 @@ class MessageList {
     }
 
     render() {
+        if (!this.container) {
+            if (window.JavaLog) window.JavaLog('Error: MessageList container not found');
+            return;
+        }
         const existingElements = this.container.querySelectorAll('.message');
         const existingIndices = Array.from(existingElements).map(el => parseInt(el.dataset.index));
 
@@ -51,19 +55,19 @@ class MessageList {
         });
 
         const chat = document.getElementById('chat');
-        if (chat.scrollHeight - chat.scrollTop < chat.clientHeight + 200) {
+        if (chat && (chat.scrollHeight - chat.scrollTop < chat.clientHeight + 200)) {
             this.scrollToBottom();
         }
     }
 
     scrollToBottom() {
         const chat = document.getElementById('chat');
-        chat.scrollTop = chat.scrollHeight;
+        if (chat) chat.scrollTop = chat.scrollHeight;
     }
 
     scrollToTop() {
         const chat = document.getElementById('chat');
-        chat.scrollTop = 0;
+        if (chat) chat.scrollTop = 0;
     }
 
     scrollToLastWaiting() {

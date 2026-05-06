@@ -37,6 +37,8 @@ const changesPanel = new ChangesPanel('changes-list');
 const chatContainer = new ChatContainer('chat');
 const sidePanel = new SidePanel('side-panel');
 
+if (window.JavaLog) window.JavaLog('Components initialized');
+
 // State Subscriptions
 stateStore.subscribe((state, oldState) => {
     if (!oldState || state.messages !== oldState.messages) {
@@ -60,7 +62,10 @@ window.addEventListener('ui:showContextMenu', (e) => sidePanel.showContextMenu(e
 window.addEventListener('ui:contextFileChanged', (e) => stateStore.setState({ currentContextFile: e.detail }));
 
 // Java Bridge Event Handlers
-window.addEventListener('java:approve', (e) => JavaBridge.call('approve', e.detail));
+window.addEventListener('java:approve', (e) => {
+    if (window.JavaLog) window.JavaLog('Approve requested for index ' + e.detail);
+    JavaBridge.call('approve', e.detail);
+});
 window.addEventListener('java:approveDarwinVariant', (e) => {
     JavaBridge.call('approveDarwinVariant', e.detail.index, e.detail.variantId);
 });
@@ -79,7 +84,10 @@ window.addEventListener('java:clarify', () => JavaBridge.call('clarify'));
 window.addEventListener('java:helloworld', () => JavaBridge.call('helloworld'));
 
 // Expose global functions for Java interaction
-window.updateMessages = (messages) => stateStore.setState({ messages });
+window.updateMessages = (messages) => {
+    if (window.JavaLog) window.JavaLog(`Updating ${messages.length} messages`);
+    stateStore.setState({ messages });
+};
 window.updateChanges = (files) => stateStore.setState({ changes: files });
 window.showDiff = (data) => {
     const lastDiffs = { ...stateStore.getState().lastDiffs };
@@ -128,21 +136,14 @@ window.selectAll = () => {
 };
 
 // Ready handshake
-const hideLoading = () => {
-    const overlay = document.getElementById('loading-overlay');
-    const layout = document.getElementById('chat-layout');
-    if (overlay) overlay.style.opacity = '0';
-    setTimeout(() => {
-        if (overlay) overlay.style.display = 'none';
-        if (layout) layout.style.display = 'flex';
-    }, 500);
-};
+if (window.JavaLog) window.JavaLog('Handshake initiated');
+
+if (typeof window.hideLoading === 'function') {
+    window.hideLoading();
+}
 
 if (window.JavaHandler) {
-    hideLoading();
     JavaBridge.call('ready');
-} else {
-    setTimeout(hideLoading, 500);
 }
 
 console.log('AI Chat Kernel (ESM) Initialized');

@@ -9,10 +9,10 @@ class DarwinContainer {
         const { text, agentType, index: mIndex } = this.data;
         const role = (agentType || '').toLowerCase();
 
-        // Darwin state logic: A variant is "waiting" if the parent message role contains "waiting"
-        // and it hasn't been approved yet.
-        const isWaiting = role.includes('waiting') && !role.includes('approved');
+        // Darwin state logic: A variant is "waiting" if it hasn't been approved yet.
+        // Darwin-branches are interactive by default unless they have been finalized.
         const isApproved = role.includes('approved');
+        const isWaiting = !isApproved;
 
         let approvedVariantId = null;
         if (isApproved && role.includes(':')) {
