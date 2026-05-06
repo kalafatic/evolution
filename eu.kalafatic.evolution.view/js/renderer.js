@@ -15,7 +15,7 @@ window.ChatApp.Renderer = {
         const header = document.createElement('div');
         header.className = 'header';
         const icon = window.ChatApp.Constants.icons[primaryRole] || (isUser ? window.ChatApp.Constants.icons.user : window.ChatApp.Constants.icons.ai);
-        header.innerHTML = `<span class="icon">${icon}</span><span class="sender">${m.sender}</span><span class="timestamp">${m.timestamp || ''}</span>`;
+        header.innerHTML = `<span class="timestamp">${m.timestamp || ''}</span><span class="icon">${icon}</span><span class="sender">${m.sender}</span>`;
 
         const content = document.createElement('div');
         content.className = 'message-content';

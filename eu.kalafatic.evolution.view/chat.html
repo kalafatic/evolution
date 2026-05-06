@@ -43,6 +43,11 @@
 
     <div id="chat-layout" style="display: flex; height: 100vh; width: 100vw; overflow: hidden;">
         <div id="main-content" style="flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="chat-search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="chat-search-input" class="search-input" placeholder="Search chat history..." oninput="window.filterMessages(this.value)">
+                <button id="chat-search-clear" class="panel-btn" onclick="document.getElementById('chat-search-input').value=''; window.filterMessages('')" style="border:none; background:none;">✕</button>
+            </div>
             <div class='chat-container' id='chat' style="flex: 1; overflow-y: auto; padding: 8px;">
                 <div id="messages-wrapper" style="display: flex; flex-direction: column; gap: 4px;"></div>
                 <div id='thinking' style='display:none; margin-top: 12px;'>
@@ -96,12 +101,12 @@
     </div>
 
     <!-- JS Modules (Non-ESM) -->
-    <script src="js/constants.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/actions.js"></script>
-    <script src="js/renderer.js"></script>
-    <script src="js/panel.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/constants.js" charset="UTF-8"></script>
+    <script src="js/utils.js" charset="UTF-8"></script>
+    <script src="js/actions.js" charset="UTF-8"></script>
+    <script src="js/renderer.js" charset="UTF-8"></script>
+    <script src="js/panel.js" charset="UTF-8"></script>
+    <script src="js/ui.js" charset="UTF-8"></script>
+    <script src="js/main.js" charset="UTF-8"></script>
 </body>
 </html>
