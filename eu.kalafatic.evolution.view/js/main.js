@@ -1,150 +1,118 @@
-import EventBus from './core/EventBus.js';
-import StateStore from './core/StateStore.js';
-import JavaBridge from './core/JavaBridge.js';
-import MessageList from './components/messages/MessageList.js';
-import ChangesPanel from './components/git/ChangesPanel.js';
-import ChatContainer from './layout/ChatContainer.js';
-import SidePanel from './layout/SidePanel.js';
+window.ChatApp = window.ChatApp || {};
 
-// Icons
-const icons = {
-    user: '👤', ai: '🤖', planner: '📋', architect: '📐',
-    javadev: '💻', tester: '🧪', reviewer: '⚖️', tool: '⚙️',
-    analytic: '🔍', general: '🧠', terminal: '📟', file: '📂',
-    maven: '📦', git: '🌿', structure: '🌳', websearch: '🌐',
-    quality: '✨', observability: '📊', orchestrator: '🎼', darwin: '🧬',
-    'final-response': '✅', 'result-summary': 'ℹ️', waiting: '❓', error: '❌',
-    thinking: '💭', response: '💬'
-};
+(function() {
+    const state = {
+        messages: [],
+        changes: [],
+        lastDiffs: {},
+        isUiReady: false,
+        pendingMessages: null,
+        pendingChanges: null
+    };
 
-// Initial State
-const initialState = {
-    messages: [],
-    changes: [],
-    lastDiffs: {},
-    isThinking: false,
-    feedbackLevel: 'full',
-    currentContextFile: null
-};
+    window.updateMessages = function(messages) {
+        if (!state.isUiReady) {
+            state.pendingMessages = messages;
+            return;
+        }
+        state.messages = messages;
+        const wrapper = document.getElementById('messages-wrapper');
+        if (!wrapper) return;
+        wrapper.innerHTML = '';
+        messages.forEach(m => wrapper.appendChild(window.ChatApp.Renderer.renderMessage(m)));
+        window.ChatApp.UI.scrollToBottom();
+    };
 
-// Initialize Core
-const eventBus = new EventBus();
-const stateStore = new StateStore(initialState, eventBus);
+    window.updateChanges = function(files) {
+        if (!state.isUiReady) {
+            state.pendingChanges = files;
+            return;
+        }
+        state.changes = files;
+        window.ChatApp.Panel.renderChanges(files, state.lastDiffs);
+    };
 
-// Initialize Components
-const messageList = new MessageList('messages-wrapper', icons);
-const changesPanel = new ChangesPanel('changes-list');
-const chatContainer = new ChatContainer('chat');
-const sidePanel = new SidePanel('side-panel');
+    window.showDiff = function(data) {
+        state.lastDiffs[data.path] = data.diff;
+        const container = document.getElementById(`diff-inline-${data.path}`);
+        if (container) container.innerHTML = window.ChatApp.Panel.renderDiff(data.diff);
+    };
 
-if (window.JavaLog) window.JavaLog('Components initialized');
+    window.showThinking = function(show) {
+        const t = document.getElementById('thinking');
+        if (t) t.style.display = show ? 'block' : 'none';
+        if (show) window.ChatApp.UI.scrollToBottom();
+    };
 
-// State Subscriptions
-stateStore.subscribe((state, oldState) => {
-    if (!oldState || state.messages !== oldState.messages) {
-        messageList.update(state.messages);
+    window.setFeedbackLevel = function(level) {
+        document.body.className = level;
+    };
+
+    // Global Bridge Helpers
+    window.quoteSelection = function() {
+        const text = window.getSelection().toString().trim();
+        if (text) window.ChatApp.Actions.callJava('quote', '-1', text);
+        document.getElementById('floating-quote-btn').style.display = 'none';
+    };
+    window.scrollToTop = () => { const c = document.getElementById('chat'); if(c) c.scrollTop = 0; };
+    window.scrollToBottom = () => window.ChatApp.UI.scrollToBottom();
+    window.toggleSidePanel = () => window.ChatApp.UI.toggleSidePanel();
+    window.toggleAllFiles = () => {
+        const items = document.querySelectorAll('.file-stack-item');
+        const expand = Array.from(items).some(i => !i.classList.contains('expanded'));
+        items.forEach(i => {
+            if (expand) { if(!i.classList.contains('expanded')) window.ChatApp.Panel.toggleFileDiff(i.dataset.path); }
+            else i.classList.remove('expanded');
+        });
+    };
+    window.filterFiles = (q) => {
+        const query = q.toLowerCase();
+        document.querySelectorAll('.file-stack-item').forEach(i => {
+            i.style.display = i.dataset.path.toLowerCase().includes(query) ? 'block' : 'none';
+        });
+    };
+    window.downloadZip = () => window.ChatApp.Actions.callJava('downloadZip');
+    window.commitChanges = () => {
+        const msg = prompt("Enter commit message:", "Improvement from AI Chat");
+        if (msg) window.ChatApp.Actions.callJava('commitGit', '0', msg);
+    };
+    window.menuAction = (a) => window.ChatApp.UI.menuAction(a);
+
+    // Initialization
+    function init() {
+        console.log('AI Chat initializing...');
+        window.ChatApp.UI.init();
+
+        state.isUiReady = true;
+        if (state.pendingMessages) {
+            window.updateMessages(state.pendingMessages);
+            state.pendingMessages = null;
+        }
+        if (state.pendingChanges) {
+            window.updateChanges(state.pendingChanges);
+            state.pendingChanges = null;
+        }
+
+        // Try to connect to Java
+        let attempts = 0;
+        const checkBridge = setInterval(() => {
+            attempts++;
+            if (window.JavaHandler) {
+                clearInterval(checkBridge);
+                window.ChatApp.Actions.processQueue();
+                window.ChatApp.Actions.callJava('ready');
+                if (window.hideLoading) window.hideLoading();
+            } else if (attempts > 20) { // 4 seconds
+                clearInterval(checkBridge);
+                console.warn('Java bridge connection timed out');
+                if (window.hideLoading) window.hideLoading();
+            }
+        }, 200);
     }
-    if (!oldState || state.changes !== oldState.changes || state.lastDiffs !== oldState.lastDiffs) {
-        changesPanel.update(state.changes, state.lastDiffs);
-    }
-    if (!oldState || state.isThinking !== oldState.isThinking) {
-        chatContainer.showThinking(state.isThinking);
-    }
-    if (!oldState || state.feedbackLevel !== oldState.feedbackLevel) {
-        document.body.className = state.feedbackLevel;
-    }
-});
 
-// Event Listeners for UI Actions
-window.addEventListener('ui:toggleCollapse', (e) => messageList.toggleCollapse(e.detail));
-window.addEventListener('ui:toggleFileDiff', (e) => changesPanel.toggleFileDiff(e.detail));
-window.addEventListener('ui:showContextMenu', (e) => sidePanel.showContextMenu(e.detail.event, e.detail.path));
-window.addEventListener('ui:contextFileChanged', (e) => stateStore.setState({ currentContextFile: e.detail }));
-
-// Java Bridge Event Handlers
-window.addEventListener('java:approve', (e) => {
-    if (window.JavaLog) window.JavaLog('Approve requested for index ' + e.detail);
-    JavaBridge.call('approve', e.detail);
-});
-window.addEventListener('java:approveDarwinVariant', (e) => {
-    JavaBridge.call('approveDarwinVariant', e.detail.index, e.detail.variantId);
-});
-window.addEventListener('java:copy', (e) => JavaBridge.call('copy', '-1', e.detail));
-window.addEventListener('java:quote', (e) => {
-    if (typeof e.detail === 'object') {
-        JavaBridge.call('quote', e.detail.index, e.detail.text);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        JavaBridge.call('quote', '-1', e.detail);
+        init();
     }
-});
-window.addEventListener('java:openDiff', (e) => JavaBridge.call('openDiff', '-1', e.detail));
-window.addEventListener('java:getDiff', (e) => JavaBridge.call('getDiff', '-1', e.detail));
-window.addEventListener('java:executeProposal', (e) => JavaBridge.call('executeProposal', '-1', e.detail));
-window.addEventListener('java:clarify', () => JavaBridge.call('clarify'));
-window.addEventListener('java:helloworld', () => JavaBridge.call('helloworld'));
-
-// Expose global functions for Java interaction
-window.updateMessages = (messages) => {
-	console.log("updateMessages called", messages);
-    if (window.JavaLog) window.JavaLog(`Updating ${messages.length} messages`);
-    stateStore.setState({ messages });
-};
-window.updateChanges = (files) => stateStore.setState({ changes: files });
-window.showDiff = (data) => {
-    const lastDiffs = { ...stateStore.getState().lastDiffs };
-    lastDiffs[data.path] = data.diff;
-    stateStore.setState({ lastDiffs });
-    changesPanel.showDiff(data);
-};
-window.showThinking = (show) => stateStore.setState({ isThinking: show });
-window.setFeedbackLevel = (level) => stateStore.setState({ feedbackLevel: level });
-
-// Navigation & Global Actions
-window.scrollToTop = () => messageList.scrollToTop();
-window.scrollToBottom = () => messageList.scrollToBottom();
-window.scrollToLastWaiting = () => messageList.scrollToLastWaiting();
-window.toggleAll = () => messageList.toggleAll();
-window.toggleSidePanel = () => sidePanel.toggle();
-window.toggleAllFiles = () => changesPanel.toggleAllFiles();
-window.filterFiles = (query) => changesPanel.filterFiles(query);
-window.downloadZip = () => JavaBridge.call('downloadZip');
-window.commitChanges = () => {
-    const message = prompt("Enter commit message:", "Improvement from AI Chat");
-    if (message) JavaBridge.call('commitGit', '0', message);
-};
-window.menuAction = (action) => {
-    const state = stateStore.getState();
-    sidePanel.menuAction(action, state.currentContextFile, state.lastDiffs[state.currentContextFile]);
-};
-
-window.quoteSelection = () => {
-    const sel = window.getSelection();
-    const text = sel.toString().trim();
-    if (text) {
-        JavaBridge.call('quote', '-1', text);
-        sel.removeAllRanges();
-    }
-    document.getElementById('floating-quote-btn').style.display = 'none';
-};
-
-window.selectAll = () => {
-    let text = '';
-    const { messages } = stateStore.getState();
-    messages.forEach(m => {
-        text += `${m.sender} [${m.timestamp || ''}]: ${m.text}\n\n`;
-    });
-    if (text) JavaBridge.call('copy', '-1', text.trim());
-};
-
-// Ready handshake
-if (window.JavaLog) window.JavaLog('Handshake initiated');
-
-if (typeof window.hideLoading === 'function') {
-    window.hideLoading();
-}
-
-if (window.JavaHandler) {
-    JavaBridge.call('ready');
-}
-
-console.log('AI Chat Kernel (ESM) Initialized');
+})();
