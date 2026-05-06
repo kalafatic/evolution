@@ -67,17 +67,7 @@ public class SelfDevSupervisor {
                 session.getIterations().add(iteration);
 
                 IterationManager iterationManager = createIterationManager(iteration);
-                EvaluationResult result;
-                try {
-                    // Logic: The IterationManager will handle its own strategic analysis
-                    // if it's the first call or if context is missing a plan.
-                    result = iterationManager.runIteration(iteration);
-                } catch (Exception e) {
-                    context.log("[SUPERVISOR] Iteration " + i + " encountered an error: " + e.getMessage());
-                    result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                    result.setSuccess(false);
-                    result.setDecision(SelfDevDecision.ROLLBACK);
-                }
+                EvaluationResult result = iterationManager.runIteration(iteration);
 
                 if (!result.isSuccess() || result.getDecision() == SelfDevDecision.ROLLBACK) {
                     failureCount++;
