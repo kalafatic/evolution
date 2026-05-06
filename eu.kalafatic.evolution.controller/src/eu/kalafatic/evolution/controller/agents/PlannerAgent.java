@@ -35,8 +35,9 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "- BIG PICTURE: For architectural tasks, you MAY add a final 'Architect: Review & Expand' task to solicit feedback on purpose/usage AFTER the initial work is planned.\n" +
                 "- ITERATION: If a task is complex, plan it in small, verifiable steps. Use 'loopToTaskId' for iterative improvement.\n" +
                 "- Trust the refined prompt and shared memory for technical details (language, paths).\n" +
-                "- Task names MUST start with agent types: 'JavaDev: [Action]', 'Tester: [Action]', 'Architect: [Action]', etc.\n" +
-                "- Task types: 'llm', 'file' (Task name: 'Write <path>'), 'shell', 'git', 'maven', 'approval'.\n\n" +
+                "- Task names MUST start with agent types: 'File: [Action]', 'JavaDev: [Action]', 'Tester: [Action]', 'Architect: [Action]', etc.\n" +
+                "- SIMPLE FILES: For simple file creation or modification (non-Java logic), use the 'File' agent and 'file' taskType.\n" +
+                "- Task types: 'llm', 'file' (Task name: 'File: Write <path>'), 'shell', 'git', 'maven', 'approval'.\n\n" +
                 "JSON Schema:\n" +
                 "[ { \"id\": \"t1\", \"name\": \"Agent: Action\", \"description\": \"...\", \"taskType\": \"...\", \"approvalRequired\": boolean, \"loopToTaskId\": \"none\" } ]";
     }

@@ -67,6 +67,18 @@ public class FileTool implements ITool {
                     try (FileWriter writer = new FileWriter(file)) {
                         writer.write(contentPart);
                     }
+
+                    // After writing via java.io.File, try to refresh the workspace resource if it's within workspace
+                    try {
+                        IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+                        IFile res = root.getFileForLocation(new Path(file.getAbsolutePath()));
+                        if (res != null) {
+                            res.refreshLocal(IResource.DEPTH_ZERO, null);
+                        }
+                    } catch (Exception e) {
+                        // Ignore workspace refresh errors in fallback mode
+                    }
+
                     context.log("Tool [FileTool]: Wrote " + contentPart.length() + " bytes to " + pathPart + " via java.io.File");
                 }
             } catch (CoreException e) {

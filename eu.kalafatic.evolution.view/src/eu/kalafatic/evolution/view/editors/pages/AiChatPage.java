@@ -499,6 +499,12 @@ public class AiChatPage extends AEvoPage {
 					state.isRunning = false;
 					if (threadId.equals(getCurrentThreadName())) {
 						instructionsGroup.setOrchestrationRunning(false);
+								chatGroup.refreshGitStatus();
+
+								// Force workspace refresh to show new files in navigator
+								try {
+									ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
+								} catch (Exception e) {}
 					}
 					state.orchestrationThread = null;
 				});
@@ -759,6 +765,12 @@ public class AiChatPage extends AEvoPage {
 					state.isRunning = false;
 					if (threadId.equals(getCurrentThreadName())) {
 						instructionsGroup.setOrchestrationRunning(false);
+							chatGroup.refreshGitStatus();
+
+							// Force workspace refresh to show new files in navigator
+							try {
+								ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
+							} catch (Exception e) {}
 					}
 					state.orchestrationThread = null;
 				});
