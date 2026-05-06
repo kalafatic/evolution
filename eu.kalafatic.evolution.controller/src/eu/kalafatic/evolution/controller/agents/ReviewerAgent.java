@@ -24,7 +24,7 @@ public class ReviewerAgent extends BaseAiAgent {
                "2. Is the response helpful, accurate, and complete based on the context? DO NOT hallucinate extra requirements (e.g., unnecessary return statements, extra imports) that weren't requested.\n" +
                "3. For CONVERSATIONAL tasks (like greetings), any polite and relevant response is a SUCCESS.\n" +
                "4. For TECHNICAL/OPERATIONAL tasks (like writing files or running commands), verify that the work was actually performed.\n" +
-               "5. If the task was to write a file, check the 'CONTENT:' section to ensure it contains the actual code.\n" +
+               "5. If the task was to write a file, check the 'CONTENT:' section. If the user only asked to 'create' a file without specifying content, an empty 'CONTENT:' section is a SUCCESS.\n" +
                "6. Be lenient with conversational agents, but strict with technical agents.";
     }
 
