@@ -134,6 +134,25 @@ public class IterationManager {
             // 3. Strategic Planning & Execution
             transition(SystemState.ANALYZING, context);
 
+            // --- Atomic Task Detection (Optimized Pipeline) ---
+            if (isSimpleFileCreate(request)) {
+                context.log("[KERNEL] Atomic file task detected. Generating deterministic plan.");
+                List<Task> tasks = createAtomicFilePlan(request, context);
+                context.getOrchestrator().getTasks().addAll(tasks);
+
+                transition(SystemState.PLAN_LOCKED, context);
+
+                boolean success = executeTasksWithRetries(tasks);
+
+                transition(SystemState.VERIFYING, context);
+                String path = tasks.get(0).getName().replaceFirst("(?i)^Write\\s+", "");
+                String finalResponse = "WORK DONE: Created file " + path + ".\nFILES: [FILE:" + path + "]";
+                response.setSummary(finalResponse);
+
+                transition(success ? SystemState.DONE : SystemState.FAILED, context);
+                return response;
+            }
+
             // SIMPLE_CHAT Mode - handled after ANALYZING start to keep flow consistent
             if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
                 transition(SystemState.EXECUTING, context);
@@ -173,6 +192,7 @@ public class IterationManager {
                     return handle(new TaskRequest(request + "\nClarification: " + clarification, taskRequest.getProjectRoot()));
                 }
             }
+
 
             // Goal/Darwin Handoff
             if (context.getPlatformMode().getType() == PlatformType.DARWIN_MODE || context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
@@ -420,6 +440,32 @@ public class IterationManager {
 
     public void setPolicyEngine(IPolicyEngine policyEngine) {
         this.policyEngine = policyEngine;
+    }
+
+    private boolean isSimpleFileCreate(String request) {
+        if (request == null) return false;
+        String lower = request.toLowerCase().trim();
+        // Detect patterns: create file x.txt, write to file y.java, save content to z.xml
+        return lower.matches("^(create|add|write|save)\\s+(file|content|to)\\s+.*$") &&
+               !lower.contains("\n") && request.length() < 100;
+    }
+
+    private List<Task> createAtomicFilePlan(String request, TaskContext context) {
+        List<Task> tasks = new ArrayList<>();
+        String lower = request.toLowerCase().trim();
+        String path = request.replaceFirst("(?i)^(create|add|write|save)\\s+(file|content|to|to\\s+file)\\s+", "").trim();
+
+        // Clean up path if it ends with punctuation
+        path = path.replaceAll("[.!?,]$", "");
+
+        Task t = OrchestrationFactory.eINSTANCE.createTask();
+        t.setId("atomic-task-1");
+        t.setName("Write " + path);
+        t.setDescription(request);
+        t.setType("file");
+        t.setApprovalRequired(false);
+        tasks.add(t);
+        return tasks;
     }
 
     /**

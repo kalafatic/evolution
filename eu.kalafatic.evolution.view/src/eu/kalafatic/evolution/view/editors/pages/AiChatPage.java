@@ -1106,6 +1106,7 @@ public class AiChatPage extends AEvoPage {
 			else if (log.contains("Agent [") && log.contains("JavaDev")) { color = colorJavaDev; style = SWT.BOLD; }
 			else if (log.contains("Agent [") && log.contains("Tester")) { color = colorTester; style = SWT.BOLD; }
 			else if (log.contains("Agent [") && log.contains("Reviewer")) { color = colorReviewer; style = SWT.BOLD; }
+			else if (log.contains("Agent [") && log.contains("File")) { color = colorJavaDev; style = SWT.BOLD; }
 			else if (log.startsWith("Orchestrator Error:") || log.contains("Exception:")) { color = colorError; style = SWT.BOLD; }
 
 			if (threadId.equals(getCurrentThreadName())) {

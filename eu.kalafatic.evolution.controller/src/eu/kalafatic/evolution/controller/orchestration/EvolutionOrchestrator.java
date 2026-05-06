@@ -141,13 +141,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     }
 
     private String generatePatch(Task task, IAgent agent, TaskContext context, String lastFeedback, String localPlan, String contextPrompt) throws Exception {
-        if ("file".equalsIgnoreCase(task.getType())) {
-            if (task.getDescription().toLowerCase().contains("create an empty file")) {
-                context.log("Orchestrator: Bypassing LLM for empty file creation.");
-                return "";
-            }
-            return agent.process(task.getDescription(), context, lastFeedback);
-        }
+        if ("file".equalsIgnoreCase(task.getType())) return agent.process(task.getDescription(), context, lastFeedback);
         return contextPrompt;
     }
 
