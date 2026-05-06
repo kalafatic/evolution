@@ -69,7 +69,7 @@ export class Message {
         const role = (agentType || '').toLowerCase();
 
         const block = document.createElement('div');
-        block.className = 'agent-block';
+        block.className = 'bubble';
         block.onclick = () => JavaBridge.call('edit', index, text);
 
         const content = document.createElement('div');
