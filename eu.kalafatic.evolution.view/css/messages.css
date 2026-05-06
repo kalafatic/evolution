@@ -1,0 +1,196 @@
+.message {
+    display: flex; flex-direction: column;
+    max-width: 95%; position: relative;
+}
+.message.user { align-self: flex-end; align-items: flex-end; }
+.message.ai { align-self: flex-start; }
+
+.message-content {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+.user .message-content { flex-direction: row-reverse; }
+
+.header {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 1px;
+}
+.user .header { flex-direction: row-reverse; }
+
+.sender {
+    font-size: 11px; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    user-select: none;
+}
+.user .sender { color: #2563eb; }
+
+.timestamp { font-size: 10px; color: #94a3b8; user-select: none; }
+.icon { font-size: 14px; user-select: none; }
+
+.bubble {
+    padding: 6px 10px; border-radius: 12px;
+    font-size: 11px; position: relative;
+    opacity: 0.8;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: all 0.2s; background: var(--ai-bg); border: 1px solid var(--border);
+    cursor: pointer;
+    color: var(--ai-text);
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow: hidden;
+}
+
+.message.user .bubble {
+    background: var(--user-bg); border-color: var(--user-border); color: var(--user-text); border-bottom-right-radius: 4px;
+    font-size: 13px; opacity: 1.0;
+}
+.message.planner .bubble { background: var(--planner-bg); border-color: var(--planner-border); color: var(--planner-text); border-bottom-left-radius: 4px; }
+.message.architect .bubble { background: var(--architect-bg); border-color: var(--architect-border); color: var(--architect-text); border-bottom-left-radius: 4px; }
+.message.javadev .bubble { background: var(--javadev-bg); border-color: var(--javadev-border); color: var(--javadev-text); border-bottom-left-radius: 4px; }
+.message.tester .bubble { background: var(--tester-bg); border-color: var(--tester-border); color: var(--tester-text); border-bottom-left-radius: 4px; }
+.message.reviewer .bubble { background: var(--reviewer-bg); border-color: var(--reviewer-border); color: var(--reviewer-text); border-bottom-left-radius: 4px; }
+.message.analytic .bubble { background: var(--analytic-bg); border-color: var(--analytic-border); color: var(--analytic-text); border-bottom-left-radius: 4px; }
+.message.general .bubble { background: var(--general-bg); border-color: var(--general-border); color: var(--general-text); border-bottom-left-radius: 4px; }
+.message.terminal .bubble { background: var(--terminal-bg); border-color: var(--terminal-border); color: var(--terminal-text); border-bottom-left-radius: 4px; }
+.message.file .bubble { background: var(--file-bg); border-color: var(--file-border); color: var(--file-text); border-bottom-left-radius: 4px; }
+.message.maven .bubble { background: var(--maven-bg); border-color: var(--maven-border); color: var(--maven-text); border-bottom-left-radius: 4px; }
+.message.git .bubble { background: var(--git-bg); border-color: var(--git-border); color: var(--git-text); border-bottom-left-radius: 4px; }
+.message.structure .bubble { background: var(--structure-bg); border-color: var(--structure-border); color: var(--structure-text); border-bottom-left-radius: 4px; }
+.message.websearch .bubble { background: var(--websearch-bg); border-color: var(--websearch-border); color: var(--websearch-text); border-bottom-left-radius: 4px; }
+.message.quality .bubble { background: var(--quality-bg); border-color: var(--quality-border); color: var(--quality-text); border-bottom-left-radius: 4px; }
+.message.observability .bubble { background: var(--observability-bg); border-color: var(--observability-border); color: var(--observability-text); border-bottom-left-radius: 4px; }
+.message.orchestrator .bubble { background: var(--orchestrator-bg); border-color: var(--orchestrator-border); color: var(--orchestrator-text); border-bottom-left-radius: 4px; }
+.message.final-response .bubble {
+    background: var(--final-response-bg);
+    border-color: var(--final-response-border);
+    color: var(--final-response-text);
+    border-bottom-left-radius: 4px;
+    border-width: 3px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    font-size: 13px; opacity: 1.0;
+}
+.message.result-summary .bubble { background: var(--result-summary-bg); border-color: var(--result-summary-border); color: var(--result-summary-text); border-bottom-left-radius: 4px; border-width: 1px; }
+.message.tool .bubble { background: var(--tool-bg); border-color: var(--tool-border); color: var(--tool-text); border-bottom-left-radius: 4px; }
+.message.waiting .bubble {
+    background: var(--waiting-bg);
+    border-color: var(--waiting-border);
+    color: var(--waiting-text);
+    border-bottom-left-radius: 4px;
+    border-style: solid;
+    border-width: 3px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    animation: pulse-waiting 2s infinite;
+    font-size: 13px; opacity: 1.0;
+}
+.message.error .bubble {
+    background: var(--error-bg);
+    border-color: var(--error-border);
+    color: var(--error-text);
+    border-bottom-left-radius: 4px;
+    border-width: 2px;
+    font-size: 13px; opacity: 1.0;
+}
+.message.thinking .bubble {
+    background: var(--thinking-bg);
+    border-color: var(--thinking-border);
+    color: var(--thinking-text);
+    border-bottom-left-radius: 4px;
+    border-style: dashed;
+    font-size: 10px;
+    opacity: 0.7;
+}
+.message.response .bubble {
+    background: var(--response-bg);
+    border-color: var(--response-border);
+    color: var(--response-text);
+    border-bottom-left-radius: 4px;
+}
+
+.message.approved .bubble {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #1e40af !important;
+    position: relative;
+}
+
+.message.approved .bubble::after {
+    content: 'APPROVED';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 32px;
+    font-weight: 900;
+    color: rgba(59, 130, 246, 0.2);
+    border: 4px solid rgba(59, 130, 246, 0.2);
+    padding: 4px 12px;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 0;
+    user-select: none;
+}
+
+.actions {
+    display: flex; flex-direction: row; gap: 4px;
+    opacity: 0; transition: opacity 0.2s;
+    user-select: none;
+}
+.message:hover .actions { opacity: 1; }
+.message.waiting .actions { opacity: 1; }
+
+.action-btn {
+    background: white; border: 1px solid var(--border); border-radius: 4px;
+    width: 24px; height: 24px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; color: #64748b; transition: all 0.2s;
+    font-size: 12px;
+    user-select: none;
+}
+.action-btn:hover { background: #f1f5f9; color: #2563eb; border-color: #cbd5e1; }
+.action-btn.approve { color: #16a34a; }
+.action-btn.approve:hover { background: #f0fdf4; border-color: #bbf7d0; }
+
+.bubble a {
+    color: inherit;
+    text-decoration: underline;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.link-go { color: #16a34a !important; text-decoration: underline !important; }
+.link-clarify { color: #d97706 !important; text-decoration: underline !important; }
+.link-problem { color: #dc2626 !important; text-decoration: underline !important; font-weight: bold; }
+
+pre {
+    background: #f8fafc; color: #1e293b; padding: 10px;
+    border-radius: 8px; overflow-x: auto;
+    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+    font-size: 12px; margin: 8px 0; border: 1px solid #e2e8f0;
+    position: relative;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+code {
+    font-family: 'Fira Code', monospace; background: rgba(0,0,0,0.05);
+    padding: 2px 4px; border-radius: 4px; font-weight: 500; color: inherit;
+}
+.think-block {
+    font-size: 10px;
+    opacity: 0.7;
+    font-style: italic;
+    border-left: 2px solid var(--border);
+    padding-left: 8px;
+    margin: 4px 0;
+    color: #64748b;
+}
+.non-essential {
+    font-size: 9px;
+    opacity: 0.6;
+    line-height: 1.3;
+}
+.collapsed .bubble-content { display: none; }
+.collapsed .bubble { padding: 8px 16px; min-height: 0; opacity: 0.7; }
+.collapsed .bubble::after { content: '... (message collapsed)'; font-style: italic; font-size: 12px; color: #94a3b8; }

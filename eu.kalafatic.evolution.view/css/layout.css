@@ -1,0 +1,73 @@
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-canvas);
+    margin: 0; padding: 0;
+    color: var(--ai-text);
+    line-height: 1.5;
+    overflow: hidden;
+    height: 100vh;
+}
+
+.chat-container {
+    display: flex; flex-direction: column;
+    gap: 4px; max-width: 900px; margin: 0 auto;
+    padding: 8px;
+}
+
+#nav-controls {
+    position: absolute;
+    right: 15px;
+    bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1000;
+}
+
+.nav-btn {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+    font-size: 18px;
+    color: #64748b;
+}
+
+.nav-btn:hover {
+    background: white;
+    color: #3b82f6;
+    border-color: #3b82f6;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* Feedback Level Visibility Rules */
+body.simple .section-plan,
+body.simple .section-debug,
+body.simple .section-timeline,
+body.simple .think-block,
+body.simple .non-essential { display: none; }
+
+body.simple .message.ai:not(.user):not(.final-response):not(.waiting):not(.error):not(.result-summary) {
+    display: none;
+}
+
+body.interactive .section-debug,
+body.interactive .section-timeline,
+body.interactive .message.tool,
+body.interactive .message.orchestrator { display: none; }
+
+body.advanced .section-timeline { display: none; }
+
+body.full .section-debug,
+body.full .section-plan,
+body.full .section-timeline { display: block; }
