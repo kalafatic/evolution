@@ -1,64 +1,101 @@
-import MessageFormatter from './MessageFormatter.js';
-import MessageActions from './MessageActions.js';
-import DarwinContainer from '../darwin/DarwinContainer.js';
-import JavaBridge from '../../core/JavaBridge.js';
+import { MessageFormatter } from './MessageFormatter.js';
+import { MessageActions } from './MessageActions.js';
+import { JavaBridge } from '../../core/JavaBridge.js';
 
-class Message {
-    constructor(data, icon) {
+export class Message {
+    constructor(data, icons) {
         this.data = data;
-        this.icon = icon;
+        this.icons = icons;
     }
 
     render() {
-        const { index, sender, text, timestamp, agentType } = this.data;
-        const role = (agentType || '').toLowerCase();
-        const roles = role.split(' ');
-        const primaryRole = roles[0];
+        if (!this.data) return document.createElement('div');
 
-        const senderLower = (sender || '').toLowerCase();
+        const { index, sender, text, agentType, timestamp } = this.data;
+        const safeIndex = index !== undefined ? index : 'unk';
+        const role = (agentType || 'ai').toLowerCase();
+        const roles = role.split(' ');
+        const primaryRole = roles[0] || 'ai';
+
+        const senderLower = (sender || 'Evo').toLowerCase();
         const isUser = primaryRole === 'user' || senderLower.includes('you') || senderLower.includes('user');
 
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isUser ? 'user' : 'ai'} ${role}`;
-        messageDiv.dataset.index = index;
-        if (role.includes('approved')) messageDiv.classList.add('approved');
-
-        const contentWrapper = document.createElement('div');
-        contentWrapper.className = 'message-content';
+        const div = document.createElement('div');
+        div.className = `message ${isUser ? 'user' : 'ai'} ${role}`;
+        div.id = `msg-${safeIndex}`;
 
         const header = document.createElement('div');
         header.className = 'header';
-        header.innerHTML = `
-            <span class="icon">${this.icon}</span>
-            <span class="sender">${sender}</span>
-            <span class="timestamp">${timestamp || ''}</span>
-        `;
 
-        const block = document.createElement('div');
-        block.className = 'agent-block';
-        block.onclick = () => window.dispatchEvent(new CustomEvent('ui:toggleCollapse', { detail: index }));
+        const icon = document.createElement('span');
+        icon.className = 'icon';
+        icon.textContent = this.icons[primaryRole] || (isUser ? this.icons.user : this.icons.ai);
+
+        const senderSpan = document.createElement('span');
+        senderSpan.className = 'sender';
+        senderSpan.textContent = sender;
+
+        const time = document.createElement('span');
+        time.className = 'timestamp';
+        time.textContent = timestamp || '';
+
+        header.appendChild(icon);
+        header.appendChild(senderSpan);
+        header.appendChild(time);
+
+        const msgContent = document.createElement('div');
+        msgContent.className = 'message-content';
 
         let isDarwin = role.includes('darwin');
-        if (isDarwin || role.includes('darwin-branches')) {
-            const darwin = new DarwinContainer(this.data);
-            block.appendChild(darwin.render());
-        } else {
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble-content';
-            bubble.innerHTML = MessageFormatter.format(text);
-            block.appendChild(bubble);
+        if (!isDarwin && !role.includes('thinking')) {
+            try {
+                const parsed = JSON.parse(text);
+                if (parsed.variants || parsed.proposals || (Array.isArray(parsed) && parsed.length > 0 && parsed[0].strategy)) {
+                    isDarwin = true;
+                }
+            } catch (e) {}
         }
 
-        const actions = new MessageActions(index, text, role);
+        if (isDarwin) {
+            this.renderDarwin(msgContent);
+        } else {
+            this.renderStandard(msgContent, primaryRole);
+        }
 
-        contentWrapper.appendChild(header);
-        contentWrapper.appendChild(block);
+        div.appendChild(header);
+        div.appendChild(msgContent);
+        return div;
+    }
 
-        messageDiv.appendChild(contentWrapper);
-        messageDiv.appendChild(actions.render());
+    renderStandard(container, primaryRole) {
+        const { index, text, agentType } = this.data;
+        const role = (agentType || 'ai').toLowerCase();
+        const safeIndex = index !== undefined ? index : -1;
+        const safeText = text || '';
 
-        return messageDiv;
+        const block = document.createElement('div');
+        block.className = 'bubble';
+        block.onclick = () => JavaBridge.call('edit', safeIndex, safeText);
+
+        const content = document.createElement('div');
+        content.className = 'bubble-content';
+        try {
+            content.innerHTML = MessageFormatter.formatText(safeText, primaryRole);
+        } catch (e) {
+            console.error('Formatting error', e);
+            content.textContent = safeText;
+        }
+        block.appendChild(content);
+
+        const actions = new MessageActions(safeIndex, safeText, role);
+
+        container.appendChild(block);
+        container.appendChild(actions.render());
+    }
+
+    async renderDarwin(container) {
+        const { DarwinContainer } = await import('../darwin/DarwinContainer.js');
+        const darwin = new DarwinContainer(this.data);
+        container.appendChild(darwin.render());
     }
 }
-
-export default Message;

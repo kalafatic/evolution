@@ -32,6 +32,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.osgi.framework.Bundle;
 
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.ChatThread;
@@ -51,6 +52,7 @@ public class ChatGroup extends AEvoGroup {
     private Browser browser;
     private AiChatPage page;
     private boolean isLoaded = false;
+    private boolean isJsReady = false;
     private ChatThread currentThread;
     private EditMessageCallback editCallback;
     private int logCount = 0;
@@ -141,9 +143,7 @@ public class ChatGroup extends AEvoGroup {
             }
 
             if (bundle != null) {
-                // We use setUrl because it's the most reliable way for SWT Browser to handle ES modules
-                // and resolve relative paths (./js/...) correctly.
-                // We MUST use FileLocator.toFileURL on the BUNDLE ROOT to ensure all JS/CSS files are extracted.
+                // This ensures all bundle resources (including js and css) are extracted to the filesystem
                 URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
                 URL chatUrl = new URL(bundleRoot, "chat.html");
                 browser.setUrl(chatUrl.toString());
@@ -317,31 +317,12 @@ public class ChatGroup extends AEvoGroup {
     }
 
     private void setupJavaScriptBridges() {
-        // Logging bridge
-        new BrowserFunction(browser, "JavaLog") {
-            @Override
-            public Object function(Object[] args) {
-                if (args.length > 0) {
-                    System.out.println("[Chat Browser] " + args[0]);
-                }
-                return null;
-            }
-        };
-
         new BrowserFunction(browser, "JavaHandler") {
             @Override
             public Object function(Object[] args) {
-                if (args.length < 1) return null;
+                if (args.length < 3) return null;
                 try {
                     String action = (String) args[0];
-
-                    if ("ready".equals(action)) {
-                        isLoaded = true;
-                        refreshBrowser();
-                        return null;
-                    }
-
-                    if (args.length < 3) return null;
                     int index = Integer.parseInt((String) args[1]);
                     String text = (String) args[2];
 
@@ -411,6 +392,13 @@ public class ChatGroup extends AEvoGroup {
                             break;
                         case "openPeerReview":
                             editor.showPeerReviewPage();
+                            break;
+                        case "ready":
+                            isJsReady = true;
+                            refreshBrowser();
+                            break;
+                        case "log":
+                            System.err.println("[JS] " + text);
                             break;
                     }
                 } catch (Exception e) {
@@ -807,7 +795,7 @@ public class ChatGroup extends AEvoGroup {
     }
 
     private void refreshBrowser() {
-        if (!isLoaded || browser.isDisposed()) return;
+        if (!isLoaded || !isJsReady || browser.isDisposed()) return;
         refreshGitStatus();
         if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
             setFeedbackLevel(orchestrator.getTasks().get(0).getFeedbackLevel());
@@ -815,22 +803,20 @@ public class ChatGroup extends AEvoGroup {
         JSONArray array = new JSONArray();
         if (currentThread != null) {
             for (ChatMessage m : currentThread.getMessages()) {
-                JSONObject json = toJsonObject(m);
-                if (json != null) array.put(json);
+                array.put(toJsonObject(m));
             }
         }
-        String jsonString = array.toString();
-        // Use JSON.parse on the JS side for maximum robustness
-        browser.execute("if(window.updateMessages) { window.updateMessages(JSON.parse(" + JSONObject.quote(jsonString) + ")); }");
+        String json = array.toString();
+        // Pass the JSON object directly to the JS function
+        browser.execute("updateMessages(" + json + ");");
     }
 
     private JSONObject toJsonObject(ChatMessage m) {
-        if (m == null) return null;
         JSONObject obj = new JSONObject();
         obj.put("index", m.getIndex());
-        obj.put("sender", m.getSender() != null ? m.getSender() : "System");
-        obj.put("text", m.getText() != null ? m.getText() : "");
-        obj.put("color", m.getColor() != null ? m.getColor() : "#000000");
+        obj.put("sender", m.getSender());
+        obj.put("text", m.getText());
+        obj.put("color", m.getColor());
         obj.put("isBold", m.isIsBold());
         obj.put("isItalic", m.isIsItalic());
         obj.put("agentType", m.getAgentType() != null ? m.getAgentType() : "ai");
