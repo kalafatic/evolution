@@ -1,12 +1,14 @@
-import EventBus from './core/EventBus.js';
-import StateStore from './core/StateStore.js';
-import JavaBridge from './core/JavaBridge.js';
-import MessageList from './components/messages/MessageList.js';
-import ChangesPanel from './components/git/ChangesPanel.js';
-import ChatContainer from './layout/ChatContainer.js';
-import SidePanel from './layout/SidePanel.js';
+import { eventBus } from './core/EventBus.js';
+import { StateStore, initialState } from './core/StateStore.js';
+import { JavaBridge } from './core/JavaBridge.js';
+import { MessageList } from './components/messages/MessageList.js';
+import { ChangesPanel } from './components/git/ChangesPanel.js';
+import { ChatContainer } from './layout/ChatContainer.js';
+import { SidePanel } from './layout/SidePanel.js';
 
-// Icons
+// Initialize Core
+const stateStore = new StateStore(initialState, eventBus);
+
 const icons = {
     user: '👤', ai: '🤖', planner: '📋', architect: '📐',
     javadev: '💻', tester: '🧪', reviewer: '⚖️', tool: '⚙️',
@@ -17,22 +19,8 @@ const icons = {
     thinking: '💭', response: '💬'
 };
 
-// Initial State
-const initialState = {
-    messages: [],
-    changes: [],
-    lastDiffs: {},
-    isThinking: false,
-    feedbackLevel: 'full',
-    currentContextFile: null
-};
-
-// Initialize Core
-const eventBus = new EventBus();
-const stateStore = new StateStore(initialState, eventBus);
-
 // Initialize Components
-const messageList = new MessageList('messages-wrapper', icons);
+const messageList = new MessageList('chat', icons);
 const changesPanel = new ChangesPanel('changes-list');
 const chatContainer = new ChatContainer('chat');
 const sidePanel = new SidePanel('side-panel');
@@ -59,7 +47,7 @@ window.addEventListener('ui:toggleFileDiff', (e) => changesPanel.toggleFileDiff(
 window.addEventListener('ui:showContextMenu', (e) => sidePanel.showContextMenu(e.detail.event, e.detail.path));
 window.addEventListener('ui:contextFileChanged', (e) => stateStore.setState({ currentContextFile: e.detail }));
 
-// Java Bridge Event Handlers
+// Java Bridge Event Handlers (Dispatched from components)
 window.addEventListener('java:approve', (e) => JavaBridge.call('approve', e.detail));
 window.addEventListener('java:approveDarwinVariant', (e) => {
     JavaBridge.call('approveDarwinVariant', e.detail.index, e.detail.variantId);
@@ -73,22 +61,47 @@ window.addEventListener('java:quote', (e) => {
     }
 });
 window.addEventListener('java:openDiff', (e) => JavaBridge.call('openDiff', '-1', e.detail));
-window.addEventListener('java:getDiff', (e) => JavaBridge.call('getDiff', '-1', e.detail));
 window.addEventListener('java:executeProposal', (e) => JavaBridge.call('executeProposal', '-1', e.detail));
 window.addEventListener('java:clarify', () => JavaBridge.call('clarify'));
-window.addEventListener('java:helloworld', () => JavaBridge.call('helloworld'));
 
-// Expose global functions for Java interaction
-window.updateMessages = (messages) => stateStore.setState({ messages });
-window.updateChanges = (files) => stateStore.setState({ changes: files });
-window.showDiff = (data) => {
-    const lastDiffs = { ...stateStore.getState().lastDiffs };
-    lastDiffs[data.path] = data.diff;
+// Expose global functions for legacy/simple calls from Java or HTML
+const updateMessages = (messages) => stateStore.setState({ messages });
+const updateChanges = (files) => stateStore.setState({ changes: files });
+const showDiff = (data) => {
+    const lastDiffs = { ...stateStore.getState().lastDiffs, [data.path]: data.diff };
     stateStore.setState({ lastDiffs });
     changesPanel.showDiff(data);
 };
-window.showThinking = (show) => stateStore.setState({ isThinking: show });
-window.setFeedbackLevel = (level) => stateStore.setState({ feedbackLevel: level });
+const showThinking = (show) => stateStore.setState({ isThinking: show });
+const setFeedbackLevel = (level) => stateStore.setState({ feedbackLevel: level });
+
+window.updateMessages = updateMessages;
+window.updateChanges = updateChanges;
+window.showDiff = showDiff;
+window.showThinking = showThinking;
+window.setFeedbackLevel = setFeedbackLevel;
+
+// Process queued calls from emergency bootloader
+const processQueue = () => {
+    if (window._evoQueue && window._evoQueue.length > 0) {
+        console.log(`Processing ${window._evoQueue.length} queued UI calls`);
+        window._evoQueue.forEach(item => {
+            if (typeof window[item.fn] === 'function') {
+                window[item.fn](...item.args);
+            } else {
+                console.warn(`Queued function ${item.fn} not found in window`);
+            }
+        });
+        window._evoQueue = [];
+    }
+};
+
+// Small delay to ensure all global assignments are done
+setTimeout(() => {
+    processQueue();
+    // Signal to Java that the JS environment is ready
+    JavaBridge.call('ready', '0', 'AI Chat Kernel Initialized');
+}, 50);
 
 // Navigation & Global Actions
 window.scrollToTop = () => messageList.scrollToTop();
@@ -104,10 +117,11 @@ window.commitChanges = () => {
     if (message) JavaBridge.call('commitGit', '0', message);
 };
 window.menuAction = (action) => {
-    const state = stateStore.getState();
-    sidePanel.menuAction(action, state.currentContextFile, state.lastDiffs[state.currentContextFile]);
+    const { currentContextFile, lastDiffs } = stateStore.getState();
+    sidePanel.menuAction(action, currentContextFile, lastDiffs[currentContextFile]);
 };
 
+// Selection / Quote Logic
 window.quoteSelection = () => {
     const sel = window.getSelection();
     const text = sel.toString().trim();
@@ -118,6 +132,26 @@ window.quoteSelection = () => {
     document.getElementById('floating-quote-btn').style.display = 'none';
 };
 
+const showFloatingQuote = (e) => {
+    const btn = document.getElementById('floating-quote-btn');
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0 && !sel.isCollapsed) {
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        btn.style.display = 'block';
+        btn.style.left = (rect.left + rect.width / 2 - btn.offsetWidth / 2) + 'px';
+        btn.style.top = (rect.top - btn.offsetHeight - 8) + 'px';
+    } else {
+        btn.style.display = 'none';
+    }
+};
+
+document.addEventListener('mouseup', (e) => setTimeout(() => showFloatingQuote(e), 10));
+document.getElementById('chat').addEventListener('scroll', () => {
+    document.getElementById('floating-quote-btn').style.display = 'none';
+});
+
+// Select All function
 window.selectAll = () => {
     let text = '';
     const { messages } = stateStore.getState();
@@ -127,22 +161,4 @@ window.selectAll = () => {
     if (text) JavaBridge.call('copy', '-1', text.trim());
 };
 
-// Ready handshake
-const hideLoading = () => {
-    const overlay = document.getElementById('loading-overlay');
-    const layout = document.getElementById('chat-layout');
-    if (overlay) overlay.style.opacity = '0';
-    setTimeout(() => {
-        if (overlay) overlay.style.display = 'none';
-        if (layout) layout.style.display = 'flex';
-    }, 500);
-};
-
-if (window.JavaHandler) {
-    hideLoading();
-    JavaBridge.call('ready');
-} else {
-    setTimeout(hideLoading, 500);
-}
-
-console.log('AI Chat Kernel (ESM) Initialized');
+console.log('AI Chat Kernel Initialized');

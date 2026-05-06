@@ -3,8 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="./css/style.css">
+    <script>
+        // Global error handler to report JS issues back to Java
+        window.onerror = function(msg, url, line, col, error) {
+            var errorInfo = "JS Error: " + msg + " at " + url + ":" + line + ":" + col;
+            if (typeof JavaHandler === 'function') {
+                JavaHandler('log', '0', errorInfo);
+            } else {
+                console.error(errorInfo);
+            }
+            return false;
+        };
+    </script>
     <style>
         /* Keep only layout-specific overrides not present in style.css */
+
+        :root {
+            /* Critical CSS variables as fallback */
+            --bg-canvas: #f1f5f9;
+            --ai-bg: #ffffff;
+            --ai-text: #1e293b;
+            --user-bg: #eff6ff;
+            --user-text: #1e40af;
+            --border: #e2e8f0;
+            --waiting-bg: #f97316;
+            --waiting-text: #ffffff;
+            --orchestrator-text: #1e293b;
+        }
 
         #nav-controls {
             position: absolute;
@@ -249,16 +274,8 @@
     </style>
 </head>
 <body class="full">
-    <div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-canvas); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s;">
-        <div class="thinking" style="margin-bottom: 20px;">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        </div>
-        <div id="loading-status" style="font-size: 14px; font-weight: bold; color: #64748b;">Initializing AI Chat Kernel...</div>
-    </div>
     <div id="floating-quote-btn" onclick="quoteSelection()">Quote</div>
-    <div id="chat-layout" style="display: none; height: 100vh;">
+    <div style="display: flex; height: 100vh;">
         <div style="flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden;">
             <div class='chat-container' id='chat' style="flex: 1; overflow-y: auto; padding: 8px;">
                 <div id="messages-wrapper" style="display: flex; flex-direction: column; gap: 4px;"></div>
@@ -315,7 +332,23 @@
         </div>
     </div>
 
-    <!-- Main Entry Point (ES Module) -->
-    <script type="module" src="./js/main.js"></script>
+    <script>
+        // Emergency bootloader: queue calls until modules are ready
+        window._evoQueue = [];
+        const queue = (fn) => (...args) => window._evoQueue.push({ fn, args });
+
+        window.updateMessages = queue('updateMessages');
+        window.updateChanges = queue('updateChanges');
+        window.showDiff = queue('showDiff');
+        window.showThinking = queue('showThinking');
+        window.setFeedbackLevel = queue('setFeedbackLevel');
+        window.scrollToTop = queue('scrollToTop');
+        window.scrollToBottom = queue('scrollToBottom');
+        window.scrollToLastWaiting = queue('scrollToLastWaiting');
+        window.toggleAll = queue('toggleAll');
+        window.selectAll = queue('selectAll');
+        window.quoteSelection = queue('quoteSelection');
+    </script>
+    <script type="module" src="./js/main.js" onerror="JavaHandler('log', '0', 'Failed to load main.js module')"></script>
 </body>
 </html>

@@ -1,9 +1,31 @@
-import DiffViewer from './DiffViewer.js';
+import { JavaBridge } from '../../core/JavaBridge.js';
 
-class FileItem {
-    constructor(path, diff) {
-        this.path = path;
-        this.diff = diff;
+export class FileItem {
+    constructor(fileInfo, lastDiff) {
+        this.fileInfo = fileInfo;
+        this.lastDiff = lastDiff;
+        this.status = 'M';
+        this.path = fileInfo;
+        this.parseFileInfo();
+    }
+
+    parseFileInfo() {
+        if (this.fileInfo.includes(' ')) {
+            const statusPart = this.fileInfo.substring(0, 2).trim();
+            const pathPart = this.fileInfo.substring(2).trim();
+            if (statusPart && pathPart) {
+                this.status = statusPart.toUpperCase();
+                this.path = pathPart;
+            }
+        }
+    }
+
+    getFileIcon(ext) {
+        const icons = {
+            java: '☕', js: '📜', ts: '📘', html: '🌐', css: '🎨',
+            json: '🔧', xml: '📦', md: '📝', txt: '📄', py: '🐍'
+        };
+        return icons[ext] || '📄';
     }
 
     render() {
@@ -11,44 +33,38 @@ class FileItem {
         item.className = 'file-stack-item';
         item.dataset.path = this.path;
 
-        // Strip status prefix (e.g. "M ", "A ", "D ")
-        const statusChar = this.path.substring(0, 1);
-        const cleanPath = this.path.substring(2);
-        const fileName = cleanPath.split('/').pop();
-        const folderPath = cleanPath.includes('/') ? cleanPath.substring(0, cleanPath.lastIndexOf('/')) : './';
+        const fileName = this.path.split('/').pop();
+        const dirPath = this.path.substring(0, this.path.lastIndexOf('/') + 1);
+        const ext = fileName.split('.').pop().toLowerCase();
+        const icon = this.getFileIcon(ext);
 
-        let statusClass = 'modified';
-        if (statusChar === 'A') statusClass = 'added';
-        if (statusChar === 'D') statusClass = 'deleted';
+        const statusClass = this.status === 'A' ? 'added' : (this.status === 'D' ? 'deleted' : 'modified');
 
         item.innerHTML = `
-            <div class="file-info" onclick="window.dispatchEvent(new CustomEvent('ui:toggleFileDiff', { detail: '${this.path}' }))"
-                 oncontextmenu="window.dispatchEvent(new CustomEvent('ui:showContextMenu', { detail: { event: event, path: '${this.path}' } }))">
-                <div class="file-status ${statusClass}">${statusChar}</div>
-                <div class="file-icon">${this.getFileIcon(fileName)}</div>
+            <div class="file-info" onclick="window.dispatchEvent(new CustomEvent('ui:toggleFileDiff', {detail: '${this.path.replace(/'/g, "\\'")}'}))" oncontextmenu="window.dispatchEvent(new CustomEvent('ui:showContextMenu', {detail: {event: event, path: '${this.path.replace(/'/g, "\\'")}'}}))">
+                <span class="file-status ${statusClass}">${this.status}</span>
+                <span class="file-icon">${icon}</span>
                 <div class="file-details">
-                    <div class="file-name">${fileName}</div>
-                    <div class="file-path">${folderPath}</div>
+                    <span class="file-name">${fileName}</span>
+                    <span class="file-path">${dirPath}</span>
                 </div>
-                <div class="expand-icon">▶</div>
+                <span class="expand-icon">▶</span>
             </div>
-            <div class="file-diff-inline">
-                ${this.diff ? DiffViewer.render(this.diff) : '<div style="padding: 10px; font-size: 10px; color: #94a3b8;">Loading diff...</div>'}
+            <div id="diff-inline-${this.path}" class="file-diff-inline">
+                ${this.lastDiff ? '' : '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 11px;">Loading diff...</div>'}
             </div>
         `;
 
+        if (this.lastDiff) {
+            import('./DiffViewer.js').then(m => {
+                const diffContainer = item.querySelector(`#diff-inline-${this.path.replace(/(:|\.|\[|\]|,|=|@)/g, "\\$1")}`);
+                if (diffContainer) {
+                    diffContainer.innerHTML = '';
+                    diffContainer.appendChild(m.DiffViewer.render({ diff: this.lastDiff }));
+                }
+            });
+        }
+
         return item;
     }
-
-    getFileIcon(name) {
-        if (name.endsWith('.java')) return '☕';
-        if (name.endsWith('.js')) return '📜';
-        if (name.endsWith('.html')) return '🌐';
-        if (name.endsWith('.css')) return '🎨';
-        if (name.endsWith('.xml') || name.endsWith('.pom')) return '⚙️';
-        if (name.endsWith('.md')) return '📝';
-        return '📄';
-    }
 }
-
-export default FileItem;

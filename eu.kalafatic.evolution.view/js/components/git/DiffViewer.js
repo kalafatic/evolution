@@ -1,29 +1,43 @@
-const DiffViewer = {
-    render(diffText) {
-        if (!diffText) return '';
+export class DiffViewer {
+    static render(data) {
+        const { diff } = data;
+        const container = document.createElement('div');
 
-        const lines = diffText.split('\n');
-        let html = '<div class="diff-viewer">';
+        const lines = diff.split('\n');
+        let leftLine = 0;
+        let rightLine = 0;
 
         lines.forEach(line => {
-            let type = '';
-            if (line.startsWith('+')) type = 'added';
-            else if (line.startsWith('-')) type = 'deleted';
-            else if (line.startsWith('@@')) type = 'hunk-header';
+            const div = document.createElement('div');
+            div.className = 'diff-line';
 
-            const content = this.escapeHtml(line);
-            html += `<div class="diff-line ${type}"><div class="line-content">${content}</div></div>`;
+            let content = line;
+            if (line.startsWith('+')) {
+                div.classList.add('added');
+                rightLine++;
+            } else if (line.startsWith('-')) {
+                div.classList.add('deleted');
+                leftLine++;
+            } else if (line.startsWith('@@')) {
+                div.classList.add('hunk-header');
+            } else {
+                leftLine++;
+                rightLine++;
+            }
+
+            const lineNum = document.createElement('div');
+            lineNum.className = 'line-num';
+            lineNum.textContent = line.startsWith('+') ? rightLine : (line.startsWith('-') ? leftLine : rightLine);
+
+            const lineContent = document.createElement('div');
+            lineContent.className = 'line-content';
+            lineContent.textContent = content;
+
+            div.appendChild(lineNum);
+            div.appendChild(lineContent);
+            container.appendChild(div);
         });
 
-        html += '</div>';
-        return html;
-    },
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        return container;
     }
-};
-
-export default DiffViewer;
+}
