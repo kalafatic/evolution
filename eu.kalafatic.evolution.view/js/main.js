@@ -8,7 +8,9 @@ window.ChatApp = window.ChatApp || {};
         isUiReady: false,
         pendingMessages: null,
         pendingChanges: null,
-        searchQuery: ''
+        searchQuery: '',
+        searchMatches: [],
+        currentMatchIndex: -1
     };
 
     window.updateMessages = function(messages) {
@@ -27,6 +29,12 @@ window.ChatApp = window.ChatApp || {};
             const query = state.searchQuery.toLowerCase();
             if (query && !text.includes(query) && !sender.includes(query)) {
                 el.style.display = 'none';
+            } else if (state.searchQuery) {
+                let regex;
+                if (state.searchQuery.startsWith('/') && state.searchQuery.endsWith('/') && state.searchQuery.length > 2) {
+                    try { regex = new RegExp(state.searchQuery.substring(1, state.searchQuery.length - 1), 'gi'); } catch(e) {}
+                }
+                window.ChatApp.Renderer.highlightMatches(el, regex || state.searchQuery.toLowerCase());
             }
             wrapper.appendChild(el);
         });
@@ -35,7 +43,6 @@ window.ChatApp = window.ChatApp || {};
 
     window.filterMessages = function(q) {
         state.searchQuery = q;
-        const query = q.toLowerCase();
         const wrapper = document.getElementById('messages-wrapper');
         if (!wrapper) return;
 
@@ -43,15 +50,88 @@ window.ChatApp = window.ChatApp || {};
         const clearBtn = document.getElementById('chat-search-clear');
         if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
 
+        state.searchMatches = [];
+        state.currentMatchIndex = -1;
+
+        if (!q) {
+            Array.from(wrapper.children).forEach(el => {
+                el.style.display = '';
+                window.ChatApp.Renderer.clearHighlight(el);
+            });
+            updateMatchCounter();
+            return;
+        }
+
+        let regex;
+        if (q.startsWith('/') && q.endsWith('/') && q.length > 2) {
+            try { regex = new RegExp(q.substring(1, q.length - 1), 'gi'); } catch(e) {}
+        }
+        const queryLower = q.toLowerCase();
+
         Array.from(wrapper.children).forEach((el, idx) => {
             const m = state.messages[idx];
             if (!m) return;
-            const text = (m.text || '').toLowerCase();
-            const sender = (m.sender || '').toLowerCase();
-            const matches = !query || text.includes(query) || sender.includes(query);
+            const text = m.text || '';
+            const sender = m.sender || '';
+
+            let matches = false;
+            if (regex) {
+                matches = regex.test(text) || regex.test(sender);
+            } else {
+                matches = text.toLowerCase().includes(queryLower) || sender.toLowerCase().includes(queryLower);
+            }
+
             el.style.display = matches ? '' : 'none';
+            if (matches) {
+                state.searchMatches.push(idx);
+                window.ChatApp.Renderer.highlightMatches(el, regex || queryLower);
+            } else {
+                window.ChatApp.Renderer.clearHighlight(el);
+            }
         });
+
+        if (state.searchMatches.length > 0) {
+            state.currentMatchIndex = 0;
+            window.navigateSearch(0);
+        }
+        updateMatchCounter();
     };
+
+    window.hasSearchMatches = function() {
+        return state.searchMatches && state.searchMatches.length > 0;
+    };
+
+    window.navigateSearch = function(dir) {
+        if (state.searchMatches.length === 0) return;
+
+        // Remove 'current' from previous match
+        if (state.currentMatchIndex >= 0) {
+            const prevEl = document.getElementById('messages-wrapper').children[state.searchMatches[state.currentMatchIndex]];
+            if (prevEl) prevEl.classList.remove('active-match');
+        }
+
+        state.currentMatchIndex += dir;
+        if (state.currentMatchIndex >= state.searchMatches.length) state.currentMatchIndex = 0;
+        if (state.currentMatchIndex < 0) state.currentMatchIndex = state.searchMatches.length - 1;
+
+        const targetIdx = state.searchMatches[state.currentMatchIndex];
+        const el = document.getElementById('messages-wrapper').children[targetIdx];
+        if (el) {
+            el.classList.add('active-match');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        updateMatchCounter();
+    };
+
+    function updateMatchCounter() {
+        const counter = document.getElementById('search-match-count');
+        if (!counter) return;
+        if (!state.searchQuery) {
+            counter.innerText = '';
+            return;
+        }
+        counter.innerText = `${state.searchMatches.length > 0 ? state.currentMatchIndex + 1 : 0} / ${state.searchMatches.length}`;
+    }
 
     window.updateChanges = function(files) {
         if (!state.isUiReady) {
@@ -79,6 +159,12 @@ window.ChatApp = window.ChatApp || {};
     };
 
     // Global Bridge Helpers
+    document.addEventListener('keydown', (e) => {
+        if (e.target.id === 'chat-search-input' && e.key === 'Enter') {
+            window.navigateSearch(1);
+        }
+    });
+
     window.quoteSelection = function() {
         const text = window.getSelection().toString().trim();
         if (text) window.ChatApp.Actions.callJava('quote', '-1', text);

@@ -48,6 +48,60 @@ window.ChatApp.Renderer = {
         return div;
     },
 
+    highlightMatches: function(el, query) {
+        this.clearHighlight(el);
+        if (!query) return;
+
+        const regex = query instanceof RegExp ? query : new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+
+        const walk = (node) => {
+            if (node.nodeType === 3) { // Text node
+                const text = node.nodeValue;
+                let match;
+                const spans = [];
+                let lastIdx = 0;
+
+                while ((match = regex.exec(text)) !== null) {
+                    if (match.index > lastIdx) {
+                        spans.push(document.createTextNode(text.substring(lastIdx, match.index)));
+                    }
+                    const mark = document.createElement('mark');
+                    mark.className = 'search-match';
+                    mark.innerText = match[0];
+                    spans.push(mark);
+                    lastIdx = regex.lastIndex;
+                    if (regex.lastIndex === match.index) regex.lastIndex++; // Avoid infinite loop for empty matches
+                }
+
+                if (lastIdx < text.length) {
+                    spans.push(document.createTextNode(text.substring(lastIdx)));
+                }
+
+                if (spans.length > 0) {
+                    const fragment = document.createDocumentFragment();
+                    spans.forEach(s => fragment.appendChild(s));
+                    node.parentNode.replaceChild(fragment, node);
+                }
+            } else if (node.nodeType === 1 && node.childNodes && !['SCRIPT', 'STYLE', 'MARK'].includes(node.tagName)) {
+                Array.from(node.childNodes).forEach(walk);
+            }
+        };
+
+        // Target only bubble and header
+        const content = el.querySelector('.bubble-content') || el;
+        const sender = el.querySelector('.sender');
+        if (content) walk(content);
+        if (sender) walk(sender);
+    },
+
+    clearHighlight: function(el) {
+        el.querySelectorAll('mark.search-match').forEach(mark => {
+            const parent = mark.parentNode;
+            parent.replaceChild(document.createTextNode(mark.innerText), mark);
+            parent.normalize(); // Merge adjacent text nodes
+        });
+    },
+
     formatText: function(text, role) {
         let clean = window.ChatApp.Utils.stripTechnicalMarkers(text);
 
