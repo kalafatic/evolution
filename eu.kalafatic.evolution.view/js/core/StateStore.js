@@ -1,5 +1,5 @@
-export class StateStore {
-    constructor(initialState = {}, eventBus) {
+class StateStore {
+    constructor(initialState = {}, eventBus = null) {
         this.state = initialState;
         this.eventBus = eventBus;
         this.subscribers = [];
@@ -12,32 +12,22 @@ export class StateStore {
     setState(newState) {
         const oldState = { ...this.state };
         this.state = { ...this.state, ...newState };
-        this.notify(this.state, oldState);
+        this.notify(oldState);
     }
 
     subscribe(callback) {
         this.subscribers.push(callback);
-        callback(this.state);
         return () => {
             this.subscribers = this.subscribers.filter(sub => sub !== callback);
         };
     }
 
-    notify(state, oldState) {
-        this.subscribers.forEach(callback => callback(state, oldState));
+    notify(oldState) {
+        this.subscribers.forEach(callback => callback(this.state, oldState));
         if (this.eventBus) {
-            this.eventBus.emit('state:changed', { state, oldState });
+            this.eventBus.emit('state:changed', { state: this.state, oldState });
         }
     }
 }
 
-// Initial system state
-export const initialState = {
-    messages: [],
-    changes: [],
-    isSidePanelOpen: true,
-    feedbackLevel: 'full', // 'simple', 'interactive', 'advanced', 'full'
-    isThinking: false,
-    lastDiffs: {}, // path -> diff
-    currentContextFile: null
-};
+export default StateStore;
