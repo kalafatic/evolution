@@ -141,13 +141,12 @@ public class ChatGroup extends AEvoGroup {
             }
 
             if (bundle != null) {
-                URL chatEntry = bundle.getEntry("/chat.html");
-                if (chatEntry != null) {
-                    URL chatUrl = FileLocator.toFileURL(chatEntry);
-                    browser.setUrl(chatUrl.toString());
-                } else {
-                    throw new Exception("chat.html entry not found in bundle");
-                }
+                // We use setUrl because it's the most reliable way for SWT Browser to handle ES modules
+                // and resolve relative paths (./js/...) correctly.
+                // We MUST use FileLocator.toFileURL on the BUNDLE ROOT to ensure all JS/CSS files are extracted.
+                URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
+                URL chatUrl = new URL(bundleRoot, "chat.html");
+                browser.setUrl(chatUrl.toString());
             } else {
                 throw new Exception("Bundle not found");
             }

@@ -1,30 +1,47 @@
-import { MessageFormatter } from '../messages/MessageFormatter.js';
-
-export class BranchFooter {
-    constructor(v, mIndex, vId, isWaiting, isThisApproved, isThisRejected) {
-        this.v = v;
+class BranchFooter {
+    constructor(vIndex, mIndex, isWaiting, isApproved, isThisApproved) {
+        this.vIndex = vIndex;
         this.mIndex = mIndex;
-        this.vId = vId;
         this.isWaiting = isWaiting;
+        this.isApproved = isApproved;
         this.isThisApproved = isThisApproved;
-        this.isThisRejected = isThisRejected;
     }
 
     render() {
         const footer = document.createElement('div');
         footer.className = 'branch-footer';
 
-        if (this.v.isApproved || this.isThisApproved) {
-            footer.innerHTML = `<div style="color: #16a34a; font-weight: bold; width: 100%; text-align: center;">APPROVED</div>`;
-        } else if (this.isThisRejected) {
-            footer.innerHTML = `<div style="color: #dc2626; font-weight: bold; width: 100%; text-align: center;">REJECTED</div>`;
+        if (this.isWaiting) {
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'branch-btn';
+            copyBtn.textContent = 'Copy';
+            copyBtn.onclick = () => window.dispatchEvent(new CustomEvent('java:copy', { detail: `Proposal ${this.vIndex + 1}` }));
+
+            const approveBtn = document.createElement('button');
+            approveBtn.className = 'branch-btn approve';
+            approveBtn.textContent = 'Approve';
+            approveBtn.onclick = () => window.dispatchEvent(new CustomEvent('java:approveDarwinVariant', { detail: { index: this.mIndex, variantId: this.vIndex } }));
+
+            footer.appendChild(copyBtn);
+            footer.appendChild(approveBtn);
+        } else if (this.isApproved) {
+            const status = document.createElement('div');
+            status.style.textAlign = 'center';
+            status.style.width = '100%';
+            status.style.fontWeight = 'bold';
+            status.textContent = this.isThisApproved ? 'APPROVED' : 'REJECTED';
+            footer.appendChild(status);
         } else {
-            const approveBtn = this.isWaiting ? `<button class="branch-btn approve" onclick="event.stopPropagation(); window.dispatchEvent(new CustomEvent('java:approveDarwinVariant', {detail: {index: ${this.mIndex}, variantId: '${this.vId}'}}))">Approve</button>` : '';
-            footer.innerHTML = `
-                <button class="branch-btn" onclick="window.dispatchEvent(new CustomEvent('java:copy', {detail: \`${MessageFormatter.escapeJs(JSON.stringify(this.v))}\`}))">Copy</button>
-                ${approveBtn}
-            `;
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'branch-btn';
+            copyBtn.textContent = 'Copy';
+            copyBtn.style.flex = '1';
+            copyBtn.onclick = () => window.dispatchEvent(new CustomEvent('java:copy', { detail: `Proposal ${this.vIndex + 1}` }));
+            footer.appendChild(copyBtn);
         }
+
         return footer;
     }
 }
+
+export default BranchFooter;
