@@ -1,5 +1,15 @@
-export class NavControls {
+class NavControls {
     constructor() {
-        // Simple UI controls, mostly handled via event listeners or direct global calls for now
+        this.navContainer = document.getElementById('nav-controls');
+    }
+
+    show() {
+        if (this.navContainer) this.navContainer.style.display = 'flex';
+    }
+
+    hide() {
+        if (this.navContainer) this.navContainer.style.display = 'none';
     }
 }
+
+export default NavControls;

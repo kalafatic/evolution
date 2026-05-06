@@ -1,4 +1,4 @@
-export class EventBus {
+class EventBus {
     constructor() {
         this.listeners = {};
     }
@@ -16,16 +16,10 @@ export class EventBus {
         this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
     }
 
-    emit(event, payload) {
+    emit(event, data) {
         if (!this.listeners[event]) return;
-        this.listeners[event].forEach(callback => {
-            try {
-                callback(payload);
-            } catch (e) {
-                console.error(`Error in event listener for ${event}:`, e);
-            }
-        });
+        this.listeners[event].forEach(callback => callback(data));
     }
 }
 
-export const eventBus = new EventBus();
+export default EventBus;

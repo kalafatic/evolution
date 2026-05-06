@@ -1,11 +1,11 @@
-import { BranchHeader } from './BranchHeader.js';
-import { BranchActions } from './BranchActions.js';
-import { BranchFooter } from './BranchFooter.js';
+import BranchHeader from './BranchHeader.js';
+import BranchActions from './BranchActions.js';
+import BranchFooter from './BranchFooter.js';
 
-export class BranchColumn {
-    constructor(v, index, mIndex, isWaiting, isApproved, approvedVariantId) {
-        this.v = v;
-        this.index = index;
+class BranchColumn {
+    constructor(vData, vIndex, mIndex, isWaiting, isApproved, approvedVariantId) {
+        this.vData = vData;
+        this.vIndex = vIndex;
         this.mIndex = mIndex;
         this.isWaiting = isWaiting;
         this.isApproved = isApproved;
@@ -13,98 +13,67 @@ export class BranchColumn {
     }
 
     render() {
-        const vId = String(this.v.id || this.index);
-        const isThisApproved = this.isApproved && (this.approvedVariantId === null || this.approvedVariantId === vId);
-        const isThisRejected = this.isApproved && this.approvedVariantId !== null && this.approvedVariantId !== vId;
-
         const column = document.createElement('div');
-        column.className = 'branch-column' + (this.v.isBest ? ' best' : '') +
-                         (this.isWaiting ? ' waiting' : '') +
-                         (isThisApproved ? ' approved' : '') +
-                         (isThisRejected ? ' rejected' : '');
+        column.className = 'branch-column';
 
-        column.appendChild(new BranchHeader(this.index).render());
+        const isThisApproved = this.isApproved && String(this.vIndex) === String(this.approvedVariantId);
+
+        if (isThisApproved) {
+            column.classList.add('approved');
+        } else if (this.isApproved) {
+            column.classList.add('rejected');
+        }
+
+        const header = new BranchHeader(this.vIndex, this.vData.confidence);
+        const actions = new BranchActions(this.vData.actions);
+        const footer = new BranchFooter(this.vIndex, this.mIndex, this.isWaiting, this.isApproved, isThisApproved);
+
+        column.appendChild(header.render());
 
         const strategy = document.createElement('div');
         strategy.className = 'branch-strategy';
-        strategy.innerText = this.v.strategy || this.v.id || 'Variant';
+        strategy.textContent = this.vData.strategy || 'Adaptive Proposal';
         column.appendChild(strategy);
 
-        const body = document.createElement('div');
-        body.style.fontSize = '12px';
-        body.style.display = 'flex';
-        body.style.flexDirection = 'column';
-        body.style.gap = '4px';
+        column.appendChild(actions.render());
 
-        const fields = ['id', 'strategy', 'score', 'suffix', 'actions', 'hypothesis', 'expected_effects', 'expected_effect', 'short_term', 'long_term', 'risk', 'reversibility'];
+        // Enhanced AI Reasoning Details
+        if (this.vData.hypothesis || this.vData.hypothesis_expected_effect || this.vData.score !== undefined) {
+            const reasoning = document.createElement('div');
+            reasoning.className = 'branch-reasoning';
+            reasoning.style.fontSize = '10px';
+            reasoning.style.marginTop = '8px';
+            reasoning.style.padding = '8px';
+            reasoning.style.background = 'rgba(0,0,0,0.03)';
+            reasoning.style.borderRadius = '4px';
 
-        fields.forEach(f => {
-            if (this.v[f] && f !== 'strategy') {
-                body.appendChild(this.renderPair(f, this.v[f]));
+            let html = '';
+            if (this.vData.hypothesis) {
+                html += `<div><strong>Hypothesis:</strong> ${this.vData.hypothesis}</div>`;
             }
-        });
-
-        Object.entries(this.v).forEach(([k, val]) => {
-            if (!fields.includes(k)) {
-                body.appendChild(this.renderPair(k, val));
+            if (this.vData.hypothesis_expected_effect) {
+                html += `<div style="margin-top:4px;"><strong>Effect:</strong> ${this.vData.hypothesis_expected_effect}</div>`;
             }
-        });
+            if (this.vData.score !== undefined) {
+                html += `<div style="margin-top:4px; font-weight:bold;">Score: ${this.vData.score}</div>`;
+            }
+            reasoning.innerHTML = html;
+            column.appendChild(reasoning);
+        }
 
-        column.appendChild(body);
-        column.appendChild(new BranchFooter(this.v, this.mIndex, vId, this.isWaiting, isThisApproved, isThisRejected).render());
+        if (this.vData.content) {
+            const content = document.createElement('div');
+            content.className = 'branch-content';
+            content.style.fontSize = '11px';
+            content.style.marginTop = '8px';
+            content.innerHTML = `<strong>Content:</strong> ${this.vData.content}`;
+            column.appendChild(content);
+        }
+
+        column.appendChild(footer.render());
 
         return column;
     }
-
-    renderPair(key, val) {
-        const container = document.createElement('div');
-        container.style.marginBottom = '4px';
-
-        const label = document.createElement('span');
-        label.style.fontWeight = '800';
-        label.style.opacity = '0.9';
-        label.style.fontSize = '11px';
-        label.style.textTransform = 'lowercase';
-        label.textContent = `${key}: `;
-        container.appendChild(label);
-
-        if (key === 'actions' && Array.isArray(val)) {
-            container.appendChild(new BranchActions(val).render());
-        } else if (Array.isArray(val)) {
-            const ul = document.createElement('ul');
-            ul.style.margin = '2px 0';
-            ul.style.paddingLeft = '18px';
-            ul.style.listStyleType = 'disc';
-            val.forEach(item => {
-                const li = document.createElement('li');
-                li.style.marginBottom = '2px';
-                if (typeof item === 'object') {
-                    li.appendChild(this.renderObject(item));
-                } else {
-                    li.textContent = String(item);
-                }
-                ul.appendChild(li);
-            });
-            container.appendChild(ul);
-        } else if (typeof val === 'object') {
-            container.appendChild(this.renderObject(val));
-        } else {
-            const span = document.createElement('span');
-            span.style.fontWeight = '500';
-            span.textContent = String(val);
-            container.appendChild(span);
-        }
-        return container;
-    }
-
-    renderObject(obj) {
-        const div = document.createElement('div');
-        div.style.paddingLeft = '12px';
-        div.style.borderLeft = '2px solid rgba(255,255,255,0.2)';
-        div.style.marginTop = '4px';
-        Object.entries(obj).forEach(([k, v]) => {
-            div.appendChild(this.renderPair(k, v));
-        });
-        return div;
-    }
 }
+
+export default BranchColumn;

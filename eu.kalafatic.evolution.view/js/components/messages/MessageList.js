@@ -1,19 +1,22 @@
-import { Message } from './Message.js';
+import Message from './Message.js';
+import DarwinContainer from '../darwin/DarwinContainer.js';
 
-export class MessageList {
+class MessageList {
     constructor(containerId, icons) {
         this.container = document.getElementById(containerId);
-        this.wrapper = document.getElementById('messages-wrapper');
         this.icons = icons;
         this.messages = [];
+        this.collapsedIndices = new Set();
     }
 
     update(messages) {
-        if (!messages) {
-            console.warn('MessageList.update received null/undefined messages');
-            return;
+        if (messages.length < this.messages.length) {
+            // Thread was likely reset or switched
+            this.container.innerHTML = '';
         }
-        const wasAtBottom = (this.container.scrollHeight - this.container.scrollTop - this.container.clientHeight) < 100;
+        this.messages = messages;
+        this.render();
+    }
 
     render() {
         if (!this.container) {
@@ -53,25 +56,11 @@ export class MessageList {
                     }
                 }
             }
-            if (matches) startIndex = oldCount;
-        }
-
-        if (startIndex === 0) {
-            this.wrapper.innerHTML = '';
-        } else {
-            // Remove everything from startIndex onwards
-            while (this.wrapper.children.length > startIndex) {
-                this.wrapper.removeChild(this.wrapper.lastChild);
-            }
-        }
+        });
 
         const chat = document.getElementById('chat');
         if (chat && (chat.scrollHeight - chat.scrollTop < chat.clientHeight + 200)) {
             this.scrollToBottom();
-        }
-
-        if (messages.some(m => (m.agentType || '').toLowerCase().includes('waiting'))) {
-            this.scrollToLastWaiting();
         }
     }
 
@@ -86,29 +75,39 @@ export class MessageList {
     }
 
     scrollToLastWaiting() {
-        const messages = document.querySelectorAll('.message.waiting');
-        if (messages.length > 0) {
-            const lastWaiting = messages[messages.length - 1];
-            const bubble = lastWaiting.querySelector('.bubble');
-            lastWaiting.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            if (bubble) {
-                bubble.classList.add('highlight-waiting');
-                setTimeout(() => bubble.classList.remove('highlight-waiting'), 5000);
-            }
+        const waiting = this.container.querySelectorAll('.message.waiting');
+        if (waiting.length > 0) {
+            waiting[waiting.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
 
     toggleCollapse(index) {
-        const msg = document.getElementById('msg-' + index);
-        if (msg) msg.classList.toggle('collapsed');
+        if (this.collapsedIndices.has(index)) {
+            this.collapsedIndices.delete(index);
+        } else {
+            this.collapsedIndices.add(index);
+        }
+        const element = this.container.querySelector(`.message[data-index="${index}"]`);
+        if (element) {
+            element.classList.toggle('collapsed');
+        }
     }
 
     toggleAll() {
-        const messages = document.querySelectorAll('.message');
-        let anyOpen = Array.from(messages).some(m => !m.classList.contains('collapsed'));
-        messages.forEach(m => {
-            if (anyOpen) m.classList.add('collapsed');
-            else m.classList.remove('collapsed');
+        const allMessages = this.container.querySelectorAll('.message');
+        const shouldCollapse = Array.from(allMessages).some(el => !el.classList.contains('collapsed'));
+
+        allMessages.forEach(el => {
+            const index = parseInt(el.dataset.index);
+            if (shouldCollapse) {
+                el.classList.add('collapsed');
+                this.collapsedIndices.add(index);
+            } else {
+                el.classList.remove('collapsed');
+                this.collapsedIndices.delete(index);
+            }
         });
     }
 }
+
+export default MessageList;

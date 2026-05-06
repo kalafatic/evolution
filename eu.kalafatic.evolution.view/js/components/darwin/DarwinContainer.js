@@ -1,6 +1,6 @@
-import { BranchColumn } from './BranchColumn.js';
+import BranchColumn from './BranchColumn.js';
 
-export class DarwinContainer {
+class DarwinContainer {
     constructor(messageData) {
         this.data = messageData;
     }
@@ -24,6 +24,7 @@ export class DarwinContainer {
 
         try {
             let jsonText = text.trim();
+            // Handle markdown code blocks
             if (jsonText.startsWith('```')) {
                 jsonText = jsonText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
             }
@@ -32,6 +33,7 @@ export class DarwinContainer {
             try {
                 data = JSON.parse(jsonText);
             } catch (e) {
+                // Fallback: search for JSON array pattern
                 const jsonMatch = jsonText.match(/\[\s*\{[\s\S]*\}\s*\]/);
                 if (jsonMatch) {
                     data = JSON.parse(jsonMatch[0]);
@@ -50,7 +52,7 @@ export class DarwinContainer {
         } catch (e) {
             console.error('Failed to parse Darwin branches', e);
             const error = document.createElement('div');
-            error.className = 'bubble error';
+            error.className = 'agent-block error';
             error.textContent = 'Failed to parse Darwin branches: ' + e.message;
             return error;
         }
@@ -58,3 +60,5 @@ export class DarwinContainer {
         return container;
     }
 }
+
+export default DarwinContainer;
