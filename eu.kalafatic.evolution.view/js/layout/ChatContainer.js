@@ -1,16 +1,14 @@
-import { JavaBridge } from '../core/JavaBridge.js';
-
-export class ChatContainer {
+class ChatContainer {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
+        this.thinking = document.getElementById('thinking');
     }
 
     showThinking(show) {
-        const thinking = document.getElementById('thinking');
-        if (!thinking) return;
-        thinking.style.display = show ? 'block' : 'none';
-        if (show) {
-            this.container.scrollTo({ top: this.container.scrollHeight, behavior: 'smooth' });
+        if (this.thinking) {
+            this.thinking.style.display = show ? 'block' : 'none';
         }
     }
 }
+
+export default ChatContainer;

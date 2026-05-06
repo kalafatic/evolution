@@ -30,14 +30,14 @@ public class VizGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, ApprovalPage page) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Network Visualization", 1, true, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Network Visualization", 1, true);
+        GridData gd = new GridData(GridData.FILL_BOTH);
+        gd.heightHint = 600;
+        group.setLayoutData(gd);
 
         // Access the section to add toolbar buttons
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();
-            if (section.getLayoutData() instanceof GridData) {
-                ((GridData) section.getLayoutData()).heightHint = 650;
-            }
             Composite toolbar = toolkit.createComposite(section);
             toolbar.setLayout(new GridLayout(4, true));
 
