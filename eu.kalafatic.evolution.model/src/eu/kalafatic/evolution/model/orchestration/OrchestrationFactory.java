@@ -310,13 +310,13 @@ public interface OrchestrationFactory extends EFactory {
 	ReviewSession createReviewSession();
 
 	/**
-	 * Returns a new object of class '<em>Chat Thread</em>'.
+	 * Returns a new object of class '<em>Chat Session</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Chat Thread</em>'.
+	 * @return a new object of class '<em>Chat Session</em>'.
 	 * @generated
 	 */
-	ChatThread createChatThread();
+	ChatSession createChatSession();
 
 	/**
 	 * Returns a new object of class '<em>Chat Message</em>'.

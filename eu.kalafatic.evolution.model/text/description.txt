@@ -148,7 +148,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute token : EString
     Attribute prompt : EString
     Attribute proxyUrl : EString
-    Reference threads : ChatThread<<0..*>>
+    Reference sessions : ChatSession<<0..*>>
     Reference promptInstructions : PromptInstructions
 
   Class NeuronAI
@@ -262,7 +262,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Reference comments : Comment<<0..*>>
     Attribute decision : ReviewDecision
 
-  Class ChatThread
+  Class ChatSession
     Attribute id : EString
     Reference messages : ChatMessage<<0..*>>
 

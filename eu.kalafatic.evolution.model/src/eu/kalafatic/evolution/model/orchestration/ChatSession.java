@@ -8,36 +8,36 @@ import org.eclipse.emf.ecore.EObject;
 
 /**
  * <!-- begin-user-doc -->
- * A representation of the model object '<em><b>Chat Thread</b></em>'.
+ * A representation of the model object '<em><b>Chat Session</b></em>'.
  * <!-- end-user-doc -->
  *
  * <p>
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatThread#getId <em>Id</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatThread#getMessages <em>Messages</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getId <em>Id</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getMessages <em>Messages</em>}</li>
  * </ul>
  *
- * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatThread()
+ * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession()
  * @model
  * @generated
  */
-public interface ChatThread extends EObject {
+public interface ChatSession extends EObject {
 	/**
 	 * Returns the value of the '<em><b>Iterative Mode</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Iterative Mode</em>' attribute.
 	 * @see #setIterativeMode(boolean)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatThread_IterativeMode()
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_IterativeMode()
 	 * @model defaultValueLiteral="false"
 	 * @generated
 	 */
 	boolean isIterativeMode();
 
 	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#isIterativeMode <em>Iterative Mode</em>}' attribute.
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isIterativeMode <em>Iterative Mode</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Iterative Mode</em>' attribute.
@@ -52,14 +52,14 @@ public interface ChatThread extends EObject {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Self Iterative Mode</em>' attribute.
 	 * @see #setSelfIterativeMode(boolean)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatThread_SelfIterativeMode()
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_SelfIterativeMode()
 	 * @model defaultValueLiteral="false"
 	 * @generated
 	 */
 	boolean isSelfIterativeMode();
 
 	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#isSelfIterativeMode <em>Self Iterative Mode</em>}' attribute.
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isSelfIterativeMode <em>Self Iterative Mode</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Self Iterative Mode</em>' attribute.
@@ -74,14 +74,14 @@ public interface ChatThread extends EObject {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Darwin Mode</em>' attribute.
 	 * @see #setDarwinMode(boolean)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatThread_DarwinMode()
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_DarwinMode()
 	 * @model defaultValueLiteral="false"
 	 * @generated
 	 */
 	boolean isDarwinMode();
 
 	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#isDarwinMode <em>Darwin Mode</em>}' attribute.
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isDarwinMode <em>Darwin Mode</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Darwin Mode</em>' attribute.
@@ -96,14 +96,14 @@ public interface ChatThread extends EObject {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Git Automation</em>' attribute.
 	 * @see #setGitAutomation(boolean)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatThread_GitAutomation()
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_GitAutomation()
 	 * @model defaultValueLiteral="false"
 	 * @generated
 	 */
 	boolean isGitAutomation();
 
 	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#isGitAutomation <em>Git Automation</em>}' attribute.
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isGitAutomation <em>Git Automation</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Git Automation</em>' attribute.
@@ -118,14 +118,14 @@ public interface ChatThread extends EObject {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Max Iterations</em>' attribute.
 	 * @see #setMaxIterations(int)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatThread_MaxIterations()
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_MaxIterations()
 	 * @model defaultValueLiteral="-1"
 	 * @generated
 	 */
 	int getMaxIterations();
 
 	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#getMaxIterations <em>Max Iterations</em>}' attribute.
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getMaxIterations <em>Max Iterations</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Max Iterations</em>' attribute.
@@ -140,14 +140,14 @@ public interface ChatThread extends EObject {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Id</em>' attribute.
 	 * @see #setId(String)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatThread_Id()
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_Id()
 	 * @model
 	 * @generated
 	 */
 	String getId();
 
 	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#getId <em>Id</em>}' attribute.
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getId <em>Id</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Id</em>' attribute.
@@ -162,10 +162,10 @@ public interface ChatThread extends EObject {
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Messages</em>' containment reference list.
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatThread_Messages()
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_Messages()
 	 * @model containment="true"
 	 * @generated
 	 */
 	EList<ChatMessage> getMessages();
 
-} // ChatThread
+} // ChatSession

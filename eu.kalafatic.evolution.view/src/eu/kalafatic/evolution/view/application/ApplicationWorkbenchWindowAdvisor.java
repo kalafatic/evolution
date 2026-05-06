@@ -555,16 +555,16 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 
 		/**
 		 * Gets the current display.
-		 * @param currentThread the current thread
+		 * @param currentSession the current thread
 		 * @return the current display
 		 */
-		private Display getCurrentDisplay(Thread currentThread) {
+		private Display getCurrentDisplay(Thread currentSession) {
 			Display display = null;
 			if ((display = Display.getDefault()) != null) {
 				return display;
 			} else if ((display = Display.getCurrent()) != null) {
 				return display;
-			} else if ((display = Display.findDisplay(currentThread)) != null) {
+			} else if ((display = Display.findDisplay(currentSession)) != null) {
 				return display;
 			}
 			return display;

@@ -207,10 +207,10 @@ public class InstructionsGroup extends AEvoGroup {
                         page.handleSend();
                     }
                 }
-                // Ctrl+N: New Thread
+                // Ctrl+N: New Session
                 if (e.keyCode == 'n' && (e.stateMask & SWT.CTRL) != 0) {
                     e.doit = false;
-                    page.createNewThread();
+                    page.createNewSession();
                 }
                 // Ctrl+L: Clean Chat
                 if (e.keyCode == 'l' && (e.stateMask & SWT.CTRL) != 0) {
@@ -224,7 +224,7 @@ public class InstructionsGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (orchestrator != null) {
-            eu.kalafatic.evolution.model.orchestration.ChatThread thread = page.getCurrentThread();
+            eu.kalafatic.evolution.model.orchestration.ChatSession thread = page.getCurrentSession();
             if (thread != null) {
                 iterativeCheck.setSelection(thread.isIterativeMode());
                 selfIterativeCheck.setSelection(thread.isSelfIterativeMode());
@@ -250,7 +250,7 @@ public class InstructionsGroup extends AEvoGroup {
     @Override
     public void updateModel() {
         if (orchestrator != null) {
-            eu.kalafatic.evolution.model.orchestration.ChatThread thread = page.getCurrentThread();
+            eu.kalafatic.evolution.model.orchestration.ChatSession thread = page.getCurrentSession();
             if (thread != null) {
                 thread.setIterativeMode(iterativeCheck.getSelection());
                 thread.setSelfIterativeMode(selfIterativeCheck.getSelection());

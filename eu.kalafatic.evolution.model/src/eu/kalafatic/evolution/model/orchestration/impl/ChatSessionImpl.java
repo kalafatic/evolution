@@ -3,7 +3,7 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
-import eu.kalafatic.evolution.model.orchestration.ChatThread;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 
 import java.util.Collection;
@@ -24,19 +24,19 @@ import org.eclipse.emf.ecore.util.InternalEList;
 
 /**
  * <!-- begin-user-doc -->
- * An implementation of the model object '<em><b>Chat Thread</b></em>'.
+ * An implementation of the model object '<em><b>Chat Session</b></em>'.
  * <!-- end-user-doc -->
  * <p>
  * The following features are implemented:
  * </p>
  * <ul>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatThreadImpl#getId <em>Id</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatThreadImpl#getMessages <em>Messages</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getId <em>Id</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getMessages <em>Messages</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class ChatThreadImpl extends MinimalEObjectImpl.Container implements ChatThread {
+public class ChatSessionImpl extends MinimalEObjectImpl.Container implements ChatSession {
 	/**
 	 * The default value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -172,7 +172,7 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	protected ChatThreadImpl() {
+	protected ChatSessionImpl() {
 		super();
 	}
 
@@ -183,7 +183,7 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	 */
 	@Override
 	protected EClass eStaticClass() {
-		return OrchestrationPackage.Literals.CHAT_THREAD;
+		return OrchestrationPackage.Literals.CHAT_SESSION;
 	}
 
 	/**
@@ -206,7 +206,7 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 		boolean oldIterativeMode = iterativeMode;
 		iterativeMode = newIterativeMode;
 		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__ITERATIVE_MODE, oldIterativeMode, iterativeMode));
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__ITERATIVE_MODE, oldIterativeMode, iterativeMode));
 	}
 
 	/**
@@ -229,7 +229,7 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 		boolean oldSelfIterativeMode = selfIterativeMode;
 		selfIterativeMode = newSelfIterativeMode;
 		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
 	}
 
 	/**
@@ -252,7 +252,7 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 		boolean oldDarwinMode = darwinMode;
 		darwinMode = newDarwinMode;
 		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__DARWIN_MODE, oldDarwinMode, darwinMode));
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__DARWIN_MODE, oldDarwinMode, darwinMode));
 	}
 
 	/**
@@ -275,7 +275,7 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 		boolean oldGitAutomation = gitAutomation;
 		gitAutomation = newGitAutomation;
 		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__GIT_AUTOMATION, oldGitAutomation, gitAutomation));
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__GIT_AUTOMATION, oldGitAutomation, gitAutomation));
 	}
 
 	/**
@@ -298,7 +298,7 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 		int oldMaxIterations = maxIterations;
 		maxIterations = newMaxIterations;
 		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__MAX_ITERATIONS, oldMaxIterations, maxIterations));
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS, oldMaxIterations, maxIterations));
 	}
 
 	/**
@@ -321,7 +321,7 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 		String oldId = id;
 		id = newId;
 		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_THREAD__ID, oldId, id));
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__ID, oldId, id));
 	}
 
 	/**
@@ -332,7 +332,7 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	public EList<ChatMessage> getMessages() {
 		if (messages == null) {
-			messages = new EObjectContainmentEList<ChatMessage>(ChatMessage.class, this, OrchestrationPackage.CHAT_THREAD__MESSAGES);
+			messages = new EObjectContainmentEList<ChatMessage>(ChatMessage.class, this, OrchestrationPackage.CHAT_SESSION__MESSAGES);
 		}
 		return messages;
 	}
@@ -345,7 +345,7 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case OrchestrationPackage.CHAT_THREAD__MESSAGES:
+			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
 				return ((InternalEList<?>)getMessages()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
@@ -359,19 +359,19 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case OrchestrationPackage.CHAT_THREAD__ITERATIVE_MODE:
+			case OrchestrationPackage.CHAT_SESSION__ITERATIVE_MODE:
 				return isIterativeMode();
-			case OrchestrationPackage.CHAT_THREAD__SELF_ITERATIVE_MODE:
+			case OrchestrationPackage.CHAT_SESSION__SELF_ITERATIVE_MODE:
 				return isSelfIterativeMode();
-			case OrchestrationPackage.CHAT_THREAD__DARWIN_MODE:
+			case OrchestrationPackage.CHAT_SESSION__DARWIN_MODE:
 				return isDarwinMode();
-			case OrchestrationPackage.CHAT_THREAD__GIT_AUTOMATION:
+			case OrchestrationPackage.CHAT_SESSION__GIT_AUTOMATION:
 				return isGitAutomation();
-			case OrchestrationPackage.CHAT_THREAD__MAX_ITERATIONS:
+			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				return getMaxIterations();
-			case OrchestrationPackage.CHAT_THREAD__ID:
+			case OrchestrationPackage.CHAT_SESSION__ID:
 				return getId();
-			case OrchestrationPackage.CHAT_THREAD__MESSAGES:
+			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
 				return getMessages();
 		}
 		return super.eGet(featureID, resolve, coreType);
@@ -386,25 +386,25 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case OrchestrationPackage.CHAT_THREAD__ITERATIVE_MODE:
+			case OrchestrationPackage.CHAT_SESSION__ITERATIVE_MODE:
 				setIterativeMode((Boolean)newValue);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__SELF_ITERATIVE_MODE:
+			case OrchestrationPackage.CHAT_SESSION__SELF_ITERATIVE_MODE:
 				setSelfIterativeMode((Boolean)newValue);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__DARWIN_MODE:
+			case OrchestrationPackage.CHAT_SESSION__DARWIN_MODE:
 				setDarwinMode((Boolean)newValue);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__GIT_AUTOMATION:
+			case OrchestrationPackage.CHAT_SESSION__GIT_AUTOMATION:
 				setGitAutomation((Boolean)newValue);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__MAX_ITERATIONS:
+			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				setMaxIterations((Integer)newValue);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__ID:
+			case OrchestrationPackage.CHAT_SESSION__ID:
 				setId((String)newValue);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__MESSAGES:
+			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
 				getMessages().clear();
 				getMessages().addAll((Collection<? extends ChatMessage>)newValue);
 				return;
@@ -420,25 +420,25 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case OrchestrationPackage.CHAT_THREAD__ITERATIVE_MODE:
+			case OrchestrationPackage.CHAT_SESSION__ITERATIVE_MODE:
 				setIterativeMode(ITERATIVE_MODE_EDEFAULT);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__SELF_ITERATIVE_MODE:
+			case OrchestrationPackage.CHAT_SESSION__SELF_ITERATIVE_MODE:
 				setSelfIterativeMode(SELF_ITERATIVE_MODE_EDEFAULT);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__DARWIN_MODE:
+			case OrchestrationPackage.CHAT_SESSION__DARWIN_MODE:
 				setDarwinMode(DARWIN_MODE_EDEFAULT);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__GIT_AUTOMATION:
+			case OrchestrationPackage.CHAT_SESSION__GIT_AUTOMATION:
 				setGitAutomation(GIT_AUTOMATION_EDEFAULT);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__MAX_ITERATIONS:
+			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				setMaxIterations(MAX_ITERATIONS_EDEFAULT);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__ID:
+			case OrchestrationPackage.CHAT_SESSION__ID:
 				setId(ID_EDEFAULT);
 				return;
-			case OrchestrationPackage.CHAT_THREAD__MESSAGES:
+			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
 				getMessages().clear();
 				return;
 		}
@@ -453,19 +453,19 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case OrchestrationPackage.CHAT_THREAD__ITERATIVE_MODE:
+			case OrchestrationPackage.CHAT_SESSION__ITERATIVE_MODE:
 				return iterativeMode != ITERATIVE_MODE_EDEFAULT;
-			case OrchestrationPackage.CHAT_THREAD__SELF_ITERATIVE_MODE:
+			case OrchestrationPackage.CHAT_SESSION__SELF_ITERATIVE_MODE:
 				return selfIterativeMode != SELF_ITERATIVE_MODE_EDEFAULT;
-			case OrchestrationPackage.CHAT_THREAD__DARWIN_MODE:
+			case OrchestrationPackage.CHAT_SESSION__DARWIN_MODE:
 				return darwinMode != DARWIN_MODE_EDEFAULT;
-			case OrchestrationPackage.CHAT_THREAD__GIT_AUTOMATION:
+			case OrchestrationPackage.CHAT_SESSION__GIT_AUTOMATION:
 				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
-			case OrchestrationPackage.CHAT_THREAD__MAX_ITERATIONS:
+			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				return maxIterations != MAX_ITERATIONS_EDEFAULT;
-			case OrchestrationPackage.CHAT_THREAD__ID:
+			case OrchestrationPackage.CHAT_SESSION__ID:
 				return ID_EDEFAULT == null ? id != null : !ID_EDEFAULT.equals(id);
-			case OrchestrationPackage.CHAT_THREAD__MESSAGES:
+			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
 				return messages != null && !messages.isEmpty();
 		}
 		return super.eIsSet(featureID);
@@ -497,4 +497,4 @@ public class ChatThreadImpl extends MinimalEObjectImpl.Container implements Chat
 		return result.toString();
 	}
 
-} //ChatThreadImpl
+} //ChatSessionImpl

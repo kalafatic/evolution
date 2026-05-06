@@ -503,7 +503,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
             showAiChatPage();
             // If the task has an ID, we could try to switch to that thread
             if (task.getId() != null) {
-                aiChatPage.switchThread(task.getId());
+                aiChatPage.switchSession(task.getId());
             }
         }
     }

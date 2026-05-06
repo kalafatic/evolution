@@ -14,7 +14,7 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 
 public class ChatMgmtGroup extends AEvoGroup {
-    private Combo threadCombo;
+    private Combo sessionCombo;
     private AiChatPage page;
 
     public ChatMgmtGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiChatPage page) {
@@ -32,23 +32,23 @@ public class ChatMgmtGroup extends AEvoGroup {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat Management", 7, false);
        
         
-        Button newThreadButton = SWTFactory.createButton(group, "New Thread");
-        newThreadButton.addSelectionListener(new SelectionAdapter() {
+        Button newSessionButton = SWTFactory.createButton(group, "New Session");
+        newSessionButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.createNewThread();
+                page.createNewSession();
             }
         });
 
 
-        SWTFactory.createLabel(group, "Select Thread:");
-        threadCombo = SWTFactory.createCombo(group);
-        threadCombo.add(page.getCurrentThreadName());
-        threadCombo.select(0);
-        threadCombo.addSelectionListener(new SelectionAdapter() {
+        SWTFactory.createLabel(group, "Select Session:");
+        sessionCombo = SWTFactory.createCombo(group);
+        sessionCombo.add(page.getCurrentSessionName());
+        sessionCombo.select(0);
+        sessionCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.switchThread(threadCombo.getText());
+                page.switchSession(sessionCombo.getText());
             }
         });
 
@@ -57,7 +57,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         byDateButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.selectThreadByDate();
+                page.selectSessionByDate();
             }
         });
         
@@ -86,22 +86,22 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
     }
 
-    public void setThreadSelection(String threadId) {
-        if (threadCombo.isDisposed()) return;
-        for (int i = 0; i < threadCombo.getItemCount(); i++) {
-            if (threadCombo.getItem(i).equals(threadId)) {
-                threadCombo.select(i);
+    public void setSessionSelection(String sessionId) {
+        if (sessionCombo.isDisposed()) return;
+        for (int i = 0; i < sessionCombo.getItemCount(); i++) {
+            if (sessionCombo.getItem(i).equals(sessionId)) {
+                sessionCombo.select(i);
                 return;
             }
         }
     }
 
-    public void updateThreadCombo(String[] threads, String current) {
-        if (threadCombo.isDisposed()) return;
-        threadCombo.setItems(threads);
+    public void updateSessionCombo(String[] threads, String current) {
+        if (sessionCombo.isDisposed()) return;
+        sessionCombo.setItems(threads);
         for (int i = 0; i < threads.length; i++) {
             if (threads[i].equals(current)) {
-                threadCombo.select(i);
+                sessionCombo.select(i);
                 break;
             }
         }

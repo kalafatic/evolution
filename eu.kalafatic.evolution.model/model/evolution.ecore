@@ -229,8 +229,8 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="token" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="prompt" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="proxyUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="threads" upperBound="-1"
-        eType="#//ChatThread" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sessions" upperBound="-1"
+        eType="#//ChatSession" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="promptInstructions" eType="#//PromptInstructions"
         containment="true"/>
   </eClassifiers>
@@ -396,7 +396,7 @@
         eType="#//Comment" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="decision" eType="#//ReviewDecision"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="ChatThread">
+  <eClassifiers xsi:type="ecore:EClass" name="ChatSession">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="messages" upperBound="-1"
         eType="#//ChatMessage" containment="true"/>

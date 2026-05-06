@@ -228,7 +228,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/token"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/prompt"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//AiChat/proxyUrl"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//AiChat/threads"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//AiChat/sessions"/>
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference evolution.ecore#//AiChat/promptInstructions"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//NeuronAI">
@@ -342,9 +342,9 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ReviewSession/comments"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ReviewSession/decision"/>
     </genClasses>
-    <genClasses ecoreClass="evolution.ecore#//ChatThread">
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatThread/id"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ChatThread/messages"/>
+    <genClasses ecoreClass="evolution.ecore#//ChatSession">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/id"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ChatSession/messages"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//ChatMessage">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/index"/>

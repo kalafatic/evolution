@@ -89,11 +89,11 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 }
 
                 TaskContext context = new TaskContext(orchModel, request.getProjectRoot());
-                String threadId = (String) request.getContext().get("threadId");
-                if (threadId != null && !threadId.isEmpty()) {
-			context.setThreadId(threadId);
+                String sessionId = (String) request.getContext().get("sessionId");
+                if (sessionId != null && !sessionId.isEmpty()) {
+			context.setSessionId(sessionId);
                 } else {
-			context.setThreadId(taskId);
+			context.setSessionId(taskId);
                 }
 
                 context.addLogListener(log -> {

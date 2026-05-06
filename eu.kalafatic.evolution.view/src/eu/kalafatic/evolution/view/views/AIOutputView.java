@@ -40,8 +40,8 @@ public class AIOutputView extends ViewPart {
     private Text inputPrompt;
     private Button sendButton;
     private Map<String, String> threads = new HashMap<>();
-    private String currentThread = "Default";
-    private Combo threadCombo;
+    private String currentSession = "Default";
+    private Combo sessionCombo;
 
     public AIOutputView() {
     }
@@ -56,24 +56,24 @@ public class AIOutputView extends ViewPart {
         header.setLayout(new GridLayout(7, false));
         header.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
-        Button newThreadBtn = new Button(header, SWT.PUSH);
-        newThreadBtn.setText("New");
-        newThreadBtn.addSelectionListener(new SelectionAdapter() {
+        Button newSessionBtn = new Button(header, SWT.PUSH);
+        newSessionBtn.setText("New");
+        newSessionBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                createNewThread();
+                createNewSession();
             }
         });
 
-        new Label(header, SWT.NONE).setText("Thread:");
-        threadCombo = new Combo(header, SWT.READ_ONLY);
-        threadCombo.add(currentThread);
-        threadCombo.select(0);
-        threads.put(currentThread, "");
-        threadCombo.addSelectionListener(new SelectionAdapter() {
+        new Label(header, SWT.NONE).setText("Session:");
+        sessionCombo = new Combo(header, SWT.READ_ONLY);
+        sessionCombo.add(currentSession);
+        sessionCombo.select(0);
+        threads.put(currentSession, "");
+        sessionCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                switchThread();
+                switchSession();
             }
         });
 
@@ -157,30 +157,30 @@ public class AIOutputView extends ViewPart {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 viewer.getDocument().set("");
-                threads.put(currentThread, "");
+                threads.put(currentSession, "");
             }
         });
     }
 
-    private void createNewThread() {
-        InputDialog dlg = new InputDialog(getSite().getShell(), "New Chat Thread", "Enter thread name:", "Thread " + (threads.size() + 1), null);
+    private void createNewSession() {
+        InputDialog dlg = new InputDialog(getSite().getShell(), "New Chat Session", "Enter session name:",  "Session " + (threads.size() + 1), null);
         if (dlg.open() == Window.OK) {
             String name = dlg.getValue();
             if (name != null && !name.trim().isEmpty() && !threads.containsKey(name)) {
-                threads.put(currentThread, viewer.getDocument().get());
-                currentThread = name;
-                threads.put(currentThread, "");
-                threadCombo.add(currentThread);
-                threadCombo.select(threadCombo.getItemCount() - 1);
+                threads.put(currentSession, viewer.getDocument().get());
+                currentSession = name;
+                threads.put(currentSession, "");
+                sessionCombo.add(currentSession);
+                sessionCombo.select(sessionCombo.getItemCount() - 1);
                 viewer.getDocument().set("");
             }
         }
     }
 
-    private void switchThread() {
-        threads.put(currentThread, viewer.getDocument().get());
-        currentThread = threadCombo.getText();
-        viewer.getDocument().set(threads.getOrDefault(currentThread, ""));
+    private void switchSession() {
+        threads.put(currentSession, viewer.getDocument().get());
+        currentSession = sessionCombo.getText();
+        viewer.getDocument().set(threads.getOrDefault(currentSession, ""));
     }
 
     private void sendMessage() {
@@ -200,7 +200,7 @@ public class AIOutputView extends ViewPart {
 
         String initialText = viewer.getDocument().get() + "\n\nUser: " + prompt + "\n";
         viewer.getDocument().set(initialText);
-        threads.put(currentThread, initialText);
+        threads.put(currentSession, initialText);
         inputPrompt.setText("");
 
         Job job = new Job("AI Chat Request") {
@@ -212,12 +212,12 @@ public class AIOutputView extends ViewPart {
 
                     Display.getDefault().asyncExec(() -> {
                         viewer.getDocument().set(viewer.getDocument().get() + "\nAI: " + response + "\n");
-                        threads.put(currentThread, viewer.getDocument().get());
+                        threads.put(currentSession, viewer.getDocument().get());
                     });
                 } catch (Exception e) {
                     Display.getDefault().asyncExec(() -> {
                         viewer.getDocument().set(viewer.getDocument().get() + "\nError: " + e.getMessage() + "\n");
-                        threads.put(currentThread, viewer.getDocument().get());
+                        threads.put(currentSession, viewer.getDocument().get());
                     });
                 }
                 return Status.OK_STATUS;

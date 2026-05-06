@@ -727,7 +727,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	public boolean isIterativeMode() {
 		if (!iterativeModeESet) {
-			eu.kalafatic.evolution.model.orchestration.ChatThread thread = getParentThread();
+			eu.kalafatic.evolution.model.orchestration.ChatSession thread = getParentSession();
 			if (thread != null) return thread.isIterativeMode();
 		}
 		return iterativeMode;
@@ -756,7 +756,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	public boolean isSelfIterativeMode() {
 		if (!selfIterativeModeESet) {
-			eu.kalafatic.evolution.model.orchestration.ChatThread thread = getParentThread();
+			eu.kalafatic.evolution.model.orchestration.ChatSession thread = getParentSession();
 			if (thread != null) return thread.isSelfIterativeMode();
 		}
 		return selfIterativeMode;
@@ -785,7 +785,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	public boolean isDarwinMode() {
 		if (!darwinModeESet) {
-			eu.kalafatic.evolution.model.orchestration.ChatThread thread = getParentThread();
+			eu.kalafatic.evolution.model.orchestration.ChatSession thread = getParentSession();
 			if (thread != null) return thread.isDarwinMode();
 		}
 		return darwinMode;
@@ -814,7 +814,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	public boolean isGitAutomation() {
 		if (!gitAutomationESet) {
-			eu.kalafatic.evolution.model.orchestration.ChatThread thread = getParentThread();
+			eu.kalafatic.evolution.model.orchestration.ChatSession thread = getParentSession();
 			if (thread != null) return thread.isGitAutomation();
 		}
 		return gitAutomation;
@@ -843,7 +843,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	public int getMaxIterations() {
 		if (!maxIterationsESet) {
-			eu.kalafatic.evolution.model.orchestration.ChatThread thread = getParentThread();
+			eu.kalafatic.evolution.model.orchestration.ChatSession thread = getParentSession();
 			if (thread != null) return thread.getMaxIterations();
 		}
 		return maxIterations;
@@ -865,21 +865,21 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	}
 
 	/**
-	 * Helper method to find parent ChatThread
+	 * Helper method to find parent ChatSession
 	 */
-	private eu.kalafatic.evolution.model.orchestration.ChatThread getParentThread() {
+	private eu.kalafatic.evolution.model.orchestration.ChatSession getParentSession() {
 		org.eclipse.emf.ecore.EObject container = eContainer();
 		while (container != null) {
 			if (container instanceof eu.kalafatic.evolution.model.orchestration.Orchestrator) {
 				eu.kalafatic.evolution.model.orchestration.Orchestrator orch = (eu.kalafatic.evolution.model.orchestration.Orchestrator) container;
-				if (orch.getAiChat() != null && !orch.getAiChat().getThreads().isEmpty()) {
+				if (orch.getAiChat() != null && !orch.getAiChat().getSessions().isEmpty()) {
 					// This is a simplification; in reality we might need the exact thread ID
 					// but for now we take the first or current thread.
-					return orch.getAiChat().getThreads().get(0);
+					return orch.getAiChat().getSessions().get(0);
 				}
 			}
-			if (container instanceof eu.kalafatic.evolution.model.orchestration.ChatThread) {
-				return (eu.kalafatic.evolution.model.orchestration.ChatThread) container;
+			if (container instanceof eu.kalafatic.evolution.model.orchestration.ChatSession) {
+				return (eu.kalafatic.evolution.model.orchestration.ChatSession) container;
 			}
 			container = container.eContainer();
 		}

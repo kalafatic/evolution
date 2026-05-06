@@ -68,7 +68,7 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        Button addPlanBtn = SWTFactory.createButton(compositeRemote, "Add Plan (Thread)", 150);
+        Button addPlanBtn = SWTFactory.createButton(compositeRemote, "Add Plan (Session)", 150);
         addPlanBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

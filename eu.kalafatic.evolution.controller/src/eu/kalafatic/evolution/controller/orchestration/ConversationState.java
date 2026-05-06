@@ -81,12 +81,12 @@ public class ConversationState {
     /**
      * Loads the state for a specific thread from shared memory.
      */
-    public static ConversationState load(String sharedMemory, String threadId) {
+    public static ConversationState load(String sharedMemory, String sessionId) {
         if (sharedMemory == null || sharedMemory.isEmpty()) return new ConversationState();
         try {
             JSONObject allStates = new JSONObject(sharedMemory);
-            if (allStates.has(threadId)) {
-                return fromJSON(allStates.getJSONObject(threadId).toString());
+            if (allStates.has(sessionId)) {
+                return fromJSON(allStates.getJSONObject(sessionId).toString());
             }
         } catch (Exception e) {
             // If sharedMemory is not a JSON object, it might be the old raw format
@@ -101,14 +101,14 @@ public class ConversationState {
     /**
      * Saves the current state for a specific thread into shared memory.
      */
-    public static String save(String sharedMemory, String threadId, ConversationState state) {
+    public static String save(String sharedMemory, String sessionId, ConversationState state) {
         JSONObject allStates;
         try {
             allStates = new JSONObject(sharedMemory);
         } catch (Exception e) {
             allStates = new JSONObject();
         }
-        allStates.put(threadId, state.toJSON());
+        allStates.put(sessionId, state.toJSON());
         return allStates.toString();
     }
 }

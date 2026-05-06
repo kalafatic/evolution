@@ -227,9 +227,9 @@ public class TaskStackGroup extends AEvoGroup {
         });
         dateCol.setEditingSupport(new DateEditingSupport(treeViewer));
 
-//        // Thread ID Column
+//        // Session ID Column
 //        TreeViewerColumn idCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
-//        idCol.getColumn().setText("Thread ID");
+//        idCol.getColumn().setText("Session ID");
 //        idCol.getColumn().setWidth(40);
 //        idCol.setLabelProvider(new ColumnLabelProvider() {
 //            @Override
