@@ -163,7 +163,30 @@ window.ChatApp = window.ChatApp || {};
         if (e.target.id === 'chat-search-input' && e.key === 'Enter') {
             window.navigateSearch(1);
         }
+
+        // Handle Ctrl+A for chat content
+        if ((e.ctrlKey || e.metaKey) && e.key === 'a' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            window.selectAll();
+        }
+
+        // Remove newly-created highlights on any user interaction
+        document.querySelectorAll('.file-stack-item.newly-created').forEach(el => el.classList.remove('newly-created'));
     });
+
+    document.addEventListener('mousedown', () => {
+        document.querySelectorAll('.file-stack-item.newly-created').forEach(el => el.classList.remove('newly-created'));
+    });
+
+    window.selectAll = function() {
+        const wrapper = document.getElementById('messages-wrapper');
+        if (!wrapper) return;
+        const range = document.createRange();
+        range.selectNodeContents(wrapper);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    };
 
     window.quoteSelection = function() {
         const text = window.getSelection().toString().trim();

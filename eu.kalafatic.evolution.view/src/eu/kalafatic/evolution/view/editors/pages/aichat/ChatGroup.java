@@ -740,9 +740,13 @@ public class ChatGroup extends AEvoGroup {
         content = content.replaceAll("\\[KERNEL\\]", "")
                         .replaceAll("\\[STRATEGY\\]", "")
                         .replaceAll("\\[ANALYSIS\\]", "")
+                        .replaceAll("\\[DIAGNOSIS\\]", "")
                         .replaceAll("\\[SUPERVISOR\\]", "")
                         .replaceAll("\\[EVO\\]", "")
                         .replaceAll("\\[DARWIN\\]", "")
+                        .replaceAll("\\[DARWINENGINE\\]", "")
+                        .replaceAll("\\[THINKING\\]", "")
+                        .replaceAll("\\[ORCHESTRATOR\\]", "")
                         .trim();
 
         String finalContent = content;

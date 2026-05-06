@@ -26,9 +26,13 @@ window.ChatApp.Utils = {
         return text.replace(/\[KERNEL\]/g, '')
                    .replace(/\[STRATEGY\]/g, '')
                    .replace(/\[ANALYSIS\]/g, '')
+                   .replace(/\[DIAGNOSIS\]/g, '')
                    .replace(/\[SUPERVISOR\]/g, '')
                    .replace(/\[EVO\]/g, '')
                    .replace(/\[DARWIN\]/g, '')
+                   .replace(/\[DARWINENGINE\]/g, '')
+                   .replace(/\[THINKING\]/g, '')
+                   .replace(/\[ORCHESTRATOR\]/g, '')
                    .trim();
     }
 };
