@@ -7,7 +7,8 @@ window.ChatApp = window.ChatApp || {};
         lastDiffs: {},
         isUiReady: false,
         pendingMessages: null,
-        pendingChanges: null
+        pendingChanges: null,
+        searchQuery: ''
     };
 
     window.updateMessages = function(messages) {
@@ -19,8 +20,37 @@ window.ChatApp = window.ChatApp || {};
         const wrapper = document.getElementById('messages-wrapper');
         if (!wrapper) return;
         wrapper.innerHTML = '';
-        messages.forEach(m => wrapper.appendChild(window.ChatApp.Renderer.renderMessage(m)));
+        messages.forEach(m => {
+            const el = window.ChatApp.Renderer.renderMessage(m);
+            const text = (m.text || '').toLowerCase();
+            const sender = (m.sender || '').toLowerCase();
+            const query = state.searchQuery.toLowerCase();
+            if (query && !text.includes(query) && !sender.includes(query)) {
+                el.style.display = 'none';
+            }
+            wrapper.appendChild(el);
+        });
         window.ChatApp.UI.scrollToBottom();
+    };
+
+    window.filterMessages = function(q) {
+        state.searchQuery = q;
+        const query = q.toLowerCase();
+        const wrapper = document.getElementById('messages-wrapper');
+        if (!wrapper) return;
+
+        // Show/hide clear button
+        const clearBtn = document.getElementById('chat-search-clear');
+        if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+        Array.from(wrapper.children).forEach((el, idx) => {
+            const m = state.messages[idx];
+            if (!m) return;
+            const text = (m.text || '').toLowerCase();
+            const sender = (m.sender || '').toLowerCase();
+            const matches = !query || text.includes(query) || sender.includes(query);
+            el.style.display = matches ? '' : 'none';
+        });
     };
 
     window.updateChanges = function(files) {
