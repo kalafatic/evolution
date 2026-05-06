@@ -158,3 +158,10 @@ window.selectAll = () => {
 };
 
 console.log('AI Chat Kernel Initialized');
+
+// Signal ready to Java
+if (window.JavaHandler) {
+    JavaHandler('ready');
+} else {
+    console.warn('JavaHandler not found, cannot signal ready');
+}

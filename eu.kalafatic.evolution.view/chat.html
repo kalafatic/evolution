@@ -890,7 +890,10 @@
     <script>
         // Emergency bootloader: queue calls until modules are ready
         window._evoQueue = [];
-        const queue = (fn) => (...args) => window._evoQueue.push({ fn, args });
+        const queue = (fn) => (...args) => {
+            console.log(`Queueing call to ${fn}`);
+            window._evoQueue.push({ fn, args });
+        };
 
         window.updateMessages = queue('updateMessages');
         window.updateChanges = queue('updateChanges');
@@ -905,5 +908,10 @@
         window.quoteSelection = queue('quoteSelection');
     </script>
     <script type="module" src="./js/main.js"></script>
+    <noscript>
+        <div style="padding: 20px; color: red; font-weight: bold;">
+            JavaScript is required for the AI Chat to function.
+        </div>
+    </noscript>
 </body>
 </html>
