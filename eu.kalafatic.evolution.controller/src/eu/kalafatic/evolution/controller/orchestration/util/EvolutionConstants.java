@@ -40,11 +40,7 @@ public final class EvolutionConstants {
 
     // Task Types
     public static final String TASK_FILE = "file";
-    public static final String TASK_WRITE = "write";
     public static final String TASK_MAVEN = "maven";
-
-    // Patterns for fast-track logic
-    public static final String ATOMIC_FILE_PATTERN = "^(create|add|write)\\s+file\\s+[^\\s]+$";
     public static final String TASK_GIT = "git";
     public static final String TASK_SHELL = "shell";
     public static final String TASK_TERMINAL = "terminal";

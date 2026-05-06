@@ -36,9 +36,8 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
                 "- BIG PICTURE: For architectural tasks, you MAY add a final 'Architect: Review & Expand' task to solicit feedback on purpose/usage AFTER the initial work is planned.\n" +
                 "- ITERATION: If a task is complex, plan it in small, verifiable steps. Use 'loopToTaskId' for iterative improvement.\n" +
                 "- Trust the refined prompt and shared memory for technical details (language, paths).\n" +
-                "- Task names MUST start with agent types: 'File: [Action]', 'JavaDev: [Action]', 'Tester: [Action]', 'Architect: [Action]', etc.\n" +
-                "- SIMPLE FILES: For simple file creation or modification (non-Java logic), use the 'File' agent and 'file' taskType. Do NOT use 'llm' taskType for simple writes.\n" +
-                "- Task types: 'llm', 'file' (Task name: 'File: Write <path>'), 'shell', 'git', 'maven', 'approval'.\n\n" +
+                "- Task names MUST start with agent types: 'JavaDev: [Action]', 'Tester: [Action]', 'Architect: [Action]', etc.\n" +
+                "- Task types: 'llm', 'file' (Task name: 'Write <path>'), 'shell', 'git', 'maven', 'approval'.\n\n" +
                 "JSON Schema:\n" +
                 "[ { \"id\": \"t1\", \"name\": \"Agent: Action\", \"description\": \"...\", \"taskType\": \"...\", \"approvalRequired\": boolean, \"loopToTaskId\": \"none\" } ]";
     }
@@ -46,22 +45,6 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
     @Override
     public List<Task> plan(String request, TaskContext context) throws Exception {
         context.log("Planner: Decomposing request - " + request);
-
-        // Fast-track for very simple file creation (no LLM planning needed)
-        String cleanRequest = request.toLowerCase().trim();
-        if (cleanRequest.matches(EvolutionConstants.ATOMIC_FILE_PATTERN)) {
-            String path = cleanRequest.replaceFirst("^(create|add|write)\\s+file\\s+", "");
-            context.log("Planner: Fast-track detected for simple file creation: " + path);
-            List<Task> fastTasks = new ArrayList<>();
-            Task t = OrchestrationFactory.eINSTANCE.createTask();
-            t.setId("task1");
-            t.setName("File: Write " + path);
-            t.setDescription(path); // Just the path for TASK_WRITE
-            t.setType(EvolutionConstants.TASK_WRITE);
-            t.setApprovalRequired(false);
-            fastTasks.add(t);
-            return fastTasks;
-        }
 
         // Step 3: Minimal Planner Guard (Updated for IntentGate Architecture)
         // This is a fail-safe in case the IntentGate incorrectly passed a non-actionable request.
