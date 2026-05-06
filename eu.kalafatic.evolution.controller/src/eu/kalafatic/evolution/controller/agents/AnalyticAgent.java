@@ -28,7 +28,7 @@ public class AnalyticAgent extends BaseAiAgent {
                 "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.\n" +
                 "2. INTENT: 'new' (task request), 'continue' (follow-up), 'chat' (greeting/casual), 'unclear'.\n" +
                 "3. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion' and 'missingInformation' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.\n" +
-                "4. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults. It should stay faithful to the original intent.\n\n" +
+                "4. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults. It should stay faithful to the original intent. CRITICAL: For ATOMIC file tasks (e.g., 'create file x'), DO NOT add content if not explicitly requested. Empty files are valid.\n\n" +
                 "DIAGNOSIS CRITERIA (for failures):\n" +
                 "1. ROOT CAUSE: syntactic, logical, or environment.\n" +
                 "2. PROGRESS: IMPROVED, SAME, or WORSE compared to previous attempt.\n" +
