@@ -1,5 +1,6 @@
 class MarkdownFormatter {
     static format(text) {
+        if (!text) return "";
         let html = text;
 
         // Bold
@@ -15,22 +16,15 @@ class MarkdownFormatter {
         html = html.replace(/^\s*[\-\*]\s+(.*)$/gm, '<li>$1</li>');
         html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
 
-        // File Paths (Interactive)
-        html = html.replace(/([a-zA-Z0-9_\-\.\/]+\.(java|js|html|css|xml|md|pom))/g, (match) => {
-            return `<a onclick="window.dispatchEvent(new CustomEvent('java:openDiff', { detail: '${match}' }))">${match}</a>`;
-        });
+        // File Paths
+        html = html.replace(/([a-zA-Z0-9_\-\.\/]+\.(java|js|html|css|xml|md|pom))/g, '<a onclick="window.dispatchEvent(new CustomEvent(\'java:openDiff\', { detail: \'$1\' }))">$1</a>');
 
-        // AI Platform Interaction Links
-        html = html.replace(/\[(CREATE|MODIFY|DELETE|ADD|UPDATE|PATCH)\s+FILE:\s*([^\]]+)\]/gi, (match, op, path) => {
-            return `<a class="link-go" onclick="window.dispatchEvent(new CustomEvent('java:executeProposal', { detail: '${path.trim()}' }))">${op} ${path.trim()}</a>`;
-        });
+        // AI Interaction
+        html = html.replace(/\[(CREATE|MODIFY|DELETE|ADD|UPDATE|PATCH)\s+FILE:\s*([^\]]+)\]/gi, '<a class="link-go" onclick="window.dispatchEvent(new CustomEvent(\'java:executeProposal\', { detail: \'$2\' }))">$1 $2</a>');
 
-        html = html.replace(/CLARIFY:/g, '<a class="link-clarify" onclick="window.dispatchEvent(new CustomEvent('java:clarify'))">CLARIFY:</a>');
+        html = html.replace(/CLARIFY:/g, '<a class="link-clarify" onclick="window.dispatchEvent(new CustomEvent(\'java:clarify\'))">CLARIFY:</a>');
 
-        // Conversational Clarify
-        html = html.replace(/(tell me a bit more|more information|could you clarify|please clarify)/gi, (match) => {
-            return `<a class="link-clarify" onclick="window.dispatchEvent(new CustomEvent('java:clarify'))">${match}</a>`;
-        });
+        html = html.replace(/(tell me a bit more|more information|could you clarify|please clarify)/gi, '<a class="link-clarify" onclick="window.dispatchEvent(new CustomEvent(\'java:clarify\'))">$1</a>');
 
         // Line Breaks
         html = html.replace(/\n/g, '<br>');

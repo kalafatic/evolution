@@ -20,15 +20,23 @@ class MessageList {
 
     render() {
         if (!this.container) {
+            this.container = document.getElementById('messages-wrapper');
+        }
+        if (!this.container) {
             if (window.JavaLog) window.JavaLog('Error: MessageList container not found');
             return;
         }
+        if (window.JavaLog) window.JavaLog(`Rendering ${this.messages.length} messages`);
+
         const existingElements = this.container.querySelectorAll('.message');
         const existingIndices = Array.from(existingElements).map(el => parseInt(el.dataset.index));
 
         this.messages.forEach((msg) => {
+            if (!msg || typeof msg !== 'object') return;
+
             if (!existingIndices.includes(msg.index)) {
-                const icon = this.icons[msg.agentType.split(' ')[0]] || this.icons.ai;
+                const agentKey = (msg.agentType || 'ai').split(' ')[0];
+                const icon = this.icons[agentKey] || this.icons.ai;
                 const messageComponent = new Message(msg, icon);
                 const element = messageComponent.render();
                 if (this.collapsedIndices.has(msg.index)) {

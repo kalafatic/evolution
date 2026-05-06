@@ -83,20 +83,21 @@ window.addEventListener('java:executeProposal', (e) => JavaBridge.call('executeP
 window.addEventListener('java:clarify', () => JavaBridge.call('clarify'));
 window.addEventListener('java:helloworld', () => JavaBridge.call('helloworld'));
 
-// Expose global functions for Java interaction
-window.updateMessages = (messages) => {
+// Expose kernel functions to Bootloader
+window.kernelUpdateMessages = (messages) => {
     if (window.JavaLog) window.JavaLog(`Updating ${messages.length} messages`);
     stateStore.setState({ messages });
 };
-window.updateChanges = (files) => stateStore.setState({ changes: files });
+window.kernelUpdateChanges = (files) => stateStore.setState({ changes: files });
+window.kernelShowThinking = (show) => stateStore.setState({ isThinking: show });
+window.kernelSetFeedbackLevel = (level) => stateStore.setState({ feedbackLevel: level });
+
 window.showDiff = (data) => {
     const lastDiffs = { ...stateStore.getState().lastDiffs };
     lastDiffs[data.path] = data.diff;
     stateStore.setState({ lastDiffs });
     changesPanel.showDiff(data);
 };
-window.showThinking = (show) => stateStore.setState({ isThinking: show });
-window.setFeedbackLevel = (level) => stateStore.setState({ feedbackLevel: level });
 
 // Navigation & Global Actions
 window.scrollToTop = () => messageList.scrollToTop();
@@ -136,7 +137,18 @@ window.selectAll = () => {
 };
 
 // Ready handshake
-if (window.JavaLog) window.JavaLog('Handshake initiated');
+if (window.JavaLog) window.JavaLog('Kernel ESM loaded');
+
+window.kernelReady = true;
+
+// Flush pending data
+if (window._pendingData) {
+    if (window._pendingData.messages) window.kernelUpdateMessages(window._pendingData.messages);
+    if (window._pendingData.changes) window.kernelUpdateChanges(window._pendingData.changes);
+    if (window._pendingData.thinking !== null) window.kernelShowThinking(window._pendingData.thinking);
+    if (window._pendingData.feedback) window.kernelSetFeedbackLevel(window._pendingData.feedback);
+    window.JavaLog('Pending data flushed');
+}
 
 if (typeof window.hideLoading === 'function') {
     window.hideLoading();

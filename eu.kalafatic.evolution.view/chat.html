@@ -896,20 +896,44 @@
         </div>
     </div>
 
-    <!-- Initializer & Error Handler -->
+    <!-- Resilient Bootloader (Captures data until ESM is ready) -->
     <script>
         (function() {
+            // Global State Queue
+            window._pendingData = {
+                messages: null,
+                changes: null,
+                thinking: null,
+                feedback: null
+            };
+
+            // Java Bridge Fallback
+            window.JavaLog = window.JavaLog || function(m) { console.log("[UI]", m); };
+
+            // Define global API immediately (called from Java)
+            window.updateMessages = function(msgs) {
+                if (window.kernelReady) { window.kernelUpdateMessages(msgs); }
+                else { window._pendingData.messages = msgs; JavaLog("Queued messages"); }
+            };
+            window.updateChanges = function(chg) {
+                if (window.kernelReady) { window.kernelUpdateChanges(chg); }
+                else { window._pendingData.changes = chg; JavaLog("Queued changes"); }
+            };
+            window.showThinking = function(show) {
+                if (window.kernelReady) { window.kernelShowThinking(show); }
+                else { window._pendingData.thinking = show; }
+            };
+            window.setFeedbackLevel = function(lvl) {
+                if (window.kernelReady) { window.kernelSetFeedbackLevel(lvl); }
+                else { window._pendingData.feedback = lvl; }
+            };
+
+            // Error Handler
             window.onerror = function(message, source, lineno, colno, error) {
                 var errInfo = "JS Error: " + message + " at " + source + ":" + lineno + ":" + colno;
-                if (window.JavaLog) window.JavaLog(errInfo);
-                console.error(errInfo, error);
+                window.JavaLog(errInfo);
                 return false;
             };
-            window.addEventListener('unhandledrejection', function(event) {
-                var errInfo = "Unhandled Promise Rejection: " + event.reason;
-                if (window.JavaLog) window.JavaLog(errInfo);
-                console.error(errInfo);
-            });
 
             window.hideLoading = function() {
                 var overlay = document.getElementById('loading-overlay');
@@ -921,8 +945,7 @@
                 }, 500);
             };
 
-            // Emergency timeout to hide overlay if JS fails to load
-            setTimeout(window.hideLoading, 4000);
+            JavaLog("Bootloader initialized");
         })();
     </script>
     <!-- Main Entry Point (ES Module) -->
