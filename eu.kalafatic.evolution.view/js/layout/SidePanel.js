@@ -37,7 +37,11 @@ export class SidePanel {
     }
 
     toggle() {
-        if (this.isOpen) {
+        if (!this.panel) return;
+        const currentWidth = this.panel.style.width;
+        if (currentWidth === '0px' || currentWidth === '0') {
+            this.panel.style.width = '320px';
+        } else {
             this.panel.style.width = '0px';
             this.isOpen = false;
         } else {
@@ -47,6 +51,7 @@ export class SidePanel {
     }
 
     showContextMenu(e, path) {
+        if (!this.contextMenu) return;
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('ui:contextFileChanged', { detail: path }));
 

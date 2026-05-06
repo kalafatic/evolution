@@ -25,6 +25,8 @@ const changesPanel = new ChangesPanel('changes-list');
 const chatContainer = new ChatContainer('chat');
 const sidePanel = new SidePanel('side-panel');
 
+if (window.JavaLog) window.JavaLog('Components initialized');
+
 // State Subscriptions
 stateStore.subscribe((state, oldState) => {
     if (!oldState || state.messages !== oldState.messages) {
@@ -47,8 +49,11 @@ window.addEventListener('ui:toggleFileDiff', (e) => changesPanel.toggleFileDiff(
 window.addEventListener('ui:showContextMenu', (e) => sidePanel.showContextMenu(e.detail.event, e.detail.path));
 window.addEventListener('ui:contextFileChanged', (e) => stateStore.setState({ currentContextFile: e.detail }));
 
-// Java Bridge Event Handlers (Dispatched from components)
-window.addEventListener('java:approve', (e) => JavaBridge.call('approve', e.detail));
+// Java Bridge Event Handlers
+window.addEventListener('java:approve', (e) => {
+    if (window.JavaLog) window.JavaLog('Approve requested for index ' + e.detail);
+    JavaBridge.call('approve', e.detail);
+});
 window.addEventListener('java:approveDarwinVariant', (e) => {
     JavaBridge.call('approveDarwinVariant', e.detail.index, e.detail.variantId);
 });
@@ -63,12 +68,17 @@ window.addEventListener('java:quote', (e) => {
 window.addEventListener('java:openDiff', (e) => JavaBridge.call('openDiff', '-1', e.detail));
 window.addEventListener('java:executeProposal', (e) => JavaBridge.call('executeProposal', '-1', e.detail));
 window.addEventListener('java:clarify', () => JavaBridge.call('clarify'));
+window.addEventListener('java:helloworld', () => JavaBridge.call('helloworld'));
 
-// Expose global functions for legacy/simple calls from Java or HTML
-const updateMessages = (messages) => stateStore.setState({ messages });
-const updateChanges = (files) => stateStore.setState({ changes: files });
-const showDiff = (data) => {
-    const lastDiffs = { ...stateStore.getState().lastDiffs, [data.path]: data.diff };
+// Expose global functions for Java interaction
+window.updateMessages = (messages) => {
+    if (window.JavaLog) window.JavaLog(`Updating ${messages.length} messages`);
+    stateStore.setState({ messages });
+};
+window.updateChanges = (files) => stateStore.setState({ changes: files });
+window.showDiff = (data) => {
+    const lastDiffs = { ...stateStore.getState().lastDiffs };
+    lastDiffs[data.path] = data.diff;
     stateStore.setState({ lastDiffs });
     changesPanel.showDiff(data);
 };
@@ -161,4 +171,15 @@ window.selectAll = () => {
     if (text) JavaBridge.call('copy', '-1', text.trim());
 };
 
-console.log('AI Chat Kernel Initialized');
+// Ready handshake
+if (window.JavaLog) window.JavaLog('Handshake initiated');
+
+if (typeof window.hideLoading === 'function') {
+    window.hideLoading();
+}
+
+if (window.JavaHandler) {
+    JavaBridge.call('ready');
+}
+
+console.log('AI Chat Kernel (ESM) Initialized');
