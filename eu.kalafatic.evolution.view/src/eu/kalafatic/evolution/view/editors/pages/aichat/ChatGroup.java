@@ -11,8 +11,10 @@ import java.net.URL;
 import java.util.Collections;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
@@ -134,11 +136,19 @@ public class ChatGroup extends AEvoGroup {
         setupJavaScriptBridges();
         
         try {
-            Bundle bundle = eu.kalafatic.evolution.view.application.Activator.getDefault().getBundle();
-            // This ensures all bundle resources (including js and css) are extracted to the filesystem
-            URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
-            URL chatUrl = new URL(bundleRoot, "chat.html");
-            browser.setUrl(chatUrl.toString());
+            Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.view");
+            if (bundle == null) {
+                bundle = FrameworkUtil.getBundle(getClass());
+            }
+
+            if (bundle != null) {
+                // This ensures all bundle resources (including js and css) are extracted to the filesystem
+                URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
+                URL chatUrl = new URL(bundleRoot, "chat.html");
+                browser.setUrl(chatUrl.toString());
+            } else {
+                throw new Exception("Bundle not found");
+            }
         } catch (Exception e) {
             System.err.println("Failed to load chat.html via setUrl: " + e.getMessage());
             String html = loadHtmlTemplate("/chat.html");
