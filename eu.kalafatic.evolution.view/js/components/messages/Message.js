@@ -68,18 +68,18 @@ export class Message {
         const { index, text, agentType } = this.data;
         const role = (agentType || '').toLowerCase();
 
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.onclick = () => JavaBridge.call('edit', index, text);
+        const block = document.createElement('div');
+        block.className = 'agent-block';
+        block.onclick = () => JavaBridge.call('edit', index, text);
 
         const content = document.createElement('div');
         content.className = 'bubble-content';
         content.innerHTML = MessageFormatter.formatText(text, primaryRole);
-        bubble.appendChild(content);
+        block.appendChild(content);
 
         const actions = new MessageActions(index, text, role);
 
-        container.appendChild(bubble);
+        container.appendChild(block);
         container.appendChild(actions.render());
     }
 

@@ -105,7 +105,7 @@
             --response-text: #1e293b;
         }
 
-        .message.approved .bubble {
+        .message.approved .agent-block {
             background: #eff6ff !important;
             border-color: #3b82f6 !important;
             color: #1e40af !important;
@@ -154,7 +154,7 @@
             user-select: none;
         }
 
-        .message.approved .bubble::after {
+        .message.approved .agent-block::after {
             content: 'APPROVED';
             position: absolute;
             top: 50%;
@@ -183,32 +183,30 @@
 
         .chat-container {
             display: flex; flex-direction: column;
-            gap: 4px; max-width: 900px; margin: 0 auto;
-            padding: 8px;
+            gap: 12px; max-width: 1000px; margin: 0 auto;
+            padding: 16px;
         }
 
         /* Message Structure */
         .message {
             display: flex; flex-direction: column;
-            max-width: 95%; position: relative;
+            max-width: 100%; position: relative;
             animation: slideIn 0.3s ease-out;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
         }
-        .message.user { align-self: flex-end; align-items: flex-end; }
-        .message.ai { align-self: flex-start; }
 
         .message-content {
             display: flex;
-            align-items: center;
-            gap: 4px;
+            align-items: flex-start;
+            gap: 12px;
             width: 100%;
         }
-        .user .message-content { flex-direction: row-reverse; }
 
         .header {
-            display: flex; align-items: center; gap: 6px;
-            margin-bottom: 1px;
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 4px;
         }
-        .user .header { flex-direction: row-reverse; }
 
         .sender {
             font-size: 11px; font-weight: 700; color: #64748b;
@@ -220,87 +218,79 @@
         .timestamp { font-size: 10px; color: #94a3b8; user-select: none; }
         .icon { font-size: 14px; user-select: none; }
 
-        /* Bubbles */
-        .bubble {
-            padding: 6px 10px; border-radius: 12px;
-            font-size: 11px; position: relative;
-            opacity: 0.8;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        /* Agent Blocks (Cards) */
+        .agent-block {
+            padding: 12px 16px; border-radius: 4px;
+            font-size: 12px; position: relative;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             transition: all 0.2s; background: var(--ai-bg); border: 1px solid var(--border);
             cursor: pointer;
             color: var(--ai-text);
-            width: fit-content;
-            max-width: 100%;
+            width: 100%;
             box-sizing: border-box;
             word-wrap: break-word;
             overflow: hidden;
         }
 
         /* Role Specific Styles */
-        .message.user .bubble {
-            background: var(--user-bg); border-color: var(--user-border); color: var(--user-text); border-bottom-right-radius: 4px;
-            font-size: 13px; opacity: 1.0;
+        .message.user .agent-block {
+            background: var(--user-bg); border-color: var(--user-border); color: var(--user-text);
+            font-size: 13px; font-weight: 500;
         }
-        .message.planner .bubble { background: var(--planner-bg); border-color: var(--planner-border); color: var(--planner-text); border-bottom-left-radius: 4px; }
-        .message.architect .bubble { background: var(--architect-bg); border-color: var(--architect-border); color: var(--architect-text); border-bottom-left-radius: 4px; }
-        .message.javadev .bubble { background: var(--javadev-bg); border-color: var(--javadev-border); color: var(--javadev-text); border-bottom-left-radius: 4px; }
-        .message.tester .bubble { background: var(--tester-bg); border-color: var(--tester-border); color: var(--tester-text); border-bottom-left-radius: 4px; }
-        .message.reviewer .bubble { background: var(--reviewer-bg); border-color: var(--reviewer-border); color: var(--reviewer-text); border-bottom-left-radius: 4px; }
-        .message.analytic .bubble { background: var(--analytic-bg); border-color: var(--analytic-border); color: var(--analytic-text); border-bottom-left-radius: 4px; }
-        .message.general .bubble { background: var(--general-bg); border-color: var(--general-border); color: var(--general-text); border-bottom-left-radius: 4px; }
-        .message.terminal .bubble { background: var(--terminal-bg); border-color: var(--terminal-border); color: var(--terminal-text); border-bottom-left-radius: 4px; }
-        .message.file .bubble { background: var(--file-bg); border-color: var(--file-border); color: var(--file-text); border-bottom-left-radius: 4px; }
-        .message.maven .bubble { background: var(--maven-bg); border-color: var(--maven-border); color: var(--maven-text); border-bottom-left-radius: 4px; }
-        .message.git .bubble { background: var(--git-bg); border-color: var(--git-border); color: var(--git-text); border-bottom-left-radius: 4px; }
-        .message.structure .bubble { background: var(--structure-bg); border-color: var(--structure-border); color: var(--structure-text); border-bottom-left-radius: 4px; }
-        .message.websearch .bubble { background: var(--websearch-bg); border-color: var(--websearch-border); color: var(--websearch-text); border-bottom-left-radius: 4px; }
-        .message.quality .bubble { background: var(--quality-bg); border-color: var(--quality-border); color: var(--quality-text); border-bottom-left-radius: 4px; }
-        .message.observability .bubble { background: var(--observability-bg); border-color: var(--observability-border); color: var(--observability-text); border-bottom-left-radius: 4px; }
-        .message.orchestrator .bubble { background: var(--orchestrator-bg); border-color: var(--orchestrator-border); color: var(--orchestrator-text); border-bottom-left-radius: 4px; }
-        .message.final-response .bubble {
+        .message.planner .agent-block { border-left: 4px solid var(--planner-border); }
+        .message.architect .agent-block { border-left: 4px solid var(--architect-border); }
+        .message.javadev .agent-block { border-left: 4px solid var(--javadev-border); }
+        .message.tester .agent-block { border-left: 4px solid var(--tester-border); }
+        .message.reviewer .agent-block { border-left: 4px solid var(--reviewer-border); }
+        .message.analytic .agent-block { border-left: 4px solid var(--analytic-border); }
+        .message.general .agent-block { border-left: 4px solid var(--general-border); }
+        .message.terminal .agent-block { border-left: 4px solid var(--terminal-border); }
+        .message.file .agent-block { border-left: 4px solid var(--file-border); }
+        .message.maven .agent-block { border-left: 4px solid var(--maven-border); }
+        .message.git .agent-block { border-left: 4px solid var(--git-border); }
+        .message.structure .agent-block { border-left: 4px solid var(--structure-border); }
+        .message.websearch .agent-block { border-left: 4px solid var(--websearch-border); }
+        .message.quality .agent-block { border-left: 4px solid var(--quality-border); }
+        .message.observability .agent-block { border-left: 4px solid var(--observability-border); }
+        .message.orchestrator .agent-block { border-left: 4px solid var(--orchestrator-border); }
+        .message.final-response .agent-block {
             background: var(--final-response-bg);
             border-color: var(--final-response-border);
             color: var(--final-response-text);
-            border-bottom-left-radius: 4px;
-            border-width: 3px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            font-size: 13px; opacity: 1.0;
+            border-width: 2px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            font-size: 13px;
         }
-        .message.result-summary .bubble { background: var(--result-summary-bg); border-color: var(--result-summary-border); color: var(--result-summary-text); border-bottom-left-radius: 4px; border-width: 1px; }
-        .message.tool .bubble { background: var(--tool-bg); border-color: var(--tool-border); color: var(--tool-text); border-bottom-left-radius: 4px; }
-        .message.waiting .bubble {
+        .message.result-summary .agent-block { background: var(--result-summary-bg); border-color: var(--result-summary-border); color: var(--result-summary-text); }
+        .message.tool .agent-block { border-left: 4px solid var(--tool-border); }
+        .message.waiting .agent-block {
             background: var(--waiting-bg);
             border-color: var(--waiting-border);
             color: var(--waiting-text);
-            border-bottom-left-radius: 4px;
             border-style: solid;
-            border-width: 3px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-width: 2px;
             animation: pulse-waiting 2s infinite;
-            font-size: 13px; opacity: 1.0;
+            font-size: 13px;
         }
-        .message.error .bubble {
+        .message.error .agent-block {
             background: var(--error-bg);
             border-color: var(--error-border);
             color: var(--error-text);
-            border-bottom-left-radius: 4px;
             border-width: 2px;
-            font-size: 13px; opacity: 1.0;
+            font-size: 13px;
         }
-        .message.thinking .bubble {
+        .message.thinking .agent-block {
             background: var(--thinking-bg);
             border-color: var(--thinking-border);
             color: var(--thinking-text);
-            border-bottom-left-radius: 4px;
             border-style: dashed;
-            font-size: 10px;
-            opacity: 0.7;
+            font-size: 11px;
+            opacity: 0.8;
         }
-        .message.response .bubble {
+        .message.response .agent-block {
             background: var(--response-bg);
             border-color: var(--response-border);
             color: var(--response-text);
-            border-bottom-left-radius: 4px;
         }
 
         .message.darwin-branches {
@@ -435,15 +425,12 @@
             background: #15803d;
         }
 
-        .message.ai .bubble {
-            border-bottom-left-radius: 4px;
-        }
-        .bubble:hover {
+        .agent-block:hover {
             transform: translateY(-1px);
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
 
-        .bubble a {
+        .agent-block a {
             color: inherit;
             text-decoration: underline;
             font-weight: bold;
@@ -494,8 +481,8 @@
 
         /* Collapsed State */
         .collapsed .bubble-content { display: none; }
-        .collapsed .bubble { padding: 8px 16px; min-height: 0; opacity: 0.7; }
-        .collapsed .bubble::after { content: '... (message collapsed)'; font-style: italic; font-size: 12px; color: #94a3b8; }
+        .collapsed .agent-block { padding: 8px 16px; min-height: 0; opacity: 0.7; }
+        .collapsed .agent-block::after { content: '... (message collapsed)'; font-style: italic; font-size: 12px; color: #94a3b8; }
 
         /* Formatting */
         pre {

@@ -46,7 +46,7 @@ export class DarwinContainer {
         } catch (e) {
             console.error('Failed to parse Darwin branches', e);
             const error = document.createElement('div');
-            error.className = 'bubble error';
+            error.className = 'agent-block error';
             error.textContent = 'Failed to parse Darwin branches: ' + e.message;
             return error;
         }
