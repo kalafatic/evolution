@@ -141,10 +141,13 @@ public class ChatGroup extends AEvoGroup {
             }
 
             if (bundle != null) {
-                // This ensures all bundle resources (including js and css) are extracted to the filesystem
-                URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
-                URL chatUrl = new URL(bundleRoot, "chat.html");
-                browser.setUrl(chatUrl.toString());
+                URL chatEntry = bundle.getEntry("/chat.html");
+                if (chatEntry != null) {
+                    URL chatUrl = FileLocator.toFileURL(chatEntry);
+                    browser.setUrl(chatUrl.toString());
+                } else {
+                    throw new Exception("chat.html entry not found in bundle");
+                }
             } else {
                 throw new Exception("Bundle not found");
             }
@@ -315,12 +318,31 @@ public class ChatGroup extends AEvoGroup {
     }
 
     private void setupJavaScriptBridges() {
+        // Logging bridge
+        new BrowserFunction(browser, "JavaLog") {
+            @Override
+            public Object function(Object[] args) {
+                if (args.length > 0) {
+                    System.out.println("[Chat Browser] " + args[0]);
+                }
+                return null;
+            }
+        };
+
         new BrowserFunction(browser, "JavaHandler") {
             @Override
             public Object function(Object[] args) {
-                if (args.length < 3) return null;
+                if (args.length < 1) return null;
                 try {
                     String action = (String) args[0];
+
+                    if ("ready".equals(action)) {
+                        isLoaded = true;
+                        refreshBrowser();
+                        return null;
+                    }
+
+                    if (args.length < 3) return null;
                     int index = Integer.parseInt((String) args[1]);
                     String text = (String) args[2];
 
@@ -794,20 +816,22 @@ public class ChatGroup extends AEvoGroup {
         JSONArray array = new JSONArray();
         if (currentThread != null) {
             for (ChatMessage m : currentThread.getMessages()) {
-                array.put(toJsonObject(m));
+                JSONObject json = toJsonObject(m);
+                if (json != null) array.put(json);
             }
         }
-        String json = array.toString();
-        // Pass the JSON object directly to the JS function
-        browser.execute("updateMessages(" + json + ");");
+        String jsonString = array.toString();
+        // Use JSON.parse on the JS side for maximum robustness
+        browser.execute("if(window.updateMessages) { window.updateMessages(JSON.parse(" + JSONObject.quote(jsonString) + ")); }");
     }
 
     private JSONObject toJsonObject(ChatMessage m) {
+        if (m == null) return null;
         JSONObject obj = new JSONObject();
         obj.put("index", m.getIndex());
-        obj.put("sender", m.getSender());
-        obj.put("text", m.getText());
-        obj.put("color", m.getColor());
+        obj.put("sender", m.getSender() != null ? m.getSender() : "System");
+        obj.put("text", m.getText() != null ? m.getText() : "");
+        obj.put("color", m.getColor() != null ? m.getColor() : "#000000");
         obj.put("isBold", m.isIsBold());
         obj.put("isItalic", m.isIsItalic());
         obj.put("agentType", m.getAgentType() != null ? m.getAgentType() : "ai");
