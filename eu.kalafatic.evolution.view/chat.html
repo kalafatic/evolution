@@ -333,21 +333,29 @@
     </div>
 
     <script>
-        // Emergency bootloader: queue calls until modules are ready
+        // Robust bootstrap: queue calls until ES modules are fully initialized
         window._evoQueue = [];
-        const queue = (fn) => (...args) => window._evoQueue.push({ fn, args });
+        window.uiReady = false;
 
-        window.updateMessages = queue('updateMessages');
-        window.updateChanges = queue('updateChanges');
-        window.showDiff = queue('showDiff');
-        window.showThinking = queue('showThinking');
-        window.setFeedbackLevel = queue('setFeedbackLevel');
-        window.scrollToTop = queue('scrollToTop');
-        window.scrollToBottom = queue('scrollToBottom');
-        window.scrollToLastWaiting = queue('scrollToLastWaiting');
-        window.toggleAll = queue('toggleAll');
-        window.selectAll = queue('selectAll');
-        window.quoteSelection = queue('quoteSelection');
+        const queueOrRun = (fnName) => (...args) => {
+            if (window.uiReady && typeof window["_" + fnName] === 'function') {
+                return window["_" + fnName](...args);
+            }
+            console.log("Queuing call to " + fnName + " (UI not ready)");
+            window._evoQueue.push({ fn: fnName, args });
+        };
+
+        window.updateMessages = queueOrRun('updateMessages');
+        window.updateChanges = queueOrRun('updateChanges');
+        window.showDiff = queueOrRun('showDiff');
+        window.showThinking = queueOrRun('showThinking');
+        window.setFeedbackLevel = queueOrRun('setFeedbackLevel');
+        window.scrollToTop = queueOrRun('scrollToTop');
+        window.scrollToBottom = queueOrRun('scrollToBottom');
+        window.scrollToLastWaiting = queueOrRun('scrollToLastWaiting');
+        window.toggleAll = queueOrRun('toggleAll');
+        window.selectAll = queueOrRun('selectAll');
+        window.quoteSelection = queueOrRun('quoteSelection');
     </script>
     <script type="module" src="./js/main.js" onerror="JavaHandler('log', '0', 'Failed to load main.js module')"></script>
 </body>

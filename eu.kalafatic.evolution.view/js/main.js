@@ -65,49 +65,63 @@ window.addEventListener('java:executeProposal', (e) => JavaBridge.call('executeP
 window.addEventListener('java:clarify', () => JavaBridge.call('clarify'));
 
 // Expose global functions for legacy/simple calls from Java or HTML
-const updateMessages = (messages) => stateStore.setState({ messages });
-const updateChanges = (files) => stateStore.setState({ changes: files });
-const showDiff = (data) => {
+window._updateMessages = (messages) => stateStore.setState({ messages });
+window._updateChanges = (files) => stateStore.setState({ changes: files });
+window._showDiff = (data) => {
     const lastDiffs = { ...stateStore.getState().lastDiffs, [data.path]: data.diff };
     stateStore.setState({ lastDiffs });
     changesPanel.showDiff(data);
 };
-const showThinking = (show) => stateStore.setState({ isThinking: show });
-const setFeedbackLevel = (level) => stateStore.setState({ feedbackLevel: level });
+window._showThinking = (show) => stateStore.setState({ isThinking: show });
+window._setFeedbackLevel = (level) => stateStore.setState({ feedbackLevel: level });
+window._scrollToTop = () => messageList.scrollToTop();
+window._scrollToBottom = () => messageList.scrollToBottom();
+window._scrollToLastWaiting = () => messageList.scrollToLastWaiting();
+window._toggleAll = () => messageList.toggleAll();
+window._selectAll = () => {
+    let text = '';
+    const { messages } = stateStore.getState();
+    messages.forEach(m => {
+        text += `${m.sender} [${m.timestamp || ''}]: ${m.text}\n\n`;
+    });
+    if (text) JavaBridge.call('copy', '-1', text.trim());
+};
+window._quoteSelection = () => {
+    const sel = window.getSelection();
+    const text = sel.toString().trim();
+    if (text) {
+        JavaBridge.call('quote', '-1', text);
+        sel.removeAllRanges();
+    }
+    document.getElementById('floating-quote-btn').style.display = 'none';
+};
 
-window.updateMessages = updateMessages;
-window.updateChanges = updateChanges;
-window.showDiff = showDiff;
-window.showThinking = showThinking;
-window.setFeedbackLevel = setFeedbackLevel;
-
-// Process queued calls from emergency bootloader
+// Process queued calls from robust bootstrap
 const processQueue = () => {
     if (window._evoQueue && window._evoQueue.length > 0) {
         console.log(`Processing ${window._evoQueue.length} queued UI calls`);
         window._evoQueue.forEach(item => {
-            if (typeof window[item.fn] === 'function') {
-                window[item.fn](...item.args);
+            const internalFn = "_" + item.fn;
+            if (typeof window[internalFn] === 'function') {
+                window[internalFn](...item.args);
             } else {
-                console.warn(`Queued function ${item.fn} not found in window`);
+                console.warn(`Internal function ${internalFn} not found in window`);
             }
         });
         window._evoQueue = [];
     }
 };
 
-// Small delay to ensure all global assignments are done
+// Ensure all global assignments are done before setting ready
 setTimeout(() => {
+    window.uiReady = true;
     processQueue();
     // Signal to Java that the JS environment is ready
     JavaBridge.call('ready', '0', 'AI Chat Kernel Initialized');
 }, 50);
 
 // Navigation & Global Actions
-window.scrollToTop = () => messageList.scrollToTop();
-window.scrollToBottom = () => messageList.scrollToBottom();
-window.scrollToLastWaiting = () => messageList.scrollToLastWaiting();
-window.toggleAll = () => messageList.toggleAll();
+// Note: legacy global names are handled via queueOrRun in chat.html
 window.toggleSidePanel = () => sidePanel.toggle();
 window.toggleAllFiles = () => changesPanel.toggleAllFiles();
 window.filterFiles = (query) => changesPanel.filterFiles(query);
