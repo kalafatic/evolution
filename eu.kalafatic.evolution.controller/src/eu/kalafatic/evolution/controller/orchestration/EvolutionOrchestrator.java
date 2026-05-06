@@ -141,6 +141,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
     }
 
     private String generatePatch(Task task, IAgent agent, TaskContext context, String lastFeedback, String localPlan, String contextPrompt) throws Exception {
+        if (EvolutionConstants.TASK_WRITE.equalsIgnoreCase(task.getType())) {
+            context.log("Orchestrator: Fast-track WRITE task detected. Bypassing LLM content generation.");
+            return ""; // Write empty file
+        }
         if ("file".equalsIgnoreCase(task.getType())) {
             if (task.getDescription().toLowerCase().contains("create an empty file")) {
                 context.log("Orchestrator: Bypassing LLM for empty file creation.");
@@ -155,7 +159,10 @@ public class EvolutionOrchestrator implements IOrchestrator {
         String taskType = task.getType();
         String taskName = task.getName();
 
-        if ("file".equalsIgnoreCase(taskType)) {
+        if (EvolutionConstants.TASK_WRITE.equalsIgnoreCase(taskType)) {
+            String path = task.getDescription();
+            return ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("WRITE " + path + "\n" + patch, context.getProjectRoot(), context);
+        } else if ("file".equalsIgnoreCase(taskType)) {
             String path = taskName.replaceFirst("(?i)^.*(Write|Create|Update)\s+", "").trim().split(" ")[0];
             return ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("WRITE " + path + "\n" + patch, context.getProjectRoot(), context);
         } else if (EvolutionConstants.TASK_MAVEN.equalsIgnoreCase(taskType)) {
@@ -170,7 +177,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
     private IAgent findAgentForTask(Task task, TaskContext context) {
         String type = task.getType().toLowerCase();
-        if (type.equals(EvolutionConstants.TASK_FILE)) return AgentFactory.getAgent(EvolutionConstants.AGENT_FILE);
+        if (type.equals(EvolutionConstants.TASK_FILE) || type.equals(EvolutionConstants.TASK_WRITE)) return AgentFactory.getAgent(EvolutionConstants.AGENT_FILE);
         if (type.equals(EvolutionConstants.TASK_MAVEN)) return AgentFactory.getAgent(EvolutionConstants.AGENT_MAVEN);
         return AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
     }

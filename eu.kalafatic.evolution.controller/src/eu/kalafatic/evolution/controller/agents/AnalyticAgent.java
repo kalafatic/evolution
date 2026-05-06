@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.agents;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 
@@ -77,6 +78,19 @@ public class AnalyticAgent extends BaseAiAgent {
 
     // @evo:14:B reason=traceability-support
     public JSONObject analyze(String prompt, TaskContext context) throws Exception {
+        // Fast-track for simple file creation
+        String cleanPrompt = (prompt != null) ? prompt.toLowerCase().trim() : "";
+        if (cleanPrompt.matches(EvolutionConstants.ATOMIC_FILE_PATTERN)) {
+            context.log("Analytic: Fast-track detected for simple file creation.");
+            JSONObject fastAnalysis = new JSONObject();
+            fastAnalysis.put("intent", "new");
+            fastAnalysis.put("confidence", 1.0);
+            fastAnalysis.put("category", "TOOL_USE");
+            fastAnalysis.put("isAmbiguous", false);
+            fastAnalysis.put("refinedPrompt", prompt);
+            return fastAnalysis;
+        }
+
         String fullPrompt = buildPrompt(prompt, context, null);
         context.log("Evo-Analytic-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);

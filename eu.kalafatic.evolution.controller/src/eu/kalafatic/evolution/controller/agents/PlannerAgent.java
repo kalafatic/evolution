@@ -6,6 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.orchestration.IPlanner;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
@@ -48,15 +49,15 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
 
         // Fast-track for very simple file creation (no LLM planning needed)
         String cleanRequest = request.toLowerCase().trim();
-        if (cleanRequest.matches("^(create|add|write)\\s+file\\s+[^\\s]+$")) {
+        if (cleanRequest.matches(EvolutionConstants.ATOMIC_FILE_PATTERN)) {
             String path = cleanRequest.replaceFirst("^(create|add|write)\\s+file\\s+", "");
             context.log("Planner: Fast-track detected for simple file creation: " + path);
             List<Task> fastTasks = new ArrayList<>();
             Task t = OrchestrationFactory.eINSTANCE.createTask();
             t.setId("task1");
             t.setName("File: Write " + path);
-            t.setDescription("Create an empty file named '" + path + "'.");
-            t.setType("file");
+            t.setDescription(path); // Just the path for TASK_WRITE
+            t.setType(EvolutionConstants.TASK_WRITE);
             t.setApprovalRequired(false);
             fastTasks.add(t);
             return fastTasks;

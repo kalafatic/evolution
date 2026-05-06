@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.agents;
 
 import java.util.List;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
@@ -35,6 +36,16 @@ public class FinalResponseAgent extends BaseAiAgent {
     }
 
     public String generateFinalResponse(String request, List<Task> tasks, TaskContext context) throws Exception {
+        // Fast-track for simple file creation
+        String cleanRequest = (request != null) ? request.toLowerCase().trim() : "";
+        if (cleanRequest.matches(EvolutionConstants.ATOMIC_FILE_PATTERN) && tasks.size() == 1) {
+            Task t = tasks.get(0);
+            if (t.getStatus() == TaskStatus.DONE) {
+                String path = cleanRequest.replaceFirst("^(create|add|write)\\s+file\\s+", "");
+                return "WORK DONE: Created file " + path + ".\nFILES: [FILE:" + path + "]";
+            }
+        }
+
         StringBuilder input = new StringBuilder();
         input.append("ORIGINAL REQUEST: ").append(request).append("\n\n");
         input.append("TASKS PERFORMED:\n");

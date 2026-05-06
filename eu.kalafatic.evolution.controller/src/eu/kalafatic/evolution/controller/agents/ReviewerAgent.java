@@ -35,6 +35,15 @@ public class ReviewerAgent extends BaseAiAgent {
     }
 
     public JSONObject evaluate(String taskOutput, String taskDescription, TaskContext context) throws Exception {
+        // Fast-track for simple file creation validation
+        if (taskDescription.startsWith("File: Write ") && (taskOutput != null && taskOutput.startsWith("SUCCESS: Wrote file"))) {
+            context.log("Reviewer: Fast-track validation for simple file write.");
+            JSONObject fastEval = new JSONObject();
+            fastEval.put("success", true);
+            fastEval.put("comment", "File created successfully (fast-track).");
+            return fastEval;
+        }
+
         String modeInfo = "";
         if (context.getPlatformMode() != null && context.getPlatformMode().isAllowSelfModify()) {
             modeInfo = "\nSTRICT EVALUATION: System is in Self-Modification mode. Ensure the change improves system health and stability.\n";
