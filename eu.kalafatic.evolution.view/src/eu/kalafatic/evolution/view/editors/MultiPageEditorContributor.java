@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.view.editors;
 
+import org.eclipse.core.commands.operations.IUndoContext;
 import org.eclipse.jface.action.*;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.IActionBars;
@@ -9,6 +10,8 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.ide.IDEActionFactory;
+import org.eclipse.ui.operations.RedoActionHandler;
+import org.eclipse.ui.operations.UndoActionHandler;
 import org.eclipse.ui.part.MultiPageEditorActionBarContributor;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.ITextEditorActionConstants;
@@ -21,6 +24,8 @@ import org.eclipse.ui.texteditor.ITextEditorActionConstants;
 public class MultiPageEditorContributor extends MultiPageEditorActionBarContributor {
 	private IEditorPart activeEditorPart;
 	private Action sampleAction;
+	private UndoActionHandler undoAction;
+	private RedoActionHandler redoAction;
 	/**
 	 * Creates a multi-page contributor.
 	 */
@@ -39,6 +44,26 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 	 * Method declared in AbstractMultiPageEditorActionBarContributor.
 	 */
 
+	@Override
+	public void setActiveEditor(IEditorPart part) {
+		super.setActiveEditor(part);
+		if (part != null) {
+			IUndoContext context = part.getAdapter(IUndoContext.class);
+			if (context != null) {
+				if (undoAction == null) {
+					undoAction = new UndoActionHandler(part.getSite(), context);
+				} else {
+					undoAction.setContext(context);
+				}
+				if (redoAction == null) {
+					redoAction = new RedoActionHandler(part.getSite(), context);
+				} else {
+					redoAction.setContext(context);
+				}
+			}
+		}
+	}
+
 	public void setActivePage(IEditorPart part) {
 		if (activeEditorPart == part)
 			return;
@@ -53,12 +78,17 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 			actionBars.setGlobalActionHandler(
 				ActionFactory.DELETE.getId(),
 				getAction(editor, ITextEditorActionConstants.DELETE));
-			actionBars.setGlobalActionHandler(
-				ActionFactory.UNDO.getId(),
-				getAction(editor, ITextEditorActionConstants.UNDO));
-			actionBars.setGlobalActionHandler(
-				ActionFactory.REDO.getId(),
-				getAction(editor, ITextEditorActionConstants.REDO));
+			IAction undo = getAction(editor, ITextEditorActionConstants.UNDO);
+			if (undo == null) {
+				undo = undoAction;
+			}
+			actionBars.setGlobalActionHandler(ActionFactory.UNDO.getId(), undo);
+
+			IAction redo = getAction(editor, ITextEditorActionConstants.REDO);
+			if (redo == null) {
+				redo = redoAction;
+			}
+			actionBars.setGlobalActionHandler(ActionFactory.REDO.getId(), redo);
 			actionBars.setGlobalActionHandler(
 				ActionFactory.CUT.getId(),
 				getAction(editor, ITextEditorActionConstants.CUT));
@@ -99,5 +129,18 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 	public void contributeToToolBar(IToolBarManager manager) {
 		manager.add(new Separator());
 		manager.add(sampleAction);
+	}
+
+	@Override
+	public void dispose() {
+		super.dispose();
+		if (undoAction != null) {
+			undoAction.dispose();
+			undoAction = null;
+		}
+		if (redoAction != null) {
+			redoAction.dispose();
+			redoAction = null;
+		}
 	}
 }
