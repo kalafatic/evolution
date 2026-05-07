@@ -233,16 +233,24 @@ public class IterationManager {
         }
     }
 
-    public EvaluationResult runIteration(Iteration iteration) throws Exception {
+    public EvaluationResult runIteration(Iteration iteration) {
         this.currentIterationModel = iteration;
         PlatformMode mode = context.getPlatformMode();
         boolean darwinEnabled = (mode != null && (mode.getType() == PlatformType.DARWIN_MODE || mode.getType() == PlatformType.SELF_DEV_MODE))
                                 || context.getOrchestrator().isDarwinMode();
 
-        if (darwinEnabled && gitManager.isGitRepository()) {
-            return runDarwin();
-        } else {
-            return runIterative();
+        try {
+            if (darwinEnabled && gitManager.isGitRepository()) {
+                return runDarwin();
+            } else {
+                return runIterative();
+            }
+        } catch (Exception e) {
+            context.log("[KERNEL] Iteration encountered an error: " + e.getMessage());
+            EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+            result.setSuccess(false);
+            result.setDecision(SelfDevDecision.ROLLBACK);
+            return result;
         }
     }
 
@@ -258,6 +266,7 @@ public class IterationManager {
             List<Task> tasks = taskPlanner.generateTasks(context, goal);
             transition(SystemState.PLAN_LOCKED, context);
 
+            transition(SystemState.EXECUTING, context);
             boolean success = executeTasksWithRetries(tasks);
 
             transition(SystemState.VERIFYING, context);
@@ -302,6 +311,7 @@ public class IterationManager {
             Trajectory trajectory = computeTrajectory(snapshot);
             FailureMemory failureMemory = memoryService.getFailureMemory();
 
+            transition(SystemState.MUTATING, context);
             List<BranchVariant> variants = darwinEngine.generateVariants(goal, snapshot, failureMemory, trajectory);
 
             if (!context.isAutoApprove()) {
@@ -310,6 +320,7 @@ public class IterationManager {
 
             transition(SystemState.PLAN_LOCKED, context);
             gitManager.forceCheckout(snapshotBranch);
+            transition(SystemState.EXECUTING, context);
             BranchVariant bestVariant = evaluateVariantsInternal(variants, taskPlanner, currentIterationModel);
 
             if (bestVariant == null || bestVariant.getScore() <= 0) {

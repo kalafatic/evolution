@@ -7,7 +7,8 @@ import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
-import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
+import eu.kalafatic.evolution.controller.orchestration.IOrchestrator;
+import eu.kalafatic.evolution.controller.orchestration.KernelFacade;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
@@ -99,9 +100,9 @@ public class SelfDevMain {
             context.setAutoApprove(true);
             context.setPlatformMode(new PlatformMode(PlatformType.SELF_DEV_MODE, AutonomyLevel.HIGH, 1, true));
 
-            EvolutionOrchestrator evo = new EvolutionOrchestrator();
+            IOrchestrator kernel = new KernelFacade();
             TaskRequest taskRequest = new TaskRequest(goal, variantDir);
-            OrchestratorResponse orchResponse = evo.handle(taskRequest, context);
+            OrchestratorResponse orchResponse = kernel.handle(taskRequest, context);
 
             String response = orchResponse.getSummary();
 
