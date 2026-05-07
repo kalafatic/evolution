@@ -46,6 +46,8 @@ public class IntentAnalyzer {
                 "  \"ambiguities\": [\n" +
                 "    { \"part\": \"string\", \"reason\": \"string\" }\n" +
                 "  ],\n" +
+                "  \"contradictions\": [\"string\"],\n" +
+                "  \"clarificationQuestion\": \"string\",\n" +
                 "  \"confidenceScore\": float\n" +
                 "}";
 
@@ -71,13 +73,14 @@ public class IntentAnalyzer {
         return result;
     }
 
-    private IntentAnalysisResult parseResult(JSONObject json) {
+    public IntentAnalysisResult parseResult(JSONObject json) {
         IntentAnalysisResult result = new IntentAnalysisResult();
         result.setGoal(json.optString("goal", ""));
         result.setLanguage(json.optString("language", ""));
         result.setFramework(json.optString("framework", ""));
         result.setTargetPlatform(json.optString("targetPlatform", ""));
         result.setExpectedOutput(json.optString("expectedOutput", ""));
+        result.setClarificationQuestion(json.optString("clarificationQuestion", ""));
         result.setConfidenceScore(json.optDouble("confidenceScore", 0.0));
 
         JSONArray constraints = json.optJSONArray("constraints");
@@ -119,6 +122,13 @@ public class IntentAnalyzer {
             }
         }
 
+        JSONArray contradictions = json.optJSONArray("contradictions");
+        if (contradictions != null) {
+            for (int i = 0; i < contradictions.length(); i++) {
+                result.getContradictions().add(contradictions.getString(i));
+            }
+        }
+
         return result;
     }
 
@@ -133,6 +143,9 @@ public class IntentAnalyzer {
         }
         if (!result.getAmbiguities().isEmpty()) {
             context.log("  Ambiguities: " + result.getAmbiguities());
+        }
+        if (!result.getContradictions().isEmpty()) {
+            context.log("  Contradictions: " + result.getContradictions());
         }
     }
 }

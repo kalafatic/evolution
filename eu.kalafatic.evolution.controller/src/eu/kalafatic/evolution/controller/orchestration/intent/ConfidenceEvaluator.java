@@ -25,6 +25,10 @@ public class ConfidenceEvaluator {
             score -= Math.min(0.2, result.getAmbiguities().size() * 0.05);
         }
 
+        if (!result.getContradictions().isEmpty()) {
+            score -= Math.min(0.3, result.getContradictions().size() * 0.15);
+        }
+
         return Math.max(0.0, Math.min(1.0, score));
     }
 }

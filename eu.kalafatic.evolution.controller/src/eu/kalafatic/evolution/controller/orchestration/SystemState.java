@@ -9,6 +9,7 @@ public enum SystemState {
     PLAN_LOCKED,
     EXECUTING,
     VERIFYING,
+    CLARIFYING,
     MUTATING,
     DONE,
     FAILED,

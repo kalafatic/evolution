@@ -49,4 +49,5 @@ public final class EvolutionConstants {
     // Default Values
     public static final float DEFAULT_TEMPERATURE = 0.7f;
     public static final int MAX_TASK_RETRIES = 3;
+    public static final double DEFAULT_CONFIDENCE_THRESHOLD = 0.75;
 }

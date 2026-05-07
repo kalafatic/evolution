@@ -15,6 +15,8 @@ public class IntentAnalysisResult {
     private List<String> constraints = new ArrayList<>();
     private List<MissingRequirement> missingInformation = new ArrayList<>();
     private List<Ambiguity> ambiguities = new ArrayList<>();
+    private List<String> contradictions = new ArrayList<>();
+    private String clarificationQuestion;
     private double confidenceScore;
 
     public String getGoal() {
@@ -81,6 +83,22 @@ public class IntentAnalysisResult {
         this.ambiguities = ambiguities;
     }
 
+    public List<String> getContradictions() {
+        return contradictions;
+    }
+
+    public void setContradictions(List<String> contradictions) {
+        this.contradictions = contradictions;
+    }
+
+    public String getClarificationQuestion() {
+        return clarificationQuestion;
+    }
+
+    public void setClarificationQuestion(String question) {
+        this.clarificationQuestion = question;
+    }
+
     public double getConfidenceScore() {
         return confidenceScore;
     }
@@ -90,6 +108,6 @@ public class IntentAnalysisResult {
     }
 
     public boolean isAmbiguous() {
-        return !ambiguities.isEmpty() || !missingInformation.isEmpty();
+        return !ambiguities.isEmpty() || !missingInformation.isEmpty() || !contradictions.isEmpty();
     }
 }
