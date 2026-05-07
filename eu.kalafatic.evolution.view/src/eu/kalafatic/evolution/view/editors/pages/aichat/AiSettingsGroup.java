@@ -166,7 +166,12 @@ public class AiSettingsGroup extends AEvoGroup {
             }
             if (remoteModel != null) {
                 int index = aiRemoteCombo.indexOf(remoteModel);
-                if (index >= 0) aiRemoteCombo.select(index);
+                if (index >= 0) {
+                    aiRemoteCombo.select(index);
+                } else {
+                    aiRemoteCombo.add(remoteModel);
+                    aiRemoteCombo.select(aiRemoteCombo.indexOf(remoteModel));
+                }
             }
 
             eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
@@ -201,7 +206,12 @@ public class AiSettingsGroup extends AEvoGroup {
                 }
                 if (model != null) {
                     int idx = localModelCombo.indexOf(model);
-                    if (idx >= 0) localModelCombo.select(idx);
+                    if (idx >= 0) {
+                        localModelCombo.select(idx);
+                    } else {
+                        localModelCombo.add(model);
+                        localModelCombo.select(localModelCombo.indexOf(model));
+                    }
                 }
             }
         }
