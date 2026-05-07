@@ -90,14 +90,21 @@ public class ScenarioTest {
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);
 
-        String planResponse = "[{\"id\": \"t1\", \"name\": \"Write Example.java\", \"taskType\": \"file\"}]";
+        String intentResponse = "{" +
+                "\"goal\": \"Write java example\", \"language\": \"java\", \"framework\": \"\", \"targetPlatform\": \"\", \"expectedOutput\": \"java class\", " +
+                "\"constraints\": [], \"missingInformation\": [], \"ambiguities\": [], \"contradictions\": [], \"clarificationQuestion\": \"\", \"confidenceScore\": 1.0" +
+                "}";
+        String planResponse = "[{\"id\": \"t1\", \"name\": \"Write Example.java\", \"taskType\": \"file\", \"description\": \"Write java example\"}]";
         String javaCode = "public class Example { public static void main(String[] args) { System.out.println(\"Hello\"); } }";
         String evalResponse = "{\"success\": true, \"comment\": \"Looks good\"}";
+        String critiqueResponse = "{\"isCorrect\": true, \"qualityScore\": 1.0, \"critique\": {}, \"suggestions\": []}";
 
         mockLlm.setResponseSequence(new String[] {
             "{\"intent\":\"new\", \"confidence\":1.0}", // Intent Classifier
             "{\"category\":\"CODING\", \"isAmbiguous\":false, \"refinedPrompt\":\"Write java example\"}", // Analytic
+            intentResponse, // IntentAnalyzer (Deep Intent Analysis)
             planResponse, // Planner
+            critiqueResponse, // Critic
             javaCode,     // JavaDev (Execution)
             evalResponse  // Validator -> Reviewer (Execution)
             // Constraint check is skipped because DesignModel is missing in shared memory
