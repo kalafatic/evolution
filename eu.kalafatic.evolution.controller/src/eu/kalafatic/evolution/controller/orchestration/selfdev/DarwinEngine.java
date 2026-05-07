@@ -20,59 +20,59 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 
 public class DarwinEngine extends BaseAiAgent {
     private final TaskContext context;
-    private final GitManager gitManager;
-    private TaskExecutor executor;
-    private Evaluator evaluator;
     private final IterationMemoryService memoryService;
     private final SystemStateSignalProvider stateProvider;
 
     public DarwinEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
         super("DarwinEngine", "DarwinEngine");
         this.context = context;
-        this.gitManager = new GitManager(context.getProjectRoot(), context);
-        this.executor = new TaskExecutor(context);
-        this.evaluator = new Evaluator(context.getProjectRoot(), context);
         this.memoryService = memoryService;
         this.stateProvider = stateProvider;
     }
 
-    public void setExecutor(TaskExecutor executor) {
-        this.executor = executor;
-    }
-
-    public void setEvaluator(Evaluator evaluator) {
-        this.evaluator = evaluator;
-    }
-
     @Override
     protected String getAgentInstructions() {
-        return "You are an AI operating inside a general-purpose iterative development system.\n" +
-               "Your task is to IMPROVE decision quality and system intelligence by reasoning over STATE and FEEDBACK — not by generating isolated code.\n\n" +
-               "PRIMARY OBJECTIVE:\n" +
-               "→ Do not think in terms of 'code generation'.\n" +
-               "→ Think in terms of: STATE TRANSITIONS, SYSTEM IMPROVEMENT, LONG-TERM EFFECTS.\n" +
-               "→ Each iteration must improve the system state, not just produce code.\n\n" +
-               "STATE MODEL:\n" +
-               "→ Use the provided StateSnapshot (build, tests, coverage) to inform decisions.\n" +
-               "→ Analyze relationships between elements (files, modules, tests, failures, dependencies).\n" +
-               "→ Identify weak points (failures, instability, complexity).\n" +
-               "→ Propose actions that improve overall system health.\n\n" +
-               "FAILURE FINGERPRINTING & ANTI-LOOP:\n" +
-               "→ Avoid repeating actions that lead to the same failure fingerprints.\n" +
-               "→ If a failure is REPEATING (count >= 2), you MUST change your strategy.\n\n" +
-               "HYPOTHESIS-DRIVEN VARIANTS:\n" +
-               "→ Every variant MUST include a hypothesis: a causal explanation of why the proposed changes will lead to the expected effects.\n" +
-               "→ Expected effects must be measurable outcomes (e.g., 'build success', 'test X passes').\n\n" +
-               "TRAJECTORY AWARENESS:\n" +
-               "→ Consider the build/test trends. Prefer variants that improve ANY dimension.\n\n" +
-               "PRIORITY LOGIC:\n" +
-               "→ IF build == FAIL → focus on build fixes.\n" +
-               "→ ELSE IF tests failing → focus on test fixes.\n" +
-               "→ ELSE → refinement.\n\n" +
-               "ITERATION STRATEGY (DARWINIAN):\n" +
-               "→ Generate 2–3 DIFFERENT candidate state transitions.\n" +
-               "→ Each candidate must represent a distinct strategy and target a meaningful system improvement.\n" +
-               "→ Avoid cosmetic changes, repeated failed approaches, or low-impact modifications.";
+        boolean isSelfDev = context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("You are an AI operating inside a general-purpose iterative development system.\n");
+
+        if (isSelfDev) {
+            sb.append("Your task is to IMPROVE decision quality and system intelligence by reasoning over STATE and FEEDBACK — not by generating isolated code.\n\n");
+            sb.append("PRIMARY OBJECTIVE:\n");
+            sb.append("→ Do not think in terms of 'code generation'.\n");
+            sb.append("→ Think in terms of: STATE TRANSITIONS, SYSTEM IMPROVEMENT, LONG-TERM EFFECTS.\n");
+            sb.append("→ Each iteration must improve the system state, not just produce code.\n\n");
+        } else {
+            sb.append("Your task is to propose the best STRATEGY to fulfill the user's goal by reasoning over STATE and FEEDBACK.\n\n");
+            sb.append("PRIMARY OBJECTIVE:\n");
+            sb.append("→ Propose 2-3 distinct candidate state transitions (strategies) to achieve the goal.\n");
+            sb.append("→ Each variant must be a complete, actionable strategy that targets the specific goal.\n\n");
+        }
+
+        sb.append("STATE MODEL:\n")
+          .append("→ Use the provided StateSnapshot (build, tests, coverage) to inform decisions.\n")
+          .append("→ Analyze relationships between elements (files, modules, tests, failures, dependencies).\n")
+          .append("→ Identify weak points (failures, instability, complexity).\n")
+          .append("→ Propose actions that improve overall system health and achieve the target goal.\n\n")
+          .append("FAILURE FINGERPRINTING & ANTI-LOOP:\n")
+          .append("→ Avoid repeating actions that lead to the same failure fingerprints.\n")
+          .append("→ If a failure is REPEATING (count >= 2), you MUST change your strategy.\n\n")
+          .append("HYPOTHESIS-DRIVEN VARIANTS:\n")
+          .append("→ Every variant MUST include a hypothesis: a causal explanation of why the proposed changes will lead to the expected effects.\n")
+          .append("→ Expected effects must be measurable outcomes (e.g., 'build success', 'test X passes', 'new class prints text').\n\n")
+          .append("TRAJECTORY AWARENESS:\n")
+          .append("→ Consider the build/test trends. Prefer variants that improve ANY dimension.\n\n")
+          .append("PRIORITY LOGIC:\n")
+          .append("→ IF build == FAIL → focus on build fixes.\n")
+          .append("→ ELSE IF tests failing → focus on test fixes.\n")
+          .append("→ ELSE → fulfillment of the current goal.\n\n")
+          .append("ITERATION STRATEGY (DARWINIAN):\n")
+          .append("→ Generate 2–3 DIFFERENT candidate state transitions.\n")
+          .append("→ Each candidate must represent a distinct strategy.\n")
+          .append("→ Avoid cosmetic changes, repeated failed approaches, or low-impact modifications.");
+
+        return sb.toString();
     }
 
     @Override

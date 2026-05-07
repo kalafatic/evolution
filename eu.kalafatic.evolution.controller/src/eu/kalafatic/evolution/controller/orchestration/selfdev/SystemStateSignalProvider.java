@@ -46,6 +46,27 @@ public class SystemStateSignalProvider {
         String os = System.getProperty("os.name");
         sb.append(" on ").append(os).append("\n");
 
+        // 4. File Structure Discovery
+        sb.append("\n--- FILE STRUCTURE (TOP-LEVEL & KEY DIRECTORIES) ---\n");
+        sb.append(discoverFileStructure(projectRoot, "", 0));
+
+        return sb.toString();
+    }
+
+    private String discoverFileStructure(File dir, String indent, int depth) {
+        if (depth > 2) return ""; // Limit depth to keep prompt manageable
+        StringBuilder sb = new StringBuilder();
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.getName().startsWith(".") || f.getName().equals("target") || f.getName().equals("bin") || f.getName().equals("node_modules")) continue;
+
+                sb.append(indent).append("- ").append(f.getName()).append(f.isDirectory() ? "/" : "").append("\n");
+                if (f.isDirectory() && depth < 2) {
+                    sb.append(discoverFileStructure(f, indent + "  ", depth + 1));
+                }
+            }
+        }
         return sb.toString();
     }
 

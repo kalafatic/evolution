@@ -5,6 +5,7 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -33,13 +34,26 @@ public class TaskPlanner extends BaseAiAgent {
         for (BranchVariant.Action action : variant.getActions()) {
             Task task = factory.createTask();
             task.setId("sd-task-" + System.currentTimeMillis() + "-" + tasks.size());
-            task.setName(action.getOperation() + " " + action.getTarget());
+
+            String op = action.getOperation().toUpperCase();
+            String target = action.getTarget();
+            task.setName(op + " " + target);
 
             String type = "llm";
-            if ("file".equalsIgnoreCase(action.getDomain()) || "class".equalsIgnoreCase(action.getDomain())) type = "file";
+            if ("file".equalsIgnoreCase(action.getDomain()) || "class".equalsIgnoreCase(action.getDomain())) {
+                type = "file";
+                if (op.equals("DELETE") || op.equals("REMOVE")) {
+                    task.setName("DELETE " + target);
+                    task.setType("shell");
+                } else if (op.equals("MKDIR")) {
+                    task.setName("MKDIR " + target);
+                    task.setType("shell");
+                }
+            }
             else if ("build".equalsIgnoreCase(action.getDomain())) type = "maven";
             else if ("structure".equalsIgnoreCase(action.getDomain())) type = "structure";
             else if ("test".equalsIgnoreCase(action.getDomain())) type = "maven"; // usually 'mvn test'
+            else if ("git".equalsIgnoreCase(action.getDomain())) type = "git";
 
             task.setType(type);
             task.setDescription(action.getDescription());
@@ -98,15 +112,12 @@ public class TaskPlanner extends BaseAiAgent {
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("[PLANNER] AI response received.");
 
-        int start = response.indexOf("[");
-        int end = response.lastIndexOf("]");
-
-        if (start == -1 || end == -1) {
+        JSONArray jsonArray = JsonUtils.extractJsonArrayFlexible(response);
+        if (jsonArray == null) {
             context.log("[PLANNER] Error: AI response is not a valid JSON array. Response: " + response);
             return new ArrayList<>();
         }
 
-        JSONArray jsonArray = new JSONArray(response.substring(start, end + 1));
         List<Task> tasks = new ArrayList<>();
         OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
 
