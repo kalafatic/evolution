@@ -20,6 +20,7 @@ import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
+import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
@@ -196,6 +197,14 @@ public class IterationManager {
                 deepAnalysis = intentParser.parseResult(analysis.getJSONObject("structuredIntent"));
             }
 
+            // --- Requirement Drift Detection ---
+            ConfirmedRequirements frozen = state.getConfirmedRequirements();
+            if (frozen != null && hasSignificantDrift(frozen, deepAnalysis)) {
+                context.log("[KERNEL] Requirement drift detected (v" + frozen.getVersion() + "). New intent: " + deepAnalysis.getGoal());
+                context.log("[AUDIT] Re-evaluating requirements due to significant drift.");
+                // We don't null it here to preserve the version number for the next freeze
+            }
+
             if (clarificationManager.shouldClarify(deepAnalysis) && !context.getOrchestrator().isDarwinMode() && !context.isAutoApprove()) {
                 transition(SystemState.CLARIFYING, context);
                 String question = clarificationManager.generateClarificationQuestion(deepAnalysis, context);
@@ -218,6 +227,12 @@ public class IterationManager {
                     transition(SystemState.FAILED, context);
                     return response;
                 }
+            }
+
+            // --- Requirement Freezing ---
+            if (!context.getOrchestrator().isDarwinMode()) {
+                freezeRequirements(state, deepAnalysis, context);
+                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), state));
             }
 
             String analyzedRequest = analysis.optString("refinedPrompt", request);
@@ -466,6 +481,45 @@ public class IterationManager {
             for (File file : allContents) deleteDirectory(file);
         }
         directory.delete();
+    }
+
+    private void freezeRequirements(ConversationState state, IntentAnalysisResult result, TaskContext context) {
+        ConfirmedRequirements existing = state.getConfirmedRequirements();
+
+        // If it's identical to the existing one, don't update (avoid version churn)
+        if (existing != null && existing.getHash().equals(Integer.toHexString(java.util.Objects.hash(result.getGoal(), result.getLanguage(), result.getFramework(), result.getConstraints(), result.getExpectedOutput())))) {
+            return;
+        }
+
+        int version = existing != null ? existing.getVersion() + 1 : 1;
+        ConfirmedRequirements frozen = new ConfirmedRequirements(
+            result.getGoal(),
+            result.getLanguage(),
+            result.getFramework(),
+            result.getConstraints(),
+            result.getExpectedOutput(),
+            version
+        );
+        state.setConfirmedRequirements(frozen);
+        context.log("[KERNEL] Requirements Frozen (v" + version + "): " + frozen.getHash());
+        context.log("[AUDIT] Frozen Requirements Goal: " + frozen.getGoal());
+    }
+
+    private boolean hasSignificantDrift(ConfirmedRequirements frozen, IntentAnalysisResult newAnalysis) {
+        if (frozen == null) return false;
+
+        // Simple heuristic for significant drift
+        if (!frozen.getGoal().equalsIgnoreCase(newAnalysis.getGoal()) && !newAnalysis.getGoal().isEmpty()) {
+            return true;
+        }
+        if (!frozen.getLanguage().equalsIgnoreCase(newAnalysis.getLanguage()) && !newAnalysis.getLanguage().isEmpty()) {
+            return true;
+        }
+        if (!frozen.getFramework().equalsIgnoreCase(newAnalysis.getFramework()) && !newAnalysis.getFramework().isEmpty()) {
+            return true;
+        }
+
+        return !newAnalysis.getContradictions().isEmpty();
     }
 
     private Trajectory computeTrajectory(StateSnapshot current) {

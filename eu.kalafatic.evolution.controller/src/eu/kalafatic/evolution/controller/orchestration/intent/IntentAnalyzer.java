@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.AiService;
+import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 
@@ -26,6 +27,9 @@ public class IntentAnalyzer {
      * @throws Exception if analysis fails.
      */
     public IntentAnalysisResult analyze(String prompt, TaskContext context) throws Exception {
+        ConversationState state = ConversationState.load(context.getSharedMemory(), context.getSessionId());
+        ConfirmedRequirements frozen = state.getConfirmedRequirements();
+
         String systemPrompt = "You are an Intent Extraction specialist. Your task is to convert raw user requests into structured intent JSON.\n" +
                 "STRICT RULES:\n" +
                 "1. Output MUST be ONLY a single JSON object.\n" +
@@ -50,6 +54,12 @@ public class IntentAnalyzer {
                 "  \"clarificationQuestion\": \"string\",\n" +
                 "  \"confidenceScore\": float\n" +
                 "}";
+
+        if (frozen != null) {
+            systemPrompt += "\n\n### MANDATORY FROZEN REQUIREMENTS (DO NOT DEVIATE) ###\n" +
+                            "You MUST detect if the NEW user request contradicts or significantly drifts from these frozen requirements.\n" +
+                            frozen.toString();
+        }
 
         String userPrompt = "Analyze the following user request:\n\n" + prompt;
 
