@@ -16,6 +16,9 @@ public class ConversationState {
     private List<String> lastMessages = new ArrayList<>();
     private List<String> openQuestions = new ArrayList<>();
     private List<String> decisions = new ArrayList<>();
+    private List<String> pendingQuestions = new ArrayList<>();
+    private List<String> clarificationHistory = new ArrayList<>();
+    private boolean isRequirementMet = true;
 
     public String getGoal() { return goal; }
     public void setGoal(String goal) { this.goal = goal; }
@@ -38,6 +41,15 @@ public class ConversationState {
     public List<String> getDecisions() { return decisions; }
     public void addDecision(String decision) { this.decisions.add(decision); }
 
+    public List<String> getPendingQuestions() { return pendingQuestions; }
+    public void setPendingQuestions(List<String> questions) { this.pendingQuestions = questions; }
+
+    public List<String> getClarificationHistory() { return clarificationHistory; }
+    public void addClarification(String clarification) { this.clarificationHistory.add(clarification); }
+
+    public boolean isRequirementMet() { return isRequirementMet; }
+    public void setRequirementMet(boolean met) { this.isRequirementMet = met; }
+
     public JSONObject toJSON() {
         JSONObject json = new JSONObject();
         json.put("goal", goal);
@@ -46,6 +58,9 @@ public class ConversationState {
         json.put("last_messages", new JSONArray(lastMessages));
         json.put("open_questions", new JSONArray(openQuestions));
         json.put("decisions", new JSONArray(decisions));
+        json.put("pending_questions", new JSONArray(pendingQuestions));
+        json.put("clarification_history", new JSONArray(clarificationHistory));
+        json.put("is_requirement_met", isRequirementMet);
         return json;
     }
 
@@ -72,6 +87,18 @@ public class ConversationState {
             if (decs != null) {
                 for (int i = 0; i < decs.length(); i++) state.decisions.add(decs.getString(i));
             }
+
+            JSONArray pQues = json.optJSONArray("pending_questions");
+            if (pQues != null) {
+                for (int i = 0; i < pQues.length(); i++) state.pendingQuestions.add(pQues.getString(i));
+            }
+
+            JSONArray cHist = json.optJSONArray("clarification_history");
+            if (cHist != null) {
+                for (int i = 0; i < cHist.length(); i++) state.clarificationHistory.add(cHist.getString(i));
+            }
+
+            state.setRequirementMet(json.optBoolean("is_requirement_met", true));
         } catch (Exception e) {
             // Log error and return empty state
         }

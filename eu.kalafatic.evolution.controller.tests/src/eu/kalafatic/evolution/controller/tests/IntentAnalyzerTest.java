@@ -104,6 +104,31 @@ public class IntentAnalyzerTest {
         assertEquals(0.3, result.getConfidenceScore(), 0.001);
     }
 
+    @Test
+    public void testContradictoryIntent() throws Exception {
+        String response = "{\n" +
+                "  \"goal\": \"Create class\",\n" +
+                "  \"language\": \"Java\",\n" +
+                "  \"framework\": \"none\",\n" +
+                "  \"targetPlatform\": \"none\",\n" +
+                "  \"expectedOutput\": \"Java class\",\n" +
+                "  \"constraints\": [],\n" +
+                "  \"missingInformation\": [],\n" +
+                "  \"ambiguities\": [],\n" +
+                "  \"contradictions\": [\"User asked for Java but also mentioned Python for the same file\"],\n" +
+                "  \"confidenceScore\": 0.5\n" +
+                "}";
+        mockLlm.setResponse(response);
+
+        IntentAnalyzer analyzer = new IntentAnalyzer(aiService);
+        IntentAnalysisResult result = analyzer.analyze("create a java class but use python syntax", context);
+
+        assertTrue(result.isAmbiguous());
+        assertEquals(1, result.getContradictions().size());
+        assertTrue(result.getContradictions().get(0).contains("Python"));
+        assertEquals(0.5, result.getConfidenceScore(), 0.001);
+    }
+
     private void injectMockLlm(AiService service, MockLlmProvider mock) throws Exception {
         Field routerField = service.getClass().getDeclaredField("llmRouter");
         routerField.setAccessible(true);

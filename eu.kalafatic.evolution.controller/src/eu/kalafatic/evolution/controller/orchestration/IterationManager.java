@@ -19,6 +19,9 @@ import eu.kalafatic.evolution.controller.agents.GeneralAgent;
 import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent;
+import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
@@ -53,6 +56,7 @@ public class IterationManager {
     private final Evaluator evaluator;
     private final DarwinEngine darwinEngine;
     private final IterationMemoryService memoryService;
+    private final ClarificationManager clarificationManager = new ClarificationManager();
 
     private IIntentClassifier intentClassifier = new LlmIntentClassifier();
     private IPolicyEngine policyEngine = new RuleBasedPolicyEngine();
@@ -171,7 +175,7 @@ public class IterationManager {
             }
 
             // --- Consolidated Kernel Intelligence Entry ---
-            // AnalyticAgent is now the single source of truth for intent, category, and clarification.
+            // AnalyticAgent is the single source of truth for intent, category, and clarification.
             JSONObject analysis = analyticAgent.analyze(request, context);
             context.log("[KERNEL] Analysis Result: " + analysis.toString());
 
@@ -183,17 +187,40 @@ public class IterationManager {
                 return response;
             }
 
-            // 2. Clarification Loop (Only for non-Darwin tasks)
-            String analyzedRequest = analysis.optString("refinedPrompt", request);
-            if (analysis.optBoolean("isAmbiguous", false) && !context.getOrchestrator().isDarwinMode() && !context.isAutoApprove()) {
-                String question = analysis.optString("clarificationQuestion", "More details needed.");
+            // 2. Intent Clarification Loop (Only for non-Darwin tasks)
+            IntentAnalyzer intentParser = new IntentAnalyzer(aiService);
+            IntentAnalysisResult deepAnalysis = intentParser.parseResult(analysis);
+
+            // Map structuredIntent if available (from AnalyticAgent internal Deep Intent Analysis)
+            if (analysis.has("structuredIntent")) {
+                deepAnalysis = intentParser.parseResult(analysis.getJSONObject("structuredIntent"));
+            }
+
+            if (clarificationManager.shouldClarify(deepAnalysis) && !context.getOrchestrator().isDarwinMode() && !context.isAutoApprove()) {
+                transition(SystemState.CLARIFYING, context);
+                String question = clarificationManager.generateClarificationQuestion(deepAnalysis, context);
+                clarificationManager.updateState(state, deepAnalysis, question);
+
+                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), state));
+
                 String clarification = context.requestInput(question).get();
-                if (clarification != null && !clarification.isEmpty()) {
+                if (clarification != null && !clarification.isEmpty() && !clarification.equalsIgnoreCase("Rejected")) {
+                    state.addClarification(clarification);
+                    state.setRequirementMet(true);
+                    context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), state));
+
                     // Recursive re-analysis with clarification
                     return handle(new TaskRequest(request + "\nClarification: " + clarification, taskRequest.getProjectRoot()));
+                } else {
+                    // Blocking: prevent code generation if clarification is empty or rejected
+                    context.log("[KERNEL] Clarification refused or empty. Stopping generation.");
+                    response.setSummary("Generation stopped: Clarification required but not provided.");
+                    transition(SystemState.FAILED, context);
+                    return response;
                 }
             }
 
+            String analyzedRequest = analysis.optString("refinedPrompt", request);
 
             // Goal/Darwin Handoff
             if (context.getPlatformMode().getType() == PlatformType.DARWIN_MODE || context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
