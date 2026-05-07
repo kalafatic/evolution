@@ -20,7 +20,7 @@ window.ChatApp.Renderer = {
         const content = document.createElement('div');
         content.className = 'message-content';
 
-        let isDarwin = role.includes('darwin');
+        let isDarwin = role.includes('darwin') && (m.text.includes('{') || m.text.includes('['));
         if (!isDarwin) {
              try {
                 const data = JSON.parse(m.text);
