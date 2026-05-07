@@ -280,8 +280,9 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void saveLastUsedSettings() {
-		if (orchestrator == null) return;
+		if (orchestrator == null || Activator.getDefault() == null) return;
 		IDialogSettings settings = Activator.getDefault().getDialogSettings();
+		if (settings == null) return;
 		IDialogSettings section = settings.getSection("AiChatSettings");
 		if (section == null) section = settings.addNewSection("AiChatSettings");
 
@@ -293,8 +294,9 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void loadLastUsedSettings() {
-		if (orchestrator == null) return;
+		if (orchestrator == null || Activator.getDefault() == null) return;
 		IDialogSettings settings = Activator.getDefault().getDialogSettings();
+		if (settings == null) return;
 		IDialogSettings section = settings.getSection("AiChatSettings");
 		if (section == null) return;
 
