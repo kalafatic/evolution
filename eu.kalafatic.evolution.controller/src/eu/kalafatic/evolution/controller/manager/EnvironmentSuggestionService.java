@@ -50,7 +50,9 @@ public class EnvironmentSuggestionService {
         }
 
         if (orchestrator.getOllama() != null && (orchestrator.getOllama().getModel() == null || orchestrator.getOllama().getModel().isEmpty())) {
-            suggestions.add(new Suggestion("Ollama Model", "Not set", "llama3.2:3b", "Compact and efficient model for local orchestration.", true));
+        	List<OllamaModel> models = OllamaConfigManager.loadModels();
+        	if (models!=null && !models.isEmpty())
+        	  suggestions.add(new Suggestion("Ollama Model", "Not set", models.getFirst().getName(), "Compact and efficient model for local orchestration.", true));
         }
 
         // 4. Java Version

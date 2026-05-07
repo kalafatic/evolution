@@ -37,7 +37,8 @@ public class PreviewPage extends Composite {
             res.save(new java.io.OutputStream() {
                 @Override public void write(int b) throws java.io.IOException { writer.write(b); }
             }, null);
-        } catch (java.io.IOException e) { e.printStackTrace(); }
+        } catch (java.io.IOException e) { 
+        	e.printStackTrace(); }
 
         String editorText = writer.toString();
         StringTokenizer tokenizer = new StringTokenizer(editorText, " \t\n\r\f!@#%^&*()-_=+~[]{};:'\",.<>/?|\\\\");

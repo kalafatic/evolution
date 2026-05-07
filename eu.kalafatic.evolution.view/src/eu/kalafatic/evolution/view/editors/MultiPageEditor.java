@@ -43,6 +43,7 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.ide.IGotoMarker;
+import org.eclipse.ui.operations.LinearUndoViolationUserApprover;
 import org.eclipse.ui.part.MultiPageEditorPart;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
@@ -176,6 +177,9 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (undoContext == null) {
             undoContext = new ObjectUndoContext(this);
         }
+     // Important: Register with the operation history
+        IOperationHistory history = OperationHistoryFactory.getOperationHistory();
+        history.addOperationApprover(new LinearUndoViolationUserApprover(undoContext, this)); // optional
         super.init(site, input);
     }
 
@@ -285,6 +289,30 @@ public class MultiPageEditor extends MultiPageEditorPart {
             e.printStackTrace();
         }
     }
+    
+    /*@Override
+    public void doSave(IProgressMonitor monitor) {
+        SubMonitor sub = SubMonitor.convert(monitor, "Saving", 100);
+        try {
+            /**
+             * Synchronize model -> editor document ONLY.
+             * DO NOT physically write the file here.
+             */
+            /*if (resource != null) {
+                ProjectModelManager.getInstance().saveResource(resource);
+            }
+            /*
+             * Let Eclipse editor own the actual save.
+             */
+            /*if (textEditor != null) {
+                textEditor.doSave(sub.split(100));
+            }
+            setDirty(false);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }*/
 
     @Override
     public void doSaveAs() {
@@ -532,6 +560,11 @@ public class MultiPageEditor extends MultiPageEditorPart {
         IEditorActionBarContributor contributor = getEditorSite().getActionBarContributor();
         if (contributor instanceof MultiPageEditorActionBarContributor) {
             ((MultiPageEditorActionBarContributor) contributor).setActivePage(getEditor(newPageIndex));
+        }
+        // Force update of action bars / undo context when switching pages
+        IEditorPart activeEditor = getEditor(newPageIndex);
+        if (activeEditor != null) {
+        	getEditorSite().getActionBars().updateActionBars();
         }
 
         Control control = getControl(newPageIndex);
