@@ -22,7 +22,6 @@ import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
-import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
@@ -48,7 +47,7 @@ import eu.kalafatic.evolution.model.orchestration.Task;
  *
  * @evo:21:A reason=kernel-refactor-alignment
  */
-public class IterationManager {
+public class IterationManager2 {
     private static final ExecutorService variantExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
 
     private final TaskContext context;
@@ -73,7 +72,7 @@ public class IterationManager {
 
     private Iteration currentIterationModel;
 
-    public IterationManager(
+    public IterationManager2(
             TaskContext context,
             AiService aiService,
             GitManager gitManager,
@@ -202,14 +201,6 @@ public class IterationManager {
                 deepAnalysis = intentParser.parseResult(analysis.getJSONObject("structuredIntent"));
             }
 
-            // --- Requirement Drift Detection ---
-            ConfirmedRequirements frozen = state.getConfirmedRequirements();
-            if (frozen != null && hasSignificantDrift(frozen, deepAnalysis)) {
-                context.log("[KERNEL] Requirement drift detected (v" + frozen.getVersion() + "). New intent: " + deepAnalysis.getGoal());
-                context.log("[AUDIT] Re-evaluating requirements due to significant drift.");
-                // We don't null it here to preserve the version number for the next freeze
-            }
-
             if (clarificationManager.shouldClarify(deepAnalysis) && !context.getOrchestrator().isDarwinMode() && !context.isAutoApprove()) {
                 transition(SystemState.CLARIFYING, context);
                 String question = clarificationManager.generateClarificationQuestion(deepAnalysis, context);
@@ -234,12 +225,6 @@ public class IterationManager {
                 }
             }
 
-            // --- Requirement Freezing ---
-            if (!context.getOrchestrator().isDarwinMode()) {
-                freezeRequirements(state, deepAnalysis, context);
-                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), state));
-            }
-
             String analyzedRequest = analysis.optString("refinedPrompt", request);
 
             // Goal/Darwin Handoff
@@ -249,15 +234,9 @@ public class IterationManager {
                 transition(SystemState.DONE, context);
                 return response;
             }
-            
-            
 
             // 3. Strategic Planning (using already analyzed/clarified request)
-            List<Task> tasks = strategicPlanner.plan(analyzedRequest, context);
-            
-            // merge with any additional tasks from the critic/planner agents if needed (e.g., for iterative repair or multi-agent collaboration scenarios)
-           tasks = decideFlow(tasks, request, context);            
-            
+            List<Task> tasks = iterativePlan(analyzedRequest, context);
             context.getOrchestrator().getTasks().addAll(tasks);
             transition(SystemState.PLAN_LOCKED, context);
 
@@ -277,21 +256,7 @@ public class IterationManager {
         }
     }
 
-	private List<Task> decideFlow(List<Task> tasks, String request, TaskContext context2) throws Exception {
-		boolean needsDeepPlanning = 
-				//mode == DARWIN_MODE ||
-				 tasks.size() > 3 
-				//|| containsAmbiguity(request) || hasHighRisk(request)
-				//|| isArchitectureLevel(request)
-				;
-
-		if (!needsDeepPlanning) {
-			return tasks;
-		}
-		return iterativePlan(request, context);
-	}
-
-	private void transition(SystemState to, TaskContext ctx) {
+    private void transition(SystemState to, TaskContext ctx) {
         TransitionToken token = new TransitionToken();
         SystemState current = ctx.getStateHolder().getState();
         ctx.log("[KERNEL] Transition: " + current + " -> " + to);
@@ -331,7 +296,7 @@ public class IterationManager {
                      context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
 
         try {
-            List<Task> tasks = taskPlanner.generateTasks(context, goal);
+            List<Task> tasks = iterativePlan(goal, context);
             transition(SystemState.PLAN_LOCKED, context);
 
             transition(SystemState.EXECUTING, context);
@@ -506,45 +471,6 @@ public class IterationManager {
             for (File file : allContents) deleteDirectory(file);
         }
         directory.delete();
-    }
-
-    private void freezeRequirements(ConversationState state, IntentAnalysisResult result, TaskContext context) {
-        ConfirmedRequirements existing = state.getConfirmedRequirements();
-        
-        // If it's identical to the existing one, don't update (avoid version churn)
-        if (existing != null && existing.getHash().equals(Integer.toHexString(java.util.Objects.hash(result.getGoal(), result.getLanguage(), result.getFramework(), result.getConstraints(), result.getExpectedOutput())))) {
-            return;
-        }
-
-        int version = existing != null ? existing.getVersion() + 1 : 1;
-        ConfirmedRequirements frozen = new ConfirmedRequirements(
-            result.getGoal(),
-            result.getLanguage(),
-            result.getFramework(),
-            result.getConstraints(),
-            result.getExpectedOutput(),
-            version
-        );
-        state.setConfirmedRequirements(frozen);
-        context.log("[KERNEL] Requirements Frozen (v" + version + "): " + frozen.getHash());
-        context.log("[AUDIT] Frozen Requirements Goal: " + frozen.getGoal());
-    }
-
-    private boolean hasSignificantDrift(ConfirmedRequirements frozen, IntentAnalysisResult newAnalysis) {
-        if (frozen == null) return false;
-        
-        // Simple heuristic for significant drift
-        if (!frozen.getGoal().equalsIgnoreCase(newAnalysis.getGoal()) && !newAnalysis.getGoal().isEmpty()) {
-            return true;
-        }
-        if (!frozen.getLanguage().equalsIgnoreCase(newAnalysis.getLanguage()) && !newAnalysis.getLanguage().isEmpty()) {
-            return true;
-        }
-        if (!frozen.getFramework().equalsIgnoreCase(newAnalysis.getFramework()) && !newAnalysis.getFramework().isEmpty()) {
-            return true;
-        }
-        
-        return !newAnalysis.getContradictions().isEmpty();
     }
 
     private Trajectory computeTrajectory(StateSnapshot current) {
