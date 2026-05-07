@@ -173,6 +173,7 @@ public class IterationManager {
             // --- Consolidated Kernel Intelligence Entry ---
             // AnalyticAgent is now the single source of truth for intent, category, and clarification.
             JSONObject analysis = analyticAgent.analyze(request, context);
+            context.log("[KERNEL] Analysis Result: " + analysis.toString());
 
             // 1. Intent/Policy Gate
             String policyResponse = policyEngine.evaluate(analysis, request, context);

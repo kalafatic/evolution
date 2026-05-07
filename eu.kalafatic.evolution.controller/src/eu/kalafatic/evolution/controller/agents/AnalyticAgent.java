@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.controller.agents;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
@@ -78,6 +80,12 @@ public class AnalyticAgent extends BaseAiAgent {
 
     // @evo:14:B reason=traceability-support
     public JSONObject analyze(String prompt, TaskContext context) throws Exception {
+        // Step 1: Perform Deep Intent Analysis
+        IntentAnalyzer intentAnalyzer = new IntentAnalyzer(aiService);
+        IntentAnalysisResult intentResult = intentAnalyzer.analyze(prompt, context);
+
+        // Step 2: Fallback to existing logic for Category/RefinedPrompt/Clarification if needed
+        // or map intentResult back to expected JSON for IterationManager compatibility
         String fullPrompt = buildPrompt(prompt, context, null);
         context.log("Evo-Analytic-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
@@ -88,9 +96,9 @@ public class AnalyticAgent extends BaseAiAgent {
         if (analysis == null) {
              analysis = new JSONObject();
              analysis.put("intent", "new");
-             analysis.put("confidence", 1.0);
+             analysis.put("confidence", intentResult.getConfidenceScore());
              analysis.put("category", "CODING");
-             analysis.put("isAmbiguous", false);
+             analysis.put("isAmbiguous", intentResult.isAmbiguous());
              analysis.put("refinedPrompt", prompt);
         }
 
@@ -98,8 +106,19 @@ public class AnalyticAgent extends BaseAiAgent {
         if (!analysis.has("intent")) {
             analysis.put("intent", "new");
         }
+
+        // Enrich with structured intent if available
+        analysis.put("structuredIntent", new JSONObject()
+            .put("goal", intentResult.getGoal())
+            .put("language", intentResult.getLanguage())
+            .put("framework", intentResult.getFramework())
+            .put("targetPlatform", intentResult.getTargetPlatform())
+            .put("expectedOutput", intentResult.getExpectedOutput())
+            .put("constraints", intentResult.getConstraints())
+            .put("confidence", intentResult.getConfidenceScore()));
+
         if (!analysis.has("confidence")) {
-            analysis.put("confidence", 1.0);
+            analysis.put("confidence", intentResult.getConfidenceScore());
         }
 
         return analysis;
