@@ -136,6 +136,40 @@ public class IterationManager {
                 context.log("Platform Mode: " + mode.getType());
             }
 
+            // --- FAST TRACK: SIMPLE_CHAT Mode Short-circuit ---
+            // We bypass the orchestration loop if the mode is already identified as SIMPLE_CHAT.
+            if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
+                context.log("Evo-Orchestrator-Mode: SIMPLE_CHAT detected. Bypassing orchestration loop.");
+                transition(SystemState.EXECUTING, context);
+                GeneralAgent chatAgent = (GeneralAgent) availableAgents.stream()
+                        .filter(a -> a instanceof GeneralAgent)
+                        .findFirst()
+                        .orElse(new GeneralAgent());
+                chatAgent.setAiService(aiService);
+                String chatResponse = chatAgent.process(request, context, null);
+                state.addMessage("Evo: " + chatResponse);
+                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), state));
+                response.setSummary(chatResponse);
+                response.setContent(chatResponse);
+                transition(SystemState.DONE, context);
+                return response;
+            }
+
+            // --- Consolidated Kernel Intelligence Entry (IntentAnalyzer) ---
+            // AnalyticAgent is the semantic authority for non-trivial requests.
+            // --- Consolidated Kernel Intelligence Entry ---
+            // AnalyticAgent is the single source of truth for intent, category, and clarification.
+            JSONObject analysis = analyticAgent.analyze(request, context);
+            context.log("[KERNEL] Analysis Result: " + analysis.toString());
+
+            // 1. Intent/Policy Gate
+            String policyResponse = policyEngine.evaluate(analysis, request, context);
+            if (policyResponse != null) {
+                response.setSummary(policyResponse);
+                transition(SystemState.DONE, context);
+                return response;
+            }
+
             // 3. Strategic Planning & Execution
             transition(SystemState.ANALYZING, context);
 
@@ -158,36 +192,10 @@ public class IterationManager {
                 return response;
             }
 
-            // SIMPLE_CHAT Mode - handled after ANALYZING start to keep flow consistent
-            if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
-                transition(SystemState.EXECUTING, context);
-                GeneralAgent chatAgent = (GeneralAgent) availableAgents.stream()
-                        .filter(a -> a instanceof GeneralAgent)
-                        .findFirst()
-                        .orElse(new GeneralAgent());
-                chatAgent.setAiService(aiService);
-                String chatResponse = chatAgent.process(request, context, null);
-                state.addMessage("Evo: " + chatResponse);
-                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), state));
-                response.setSummary(chatResponse);
-                response.setContent(chatResponse);
-                transition(SystemState.DONE, context);
-                return response;
-            }
-
-            // --- Consolidated Kernel Intelligence Entry ---
-            // AnalyticAgent is the single source of truth for intent, category, and clarification.
-            JSONObject analysis = analyticAgent.analyze(request, context);
-            context.log("[KERNEL] Analysis Result: " + analysis.toString());
-
-            // 1. Intent/Policy Gate
-            String policyResponse = policyEngine.evaluate(analysis, request, context);
-            if (policyResponse != null) {
-                response.setSummary(policyResponse);
-                transition(SystemState.DONE, context);
-                return response;
-            }
-
+            // 2. Clarification Loop (Only for non-Darwin tasks)
+            String analyzedRequest = analysis.optString("refinedPrompt", request);
+            if (analysis.optBoolean("isAmbiguous", false) && !context.getOrchestrator().isDarwinMode() && !context.isAutoApprove()) {
+                String question = analysis.optString("clarificationQuestion", "More details needed.");
             // 2. Intent Clarification Loop (Only for non-Darwin tasks)
             IntentAnalyzer intentParser = new IntentAnalyzer(aiService);
             IntentAnalysisResult deepAnalysis = intentParser.parseResult(analysis);
