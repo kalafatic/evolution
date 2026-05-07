@@ -138,7 +138,10 @@ public class IterationManager {
                 ModeRouter router = new ModeRouter();
                 PlatformMode mode = router.route(request, context.getOrchestrator());
                 context.setPlatformMode(mode);
-                context.log("Platform Mode: " + mode.getType());
+                context.log("Platform Mode: " + mode.getType() + " detected for prompt: " + request);
+                if (mode.getType() == PlatformType.SIMPLE_CHAT) {
+                    context.log("SIMPLE_CHAT detected");
+                }
             }
 
             // 3. Strategic Planning & Execution
@@ -251,10 +254,7 @@ public class IterationManager {
             }
 
             // 3. Strategic Planning (using already analyzed/clarified request)
-            List<Task> tasks = strategicPlanner.plan(analyzedRequest, context);
-            
-            // merge with any additional tasks from the critic/planner agents if needed (e.g., for iterative repair or multi-agent collaboration scenarios)
-           tasks = decideFlow(tasks, request, context);            
+            List<Task> tasks = decideFlow(analyzedRequest, context);
             
             context.getOrchestrator().getTasks().addAll(tasks);
             transition(SystemState.PLAN_LOCKED, context);
@@ -275,19 +275,14 @@ public class IterationManager {
         }
     }
 
-	private List<Task> decideFlow(List<Task> tasks, String request, TaskContext context2) throws Exception {
-		boolean needsDeepPlanning = 
-				context.getPlatformMode().getType() != PlatformType.SIMPLE_CHAT 
-						|| tasks.size() > 3 
-				//|| containsAmbiguity(request) || hasHighRisk(request)
-				//|| isArchitectureLevel(request)
-				;
+    private List<Task> decideFlow(String request, TaskContext context2) throws Exception {
+        boolean needsDeepPlanning = context.getPlatformMode().getType() != PlatformType.SIMPLE_CHAT;
 
-		if (!needsDeepPlanning) {
-			return tasks;
-		}
-		return iterativePlan(request, context);
-	}
+        if (!needsDeepPlanning) {
+            return strategicPlanner.plan(request, context);
+        }
+        return iterativePlan(request, context);
+    }
 
 	private void transition(SystemState to, TaskContext ctx) {
         TransitionToken token = new TransitionToken();
@@ -561,18 +556,23 @@ public class IterationManager {
     private boolean isSimpleFileCreate(String request) {
         if (request == null) return false;
         String lower = request.toLowerCase().trim();
-        // Detect patterns: create file x.txt, write to file y.java, save content to z.xml
-        return lower.matches("^(create|add|write|save)\\s+(file|content|to)\\s+.*$") &&
+        // Detect patterns: create file x.txt, write to file y.java, save content to z.xml, create java class, create interface
+        return lower.matches("^(create|add|write|save)\\s+(file|content|to|java\\s+class|java\\s+interface|interface|class)\\s+.*$") &&
                !lower.contains("\n") && request.length() < 100;
     }
 
     private List<Task> createAtomicFilePlan(String request, TaskContext context) {
         List<Task> tasks = new ArrayList<>();
         String lower = request.toLowerCase().trim();
-        String path = request.replaceFirst("(?i)^(create|add|write|save)\\s+(file|content|to|to\\s+file)\\s+", "").trim();
+        String path = request.replaceFirst("(?i)^(create|add|write|save)\\s+(file|content|to|to\\s+file|java\\s+class|java\\s+interface|interface|class)\\s+", "").trim();
 
         // Clean up path if it ends with punctuation
         path = path.replaceAll("[.!?,]$", "");
+
+        // Auto-append .java if it's a class/interface request and no extension provided
+        if ((lower.contains("class") || lower.contains("interface")) && !path.contains(".")) {
+            path += ".java";
+        }
 
         Task t = OrchestrationFactory.eINSTANCE.createTask();
         t.setId("atomic-task-1");

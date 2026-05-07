@@ -64,7 +64,9 @@ public abstract class BaseAiAgent implements IAgent {
     protected String buildPrompt(String request, TaskContext context, String lastFeedback) {
         StringBuilder sb = new StringBuilder();
         sb.append("Role: ").append(type).append("\n");
-        sb.append("PROJECT ROOT: ").append(context.getProjectRoot().getAbsolutePath()).append("\n\n");
+        if (context.getProjectRoot() != null) {
+            sb.append("PROJECT ROOT: ").append(context.getProjectRoot().getAbsolutePath()).append("\n\n");
+        }
 
         sb.append("INSTRUCTIONS:\n").append(getAgentInstructions()).append("\n\n");
 
