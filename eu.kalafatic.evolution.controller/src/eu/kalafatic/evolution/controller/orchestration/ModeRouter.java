@@ -20,7 +20,13 @@ public class ModeRouter {
      */
     public PlatformMode routeFast(String prompt, Orchestrator orchestrator) {
         if (prompt == null) prompt = "";
-        String lowerPrompt = prompt.toLowerCase();
+        String lowerPrompt = prompt.toLowerCase().trim();
+
+        // --- FAST PRECHECK: Greetings and simple chat detection ---
+        // We check this FIRST to ensure simple greetings don't trigger Darwin even if orchestrator has Darwin flags.
+        if (lowerPrompt.matches("^(hi|hello|hey|greetings|good morning|good afternoon|good evening)\\s*[!.]*$")) {
+            return createSimpleChatMode();
+        }
 
         if (lowerPrompt.equals("tell me a joke")) return createSimpleChatMode();
 
@@ -50,11 +56,6 @@ public class ModeRouter {
         // 3. Obvious coding keywords detection
         if (lowerPrompt.matches(".*\\b(create|fix|add|run|test|generate|write|refactor|modify|delete|check|implement|build)\\b.*")) {
             return createAssistedCodingMode();
-        }
-
-        // 4. Greetings and simple chat detection
-        if (lowerPrompt.matches("^\\s*(hi|hello|hey|greetings|good morning|good afternoon|good evening)\\s*[!.]*\\s*$")) {
-            return createSimpleChatMode();
         }
 
         return null; // Not fast-routable
