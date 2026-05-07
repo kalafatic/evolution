@@ -40,6 +40,7 @@ public class AgentFactory {
         registerAgent(EvolutionConstants.AGENT_REPAIR, new RepairAgent());
         registerAgent(EvolutionConstants.AGENT_PLANNER, new PlannerAgent());
         registerAgent(EvolutionConstants.AGENT_PROPOSAL_CONSOLIDATOR, new ProposalConsolidatorAgent());
+        registerAgent(EvolutionConstants.AGENT_CRITIC, new CriticAgent());
         registerAgent(EvolutionConstants.AGENT_FINAL_RESPONSE, new FinalResponseAgent());
     }
 
