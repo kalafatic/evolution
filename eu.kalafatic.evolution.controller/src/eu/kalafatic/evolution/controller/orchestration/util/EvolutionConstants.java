@@ -37,6 +37,7 @@ public final class EvolutionConstants {
     public static final String AGENT_FINAL_RESPONSE = "FinalResponse";
     public static final String AGENT_PLANNER = "Planner";
     public static final String AGENT_PROPOSAL_CONSOLIDATOR = "ProposalConsolidator";
+    public static final String AGENT_CRITIC = "Critic";
 
     // Task Types
     public static final String TASK_FILE = "file";
@@ -50,4 +51,7 @@ public final class EvolutionConstants {
     public static final float DEFAULT_TEMPERATURE = 0.7f;
     public static final int MAX_TASK_RETRIES = 3;
     public static final double DEFAULT_CONFIDENCE_THRESHOLD = 0.75;
+
+    public static final int MAX_PLANNING_ITERATIONS = 3;
+    public static final double PLANNING_QUALITY_THRESHOLD = 0.9;
 }

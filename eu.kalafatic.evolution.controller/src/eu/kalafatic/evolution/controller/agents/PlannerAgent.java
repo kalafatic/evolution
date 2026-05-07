@@ -50,7 +50,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
         // This is a fail-safe in case the IntentGate incorrectly passed a non-actionable request.
         // It now also considers shared memory for context.
         String contextLower = (request + " " + context.getSharedMemory()).toLowerCase();
-        if (!contextLower.matches(".*\\b(create|write|fix|generate|modify|delete|run|execute|add|implement|test|build|check|simple|example)\\b.*")) {
+        if (!contextLower.matches(".*\\b(create|write|fix|generate|modify|delete|run|execute|add|implement|test|build|check|simple|example|hello|hi|greet)\\b.*")) {
             context.log("Planner: Safety Guard - Request and context do not clearly contain an action. Returning clarification task.");
             List<Task> fallbackTasks = new ArrayList<>();
             Task t = OrchestrationFactory.eINSTANCE.createTask();
@@ -66,10 +66,12 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
         // Adjust instructions based on PlatformMode
         PlatformMode mode = context.getPlatformMode();
         String modeInstructions = "";
-        if (mode.getType() == PlatformType.ASSISTED_CODING) {
-            modeInstructions = "\nPLATFORM MODE: ASSISTED_CODING. Keep the plan very simple (1-2 tasks max). Focus on the most direct solution.\n";
-        } else if (mode.getType() == PlatformType.DARWIN_MODE) {
-            modeInstructions = "\nPLATFORM MODE: DARWIN_MODE. Provide a comprehensive multi-step plan for evaluation.\n";
+        if (mode != null) {
+            if (mode.getType() == PlatformType.ASSISTED_CODING) {
+                modeInstructions = "\nPLATFORM MODE: ASSISTED_CODING. Keep the plan very simple (1-2 tasks max). Focus on the most direct solution.\n";
+            } else if (mode.getType() == PlatformType.DARWIN_MODE) {
+                modeInstructions = "\nPLATFORM MODE: DARWIN_MODE. Provide a comprehensive multi-step plan for evaluation.\n";
+            }
         }
 
         // Use structured prompt building to include shared memory/history in planning

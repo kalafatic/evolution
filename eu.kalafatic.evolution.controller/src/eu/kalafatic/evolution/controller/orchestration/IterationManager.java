@@ -14,11 +14,13 @@ import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.agents.AgentFactory;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
+import eu.kalafatic.evolution.controller.agents.CriticAgent;
 import eu.kalafatic.evolution.controller.agents.FinalResponseAgent;
 import eu.kalafatic.evolution.controller.agents.GeneralAgent;
 import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent;
+import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
@@ -63,6 +65,7 @@ public class IterationManager {
     private IPolicyEngine policyEngine = new RuleBasedPolicyEngine();
     private final AnalyticAgent analyticAgent;
     private final PlannerAgent strategicPlanner;
+    private final CriticAgent criticAgent;
     private final FinalResponseAgent finalResponseAgent;
     private final eu.kalafatic.evolution.controller.agents.ValidatorAgent validator;
     private final eu.kalafatic.evolution.controller.agents.RepairAgent repairAgent;
@@ -91,6 +94,7 @@ public class IterationManager {
         availableAgents.addAll(AgentFactory.getAllAgents());
         analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
         strategicPlanner = (PlannerAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_PLANNER);
+        criticAgent = (CriticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_CRITIC);
         finalResponseAgent = (FinalResponseAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_FINAL_RESPONSE);
         validator = (eu.kalafatic.evolution.controller.agents.ValidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_VALIDATOR);
         repairAgent = (eu.kalafatic.evolution.controller.agents.RepairAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_REPAIR);
@@ -99,6 +103,7 @@ public class IterationManager {
         intentClassifier.setAiService(aiService);
         analyticAgent.setAiService(aiService);
         strategicPlanner.setAiService(aiService);
+        criticAgent.setAiService(aiService);
         finalResponseAgent.setAiService(aiService);
         validator.setAiService(aiService);
         repairAgent.setAiService(aiService);
@@ -254,7 +259,7 @@ public class IterationManager {
             }
 
             // 3. Strategic Planning (using already analyzed/clarified request)
-            List<Task> tasks = strategicPlanner.plan(analyzedRequest, context);
+            List<Task> tasks = iterativePlan(analyzedRequest, context);
             context.getOrchestrator().getTasks().addAll(tasks);
             transition(SystemState.PLAN_LOCKED, context);
 
@@ -314,7 +319,7 @@ public class IterationManager {
                      context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
 
         try {
-            List<Task> tasks = taskPlanner.generateTasks(context, goal);
+            List<Task> tasks = iterativePlan(goal, context);
             transition(SystemState.PLAN_LOCKED, context);
 
             transition(SystemState.EXECUTING, context);
@@ -567,6 +572,82 @@ public class IterationManager {
         t.setApprovalRequired(false);
         tasks.add(t);
         return tasks;
+    }
+
+    /**
+     * Implements a multi-stage reasoning pipeline: Planner -> Critic -> Repair loop.
+     */
+    private List<Task> iterativePlan(String request, TaskContext context) throws Exception {
+        context.log("[KERNEL] Starting iterative planning loop for: " + request);
+
+        // 1. Initial Proposal
+        List<Task> currentTasks = strategicPlanner.plan(request, context);
+        double initialScore = 0.0;
+        double finalScore = 0.0;
+
+        for (int i = 1; i <= EvolutionConstants.MAX_PLANNING_ITERATIONS; i++) {
+            context.log("[KERNEL] Planning Iteration " + i);
+
+            // Convert tasks to JSON for the critic
+            JSONArray taskArray = new JSONArray();
+            for (Task t : currentTasks) {
+                JSONObject tObj = new JSONObject();
+                tObj.put("id", t.getId());
+                tObj.put("name", t.getName());
+                tObj.put("description", t.getDescription());
+                tObj.put("taskType", t.getType());
+                taskArray.put(tObj);
+            }
+            String planJson = taskArray.toString();
+
+            // 2. Critique
+            JSONObject critiqueResult = criticAgent.critique(request, planJson, context);
+            double score = critiqueResult.optDouble("qualityScore", 0.0);
+            boolean isCorrect = critiqueResult.optBoolean("isCorrect", false);
+
+            if (i == 1) initialScore = score;
+            finalScore = score;
+
+            context.log("[KERNEL] Plan Quality Score: " + score + " (Iteration " + i + ")");
+            context.log("[KERNEL] Critique: " + critiqueResult.optJSONObject("critique"));
+
+            // 3. Stopping Condition
+            if (isCorrect && score >= EvolutionConstants.PLANNING_QUALITY_THRESHOLD) {
+                context.log("[KERNEL] Plan approved by critic.");
+                break;
+            }
+
+            if (i < EvolutionConstants.MAX_PLANNING_ITERATIONS) {
+                // 4. Repair
+                context.log("[KERNEL] Repairing plan based on critique...");
+                String repairInput = "ORIGINAL REQUEST: " + request +
+                                     "\nCURRENT PLAN: " + planJson +
+                                     "\nCRITIQUE: " + critiqueResult.toString();
+
+                String repairedPlanResponse = repairAgent.process(repairInput, context, null);
+                JSONArray repairedJsonArray = JsonUtils.extractJsonArrayFlexible(repairedPlanResponse);
+
+                if (repairedJsonArray != null) {
+                    List<Task> repairedTasks = new ArrayList<>();
+                    for (int j = 0; j < repairedJsonArray.length(); j++) {
+                        JSONObject obj = repairedJsonArray.getJSONObject(j);
+                        Task task = OrchestrationFactory.eINSTANCE.createTask();
+                        task.setId(obj.optString("id", "rt" + j));
+                        task.setName(obj.optString("name", "Task " + j));
+                        task.setDescription(obj.optString("description", ""));
+                        task.setType(obj.optString("taskType", "llm"));
+                        repairedTasks.add(task);
+                    }
+                    currentTasks = repairedTasks;
+                } else {
+                    context.log("[KERNEL] Plan repair failed to produce valid JSON. Retrying with planner.");
+                    currentTasks = strategicPlanner.plan(request + "\nFeedback from Critic: " + critiqueResult.toString(), context);
+                }
+            }
+        }
+
+        context.log("[KERNEL] Iterative planning complete. Quality Improvement: " + initialScore + " -> " + finalScore);
+        return currentTasks;
     }
 
     /**
