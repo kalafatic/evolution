@@ -249,8 +249,6 @@ public class IterationManager {
                 transition(SystemState.DONE, context);
                 return response;
             }
-            
-            
 
             // 3. Strategic Planning (using already analyzed/clarified request)
             List<Task> tasks = strategicPlanner.plan(analyzedRequest, context);
@@ -279,8 +277,8 @@ public class IterationManager {
 
 	private List<Task> decideFlow(List<Task> tasks, String request, TaskContext context2) throws Exception {
 		boolean needsDeepPlanning = 
-				//mode == DARWIN_MODE ||
-				 tasks.size() > 3 
+				context.getPlatformMode().getType() != PlatformType.SIMPLE_CHAT 
+						|| tasks.size() > 3 
 				//|| containsAmbiguity(request) || hasHighRisk(request)
 				//|| isArchitectureLevel(request)
 				;
