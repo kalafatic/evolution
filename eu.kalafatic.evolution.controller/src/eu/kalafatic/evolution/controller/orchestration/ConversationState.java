@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 
 /**
  * Structured conversation state to maintain persistent intent across turns.
@@ -19,6 +20,7 @@ public class ConversationState {
     private List<String> pendingQuestions = new ArrayList<>();
     private List<String> clarificationHistory = new ArrayList<>();
     private boolean isRequirementMet = true;
+    private ConfirmedRequirements confirmedRequirements;
 
     public String getGoal() { return goal; }
     public void setGoal(String goal) { this.goal = goal; }
@@ -50,6 +52,9 @@ public class ConversationState {
     public boolean isRequirementMet() { return isRequirementMet; }
     public void setRequirementMet(boolean met) { this.isRequirementMet = met; }
 
+    public ConfirmedRequirements getConfirmedRequirements() { return confirmedRequirements; }
+    public void setConfirmedRequirements(ConfirmedRequirements reqs) { this.confirmedRequirements = reqs; }
+
     public JSONObject toJSON() {
         JSONObject json = new JSONObject();
         json.put("goal", goal);
@@ -61,6 +66,9 @@ public class ConversationState {
         json.put("pending_questions", new JSONArray(pendingQuestions));
         json.put("clarification_history", new JSONArray(clarificationHistory));
         json.put("is_requirement_met", isRequirementMet);
+        if (confirmedRequirements != null) {
+            json.put("confirmed_requirements", confirmedRequirements.toJSON());
+        }
         return json;
     }
 
@@ -99,6 +107,9 @@ public class ConversationState {
             }
 
             state.setRequirementMet(json.optBoolean("is_requirement_met", true));
+            if (json.has("confirmed_requirements")) {
+                state.setConfirmedRequirements(ConfirmedRequirements.fromJSON(json.getJSONObject("confirmed_requirements")));
+            }
         } catch (Exception e) {
             // Log error and return empty state
         }

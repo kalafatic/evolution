@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
+import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
 import eu.kalafatic.evolution.controller.orchestration.util.DataScrubber;
@@ -65,6 +67,13 @@ public abstract class BaseAiAgent implements IAgent {
         sb.append("PROJECT ROOT: ").append(context.getProjectRoot().getAbsolutePath()).append("\n\n");
 
         sb.append("INSTRUCTIONS:\n").append(getAgentInstructions()).append("\n\n");
+
+        ConversationState state = ConversationState.load(context.getSharedMemory(), context.getSessionId());
+        ConfirmedRequirements frozen = state.getConfirmedRequirements();
+        if (frozen != null) {
+            sb.append("### MANDATORY FROZEN REQUIREMENTS (DO NOT DEVIATE) ###\n");
+            sb.append(frozen.toString()).append("\n\n");
+        }
 
         if (lastFeedback != null) {
             sb.append("### PREVIOUS FEEDBACK (FAILURE RECOVERY)\n").append(lastFeedback).append("\n\n");

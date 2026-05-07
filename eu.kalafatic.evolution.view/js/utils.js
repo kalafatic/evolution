@@ -33,6 +33,7 @@ window.ChatApp.Utils = {
                    .replace(/\[DARWINENGINE\]/g, '')
                    .replace(/\[THINKING\]/g, '')
                    .replace(/\[ORCHESTRATOR\]/g, '')
+                   .replace(/\[AUDIT\]/g, '')
                    .trim();
     }
 };
