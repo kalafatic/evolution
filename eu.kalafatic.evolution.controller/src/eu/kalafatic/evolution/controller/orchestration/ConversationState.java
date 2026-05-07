@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 
 /**
  * Structured conversation state to maintain persistent intent across turns.
@@ -16,6 +17,10 @@ public class ConversationState {
     private List<String> lastMessages = new ArrayList<>();
     private List<String> openQuestions = new ArrayList<>();
     private List<String> decisions = new ArrayList<>();
+    private List<String> pendingQuestions = new ArrayList<>();
+    private List<String> clarificationHistory = new ArrayList<>();
+    private boolean isRequirementMet = true;
+    private ConfirmedRequirements confirmedRequirements;
 
     public String getGoal() { return goal; }
     public void setGoal(String goal) { this.goal = goal; }
@@ -38,6 +43,18 @@ public class ConversationState {
     public List<String> getDecisions() { return decisions; }
     public void addDecision(String decision) { this.decisions.add(decision); }
 
+    public List<String> getPendingQuestions() { return pendingQuestions; }
+    public void setPendingQuestions(List<String> questions) { this.pendingQuestions = questions; }
+
+    public List<String> getClarificationHistory() { return clarificationHistory; }
+    public void addClarification(String clarification) { this.clarificationHistory.add(clarification); }
+
+    public boolean isRequirementMet() { return isRequirementMet; }
+    public void setRequirementMet(boolean met) { this.isRequirementMet = met; }
+
+    public ConfirmedRequirements getConfirmedRequirements() { return confirmedRequirements; }
+    public void setConfirmedRequirements(ConfirmedRequirements reqs) { this.confirmedRequirements = reqs; }
+
     public JSONObject toJSON() {
         JSONObject json = new JSONObject();
         json.put("goal", goal);
@@ -46,6 +63,12 @@ public class ConversationState {
         json.put("last_messages", new JSONArray(lastMessages));
         json.put("open_questions", new JSONArray(openQuestions));
         json.put("decisions", new JSONArray(decisions));
+        json.put("pending_questions", new JSONArray(pendingQuestions));
+        json.put("clarification_history", new JSONArray(clarificationHistory));
+        json.put("is_requirement_met", isRequirementMet);
+        if (confirmedRequirements != null) {
+            json.put("confirmed_requirements", confirmedRequirements.toJSON());
+        }
         return json;
     }
 
@@ -71,6 +94,21 @@ public class ConversationState {
             JSONArray decs = json.optJSONArray("decisions");
             if (decs != null) {
                 for (int i = 0; i < decs.length(); i++) state.decisions.add(decs.getString(i));
+            }
+
+            JSONArray pQues = json.optJSONArray("pending_questions");
+            if (pQues != null) {
+                for (int i = 0; i < pQues.length(); i++) state.pendingQuestions.add(pQues.getString(i));
+            }
+
+            JSONArray cHist = json.optJSONArray("clarification_history");
+            if (cHist != null) {
+                for (int i = 0; i < cHist.length(); i++) state.clarificationHistory.add(cHist.getString(i));
+            }
+
+            state.setRequirementMet(json.optBoolean("is_requirement_met", true));
+            if (json.has("confirmed_requirements")) {
+                state.setConfirmedRequirements(ConfirmedRequirements.fromJSON(json.getJSONObject("confirmed_requirements")));
             }
         } catch (Exception e) {
             // Log error and return empty state

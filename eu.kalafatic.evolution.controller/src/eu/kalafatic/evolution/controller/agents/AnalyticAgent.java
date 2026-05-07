@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.controller.agents;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
@@ -28,8 +30,9 @@ public class AnalyticAgent extends BaseAiAgent {
                 "ANALYSIS CRITERIA (for new requests):\n" +
                 "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.\n" +
                 "2. INTENT: 'new' (task request), 'continue' (follow-up), 'chat' (greeting/casual), 'unclear'.\n" +
-                "3. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion' and 'missingInformation' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.\n" +
-                "4. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults. It should stay faithful to the original intent.\n\n" +
+                "3. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion', 'missingInformation' and 'contradictions' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.\n" +
+                "4. CONTRADICTIONS: Detect if the user request contains conflicting instructions (e.g., 'use Java but also use Python for the same class').\n" +
+                "5. REFINED PROMPT: Create an actionable version of the prompt with assumed defaults. It should stay faithful to the original intent.\n\n" +
                 "DIAGNOSIS CRITERIA (for failures):\n" +
                 "1. ROOT CAUSE: syntactic, logical, or environment.\n" +
                 "2. PROGRESS: IMPROVED, SAME, or WORSE compared to previous attempt.\n" +
@@ -43,6 +46,7 @@ public class AnalyticAgent extends BaseAiAgent {
                 "  \"objective\": \"...\",\n" +
                 "  \"isAmbiguous\": boolean,\n" +
                 "  \"missingInformation\": [],\n" +
+                "  \"contradictions\": [],\n" +
                 "  \"clarificationQuestion\": \"...\",\n" +
                 "  \"refinedPrompt\": \"...\"\n" +
                 "}\n" +
@@ -78,6 +82,12 @@ public class AnalyticAgent extends BaseAiAgent {
 
     // @evo:14:B reason=traceability-support
     public JSONObject analyze(String prompt, TaskContext context) throws Exception {
+        // Step 1: Perform Deep Intent Analysis
+        IntentAnalyzer intentAnalyzer = new IntentAnalyzer(aiService);
+        IntentAnalysisResult intentResult = intentAnalyzer.analyze(prompt, context);
+
+        // Step 2: Fallback to existing logic for Category/RefinedPrompt/Clarification if needed
+        // or map intentResult back to expected JSON for IterationManager compatibility
         String fullPrompt = buildPrompt(prompt, context, null);
         context.log("Evo-Analytic-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
@@ -88,9 +98,9 @@ public class AnalyticAgent extends BaseAiAgent {
         if (analysis == null) {
              analysis = new JSONObject();
              analysis.put("intent", "new");
-             analysis.put("confidence", 1.0);
+             analysis.put("confidence", intentResult.getConfidenceScore());
              analysis.put("category", "CODING");
-             analysis.put("isAmbiguous", false);
+             analysis.put("isAmbiguous", intentResult.isAmbiguous());
              analysis.put("refinedPrompt", prompt);
         }
 
@@ -98,8 +108,19 @@ public class AnalyticAgent extends BaseAiAgent {
         if (!analysis.has("intent")) {
             analysis.put("intent", "new");
         }
+
+        // Enrich with structured intent if available
+        analysis.put("structuredIntent", new JSONObject()
+            .put("goal", intentResult.getGoal())
+            .put("language", intentResult.getLanguage())
+            .put("framework", intentResult.getFramework())
+            .put("targetPlatform", intentResult.getTargetPlatform())
+            .put("expectedOutput", intentResult.getExpectedOutput())
+            .put("constraints", intentResult.getConstraints())
+            .put("confidence", intentResult.getConfidenceScore()));
+
         if (!analysis.has("confidence")) {
-            analysis.put("confidence", 1.0);
+            analysis.put("confidence", intentResult.getConfidenceScore());
         }
 
         return analysis;

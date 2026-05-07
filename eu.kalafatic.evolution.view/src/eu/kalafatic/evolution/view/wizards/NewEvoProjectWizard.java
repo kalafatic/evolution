@@ -189,9 +189,14 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
             // Ollama Settings
             if (!ollamaPage.isSkipped()) {
-                modelManager.updateOllamaSettings(orchestrator, ollamaPage.getOllamaUrl(), ollamaPage.getModelName(), ollamaPage.getExecutablePath());
+                String modelName = ollamaPage.getModelName();
+                modelManager.updateOllamaSettings(orchestrator, ollamaPage.getOllamaUrl(), modelName, ollamaPage.getExecutablePath());
+                modelManager.updateLocalModel(orchestrator, modelName);
+                modelManager.updateHybridModel(orchestrator, modelName);
             } else {
                 modelManager.updateOllamaSettings(orchestrator, "http://localhost:11434", "llama3.2:3b", null);
+                modelManager.updateLocalModel(orchestrator, "llama3.2:3b");
+                modelManager.updateHybridModel(orchestrator, "llama3.2:3b");
             }
 
             // LLM Settings
@@ -199,8 +204,10 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 float temp = 1.0f;
                 try { temp = Float.parseFloat(llmPage.getTemperature()); } catch (NumberFormatException e) {}
                 modelManager.updateLlmSettings(orchestrator, llmPage.getLlmModel(), temp);
+                modelManager.updateRemoteModel(orchestrator, llmPage.getLlmModel());
             } else {
                 modelManager.updateLlmSettings(orchestrator, "gpt-4o", 1.0f);
+                modelManager.updateRemoteModel(orchestrator, "gpt-4o");
             }
 
             // Maven Settings

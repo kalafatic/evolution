@@ -705,7 +705,7 @@ public class ChatGroup extends AEvoGroup {
         if (content.contains("[DARWIN_BRANCHES]")) {
             agentType = "darwin-branches";
             content = content.replace("[DARWIN_BRANCHES]", "").trim();
-        } else if (content.toLowerCase().startsWith("[darwin]") || sender.toLowerCase().contains("-darwinengine-") || sender.toLowerCase().equals("evo-darwinengine")) {
+        } else if (sender.toLowerCase().contains("-darwinengine-") || sender.toLowerCase().equals("evo-darwinengine")) {
             if (!agentType.equals("thinking")) {
                 agentType = "darwin";
             }

@@ -66,6 +66,8 @@ import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.ModeRouter;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
+import org.eclipse.jface.dialogs.IDialogSettings;
+import eu.kalafatic.evolution.view.application.Activator;
 
 /**
  * @evo:16:A reason=darwin-mode-sync
@@ -280,6 +282,54 @@ public class AiChatPage extends AEvoPage {
 		}
 	}
 
+	public void saveLastUsedSettings() {
+		if (orchestrator == null || Activator.getDefault() == null) return;
+		IDialogSettings settings = Activator.getDefault().getDialogSettings();
+		if (settings == null) return;
+		IDialogSettings section = settings.getSection("AiChatSettings");
+		if (section == null) section = settings.addNewSection("AiChatSettings");
+
+		section.put("AiMode", orchestrator.getAiMode().getValue());
+		if (orchestrator.getLocalModel() != null) section.put("LocalModel", orchestrator.getLocalModel());
+		if (orchestrator.getRemoteModel() != null) section.put("RemoteModel", orchestrator.getRemoteModel());
+		if (aiSettingsGroup.getRemoteToken() != null) section.put("RemoteToken_" + orchestrator.getRemoteModel(), aiSettingsGroup.getRemoteToken());
+		if (aiSettingsGroup.getRemoteUrl() != null) section.put("RemoteUrl_" + orchestrator.getRemoteModel(), aiSettingsGroup.getRemoteUrl());
+	}
+
+	public void loadLastUsedSettings() {
+		if (orchestrator == null || Activator.getDefault() == null) return;
+		IDialogSettings settings = Activator.getDefault().getDialogSettings();
+		if (settings == null) return;
+		IDialogSettings section = settings.getSection("AiChatSettings");
+		if (section == null) return;
+
+		try {
+			int modeVal = section.getInt("AiMode");
+			orchestrator.setAiMode(AiMode.get(modeVal));
+		} catch (NumberFormatException e) {}
+
+		String localModel = section.get("LocalModel");
+		if (localModel != null) {
+			orchestrator.setLocalModel(localModel);
+			if (orchestrator.getOllama() != null) orchestrator.getOllama().setModel(localModel);
+		}
+
+		String remoteModel = section.get("RemoteModel");
+		if (remoteModel != null) {
+			orchestrator.setRemoteModel(remoteModel);
+			String token = section.get("RemoteToken_" + remoteModel);
+			if (token != null) {
+				eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
+					.updateToken(orchestrator, remoteModel, token);
+			}
+			String url = section.get("RemoteUrl_" + remoteModel);
+			if (url != null) {
+				if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+				orchestrator.getAiChat().setUrl(url);
+			}
+		}
+	}
+
 	public void syncModelWithUI() {
 		if (orchestrator == null || isUpdating) return;
 		isUpdating = true;
@@ -332,6 +382,7 @@ public class AiChatPage extends AEvoPage {
 		}
 
 		orchestrator.getAiChat().setUrl(aiSettingsGroup.getRemoteUrl());
+		saveLastUsedSettings();
 		editor.setDirty(true);
 		updateModeDisplay();
 		isUpdating = false;
@@ -616,11 +667,8 @@ public class AiChatPage extends AEvoPage {
 			newSession.setId(id);
 
 			// Pre-select model from last used settings
-			if (orchestrator.getOllama() != null && orchestrator.getOllama().getModel() != null) {
-				// The session itself doesn't store the model in the current Ecore,
-				// but we ensure the global model is used.
-				// If we had a model field in ChatSession, we would set it here.
-			}
+			loadLastUsedSettings();
+			refreshUI();
 
 			orchestrator.getAiChat().getSessions().add(newSession);
 			currentSession = newSession;
@@ -1313,6 +1361,7 @@ public class AiChatPage extends AEvoPage {
 					orchestrator.getAiChat().setUrl(apiUrl);
 					if (orchestrator.getLlm() == null) orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
 					editor.setDirty(true); updateModeDisplay(); updateStatusInfo();
+					saveLastUsedSettings();
 					MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK); mb.setText("AI Connection Success"); mb.setMessage("Connected to AI provider successfully and settings saved.\nResponse: " + response); mb.open();
 				});
 			} catch (Exception ex) {
