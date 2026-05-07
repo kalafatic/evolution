@@ -9,7 +9,7 @@ import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
-import eu.kalafatic.evolution.model.orchestration.ChatThread;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
 import eu.kalafatic.evolution.model.orchestration.Comment;
@@ -1806,7 +1806,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getAiChat_Threads() {
+	public EReference getAiChat_Sessions() {
 		return (EReference)aiChatEClass.getEStructuralFeatures().get(4);
 	}
 
@@ -2746,7 +2746,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EClass getChatThread() {
+	public EClass getChatSession() {
 		return chatThreadEClass;
 	}
 
@@ -2756,7 +2756,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EAttribute getChatThread_Id() {
+	public EAttribute getChatSession_Id() {
 		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(0);
 	}
 
@@ -2766,7 +2766,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getChatThread_Messages() {
+	public EReference getChatSession_Messages() {
 		return (EReference)chatThreadEClass.getEStructuralFeatures().get(1);
 	}
 
@@ -2776,7 +2776,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated NOT
 	 */
 	@Override
-	public EAttribute getChatThread_IterativeMode() {
+	public EAttribute getChatSession_IterativeMode() {
 		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(2);
 	}
 
@@ -2786,7 +2786,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated NOT
 	 */
 	@Override
-	public EAttribute getChatThread_SelfIterativeMode() {
+	public EAttribute getChatSession_SelfIterativeMode() {
 		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(3);
 	}
 
@@ -2796,7 +2796,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated NOT
 	 */
 	@Override
-	public EAttribute getChatThread_DarwinMode() {
+	public EAttribute getChatSession_DarwinMode() {
 		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(4);
 	}
 
@@ -2806,7 +2806,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated NOT
 	 */
 	@Override
-	public EAttribute getChatThread_GitAutomation() {
+	public EAttribute getChatSession_GitAutomation() {
 		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(5);
 	}
 
@@ -2816,7 +2816,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated NOT
 	 */
 	@Override
-	public EAttribute getChatThread_MaxIterations() {
+	public EAttribute getChatSession_MaxIterations() {
 		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(6);
 	}
 
@@ -3275,7 +3275,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(aiChatEClass, AI_CHAT__TOKEN);
 		createEAttribute(aiChatEClass, AI_CHAT__PROMPT);
 		createEAttribute(aiChatEClass, AI_CHAT__PROXY_URL);
-		createEReference(aiChatEClass, AI_CHAT__THREADS);
+		createEReference(aiChatEClass, AI_CHAT__SESSIONS);
 		createEReference(aiChatEClass, AI_CHAT__PROMPT_INSTRUCTIONS);
 
 		neuronAIEClass = createEClass(NEURON_AI);
@@ -3389,14 +3389,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(reviewSessionEClass, REVIEW_SESSION__COMMENTS);
 		createEAttribute(reviewSessionEClass, REVIEW_SESSION__DECISION);
 
-		chatThreadEClass = createEClass(CHAT_THREAD);
-		createEAttribute(chatThreadEClass, CHAT_THREAD__ID);
-		createEReference(chatThreadEClass, CHAT_THREAD__MESSAGES);
-		createEAttribute(chatThreadEClass, CHAT_THREAD__ITERATIVE_MODE);
-		createEAttribute(chatThreadEClass, CHAT_THREAD__SELF_ITERATIVE_MODE);
-		createEAttribute(chatThreadEClass, CHAT_THREAD__DARWIN_MODE);
-		createEAttribute(chatThreadEClass, CHAT_THREAD__GIT_AUTOMATION);
-		createEAttribute(chatThreadEClass, CHAT_THREAD__MAX_ITERATIONS);
+		chatThreadEClass = createEClass(CHAT_SESSION);
+		createEAttribute(chatThreadEClass, CHAT_SESSION__ID);
+		createEReference(chatThreadEClass, CHAT_SESSION__MESSAGES);
+		createEAttribute(chatThreadEClass, CHAT_SESSION__ITERATIVE_MODE);
+		createEAttribute(chatThreadEClass, CHAT_SESSION__SELF_ITERATIVE_MODE);
+		createEAttribute(chatThreadEClass, CHAT_SESSION__DARWIN_MODE);
+		createEAttribute(chatThreadEClass, CHAT_SESSION__GIT_AUTOMATION);
+		createEAttribute(chatThreadEClass, CHAT_SESSION__MAX_ITERATIONS);
 
 		chatMessageEClass = createEClass(CHAT_MESSAGE);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__INDEX);
@@ -3612,7 +3612,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getAiChat_Token(), ecorePackage.getEString(), "token", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAiChat_Prompt(), ecorePackage.getEString(), "prompt", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getAiChat_ProxyUrl(), ecorePackage.getEString(), "proxyUrl", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getAiChat_Threads(), this.getChatThread(), null, "threads", null, 0, -1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getAiChat_Sessions(), this.getChatSession(), null, "sessions", null, 0, -1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getAiChat_PromptInstructions(), this.getPromptInstructions(), null, "promptInstructions", null, 0, 1, AiChat.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(neuronAIEClass, NeuronAI.class, "NeuronAI", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -3726,14 +3726,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getReviewSession_Comments(), this.getComment(), null, "comments", null, 0, -1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getReviewSession_Decision(), this.getReviewDecision(), "decision", null, 0, 1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
-		initEClass(chatThreadEClass, ChatThread.class, "ChatThread", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getChatThread_Id(), ecorePackage.getEString(), "id", null, 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getChatThread_Messages(), this.getChatMessage(), null, "messages", null, 0, -1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getChatThread_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getChatThread_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getChatThread_DarwinMode(), ecorePackage.getEBoolean(), "darwinMode", "false", 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getChatThread_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", "false", 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getChatThread_MaxIterations(), ecorePackage.getEInt(), "maxIterations", "-1", 0, 1, ChatThread.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEClass(chatThreadEClass, ChatSession.class, "ChatSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getChatSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getChatSession_Messages(), this.getChatMessage(), null, "messages", null, 0, -1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_DarwinMode(), ecorePackage.getEBoolean(), "darwinMode", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_MaxIterations(), ecorePackage.getEInt(), "maxIterations", "-1", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(chatMessageEClass, ChatMessage.class, "ChatMessage", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getChatMessage_Index(), ecorePackage.getEInt(), "index", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

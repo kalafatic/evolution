@@ -42,7 +42,9 @@ public class OllamaProvider implements ILlmProvider {
         service.setTemperature(temperature);
 
         try {
-            return service.generate(prompt);
+            String sessionId = context.getSessionId();
+            if (sessionId == null) sessionId = "Default";
+            return service.chat(prompt, sessionId);
         } catch (Exception e) {
             String errorBody = e.getMessage();
             if (errorBody != null && errorBody.contains("requires more system memory") && errorBody.contains("than is available")) {

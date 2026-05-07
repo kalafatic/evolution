@@ -33,7 +33,7 @@ public class TaskContext {
     private final List<String> instructionFiles = new CopyOnWriteArrayList<>();
     private final FileChangeTracker fileChangeTracker = new FileChangeTracker();
     private String currentTaskName = "Orchestration";
-    private String threadId = "Default";
+    private String sessionId = "Default";
     private String currentTaskId = "Unknown";
     private int currentIteration = 0;
     private String currentPhase = "INIT";
@@ -111,12 +111,12 @@ public class TaskContext {
         this.currentPhase = currentPhase;
     }
 
-    public String getThreadId() {
-        return threadId;
+    public String getSessionId() {
+        return sessionId;
     }
 
-    public void setThreadId(String threadId) {
-        this.threadId = threadId;
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 
     public void log(String message) {

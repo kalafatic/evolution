@@ -34,7 +34,7 @@ public class RuleBasedPolicyEngine implements IPolicyEngine {
                              input.toLowerCase().matches("^\\s*(hi|hello|hey|greetings|good morning|good afternoon|good evening)\\s*[!.]*\\s*$"));
 
         if (isGreeting) {
-            ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
+            ConversationState state = ConversationState.load(context.getSharedMemory(), context.getSessionId());
             if (state.getGoal().isEmpty()) {
                 return "Hello! I'm Evo, your AI software engineer. How can I help you today?";
             }
@@ -47,7 +47,7 @@ public class RuleBasedPolicyEngine implements IPolicyEngine {
         if ("new".equals(intent) || "continue".equals(intent)) {
             // Check if it's just a simple greeting disguised as 'continue' when no goal exists.
             // Use word boundaries to avoid catching words like 'hello' inside longer commands (e.g. 'Say Hello').
-            ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
+            ConversationState state = ConversationState.load(context.getSharedMemory(), context.getSessionId());
             if (state.getGoal().isEmpty() && input.toLowerCase().matches(".*\\b(hi|hello|hey)\\b.*") && input.length() < 15) {
                 return "Hello! I'm Evo, your AI software engineer. How can I help you today?";
             }

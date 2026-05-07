@@ -27,7 +27,7 @@ public class OllamaService {
     private final String baseUrl;
     private String model;
     private final HttpClient httpClient;
-    private final List<Message> messages = new ArrayList<>();
+    private final java.util.Map<String, List<Message>> sessionMessages = new java.util.concurrent.ConcurrentHashMap<>();
 
     private List<OllamaModel> cachedModels = null;
     private long lastModelRefresh = 0;
@@ -46,9 +46,6 @@ public class OllamaService {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
-
-        // Optional system prompt
-        messages.add(new Message("system", "You are a concise, helpful Java programming assistant."));
     }
 
     public String getBaseUrl() {
@@ -132,10 +129,20 @@ public class OllamaService {
     }
 
     public String chat(String userInput) throws Exception {
-        messages.add(new Message("user", userInput));
+        return chat(userInput, "Default");
+    }
+
+    public String chat(String userInput, String sessionId) throws Exception {
+        List<Message> history = sessionMessages.computeIfAbsent(sessionId, k -> {
+            List<Message> list = new ArrayList<>();
+            list.add(new Message("system", "You are a concise, helpful Java programming assistant."));
+            return list;
+        });
+
+        history.add(new Message("user", userInput));
 
         String chatUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/chat";
-        String jsonBody = buildChatJsonRequest(false);
+        String jsonBody = buildChatJsonRequest(history, false);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(chatUrl))
@@ -153,7 +160,7 @@ public class OllamaService {
         JSONObject jsonResponse = new JSONObject(response.body());
         String answer = jsonResponse.getJSONObject("message").getString("content");
 
-        messages.add(new Message("assistant", answer));
+        history.add(new Message("assistant", answer));
 
         return answer;
     }
@@ -190,7 +197,7 @@ public class OllamaService {
         return jsonResponse.has("response") ? jsonResponse.getString("response") : jsonResponse.optString("solution", "");
     }
 
-    private String buildChatJsonRequest(boolean stream) {
+    private String buildChatJsonRequest(List<Message> history, boolean stream) {
         JSONObject json = new JSONObject();
         json.put("model", this.model);
         json.put("stream", stream);
@@ -204,7 +211,7 @@ public class OllamaService {
         json.put("options", options);
 
         JSONArray msgs = new JSONArray();
-        for (Message msg : messages) {
+        for (Message msg : history) {
             JSONObject m = new JSONObject();
             m.put("role", msg.role);
             m.put("content", msg.content);
@@ -215,8 +222,8 @@ public class OllamaService {
         return json.toString();
     }
 
-    public List<Message> getMessages() {
-        return messages;
+    public List<Message> getMessages(String sessionId) {
+        return sessionMessages.getOrDefault(sessionId, Collections.emptyList());
     }
 
     /**

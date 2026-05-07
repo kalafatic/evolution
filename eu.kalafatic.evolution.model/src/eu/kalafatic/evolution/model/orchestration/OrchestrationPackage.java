@@ -1503,13 +1503,13 @@ public interface OrchestrationPackage extends EPackage {
 	int AI_CHAT__PROXY_URL = 3;
 
 	/**
-	 * The feature id for the '<em><b>Threads</b></em>' containment reference list.
+	 * The feature id for the '<em><b>Sessions</b></em>' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AI_CHAT__THREADS = 4;
+	int AI_CHAT__SESSIONS = 4;
 
 	/**
 	 * The feature id for the '<em><b>Prompt Instructions</b></em>' containment reference.
@@ -2800,14 +2800,14 @@ public interface OrchestrationPackage extends EPackage {
 	int REVIEW_SESSION_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatThreadImpl <em>Chat Thread</em>}' class.
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl <em>Chat Session</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatThreadImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatThread()
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatSession()
 	 * @generated
 	 */
-	int CHAT_THREAD = 33;
+	int CHAT_SESSION = 33;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -2816,7 +2816,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_THREAD__ID = 0;
+	int CHAT_SESSION__ID = 0;
 
 	/**
 	 * The feature id for the '<em><b>Messages</b></em>' containment reference list.
@@ -2825,7 +2825,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_THREAD__MESSAGES = 1;
+	int CHAT_SESSION__MESSAGES = 1;
 
 	/**
 	 * The feature id for the '<em><b>Iterative Mode</b></em>' attribute.
@@ -2834,7 +2834,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_THREAD__ITERATIVE_MODE = 2;
+	int CHAT_SESSION__ITERATIVE_MODE = 2;
 
 	/**
 	 * The feature id for the '<em><b>Self Iterative Mode</b></em>' attribute.
@@ -2843,7 +2843,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_THREAD__SELF_ITERATIVE_MODE = 3;
+	int CHAT_SESSION__SELF_ITERATIVE_MODE = 3;
 
 	/**
 	 * The feature id for the '<em><b>Darwin Mode</b></em>' attribute.
@@ -2852,7 +2852,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_THREAD__DARWIN_MODE = 4;
+	int CHAT_SESSION__DARWIN_MODE = 4;
 
 	/**
 	 * The feature id for the '<em><b>Git Automation</b></em>' attribute.
@@ -2861,7 +2861,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_THREAD__GIT_AUTOMATION = 5;
+	int CHAT_SESSION__GIT_AUTOMATION = 5;
 
 	/**
 	 * The feature id for the '<em><b>Max Iterations</b></em>' attribute.
@@ -2870,25 +2870,25 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_THREAD__MAX_ITERATIONS = 6;
+	int CHAT_SESSION__MAX_ITERATIONS = 6;
 
 	/**
-	 * The number of structural features of the '<em>Chat Thread</em>' class.
+	 * The number of structural features of the '<em>Chat Session</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_THREAD_FEATURE_COUNT = 7;
+	int CHAT_SESSION_FEATURE_COUNT = 7;
 
 	/**
-	 * The number of operations of the '<em>Chat Thread</em>' class.
+	 * The number of operations of the '<em>Chat Session</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_THREAD_OPERATION_COUNT = 0;
+	int CHAT_SESSION_OPERATION_COUNT = 0;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.
@@ -4644,15 +4644,15 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getAiChat_ProxyUrl();
 
 	/**
-	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getThreads <em>Threads</em>}'.
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getSessions <em>Sessions</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference list '<em>Threads</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.AiChat#getThreads()
+	 * @return the meta object for the containment reference list '<em>Sessions</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiChat#getSessions()
 	 * @see #getAiChat()
 	 * @generated
 	 */
-	EReference getAiChat_Threads();
+	EReference getAiChat_Sessions();
 
 	/**
 	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions <em>Prompt Instructions</em>}'.
@@ -5659,91 +5659,91 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getReviewSession_Decision();
 
 	/**
-	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChatThread <em>Chat Thread</em>}'.
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChatSession <em>Chat Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Chat Thread</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ChatThread
+	 * @return the meta object for class '<em>Chat Session</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession
 	 * @generated
 	 */
-	EClass getChatThread();
+	EClass getChatSession();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#isIterativeMode <em>Iterative Mode</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isIterativeMode <em>Iterative Mode</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the attribute '<em>Iterative Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ChatThread#isIterativeMode()
-	 * @see #getChatThread()
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#isIterativeMode()
+	 * @see #getChatSession()
 	 * @generated
 	 */
-	EAttribute getChatThread_IterativeMode();
+	EAttribute getChatSession_IterativeMode();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#isSelfIterativeMode <em>Self Iterative Mode</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isSelfIterativeMode <em>Self Iterative Mode</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the attribute '<em>Self Iterative Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ChatThread#isSelfIterativeMode()
-	 * @see #getChatThread()
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#isSelfIterativeMode()
+	 * @see #getChatSession()
 	 * @generated
 	 */
-	EAttribute getChatThread_SelfIterativeMode();
+	EAttribute getChatSession_SelfIterativeMode();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#isDarwinMode <em>Darwin Mode</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isDarwinMode <em>Darwin Mode</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the attribute '<em>Darwin Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ChatThread#isDarwinMode()
-	 * @see #getChatThread()
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#isDarwinMode()
+	 * @see #getChatSession()
 	 * @generated
 	 */
-	EAttribute getChatThread_DarwinMode();
+	EAttribute getChatSession_DarwinMode();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#isGitAutomation <em>Git Automation</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isGitAutomation <em>Git Automation</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the attribute '<em>Git Automation</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ChatThread#isGitAutomation()
-	 * @see #getChatThread()
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#isGitAutomation()
+	 * @see #getChatSession()
 	 * @generated
 	 */
-	EAttribute getChatThread_GitAutomation();
+	EAttribute getChatSession_GitAutomation();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#getMaxIterations <em>Max Iterations</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getMaxIterations <em>Max Iterations</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the attribute '<em>Max Iterations</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ChatThread#getMaxIterations()
-	 * @see #getChatThread()
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getMaxIterations()
+	 * @see #getChatSession()
 	 * @generated
 	 */
-	EAttribute getChatThread_MaxIterations();
+	EAttribute getChatSession_MaxIterations();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#getId <em>Id</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getId <em>Id</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the attribute '<em>Id</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ChatThread#getId()
-	 * @see #getChatThread()
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getId()
+	 * @see #getChatSession()
 	 * @generated
 	 */
-	EAttribute getChatThread_Id();
+	EAttribute getChatSession_Id();
 
 	/**
-	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.ChatThread#getMessages <em>Messages</em>}'.
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getMessages <em>Messages</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the containment reference list '<em>Messages</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ChatThread#getMessages()
-	 * @see #getChatThread()
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getMessages()
+	 * @see #getChatSession()
 	 * @generated
 	 */
-	EReference getChatThread_Messages();
+	EReference getChatSession_Messages();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage <em>Chat Message</em>}'.
@@ -7154,12 +7154,12 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute AI_CHAT__PROXY_URL = eINSTANCE.getAiChat_ProxyUrl();
 
 		/**
-		 * The meta object literal for the '<em><b>Threads</b></em>' containment reference list feature.
+		 * The meta object literal for the '<em><b>Sessions</b></em>' containment reference list feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EReference AI_CHAT__THREADS = eINSTANCE.getAiChat_Threads();
+		EReference AI_CHAT__SESSIONS = eINSTANCE.getAiChat_Sessions();
 
 		/**
 		 * The meta object literal for the '<em><b>Prompt Instructions</b></em>' containment reference feature.
@@ -7944,14 +7944,14 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute REVIEW_SESSION__DECISION = eINSTANCE.getReviewSession_Decision();
 
 		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatThreadImpl <em>Chat Thread</em>}' class.
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl <em>Chat Session</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatThreadImpl
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatThread()
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatSession()
 		 * @generated
 		 */
-		EClass CHAT_THREAD = eINSTANCE.getChatThread();
+		EClass CHAT_SESSION = eINSTANCE.getChatSession();
 
 		/**
 		 * The meta object literal for the '<em><b>Iterative Mode</b></em>' attribute feature.
@@ -7959,7 +7959,7 @@ public interface OrchestrationPackage extends EPackage {
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute CHAT_THREAD__ITERATIVE_MODE = eINSTANCE.getChatThread_IterativeMode();
+		EAttribute CHAT_SESSION__ITERATIVE_MODE = eINSTANCE.getChatSession_IterativeMode();
 
 		/**
 		 * The meta object literal for the '<em><b>Self Iterative Mode</b></em>' attribute feature.
@@ -7967,7 +7967,7 @@ public interface OrchestrationPackage extends EPackage {
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute CHAT_THREAD__SELF_ITERATIVE_MODE = eINSTANCE.getChatThread_SelfIterativeMode();
+		EAttribute CHAT_SESSION__SELF_ITERATIVE_MODE = eINSTANCE.getChatSession_SelfIterativeMode();
 
 		/**
 		 * The meta object literal for the '<em><b>Darwin Mode</b></em>' attribute feature.
@@ -7975,7 +7975,7 @@ public interface OrchestrationPackage extends EPackage {
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute CHAT_THREAD__DARWIN_MODE = eINSTANCE.getChatThread_DarwinMode();
+		EAttribute CHAT_SESSION__DARWIN_MODE = eINSTANCE.getChatSession_DarwinMode();
 
 		/**
 		 * The meta object literal for the '<em><b>Git Automation</b></em>' attribute feature.
@@ -7983,7 +7983,7 @@ public interface OrchestrationPackage extends EPackage {
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute CHAT_THREAD__GIT_AUTOMATION = eINSTANCE.getChatThread_GitAutomation();
+		EAttribute CHAT_SESSION__GIT_AUTOMATION = eINSTANCE.getChatSession_GitAutomation();
 
 		/**
 		 * The meta object literal for the '<em><b>Max Iterations</b></em>' attribute feature.
@@ -7991,7 +7991,7 @@ public interface OrchestrationPackage extends EPackage {
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute CHAT_THREAD__MAX_ITERATIONS = eINSTANCE.getChatThread_MaxIterations();
+		EAttribute CHAT_SESSION__MAX_ITERATIONS = eINSTANCE.getChatSession_MaxIterations();
 
 		/**
 		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
@@ -7999,7 +7999,7 @@ public interface OrchestrationPackage extends EPackage {
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute CHAT_THREAD__ID = eINSTANCE.getChatThread_Id();
+		EAttribute CHAT_SESSION__ID = eINSTANCE.getChatSession_Id();
 
 		/**
 		 * The meta object literal for the '<em><b>Messages</b></em>' containment reference list feature.
@@ -8007,7 +8007,7 @@ public interface OrchestrationPackage extends EPackage {
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EReference CHAT_THREAD__MESSAGES = eINSTANCE.getChatThread_Messages();
+		EReference CHAT_SESSION__MESSAGES = eINSTANCE.getChatSession_Messages();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.

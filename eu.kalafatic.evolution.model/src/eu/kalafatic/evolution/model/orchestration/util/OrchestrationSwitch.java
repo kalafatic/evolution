@@ -8,7 +8,7 @@ import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
-import eu.kalafatic.evolution.model.orchestration.ChatThread;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.Comment;
 import eu.kalafatic.evolution.model.orchestration.Database;
@@ -303,9 +303,9 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
-			case OrchestrationPackage.CHAT_THREAD: {
-				ChatThread chatThread = (ChatThread)theEObject;
-				T result = caseChatThread(chatThread);
+			case OrchestrationPackage.CHAT_SESSION: {
+				ChatSession chatThread = (ChatSession)theEObject;
+				T result = caseChatSession(chatThread);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -821,17 +821,17 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Chat Thread</em>'.
+	 * Returns the result of interpreting the object as an instance of '<em>Chat Session</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
 	 * returning a non-null result will terminate the switch.
 	 * <!-- end-user-doc -->
 	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Chat Thread</em>'.
+	 * @return the result of interpreting the object as an instance of '<em>Chat Session</em>'.
 	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
 	 * @generated
 	 */
-	public T caseChatThread(ChatThread object) {
+	public T caseChatSession(ChatSession object) {
 		return null;
 	}
 

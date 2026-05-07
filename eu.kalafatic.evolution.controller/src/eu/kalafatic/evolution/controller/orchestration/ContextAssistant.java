@@ -13,7 +13,7 @@ public class ContextAssistant {
 
     public ContextAssistResult analyze(String input, TaskContext context) throws Exception {
         Orchestrator orchestrator = context.getOrchestrator();
-        ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
+        ConversationState state = ConversationState.load(context.getSharedMemory(), context.getSessionId());
 
         StringBuilder sb = new StringBuilder();
         sb.append("You are a Context Assist layer for an AI platform.\n");

@@ -177,7 +177,7 @@ public class TaskStackPage extends AEvoPage {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
         String timestamp = sdf.format(new Date());
         newPlan.setId("P-" + timestamp);
-        newPlan.setName("New Plan Thread");
+        newPlan.setName("New Plan Session");
         newPlan.setStatus(TaskStatus.READY);
         newPlan.setSelected(true);
         orchestrator.getTasks().add(newPlan);

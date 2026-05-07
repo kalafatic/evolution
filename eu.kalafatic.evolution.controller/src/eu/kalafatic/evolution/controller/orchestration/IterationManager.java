@@ -120,7 +120,7 @@ public class IterationManager {
             context.log("[KERNEL] Strategic Initialization: " + request);
 
             // 1. Manage Conversation State
-            ConversationState state = ConversationState.load(context.getSharedMemory(), context.getThreadId());
+            ConversationState state = ConversationState.load(context.getSharedMemory(), context.getSessionId());
             state.addMessage("User: " + request);
 
             // 2. Mode Routing
@@ -163,7 +163,7 @@ public class IterationManager {
                 chatAgent.setAiService(aiService);
                 String chatResponse = chatAgent.process(request, context, null);
                 state.addMessage("Evo: " + chatResponse);
-                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getThreadId(), state));
+                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), state));
                 response.setSummary(chatResponse);
                 response.setContent(chatResponse);
                 transition(SystemState.DONE, context);

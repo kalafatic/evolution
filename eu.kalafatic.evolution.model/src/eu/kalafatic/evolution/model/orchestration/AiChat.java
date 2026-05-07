@@ -19,7 +19,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getToken <em>Token</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPrompt <em>Prompt</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getProxyUrl <em>Proxy Url</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getThreads <em>Threads</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getSessions <em>Sessions</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.AiChat#getPromptInstructions <em>Prompt Instructions</em>}</li>
  * </ul>
  *
@@ -117,16 +117,16 @@ public interface AiChat extends EObject {
 	void setProxyUrl(String value);
 
 	/**
-	 * Returns the value of the '<em><b>Threads</b></em>' containment reference list.
-	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.ChatThread}.
+	 * Returns the value of the '<em><b>Sessions</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.ChatSession}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Threads</em>' containment reference list.
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAiChat_Threads()
+	 * @return the value of the '<em>Sessions</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getAiChat_Sessions()
 	 * @model containment="true"
 	 * @generated
 	 */
-	EList<ChatThread> getThreads();
+	EList<ChatSession> getSessions();
 
 	/**
 	 * Returns the value of the '<em><b>Prompt Instructions</b></em>' containment reference.

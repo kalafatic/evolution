@@ -53,8 +53,8 @@ public class LLMSettingsPage extends AWizardPage {
     private OllamaService ollamaService;
     private Map<String, String> threads = new HashMap<>();
     private Map<String, StyleRange[]> threadStyles = new HashMap<>();
-    private String currentThread = "Default";
-    private Combo threadCombo;
+    private String currentSession = "Default";
+    private Combo sessionCombo;
     private Combo aiModeCombo;    
     private Combo aiRemoteCombo;
 

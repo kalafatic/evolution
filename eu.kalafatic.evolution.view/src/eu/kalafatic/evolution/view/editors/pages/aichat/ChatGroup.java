@@ -35,7 +35,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
-import eu.kalafatic.evolution.model.orchestration.ChatThread;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -53,7 +53,7 @@ public class ChatGroup extends AEvoGroup {
     private AiChatPage page;
     private boolean isLoaded = false;
     private boolean isJsReady = false;
-    private ChatThread currentThread;
+    private ChatSession currentSession;
     private EditMessageCallback editCallback;
     private int logCount = 0;
 
@@ -479,8 +479,8 @@ public class ChatGroup extends AEvoGroup {
     }
 
     public void handleApprove(int index) {
-        if (currentThread != null && index >= 0 && index < currentThread.getMessages().size()) {
-            ChatMessage msg = currentThread.getMessages().get(index);
+        if (currentSession != null && index >= 0 && index < currentSession.getMessages().size()) {
+            ChatMessage msg = currentSession.getMessages().get(index);
             String agentType = msg.getAgentType();
             if (agentType == null) agentType = "ai";
 
@@ -496,8 +496,8 @@ public class ChatGroup extends AEvoGroup {
     }
 
     public void handleApproveDarwinVariant(int index, String variantId) {
-        if (currentThread != null && index >= 0 && index < currentThread.getMessages().size()) {
-            ChatMessage msg = currentThread.getMessages().get(index);
+        if (currentSession != null && index >= 0 && index < currentSession.getMessages().size()) {
+            ChatMessage msg = currentSession.getMessages().get(index);
             String agentType = msg.getAgentType();
             if (agentType == null) agentType = "darwin";
 
@@ -512,8 +512,8 @@ public class ChatGroup extends AEvoGroup {
     }
 
     public void markLastWaitingAsApproved() {
-        if (currentThread != null) {
-            List<ChatMessage> messages = currentThread.getMessages();
+        if (currentSession != null) {
+            List<ChatMessage> messages = currentSession.getMessages();
             for (int i = messages.size() - 1; i >= 0; i--) {
                 ChatMessage msg = messages.get(i);
                 if (msg.getAgentType() != null && msg.getAgentType().contains("waiting")) {
@@ -525,8 +525,8 @@ public class ChatGroup extends AEvoGroup {
     }
 
     public void markLastAiMessageAsWaiting() {
-        if (currentThread != null) {
-            List<ChatMessage> messages = currentThread.getMessages();
+        if (currentSession != null) {
+            List<ChatMessage> messages = currentSession.getMessages();
             for (int i = messages.size() - 1; i >= 0; i--) {
                 ChatMessage msg = messages.get(i);
                 String agentType = msg.getAgentType();
@@ -546,10 +546,10 @@ public class ChatGroup extends AEvoGroup {
     }
 
     public void appendText(String text, org.eclipse.swt.graphics.Color color, int style) {
-        appendTextToThread(currentThread, text, color, style);
+        appendTextToSession(currentSession, text, color, style);
     }
 
-    public void appendTextToThread(ChatThread thread, String text, org.eclipse.swt.graphics.Color color, int style) {
+    public void appendTextToSession(ChatSession thread, String text, org.eclipse.swt.graphics.Color color, int style) {
         if (thread == null || text == null || text.trim().isEmpty()) return;
     	if (color == null) {
     		color = Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
@@ -772,7 +772,7 @@ public class ChatGroup extends AEvoGroup {
                     msg.setTimestamp(fTimestamp);
                     thread.getMessages().add(msg);
 
-                    if (thread == currentThread) {
+                    if (thread == currentSession) {
                         refreshBrowser();
                     }
                 } catch (Exception e) {
@@ -819,8 +819,8 @@ public class ChatGroup extends AEvoGroup {
     }
 
 	public void updateMessage(int index, String newText) {
-        if (currentThread != null && index >= 0 && index < currentThread.getMessages().size()) {
-            currentThread.getMessages().get(index).setText(newText);
+        if (currentSession != null && index >= 0 && index < currentSession.getMessages().size()) {
+            currentSession.getMessages().get(index).setText(newText);
             refreshBrowser();
         }
     }
@@ -847,8 +847,8 @@ public class ChatGroup extends AEvoGroup {
             setFeedbackLevel(orchestrator.getTasks().get(0).getFeedbackLevel());
         }
         JSONArray array = new JSONArray();
-        if (currentThread != null) {
-            for (ChatMessage m : currentThread.getMessages()) {
+        if (currentSession != null) {
+            for (ChatMessage m : currentSession.getMessages()) {
                 JSONObject json = toJsonObject(m);
                 if (json != null) array.put(json);
             }
@@ -882,29 +882,29 @@ public class ChatGroup extends AEvoGroup {
     }
 
     public void clear() {
-        if (currentThread != null) {
-            currentThread.getMessages().clear();
+        if (currentSession != null) {
+            currentSession.getMessages().clear();
         }
         refreshBrowser();
     }
 
     public String getText() {
-        if (currentThread == null) return "";
+        if (currentSession == null) return "";
         StringBuilder sb = new StringBuilder();
-        for (ChatMessage m : currentThread.getMessages()) {
+        for (ChatMessage m : currentSession.getMessages()) {
             sb.append(m.getSender()).append(": ").append(m.getText()).append("\n\n");
         }
         return sb.toString();
     }
 
-    public void setThread(ChatThread thread) {
-        this.currentThread = thread;
+    public void setSession(ChatSession thread) {
+        this.currentSession = thread;
         refreshBrowser();
     }
 
     public void setText(String text) {
-        if (currentThread == null) return;
-        currentThread.getMessages().clear();
+        if (currentSession == null) return;
+        currentSession.getMessages().clear();
         if (text == null || text.isEmpty()) {
             refreshBrowser();
             return;
@@ -913,7 +913,7 @@ public class ChatGroup extends AEvoGroup {
         for (String line : lines) {
             String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
             ChatMessage msg = OrchestrationFactory.eINSTANCE.createChatMessage();
-            msg.setIndex(currentThread.getMessages().size());
+            msg.setIndex(currentSession.getMessages().size());
             if (line.contains(": ")) {
                 int colon = line.indexOf(": ");
                 String sender = line.substring(0, colon);
@@ -935,7 +935,7 @@ public class ChatGroup extends AEvoGroup {
                 msg.setAgentType("ai");
                 msg.setTimestamp(timestamp);
             }
-            currentThread.getMessages().add(msg);
+            currentSession.getMessages().add(msg);
         }
         refreshBrowser();
     }

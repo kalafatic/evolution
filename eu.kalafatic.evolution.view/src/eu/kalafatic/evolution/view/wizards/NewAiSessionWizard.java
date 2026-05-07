@@ -13,11 +13,11 @@ import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 /**
  * @evo:17:A reason=new-thread-wizard
  */
-public class NewAiThreadWizard extends Wizard implements INewWizard {
-    private NewAiThreadWizardPage page;
+public class NewAiSessionWizard extends Wizard implements INewWizard {
+    private NewAiSessionWizardPage page;
 
-    public NewAiThreadWizard() {
-        setWindowTitle("New AI Thread");
+    public NewAiSessionWizard() {
+        setWindowTitle("New AI Session");
     }
 
     @Override
@@ -26,13 +26,13 @@ public class NewAiThreadWizard extends Wizard implements INewWizard {
 
     @Override
     public void addPages() {
-        page = new NewAiThreadWizardPage();
+        page = new NewAiSessionWizardPage();
         addPage(page);
     }
 
     @Override
     public boolean performFinish() {
-        String threadName = page.getThreadName();
+        String sessionName = page.getSessionName();
         IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
         if (window != null) {
             IWorkbenchPage workbenchPage = window.getActivePage();
@@ -40,7 +40,7 @@ public class NewAiThreadWizard extends Wizard implements INewWizard {
                 MultiPageEditor editor = (MultiPageEditor) workbenchPage.getActiveEditor();
                 AiChatPage aiChatPage = editor.getAiChatPage();
                 if (aiChatPage != null) {
-                    aiChatPage.createNewThread(threadName);
+                    aiChatPage.createNewSession(sessionName);
                     return true;
                 }
             }

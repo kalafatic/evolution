@@ -1,0 +1,39 @@
+package eu.kalafatic.evolution.view.wizards;
+
+import org.eclipse.jface.wizard.WizardPage;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Text;
+
+public class NewAiSessionWizardPage extends WizardPage {
+    private Text sessionNameText;
+
+    protected NewAiSessionWizardPage() {
+        super("NewAiSessionWizardPage");
+        setTitle("New AI Chat Session");
+        setDescription("Enter a description for the new AI chat session.");
+    }
+
+    @Override
+    public void createControl(Composite parent) {
+        Composite container = new Composite(parent, SWT.NONE);
+        container.setLayout(new GridLayout(2, false));
+
+        new Label(container, SWT.NONE).setText("Session Description:");
+        sessionNameText = new Text(container, SWT.BORDER);
+        sessionNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        sessionNameText.setText("task");
+        sessionNameText.addModifyListener(e -> {
+            setPageComplete(!sessionNameText.getText().trim().isEmpty());
+        });
+
+        setControl(container);
+    }
+
+    public String getSessionName() {
+        return sessionNameText.getText();
+    }
+}

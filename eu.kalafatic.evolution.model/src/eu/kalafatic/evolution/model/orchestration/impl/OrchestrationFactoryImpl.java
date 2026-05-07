@@ -9,7 +9,7 @@ import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
-import eu.kalafatic.evolution.model.orchestration.ChatThread;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
 import eu.kalafatic.evolution.model.orchestration.Comment;
@@ -137,7 +137,7 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.FILE_CHANGE: return createFileChange();
 			case OrchestrationPackage.CHANGE_SET: return createChangeSet();
 			case OrchestrationPackage.REVIEW_SESSION: return createReviewSession();
-			case OrchestrationPackage.CHAT_THREAD: return createChatThread();
+			case OrchestrationPackage.CHAT_SESSION: return createChatSession();
 			case OrchestrationPackage.CHAT_MESSAGE: return createChatMessage();
 			case OrchestrationPackage.PROMPT_INSTRUCTIONS: return createPromptInstructions();
 			default:
@@ -581,8 +581,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public ChatThread createChatThread() {
-		ChatThreadImpl chatThread = new ChatThreadImpl();
+	public ChatSession createChatSession() {
+		ChatSessionImpl chatThread = new ChatSessionImpl();
 		return chatThread;
 	}
 
