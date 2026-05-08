@@ -143,6 +143,11 @@ public class IterationManager {
                 PlatformMode mode = router.route(request, context.getOrchestrator());
                 context.setPlatformMode(mode);
                 context.log("Platform Mode: " + mode.getType());
+
+                eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+                    new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                        eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MODE_CHANGED,
+                        context.getSessionId(), "Kernel", mode.getType().toString()));
             }
 
             transition(SystemState.ANALYZING, context);
@@ -288,6 +293,11 @@ public class IterationManager {
         TransitionToken token = new TransitionToken();
         SystemState current = ctx.getStateHolder().getState();
         ctx.getStateHolder().applyTransition(token, to);
+
+        eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+            new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                eu.kalafatic.evolution.controller.workflow.RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
+                ctx.getSessionId(), "Kernel", to.toString()));
     }
 
     public EvaluationResult runIteration(Iteration iteration) {
@@ -647,6 +657,12 @@ public class IterationManager {
                 context.checkPause();
                 transition(SystemState.EXECUTING, context);
                 task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.RUNNING);
+
+                eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+                    new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                        eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_STARTED,
+                        context.getSessionId(), "Kernel", task.getId()));
+
                 String result = taskExecutor.getOrchestrator().executeTask(task, context);
                 transition(SystemState.VERIFYING, context);
                 task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.VERIFYING);
@@ -655,6 +671,12 @@ public class IterationManager {
                 JSONObject evaluation = validator.evaluate(change, task.getName(), context);
                 if (evaluation.optBoolean("success", false)) {
                     task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
+
+                    eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+                        new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                            eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_COMPLETED,
+                            context.getSessionId(), "Kernel", task.getId()));
+
                     success = true;
                     break;
                 } else if (retry < EvolutionConstants.MAX_TASK_RETRIES) {

@@ -61,6 +61,12 @@ public class SelfDevSupervisor {
                 }
 
                 context.log("[SUPERVISOR] Starting Iteration " + i + " of " + maxIter);
+
+                eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+                    new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                        eu.kalafatic.evolution.controller.workflow.RuntimeEventType.ITERATION_STARTED,
+                        context.getSessionId(), "Supervisor", "iteration-" + i));
+
                 Iteration iteration = OrchestrationFactory.eINSTANCE.createIteration();
                 iteration.setId("iteration-" + i);
                 iteration.setBranchName("selfdev/" + session.getId() + "/" + iteration.getId());
