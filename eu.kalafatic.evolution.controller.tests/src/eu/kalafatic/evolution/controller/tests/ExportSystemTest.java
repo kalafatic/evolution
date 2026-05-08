@@ -33,6 +33,13 @@ public class ExportSystemTest {
     }
 
     @Test
+    public void testMediatedAiModeMapping() {
+        orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED);
+        PlatformMode mode = router.route("Improve class IterationManager", orchestrator);
+        assertEquals(PlatformType.HYBRID_MANUAL_EXPORT, mode.getType());
+    }
+
+    @Test
     public void testExportModeDetection() {
         String[] prompts = {
             "mode: export - help me fix the kernel",

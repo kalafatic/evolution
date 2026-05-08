@@ -53,6 +53,9 @@ public class ModeRouter {
                     return createAssistedCodingMode();
                 }
             }
+            if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
+                return createHybridManualExportMode();
+            }
         }
 
         // 3. Obvious coding keywords detection
