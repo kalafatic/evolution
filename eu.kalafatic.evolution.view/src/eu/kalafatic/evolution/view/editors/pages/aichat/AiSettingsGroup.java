@@ -187,6 +187,8 @@ public class AiSettingsGroup extends AEvoGroup {
 				List<String> modelsToShow;
 				if (mode == AiMode.PROXY) {
 					modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
+				} else if (mode == AiMode.MEDIATED) {
+					modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.MEDIATED);
 				} else {
 					modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.LOCAL,
 							AiMode.HYBRID);
