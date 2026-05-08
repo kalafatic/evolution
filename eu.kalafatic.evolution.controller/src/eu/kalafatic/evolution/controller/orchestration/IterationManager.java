@@ -131,6 +131,7 @@ public class IterationManager {
         response.setResultType(ResultType.CHAT);
 
         try {
+            context.getOrchestrator().getTasks().clear();
             context.setCurrentTaskName("Initialization");
             context.log("[KERNEL] Strategic Initialization: " + request);
 
@@ -153,7 +154,7 @@ public class IterationManager {
             AtomicIntentAnalysis atomicAnalysis = atomicIntentClassifier.analyze(request, context);
             if (atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() > 0.80 && !atomicAnalysis.isRequiresPlanning()) {
                 context.log("[KERNEL] Atomic task detected. Generating deterministic plan.");
-                List<Task> tasks = createAtomicFilePlan(request, context);
+                List<Task> tasks = createAtomicFilePlan(request, atomicAnalysis, context);
                 context.getOrchestrator().getTasks().addAll(tasks);
                 transition(SystemState.PLAN_LOCKED, context);
                 boolean success = executeTasksWithRetries(tasks);
@@ -581,9 +582,11 @@ public class IterationManager {
         return analysis.isAtomic() && analysis.getConfidence() > 0.80 && !analysis.isRequiresPlanning();
     }
 
-    private List<Task> createAtomicFilePlan(String request, TaskContext context) {
+    private List<Task> createAtomicFilePlan(String request, AtomicIntentAnalysis analysis, TaskContext context) {
         List<Task> tasks = new ArrayList<>();
-        String path = request.replaceFirst("(?i)^(create|add|write|save)\\s+((a\\s+|an\\s+)?(new\\s+)?)(file|content|to|to\\s+file|java\\s+class|java\\s+interface|interface|class|resource|record)\\s+(to\\s+)?", "").trim();
+        String path = (analysis != null && analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty()) ?
+                      analysis.getTargetArtifact() :
+                      request.replaceFirst("(?i)^(create|add|write|save)\\s+((a\\s+|an\\s+)?(new\\s+)?)(file|content|to|to\\s+file|java\\s+class|java\\s+interface|interface|class|resource|record)\\s+(to\\s+)?", "").trim();
         path = path.replaceAll("[.!?,]$","");
         Task t = OrchestrationFactory.eINSTANCE.createTask();
         t.setId("atomic-task-1");
