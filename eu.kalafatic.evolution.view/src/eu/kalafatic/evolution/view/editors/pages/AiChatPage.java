@@ -642,6 +642,8 @@ public class AiChatPage extends AEvoPage {
 		if (sessionList.isEmpty()) {
 			ChatSession defaultSession = OrchestrationFactory.eINSTANCE.createChatSession();
 			defaultSession.setId("Default");
+			defaultSession.setIterativeMode(true);
+			defaultSession.setDarwinMode(true);
 			sessionList.add(defaultSession);
 		}
 		currentSession = sessionList.get(0);
@@ -1095,9 +1097,11 @@ public class AiChatPage extends AEvoPage {
 		if (file.exists()) {
 			IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
 			if (iFile != null) {
+				final String finalPath = path;
 				Display.getDefault().asyncExec(() -> {
 					editor.refreshNavigator(iFile);
 					editor.showComparePage(iFile);
+					chatGroup.selectFile(finalPath);
 				});
 			}
 		}
@@ -1319,11 +1323,19 @@ public class AiChatPage extends AEvoPage {
 			return result;
 		};
 		IControlContentAdapter contentAdapter = new IControlContentAdapter() {
-			@Override public void setControlContents(org.eclipse.swt.widgets.Control control, String contents, int cursorPosition) { ((StyledText) control).setText(contents); ((StyledText) control).setSelection(cursorPosition); }
+			@Override public void setControlContents(org.eclipse.swt.widgets.Control control, String contents, int cursorPosition) {
+				StyledText st = (StyledText) control;
+				st.setText(contents);
+				st.setSelection(cursorPosition);
+			}
 			@Override public void insertControlContents(org.eclipse.swt.widgets.Control control, String contents, int cursorPosition) {
-				StyledText st = (StyledText) control; String ct = st.getText(); int ss = st.getSelection().x;
-				int ws = ss; while (ws > 0 && !Character.isWhitespace(ct.charAt(ws - 1))) ws--;
-				st.setText(ct.substring(0, ws) + contents + ct.substring(ss)); st.setSelection(ws + cursorPosition);
+				StyledText st = (StyledText) control;
+				String ct = st.getText();
+				int ss = st.getSelection().x;
+				int ws = ss;
+				while (ws > 0 && !Character.isWhitespace(ct.charAt(ws - 1))) ws--;
+				st.replaceTextRange(ws, ss - ws, contents);
+				st.setSelection(ws + cursorPosition);
 			}
 			@Override public String getControlContents(org.eclipse.swt.widgets.Control control) { return ((StyledText) control).getText(); }
 			@Override public int getCursorPosition(org.eclipse.swt.widgets.Control control) { return ((StyledText) control).getCaretOffset(); }
@@ -1332,9 +1344,9 @@ public class AiChatPage extends AEvoPage {
 		};
 		KeyStroke ks = null; try { ks = KeyStroke.getInstance("Ctrl+Space"); } catch (Exception e) {}
 		assistAdapter = new ContentProposalAdapter(text, contentAdapter, proposalProvider, ks, null);
-		assistAdapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_REPLACE);
+		assistAdapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_INSERT);
 		assistAdapter.setAutoActivationDelay(200);
-		assistAdapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyz".toCharArray());
+		assistAdapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyz/".toCharArray());
 
 		text.addFocusListener(new org.eclipse.swt.events.FocusAdapter() {
 			@Override

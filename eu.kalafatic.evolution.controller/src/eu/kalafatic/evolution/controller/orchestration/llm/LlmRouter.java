@@ -60,6 +60,10 @@ public class LlmRouter {
                 return verifyResponseLocally(orchestrator, remoteResponse, temperature, proxyUrl, context);
             } else if (mode == AiMode.REMOTE) {
                 return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            } else if (mode == AiMode.MEDIATED) {
+                // For MEDIATED mode, we use local intelligence to prepare/optimize
+                if (context != null) context.log("LlmRouter-Mediated: Using local intelligence for preparation.");
+                return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
             }
         } catch (Exception e) {
             // @evo:20:A reason=resilient-routing-fallback

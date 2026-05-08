@@ -10,7 +10,10 @@ window.ChatApp.Panel = {
             return;
         }
 
-        files.forEach(fileInfo => {
+        files.forEach(itemData => {
+            let fileInfo = typeof itemData === 'string' ? itemData : itemData.info;
+            let date = typeof itemData === 'string' ? '' : itemData.date;
+
             let status = 'M';
             let path = fileInfo;
             if (fileInfo.includes(' ')) {
@@ -31,6 +34,7 @@ window.ChatApp.Panel = {
                     <div class="file-details">
                         <span class="file-name">${fileName}</span>
                         <span class="file-path">${dir}</span>
+                        ${date ? `<span class="file-date" style="font-size: 8px; color: #94a3b8;">${date}</span>` : ''}
                     </div>
                     <span class="expand-icon">▶</span>
                 </div>
@@ -65,5 +69,21 @@ window.ChatApp.Panel = {
             html += `<div class="diff-line ${cls}"><div class="line-num">${num}</div><div class="line-content">${window.ChatApp.Utils.escapeHtml(line)}</div></div>`;
         });
         return html;
+    },
+
+    selectFile: function(path) {
+        const item = document.querySelector(`.file-stack-item[data-path="${path}"]`);
+        if (!item) return;
+
+        // Remove active-file from any other item
+        document.querySelectorAll('.file-stack-item.active-file').forEach(el => el.classList.remove('active-file'));
+
+        item.classList.add('active-file');
+        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Optionally expand it if it's not already
+        if (!item.classList.contains('expanded')) {
+            this.toggleFileDiff(path);
+        }
     }
 };

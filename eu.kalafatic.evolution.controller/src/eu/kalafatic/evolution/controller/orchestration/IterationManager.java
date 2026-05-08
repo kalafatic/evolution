@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +28,11 @@ import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
+import eu.kalafatic.evolution.controller.orchestration.export.ArchitectureSummarizer;
+import eu.kalafatic.evolution.controller.orchestration.export.ContextSelectionEngine;
+import eu.kalafatic.evolution.controller.orchestration.export.ExportPackageBuilder;
+import eu.kalafatic.evolution.controller.orchestration.export.PromptOptimizer;
+import eu.kalafatic.evolution.controller.orchestration.export.SelfDevRequestAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
@@ -48,8 +54,6 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 
 /**
  * The Kernel Control Plane. Sole authority for state transitions and strategic orchestration.
- *
- * @evo:21:A reason=kernel-refactor-alignment
  */
 public class IterationManager {
     private static final ExecutorService variantExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
@@ -104,7 +108,6 @@ public class IterationManager {
         validator = (eu.kalafatic.evolution.controller.agents.ValidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_VALIDATOR);
         repairAgent = (eu.kalafatic.evolution.controller.agents.RepairAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_REPAIR);
 
-        // Ensure agents use the provided AiService
         intentClassifier.setAiService(aiService);
         analyticAgent.setAiService(aiService);
         strategicPlanner.setAiService(aiService);
@@ -121,9 +124,6 @@ public class IterationManager {
         });
     }
 
-    /**
-     * Entry point for a task request. Manages the full strategic lifecycle.
-     */
     public OrchestratorResponse handle(TaskRequest taskRequest) throws Exception {
         transition(SystemState.INIT, context);
         String request = taskRequest.getPrompt();
@@ -134,51 +134,41 @@ public class IterationManager {
             context.setCurrentTaskName("Initialization");
             context.log("[KERNEL] Strategic Initialization: " + request);
 
-            // 1. Manage Conversation State
             ConversationState state = ConversationState.load(context.getSharedMemory(), context.getSessionId());
             state.addMessage("User: " + request);
 
-            // 2. Mode Routing
             if (context.getPlatformMode() == null) {
                 ModeRouter router = new ModeRouter();
                 PlatformMode mode = router.route(request, context.getOrchestrator());
                 context.setPlatformMode(mode);
-                context.log("Platform Mode: " + mode.getType() + " detected for prompt: " + request);
-                if (mode.getType() == PlatformType.SIMPLE_CHAT) {
-                    context.log("SIMPLE_CHAT detected");
-                }
+                context.log("Platform Mode: " + mode.getType());
             }
 
-            // 3. Strategic Planning & Execution
             transition(SystemState.ANALYZING, context);
 
-            // --- Atomic Task Detection (Optimized Pipeline) ---
+            if (context.getPlatformMode().getType() == PlatformType.HYBRID_MANUAL_EXPORT) {
+                return handleExportFlow(request, context);
+            }
+
             AtomicIntentAnalysis atomicAnalysis = atomicIntentClassifier.analyze(request, context);
             if (atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() > 0.80 && !atomicAnalysis.isRequiresPlanning()) {
-                context.log("[KERNEL] Atomic task detected semantically. Generating deterministic plan.");
+                context.log("[KERNEL] Atomic task detected. Generating deterministic plan.");
                 List<Task> tasks = createAtomicFilePlan(request, context);
                 context.getOrchestrator().getTasks().addAll(tasks);
-
                 transition(SystemState.PLAN_LOCKED, context);
-
                 boolean success = executeTasksWithRetries(tasks);
-
                 transition(SystemState.VERIFYING, context);
                 String path = tasks.get(0).getName().replaceFirst("(?i)^Write\\s+", "");
-                String finalResponse = "WORK DONE: Created file " + path + ".\nFILES: [FILE:" + path + "]";
+                String finalResponse = "WORK DONE: Created file " + path + ".";
                 response.setSummary(finalResponse);
-
                 transition(success ? SystemState.DONE : SystemState.FAILED, context);
                 return response;
             }
 
-            // SIMPLE_CHAT Mode - handled after ANALYZING start to keep flow consistent
             if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
                 transition(SystemState.EXECUTING, context);
                 GeneralAgent chatAgent = (GeneralAgent) availableAgents.stream()
-                        .filter(a -> a instanceof GeneralAgent)
-                        .findFirst()
-                        .orElse(new GeneralAgent());
+                        .filter(a -> a instanceof GeneralAgent).findFirst().orElse(new GeneralAgent());
                 chatAgent.setAiService(aiService);
                 String chatResponse = chatAgent.process(request, context, null);
                 state.addMessage("Evo: " + chatResponse);
@@ -189,12 +179,9 @@ public class IterationManager {
                 return response;
             }
 
-            // --- Consolidated Kernel Intelligence Entry ---
-            // AnalyticAgent is the single source of truth for intent, category, and clarification.
             JSONObject analysis = analyticAgent.analyze(request, context);
             context.log("[KERNEL] Analysis Result: " + analysis.toString());
 
-            // 1. Intent/Policy Gate
             String policyResponse = policyEngine.evaluate(analysis, request, context);
             if (policyResponse != null) {
                 response.setSummary(policyResponse);
@@ -202,48 +189,35 @@ public class IterationManager {
                 return response;
             }
 
-            // 2. Intent Clarification Loop (Only for non-Darwin tasks)
             IntentAnalyzer intentParser = new IntentAnalyzer(aiService);
             IntentAnalysisResult deepAnalysis = intentParser.parseResult(analysis);
-
-            // Map structuredIntent if available (from AnalyticAgent internal Deep Intent Analysis)
             if (analysis.has("structuredIntent")) {
                 deepAnalysis = intentParser.parseResult(analysis.getJSONObject("structuredIntent"));
             }
 
-            // --- Requirement Drift Detection ---
             ConfirmedRequirements frozen = state.getConfirmedRequirements();
             if (frozen != null && hasSignificantDrift(frozen, deepAnalysis)) {
-                context.log("[KERNEL] Requirement drift detected (v" + frozen.getVersion() + "). New intent: " + deepAnalysis.getGoal());
-                context.log("[AUDIT] Re-evaluating requirements due to significant drift.");
-                // We don't null it here to preserve the version number for the next freeze
+                context.log("[KERNEL] Requirement drift detected.");
             }
 
             if (clarificationManager.shouldClarify(deepAnalysis) && !context.getOrchestrator().isDarwinMode() && !context.isAutoApprove()) {
                 transition(SystemState.CLARIFYING, context);
                 String question = clarificationManager.generateClarificationQuestion(deepAnalysis, context);
                 clarificationManager.updateState(state, deepAnalysis, question);
-
                 context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), state));
-
                 String clarification = context.requestInput(question).get();
                 if (clarification != null && !clarification.isEmpty() && !clarification.equalsIgnoreCase("Rejected")) {
                     state.addClarification(clarification);
                     state.setRequirementMet(true);
                     context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), state));
-
-                    // Recursive re-analysis with clarification
-                    return handle(new TaskRequest(request + "\nClarification: " + clarification, taskRequest.getProjectRoot()));
+                    return handle(new TaskRequest(request + "\\nClarification: " + clarification, taskRequest.getProjectRoot()));
                 } else {
-                    // Blocking: prevent code generation if clarification is empty or rejected
-                    context.log("[KERNEL] Clarification refused or empty. Stopping generation.");
-                    response.setSummary("Generation stopped: Clarification required but not provided.");
+                    response.setSummary("Generation stopped: Clarification required.");
                     transition(SystemState.FAILED, context);
                     return response;
                 }
             }
 
-            // --- Requirement Freezing ---
             if (!context.getOrchestrator().isDarwinMode()) {
                 freezeRequirements(state, deepAnalysis, context);
                 context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), state));
@@ -251,27 +225,20 @@ public class IterationManager {
 
             String analyzedRequest = analysis.optString("refinedPrompt", request);
 
-            // Goal/Darwin Handoff
             if (context.getPlatformMode().getType() == PlatformType.DARWIN_MODE || context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
                 EvaluationResult res = runDarwin();
-                response.setSummary("Darwin evolution completed. Result: " + (res.isSuccess() ? "SUCCESS" : "FAIL"));
+                response.setSummary("Darwin evolution completed.");
                 transition(SystemState.DONE, context);
                 return response;
             }
 
-            // 3. Strategic Planning (using already analyzed/clarified request)
             List<Task> tasks = decideFlow(analyzedRequest, context);
-            
             context.getOrchestrator().getTasks().addAll(tasks);
             transition(SystemState.PLAN_LOCKED, context);
-
-            // Execution
             boolean success = executeTasksWithRetries(tasks);
-
             transition(SystemState.VERIFYING, context);
             String finalResponse = finalResponseAgent.generateFinalResponse(request, tasks, context);
             response.setSummary(finalResponse);
-
             transition(success ? SystemState.DONE : SystemState.FAILED, context);
             return response;
 
@@ -281,10 +248,30 @@ public class IterationManager {
         }
     }
 
-    private List<Task> decideFlow(String request, TaskContext context2) throws Exception {
-        boolean needsDeepPlanning = context.getPlatformMode().getType() != PlatformType.SIMPLE_CHAT;
+    private OrchestratorResponse handleExportFlow(String request, TaskContext context) throws Exception {
+        context.log("[KERNEL] Executing Hybrid Manual Export flow.");
+        SelfDevRequestAnalyzer analyzer = new SelfDevRequestAnalyzer();
+        JSONObject analysis = analyzer.analyze(request, context);
+        transition(SystemState.EXPORTING, context);
+        ArchitectureSummarizer summarizer = new ArchitectureSummarizer();
+        String architectureSummary = summarizer.summarize(context, aiService);
+        ContextSelectionEngine contextEngine = new ContextSelectionEngine();
+        Map<String, String> contextFiles = contextEngine.selectContext(request, analysis, context);
+        PromptOptimizer optimizer = new PromptOptimizer();
+        String optimizedPrompt = optimizer.optimize(request, architectureSummary, context, aiService);
+        ExportPackageBuilder builder = new ExportPackageBuilder();
+        File zipFile = builder.build(request, analysis, optimizedPrompt, architectureSummary, contextFiles, context);
+        OrchestratorResponse response = new OrchestratorResponse();
+        response.setResultType(ResultType.CHAT);
+        String summary = "### Export Complete\\n\\nLocation: `" + zipFile.getAbsolutePath() + "`";
+        response.setSummary(summary);
+        response.setContent(summary);
+        transition(SystemState.DONE, context);
+        return response;
+    }
 
-        if (!needsDeepPlanning) {
+    private List<Task> decideFlow(String request, TaskContext context2) throws Exception {
+        if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
             return strategicPlanner.plan(request, context);
         }
         return iterativePlan(request, context);
@@ -293,27 +280,16 @@ public class IterationManager {
 	private void transition(SystemState to, TaskContext ctx) {
         TransitionToken token = new TransitionToken();
         SystemState current = ctx.getStateHolder().getState();
-        ctx.log("[KERNEL] Transition: " + current + " -> " + to);
         ctx.getStateHolder().applyTransition(token, to);
-        if (currentIterationModel != null) {
-            currentIterationModel.setPhase(to == SystemState.DONE ? "LEARN" : to.name());
-        }
     }
 
     public EvaluationResult runIteration(Iteration iteration) {
         this.currentIterationModel = iteration;
-        PlatformMode mode = context.getPlatformMode();
-        boolean darwinEnabled = (mode != null && (mode.getType() == PlatformType.DARWIN_MODE || mode.getType() == PlatformType.SELF_DEV_MODE))
-                                || context.getOrchestrator().isDarwinMode();
-
+        boolean darwinEnabled = (context.getPlatformMode() != null && (context.getPlatformMode().getType() == PlatformType.DARWIN_MODE || context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE)) || context.getOrchestrator().isDarwinMode();
         try {
-            if (darwinEnabled && gitManager.isGitRepository()) {
-                return runDarwin();
-            } else {
-                return runIterative();
-            }
+            if (darwinEnabled && gitManager.isGitRepository()) return runDarwin();
+            else return runIterative();
         } catch (Exception e) {
-            context.log("[KERNEL] Iteration encountered an error: " + e.getMessage());
             EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
             result.setSuccess(false);
             result.setDecision(SelfDevDecision.ROLLBACK);
@@ -325,21 +301,15 @@ public class IterationManager {
         transition(SystemState.INIT, context);
         currentIterationModel.setStatus(IterationStatus.RUNNING);
         transition(SystemState.ANALYZING, context);
-
-        String goal = context.getOrchestrator().getSelfDevSession() != null ?
-                     context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
-
+        String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
         try {
-            List<Task> tasks = taskPlanner.generateTasks(context, goal);
+            List<Task> tasks = iterativePlan(goal, context);
             transition(SystemState.PLAN_LOCKED, context);
-
             transition(SystemState.EXECUTING, context);
             boolean success = executeTasksWithRetries(tasks);
-
             transition(SystemState.VERIFYING, context);
             EvaluationResult result = evaluator.evaluate();
             currentIterationModel.setEvaluationResult(result);
-
             if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
                 transition(SystemState.DONE, context);
                 gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
@@ -361,26 +331,19 @@ public class IterationManager {
     private EvaluationResult runDarwin() throws Exception {
         currentIterationModel.setStatus(IterationStatus.RUNNING);
         transition(SystemState.INIT, context);
-
-        String goal = context.getOrchestrator().getSelfDevSession() != null ?
-                     context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
-
+        String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
         gitManager.ensureInitialCommit();
         String originalBranch = gitManager.getCurrentBranch();
         String snapshotBranch = "snapshot/" + currentIterationModel.getId() + "-" + System.currentTimeMillis();
-
         try {
             gitManager.createBranch(snapshotBranch);
             transition(SystemState.ANALYZING, context);
-
             Evaluator.Evaluation initialEval = evaluator.evaluateWithSnapshot();
             StateSnapshot snapshot = initialEval.snapshot;
-            Trajectory trajectory = computeTrajectory(snapshot);
+            Trajectory trajectory = new Trajectory();
             FailureMemory failureMemory = memoryService.getFailureMemory();
-
             transition(SystemState.MUTATING, context);
             List<BranchVariant> variants = darwinEngine.generateVariants(goal, snapshot, failureMemory, trajectory);
-
             if (!context.isAutoApprove()) {
                 String input = context.requestInput("Darwin generated " + variants.size() + " variants. Review and approve to start evaluation.").get();
                 if (input != null && input.startsWith("EDIT PROPOSAL")) {
@@ -392,29 +355,24 @@ public class IterationManager {
                 } else if ("Rejected".equalsIgnoreCase(input)) {
                     throw new Exception("Darwin variants rejected by user.");
                 }
+                context.requestApproval("Darwin generated " + variants.size() + " variants.").get();
             }
-
             transition(SystemState.PLAN_LOCKED, context);
             gitManager.forceCheckout(snapshotBranch);
             transition(SystemState.EXECUTING, context);
             BranchVariant bestVariant = evaluateVariantsInternal(variants, taskPlanner, currentIterationModel);
-
             if (bestVariant == null || bestVariant.getScore() <= 0) {
                 transition(SystemState.FAILED, context);
                 currentIterationModel.setStatus(IterationStatus.FAILED);
                 gitManager.forceCheckout(originalBranch);
                 return failedResult();
             }
-
             transition(SystemState.EXECUTING, context);
             gitManager.forceCheckout(originalBranch);
             gitManager.merge(bestVariant.getBranchName());
-
-            // Darwin variants are already executed in evaluateVariantsInternal
             transition(SystemState.VERIFYING, context);
             EvaluationResult result = evaluator.evaluate();
             currentIterationModel.setEvaluationResult(result);
-
             if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
                 transition(SystemState.DONE, context);
                 gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
@@ -440,13 +398,10 @@ public class IterationManager {
             gitManager.createBranch(variant.getBranchName());
             gitManager.forceCheckout(baseBranch);
         }
-
         List<CompletableFuture<BranchVariant>> futures = variants.stream()
             .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner), variantExecutor))
             .collect(Collectors.toList());
-
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
         BranchVariant bestVariant = null;
         double bestScore = -1.0;
         for (CompletableFuture<BranchVariant> future : futures) {
@@ -464,23 +419,17 @@ public class IterationManager {
         try {
             tempDir = Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
             gitManager.createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
-
             TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
             variantContext.setPlatformMode(context.getPlatformMode());
             variantContext.setAutoApprove(true);
-
-            TaskExecutor variantExecutor = new TaskExecutor(variantContext);
             List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
-
             IterationManager variantManager = KernelFactory.create(variantContext);
             boolean success = variantManager.executeTasksWithRetries(tasks);
-
             variant.setSuccess(success);
             Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
             EvaluationResult result = variantEvaluator.evaluate();
-
             variant.setSuccess(result.isSuccess());
-            variant.setScore(calculateScore(result));
+            variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
             return variant;
         } catch (Exception e) {
             variant.setScore(0.0);
@@ -493,12 +442,6 @@ public class IterationManager {
                 } catch (Exception e) {}
             }
         }
-    }
-
-
-    private double calculateScore(EvaluationResult result) {
-        if (result.isSuccess()) return 0.8 + (result.getTestPassRate() * 0.2);
-        return result.getTestPassRate() * 0.5;
     }
 
     private EvaluationResult failedResult() {
@@ -518,50 +461,18 @@ public class IterationManager {
 
     private void freezeRequirements(ConversationState state, IntentAnalysisResult result, TaskContext context) {
         ConfirmedRequirements existing = state.getConfirmedRequirements();
-        
-        // If it's identical to the existing one, don't update (avoid version churn)
-        if (existing != null && existing.getHash().equals(Integer.toHexString(java.util.Objects.hash(result.getGoal(), result.getLanguage(), result.getFramework(), result.getConstraints(), result.getExpectedOutput())))) {
-            return;
-        }
-
+        if (existing != null && existing.getHash().equals(Integer.toHexString(java.util.Objects.hash(result.getGoal(), result.getLanguage(), result.getFramework(), result.getConstraints(), result.getExpectedOutput())))) return;
         int version = existing != null ? existing.getVersion() + 1 : 1;
-        ConfirmedRequirements frozen = new ConfirmedRequirements(
-            result.getGoal(),
-            result.getLanguage(),
-            result.getFramework(),
-            result.getConstraints(),
-            result.getExpectedOutput(),
-            version
-        );
+        ConfirmedRequirements frozen = new ConfirmedRequirements(result.getGoal(), result.getLanguage(), result.getFramework(), result.getConstraints(), result.getExpectedOutput(), version);
         state.setConfirmedRequirements(frozen);
-        context.log("[KERNEL] Requirements Frozen (v" + version + "): " + frozen.getHash());
-        context.log("[AUDIT] Frozen Requirements Goal: " + frozen.getGoal());
     }
 
     private boolean hasSignificantDrift(ConfirmedRequirements frozen, IntentAnalysisResult newAnalysis) {
         if (frozen == null) return false;
-        
-        // Simple heuristic for significant drift
-        if (!frozen.getGoal().equalsIgnoreCase(newAnalysis.getGoal()) && !newAnalysis.getGoal().isEmpty()) {
-            return true;
-        }
-        if (!frozen.getLanguage().equalsIgnoreCase(newAnalysis.getLanguage()) && !newAnalysis.getLanguage().isEmpty()) {
-            return true;
-        }
-        if (!frozen.getFramework().equalsIgnoreCase(newAnalysis.getFramework()) && !newAnalysis.getFramework().isEmpty()) {
-            return true;
-        }
-        
+        if (!frozen.getGoal().equalsIgnoreCase(newAnalysis.getGoal()) && !newAnalysis.getGoal().isEmpty()) return true;
+        if (!frozen.getLanguage().equalsIgnoreCase(newAnalysis.getLanguage()) && !newAnalysis.getLanguage().isEmpty()) return true;
+        if (!frozen.getFramework().equalsIgnoreCase(newAnalysis.getFramework()) && !newAnalysis.getFramework().isEmpty()) return true;
         return !newAnalysis.getContradictions().isEmpty();
-    }
-
-    private Trajectory computeTrajectory(StateSnapshot current) {
-        return new Trajectory();
-    }
-
-    public void setIntentClassifier(IIntentClassifier intentClassifier) {
-        this.intentClassifier = intentClassifier;
-        this.intentClassifier.setAiService(aiService);
     }
 
     public void setPolicyEngine(IPolicyEngine policyEngine) {
@@ -672,17 +583,8 @@ public class IterationManager {
 
     private List<Task> createAtomicFilePlan(String request, TaskContext context) {
         List<Task> tasks = new ArrayList<>();
-        String lower = request.toLowerCase().trim();
         String path = request.replaceFirst("(?i)^(create|add|write|save)\\s+((a\\s+|an\\s+)?(new\\s+)?)(file|content|to|to\\s+file|java\\s+class|java\\s+interface|interface|class|resource|record)\\s+(to\\s+)?", "").trim();
-
-        // Clean up path if it ends with punctuation
-        path = path.replaceAll("[.!?,]$", "");
-
-        // Auto-append .java if it's a class/interface request and no extension provided
-        if ((lower.contains("class") || lower.contains("interface")) && !path.contains(".")) {
-            path += ".java";
-        }
-
+        path = path.replaceAll("[.!?,]$","");
         Task t = OrchestrationFactory.eINSTANCE.createTask();
         t.setId("atomic-task-1");
         t.setName("Write " + path);
@@ -693,21 +595,9 @@ public class IterationManager {
         return tasks;
     }
 
-    /**
-     * Implements a multi-stage reasoning pipeline: Planner -> Critic -> Repair loop.
-     */
     private List<Task> iterativePlan(String request, TaskContext context) throws Exception {
-        context.log("[KERNEL] Starting iterative planning loop for: " + request);
-
-        // 1. Initial Proposal
         List<Task> currentTasks = strategicPlanner.plan(request, context);
-        double initialScore = 0.0;
-        double finalScore = 0.0;
-
         for (int i = 1; i <= EvolutionConstants.MAX_PLANNING_ITERATIONS; i++) {
-            context.log("[KERNEL] Planning Iteration " + i);
-
-            // Convert tasks to JSON for the critic
             JSONArray taskArray = new JSONArray();
             for (Task t : currentTasks) {
                 JSONObject tObj = new JSONObject();
@@ -717,35 +607,11 @@ public class IterationManager {
                 tObj.put("taskType", t.getType());
                 taskArray.put(tObj);
             }
-            String planJson = taskArray.toString();
-
-            // 2. Critique
-            JSONObject critiqueResult = criticAgent.critique(request, planJson, context);
-            double score = critiqueResult.optDouble("qualityScore", 0.0);
-            boolean isCorrect = critiqueResult.optBoolean("isCorrect", false);
-
-            if (i == 1) initialScore = score;
-            finalScore = score;
-
-            context.log("[KERNEL] Plan Quality Score: " + score + " (Iteration " + i + ")");
-            context.log("[KERNEL] Critique: " + critiqueResult.optJSONObject("critique"));
-
-            // 3. Stopping Condition
-            if (isCorrect && score >= EvolutionConstants.PLANNING_QUALITY_THRESHOLD) {
-                context.log("[KERNEL] Plan approved by critic.");
-                break;
-            }
-
+            JSONObject critiqueResult = criticAgent.critique(request, taskArray.toString(), context);
+            if (critiqueResult.optBoolean("isCorrect", false) && critiqueResult.optDouble("qualityScore", 0.0) >= EvolutionConstants.PLANNING_QUALITY_THRESHOLD) break;
             if (i < EvolutionConstants.MAX_PLANNING_ITERATIONS) {
-                // 4. Repair
-                context.log("[KERNEL] Repairing plan based on critique...");
-                String repairInput = "ORIGINAL REQUEST: " + request +
-                                     "\nCURRENT PLAN: " + planJson +
-                                     "\nCRITIQUE: " + critiqueResult.toString();
-
-                String repairedPlanResponse = repairAgent.process(repairInput, context, null);
+                String repairedPlanResponse = repairAgent.process("ORIGINAL REQUEST: " + request + "\\nCURRENT PLAN: " + taskArray.toString() + "\\nCRITIQUE: " + critiqueResult.toString(), context, null);
                 JSONArray repairedJsonArray = JsonUtils.extractJsonArrayFlexible(repairedPlanResponse);
-
                 if (repairedJsonArray != null) {
                     List<Task> repairedTasks = new ArrayList<>();
                     for (int j = 0; j < repairedJsonArray.length(); j++) {
@@ -758,75 +624,37 @@ public class IterationManager {
                         repairedTasks.add(task);
                     }
                     currentTasks = repairedTasks;
-                } else {
-                    context.log("[KERNEL] Plan repair failed to produce valid JSON. Retrying with planner.");
-                    currentTasks = strategicPlanner.plan(request + "\nFeedback from Critic: " + critiqueResult.toString(), context);
                 }
             }
         }
-
-        context.log("[KERNEL] Iterative planning complete. Quality Improvement: " + initialScore + " -> " + finalScore);
         return currentTasks;
     }
 
-    /**
-     * Centralized execution loop for tasks. Handles retries, verification, and diagnosis.
-     */
     public boolean executeTasksWithRetries(List<Task> tasks) throws Exception {
-        context.log("[KERNEL] Starting centralized execution loop for " + tasks.size() + " tasks.");
-
         for (Task task : tasks) {
             if (task.getStatus() == eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE) continue;
-
-            context.setCurrentTaskName(task.getName());
             boolean success = false;
-            int maxRetries = EvolutionConstants.MAX_TASK_RETRIES;
-
-            for (int retry = 1; retry <= maxRetries; retry++) {
+            for (int retry = 1; retry <= EvolutionConstants.MAX_TASK_RETRIES; retry++) {
                 context.checkPause();
-                context.setCurrentIteration(retry);
-
-                // 1. EXECUTE
                 transition(SystemState.EXECUTING, context);
                 task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.RUNNING);
                 String result = taskExecutor.getOrchestrator().executeTask(task, context);
-
-                // 2. VERIFY
                 transition(SystemState.VERIFYING, context);
                 task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.VERIFYING);
-
                 ChangeUnit change = new ChangeUnit();
-                change.setPatch(task.getResponse()); // Orchestrator sets response
+                change.setPatch(task.getResponse());
                 JSONObject evaluation = validator.evaluate(change, task.getName(), context);
-
                 if (evaluation.optBoolean("success", false)) {
                     task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
                     success = true;
                     break;
-                } else {
-                    context.log("[KERNEL] Verification failed for task: " + task.getName() + " (Attempt " + retry + ")");
-                    task.setFeedback("Verification Failed: " + evaluation.optString("feedback"));
-
-                    // 3. ANALYZE/DIAGNOSE
+                } else if (retry < EvolutionConstants.MAX_TASK_RETRIES) {
                     transition(SystemState.ANALYZING, context);
-                    JSONObject diagnosis = analyticAgent.diagnose(result, evaluation.optString("feedback"), context);
-
-                    if (retry < maxRetries) {
-                        context.log("[KERNEL] Mutating strategy for retry...");
-                        transition(SystemState.MUTATING, context);
-                        // If AnalyticAgent suggests RepairAgent, we could switch logic here
-                        // For now, we stay in the loop and retry with feedback
-                    } else {
-                        task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
-                        success = false;
-                    }
-                }
+                    analyticAgent.diagnose(result, evaluation.optString("feedback"), context);
+                    transition(SystemState.MUTATING, context);
+                } else task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
             }
-
-            if (!success) {
-                context.log("[KERNEL] Task failed after " + maxRetries + " attempts: " + task.getName());
-                return false;
-            }
+            if (!success) return false;
         }
         return true;
     }

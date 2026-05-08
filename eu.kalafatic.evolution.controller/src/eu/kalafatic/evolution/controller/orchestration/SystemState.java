@@ -11,6 +11,7 @@ public enum SystemState {
     VERIFYING,
     CLARIFYING,
     MUTATING,
+    EXPORTING,
     DONE,
     FAILED,
     RECOVERING

@@ -108,6 +108,7 @@ public class InstructionsGroup extends AEvoGroup {
         });
 
         iterativeCheck = toolkit.createButton(composite, "Iterative", SWT.CHECK);
+        iterativeCheck.setSelection(true);
         iterativeCheck.setToolTipText("Enable iterative development based on your prompt.");
         iterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -130,6 +131,7 @@ public class InstructionsGroup extends AEvoGroup {
         });
 
         darwinCheck = toolkit.createButton(composite, "Darwin", SWT.CHECK);
+        darwinCheck.setSelection(true);
         darwinCheck.setToolTipText("Enable Darwin style iterations (multiple branches, survival of the fittest).");
         darwinCheck.addSelectionListener(new SelectionAdapter() {
             @Override

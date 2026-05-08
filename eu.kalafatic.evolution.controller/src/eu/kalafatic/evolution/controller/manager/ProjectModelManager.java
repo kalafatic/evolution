@@ -306,7 +306,7 @@ public class ProjectModelManager {
      * Fetches available LLM models based on the selected mode(s).
      *
      * @param orchestrator The orchestrator containing configuration (URLs, etc). Can be null.
-     * @param modes The AI modes to filter by (LOCAL, REMOTE, HYBRID, PROXY).
+     * @param modes The AI modes to filter by (LOCAL, REMOTE, HYBRID, PROXY, MEDIATED).
      * @return A list of model names.
      */
     public List<String> getLlmModels(Orchestrator orchestrator, AiMode... modes) {
@@ -329,6 +329,9 @@ public class ProjectModelManager {
             }
             if (modeList.contains(AiMode.HYBRID) && info.isLocal() && !isProxy(info)) {
                 include = true;
+            }
+            if (modeList.contains(AiMode.MEDIATED)) {
+                include = true; // Include everything for mediated for now
             }
 
             if (include) {

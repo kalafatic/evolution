@@ -274,6 +274,7 @@
     <eLiterals name="HYBRID" value="1" literal="Hybrid"/>
     <eLiterals name="REMOTE" value="2" literal="Remote"/>
     <eLiterals name="PROXY" value="3" literal="Proxy"/>
+    <eLiterals name="MEDIATED" value="4" literal="Mediated"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EEnum" name="SelfDevStatus">
     <eLiterals name="RUNNING"/>
