@@ -11,17 +11,17 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
-import eu.kalafatic.evolution.view.editors.pages.IterationPage;
+import eu.kalafatic.evolution.view.editors.pages.DevelopmentPage;
 
 public class SelfDevEditDialog extends Dialog {
     private SelfDevSession session;
-    private IterationPage page;
+    private DevelopmentPage page;
 
     private Text initialRequestText;
     private Text maxIterationsText;
     private Text rationaleText;
 
-    public SelfDevEditDialog(Shell parentShell, SelfDevSession session, IterationPage page) {
+    public SelfDevEditDialog(Shell parentShell, SelfDevSession session, DevelopmentPage page) {
         super(parentShell);
         this.session = session;
         this.page = page;
