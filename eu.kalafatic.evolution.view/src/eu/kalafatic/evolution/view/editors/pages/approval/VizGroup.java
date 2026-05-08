@@ -9,7 +9,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
-import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
+import eu.kalafatic.evolution.view.editors.pages.DevelopmentPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -19,17 +19,17 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 public class VizGroup extends AEvoGroup {
     private Browser browser;
 
-    public VizGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, ApprovalPage page) {
+    public VizGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, DevelopmentPage page) {
         super(editor, orchestrator);
         createControl(toolkit, parent, page);
     }
 
     @Override
     protected void refreshUI() {
-        // Handled by ApprovalPage.refreshBrowser() via model notifications
+        // Handled by DevelopmentPage.refreshBrowser() via model notifications
     }
 
-    private void createControl(FormToolkit toolkit, Composite parent, ApprovalPage page) {
+    private void createControl(FormToolkit toolkit, Composite parent, DevelopmentPage page) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Network Visualization", 1, true);
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 600;

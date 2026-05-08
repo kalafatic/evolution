@@ -60,6 +60,7 @@ import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.editors.pages.AiFlowPage;
 import eu.kalafatic.evolution.view.editors.pages.ArchitecturePage;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
+import eu.kalafatic.evolution.view.editors.pages.DevelopmentPage;
 import eu.kalafatic.evolution.view.editors.pages.BrowserPage;
 import eu.kalafatic.evolution.view.editors.pages.ContextPage;
 import eu.kalafatic.evolution.view.editors.pages.GraphPage;
@@ -89,6 +90,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private BrowserPage browserPage;
     private AiFlowPage aiFlowPage;
     private ApprovalPage approvalPage;
+    private DevelopmentPage developmentPage;
     private ToolsPage toolsPage;
     private TestsPage testsPage;
     private IterationPage iterationPage;
@@ -209,6 +211,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
                 aiFlowPage = AiFlowPageFactory.createAiFlowPage(this, orchestrator);
                 approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
+                developmentPage = DevelopmentPageFactory.createDevelopmentPage(this, orchestrator);
                 toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
                 testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
                 iterationPage = IterationPageFactory.createIterationPage(this, orchestrator);
@@ -394,6 +397,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (browserPage != null) browserPage.setOrchestrator(orchestrator);
         if (aiFlowPage != null) aiFlowPage.setOrchestrator(orchestrator);
         if (approvalPage != null) approvalPage.setOrchestrator(orchestrator);
+        if (developmentPage != null) developmentPage.setOrchestrator(orchestrator);
         if (toolsPage != null) toolsPage.setOrchestrator(orchestrator);
         if (testsPage != null) testsPage.setOrchestrator(orchestrator);
         if (iterationPage != null) iterationPage.setOrchestrator(orchestrator);
@@ -447,6 +451,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (contextPage != null) contextPage.refreshUI(); // TODO: refactor ContextPage if needed
         if (serverPage != null) serverPage.scheduleRefresh();
         if (approvalPage != null) approvalPage.scheduleRefresh();
+        if (developmentPage != null) developmentPage.scheduleRefresh();
 
         int active = getActivePage();
         if (active != -1 && getControl(active) == comparePage) {

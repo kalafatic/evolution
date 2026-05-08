@@ -3,7 +3,6 @@ package eu.kalafatic.evolution.view.editors.pages;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -20,7 +19,6 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -32,42 +30,20 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IFileEditorInput;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.eclipse.ui.forms.widgets.FormToolkit;
-import org.eclipse.ui.forms.widgets.Section;
 
-import eu.kalafatic.evolution.view.factories.SWTFactory;
-import eu.kalafatic.evolution.view.editors.pages.iteration.SelfDevEditDialog;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevBootstrapController;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 /**
  * @evo:22:A reason=self-dev-bootstrap-ui
  */
 public class IterationPage extends AEvoPage {
 
-    private static class SelfDevRow {
-        static final String SELF_DEV_LOOP = "Self-Dev Loop";
-        static final String EVO_RCP = "Evo RCP";
-
-        String name;
-        String path;
-        String status;
-
-        SelfDevRow(String name, String path, String status) {
-            this.name = name;
-            this.path = path;
-            this.status = status;
-        }
-    }
-
     private IterationMemoryService memoryService;
-    private SelfDevBootstrapController bootstrapController;
     private File projectRoot;
 
     private Map<Integer, List<IterationRecord>> iterationsMap = new TreeMap<>();
@@ -83,7 +59,6 @@ public class IterationPage extends AEvoPage {
     private Button nextBtn;
 
     private TableViewer branchTable;
-    private TableViewer selfDevTable;
     private Composite flowComposite;
     private StyledText logText;
 
@@ -92,7 +67,6 @@ public class IterationPage extends AEvoPage {
     private Label[] flowSteps = new Label[6];
     private String[] stepNames = {"PLAN", "CODE", "TEST", "SCORE", "SELECT", "MERGE"};
     private java.util.Timer pollTimer;
-    private Thread internalSupervisorThread;
 
     public IterationPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -140,7 +114,6 @@ public class IterationPage extends AEvoPage {
         }
         if (projectRoot != null) {
             this.memoryService = new IterationMemoryService(projectRoot);
-            this.bootstrapController = new SelfDevBootstrapController(projectRoot, orchestrator);
         }
     }
 
@@ -226,85 +199,6 @@ public class IterationPage extends AEvoPage {
         logText = new StyledText(logComp, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
         logText.setLayoutData(new GridData(GridData.FILL_BOTH));
         logText.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
-
-        // 3. Self-Development Section
-        Composite selfDevComp = SWTFactory.createExpandableGroup(toolkit, container, "Self-Development", 1, true);
-
-        Composite sdTools = SWTFactory.createComposite(selfDevComp, 1);
-        Button archBtn = toolkit.createButton(sdTools, "Open Architecture View", SWT.PUSH);
-        archBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                editor.showArchitecturePage();
-            }
-        });
-
-        selfDevTable = new TableViewer(selfDevComp, SWT.BORDER | SWT.FULL_SELECTION);
-        Table sdTable = selfDevTable.getTable();
-        sdTable.setHeaderVisible(true);
-        sdTable.setLinesVisible(true);
-        GridData gdSdTable = new GridData(GridData.FILL_HORIZONTAL);
-        gdSdTable.heightHint = 80;
-        sdTable.setLayoutData(gdSdTable);
-
-        createSelfDevColumns();
-        selfDevTable.setContentProvider(ArrayContentProvider.getInstance());
-        List<SelfDevRow> sdData = new ArrayList<>();
-        sdData.add(new SelfDevRow("Self-Dev Loop", "orchestrator", "ready"));
-        sdData.add(new SelfDevRow("Evo RCP", "/xx/", "ready"));
-        selfDevTable.setInput(sdData);
-
-        // use mouseDown to detect column
-        sdTable.addListener(SWT.MouseDown, event -> {
-            org.eclipse.swt.graphics.Point pt = new org.eclipse.swt.graphics.Point(event.x, event.y);
-            org.eclipse.swt.widgets.TableItem item = sdTable.getItem(pt);
-            if (item != null) {
-                for (int i = 0; i < sdTable.getColumnCount(); i++) {
-                    org.eclipse.swt.graphics.Rectangle rect = item.getBounds(i);
-                    if (rect.contains(pt)) {
-                        handleSelfDevAction((SelfDevRow) item.getData(), i);
-                    }
-                }
-            }
-        });
-    }
-
-    private void handleSelfDevAction(SelfDevRow row, int columnIndex) {
-        if (columnIndex == 0) { // Action
-            if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
-                if (bootstrapController != null && bootstrapController.isRunning()) {
-                    bootstrapController.stopBootstrap();
-                } else if (bootstrapController != null) {
-                    try {
-                        bootstrapController.startBootstrap();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            } else {
-                if ("running".equals(row.status)) {
-                    row.status = "paused";
-                } else if ("paused".equals(row.status)) {
-                    row.status = "running";
-                } else {
-                    row.status = "running";
-                }
-                selfDevTable.refresh(row);
-            }
-        } else if (columnIndex == 1) { // Edit
-            if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
-                openSelfDevEditDialog();
-            }
-        }
-    }
-
-    private void openSelfDevEditDialog() {
-        if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
-            SelfDevEditDialog dialog = new SelfDevEditDialog(getShell(), orchestrator.getSelfDevSession(), this);
-            if (dialog.open() == org.eclipse.jface.window.Window.OK) {
-                updateSessionStatus();
-            }
-        }
     }
 
     public void setDirty(boolean dirty) {
@@ -354,83 +248,8 @@ public class IterationPage extends AEvoPage {
         });
     }
 
-    private void createSelfDevColumns() {
-        String[] titles = { "Action", "Edit", "Name", "Path/URL", "Status" };
-        int[] bounds = { 100, 50, 100, 250, 100 };
-
-        TableViewerColumn col = createTableViewerColumn(selfDevTable, titles[0], bounds[0], 0);
-        col.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                SelfDevRow row = (SelfDevRow) element;
-                if ("running".equals(row.status) || "starting".equals(row.status) || "building".equals(row.status) || "evaluating".equals(row.status)) {
-                    return "\u23F8 \u23F9"; // pause stop
-                } else if ("paused".equals(row.status)) {
-                    return "\u25B6 \u23F9"; // play stop
-                } else {
-                    return "\u25B6"; // play
-                }
-            }
-            @Override
-            public Image getImage(Object element) {
-                SelfDevRow row = (SelfDevRow) element;
-                if ("running".equals(row.status) || "starting".equals(row.status) || "building".equals(row.status) || "evaluating".equals(row.status)) {
-                    return imageRegistry.get("pause");
-                } else if ("paused".equals(row.status)) {
-                    return imageRegistry.get("play");
-                } else {
-                    return imageRegistry.get("play");
-                }
-            }
-        });
-
-        col = createTableViewerColumn(selfDevTable, titles[1], bounds[1], 1);
-        col.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                SelfDevRow row = (SelfDevRow) element;
-                if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
-                    return "\u270E"; // Pencil icon
-                }
-                return "";
-            }
-            @Override
-            public Image getImage(Object element) {
-                return null;
-            }
-        });
-
-        col = createTableViewerColumn(selfDevTable, titles[2], bounds[2], 2);
-        col.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                return ((SelfDevRow) element).name;
-            }
-        });
-
-        col = createTableViewerColumn(selfDevTable, titles[3], bounds[3], 3);
-        col.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                return ((SelfDevRow) element).path;
-            }
-        });
-
-        col = createTableViewerColumn(selfDevTable, titles[4], bounds[4], 4);
-        col.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                return ((SelfDevRow) element).status;
-            }
-        });
-    }
-
     private TableViewerColumn createTableViewerColumn(String title, int bound, final int colNumber) {
-        return createTableViewerColumn(branchTable, title, bound, colNumber);
-    }
-
-    private TableViewerColumn createTableViewerColumn(TableViewer viewer, String title, int bound, final int colNumber) {
-        final TableViewerColumn viewerColumn = new TableViewerColumn(viewer, SWT.NONE);
+        final TableViewerColumn viewerColumn = new TableViewerColumn(branchTable, SWT.NONE);
         final org.eclipse.swt.widgets.TableColumn column = viewerColumn.getColumn();
         column.setText(title);
         column.setWidth(bound);
@@ -537,8 +356,6 @@ public class IterationPage extends AEvoPage {
                 flowSteps[i].setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN));
                 flowSteps[i].setText(stepNames[i] + " \u2714");
             } else {
-                // If it failed, maybe only PLAN/CODE/TEST/SCORE were done?
-                // For simplicity, just show checkmarks up to SCORE if it failed there
                 if (i <= 3) {
                     flowSteps[i].setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN));
                     flowSteps[i].setText(stepNames[i] + " \u2714");
@@ -561,48 +378,16 @@ public class IterationPage extends AEvoPage {
                     return;
                 }
 
-                // 1. Fetch data in background
                 refreshData();
-                JSONObject supervisorStatus = bootstrapController != null ? bootstrapController.getStatus() : null;
-                boolean internalAlive = internalSupervisorThread != null && internalSupervisorThread.isAlive();
 
-                // 2. Update UI on UI thread
                 Display.getDefault().asyncExec(() -> {
                     if (!isDisposed()) {
                         updateUI();
-                        updateSelfDevStatus(supervisorStatus, internalAlive);
                         updateSessionStatus();
                     }
                 });
             }
         }, 2000, 2000);
-    }
-
-    private void updateSelfDevStatus(JSONObject status, boolean internalAlive) {
-        String phase = internalAlive ? "evolving" : "ready";
-        if (status != null) {
-            phase = status.optString("phase", phase);
-        } else if (bootstrapController != null && bootstrapController.isRunning()) {
-            phase = "bootstrapping";
-        }
-
-        updateRowStatus(SelfDevRow.SELF_DEV_LOOP, phase.toLowerCase());
-    }
-
-    private void updateRowStatus(String name, String status) {
-        Object input = selfDevTable.getInput();
-        if (input instanceof List) {
-            List<SelfDevRow> rows = (List<SelfDevRow>) input;
-            for (SelfDevRow row : rows) {
-                if (name.equals(row.name)) {
-                    if (!status.equals(row.status)) {
-                        row.status = status;
-                        selfDevTable.refresh(row);
-                    }
-                    break;
-                }
-            }
-        }
     }
 
     private void updateSessionStatus() {
@@ -615,31 +400,6 @@ public class IterationPage extends AEvoPage {
             double progress = max > 0 ? (double) current / max * 100 : 0;
             sessionProgressLabel.setText(String.format("Progress: %.0f%%", progress));
         }
-    }
-
-    private void startInternalSupervisor() {
-        if (orchestrator == null) return;
-        if (orchestrator.getSelfDevSession() == null) {
-            eu.kalafatic.evolution.model.orchestration.SelfDevSession session =
-                eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createSelfDevSession();
-            session.setId("session-" + System.currentTimeMillis());
-            session.setMaxIterations(5);
-            session.setInitialRequest("Autonomous improvement");
-            orchestrator.setSelfDevSession(session);
-        }
-
-        internalSupervisorThread = new Thread(() -> {
-            try {
-                eu.kalafatic.evolution.controller.orchestration.TaskContext context =
-                    new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, projectRoot);
-                eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevSupervisor supervisor =
-                    new eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevSupervisor(orchestrator.getSelfDevSession(), context);
-                supervisor.startSession();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }, "InternalSelfDevSupervisor");
-        internalSupervisorThread.start();
     }
 
     @Override
