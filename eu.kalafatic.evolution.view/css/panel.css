@@ -98,6 +98,10 @@
     box-shadow: 0 0 8px rgba(34, 197, 94, 0.2);
     background: #f0fdf4;
 }
+.file-stack-item.active-file {
+    border-color: #3b82f6;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
 .file-info {
     padding: 8px 10px;
     display: flex;

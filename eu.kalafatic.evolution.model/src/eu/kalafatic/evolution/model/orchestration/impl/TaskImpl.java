@@ -668,7 +668,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @generated
 	 * @ordered
 	 */
-	protected static final FeedbackLevel FEEDBACK_LEVEL_EDEFAULT = FeedbackLevel.SIMPLE;
+	protected static final FeedbackLevel FEEDBACK_LEVEL_EDEFAULT = FeedbackLevel.FULL;
 
 	/**
 	 * The cached value of the '{@link #getFeedbackLevel() <em>Feedback Level</em>}' attribute.

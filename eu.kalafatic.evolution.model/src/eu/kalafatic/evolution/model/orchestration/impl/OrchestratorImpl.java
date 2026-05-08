@@ -450,7 +450,7 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected static final boolean DARWIN_MODE_EDEFAULT = false;
+	protected static final boolean DARWIN_MODE_EDEFAULT = true;
 
 	/**
 	 * The cached value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
