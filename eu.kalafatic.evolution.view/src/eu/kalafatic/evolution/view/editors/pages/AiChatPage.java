@@ -412,7 +412,8 @@ public class AiChatPage extends AEvoPage {
 		if (isWaiting) {
 			String lower = request.toLowerCase().trim();
 
-			if (editingVariantId != null && request.startsWith("EDIT PROPOSAL")) {
+			if (editingVariantId != null && request.toUpperCase().startsWith("EDIT PROPOSAL")) {
+				instructionsGroup.setOrchestrationRunning(true);
 				provideInput(request);
 				chatGroup.handleApproveDarwinVariant(editingMessageIndex, editingVariantId);
 				editingVariantId = null;
@@ -430,16 +431,19 @@ public class AiChatPage extends AEvoPage {
 
 			if (isApproval) {
 				if (lower.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$") || lower.contains("approve variant")) {
+					instructionsGroup.setOrchestrationRunning(true);
 					provideApproval(true);
 					instructionsGroup.setRequest("");
 					return;
 				} else if (lower.matches("^(no|n|reject|stop|cancel|abort)$")) {
+					instructionsGroup.setOrchestrationRunning(true);
 					provideApproval(false);
 					instructionsGroup.setRequest("");
 					return;
 				}
 			}
 
+			instructionsGroup.setOrchestrationRunning(true);
 			provideInput(request);
 			instructionsGroup.setRequest("");
 			return;
@@ -499,6 +503,7 @@ public class AiChatPage extends AEvoPage {
 				modeIndicatorLabel.setBackground(colorWaiting);
 			}
 			chatGroup.markLastAiMessageAsWaiting();
+			instructionsGroup.setOrchestrationRunning(false);
 			handleClarify();
 			feedbackGroup.showApproval(msg); updateScrolledContent();
 		}));
@@ -509,6 +514,7 @@ public class AiChatPage extends AEvoPage {
 				modeIndicatorLabel.setBackground(colorWaiting);
 			}
 			chatGroup.markLastAiMessageAsWaiting();
+			instructionsGroup.setOrchestrationRunning(false);
 			handleClarify();
 			feedbackGroup.showInput(msg); updateScrolledContent();
 		}));
@@ -794,6 +800,7 @@ public class AiChatPage extends AEvoPage {
 						modeIndicatorLabel.setBackground(colorWaiting);
 					}
 					chatGroup.markLastAiMessageAsWaiting();
+					instructionsGroup.setOrchestrationRunning(false);
 					handleClarify();
 					feedbackGroup.showApproval(message); updateScrolledContent();
 				}));
@@ -804,6 +811,7 @@ public class AiChatPage extends AEvoPage {
 						modeIndicatorLabel.setBackground(colorWaiting);
 					}
 					chatGroup.markLastAiMessageAsWaiting();
+					instructionsGroup.setOrchestrationRunning(false);
 					handleClarify();
 					feedbackGroup.showInput(message); updateScrolledContent();
 				}));
@@ -1327,9 +1335,9 @@ public class AiChatPage extends AEvoPage {
 				while (wordStart > 0 && !Character.isWhitespace(textContent.charAt(wordStart - 1))) {
 					wordStart--;
 				}
-				String newText = textContent.substring(0, wordStart) + contents + textContent.substring(selectionStart);
-				st.setText(newText);
+				st.replaceTextRange(wordStart, selectionStart - wordStart, contents);
 				st.setSelection(wordStart + cursorPosition);
+				st.setFocus();
 			}
 			@Override public String getControlContents(org.eclipse.swt.widgets.Control control) { return ((StyledText) control).getText(); }
 			@Override public int getCursorPosition(org.eclipse.swt.widgets.Control control) { return ((StyledText) control).getCaretOffset(); }
