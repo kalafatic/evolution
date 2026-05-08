@@ -35,9 +35,9 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Interactive AI Workflow", 1, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Interactive AI Workflow", 1, true, true);
         GridData gd = new GridData(GridData.FILL_BOTH);
-        gd.heightHint = 500;
+        gd.heightHint = 700;
         group.setLayoutData(gd);
 
         Composite browserContainer = toolkit.createComposite(group);
@@ -45,7 +45,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
         browserContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         try {
-            browser = SWTFactory.createBrowser(browserContainer, 500);
+            browser = SWTFactory.createBrowser(browserContainer, 700);
 
             new BrowserFunction(browser, "javaAction") {
                 @Override
@@ -80,6 +80,10 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
             JSONObject graph = WorkflowGraphManager.getInstance(sessionId).getGraphJson();
             browser.execute("if(window.updateGraph) window.updateGraph(" + graph.toString() + ");");
         }
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 
     @Override

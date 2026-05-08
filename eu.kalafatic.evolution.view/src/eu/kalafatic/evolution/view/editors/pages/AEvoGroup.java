@@ -99,4 +99,8 @@ public abstract class AEvoGroup {
     public void setOrchestrator(Orchestrator orchestrator) {
         this.orchestrator = orchestrator;
     }
+
+    public void dispose() {
+        // To be overridden by subclasses
+    }
 }
