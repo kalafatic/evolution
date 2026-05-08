@@ -168,6 +168,32 @@ public class DarwinEvolutionTest {
         assertTrue("Should contain history analysis in logs", historyFound);
     }
 
+    @Test
+    public void testAtomicTaskDetection_NotRoutedToDarwin() throws Exception {
+        // This test simulates the logic in AiChatPage.handleSend()
+        orchestrator.setDarwinMode(true);
+        String request = "create a java class Hello";
+
+        // Check if atomic
+        boolean isAtomic = eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate(request);
+        assertTrue("Request should be detected as atomic", isAtomic);
+
+        // Simulation of AiChatPage.handleSend routing
+        boolean wouldRouteToDarwin = orchestrator.isDarwinMode() && !isAtomic;
+        assertFalse("Atomic task should NOT be routed to Darwin even if Darwin mode is enabled", wouldRouteToDarwin);
+    }
+
+    @Test
+    public void testIsSimpleFileCreate_Variations() {
+        assertTrue(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("create java class Test"));
+        assertTrue(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("create a java class Test"));
+        assertTrue(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("create new file config.xml"));
+        assertTrue(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("write to file log.txt"));
+        // Non-atomic because of "and" or broad scope
+        assertFalse(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("create java class Test and add many methods"));
+        assertFalse(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("just a simple chat"));
+    }
+
     private IterationManager createMockedManager(TaskContext context) {
         GitManager gitManager = new GitManager(tempDir, context);
         TaskPlanner taskPlanner = new TaskPlanner();

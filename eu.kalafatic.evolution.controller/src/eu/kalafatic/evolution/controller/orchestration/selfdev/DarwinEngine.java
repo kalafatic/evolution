@@ -47,7 +47,9 @@ public class DarwinEngine extends BaseAiAgent {
             sb.append("Your task is to propose the best STRATEGY to fulfill the user's goal by reasoning over STATE and FEEDBACK.\n\n");
             sb.append("PRIMARY OBJECTIVE:\n");
             sb.append("→ Propose 2-3 distinct candidate state transitions (strategies) to achieve the goal.\n");
-            sb.append("→ Each variant must be a complete, actionable strategy that targets the specific goal.\n\n");
+            sb.append("→ CRITICAL: Fulfillment of the current goal is the HIGHEST priority.\n");
+            sb.append("→ Each variant must be a complete, actionable strategy that targets the specific goal.\n");
+            sb.append("→ Avoid over-engineering or proposing unrelated structural changes unless they directly facilitate the goal.\n\n");
         }
 
         sb.append("STATE MODEL:\n")
