@@ -71,6 +71,7 @@ public class DevelopmentPage extends AEvoPage {
     private java.util.Timer pollTimer;
 
     private VizGroup vizGroup;
+    private eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup workflowGroup;
     private ArchitecturePage archViz;
     private boolean isLoaded = false;
     private int initRetries = 0;
@@ -171,6 +172,12 @@ public class DevelopmentPage extends AEvoPage {
 
         // 2. Network Visualization
         vizGroup = new VizGroup(toolkit, container, editor, orchestrator, this);
+
+        // 2.5 Interactive AI Workflow
+        String sessionId = (orchestrator != null && orchestrator.getSelfDevSession() != null) ?
+            orchestrator.getSelfDevSession().getId() : "default";
+        workflowGroup = new eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup(
+            toolkit, container, editor, orchestrator, sessionId);
 
         // 3. Architecture Visualization
         Composite archGroup = SWTFactory.createExpandableGroup(toolkit, container, "Architecture Visualization", 1, true);
@@ -371,6 +378,7 @@ public class DevelopmentPage extends AEvoPage {
     protected void refreshUI() {
         updateSessionStatus();
         if (archViz != null) archViz.scheduleRefresh();
+        if (workflowGroup != null) workflowGroup.scheduleRefresh();
         refreshBrowser();
     }
 

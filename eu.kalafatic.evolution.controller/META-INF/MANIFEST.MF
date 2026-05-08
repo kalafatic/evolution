@@ -45,6 +45,7 @@ Export-Package: eu.kalafatic.evolution.controller,
  eu.kalafatic.evolution.controller.splashHandlers,
  eu.kalafatic.evolution.controller.tools,
  eu.kalafatic.evolution.controller.vcs,
+ eu.kalafatic.evolution.controller.workflow,
  org.json
 Bundle-ClassPath: .,
  lib/json-20140107.jar,
