@@ -23,7 +23,6 @@ public class ModeRouter {
         String lowerPrompt = prompt.toLowerCase().trim();
 
         // --- FAST PRECHECK: Greetings and simple chat detection ---
-        // We check this FIRST to ensure simple greetings don't trigger Darwin even if orchestrator has Darwin flags.
         if (lowerPrompt.matches("^(hi|hello|hey|greetings|good morning|good afternoon|good evening)\\s*[!.]*$")) {
             return createSimpleChatMode();
         }
@@ -35,6 +34,9 @@ public class ModeRouter {
         if (lowerPrompt.contains("mode: assisted")) return createAssistedCodingMode();
         if (lowerPrompt.contains("mode: darwin")) return createDarwinMode();
         if (lowerPrompt.contains("mode: self-dev")) return createSelfDevMode();
+        if (lowerPrompt.contains("mode: export") || lowerPrompt.contains("prepare export") || lowerPrompt.contains("manual self-dev package") || lowerPrompt.contains("export for chatgpt")) {
+            return createHybridManualExportMode();
+        }
 
         // 2. Map from existing model flags
         if (orchestrator != null) {
@@ -79,6 +81,7 @@ public class ModeRouter {
                 case ASSISTED_CODING: return createAssistedCodingMode();
                 case DARWIN_MODE: return createDarwinMode();
                 case SELF_DEV_MODE: return createSelfDevMode();
+                case HYBRID_MANUAL_EXPORT: return createHybridManualExportMode();
             }
         }
 
@@ -100,11 +103,13 @@ public class ModeRouter {
 
     private PlatformMode createSelfDevMode() {
         PlatformMode mode = new PlatformMode(PlatformType.SELF_DEV_MODE, AutonomyLevel.HIGH, 5, true);
-        // Restrict self-modification to a defined set of modules/directories for safety.
-        // For Evo, we allow most things but can exclude core infrastructure if needed.
         mode.getAllowedPaths().add("eu.kalafatic.evolution.controller/src");
         mode.getAllowedPaths().add("eu.kalafatic.evolution.view/src");
         mode.getAllowedPaths().add("eu.kalafatic.evolution.model/src");
         return mode;
+    }
+
+    private PlatformMode createHybridManualExportMode() {
+        return new PlatformMode(PlatformType.HYBRID_MANUAL_EXPORT, AutonomyLevel.LOW, 1, false);
     }
 }

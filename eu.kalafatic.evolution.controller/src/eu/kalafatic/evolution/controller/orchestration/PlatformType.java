@@ -7,5 +7,6 @@ public enum PlatformType {
     SIMPLE_CHAT,
     ASSISTED_CODING,
     DARWIN_MODE,
-    SELF_DEV_MODE
+    SELF_DEV_MODE,
+    HYBRID_MANUAL_EXPORT
 }
