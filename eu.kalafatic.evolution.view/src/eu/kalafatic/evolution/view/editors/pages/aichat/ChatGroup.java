@@ -412,6 +412,9 @@ public class ChatGroup extends AEvoGroup {
                             handleApproveDarwinVariant(index, text);
                             page.handleExecuteProposal("Approve variant " + text);
                             break;
+                        case "editDarwinVariant":
+                            handleEditDarwinVariant(index, text);
+                            break;
                         case "create":
                             page.provideApproval(true);
                             break;
@@ -511,6 +514,62 @@ public class ChatGroup extends AEvoGroup {
                 msg.setAgentType(agentType + " approved");
             }
             refreshBrowser();
+        }
+    }
+
+    private void handleEditDarwinVariant(int index, String variantId) {
+        if (currentSession != null && index >= 0 && index < currentSession.getMessages().size()) {
+            ChatMessage msg = currentSession.getMessages().get(index);
+            String text = msg.getText().trim();
+            try {
+                if (text.startsWith("```")) {
+                    text = text.replaceFirst("^```[a-z]*\\n?", "").replaceFirst("\\n?```$", "").trim();
+                }
+
+                // Try to find the JSON array of variants
+                JSONArray variants = null;
+                if (text.startsWith("[")) {
+                    variants = new JSONArray(text);
+                } else {
+                    java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\[\\s*\\{[\\s\\S]*\\}\\s*\\]").matcher(text);
+                    if (matcher.find()) {
+                        variants = new JSONArray(matcher.group());
+                    } else {
+                        JSONObject obj = new JSONObject(text);
+                        if (obj.has("variants")) variants = obj.getJSONArray("variants");
+                        else if (obj.has("proposals")) variants = obj.getJSONArray("proposals");
+                    }
+                }
+
+                if (variants != null) {
+                    for (int i = 0; i < variants.length(); i++) {
+                        JSONObject v = variants.getJSONObject(i);
+                        String vId = v.optString("id", String.valueOf(i));
+                        if (vId.equals(variantId)) {
+                            // Format this variant for manual edit
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("EDIT PROPOSAL ").append(vId).append(": ").append(v.optString("strategy", "")).append("\n");
+
+                            JSONArray actions = v.optJSONArray("actions");
+                            if (actions != null && actions.length() > 0) {
+                                sb.append("Actions:\n");
+                                for (int j = 0; j < actions.length(); j++) {
+                                    JSONObject action = actions.getJSONObject(j);
+                                    sb.append("- [").append(action.optString("domain", "file")).append("] ")
+                                      .append(action.optString("operation", "")).append(" ")
+                                      .append(action.optString("target", "")).append(": ")
+                                      .append(action.optString("description", "")).append("\n");
+                                }
+                            }
+
+                            page.handleEditDarwinVariant(index, variantId, sb.toString());
+                            return;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

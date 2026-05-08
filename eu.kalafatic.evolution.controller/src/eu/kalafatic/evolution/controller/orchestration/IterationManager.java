@@ -345,6 +345,16 @@ public class IterationManager {
             transition(SystemState.MUTATING, context);
             List<BranchVariant> variants = darwinEngine.generateVariants(goal, snapshot, failureMemory, trajectory);
             if (!context.isAutoApprove()) {
+                String input = context.requestInput("Darwin generated " + variants.size() + " variants. Review and approve to start evaluation.").get();
+                if (input != null && input.startsWith("EDIT PROPOSAL")) {
+                    updateVariantFromInput(variants, input);
+                } else if (input != null && input.startsWith("Approve variant ")) {
+                    // Logic already handled in provideInput(approved ? "Approved" : "Rejected") mapping in TaskContext if using handleExecuteProposal
+                    // But here we might want to ensure we know which variant was approved if we want to prune others early.
+                    // For now, the evaluateVariantsInternal will handle all generated variants.
+                } else if ("Rejected".equalsIgnoreCase(input)) {
+                    throw new Exception("Darwin variants rejected by user.");
+                }
                 context.requestApproval("Darwin generated " + variants.size() + " variants.").get();
             }
             transition(SystemState.PLAN_LOCKED, context);
@@ -467,6 +477,108 @@ public class IterationManager {
 
     public void setPolicyEngine(IPolicyEngine policyEngine) {
         this.policyEngine = policyEngine;
+    }
+
+    private void updateVariantFromInput(List<BranchVariant> variants, String input) {
+        try {
+            String[] lines = input.split("\n");
+            if (lines.length == 0) return;
+
+            // Line 0: EDIT PROPOSAL <id>: <strategy>
+            String firstLine = lines[0].trim();
+            if (!firstLine.startsWith("EDIT PROPOSAL ")) return;
+
+            int firstColon = firstLine.indexOf(":");
+            if (firstColon == -1) return;
+
+            String variantId = firstLine.substring("EDIT PROPOSAL ".length(), firstColon).trim();
+            String strategy = firstLine.substring(firstColon + 1).trim();
+
+            BranchVariant target = null;
+            for (BranchVariant v : variants) {
+                if (v.getId().equals(variantId)) {
+                    target = v;
+                    break;
+                }
+            }
+
+            if (target != null) {
+                target.setStrategy(strategy);
+                List<BranchVariant.Action> newActions = new ArrayList<>();
+
+                boolean inActions = false;
+                java.util.regex.Pattern actionPattern = java.util.regex.Pattern.compile("- \\[(.*)\\] (\\S+) (\\S+): (.*)");
+
+                for (int i = 1; i < lines.length; i++) {
+                    String line = lines[i].trim();
+                    if (line.equalsIgnoreCase("Actions:")) {
+                        inActions = true;
+                        continue;
+                    }
+                    if (inActions && line.startsWith("- ")) {
+                        java.util.regex.Matcher m = actionPattern.matcher(line);
+                        if (m.matches()) {
+                            BranchVariant.Action a = new BranchVariant.Action();
+                            a.setDomain(m.group(1));
+                            a.setOperation(m.group(2));
+                            a.setTarget(m.group(3));
+                            a.setDescription(m.group(4));
+                            newActions.add(a);
+                        } else {
+                            // Fallback for missing domain or slightly different format
+                            try {
+                                String actionPart = line.substring(2).trim();
+                                int colon = actionPart.indexOf(":");
+                                if (colon != -1) {
+                                    String opTarget = actionPart.substring(0, colon).trim();
+                                    String desc = actionPart.substring(colon + 1).trim();
+
+                                    // Remove possible [domain] if present but pattern didn't match perfectly
+                                    String domain = "file";
+                                    if (opTarget.startsWith("[")) {
+                                        int endBracket = opTarget.indexOf("]");
+                                        if (endBracket != -1) {
+                                            domain = opTarget.substring(1, endBracket);
+                                            opTarget = opTarget.substring(endBracket + 1).trim();
+                                        }
+                                    }
+
+                                    int firstSpace = opTarget.indexOf(" ");
+                                    if (firstSpace != -1) {
+                                        BranchVariant.Action a = new BranchVariant.Action();
+                                        a.setDomain(domain);
+                                        a.setOperation(opTarget.substring(0, firstSpace).trim());
+                                        a.setTarget(opTarget.substring(firstSpace + 1).trim());
+                                        a.setDescription(desc);
+                                        newActions.add(a);
+                                    }
+                                }
+                            } catch (Exception e) {}
+                        }
+                    }
+                }
+
+                if (!newActions.isEmpty()) {
+                    target.getActions().clear();
+                    target.getActions().addAll(newActions);
+                }
+
+                context.log("[KERNEL] Updated variant " + variantId + " from manual edit.");
+
+                // Prune other variants if user edited a specific one?
+                // The prompt says "continue with edited proposal", suggesting we focus on it.
+                // But Darwin usually evaluates all. If edited, maybe it's the only one we want.
+                // Decision: keep all, but the edited one is now modified.
+                // User might have approved the edit, so it will proceed to evaluation.
+            }
+        } catch (Exception e) {
+            context.log("[KERNEL] Failed to parse edited proposal: " + e.getMessage());
+        }
+    }
+
+    public static boolean isSimpleFileCreate(String request) {
+        AtomicIntentAnalysis analysis = HybridAtomicIntentClassifier.heuristicAnalyze(request);
+        return analysis.isAtomic() && analysis.getConfidence() > 0.80 && !analysis.isRequiresPlanning();
     }
 
     private List<Task> createAtomicFilePlan(String request, TaskContext context) {

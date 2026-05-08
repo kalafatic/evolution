@@ -278,7 +278,8 @@ window.ChatApp.Renderer = {
                     <div class="branch-footer">
                         ${isThisApproved ? '<div style="color: #16a34a; font-weight: bold;">APPROVED</div>' :
                           isThisRejected ? '<div style="color: #dc2626; font-weight: bold;">REJECTED</div>' :
-                          `<button class="branch-btn approve" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${vId}')">Approve</button>`}
+                          `<button class="branch-btn approve" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${vId}')">Approve</button>
+                           <button class="branch-btn" onclick="window.ChatApp.Actions.callJava('editDarwinVariant', '${m.index}', '${vId}')">Edit</button>`}
                     </div>
                 `;
                 container.appendChild(col);

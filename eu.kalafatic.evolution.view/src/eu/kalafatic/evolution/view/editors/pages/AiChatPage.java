@@ -88,6 +88,9 @@ public class AiChatPage extends AEvoPage {
 	private SystemStatusGroup systemStatusGroup;
 	private FeedbackGroup feedbackGroup;
 
+	private int editingMessageIndex = -1;
+	private String editingVariantId = null;
+
 	private static class SessionState {
 		Thread orchestrationSession;
 		TaskContext currentContext;
@@ -407,6 +410,16 @@ public class AiChatPage extends AEvoPage {
 
 		if (isWaiting) {
 			String lower = request.toLowerCase().trim();
+
+			if (editingVariantId != null && request.startsWith("EDIT PROPOSAL")) {
+				provideInput(request);
+				chatGroup.handleApproveDarwinVariant(editingMessageIndex, editingVariantId);
+				editingVariantId = null;
+				editingMessageIndex = -1;
+				instructionsGroup.setRequest("");
+				return;
+			}
+
 			boolean isApproval = false;
 			if (state.currentContext != null) isApproval = state.currentContext.isWaitingForApproval();
 			else {
@@ -1096,6 +1109,14 @@ public class AiChatPage extends AEvoPage {
 
 	public void handleSimpleSolution() {
 		handleExecuteProposal("Execute the simplest working solution.");
+	}
+
+	public void handleEditDarwinVariant(int index, String variantId, String text) {
+		this.editingMessageIndex = index;
+		this.editingVariantId = variantId;
+		instructionsGroup.setRequest(text);
+		instructionsGroup.focusAndHighlight(colorLightOrange, null);
+		instructionsGroup.setCaretToEnd();
 	}
 
 	public void handleExecuteProposal(String request) {
