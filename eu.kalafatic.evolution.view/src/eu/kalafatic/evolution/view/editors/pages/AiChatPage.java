@@ -279,6 +279,7 @@ public class AiChatPage extends AEvoPage {
 		case LOCAL: modeIndicatorLabel.setBackground(colorLocal); break;
 		case HYBRID: modeIndicatorLabel.setBackground(colorHybrid); break;
 		case REMOTE: modeIndicatorLabel.setBackground(colorRemote); break;
+		case MEDIATED: modeIndicatorLabel.setBackground(colorHybrid); break;
 		}
 		if (aiSettingsGroup != null) {
 			updateScrolledContent();

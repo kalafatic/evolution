@@ -19,11 +19,12 @@ public class ArchitectureSummarizer {
     public String summarize(TaskContext context, AiService aiService) throws Exception {
         context.log("[EXPORT] Summarizing system architecture...");
 
-        String instruction = "Perform a high-level analysis of the project structure and summarize: " +
-                             "1. Main modules and their responsibilities. " +
-                             "2. Key relationships and communication patterns. " +
-                             "3. Any architectural constraints or notable design patterns. " +
-                             "Return the summary in Markdown format.";
+        String instruction = "Perform a deep high-level analysis of the project structure and summarize: " +
+                             "1. Main modules (OSGi bundles) and their core responsibilities. " +
+                             "2. Key relationships, communication patterns (e.g., state transitions, agent orchestration). " +
+                             "3. Core architectural invariants and design patterns (e.g., deterministic kernel, intelligence isolation). " +
+                             "4. Current technical debt or areas for improvement relevant to general development. " +
+                             "Return the summary in professional Markdown format optimized for a frontier AI model's context window.";
 
         architectAgent.setAiService(aiService);
         return architectAgent.process(instruction, context, null);
