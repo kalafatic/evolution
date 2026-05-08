@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
 import org.junit.Test;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
-import eu.kalafatic.evolution.controller.orchestration.LlmIntentClassifier;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.llm.ILlmProvider;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
@@ -20,9 +19,8 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.agents.IAgent;
-import eu.kalafatic.evolution.controller.agents.PlannerAgent;
-import eu.kalafatic.evolution.controller.agents.ReviewerAgent;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
+import eu.kalafatic.evolution.controller.orchestration.SystemState;
 
 public class OrchestratorFlowTest {
 
@@ -49,157 +47,68 @@ public class OrchestratorFlowTest {
     }
 
     @Test
-    public void testFullOrchestratorFlow() throws Exception {
+    public void testDirectExecutionFlow() throws Exception {
         EvolutionOrchestrator engine = new EvolutionOrchestrator();
         TaskContext context = new TaskContext(orchestrator, tempDir);
-
-
-        // Mock Approval
-        context.addApprovalListener(message -> {
-            context.provideApproval(true);
-        });
-
-        // Inject mocks into the engine's agents
-        injectMocksIntoOrchestrator(engine, mockOllama);
-
-        // Define AI responses
-        // 1. Planner Response (JSON array of tasks)
-        String planResponse = "[" +
-                "{\"id\": \"t1\", \"name\": \"Write src/Main.java\", \"taskType\": \"file\"}," +
-                "{\"id\": \"t2\", \"name\": \"Say Hello\", \"taskType\": \"llm\"}" +
-                "]";
-
-        // 2. JavaDevAgent Response (The Java code)
-        String javaCode = "public class Main { public static void main(String[] args) { System.out.println(\"Hello\"); } }";
-
-        // 3. Evaluation Responses (Success JSONs)
-        String successEval = "{\"success\": true, \"comment\": \"Looks good\"}";
-
-        mockOllama.setResponseSequence(new String[] {
-            "{\"mode\":\"ASSISTED_CODING\", \"confidence\":\"HIGH\"}", // ContextAssistant
-            "{\"intent\":\"new\", \"confidence\":0.9}", // IntentGate
-            "{\"category\":\"CODING\", \"isAmbiguous\":false}", // AnalyticAgent
-            planResponse, // Planner
-            javaCode,     // JavaDevAgent (for Write src/Main.java)
-            successEval,  // Reviewer (for t1)
-            "Hello from AI", // GeneralAgent (for Say Hello)
-            successEval   // Reviewer (for t2)
-        });
-
-        // Execute
-        String result = engine.execute("Create a java app", context);
-
-        // Verification
-        assertNotNull(result);
-
-        // Check if file was created
-        File javaFile = new File(tempDir, "src/Main.java");
-        assertTrue("Java file should exist", javaFile.exists());
-        String content = Files.readString(javaFile.toPath());
-        assertEquals(javaCode, content);
-
-        // Check task status in context (orchestrator model)
-        assertEquals(2, orchestrator.getTasks().size());
-        assertEquals(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE, orchestrator.getTasks().get(0).getStatus());
-        assertEquals(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE, orchestrator.getTasks().get(1).getStatus());
-    }
-
-    @Test
-    public void testGreetingResponse() throws Exception {
-        EvolutionOrchestrator engine = new EvolutionOrchestrator();
-        TaskContext context = new TaskContext(orchestrator, tempDir);
-
-        injectMocksIntoOrchestrator(engine, mockOllama);
-
-        // Mock Sequence:
-        // 0. ContextAssistant -> SIMPLE_CHAT
-        // 1. Intent Classification -> 'chat'
-        mockOllama.setResponseSequence(new String[] {
-            "{\"mode\":\"SIMPLE_CHAT\", \"confidence\":\"HIGH\"}",
-            "{\"intent\":\"chat\", \"confidence\":0.9, \"needs_clarification\":false, \"reason\":\"greeting\"}"
-        });
-
-        // Execute
-        String result = engine.execute("hi", context);
-
-        // Verification
-        assertNotNull(result);
-        assertTrue("Response should be a greeting", result.contains("Hello! I'm Evo"));
-    }
-
-    @Test
-    public void testClarificationWait() throws Exception {
-        EvolutionOrchestrator engine = new EvolutionOrchestrator();
-        TaskContext context = new TaskContext(orchestrator, tempDir);
-
+        context.getStateHolder().applyTransition(new TransitionToken(), SystemState.EXECUTING);
 
         // Inject mocks
         injectMocksIntoOrchestrator(engine, mockOllama);
 
-        // Mock Planner Response
-        String planResponse = "[{\"id\": \"t1\", \"name\": \"Say Hello\", \"taskType\": \"llm\"}]";
-
-        // Mock sequence:
-        // 0. ContextAssistant -> SIMPLE_CHAT
-        // 1. IntentGate -> new
-        // 2. Analytic -> CHAT, clear
-        // 3. Planner -> planResponse
-        // 4. GeneralAgent (performAction attempt 1) -> CLARIFY
-        // 5. GeneralAgent (performAction attempt 2 after input) -> "Hello verified"
-        // 6. ReviewerAgent -> success
         mockOllama.setResponseSequence(new String[] {
-            "{\"mode\":\"SIMPLE_CHAT\", \"confidence\":\"HIGH\"}",
-            "{\"intent\":\"new\", \"confidence\":0.9}",
-            "{\"category\":\"CHAT\", \"isAmbiguous\":false}",
-            planResponse,
-            "CLARIFY: What do you mean by hello?",
-            "Hello verified",
-            "{\"success\": true}"
+            "Hello from direct execution"
         });
 
-        // Mock User Input for Clarification
-        context.addInputListener(message -> {
-            context.provideInput("I mean Hi");
+        // Execute direct prompt (no tasks)
+        String result = engine.execute("hi", context);
+
+        // Verification
+        assertNotNull(result);
+        assertTrue("Result was: " + result, result.contains("Hello from direct execution"));
+    }
+
+    @Test
+    public void testTaskExecutionFlow() throws Exception {
+        EvolutionOrchestrator engine = new EvolutionOrchestrator();
+        TaskContext context = new TaskContext(orchestrator, tempDir);
+        context.getStateHolder().applyTransition(new TransitionToken(), SystemState.EXECUTING);
+
+        // Define a task
+        var task = OrchestrationFactory.eINSTANCE.createTask();
+        task.setId("t1");
+        task.setName("Write src/Hello.java");
+        task.setType("file");
+        task.setDescription("Create a hello class");
+        orchestrator.getTasks().add(task);
+
+        // Inject mocks
+        injectMocksIntoOrchestrator(engine, mockOllama);
+
+        String javaCode = "public class Hello {}";
+        mockOllama.setResponseSequence(new String[] {
+            javaCode
         });
 
-        // Execute - use something that isn't a simple greeting to bypass PolicyEngine directly
-        // Use 'Execute' to pass the Planner's safety guard.
-        String result = engine.execute("Execute Say Hello", context);
+        // Execute
+        String result = engine.handle(new eu.kalafatic.evolution.controller.orchestration.TaskRequest("run", tempDir), context).getSummary();
 
         assertNotNull(result);
-        assertNotNull(result);
+        File helloFile = new File(tempDir, "src/Hello.java");
+        assertTrue("Hello file should exist", helloFile.exists());
+        assertEquals(javaCode, Files.readString(helloFile.toPath()));
+        assertEquals(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE, task.getStatus());
     }
 
     private void injectMocksIntoOrchestrator(EvolutionOrchestrator engine, ILlmProvider mock) throws Exception {
-        // Orchestrator has planner (PlannerAgent), reviewer (ReviewerAgent), and availableAgents (List<IAgent>)
-        Field plannerField = EvolutionOrchestrator.class.getDeclaredField("planner");
-        plannerField.setAccessible(true);
-        injectMockIntoAgent((IAgent) plannerField.get(engine), mock);
-
-        Field validatorField = EvolutionOrchestrator.class.getDeclaredField("validator");
-        validatorField.setAccessible(true);
-        injectMockIntoAgent((IAgent) validatorField.get(engine), mock);
-
-        Field intentClassifierField = EvolutionOrchestrator.class.getDeclaredField("intentClassifier");
-        intentClassifierField.setAccessible(true);
-        Object classifier = intentClassifierField.get(engine);
-        if (classifier instanceof LlmIntentClassifier) {
-            Field routerField = LlmIntentClassifier.class.getDeclaredField("llmRouter");
-            routerField.setAccessible(true);
-            LlmRouter router = (LlmRouter) routerField.get(classifier);
-            injectProviderIntoRouter(router, mock);
+        String[] agentFields = {"analyticAgent", "validator", "repairAgent", "consolidator"};
+        for (String fieldName : agentFields) {
+            try {
+                Field f = EvolutionOrchestrator.class.getDeclaredField(fieldName);
+                f.setAccessible(true);
+                IAgent agent = (IAgent) f.get(engine);
+                if (agent != null) injectMockIntoAgent(agent, mock);
+            } catch (NoSuchFieldException e) { }
         }
-
-        Field contextAssistantField = EvolutionOrchestrator.class.getDeclaredField("contextAssistant");
-        contextAssistantField.setAccessible(true);
-        Object contextAssistant = contextAssistantField.get(engine);
-        Field caRouterField = contextAssistant.getClass().getDeclaredField("llmRouter");
-        caRouterField.setAccessible(true);
-        injectProviderIntoRouter((LlmRouter) caRouterField.get(contextAssistant), mock);
-
-        Field analyticAgentField = EvolutionOrchestrator.class.getDeclaredField("analyticAgent");
-        analyticAgentField.setAccessible(true);
-        injectMockIntoAgent((IAgent) analyticAgentField.get(engine), mock);
 
         Field agentsField = EvolutionOrchestrator.class.getDeclaredField("availableAgents");
         agentsField.setAccessible(true);
@@ -207,12 +116,19 @@ public class OrchestratorFlowTest {
         for (IAgent agent : agents) {
             injectMockIntoAgent(agent, mock);
         }
+
+        Field aiServiceField = EvolutionOrchestrator.class.getDeclaredField("aiService");
+        aiServiceField.setAccessible(true);
+        AiService aiService = (AiService) aiServiceField.get(engine);
+        Field serviceRouterField = AiService.class.getDeclaredField("llmRouter");
+        serviceRouterField.setAccessible(true);
+        LlmRouter serviceRouter = (LlmRouter) serviceRouterField.get(aiService);
+        injectProviderIntoRouter(serviceRouter, mock);
     }
 
     private void injectMockIntoAgent(IAgent agent, ILlmProvider mock) throws Exception {
         if (!(agent instanceof BaseAiAgent)) return;
 
-        // BaseAiAgent has llmRouter and aiService
         Field routerField = BaseAiAgent.class.getDeclaredField("llmRouter");
         routerField.setAccessible(true);
         LlmRouter router = (LlmRouter) routerField.get(agent);
@@ -240,6 +156,7 @@ public class OrchestratorFlowTest {
 
         public void setResponseSequence(String[] sequence) {
             this.responseSequence = sequence;
+            this.callCount.set(0);
         }
 
         @Override
