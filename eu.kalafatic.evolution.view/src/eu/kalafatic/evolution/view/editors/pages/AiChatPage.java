@@ -671,12 +671,6 @@ public class AiChatPage extends AEvoPage {
 	 */
 	public void createNewSession(String taskName) {
 		if (taskName != null && !taskName.trim().isEmpty()) {
-			String initialPrompt = "";
-			org.eclipse.jface.text.ITextSelection selection = editor.getLastTextSelection();
-			if (selection != null && !selection.getText().isEmpty()) {
-				initialPrompt = "Analyze this code:\n\n" + selection.getText();
-			}
-
 			String dateStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"));
 			String id = dateStr + "_" + taskName.trim();
 
@@ -691,10 +685,6 @@ public class AiChatPage extends AEvoPage {
 			currentSession = newSession;
 			chatGroup.setSession(currentSession);
 			updateSessionCombo();
-
-			if (!initialPrompt.isEmpty()) {
-				instructionsGroup.setRequest(initialPrompt);
-			}
 
 			editor.setDirty(true);
 		}
@@ -1331,12 +1321,15 @@ public class AiChatPage extends AEvoPage {
 			}
 			@Override public void insertControlContents(org.eclipse.swt.widgets.Control control, String contents, int cursorPosition) {
 				StyledText st = (StyledText) control;
-				String ct = st.getText();
-				int ss = st.getSelection().x;
-				int ws = ss;
-				while (ws > 0 && !Character.isWhitespace(ct.charAt(ws - 1))) ws--;
-				st.replaceTextRange(ws, ss - ws, contents);
-				st.setSelection(ws + cursorPosition);
+				String textContent = st.getText();
+				int selectionStart = st.getCaretOffset();
+				int wordStart = selectionStart;
+				while (wordStart > 0 && !Character.isWhitespace(textContent.charAt(wordStart - 1))) {
+					wordStart--;
+				}
+				String newText = textContent.substring(0, wordStart) + contents + textContent.substring(selectionStart);
+				st.setText(newText);
+				st.setSelection(wordStart + cursorPosition);
 			}
 			@Override public String getControlContents(org.eclipse.swt.widgets.Control control) { return ((StyledText) control).getText(); }
 			@Override public int getCursorPosition(org.eclipse.swt.widgets.Control control) { return ((StyledText) control).getCaretOffset(); }
@@ -1346,15 +1339,8 @@ public class AiChatPage extends AEvoPage {
 		KeyStroke ks = null; try { ks = KeyStroke.getInstance("Ctrl+Space"); } catch (Exception e) {}
 		assistAdapter = new ContentProposalAdapter(text, contentAdapter, proposalProvider, ks, null);
 		assistAdapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_INSERT);
-		assistAdapter.setAutoActivationDelay(200);
+		assistAdapter.setAutoActivationDelay(100);
 		assistAdapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyz/".toCharArray());
-
-		text.addFocusListener(new org.eclipse.swt.events.FocusAdapter() {
-			@Override
-			public void focusLost(org.eclipse.swt.events.FocusEvent e) {
-				if (assistAdapter != null) assistAdapter.closeProposalPopup();
-			}
-		});
 	}
 
 	public void testAiConnectionRemote(int modeIndex, String remoteModel, String token, String apiUrl) {
