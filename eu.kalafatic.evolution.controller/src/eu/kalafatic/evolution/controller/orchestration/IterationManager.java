@@ -20,6 +20,9 @@ import eu.kalafatic.evolution.controller.agents.GeneralAgent;
 import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent;
+import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
+import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentClassifier;
+import eu.kalafatic.evolution.controller.orchestration.intent.HybridAtomicIntentClassifier;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
@@ -60,6 +63,7 @@ public class IterationManager {
     private final DarwinEngine darwinEngine;
     private final IterationMemoryService memoryService;
     private final ClarificationManager clarificationManager = new ClarificationManager();
+    private final AtomicIntentClassifier atomicIntentClassifier;
 
     private IIntentClassifier intentClassifier = new LlmIntentClassifier();
     private IPolicyEngine policyEngine = new RuleBasedPolicyEngine();
@@ -90,6 +94,7 @@ public class IterationManager {
         this.evaluator = evaluator;
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
+        this.atomicIntentClassifier = new HybridAtomicIntentClassifier(aiService);
 
         availableAgents.addAll(AgentFactory.getAllAgents());
         analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
@@ -148,8 +153,9 @@ public class IterationManager {
             transition(SystemState.ANALYZING, context);
 
             // --- Atomic Task Detection (Optimized Pipeline) ---
-            if (isSimpleFileCreate(request)) {
-                context.log("[KERNEL] Atomic file task detected. Generating deterministic plan.");
+            AtomicIntentAnalysis atomicAnalysis = atomicIntentClassifier.analyze(request, context);
+            if (atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() > 0.80 && !atomicAnalysis.isRequiresPlanning()) {
+                context.log("[KERNEL] Atomic task detected semantically. Generating deterministic plan.");
                 List<Task> tasks = createAtomicFilePlan(request, context);
                 context.getOrchestrator().getTasks().addAll(tasks);
 
@@ -553,18 +559,15 @@ public class IterationManager {
         this.policyEngine = policyEngine;
     }
 
-    private boolean isSimpleFileCreate(String request) {
-        if (request == null) return false;
-        String lower = request.toLowerCase().trim();
-        // Detect patterns: create file x.txt, write to file y.java, save content to z.xml, create java class, create interface
-        return lower.matches("^(create|add|write|save)\\s+(file|content|to|java\\s+class|java\\s+interface|interface|class)\\s+.*$") &&
-               !lower.contains("\n") && request.length() < 100;
+    public static boolean isSimpleFileCreate(String request) {
+        AtomicIntentAnalysis analysis = HybridAtomicIntentClassifier.heuristicAnalyze(request);
+        return analysis.isAtomic() && analysis.getConfidence() > 0.80 && !analysis.isRequiresPlanning();
     }
 
     private List<Task> createAtomicFilePlan(String request, TaskContext context) {
         List<Task> tasks = new ArrayList<>();
         String lower = request.toLowerCase().trim();
-        String path = request.replaceFirst("(?i)^(create|add|write|save)\\s+(file|content|to|to\\s+file|java\\s+class|java\\s+interface|interface|class)\\s+", "").trim();
+        String path = request.replaceFirst("(?i)^(create|add|write|save)\\s+((a\\s+|an\\s+)?(new\\s+)?)(file|content|to|to\\s+file|java\\s+class|java\\s+interface|interface|class|resource|record)\\s+(to\\s+)?", "").trim();
 
         // Clean up path if it ends with punctuation
         path = path.replaceAll("[.!?,]$", "");
