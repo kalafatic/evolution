@@ -121,7 +121,9 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         analysis.setConfidence(Math.max(0.0, Math.min(1.0, score)));
         analysis.setAtomic(analysis.getConfidence() > 0.6);
         analysis.setDeterministic(analysis.getConfidence() > 0.7);
-        analysis.setRequiresPlanning(analysis.getConfidence() < 0.75 || analysis.isMultiStep());
+
+        boolean hasTarget = analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty();
+        analysis.setRequiresPlanning(analysis.getConfidence() < 0.75 || analysis.isMultiStep() || !hasTarget);
 
         return analysis;
     }
