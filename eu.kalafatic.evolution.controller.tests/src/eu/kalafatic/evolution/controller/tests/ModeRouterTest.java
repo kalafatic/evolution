@@ -88,6 +88,15 @@ public class ModeRouterTest {
     }
 
     @Test
+    public void testMediatedModePriority() {
+        orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED);
+        orchestrator.setDarwinMode(true); // Mediated should take precedence
+
+        PlatformMode mode = router.route("High priority task", orchestrator);
+        assertEquals(PlatformType.HYBRID_MANUAL_EXPORT, mode.getType());
+    }
+
+    @Test
     public void testRouteFastCoding() {
         PlatformMode mode = router.routeFast("Create a java class", orchestrator);
         assertNotNull(mode);

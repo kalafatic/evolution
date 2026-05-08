@@ -262,24 +262,37 @@ public class IterationManager {
 
     private OrchestratorResponse handleExportFlow(String request, TaskContext context) throws Exception {
         context.log("[KERNEL] Executing Hybrid Manual Export flow.");
-        SelfDevRequestAnalyzer analyzer = new SelfDevRequestAnalyzer();
-        JSONObject analysis = analyzer.analyze(request, context);
-        transition(SystemState.EXPORTING, context);
-        ArchitectureSummarizer summarizer = new ArchitectureSummarizer();
-        String architectureSummary = summarizer.summarize(context, aiService);
-        ContextSelectionEngine contextEngine = new ContextSelectionEngine();
-        Map<String, String> contextFiles = contextEngine.selectContext(request, analysis, context);
-        PromptOptimizer optimizer = new PromptOptimizer();
-        String optimizedPrompt = optimizer.optimize(request, architectureSummary, context, aiService);
-        ExportPackageBuilder builder = new ExportPackageBuilder();
-        File zipFile = builder.build(request, analysis, optimizedPrompt, architectureSummary, contextFiles, context);
-        OrchestratorResponse response = new OrchestratorResponse();
-        response.setResultType(ResultType.CHAT);
-        String summary = "### Export Complete\\n\\nLocation: `" + zipFile.getAbsolutePath() + "`";
-        response.setSummary(summary);
-        response.setContent(summary);
-        transition(SystemState.DONE, context);
-        return response;
+        eu.kalafatic.evolution.model.orchestration.AiMode originalMode = context.getOrchestrator().getAiMode();
+        try {
+            // For export preparation, we use local intelligence to avoid intermediate mediation prompts
+            context.getOrchestrator().setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.LOCAL);
+
+            SelfDevRequestAnalyzer analyzer = new SelfDevRequestAnalyzer();
+            JSONObject analysis = analyzer.analyze(request, context);
+            transition(SystemState.EXPORTING, context);
+
+            ArchitectureSummarizer summarizer = new ArchitectureSummarizer();
+            String architectureSummary = summarizer.summarize(context, aiService);
+
+            ContextSelectionEngine contextEngine = new ContextSelectionEngine();
+            Map<String, String> contextFiles = contextEngine.selectContext(request, analysis, context);
+
+            PromptOptimizer optimizer = new PromptOptimizer();
+            String optimizedPrompt = optimizer.optimize(request, architectureSummary, context, aiService);
+
+            ExportPackageBuilder builder = new ExportPackageBuilder();
+            File zipFile = builder.build(request, analysis, optimizedPrompt, architectureSummary, contextFiles, context);
+
+            OrchestratorResponse response = new OrchestratorResponse();
+            response.setResultType(ResultType.CHAT);
+            String summary = "### Export Complete\\n\\nLocation: `" + zipFile.getAbsolutePath() + "`";
+            response.setSummary(summary);
+            response.setContent(summary);
+            transition(SystemState.DONE, context);
+            return response;
+        } finally {
+            context.getOrchestrator().setAiMode(originalMode);
+        }
     }
 
     private List<Task> decideFlow(String request, TaskContext context2) throws Exception {
