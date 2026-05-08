@@ -3205,61 +3205,6 @@ public interface OrchestrationPackage extends EPackage {
 	EClass getTask();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isIterativeMode <em>Iterative Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Iterative Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Task#isIterativeMode()
-	 * @see #getTask()
-	 * @generated
-	 */
-	EAttribute getTask_IterativeMode();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isSelfIterativeMode <em>Self Iterative Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Self Iterative Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Task#isSelfIterativeMode()
-	 * @see #getTask()
-	 * @generated
-	 */
-	EAttribute getTask_SelfIterativeMode();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isDarwinMode <em>Darwin Mode</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Darwin Mode</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Task#isDarwinMode()
-	 * @see #getTask()
-	 * @generated
-	 */
-	EAttribute getTask_DarwinMode();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isGitAutomation <em>Git Automation</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Git Automation</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Task#isGitAutomation()
-	 * @see #getTask()
-	 * @generated
-	 */
-	EAttribute getTask_GitAutomation();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getMaxIterations <em>Max Iterations</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Max Iterations</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Task#getMaxIterations()
-	 * @see #getTask()
-	 * @generated
-	 */
-	EAttribute getTask_MaxIterations();
-
-	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getId <em>Id</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3544,6 +3489,61 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getTask_AutoEscalate();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isIterativeMode <em>Iterative Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Iterative Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#isIterativeMode()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_IterativeMode();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isSelfIterativeMode <em>Self Iterative Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Self Iterative Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#isSelfIterativeMode()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_SelfIterativeMode();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isDarwinMode <em>Darwin Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Darwin Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#isDarwinMode()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_DarwinMode();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#isGitAutomation <em>Git Automation</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Git Automation</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#isGitAutomation()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_GitAutomation();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getMaxIterations <em>Max Iterations</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Max Iterations</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getMaxIterations()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_MaxIterations();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
@@ -5669,6 +5669,28 @@ public interface OrchestrationPackage extends EPackage {
 	EClass getChatSession();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getId <em>Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getId()
+	 * @see #getChatSession()
+	 * @generated
+	 */
+	EAttribute getChatSession_Id();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getMessages <em>Messages</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Messages</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getMessages()
+	 * @see #getChatSession()
+	 * @generated
+	 */
+	EReference getChatSession_Messages();
+
+	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isIterativeMode <em>Iterative Mode</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5722,28 +5744,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getChatSession_MaxIterations();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getId <em>Id</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Id</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getId()
-	 * @see #getChatSession()
-	 * @generated
-	 */
-	EAttribute getChatSession_Id();
-
-	/**
-	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getMessages <em>Messages</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference list '<em>Messages</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getMessages()
-	 * @see #getChatSession()
-	 * @generated
-	 */
-	EReference getChatSession_Messages();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage <em>Chat Message</em>}'.
@@ -6072,46 +6072,6 @@ public interface OrchestrationPackage extends EPackage {
 		EClass TASK = eINSTANCE.getTask();
 
 		/**
-		 * The meta object literal for the '<em><b>Iterative Mode</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TASK__ITERATIVE_MODE = eINSTANCE.getTask_IterativeMode();
-
-		/**
-		 * The meta object literal for the '<em><b>Self Iterative Mode</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TASK__SELF_ITERATIVE_MODE = eINSTANCE.getTask_SelfIterativeMode();
-
-		/**
-		 * The meta object literal for the '<em><b>Darwin Mode</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TASK__DARWIN_MODE = eINSTANCE.getTask_DarwinMode();
-
-		/**
-		 * The meta object literal for the '<em><b>Git Automation</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TASK__GIT_AUTOMATION = eINSTANCE.getTask_GitAutomation();
-
-		/**
-		 * The meta object literal for the '<em><b>Max Iterations</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute TASK__MAX_ITERATIONS = eINSTANCE.getTask_MaxIterations();
-
-		/**
 		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -6318,6 +6278,46 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__AUTO_ESCALATE = eINSTANCE.getTask_AutoEscalate();
+
+		/**
+		 * The meta object literal for the '<em><b>Iterative Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__ITERATIVE_MODE = eINSTANCE.getTask_IterativeMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Self Iterative Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__SELF_ITERATIVE_MODE = eINSTANCE.getTask_SelfIterativeMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Darwin Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__DARWIN_MODE = eINSTANCE.getTask_DarwinMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Git Automation</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__GIT_AUTOMATION = eINSTANCE.getTask_GitAutomation();
+
+		/**
+		 * The meta object literal for the '<em><b>Max Iterations</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__MAX_ITERATIONS = eINSTANCE.getTask_MaxIterations();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.
@@ -7954,6 +7954,22 @@ public interface OrchestrationPackage extends EPackage {
 		EClass CHAT_SESSION = eINSTANCE.getChatSession();
 
 		/**
+		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_SESSION__ID = eINSTANCE.getChatSession_Id();
+
+		/**
+		 * The meta object literal for the '<em><b>Messages</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference CHAT_SESSION__MESSAGES = eINSTANCE.getChatSession_Messages();
+
+		/**
 		 * The meta object literal for the '<em><b>Iterative Mode</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -7992,22 +8008,6 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_SESSION__MAX_ITERATIONS = eINSTANCE.getChatSession_MaxIterations();
-
-		/**
-		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute CHAT_SESSION__ID = eINSTANCE.getChatSession_Id();
-
-		/**
-		 * The meta object literal for the '<em><b>Messages</b></em>' containment reference list feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference CHAT_SESSION__MESSAGES = eINSTANCE.getChatSession_Messages();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.

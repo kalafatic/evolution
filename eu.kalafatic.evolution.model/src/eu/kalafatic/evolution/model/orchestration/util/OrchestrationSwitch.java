@@ -304,8 +304,8 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 				return result;
 			}
 			case OrchestrationPackage.CHAT_SESSION: {
-				ChatSession chatThread = (ChatSession)theEObject;
-				T result = caseChatSession(chatThread);
+				ChatSession chatSession = (ChatSession)theEObject;
+				T result = caseChatSession(chatSession);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}

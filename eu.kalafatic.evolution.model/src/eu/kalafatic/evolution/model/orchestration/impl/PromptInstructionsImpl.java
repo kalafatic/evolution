@@ -98,7 +98,7 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 	 * @generated
 	 * @ordered
 	 */
-	protected static final boolean ITERATIVE_MODE_EDEFAULT = true;
+	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
 
 	/**
 	 * The cached value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.

@@ -303,7 +303,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass chatThreadEClass = null;
+	private EClass chatSessionEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -743,7 +743,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getTask_IterativeMode() {
@@ -753,7 +753,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getTask_SelfIterativeMode() {
@@ -763,7 +763,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getTask_DarwinMode() {
@@ -773,7 +773,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getTask_GitAutomation() {
@@ -783,7 +783,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getTask_MaxIterations() {
@@ -2747,7 +2747,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 */
 	@Override
 	public EClass getChatSession() {
-		return chatThreadEClass;
+		return chatSessionEClass;
 	}
 
 	/**
@@ -2757,7 +2757,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 */
 	@Override
 	public EAttribute getChatSession_Id() {
-		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(0);
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(0);
 	}
 
 	/**
@@ -2767,57 +2767,57 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 */
 	@Override
 	public EReference getChatSession_Messages() {
-		return (EReference)chatThreadEClass.getEStructuralFeatures().get(1);
+		return (EReference)chatSessionEClass.getEStructuralFeatures().get(1);
 	}
 
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getChatSession_IterativeMode() {
-		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(2);
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getChatSession_SelfIterativeMode() {
-		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(3);
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getChatSession_DarwinMode() {
-		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(4);
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(4);
 	}
 
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getChatSession_GitAutomation() {
-		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(5);
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(5);
 	}
 
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	@Override
 	public EAttribute getChatSession_MaxIterations() {
-		return (EAttribute)chatThreadEClass.getEStructuralFeatures().get(6);
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(6);
 	}
 
 	/**
@@ -3122,7 +3122,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * guarded to have no affect on any invocation but its first.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	public void createPackageContents() {
 		if (isCreated) return;
@@ -3389,14 +3389,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(reviewSessionEClass, REVIEW_SESSION__COMMENTS);
 		createEAttribute(reviewSessionEClass, REVIEW_SESSION__DECISION);
 
-		chatThreadEClass = createEClass(CHAT_SESSION);
-		createEAttribute(chatThreadEClass, CHAT_SESSION__ID);
-		createEReference(chatThreadEClass, CHAT_SESSION__MESSAGES);
-		createEAttribute(chatThreadEClass, CHAT_SESSION__ITERATIVE_MODE);
-		createEAttribute(chatThreadEClass, CHAT_SESSION__SELF_ITERATIVE_MODE);
-		createEAttribute(chatThreadEClass, CHAT_SESSION__DARWIN_MODE);
-		createEAttribute(chatThreadEClass, CHAT_SESSION__GIT_AUTOMATION);
-		createEAttribute(chatThreadEClass, CHAT_SESSION__MAX_ITERATIONS);
+		chatSessionEClass = createEClass(CHAT_SESSION);
+		createEAttribute(chatSessionEClass, CHAT_SESSION__ID);
+		createEReference(chatSessionEClass, CHAT_SESSION__MESSAGES);
+		createEAttribute(chatSessionEClass, CHAT_SESSION__ITERATIVE_MODE);
+		createEAttribute(chatSessionEClass, CHAT_SESSION__SELF_ITERATIVE_MODE);
+		createEAttribute(chatSessionEClass, CHAT_SESSION__DARWIN_MODE);
+		createEAttribute(chatSessionEClass, CHAT_SESSION__GIT_AUTOMATION);
+		createEAttribute(chatSessionEClass, CHAT_SESSION__MAX_ITERATIONS);
 
 		chatMessageEClass = createEClass(CHAT_MESSAGE);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__INDEX);
@@ -3424,7 +3424,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		executionModeEEnum = createEEnum(EXECUTION_MODE);
 		neuronTypeEEnum = createEEnum(NEURON_TYPE);
 		aiModeEEnum = createEEnum(AI_MODE);
-
 		selfDevStatusEEnum = createEEnum(SELF_DEV_STATUS);
 		iterationStatusEEnum = createEEnum(ITERATION_STATUS);
 		selfDevDecisionEEnum = createEEnum(SELF_DEV_DECISION);
@@ -3444,7 +3443,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * method is guarded to have no affect on any invocation but its first.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated NOT
+	 * @generated
 	 */
 	public void initializePackageContents() {
 		if (isInitialized) return;
@@ -3726,14 +3725,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getReviewSession_Comments(), this.getComment(), null, "comments", null, 0, -1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getReviewSession_Decision(), this.getReviewDecision(), "decision", null, 0, 1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
-		initEClass(chatThreadEClass, ChatSession.class, "ChatSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEClass(chatSessionEClass, ChatSession.class, "ChatSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getChatSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getChatSession_Messages(), this.getChatMessage(), null, "messages", null, 0, -1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getChatSession_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "true", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getChatSession_DarwinMode(), ecorePackage.getEBoolean(), "darwinMode", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_DarwinMode(), ecorePackage.getEBoolean(), "darwinMode", "true", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getChatSession_MaxIterations(), ecorePackage.getEInt(), "maxIterations", "-1", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_MaxIterations(), ecorePackage.getEInt(), "maxIterations", "1", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(chatMessageEClass, ChatMessage.class, "ChatMessage", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getChatMessage_Index(), ecorePackage.getEInt(), "index", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -3803,6 +3802,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(aiModeEEnum, AiMode.HYBRID);
 		addEEnumLiteral(aiModeEEnum, AiMode.REMOTE);
 		addEEnumLiteral(aiModeEEnum, AiMode.PROXY);
+		addEEnumLiteral(aiModeEEnum, AiMode.MEDIATED);
 
 		initEEnum(selfDevStatusEEnum, SelfDevStatus.class, "SelfDevStatus");
 		addEEnumLiteral(selfDevStatusEEnum, SelfDevStatus.RUNNING);

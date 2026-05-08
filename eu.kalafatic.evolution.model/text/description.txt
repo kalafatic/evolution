@@ -34,6 +34,11 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute logLevel : LogLevel
     Attribute feedbackLevel : FeedbackLevel
     Attribute autoEscalate : EBoolean
+    Attribute iterativeMode : EBoolean
+    Attribute selfIterativeMode : EBoolean
+    Attribute darwinMode : EBoolean
+    Attribute gitAutomation : EBoolean
+    Attribute maxIterations : EInt
 
   Class Agent
     Attribute id : EString
@@ -265,6 +270,11 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
   Class ChatSession
     Attribute id : EString
     Reference messages : ChatMessage<<0..*>>
+    Attribute iterativeMode : EBoolean
+    Attribute selfIterativeMode : EBoolean
+    Attribute darwinMode : EBoolean
+    Attribute gitAutomation : EBoolean
+    Attribute maxIterations : EInt
 
   Class ChatMessage
     Attribute index : EInt
@@ -332,6 +342,8 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Literal LOCAL = 0
     Literal HYBRID = 1
     Literal REMOTE = 2
+    Literal PROXY = 3
+    Literal MEDIATED = 4
 
   Enum SelfDevStatus
     Literal RUNNING = 0

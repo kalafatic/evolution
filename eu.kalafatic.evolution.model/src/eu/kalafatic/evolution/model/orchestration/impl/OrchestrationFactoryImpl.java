@@ -582,8 +582,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 */
 	@Override
 	public ChatSession createChatSession() {
-		ChatSessionImpl chatThread = new ChatSessionImpl();
-		return chatThread;
+		ChatSessionImpl chatSession = new ChatSessionImpl();
+		return chatSession;
 	}
 
 	/**

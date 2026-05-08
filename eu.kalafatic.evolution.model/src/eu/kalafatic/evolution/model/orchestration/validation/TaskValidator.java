@@ -46,4 +46,9 @@ public interface TaskValidator {
 	boolean validateLogLevel(LogLevel value);
 	boolean validateFeedbackLevel(FeedbackLevel value);
 	boolean validateAutoEscalate(boolean value);
+	boolean validateIterativeMode(boolean value);
+	boolean validateSelfIterativeMode(boolean value);
+	boolean validateDarwinMode(boolean value);
+	boolean validateGitAutomation(boolean value);
+	boolean validateMaxIterations(int value);
 }

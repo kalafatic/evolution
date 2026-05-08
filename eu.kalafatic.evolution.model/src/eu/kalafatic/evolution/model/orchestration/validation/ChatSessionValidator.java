@@ -19,4 +19,9 @@ public interface ChatSessionValidator {
 
 	boolean validateId(String value);
 	boolean validateMessages(EList<ChatMessage> value);
+	boolean validateIterativeMode(boolean value);
+	boolean validateSelfIterativeMode(boolean value);
+	boolean validateDarwinMode(boolean value);
+	boolean validateGitAutomation(boolean value);
+	boolean validateMaxIterations(int value);
 }

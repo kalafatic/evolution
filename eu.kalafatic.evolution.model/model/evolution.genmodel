@@ -56,6 +56,8 @@
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/LOCAL"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/HYBRID"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/REMOTE"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/PROXY"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/MEDIATED"/>
     </genEnums>
     <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//SelfDevStatus">
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevStatus/RUNNING"/>
@@ -114,6 +116,11 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/logLevel"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/feedbackLevel"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/autoEscalate"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/iterativeMode"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/selfIterativeMode"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/darwinMode"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/gitAutomation"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/maxIterations"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Agent">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Agent/id"/>
@@ -345,6 +352,11 @@
     <genClasses ecoreClass="evolution.ecore#//ChatSession">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/id"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ChatSession/messages"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/iterativeMode"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/selfIterativeMode"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/darwinMode"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/gitAutomation"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/maxIterations"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//ChatMessage">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/index"/>

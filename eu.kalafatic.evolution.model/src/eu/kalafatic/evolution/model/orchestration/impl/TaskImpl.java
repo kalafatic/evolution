@@ -60,156 +60,16 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getLogLevel <em>Log Level</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getFeedbackLevel <em>Feedback Level</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isAutoEscalate <em>Auto Escalate</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isIterativeMode <em>Iterative Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isSelfIterativeMode <em>Self Iterative Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isDarwinMode <em>Darwin Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isGitAutomation <em>Git Automation</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getMaxIterations <em>Max Iterations</em>}</li>
  * </ul>
  *
  * @generated
  */
 public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
-	/**
-	 * The default value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isIterativeMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
-
-	/**
-	 * The cached value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isIterativeMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean iterativeMode = ITERATIVE_MODE_EDEFAULT;
-
-	/**
-	 * This is true if the Iterative Mode attribute has been set.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean iterativeModeESet;
-
-	/**
-	 * The default value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isSelfIterativeMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final boolean SELF_ITERATIVE_MODE_EDEFAULT = false;
-
-	/**
-	 * The cached value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isSelfIterativeMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
-
-	/**
-	 * This is true if the Self Iterative Mode attribute has been set.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean selfIterativeModeESet;
-
-	/**
-	 * The default value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isDarwinMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final boolean DARWIN_MODE_EDEFAULT = false;
-
-	/**
-	 * The cached value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isDarwinMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean darwinMode = DARWIN_MODE_EDEFAULT;
-
-	/**
-	 * This is true if the Darwin Mode attribute has been set.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean darwinModeESet;
-
-	/**
-	 * The default value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isGitAutomation()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final boolean GIT_AUTOMATION_EDEFAULT = false;
-
-	/**
-	 * The cached value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #isGitAutomation()
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean gitAutomation = GIT_AUTOMATION_EDEFAULT;
-
-	/**
-	 * This is true if the Git Automation attribute has been set.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean gitAutomationESet;
-
-	/**
-	 * The default value of the '{@link #getMaxIterations() <em>Max Iterations</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getMaxIterations()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final int MAX_ITERATIONS_EDEFAULT = -1;
-
-	/**
-	 * The cached value of the '{@link #getMaxIterations() <em>Max Iterations</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getMaxIterations()
-	 * @generated
-	 * @ordered
-	 */
-	protected int maxIterations = MAX_ITERATIONS_EDEFAULT;
-
-	/**
-	 * This is true if the Max Iterations attribute has been set.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	protected boolean maxIterationsESet;
-
 	/**
 	 * The default value of the '{@link #getId() <em>Id</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -668,7 +528,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @generated
 	 * @ordered
 	 */
-	protected static final FeedbackLevel FEEDBACK_LEVEL_EDEFAULT = FeedbackLevel.FULL;
+	protected static final FeedbackLevel FEEDBACK_LEVEL_EDEFAULT = FeedbackLevel.SIMPLE;
 
 	/**
 	 * The cached value of the '{@link #getFeedbackLevel() <em>Feedback Level</em>}' attribute.
@@ -701,6 +561,106 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected boolean autoEscalate = AUTO_ESCALATE_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean iterativeMode = ITERATIVE_MODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSelfIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean SELF_ITERATIVE_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isSelfIterativeMode() <em>Self Iterative Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isSelfIterativeMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isDarwinMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean DARWIN_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isDarwinMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean darwinMode = DARWIN_MODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isGitAutomation()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean GIT_AUTOMATION_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isGitAutomation() <em>Git Automation</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isGitAutomation()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean gitAutomation = GIT_AUTOMATION_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getMaxIterations() <em>Max Iterations</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMaxIterations()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int MAX_ITERATIONS_EDEFAULT = -1;
+
+	/**
+	 * The cached value of the '{@link #getMaxIterations() <em>Max Iterations</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMaxIterations()
+	 * @generated
+	 * @ordered
+	 */
+	protected int maxIterations = MAX_ITERATIONS_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -717,173 +677,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.TASK;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public boolean isIterativeMode() {
-		if (!iterativeModeESet) {
-			eu.kalafatic.evolution.model.orchestration.ChatSession thread = getParentSession();
-			if (thread != null) return thread.isIterativeMode();
-		}
-		return iterativeMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public void setIterativeMode(boolean newIterativeMode) {
-		boolean oldIterativeMode = iterativeMode;
-		iterativeMode = newIterativeMode;
-		boolean oldIterativeModeESet = iterativeModeESet;
-		iterativeModeESet = true;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__ITERATIVE_MODE, oldIterativeMode, iterativeMode, !oldIterativeModeESet));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public boolean isSelfIterativeMode() {
-		if (!selfIterativeModeESet) {
-			eu.kalafatic.evolution.model.orchestration.ChatSession thread = getParentSession();
-			if (thread != null) return thread.isSelfIterativeMode();
-		}
-		return selfIterativeMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public void setSelfIterativeMode(boolean newSelfIterativeMode) {
-		boolean oldSelfIterativeMode = selfIterativeMode;
-		selfIterativeMode = newSelfIterativeMode;
-		boolean oldSelfIterativeModeESet = selfIterativeModeESet;
-		selfIterativeModeESet = true;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode, !oldSelfIterativeModeESet));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public boolean isDarwinMode() {
-		if (!darwinModeESet) {
-			eu.kalafatic.evolution.model.orchestration.ChatSession thread = getParentSession();
-			if (thread != null) return thread.isDarwinMode();
-		}
-		return darwinMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public void setDarwinMode(boolean newDarwinMode) {
-		boolean oldDarwinMode = darwinMode;
-		darwinMode = newDarwinMode;
-		boolean oldDarwinModeESet = darwinModeESet;
-		darwinModeESet = true;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__DARWIN_MODE, oldDarwinMode, darwinMode, !oldDarwinModeESet));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public boolean isGitAutomation() {
-		if (!gitAutomationESet) {
-			eu.kalafatic.evolution.model.orchestration.ChatSession thread = getParentSession();
-			if (thread != null) return thread.isGitAutomation();
-		}
-		return gitAutomation;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public void setGitAutomation(boolean newGitAutomation) {
-		boolean oldGitAutomation = gitAutomation;
-		gitAutomation = newGitAutomation;
-		boolean oldGitAutomationESet = gitAutomationESet;
-		gitAutomationESet = true;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__GIT_AUTOMATION, oldGitAutomation, gitAutomation, !oldGitAutomationESet));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public int getMaxIterations() {
-		if (!maxIterationsESet) {
-			eu.kalafatic.evolution.model.orchestration.ChatSession thread = getParentSession();
-			if (thread != null) return thread.getMaxIterations();
-		}
-		return maxIterations;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated NOT
-	 */
-	@Override
-	public void setMaxIterations(int newMaxIterations) {
-		int oldMaxIterations = maxIterations;
-		maxIterations = newMaxIterations;
-		boolean oldMaxIterationsESet = maxIterationsESet;
-		maxIterationsESet = true;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__MAX_ITERATIONS, oldMaxIterations, maxIterations, !oldMaxIterationsESet));
-	}
-
-	/**
-	 * Helper method to find parent ChatSession
-	 */
-	private eu.kalafatic.evolution.model.orchestration.ChatSession getParentSession() {
-		org.eclipse.emf.ecore.EObject container = eContainer();
-		while (container != null) {
-			if (container instanceof eu.kalafatic.evolution.model.orchestration.Orchestrator) {
-				eu.kalafatic.evolution.model.orchestration.Orchestrator orch = (eu.kalafatic.evolution.model.orchestration.Orchestrator) container;
-				if (orch.getAiChat() != null && !orch.getAiChat().getSessions().isEmpty()) {
-					// This is a simplification; in reality we might need the exact thread ID
-					// but for now we take the first or current thread.
-					return orch.getAiChat().getSessions().get(0);
-				}
-			}
-			if (container instanceof eu.kalafatic.evolution.model.orchestration.ChatSession) {
-				return (eu.kalafatic.evolution.model.orchestration.ChatSession) container;
-			}
-			container = container.eContainer();
-		}
-		return null;
 	}
 
 	/**
@@ -1460,6 +1253,121 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @generated
 	 */
 	@Override
+	public boolean isIterativeMode() {
+		return iterativeMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setIterativeMode(boolean newIterativeMode) {
+		boolean oldIterativeMode = iterativeMode;
+		iterativeMode = newIterativeMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__ITERATIVE_MODE, oldIterativeMode, iterativeMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isSelfIterativeMode() {
+		return selfIterativeMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSelfIterativeMode(boolean newSelfIterativeMode) {
+		boolean oldSelfIterativeMode = selfIterativeMode;
+		selfIterativeMode = newSelfIterativeMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isDarwinMode() {
+		return darwinMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setDarwinMode(boolean newDarwinMode) {
+		boolean oldDarwinMode = darwinMode;
+		darwinMode = newDarwinMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__DARWIN_MODE, oldDarwinMode, darwinMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isGitAutomation() {
+		return gitAutomation;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGitAutomation(boolean newGitAutomation) {
+		boolean oldGitAutomation = gitAutomation;
+		gitAutomation = newGitAutomation;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__GIT_AUTOMATION, oldGitAutomation, gitAutomation));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getMaxIterations() {
+		return maxIterations;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setMaxIterations(int newMaxIterations) {
+		int oldMaxIterations = maxIterations;
+		maxIterations = newMaxIterations;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__MAX_ITERATIONS, oldMaxIterations, maxIterations));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.TASK__SUB_TASKS:
@@ -1476,16 +1384,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case OrchestrationPackage.TASK__ITERATIVE_MODE:
-				return isIterativeMode();
-			case OrchestrationPackage.TASK__SELF_ITERATIVE_MODE:
-				return isSelfIterativeMode();
-			case OrchestrationPackage.TASK__DARWIN_MODE:
-				return isDarwinMode();
-			case OrchestrationPackage.TASK__GIT_AUTOMATION:
-				return isGitAutomation();
-			case OrchestrationPackage.TASK__MAX_ITERATIONS:
-				return getMaxIterations();
 			case OrchestrationPackage.TASK__ID:
 				return getId();
 			case OrchestrationPackage.TASK__NAME:
@@ -1538,6 +1436,16 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getFeedbackLevel();
 			case OrchestrationPackage.TASK__AUTO_ESCALATE:
 				return isAutoEscalate();
+			case OrchestrationPackage.TASK__ITERATIVE_MODE:
+				return isIterativeMode();
+			case OrchestrationPackage.TASK__SELF_ITERATIVE_MODE:
+				return isSelfIterativeMode();
+			case OrchestrationPackage.TASK__DARWIN_MODE:
+				return isDarwinMode();
+			case OrchestrationPackage.TASK__GIT_AUTOMATION:
+				return isGitAutomation();
+			case OrchestrationPackage.TASK__MAX_ITERATIONS:
+				return getMaxIterations();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1551,21 +1459,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case OrchestrationPackage.TASK__ITERATIVE_MODE:
-				setIterativeMode((Boolean)newValue);
-				return;
-			case OrchestrationPackage.TASK__SELF_ITERATIVE_MODE:
-				setSelfIterativeMode((Boolean)newValue);
-				return;
-			case OrchestrationPackage.TASK__DARWIN_MODE:
-				setDarwinMode((Boolean)newValue);
-				return;
-			case OrchestrationPackage.TASK__GIT_AUTOMATION:
-				setGitAutomation((Boolean)newValue);
-				return;
-			case OrchestrationPackage.TASK__MAX_ITERATIONS:
-				setMaxIterations((Integer)newValue);
-				return;
 			case OrchestrationPackage.TASK__ID:
 				setId((String)newValue);
 				return;
@@ -1647,6 +1540,21 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__AUTO_ESCALATE:
 				setAutoEscalate((Boolean)newValue);
 				return;
+			case OrchestrationPackage.TASK__ITERATIVE_MODE:
+				setIterativeMode((Boolean)newValue);
+				return;
+			case OrchestrationPackage.TASK__SELF_ITERATIVE_MODE:
+				setSelfIterativeMode((Boolean)newValue);
+				return;
+			case OrchestrationPackage.TASK__DARWIN_MODE:
+				setDarwinMode((Boolean)newValue);
+				return;
+			case OrchestrationPackage.TASK__GIT_AUTOMATION:
+				setGitAutomation((Boolean)newValue);
+				return;
+			case OrchestrationPackage.TASK__MAX_ITERATIONS:
+				setMaxIterations((Integer)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1659,26 +1567,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case OrchestrationPackage.TASK__ITERATIVE_MODE:
-				setIterativeMode(ITERATIVE_MODE_EDEFAULT);
-				iterativeModeESet = false;
-				return;
-			case OrchestrationPackage.TASK__SELF_ITERATIVE_MODE:
-				setSelfIterativeMode(SELF_ITERATIVE_MODE_EDEFAULT);
-				selfIterativeModeESet = false;
-				return;
-			case OrchestrationPackage.TASK__DARWIN_MODE:
-				setDarwinMode(DARWIN_MODE_EDEFAULT);
-				darwinModeESet = false;
-				return;
-			case OrchestrationPackage.TASK__GIT_AUTOMATION:
-				setGitAutomation(GIT_AUTOMATION_EDEFAULT);
-				gitAutomationESet = false;
-				return;
-			case OrchestrationPackage.TASK__MAX_ITERATIONS:
-				setMaxIterations(MAX_ITERATIONS_EDEFAULT);
-				maxIterationsESet = false;
-				return;
 			case OrchestrationPackage.TASK__ID:
 				setId(ID_EDEFAULT);
 				return;
@@ -1757,6 +1645,21 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__AUTO_ESCALATE:
 				setAutoEscalate(AUTO_ESCALATE_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__ITERATIVE_MODE:
+				setIterativeMode(ITERATIVE_MODE_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__SELF_ITERATIVE_MODE:
+				setSelfIterativeMode(SELF_ITERATIVE_MODE_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__DARWIN_MODE:
+				setDarwinMode(DARWIN_MODE_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__GIT_AUTOMATION:
+				setGitAutomation(GIT_AUTOMATION_EDEFAULT);
+				return;
+			case OrchestrationPackage.TASK__MAX_ITERATIONS:
+				setMaxIterations(MAX_ITERATIONS_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1769,16 +1672,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case OrchestrationPackage.TASK__ITERATIVE_MODE:
-				return iterativeModeESet;
-			case OrchestrationPackage.TASK__SELF_ITERATIVE_MODE:
-				return selfIterativeModeESet;
-			case OrchestrationPackage.TASK__DARWIN_MODE:
-				return darwinModeESet;
-			case OrchestrationPackage.TASK__GIT_AUTOMATION:
-				return gitAutomationESet;
-			case OrchestrationPackage.TASK__MAX_ITERATIONS:
-				return maxIterationsESet;
 			case OrchestrationPackage.TASK__ID:
 				return ID_EDEFAULT == null ? id != null : !ID_EDEFAULT.equals(id);
 			case OrchestrationPackage.TASK__NAME:
@@ -1831,6 +1724,16 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return feedbackLevel != FEEDBACK_LEVEL_EDEFAULT;
 			case OrchestrationPackage.TASK__AUTO_ESCALATE:
 				return autoEscalate != AUTO_ESCALATE_EDEFAULT;
+			case OrchestrationPackage.TASK__ITERATIVE_MODE:
+				return iterativeMode != ITERATIVE_MODE_EDEFAULT;
+			case OrchestrationPackage.TASK__SELF_ITERATIVE_MODE:
+				return selfIterativeMode != SELF_ITERATIVE_MODE_EDEFAULT;
+			case OrchestrationPackage.TASK__DARWIN_MODE:
+				return darwinMode != DARWIN_MODE_EDEFAULT;
+			case OrchestrationPackage.TASK__GIT_AUTOMATION:
+				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
+			case OrchestrationPackage.TASK__MAX_ITERATIONS:
+				return maxIterations != MAX_ITERATIONS_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1845,17 +1748,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		if (eIsProxy()) return super.toString();
 
 		StringBuilder result = new StringBuilder(super.toString());
-		result.append(" (iterativeMode: ");
-		result.append(iterativeMode);
-		result.append(", selfIterativeMode: ");
-		result.append(selfIterativeMode);
-		result.append(", darwinMode: ");
-		result.append(darwinMode);
-		result.append(", gitAutomation: ");
-		result.append(gitAutomation);
-		result.append(", maxIterations: ");
-		result.append(maxIterations);
-		result.append(", id: ");
+		result.append(" (id: ");
 		result.append(id);
 		result.append(", name: ");
 		result.append(name);
@@ -1903,6 +1796,16 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(feedbackLevel);
 		result.append(", autoEscalate: ");
 		result.append(autoEscalate);
+		result.append(", iterativeMode: ");
+		result.append(iterativeMode);
+		result.append(", selfIterativeMode: ");
+		result.append(selfIterativeMode);
+		result.append(", darwinMode: ");
+		result.append(darwinMode);
+		result.append(", gitAutomation: ");
+		result.append(gitAutomation);
+		result.append(", maxIterations: ");
+		result.append(maxIterations);
 		result.append(')');
 		return result.toString();
 	}

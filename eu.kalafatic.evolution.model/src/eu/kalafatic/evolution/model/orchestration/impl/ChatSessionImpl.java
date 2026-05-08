@@ -32,11 +32,46 @@ import org.eclipse.emf.ecore.util.InternalEList;
  * <ul>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getId <em>Id</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getMessages <em>Messages</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isIterativeMode <em>Iterative Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isSelfIterativeMode <em>Self Iterative Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isDarwinMode <em>Darwin Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isGitAutomation <em>Git Automation</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getMaxIterations <em>Max Iterations</em>}</li>
  * </ul>
  *
  * @generated
  */
 public class ChatSessionImpl extends MinimalEObjectImpl.Container implements ChatSession {
+	/**
+	 * The default value of the '{@link #getId() <em>Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getId()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getId() <em>Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getId()
+	 * @generated
+	 * @ordered
+	 */
+	protected String id = ID_EDEFAULT;
+
+	/**
+	 * The cached value of the '{@link #getMessages() <em>Messages</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMessages()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<ChatMessage> messages;
+
 	/**
 	 * The default value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -45,7 +80,7 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @generated
 	 * @ordered
 	 */
-	protected static final boolean ITERATIVE_MODE_EDEFAULT = false;
+	protected static final boolean ITERATIVE_MODE_EDEFAULT = true;
 
 	/**
 	 * The cached value of the '{@link #isIterativeMode() <em>Iterative Mode</em>}' attribute.
@@ -85,7 +120,7 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @generated
 	 * @ordered
 	 */
-	protected static final boolean DARWIN_MODE_EDEFAULT = false;
+	protected static final boolean DARWIN_MODE_EDEFAULT = true;
 
 	/**
 	 * The cached value of the '{@link #isDarwinMode() <em>Darwin Mode</em>}' attribute.
@@ -125,7 +160,7 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int MAX_ITERATIONS_EDEFAULT = -1;
+	protected static final int MAX_ITERATIONS_EDEFAULT = 1;
 
 	/**
 	 * The cached value of the '{@link #getMaxIterations() <em>Max Iterations</em>}' attribute.
@@ -136,36 +171,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @ordered
 	 */
 	protected int maxIterations = MAX_ITERATIONS_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #getId() <em>Id</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getId()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final String ID_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getId() <em>Id</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getId()
-	 * @generated
-	 * @ordered
-	 */
-	protected String id = ID_EDEFAULT;
-
-	/**
-	 * The cached value of the '{@link #getMessages() <em>Messages</em>}' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getMessages()
-	 * @generated
-	 * @ordered
-	 */
-	protected EList<ChatMessage> messages;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -184,6 +189,42 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.CHAT_SESSION;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getId() {
+		return id;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setId(String newId) {
+		String oldId = id;
+		id = newId;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__ID, oldId, id));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<ChatMessage> getMessages() {
+		if (messages == null) {
+			messages = new EObjectContainmentEList<ChatMessage>(ChatMessage.class, this, OrchestrationPackage.CHAT_SESSION__MESSAGES);
+		}
+		return messages;
 	}
 
 	/**
@@ -307,42 +348,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @generated
 	 */
 	@Override
-	public String getId() {
-		return id;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setId(String newId) {
-		String oldId = id;
-		id = newId;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__ID, oldId, id));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EList<ChatMessage> getMessages() {
-		if (messages == null) {
-			messages = new EObjectContainmentEList<ChatMessage>(ChatMessage.class, this, OrchestrationPackage.CHAT_SESSION__MESSAGES);
-		}
-		return messages;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
@@ -359,6 +364,10 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
+			case OrchestrationPackage.CHAT_SESSION__ID:
+				return getId();
+			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
+				return getMessages();
 			case OrchestrationPackage.CHAT_SESSION__ITERATIVE_MODE:
 				return isIterativeMode();
 			case OrchestrationPackage.CHAT_SESSION__SELF_ITERATIVE_MODE:
@@ -369,10 +378,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return isGitAutomation();
 			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				return getMaxIterations();
-			case OrchestrationPackage.CHAT_SESSION__ID:
-				return getId();
-			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
-				return getMessages();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -386,6 +391,13 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
+			case OrchestrationPackage.CHAT_SESSION__ID:
+				setId((String)newValue);
+				return;
+			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
+				getMessages().clear();
+				getMessages().addAll((Collection<? extends ChatMessage>)newValue);
+				return;
 			case OrchestrationPackage.CHAT_SESSION__ITERATIVE_MODE:
 				setIterativeMode((Boolean)newValue);
 				return;
@@ -401,13 +413,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				setMaxIterations((Integer)newValue);
 				return;
-			case OrchestrationPackage.CHAT_SESSION__ID:
-				setId((String)newValue);
-				return;
-			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
-				getMessages().clear();
-				getMessages().addAll((Collection<? extends ChatMessage>)newValue);
-				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -420,6 +425,12 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
+			case OrchestrationPackage.CHAT_SESSION__ID:
+				setId(ID_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
+				getMessages().clear();
+				return;
 			case OrchestrationPackage.CHAT_SESSION__ITERATIVE_MODE:
 				setIterativeMode(ITERATIVE_MODE_EDEFAULT);
 				return;
@@ -435,12 +446,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				setMaxIterations(MAX_ITERATIONS_EDEFAULT);
 				return;
-			case OrchestrationPackage.CHAT_SESSION__ID:
-				setId(ID_EDEFAULT);
-				return;
-			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
-				getMessages().clear();
-				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -453,6 +458,10 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
+			case OrchestrationPackage.CHAT_SESSION__ID:
+				return ID_EDEFAULT == null ? id != null : !ID_EDEFAULT.equals(id);
+			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
+				return messages != null && !messages.isEmpty();
 			case OrchestrationPackage.CHAT_SESSION__ITERATIVE_MODE:
 				return iterativeMode != ITERATIVE_MODE_EDEFAULT;
 			case OrchestrationPackage.CHAT_SESSION__SELF_ITERATIVE_MODE:
@@ -463,10 +472,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
 			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				return maxIterations != MAX_ITERATIONS_EDEFAULT;
-			case OrchestrationPackage.CHAT_SESSION__ID:
-				return ID_EDEFAULT == null ? id != null : !ID_EDEFAULT.equals(id);
-			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
-				return messages != null && !messages.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}
@@ -481,7 +486,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		if (eIsProxy()) return super.toString();
 
 		StringBuilder result = new StringBuilder(super.toString());
-		result.append(" (iterativeMode: ");
+		result.append(" (id: ");
+		result.append(id);
+		result.append(", iterativeMode: ");
 		result.append(iterativeMode);
 		result.append(", selfIterativeMode: ");
 		result.append(selfIterativeMode);
@@ -491,8 +498,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		result.append(gitAutomation);
 		result.append(", maxIterations: ");
 		result.append(maxIterations);
-		result.append(", id: ");
-		result.append(id);
 		result.append(')');
 		return result.toString();
 	}
