@@ -61,7 +61,8 @@ public class KernelUnitTest {
     @Test
     public void testSimpleChatFlow() throws Exception {
         mockLlm.setResponseSequence(new String[] {
-            "Hello, I am a mock response."
+            "{\"atomic\": false, \"confidence\": 0.1}", // AtomicIntentClassifier LLM validation
+            "Hello, I am a mock response." // GeneralAgent (IterationManager handles SIMPLE_CHAT mode by calling chatAgent directly after atomic check)
         });
 
         IterationManager manager = createManager();
@@ -72,7 +73,9 @@ public class KernelUnitTest {
         var response = manager.handle(request);
 
         assertEquals(ResultType.CHAT, response.getResultType());
-        assertTrue(response.getSummary().contains("mock response"));
+        // Since we refactored to use GeneralAgent, and buildPrompt adds prefixes, we check for containment
+        assertTrue("Response summary should contain mock response, but was: " + response.getSummary(),
+                response.getSummary().contains("mock response"));
         assertEquals(SystemState.DONE, context.getStateHolder().getState());
     }
 
