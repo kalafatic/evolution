@@ -188,7 +188,26 @@ public class ChatGroup extends AEvoGroup {
             try {
                 eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider gitProvider = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
                 List<String> changedFiles = gitProvider.getChangedFiles(projectRoot, "HEAD");
-                JSONArray array = new JSONArray(changedFiles);
+
+                JSONArray array = new JSONArray();
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                for (String fileInfo : changedFiles) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("info", fileInfo);
+
+                    String path = fileInfo;
+                    if (path.length() > 2 && path.charAt(1) == ' ') {
+                        path = path.substring(2);
+                    }
+                    File file = new File(projectRoot, path);
+                    if (file.exists()) {
+                        obj.put("date", sdf.format(new java.util.Date(file.lastModified())));
+                    } else {
+                        obj.put("date", "");
+                    }
+                    array.put(obj);
+                }
+
                 Display.getDefault().asyncExec(() -> {
                     if (browser != null && !browser.isDisposed()) {
                         browser.execute("updateChanges(" + array.toString() + ");");
@@ -838,6 +857,11 @@ public class ChatGroup extends AEvoGroup {
     public void focusWaitingMessage() {
         if (!isLoaded || browser.isDisposed()) return;
         browser.execute("scrollToLastWaiting();");
+    }
+
+    public void selectFile(String path) {
+        if (!isLoaded || browser.isDisposed()) return;
+        browser.execute("if(window.ChatApp && window.ChatApp.Panel) { window.ChatApp.Panel.selectFile('" + path + "'); }");
     }
 
     private void refreshBrowser() {

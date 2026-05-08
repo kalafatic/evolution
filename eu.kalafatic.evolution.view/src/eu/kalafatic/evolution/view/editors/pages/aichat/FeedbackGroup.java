@@ -157,6 +157,7 @@ public class FeedbackGroup extends AEvoGroup {
         for (int i = 0; i < levels.length; i++) {
             final FeedbackLevel level = levels[i];
             levelButtons[i] = SWTFactory.createButton(segmentedControl, level.getName(), SWT.CHECK, SWTFactory.BUTTON_WIDTH);
+            if (level == FeedbackLevel.FULL) levelButtons[i].setSelection(true);
             final int index = i;
             levelButtons[i].addSelectionListener(new SelectionAdapter() {
                 @Override
