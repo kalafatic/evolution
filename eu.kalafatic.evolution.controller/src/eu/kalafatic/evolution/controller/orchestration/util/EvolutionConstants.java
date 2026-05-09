@@ -43,6 +43,7 @@ public final class EvolutionConstants {
     public static final String TASK_FILE = "file";
     public static final String TASK_MAVEN = "maven";
     public static final String TASK_GIT = "git";
+    public static final String TASK_STRUCTURE = "structure";
     public static final String TASK_SHELL = "shell";
     public static final String TASK_TERMINAL = "terminal";
     public static final String TASK_APPROVAL = "approval";

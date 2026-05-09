@@ -166,8 +166,21 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
     private IAgent findAgentForTask(Task task, TaskContext context) {
         String type = task.getType().toLowerCase();
+        String name = task.getName();
+
+        // 1. Prefix-based routing (e.g., "Structure: Analyze project")
+        if (name != null && name.contains(":")) {
+            String prefix = name.substring(0, name.indexOf(":")).trim();
+            IAgent prefixedAgent = AgentFactory.getAgent(prefix);
+            if (prefixedAgent != null) return prefixedAgent;
+        }
+
+        // 2. Type-based routing
         if (type.equals(EvolutionConstants.TASK_FILE)) return AgentFactory.getAgent(EvolutionConstants.AGENT_FILE);
         if (type.equals(EvolutionConstants.TASK_MAVEN)) return AgentFactory.getAgent(EvolutionConstants.AGENT_MAVEN);
+        if (type.equals(EvolutionConstants.TASK_STRUCTURE)) return AgentFactory.getAgent(EvolutionConstants.AGENT_STRUCTURE);
+        if (type.equals(EvolutionConstants.TASK_GIT)) return AgentFactory.getAgent(EvolutionConstants.AGENT_GIT);
+
         return AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
     }
 }

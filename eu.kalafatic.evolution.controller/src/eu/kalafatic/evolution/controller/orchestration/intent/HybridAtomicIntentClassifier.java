@@ -78,7 +78,8 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
 
         // Detect potential target (simplistic: last word if it looks like an identifier or lowercase name after a positive artifact)
         // Refined to better support Windows paths and complex identifiers
-        Pattern targetPattern = Pattern.compile("\\b([a-zA-Z]:\\\\[^\\s:]+|[A-Z][a-zA-Z0-9_]*|[a-z0-9_-]+\\.[a-z0-9]+)\\b");
+        // Improved Windows path support to include trailing backslashes if present
+        Pattern targetPattern = Pattern.compile("\\b([a-zA-Z]:\\\\[^\\s:]*|[A-Z][a-zA-Z0-9_]*|[a-z0-9_-]+\\.[a-z0-9]+)\\b");
         Matcher m = targetPattern.matcher(request);
         int targetCount = 0;
         while (m.find()) {
@@ -147,7 +148,7 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         }
 
         // NEGATIVE SIGNALS
-        List<String> negWording = Arrays.asList("refactor", "redesign", "optimize", "improve", "architecture", "workflow", "system-wide", "autonomous", "analyze project", "entire", "analyze", "investigate", "summarize", "report");
+        List<String> negWording = Arrays.asList("refactor", "redesign", "optimize", "improve", "architecture", "workflow", "system-wide", "autonomous", "analyze project", "entire", "analyze", "investigate", "summarize", "report", "discovery", "audit");
         for (String neg : negWording) {
             if (lower.contains(neg)) {
                 score -= 0.2;
