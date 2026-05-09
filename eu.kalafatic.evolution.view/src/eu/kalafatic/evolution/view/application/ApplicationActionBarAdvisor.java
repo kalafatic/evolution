@@ -212,12 +212,12 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 
 		menu.add(new Separator());
 
-		IAction updateAction = builder.createAction(window, "org.eclipse.equinox.p2.ui.sdk.update");
+		IAction updateAction = builder.createAction(window, "eu.kalafatic.utils.p2.update");
 		if (updateAction != null) {
 			menu.add(updateAction);
 		}
 
-		IAction installAction = builder.createAction(window, "org.eclipse.equinox.p2.ui.sdk.install");
+		IAction installAction = builder.createAction(window, "eu.kalafatic.utils.p2.install");
 		if (installAction != null) {
 			menu.add(installAction);
 		}

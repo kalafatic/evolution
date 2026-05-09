@@ -651,11 +651,11 @@
             name="New AI Session">
       </command>
       <command
-            id="org.eclipse.equinox.p2.ui.sdk.update"
+            id="eu.kalafatic.utils.p2.update"
             name="Check for Updates">
       </command>
       <command
-            id="org.eclipse.equinox.p2.ui.sdk.install"
+            id="eu.kalafatic.utils.p2.install"
             name="Install New Software...">
       </command>
    </extension>
@@ -703,11 +703,11 @@
       </handler>
       <handler
             class="eu.kalafatic.utils.p2.UpdateHandler"
-            commandId="org.eclipse.equinox.p2.ui.sdk.update">
+            commandId="eu.kalafatic.utils.p2.update">
       </handler>
       <handler
             class="eu.kalafatic.utils.p2.InstallHandler"
-            commandId="org.eclipse.equinox.p2.ui.sdk.install">
+            commandId="eu.kalafatic.utils.p2.install">
       </handler>
    </extension>
    <extension
