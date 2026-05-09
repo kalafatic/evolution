@@ -156,7 +156,7 @@ public class IterationManager {
             transition(SystemState.ANALYZING, context);
 
             if (context.getPlatformMode().getType() == PlatformType.HYBRID_MANUAL_EXPORT) {
-                return new eu.kalafatic.evolution.controller.orchestration.flows.MediatedExportFlow(aiService).execute(request, context);
+                return new eu.kalafatic.evolution.controller.orchestration.flows.MediatedExportFlow(aiService, this).execute(request, context);
             }
 
             AtomicIntentAnalysis atomicAnalysis = atomicIntentClassifier.analyze(request, context);
@@ -292,7 +292,7 @@ public class IterationManager {
         return iterativePlan(request, context);
     }
 
-    private void transition(SystemState to, TaskContext ctx) {
+    public void transition(SystemState to, TaskContext ctx) {
         TransitionToken token = new TransitionToken();
         SystemState current = ctx.getStateHolder().getState();
         ctx.getStateHolder().applyTransition(token, to);
