@@ -68,11 +68,18 @@ import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import eu.kalafatic.evolution.view.application.Activator;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.WorkflowStepRegistry;
+import eu.kalafatic.evolution.controller.workflow.WorkflowStep;
+import eu.kalafatic.evolution.controller.workflow.StepModeController;
+import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
 
 /**
  * @evo:16:A reason=darwin-mode-sync
  */
-public class AiChatPage extends AEvoPage {
+public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	private boolean isUpdating = false;
 	private Label modeIndicatorLabel;
 	private ContentProposalAdapter assistAdapter;
@@ -118,9 +125,11 @@ public class AiChatPage extends AEvoPage {
 		super(parent, editor, orchestrator);
 		initResources();
 		createControl();
+		RuntimeEventBus.getInstance().subscribe(this);
 		addDisposeListener(new DisposeListener() {
 			@Override
 			public void widgetDisposed(DisposeEvent e) {
+				RuntimeEventBus.getInstance().unsubscribe(AiChatPage.this);
 				if (chatFont != null && !chatFont.isDisposed()) chatFont.dispose();
 				if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
 				if (colorWaiting != null && !colorWaiting.isDisposed()) colorWaiting.dispose();
@@ -411,6 +420,18 @@ public class AiChatPage extends AEvoPage {
 			}
 		}
 
+		// Check for active steps in Step Mode
+		WorkflowStep activeStep = WorkflowStepRegistry.getInstance().getActiveStepForSession(getCurrentSessionName());
+		if (activeStep != null && activeStep.getStatus() == WorkflowStatus.WAITING_USER) {
+			String lower = request.toLowerCase().trim();
+			if (lower.isEmpty() || lower.equals("next") || lower.equals("continue") || lower.equals("approve") || lower.equals("yes") || lower.equals("y")) {
+				instructionsGroup.setOrchestrationRunning(true);
+				StepModeController.getInstance().resumeStep(activeStep.getId(), WorkflowStatus.COMPLETED);
+				instructionsGroup.setRequest("");
+				return;
+			}
+		}
+
 		if (isWaiting) {
 			String lower = request.toLowerCase().trim();
 
@@ -492,6 +513,7 @@ public class AiChatPage extends AEvoPage {
 		TaskContext context = new TaskContext(orchestrator, getProjectRoot());
 		context.setSessionId(sessionId);
 		state.currentContext = context;
+		editor.setCurrentContext(context);
 
 		context.addLogListener(log -> Display.getDefault().asyncExec(() -> {
 			if (!chatGroup.isDisposed()) {
@@ -795,6 +817,7 @@ public class AiChatPage extends AEvoPage {
 				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
 				context.setPlatformMode(new eu.kalafatic.evolution.controller.orchestration.ModeRouter().route(finalRequest, orchestrator));
 				state.currentContext = context;
+				Display.getDefault().asyncExec(() -> editor.setCurrentContext(context));
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) processLogEntry(log, sessionId); }));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
 					if (!sessionId.equals(getCurrentSessionName())) return;
@@ -1352,6 +1375,34 @@ public class AiChatPage extends AEvoPage {
 		assistAdapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_INSERT);
 		assistAdapter.setAutoActivationDelay(100);
 		assistAdapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyz/".toCharArray());
+	}
+
+	@Override
+	public void onEvent(RuntimeEvent event) {
+		String sessionId = event.getSessionId();
+		if (sessionId == null || !sessionId.equals(getCurrentSessionName())) return;
+
+		Display.getDefault().asyncExec(() -> {
+			if (isDisposed()) return;
+			switch (event.getType()) {
+				case STEP_WAITING:
+					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
+						modeIndicatorLabel.setText("WAITING FOR STEP APPROVAL...");
+						modeIndicatorLabel.setBackground(colorWaiting);
+					}
+					instructionsGroup.setOrchestrationRunning(false);
+					instructionsGroup.focusAndHighlight(colorLightOrange, null);
+					break;
+				case STEP_RESUMED:
+					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
+						updateModeDisplay();
+					}
+					instructionsGroup.setOrchestrationRunning(true);
+					break;
+				default:
+					break;
+			}
+		});
 	}
 
 	public void testAiConnectionRemote(int modeIndex, String remoteModel, String token, String apiUrl) {
