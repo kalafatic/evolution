@@ -35,6 +35,7 @@ import eu.kalafatic.evolution.controller.orchestration.export.PromptOptimizer;
 import eu.kalafatic.evolution.controller.orchestration.export.SelfDevRequestAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
@@ -419,9 +420,22 @@ public class IterationManager {
                     // But here we might want to ensure we know which variant was approved if we want to prune others early.
                     // For now, the evaluateVariantsInternal will handle all generated variants.
                 } else if ("Rejected".equalsIgnoreCase(input)) {
-                    throw new Exception("Darwin variants rejected by user.");
+                    recordRejection(goal, "Darwin variants rejected by user.");
+                    EvaluationResult res = failedResult();
+                    res.setDecision(SelfDevDecision.CONTINUE);
+                    currentIterationModel.setEvaluationResult(res);
+                    transition(SystemState.FAILED, context);
+                    return res;
                 }
-                context.requestApproval("Darwin generated " + variants.size() + " variants.").get();
+                Boolean approved = context.requestApproval("Darwin generated " + variants.size() + " variants.").get();
+                if (approved != null && !approved) {
+                    recordRejection(goal, "Darwin variants rejected by user (Approval denied).");
+                    EvaluationResult res = failedResult();
+                    res.setDecision(SelfDevDecision.CONTINUE);
+                    currentIterationModel.setEvaluationResult(res);
+                    transition(SystemState.FAILED, context);
+                    return res;
+                }
             }
             transition(SystemState.PLAN_LOCKED, context);
             gitManager.forceCheckout(snapshotBranch);
@@ -518,6 +532,23 @@ public class IterationManager {
         res.setSuccess(false);
         res.setDecision(SelfDevDecision.ROLLBACK);
         return res;
+    }
+
+    private void recordRejection(String goal, String message) {
+        IterationRecord record = new IterationRecord();
+        int iterNum = 0;
+        try {
+            if (currentIterationModel != null) {
+                iterNum = Integer.parseInt(currentIterationModel.getId().replace("iteration-", ""));
+            }
+        } catch (Exception e) {}
+        record.setIteration(iterNum);
+        record.setGoal(goal);
+        record.setStrategy("Darwin Variant Selection");
+        record.setResult("FAIL");
+        record.setErrorMessage(message);
+        record.setTimestamp(System.currentTimeMillis());
+        memoryService.saveRecord(record);
     }
 
     private void deleteDirectory(File directory) {
