@@ -36,6 +36,7 @@ public class TaskEditDialog extends Dialog {
     private Button selfIterativeCheck;
     private Button darwinCheck;
     private Button autoGitCheck;
+    private Button stepModeCheck;
     private Text maxIterationsText;
     private ListViewer attachmentsViewer;
     private List<String> attachmentsList;
@@ -86,25 +87,34 @@ public class TaskEditDialog extends Dialog {
         createLabel(container, "Description:");
         descriptionText = createText(container, task.getDescription() != null ? task.getDescription() : "");
 
-        createLabel(container, "Approval Required:");
-        approvalCheck = new Button(container, SWT.CHECK);
+        createLabel(container, "Execution Controls:");
+        Composite controlsComp = new Composite(container, SWT.NONE);
+        controlsComp.setLayout(new GridLayout(3, true));
+        controlsComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        approvalCheck = new Button(controlsComp, SWT.CHECK);
+        approvalCheck.setText("Approval Required");
         approvalCheck.setSelection(task.isApprovalRequired());
 
-        createLabel(container, "Iterative Mode:");
-        iterativeCheck = new Button(container, SWT.CHECK);
+        iterativeCheck = new Button(controlsComp, SWT.CHECK);
+        iterativeCheck.setText("Iterative Mode");
         iterativeCheck.setSelection(task.isIterativeMode());
 
-        createLabel(container, "Self-Iterative (Self-Dev):");
-        selfIterativeCheck = new Button(container, SWT.CHECK);
+        selfIterativeCheck = new Button(controlsComp, SWT.CHECK);
+        selfIterativeCheck.setText("Self-Dev Mode");
         selfIterativeCheck.setSelection(task.isSelfIterativeMode());
 
-        createLabel(container, "Darwin Mode:");
-        darwinCheck = new Button(container, SWT.CHECK);
+        darwinCheck = new Button(controlsComp, SWT.CHECK);
+        darwinCheck.setText("Darwin Mode");
         darwinCheck.setSelection(task.isDarwinMode());
 
-        createLabel(container, "Git Automation:");
-        autoGitCheck = new Button(container, SWT.CHECK);
+        autoGitCheck = new Button(controlsComp, SWT.CHECK);
+        autoGitCheck.setText("Git Automation");
         autoGitCheck.setSelection(task.isGitAutomation());
+
+        stepModeCheck = new Button(controlsComp, SWT.CHECK);
+        stepModeCheck.setText("Step Mode");
+        stepModeCheck.setSelection(task.isStepMode());
 
         createLabel(container, "Max Iterations:");
         maxIterationsText = createText(container, String.valueOf(task.getMaxIterations()));
@@ -175,6 +185,7 @@ public class TaskEditDialog extends Dialog {
         task.setSelfIterativeMode(selfIterativeCheck.getSelection());
         task.setDarwinMode(darwinCheck.getSelection());
         task.setGitAutomation(autoGitCheck.getSelection());
+        task.setStepMode(stepModeCheck.getSelection());
         try {
             task.setMaxIterations(Integer.parseInt(maxIterationsText.getText()));
         } catch (NumberFormatException e) {}

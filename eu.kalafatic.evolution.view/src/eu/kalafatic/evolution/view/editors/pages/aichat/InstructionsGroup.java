@@ -70,24 +70,26 @@ public class InstructionsGroup extends AEvoGroup {
         attachmentArea.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Composite composite = toolkit.createComposite(group);
-        org.eclipse.swt.layout.GridLayout compLayout = new org.eclipse.swt.layout.GridLayout(11, false);
-        compLayout.marginHeight = 0; compLayout.marginWidth = 0;
-        compLayout.numColumns = 12;
-        composite.setLayout(compLayout);
+        composite.setLayout(new org.eclipse.swt.layout.GridLayout(2, false));
         composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        sendButton = toolkit.createButton(composite, "▶️ Send", SWT.PUSH);
+        // Left side: Buttons
+        Composite btnComp = toolkit.createComposite(composite);
+        btnComp.setLayout(new org.eclipse.swt.layout.GridLayout(4, false));
+        btnComp.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+
+        sendButton = toolkit.createButton(btnComp, "▶️ Send", SWT.PUSH);
         GridData sendGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
-        sendGd.widthHint = 70;
+        sendGd.widthHint = 80;
         sendGd.heightHint = 28;
         sendButton.setLayoutData(sendGd);
         sendButton.setBackground(lightGreen);
         sendButton.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
         sendButton.setToolTipText("Start a classic, iterative or autonomous iterative self-development session to improve the codebase.");
 
-        pauseButton = toolkit.createButton(composite, "⏸️ Pause", SWT.PUSH);
+        pauseButton = toolkit.createButton(btnComp, "⏸️ Pause", SWT.PUSH);
         GridData actionGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
-        actionGd.widthHint = 70;
+        actionGd.widthHint = 80;
         actionGd.heightHint = 28;
         pauseButton.setLayoutData(actionGd);
         pauseButton.setEnabled(true);
@@ -98,7 +100,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        stopButton = toolkit.createButton(composite, "⏹️ Stop", SWT.PUSH);
+        stopButton = toolkit.createButton(btnComp, "⏹️ Stop", SWT.PUSH);
         stopButton.setLayoutData(actionGd);
         stopButton.setEnabled(true);
         stopButton.addSelectionListener(new SelectionAdapter() {
@@ -108,7 +110,15 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        iterativeCheck = toolkit.createButton(composite, "Iterative", SWT.CHECK);
+        attachButton = toolkit.createButton(btnComp, "\ud83d\udcce" + "Attach MD", SWT.PUSH);
+        attachButton.setLayoutData(actionGd);
+
+        // Right side: Checkboxes and Spinners
+        Composite settingsComp = toolkit.createComposite(composite);
+        settingsComp.setLayout(new org.eclipse.swt.layout.GridLayout(3, false));
+        settingsComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        iterativeCheck = toolkit.createButton(settingsComp, "Iterative", SWT.CHECK);
         iterativeCheck.setSelection(true);
         iterativeCheck.setToolTipText("Enable iterative development based on your prompt.");
         iterativeCheck.addSelectionListener(new SelectionAdapter() {
@@ -118,7 +128,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        selfIterativeCheck = toolkit.createButton(composite, "Self Development", SWT.CHECK);
+        selfIterativeCheck = toolkit.createButton(settingsComp, "Self Development", SWT.CHECK);
         selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");
         selfIterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -131,7 +141,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        darwinCheck = toolkit.createButton(composite, "Darwin", SWT.CHECK);
+        darwinCheck = toolkit.createButton(settingsComp, "Darwin", SWT.CHECK);
         darwinCheck.setSelection(true);
         darwinCheck.setToolTipText("Enable Darwin style iterations (multiple branches, survival of the fittest).");
         darwinCheck.addSelectionListener(new SelectionAdapter() {
@@ -141,7 +151,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        autoApproveCheck = toolkit.createButton(composite, "Auto-Approve", SWT.CHECK);
+        autoApproveCheck = toolkit.createButton(settingsComp, "Auto-Approve", SWT.CHECK);
         autoApproveCheck.setToolTipText("Automatically approve plans and file deletions.");
         autoApproveCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -150,7 +160,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        gitAutomationCheck = toolkit.createButton(composite, "Auto-Git", SWT.CHECK);
+        gitAutomationCheck = toolkit.createButton(settingsComp, "Auto-Git", SWT.CHECK);
         gitAutomationCheck.setToolTipText("Automatically create branches and commit changes.");
         gitAutomationCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -159,7 +169,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        stepModeCheck = toolkit.createButton(composite, "Step Mode", SWT.CHECK);
+        stepModeCheck = toolkit.createButton(settingsComp, "Step Mode", SWT.CHECK);
         stepModeCheck.setToolTipText("Enable step-by-step execution control in the workflow graph.");
         stepModeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -168,8 +178,14 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        toolkit.createLabel(composite, "Max Iterations:");
-        maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(composite, SWT.BORDER);
+        Composite iterComp = toolkit.createComposite(settingsComp);
+        iterComp.setLayout(new org.eclipse.swt.layout.GridLayout(2, false));
+        GridData iterGd = new GridData(SWT.FILL, SWT.CENTER, true, false);
+        iterGd.horizontalSpan = 3;
+        iterComp.setLayoutData(iterGd);
+
+        toolkit.createLabel(iterComp, "Max Iterations:");
+        maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(iterComp, SWT.BORDER);
         maxIterationsSpinner.setMinimum(1);
         maxIterationsSpinner.setMaximum(100);
         maxIterationsSpinner.setIncrement(1);
@@ -180,7 +196,6 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        attachButton = toolkit.createButton(composite, "\ud83d\udcce" + "Attach MD", SWT.PUSH);
         attachButton.setToolTipText("Add External Instructions (.md)");
         attachButton.addSelectionListener(new SelectionAdapter() {
             @Override

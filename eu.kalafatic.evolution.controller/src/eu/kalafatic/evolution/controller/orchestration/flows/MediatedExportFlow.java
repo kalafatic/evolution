@@ -6,14 +6,17 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.controller.orchestration.export.*;
 import eu.kalafatic.evolution.controller.workflow.*;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 
 public class MediatedExportFlow implements IOrchestrationFlow {
     private final AiService aiService;
+    private final IterationManager manager;
 
-    public MediatedExportFlow(AiService aiService) {
+    public MediatedExportFlow(AiService aiService, IterationManager manager) {
         this.aiService = aiService;
+        this.manager = manager;
     }
 
     @Override
@@ -24,11 +27,21 @@ public class MediatedExportFlow implements IOrchestrationFlow {
         // Temporarily force LOCAL mode for automated preparation steps
         eu.kalafatic.evolution.model.orchestration.AiMode originalMode = context.getOrchestrator().getAiMode();
         context.getOrchestrator().setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.LOCAL);
+        // Mediation suppression for internal preparation steps
+        AiMode originalMode = context.getOrchestrator().getAiMode();
+        boolean mediated = originalMode == AiMode.MEDIATED;
+        if (mediated) {
+            context.log("[KERNEL] Temporarily suppressing MEDIATED mode for internal prep.");
+            context.getOrchestrator().setAiMode(AiMode.LOCAL);
+        }
 
         try {
             return executeInternal(request, context);
         } finally {
             context.getOrchestrator().setAiMode(originalMode);
+            if (mediated) {
+                context.getOrchestrator().setAiMode(originalMode);
+            }
         }
     }
 
@@ -43,7 +56,7 @@ public class MediatedExportFlow implements IOrchestrationFlow {
 
             SelfDevRequestAnalyzer analyzer = new SelfDevRequestAnalyzer();
             analysis = analyzer.analyze(request, context);
-            context.getStateHolder().applyTransition(new TransitionToken(), SystemState.EXPORTING);
+            manager.transition(SystemState.EXPORTING, context);
 
             if (checkStep(context, "mediated_flow", "ANALYSIS", "Verify export analysis and file selection.") == WorkflowStatus.RETRY) {
                 context.getOrchestrator().getTasks().remove(analysisTask);
@@ -121,7 +134,7 @@ public class MediatedExportFlow implements IOrchestrationFlow {
         String summary = "### Export Complete\n\nLocation: `" + zipFile.getAbsolutePath() + "`";
         response.setSummary(summary);
         response.setContent(summary);
-        context.getStateHolder().applyTransition(new TransitionToken(), SystemState.DONE);
+        manager.transition(SystemState.DONE, context);
         return response;
     }
 
