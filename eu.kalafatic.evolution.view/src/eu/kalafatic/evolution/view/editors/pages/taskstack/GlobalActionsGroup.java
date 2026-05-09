@@ -8,11 +8,13 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 
@@ -90,8 +92,19 @@ public class GlobalActionsGroup extends AEvoGroup {
         Button executeBtn = SWTFactory.createButton(compositeRemote, "Execute Selected", 150);
         executeBtn.addSelectionListener(new SelectionAdapter() {
             @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.executeSelected();
+            public void widgetSelected(SelectionEvent e) {  
+            	try {
+					TreeItem[] items = page.getTaskStackGroup().getTreeViewer().getTree().getItems();
+					for (TreeItem item : items) {
+						if (item.getChecked()) {
+							orchestrator.getTasks().add((Task) item.getData());
+						}            		
+					    System.out.println("Task: " + item.getText() + " - Selected: " + item.getChecked());				    
+					} 
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				page.executeSelected();
             }
         });
 

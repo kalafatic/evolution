@@ -406,13 +406,9 @@ public class TaskStackGroup extends AEvoGroup {
                 return treeViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_BLUE);
             }
         });
-
-       
-
-       
-       
     }
-
+   
+    
     private org.eclipse.swt.graphics.Color getStatusColor(TaskStatus status) {
         int color = SWT.COLOR_BLACK;
         switch (status) {
@@ -547,4 +543,8 @@ public class TaskStackGroup extends AEvoGroup {
         }
         public String getSelectedDate() { return selectedDate; }
     }
+
+	public CheckboxTreeViewer getTreeViewer() {
+		return treeViewer;
+	}
 }

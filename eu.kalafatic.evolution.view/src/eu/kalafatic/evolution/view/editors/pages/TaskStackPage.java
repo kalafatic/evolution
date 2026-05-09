@@ -327,4 +327,8 @@ public class TaskStackPage extends AEvoPage {
     // Compatibility methods
     public void registerTaskRow(Task task, org.eclipse.swt.widgets.Button check, org.eclipse.swt.widgets.Text nameText, org.eclipse.swt.widgets.Text timeText, org.eclipse.swt.widgets.Label statusLabel) {}
     public void registerTaskRowCheck(Task task, org.eclipse.swt.widgets.Button check) {}
+
+	public TaskStackGroup getTaskStackGroup() {
+		return taskStackGroup;
+	}
 }

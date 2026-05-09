@@ -72,6 +72,8 @@ public class VizGroup extends AEvoGroup {
 		browser = SWTFactory.createBrowser(browserContainer,700);
           
             page.setupBrowserListeners(browser);
+            
+            
         } catch (Exception e) {
             toolkit.createLabel(browserContainer, "Browser not supported: " + e.getMessage());
         }

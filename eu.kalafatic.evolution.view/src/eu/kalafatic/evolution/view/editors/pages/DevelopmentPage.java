@@ -42,6 +42,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup;
 import eu.kalafatic.evolution.view.editors.pages.development.VizGroup;
 import eu.kalafatic.evolution.view.editors.pages.iteration.SelfDevEditDialog;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
@@ -74,7 +75,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
     private java.util.Timer pollTimer;
 
     private VizGroup vizGroup;
-    private eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup workflowGroup;
+    private InteractiveWorkflowGroup workflowGroup;
     private ArchitecturePage archViz;
     private boolean isLoaded = false;
     private int initRetries = 0;
@@ -195,6 +196,13 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         archViz = new ArchitecturePage(archComp, editor, orchestrator);
 
         this.setContent(container);
+        
+        Display.getCurrent().asyncExec(() -> {
+			if (!isDisposed()) {
+				refreshBrowser();
+				container.layout(true, true);
+			}
+		});
     }
 
     private void createSelfDevColumns() {
