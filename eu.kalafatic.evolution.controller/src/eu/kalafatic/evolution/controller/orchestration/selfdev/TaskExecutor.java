@@ -12,12 +12,13 @@ public class TaskExecutor {
     private final TaskContext context;
 
     public TaskExecutor(TaskContext context) {
-        this(context, new EvolutionOrchestrator());
+        this.context = context;
+        this.orchestrator = new EvolutionOrchestrator();
     }
 
-    public TaskExecutor(TaskContext context, EvolutionOrchestrator orchestrator) {
+    public TaskExecutor(TaskContext context, eu.kalafatic.evolution.model.orchestration.Orchestrator orchestrator) {
         this.context = context;
-        this.orchestrator = orchestrator;
+        this.orchestrator = (orchestrator instanceof EvolutionOrchestrator) ? (EvolutionOrchestrator) orchestrator : new EvolutionOrchestrator();
     }
 
     public EvolutionOrchestrator getOrchestrator() {
