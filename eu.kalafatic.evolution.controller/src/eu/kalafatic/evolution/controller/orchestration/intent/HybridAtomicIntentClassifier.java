@@ -76,7 +76,8 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         }
 
         // Detect potential target (simplistic: last word if it looks like an identifier or lowercase name after a positive artifact)
-        Pattern targetPattern = Pattern.compile("\\b([A-Z][a-zA-Z0-9_]*|[a-z0-9_-]+\\.[a-z0-9]+)\\b");
+        // Refined to better support Windows paths and complex identifiers
+        Pattern targetPattern = Pattern.compile("\\b([a-zA-Z]:\\\\[^\\s:]+|[A-Z][a-zA-Z0-9_]*|[a-z0-9_-]+\\.[a-z0-9]+)\\b");
         Matcher m = targetPattern.matcher(request);
         int targetCount = 0;
         while (m.find()) {

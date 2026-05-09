@@ -243,12 +243,19 @@ public class IterationManager {
             }
 
             String analyzedRequest = analysis.optString("refinedPrompt", request);
+            String category = analysis.optString("category", "CODING").toUpperCase();
 
             if (context.getPlatformMode().getType() == PlatformType.DARWIN_MODE || context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
-                EvaluationResult res = runDarwin();
-                response.setSummary("Darwin evolution completed.");
-                transition(SystemState.DONE, context);
-                return response;
+                // Gate Darwin mode: Only run for CODING or TOOL_USE tasks.
+                // RESEARCH/CHAT tasks should use the structured iterative planning flow.
+                if ("CODING".equals(category) || "TOOL_USE".equals(category)) {
+                    EvaluationResult res = runDarwin();
+                    response.setSummary("Darwin evolution completed.");
+                    transition(SystemState.DONE, context);
+                    return response;
+                } else {
+                    context.log("[KERNEL] Bypassing Darwin loop for " + category + " task. Using Iterative Planning.");
+                }
             }
 
             List<Task> tasks = decideFlow(analyzedRequest, context);
