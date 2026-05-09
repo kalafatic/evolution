@@ -10,10 +10,15 @@ public class SupervisorManager {
 
     public SupervisorManager(TaskContext context) {
         this.context = context;
-        this.controller = new SelfDevBootstrapController(context.getProjectRoot(), context.getOrchestrator());
+        if (context != null) {
+            this.controller = new SelfDevBootstrapController(context.getProjectRoot(), context.getOrchestrator());
+        } else {
+            this.controller = null;
+        }
     }
 
     public void start() throws java.io.IOException {
+        if (controller == null) throw new java.io.IOException("Cannot start supervisor: No active task context.");
         controller.startBootstrap();
         publishStatus("STARTING");
         RuntimeEventBus.getInstance().publish(new RuntimeEvent(
@@ -21,11 +26,12 @@ public class SupervisorManager {
     }
 
     public void stop() {
-        controller.stopBootstrap();
+        if (controller != null) controller.stopBootstrap();
         publishStatus("STOPPED");
     }
 
     public void updateStatus() {
+        if (controller == null) return;
         JSONObject status = controller.getStatus();
         if (status != null) {
             String phase = status.optString("phase", "UNKNOWN");
@@ -34,9 +40,10 @@ public class SupervisorManager {
     }
 
     private void publishStatus(String status) {
+        String sid = context != null ? context.getSessionId() : "Default";
         RuntimeEventBus.getInstance().publish(new RuntimeEvent(
             RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
-            context.getSessionId(),
+            sid,
             "SupervisorManager",
             status
         ));
