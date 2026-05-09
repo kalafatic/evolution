@@ -80,12 +80,12 @@ import eu.kalafatic.evolution.view.views.EvoNavigator;
 public class MultiPageEditor extends MultiPageEditorPart {
 
     public static final String ID = "eu.kalafatic.evolution.view.editors.MultiPageEditor";
+    
     private TextEditor textEditor;
     private AiChatPage aiChatPage;
     private ArchitecturePage architecturePage;
     private PropertiesPage propertiesPage;
-    private McpSettingsPage mcpSettingsPage;
-    private PreviewPage previewPage;
+    private McpSettingsPage mcpSettingsPage;   
     private GraphPage graphPage;
     private BrowserPage browserPage;
     private AiFlowPage aiFlowPage;
@@ -206,8 +206,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 setPageText(index, "Editor");
 
                 propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
-                mcpSettingsPage = McpSettingsPageFactory.createMcpSettingsPage(this, orchestrator);
-                previewPage = PreviewPageFactory.createPreviewPage(this, orchestrator);
+                mcpSettingsPage = McpSettingsPageFactory.createMcpSettingsPage(this, orchestrator);              
                 browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
                 aiFlowPage = AiFlowPageFactory.createAiFlowPage(this, orchestrator);
                 approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
@@ -392,7 +391,6 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (architecturePage != null) architecturePage.setOrchestrator(orchestrator);
         if (propertiesPage != null) propertiesPage.setOrchestrator(orchestrator);
         if (mcpSettingsPage != null) mcpSettingsPage.setOrchestrator(orchestrator);
-        if (previewPage != null) previewPage.setOrchestrator(orchestrator);
         if (graphPage != null) graphPage.setOrchestrator(orchestrator);
         if (browserPage != null) browserPage.setOrchestrator(orchestrator);
         if (aiFlowPage != null) aiFlowPage.setOrchestrator(orchestrator);
@@ -573,9 +571,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         }
 
         Control control = getControl(newPageIndex);
-        if (control == previewPage && previewPage != null) {
-            previewPage.sortWords();
-        } else if (control == comparePage && comparePage != null) {
+        if (control == comparePage && comparePage != null) {
             refreshComparePage();
         } else if (control == architecturePage && architecturePage != null) {
             architecturePage.scheduleRefresh();

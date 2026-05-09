@@ -42,7 +42,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.editors.pages.approval.VizGroup;
+import eu.kalafatic.evolution.view.editors.pages.development.VizGroup;
 import eu.kalafatic.evolution.view.editors.pages.iteration.SelfDevEditDialog;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
@@ -190,7 +190,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         Composite archComp = toolkit.createComposite(archGroup);
         archComp.setLayout(new org.eclipse.swt.layout.FillLayout());
         GridData archGd = new GridData(GridData.FILL_BOTH);
-        archGd.heightHint = 800;
+        archGd.minimumHeight = 800;
         archComp.setLayoutData(archGd);
         archViz = new ArchitecturePage(archComp, editor, orchestrator);
 

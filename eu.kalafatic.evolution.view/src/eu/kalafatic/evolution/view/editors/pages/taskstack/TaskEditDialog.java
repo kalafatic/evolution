@@ -4,6 +4,8 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ListViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -12,12 +14,14 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.window.Window;
 
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
+import eu.kalafatic.evolution.view.factories.SWTFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,9 +41,10 @@ public class TaskEditDialog extends Dialog {
     private Button darwinCheck;
     private Button autoGitCheck;
     private Button stepModeCheck;
-    private Text maxIterationsText;
+ 
     private ListViewer attachmentsViewer;
     private List<String> attachmentsList;
+	private Spinner maxIterationsSpinner;
 
     public TaskEditDialog(Shell parentShell, Task task, TaskStackPage page) {
         super(parentShell);
@@ -59,13 +64,13 @@ public class TaskEditDialog extends Dialog {
         Composite container = (Composite) super.createDialogArea(parent);
         container.setLayout(new GridLayout(2, false));      
         GridData gridData = new GridData();
-        gridData.widthHint = 600;
+        gridData.widthHint = 700;
         container.setLayoutData(gridData);
         
-        createLabel(container, "Name:");
+        SWTFactory.createLabel(container, "Name:");
         nameText = createText(container, task.getName());
 
-        createLabel(container, "Type:");
+        SWTFactory.createLabel(container, "Type:");
         typeCombo = new Combo(container, SWT.READ_ONLY);
         typeCombo.setItems(new String[]{"chat", "coding", "llm", "file", "shell", "git", "maven", "approval"});
         typeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -74,22 +79,22 @@ public class TaskEditDialog extends Dialog {
             typeCombo.setText(type);
         }
 
-        createLabel(container, "Prompt:");
+        SWTFactory.createLabel(container, "Prompt:");
         promptText = new Text(container, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
         GridData gdPrompt = new GridData(GridData.FILL_BOTH);
         gdPrompt.heightHint = 100;
         promptText.setLayoutData(gdPrompt);
         promptText.setText(task.getPrompt() != null ? task.getPrompt() : "");
 
-        createLabel(container, "Goal:");
+        SWTFactory.createLabel(container, "Goal:");
         goalText = createText(container, task.getGoal() != null ? task.getGoal() : "");
 
-        createLabel(container, "Description:");
+        SWTFactory.createLabel(container, "Description:");
         descriptionText = createText(container, task.getDescription() != null ? task.getDescription() : "");
 
-        createLabel(container, "Execution Controls:");
+        SWTFactory.createLabel(container, "Execution Controls:");
         Composite controlsComp = new Composite(container, SWT.NONE);
-        controlsComp.setLayout(new GridLayout(3, true));
+        controlsComp.setLayout(new GridLayout(4, true));
         controlsComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         approvalCheck = new Button(controlsComp, SWT.CHECK);
@@ -115,25 +120,35 @@ public class TaskEditDialog extends Dialog {
         stepModeCheck = new Button(controlsComp, SWT.CHECK);
         stepModeCheck.setText("Step Mode");
         stepModeCheck.setSelection(task.isStepMode());
+        
+        SWTFactory.createLabel(controlsComp, "Max Iterations:");
+        
+        maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(controlsComp, SWT.BORDER);
+        maxIterationsSpinner.setMinimum(1);
+        maxIterationsSpinner.setMaximum(100);
+        maxIterationsSpinner.setIncrement(1);
+        maxIterationsSpinner.setSelection(task.getMaxIterations());
+        maxIterationsSpinner.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+            	task.setMaxIterations(maxIterationsSpinner.getSelection());
+            }
+        });
+        
+        
+       
 
-        createLabel(container, "Max Iterations:");
-        maxIterationsText = createText(container, String.valueOf(task.getMaxIterations()));
-
-        createLabel(container, "Attachments:");
-        Composite attachComp = new Composite(container, SWT.NONE);
-        attachComp.setLayout(new GridLayout(2, false));
-        attachComp.setLayoutData(new GridData(GridData.FILL_BOTH));
+        SWTFactory.createLabel(container, "Attachments:");
+        Composite attachComp = SWTFactory.createComposite(container, SWT.NONE, 2);
 
         attachmentsViewer = new ListViewer(attachComp, SWT.BORDER | SWT.V_SCROLL);
         attachmentsViewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
         attachmentsViewer.setContentProvider(ArrayContentProvider.getInstance());
         attachmentsViewer.setInput(attachmentsList);
 
-        Composite btnComp = new Composite(attachComp, SWT.NONE);
-        btnComp.setLayout(new GridLayout(1, false));
+        Composite btnComp = SWTFactory.createComposite(attachComp);
 
-        Button addBtn = new Button(btnComp, SWT.PUSH);
-        addBtn.setText("Add");
+        Button addBtn = SWTFactory.createButton(btnComp, "Add");
         addBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -145,8 +160,7 @@ public class TaskEditDialog extends Dialog {
             }
         });
 
-        Button removeBtn = new Button(btnComp, SWT.PUSH);
-        removeBtn.setText("Remove");
+        Button removeBtn =SWTFactory.createButton(btnComp, "Remove");
         removeBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -159,11 +173,6 @@ public class TaskEditDialog extends Dialog {
         });
 
         return container;
-    }
-
-    private void createLabel(Composite parent, String text) {
-        Label label = new Label(parent, SWT.NONE);
-        label.setText(text);
     }
 
     private Text createText(Composite parent, String initialValue) {
@@ -187,7 +196,7 @@ public class TaskEditDialog extends Dialog {
         task.setGitAutomation(autoGitCheck.getSelection());
         task.setStepMode(stepModeCheck.getSelection());
         try {
-            task.setMaxIterations(Integer.parseInt(maxIterationsText.getText()));
+            task.setMaxIterations(maxIterationsSpinner.getSelection());
         } catch (NumberFormatException e) {}
         task.getAttachments().clear();
         task.getAttachments().addAll(attachmentsList);

@@ -38,8 +38,13 @@ import eu.kalafatic.evolution.controller.manager.OllamaService;
 public class SWTFactory {
 
 	public static final int LABEL_WIDTH = 130;
+	public static final int BUTTON_HEIGHT = 20;
 	public static final int BUTTON_WIDTH = 100;
 
+	public static Composite createComposite(Composite parent) {
+		return createComposite(parent,1 ) ;
+	}
+	
 	public static Composite createComposite(Composite parent, int columns) {
 		Composite container = new Composite(parent, SWT.NONE);
 		container.setLayout(new GridLayout(columns, false));
@@ -85,6 +90,15 @@ public class SWTFactory {
 		return label;
 	}
 
+	public static Label createLabel(Composite parent, String text, int style, int widthHint) {
+		GridData gd = new GridData();
+		gd.widthHint = widthHint;
+		Label label = new Label(parent, style);
+		label.setLayoutData(gd);
+		label.setText(text);
+		return label;
+	}
+	
 	public static Button createButton(Composite parent, String text) {
 		return createButton(parent, text, BUTTON_WIDTH);
 	}
@@ -97,12 +111,19 @@ public class SWTFactory {
 		btn.setText(text);
 		return btn;
 	}
+		
 	
 	public static Button createButton(Composite parent, String text, int style, int widthHint) {
 		GridData gd = new GridData();
 		gd.widthHint = widthHint;
 		Button btn = new Button(parent,style);
 		btn.setLayoutData(gd);
+		btn.setText(text);
+		return btn;
+	}
+	
+	public static Button createCheckButton(Composite parent, String text) {
+		Button btn = new Button(parent,SWT.CHECK);		
 		btn.setText(text);
 		return btn;
 	}

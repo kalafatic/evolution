@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view.editors.pages.approval;
+package eu.kalafatic.evolution.view.editors.pages.development;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
