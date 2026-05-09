@@ -37,6 +37,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isDarwinMode <em>Darwin Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getMaxIterations <em>Max Iterations</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isStepMode <em>Step Mode</em>}</li>
  * </ul>
  *
  * @generated
@@ -173,12 +174,55 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	protected int maxIterations = MAX_ITERATIONS_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #isStepMode() <em>Step Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isStepMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean STEP_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isStepMode() <em>Step Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isStepMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean stepMode = STEP_MODE_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	protected ChatSessionImpl() {
 		super();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isStepMode() {
+		return stepMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setStepMode(boolean newStepMode) {
+		boolean oldStepMode = stepMode;
+		stepMode = newStepMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__STEP_MODE, oldStepMode, stepMode));
 	}
 
 	/**
@@ -378,6 +422,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return isGitAutomation();
 			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				return getMaxIterations();
+			case OrchestrationPackage.CHAT_SESSION__STEP_MODE:
+				return isStepMode();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -413,6 +459,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				setMaxIterations((Integer)newValue);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__STEP_MODE:
+				setStepMode((Boolean)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -446,6 +495,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				setMaxIterations(MAX_ITERATIONS_EDEFAULT);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__STEP_MODE:
+				setStepMode(STEP_MODE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -472,6 +524,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
 			case OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS:
 				return maxIterations != MAX_ITERATIONS_EDEFAULT;
+			case OrchestrationPackage.CHAT_SESSION__STEP_MODE:
+				return stepMode != STEP_MODE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -498,6 +552,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		result.append(gitAutomation);
 		result.append(", maxIterations: ");
 		result.append(maxIterations);
+		result.append(", stepMode: ");
+		result.append(stepMode);
 		result.append(')');
 		return result.toString();
 	}

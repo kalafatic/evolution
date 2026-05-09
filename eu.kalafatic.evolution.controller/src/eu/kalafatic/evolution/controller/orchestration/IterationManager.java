@@ -45,6 +45,9 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Trajectory;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.workflow.StepModeController;
+import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
+import eu.kalafatic.evolution.controller.workflow.WorkflowStep;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.IterationStatus;
@@ -161,6 +164,9 @@ public class IterationManager {
                 context.log("[KERNEL] Atomic task detected. Generating deterministic plan.");
                 List<Task> tasks = createAtomicFilePlan(request, atomicAnalysis, context);
                 context.getOrchestrator().getTasks().addAll(tasks);
+
+                checkStep("evolution_loop", "ATOMIC_PLAN", "Review atomic execution plan.");
+
                 transition(SystemState.PLAN_LOCKED, context);
                 boolean success = executeTasksWithRetries(tasks);
                 transition(SystemState.VERIFYING, context);
@@ -172,6 +178,7 @@ public class IterationManager {
             }
 
             if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
+                context.log("[KERNEL] SIMPLE_CHAT detected.");
                 transition(SystemState.EXECUTING, context);
                 GeneralAgent chatAgent = (GeneralAgent) availableAgents.stream()
                         .filter(a -> a instanceof GeneralAgent).findFirst().orElse(new GeneralAgent());
@@ -246,6 +253,9 @@ public class IterationManager {
 
             List<Task> tasks = decideFlow(analyzedRequest, context);
             context.getOrchestrator().getTasks().addAll(tasks);
+
+            checkStep("evolution_loop", "PLANNING", "Plan generated. Review tasks before execution.");
+
             transition(SystemState.PLAN_LOCKED, context);
             boolean success = executeTasksWithRetries(tasks);
             transition(SystemState.VERIFYING, context);
@@ -260,39 +270,52 @@ public class IterationManager {
         }
     }
 
+    private void checkStep(String entityId, String type, String description) throws Exception {
+        if (context.getOrchestrator().getAiChat() != null &&
+            context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
+            context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode()) {
+
+            WorkflowStep step = new WorkflowStep("step-" + System.currentTimeMillis(), entityId, type);
+            step.setDescription(description);
+            WorkflowStatus result = StepModeController.getInstance().waitForStep(context.getSessionId(), step, context);
+            if (result == WorkflowStatus.FAILED) {
+                throw new Exception("Step failed or rejected by user: " + description);
+            }
+        }
+    }
+
     private OrchestratorResponse handleExportFlow(String request, TaskContext context) throws Exception {
         context.log("[KERNEL] Executing Hybrid Manual Export flow.");
-        eu.kalafatic.evolution.model.orchestration.AiMode originalMode = context.getOrchestrator().getAiMode();
-        try {
-            // For export preparation, we use local intelligence to avoid intermediate mediation prompts
-            context.getOrchestrator().setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.LOCAL);
+        SelfDevRequestAnalyzer analyzer = new SelfDevRequestAnalyzer();
+        JSONObject analysis = analyzer.analyze(request, context);
+        transition(SystemState.EXPORTING, context);
 
-            SelfDevRequestAnalyzer analyzer = new SelfDevRequestAnalyzer();
-            JSONObject analysis = analyzer.analyze(request, context);
-            transition(SystemState.EXPORTING, context);
+        checkStep("mediated_flow", "ANALYSIS", "Verify export analysis and file selection.");
 
-            ArchitectureSummarizer summarizer = new ArchitectureSummarizer();
-            String architectureSummary = summarizer.summarize(context, aiService);
+        ArchitectureSummarizer summarizer = new ArchitectureSummarizer();
+        String architectureSummary = summarizer.summarize(context, aiService);
+        ContextSelectionEngine contextEngine = new ContextSelectionEngine();
+        Map<String, String> contextFiles = contextEngine.selectContext(request, analysis, context);
 
-            ContextSelectionEngine contextEngine = new ContextSelectionEngine();
-            Map<String, String> contextFiles = contextEngine.selectContext(request, analysis, context);
+        checkStep("mediated_flow", "CONTEXT_SELECTION", "Review selected context files.");
 
-            PromptOptimizer optimizer = new PromptOptimizer();
-            String optimizedPrompt = optimizer.optimize(request, architectureSummary, context, aiService);
+        PromptOptimizer optimizer = new PromptOptimizer();
+        String optimizedPrompt = optimizer.optimize(request, architectureSummary, context, aiService);
 
-            ExportPackageBuilder builder = new ExportPackageBuilder();
-            File zipFile = builder.build(request, analysis, optimizedPrompt, architectureSummary, contextFiles, context);
+        checkStep("mediated_flow", "PROMPT_GENERATION", "Review optimized prompt before export.");
 
-            OrchestratorResponse response = new OrchestratorResponse();
-            response.setResultType(ResultType.CHAT);
-            String summary = "### Export Complete\\n\\nLocation: `" + zipFile.getAbsolutePath() + "`";
-            response.setSummary(summary);
-            response.setContent(summary);
-            transition(SystemState.DONE, context);
-            return response;
-        } finally {
-            context.getOrchestrator().setAiMode(originalMode);
-        }
+        ExportPackageBuilder builder = new ExportPackageBuilder();
+        File zipFile = builder.build(request, analysis, optimizedPrompt, architectureSummary, contextFiles, context);
+
+        checkStep("zip_export", "EXPORT_READY", "Export package generated at: " + zipFile.getName());
+
+        OrchestratorResponse response = new OrchestratorResponse();
+        response.setResultType(ResultType.CHAT);
+        String summary = "### Export Complete\\n\\nLocation: `" + zipFile.getAbsolutePath() + "`";
+        response.setSummary(summary);
+        response.setContent(summary);
+        transition(SystemState.DONE, context);
+        return response;
     }
 
     private List<Task> decideFlow(String request, TaskContext context2) throws Exception {
@@ -374,6 +397,9 @@ public class IterationManager {
             FailureMemory failureMemory = memoryService.getFailureMemory();
             transition(SystemState.MUTATING, context);
             List<BranchVariant> variants = darwinEngine.generateVariants(goal, snapshot, failureMemory, trajectory);
+
+            checkStep("evolution_loop", "MUTATION", "Darwin variants generated. Review before approval.");
+
             if (!context.isAutoApprove()) {
                 String input = context.requestInput("Darwin generated " + variants.size() + " variants. Review and approve to start evaluation.").get();
                 if (input != null && input.startsWith("EDIT PROPOSAL")) {
@@ -391,6 +417,9 @@ public class IterationManager {
             gitManager.forceCheckout(snapshotBranch);
             transition(SystemState.EXECUTING, context);
             BranchVariant bestVariant = evaluateVariantsInternal(variants, taskPlanner, currentIterationModel);
+
+            checkStep("evolution_loop", "BRANCH_COMPARISON", "Evaluation complete. Best variant selected: " + (bestVariant != null ? bestVariant.getId() : "None"));
+
             if (bestVariant == null || bestVariant.getScore() <= 0) {
                 transition(SystemState.FAILED, context);
                 currentIterationModel.setStatus(IterationStatus.FAILED);
@@ -454,7 +483,7 @@ public class IterationManager {
             variantContext.setAutoApprove(true);
             List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
             IterationManager variantManager = KernelFactory.create(variantContext);
-            boolean success = variantManager.executeTasksWithRetries(tasks);
+            boolean success = taskExecutor.executeTasks(tasks, aiService);
             variant.setSuccess(success);
             Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
             EvaluationResult result = variantEvaluator.evaluate();
@@ -615,7 +644,7 @@ public class IterationManager {
         List<Task> tasks = new ArrayList<>();
         String path = (analysis != null && analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty()) ?
                       analysis.getTargetArtifact() :
-                      request.replaceFirst("(?i)^(create|add|write|save)\\s+((a\\s+|an\\s+)?(new\\s+)?)(file|content|to|to\\s+file|java\\s+class|java\\s+interface|interface|class|resource|record)\\s+(to\\s+)?", "").trim();
+                      request.replaceFirst("(?i)^(create|add|write|save)\\s+((a\\s+|an\\s+)?(new\\s+)?)(file|content|to|to\\s+file|java\\s+class|java\\s+interface|interface|class|resource|record)\\s+(to\\s+)?", "").trim().split("\\s+")[0];
         path = path.replaceAll("[.!?,]$","");
         Task t = OrchestrationFactory.eINSTANCE.createTask();
         t.setId("atomic-task-1");
@@ -676,11 +705,16 @@ public class IterationManager {
                         eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_STARTED,
                         context.getSessionId(), "Kernel", task.getId()));
 
+                checkStep(task.getId(), "TASK_EXECUTION", "Executing task: " + task.getName());
+
                 String result = taskExecutor.getOrchestrator().executeTask(task, context);
                 transition(SystemState.VERIFYING, context);
                 task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.VERIFYING);
                 ChangeUnit change = new ChangeUnit();
                 change.setPatch(task.getResponse());
+
+                checkStep(task.getId(), "PATCH_GENERATION", "Patch generated for task: " + task.getName());
+
                 JSONObject evaluation = validator.evaluate(change, task.getName(), context);
                 if (evaluation.optBoolean("success", false)) {
                     task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);

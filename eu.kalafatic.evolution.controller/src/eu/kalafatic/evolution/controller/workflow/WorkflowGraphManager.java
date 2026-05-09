@@ -78,6 +78,57 @@ public class WorkflowGraphManager implements RuntimeEventListener {
             case DEPLOYMENT_STATUS_CHANGED:
                 handleDeploymentStatusChanged(event);
                 break;
+            case STEP_WAITING:
+                handleStepWaiting(event);
+                break;
+            case STEP_RESUMED:
+                handleStepResumed(event);
+                break;
+        }
+    }
+
+    private void handleStepWaiting(RuntimeEvent event) {
+        String stepId = event.getPayload().toString();
+        WorkflowStep step = WorkflowStepRegistry.getInstance().getStep(stepId);
+        if (step != null) {
+            GraphEntity entity = entities.get(step.getEntityId());
+            if (entity == null) {
+                // Try to map generic mediated/evo entities if they don't exist yet
+                if ("mediated_flow".equals(step.getEntityId())) {
+                    setupMediatedTemplate();
+                    entity = entities.get("mediated_flow");
+                } else if ("evolution_loop".equals(step.getEntityId())) {
+                    setupSelfDevTemplate();
+                    entity = entities.get("evolution_loop");
+                }
+            }
+            if (entity != null) {
+                entity.setStatus("WAITING_USER");
+                entity.setRuntimeState("STEP: " + step.getStepType());
+                entity.getMetadata().put("currentStepId", stepId);
+                entity.getMetadata().put("stepDescription", step.getDescription());
+                entity.getActions().clear();
+                entity.getActions().add("CONTINUE");
+                entity.getActions().add("RETRY");
+                entity.getActions().add("SKIP");
+                entity.getActions().add("INSPECT");
+            }
+        }
+    }
+
+    private void handleStepResumed(RuntimeEvent event) {
+        String stepId = event.getPayload().toString();
+        WorkflowStep step = WorkflowStepRegistry.getInstance().getStep(stepId);
+        if (step != null) {
+            GraphEntity entity = entities.get(step.getEntityId());
+            if (entity != null) {
+                entity.setStatus("RUNNING");
+                entity.getActions().clear();
+                // Optionally restore original actions based on entity type
+                if (EntityType.SUPERVISOR.equals(entity.getType())) {
+                    entity.getActions().add("STOP_SUPERVISOR");
+                }
+            }
         }
     }
 
