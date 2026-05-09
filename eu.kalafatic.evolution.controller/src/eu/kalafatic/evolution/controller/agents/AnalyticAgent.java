@@ -28,7 +28,7 @@ public class AnalyticAgent extends BaseAiAgent {
         return "Role: Analytic Agent. Goal: Analyze user prompt or task failure.\n\n" +
                 "STRICT OUTPUT RULE: You MUST output ONLY a single JSON object. No preamble, no conversational text. Never output two JSON objects.\n\n" +
                 "ANALYSIS CRITERIA (for new requests):\n" +
-                "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT.\n" +
+                "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT. Note: 'analyze', 'investigate', 'report', and 'summarize' tasks should be categorized as RESEARCH to ensure they follow the standard iterative flow and bypass evolutionary mutation.\n" +
                 "2. INTENT: 'new' (task request), 'continue' (follow-up), 'chat' (greeting/casual), 'unclear'.\n" +
                 "3. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion', 'missingInformation' and 'contradictions' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.\n" +
                 "4. CONTRADICTIONS: Detect if the user request contains conflicting instructions (e.g., 'use Java but also use Python for the same class').\n" +
