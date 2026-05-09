@@ -72,13 +72,7 @@ public final class ConfirmedRequirements {
     public static ConfirmedRequirements fromJSON(JSONObject json) {
         if (json == null) return null;
 
-        List<String> constraints = new ArrayList<>();
-        JSONArray arr = json.optJSONArray("constraints");
-        if (arr != null) {
-            for (int i = 0; i < arr.length(); i++) {
-                constraints.add(arr.getString(i));
-            }
-        }
+        List<String> constraints = eu.kalafatic.evolution.controller.parsers.JsonUtils.toStringList(json.optJSONArray("constraints"));
 
         return new ConfirmedRequirements(
             json.optString("goal", ""),

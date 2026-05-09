@@ -129,6 +129,38 @@ public class IntentAnalyzerTest {
         assertEquals(0.5, result.getConfidenceScore(), 0.001);
     }
 
+    @Test
+    public void testRobustListParsing() throws Exception {
+        String response = "{\n" +
+                "  \"goal\": \"Convert raw user requests into structured intent JSON.\",\n" +
+                "  \"language\": \"Java\",\n" +
+                "  \"framework\": \"NLU\",\n" +
+                "  \"targetPlatform\": \"Cloud\",\n" +
+                "  \"expectedOutput\": \"JSON object\",\n" +
+                "  \"constraints\": [\"Must be a single JSON object.\"],\n" +
+                "  \"missingInformation\": [\n" +
+                "    { \"field\": \"Request Context\", \"description\": \"The user request is a raw text string.\" }\n" +
+                "  ],\n" +
+                "  \"ambiguities\": [\n" +
+                "    { \"part\": \"Intent Type\", \"reason\": \"The specific type of intent is not defined.\" }\n" +
+                "  ],\n" +
+                "  \"contradictions\": [\n" +
+                "    { \"part\": \"Output Format\", \"reason\": \"The output must be a JSON object, not a string.\" }\n" +
+                "  ],\n" +
+                "  \"clarificationQuestion\": \"Please provide the raw user request text.\",\n" +
+                "  \"confidenceScore\": 0.95\n" +
+                "}";
+        mockLlm.setResponse(response);
+
+        IntentAnalyzer analyzer = new IntentAnalyzer(aiService);
+        IntentAnalysisResult result = analyzer.analyze("analyze request", context);
+
+        assertEquals(1, result.getContradictions().size());
+        assertEquals("Output Format: The output must be a JSON object, not a string.", result.getContradictions().get(0));
+        assertEquals(1, result.getConstraints().size());
+        assertEquals("Must be a single JSON object.", result.getConstraints().get(0));
+    }
+
     private void injectMockLlm(AiService service, MockLlmProvider mock) throws Exception {
         Field routerField = service.getClass().getDeclaredField("llmRouter");
         routerField.setAccessible(true);

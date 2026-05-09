@@ -85,19 +85,8 @@ public class ContextAssistant {
 
             result.setClarifiedGoal(json.optString("clarifiedGoal", ""));
 
-            JSONArray missing = json.optJSONArray("missingInfo");
-            if (missing != null) {
-                for (int i = 0; i < missing.length(); i++) {
-                    result.getMissingInfo().add(missing.getString(i));
-                }
-            }
-
-            JSONArray steps = json.optJSONArray("suggestedSteps");
-            if (steps != null) {
-                for (int i = 0; i < steps.length(); i++) {
-                    result.getSuggestedSteps().add(steps.getString(i));
-                }
-            }
+            result.getMissingInfo().addAll(eu.kalafatic.evolution.controller.parsers.JsonUtils.toStringList(json.optJSONArray("missingInfo")));
+            result.getSuggestedSteps().addAll(eu.kalafatic.evolution.controller.parsers.JsonUtils.toStringList(json.optJSONArray("suggestedSteps")));
         } catch (Exception e) {
             // Fallback to defaults
         }

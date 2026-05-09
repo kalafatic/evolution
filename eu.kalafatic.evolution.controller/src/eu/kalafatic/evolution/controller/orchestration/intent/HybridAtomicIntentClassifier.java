@@ -147,7 +147,7 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         }
 
         // NEGATIVE SIGNALS
-        List<String> negWording = Arrays.asList("refactor", "redesign", "optimize", "improve", "architecture", "workflow", "system-wide", "autonomous", "analyze project", "entire");
+        List<String> negWording = Arrays.asList("refactor", "redesign", "optimize", "improve", "architecture", "workflow", "system-wide", "autonomous", "analyze project", "entire", "analyze", "investigate", "summarize", "report");
         for (String neg : negWording) {
             if (lower.contains(neg)) {
                 score -= 0.2;

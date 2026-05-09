@@ -93,22 +93,17 @@ public class IntentAnalyzer {
         result.setClarificationQuestion(json.optString("clarificationQuestion", ""));
         result.setConfidenceScore(json.optDouble("confidenceScore", 0.0));
 
-        JSONArray constraints = json.optJSONArray("constraints");
-        if (constraints != null) {
-            for (int i = 0; i < constraints.length(); i++) {
-                result.getConstraints().add(constraints.getString(i));
-            }
-        }
+        result.setConstraints(JsonUtils.toStringList(json.optJSONArray("constraints")));
 
         JSONArray missing = json.optJSONArray("missingInformation");
         if (missing != null) {
             for (int i = 0; i < missing.length(); i++) {
-                Object obj = missing.get(i);
+                Object obj = missing.opt(i);
                 if (obj instanceof JSONObject) {
                     JSONObject m = (JSONObject) obj;
                     result.getMissingInformation().add(new MissingRequirement(
-                            m.optString("field", ""),
-                            m.optString("description", "")
+                            m.optString("field", "unknown"),
+                            m.optString("description", m.toString())
                     ));
                 } else if (obj instanceof String) {
                     result.getMissingInformation().add(new MissingRequirement("unknown", (String) obj));
@@ -119,12 +114,12 @@ public class IntentAnalyzer {
         JSONArray ambiguities = json.optJSONArray("ambiguities");
         if (ambiguities != null) {
             for (int i = 0; i < ambiguities.length(); i++) {
-                Object obj = ambiguities.get(i);
+                Object obj = ambiguities.opt(i);
                 if (obj instanceof JSONObject) {
                     JSONObject a = (JSONObject) obj;
                     result.getAmbiguities().add(new Ambiguity(
-                            a.optString("part", ""),
-                            a.optString("reason", "")
+                            a.optString("part", "unknown"),
+                            a.optString("reason", a.toString())
                     ));
                 } else if (obj instanceof String) {
                     result.getAmbiguities().add(new Ambiguity("unknown", (String) obj));
@@ -132,12 +127,7 @@ public class IntentAnalyzer {
             }
         }
 
-        JSONArray contradictions = json.optJSONArray("contradictions");
-        if (contradictions != null) {
-            for (int i = 0; i < contradictions.length(); i++) {
-                result.getContradictions().add(contradictions.getString(i));
-            }
-        }
+        result.setContradictions(JsonUtils.toStringList(json.optJSONArray("contradictions")));
 
         return result;
     }
