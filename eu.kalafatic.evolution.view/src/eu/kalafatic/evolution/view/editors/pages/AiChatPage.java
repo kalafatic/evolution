@@ -406,8 +406,30 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	public void handleSend() {
 		instructionsGroup.resetBackground();
 		String request = instructionsGroup.getRequest();
-		if (request.isEmpty()) return;
 		SessionState state = getCurrentSessionState();
+
+		// Check for active steps in Step Mode - allow resumption even if command is already running
+		WorkflowStep activeStep = WorkflowStepRegistry.getInstance().getActiveStepForSession(getCurrentSessionName());
+		if (activeStep != null && activeStep.getStatus() == WorkflowStatus.WAITING_USER) {
+			String lower = request.toLowerCase().trim();
+			if (lower.equals("retry")) {
+				instructionsGroup.setOrchestrationRunning(true);
+				StepModeController.getInstance().resumeStep(activeStep.getId(), WorkflowStatus.RETRY);
+				instructionsGroup.setRequest("");
+				return;
+			} else if (lower.equals("skip")) {
+				instructionsGroup.setOrchestrationRunning(true);
+				StepModeController.getInstance().resumeStep(activeStep.getId(), WorkflowStatus.SKIPPED);
+				instructionsGroup.setRequest("");
+				return;
+			} else {
+				// Treat any other input (empty, "next", or random comments) as "CONTINUE"
+				instructionsGroup.setOrchestrationRunning(true);
+				StepModeController.getInstance().resumeStep(activeStep.getId(), WorkflowStatus.COMPLETED);
+				instructionsGroup.setRequest("");
+				return;
+			}
+		}
 
 		// Check if we are waiting for user input or approval and unblock via chat if possible
 		boolean isWaiting = false;
@@ -417,18 +439,6 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
 			if (result != null) {
 				isWaiting = result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT || result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL;
-			}
-		}
-
-		// Check for active steps in Step Mode
-		WorkflowStep activeStep = WorkflowStepRegistry.getInstance().getActiveStepForSession(getCurrentSessionName());
-		if (activeStep != null && activeStep.getStatus() == WorkflowStatus.WAITING_USER) {
-			String lower = request.toLowerCase().trim();
-			if (lower.isEmpty() || lower.equals("next") || lower.equals("continue") || lower.equals("approve") || lower.equals("yes") || lower.equals("y")) {
-				instructionsGroup.setOrchestrationRunning(true);
-				StepModeController.getInstance().resumeStep(activeStep.getId(), WorkflowStatus.COMPLETED);
-				instructionsGroup.setRequest("");
-				return;
 			}
 		}
 
@@ -471,6 +481,10 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			instructionsGroup.setRequest("");
 			return;
 		}
+
+		if (state.isRunning) return; // Prevent duplicate sessions for same ID
+
+		if (request.isEmpty()) return;
 
 		if (currentSession == null) initializeSessions();
 

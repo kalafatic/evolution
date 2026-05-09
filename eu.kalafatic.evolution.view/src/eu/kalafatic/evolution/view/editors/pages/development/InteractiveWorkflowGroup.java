@@ -74,21 +74,38 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
 
     private void loadWorkflowHtml() {
         try {
-            if (Activator.getDefault() == null) return;
+            if (Activator.getDefault() == null) {
+                browser.setText(getFallbackHtml());
+                return;
+            }
             URL url = FileLocator.find(Activator.getDefault().getBundle(), new Path("workflow/workflow.html"), null);
             if (url != null) {
                 browser.setUrl(FileLocator.toFileURL(url).toExternalForm());
+            } else {
+                browser.setText(getFallbackHtml());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            browser.setText(getFallbackHtml());
         }
+    }
+
+    private String getFallbackHtml() {
+        return "<html><body style='background:#f0f2f5; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh;'>"
+             + "<div style='text-align:center;'><h3>Workflow Diagram</h3><p>Loading assets...</p></div>"
+             + "</body></html>";
     }
 
     @Override
     protected void refreshUI() {
         if (browser != null && !browser.isDisposed() && isLoaded) {
-            JSONObject graph = WorkflowGraphManager.getInstance(sessionId).getGraphJson(sessionId);
-            browser.execute("if(window.updateGraph) window.updateGraph(" + graph.toString() + ");");
+            String sid = sessionId != null ? sessionId : "Default";
+            executor.setSessionId(sid);
+            executor.setContext(editor.getCurrentContext());
+
+            JSONObject graph = WorkflowGraphManager.getInstance(sid).getGraphJson(sid);
+            if (graph != null) {
+                browser.execute("if(window.updateGraph) window.updateGraph(" + graph.toString() + ");");
+            }
         }
     }
 
