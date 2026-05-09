@@ -100,7 +100,10 @@ public abstract class AEvoGroup {
         this.orchestrator = orchestrator;
     }
 
+    /**
+     * Disposes of any resources held by this group.
+     */
     public void dispose() {
-        // To be overridden by subclasses
+        // Default implementation does nothing
     }
 }
