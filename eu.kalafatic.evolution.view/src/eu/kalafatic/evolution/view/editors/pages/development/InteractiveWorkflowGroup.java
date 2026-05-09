@@ -74,12 +74,20 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
 
     private void loadWorkflowHtml() {
         try {
-            if (Activator.getDefault() == null) return;
+            if (Activator.getDefault() == null) {
+                System.err.println("[WORKFLOW] Activator default is null");
+                return;
+            }
             URL url = FileLocator.find(Activator.getDefault().getBundle(), new Path("workflow/workflow.html"), null);
             if (url != null) {
-                browser.setUrl(FileLocator.toFileURL(url).toExternalForm());
+                String externalForm = FileLocator.toFileURL(url).toExternalForm();
+                System.out.println("[WORKFLOW] Loading workflow HTML from: " + externalForm);
+                browser.setUrl(externalForm);
+            } else {
+                System.err.println("[WORKFLOW] Could not find workflow/workflow.html in bundle");
             }
         } catch (Exception e) {
+            System.err.println("[WORKFLOW] Error loading workflow HTML: " + e.getMessage());
             e.printStackTrace();
         }
     }
