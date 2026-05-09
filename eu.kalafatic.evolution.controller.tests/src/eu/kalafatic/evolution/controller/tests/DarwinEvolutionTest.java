@@ -104,9 +104,8 @@ public class DarwinEvolutionTest {
 
         SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
             @Override
-            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration) {
-                IterationManager im = createMockedManager(context);
-                return im;
+            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration, eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
+                return createMockedManager(context);
             }
         };
 
@@ -157,7 +156,7 @@ public class DarwinEvolutionTest {
 
         SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
             @Override
-            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration) {
+            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration, eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
                  return createMockedManager(context);
             }
         };
@@ -197,10 +196,12 @@ public class DarwinEvolutionTest {
     private IterationManager createMockedManager(TaskContext context) {
         GitManager gitManager = new GitManager(tempDir, context);
         TaskPlanner taskPlanner = new TaskPlanner();
-        TaskExecutor taskExecutor = new TaskExecutor(context);
+        TaskExecutor taskExecutor = new TaskExecutor(context, orchestrator);
         IterationMemoryService memoryService = new IterationMemoryService(tempDir);
         SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(tempDir, context);
         DarwinEngine darwinEngine = new DarwinEngine(context, memoryService, stateProvider);
+        darwinEngine.setAiService(aiService);
+        context.setAiService(aiService);
 
         return new IterationManager(
             context,
