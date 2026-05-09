@@ -151,6 +151,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
         if ("file".equalsIgnoreCase(taskType)) {
             String path = taskName.replaceFirst("(?i)^(Write|Create|Update)\\s+", "").trim().split(" ")[0];
+            // Sanitization: Remove leading slashes and drive letters, and normalize separators
+            path = path.replaceFirst("^([a-zA-Z]:)?[/\\\\]+", "").replace('\\', '/');
             return ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("WRITE " + path + "\n" + patch, context.getProjectRoot(), context);
         } else if (EvolutionConstants.TASK_MAVEN.equalsIgnoreCase(taskType)) {
             return ToolFactory.getTool(EvolutionConstants.TOOL_MAVEN).execute(taskName, context.getProjectRoot(), context);

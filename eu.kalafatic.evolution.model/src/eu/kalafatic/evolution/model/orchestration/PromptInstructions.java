@@ -18,6 +18,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#getPreferredMaxIterations <em>Preferred Max Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isIterativeMode <em>Iterative Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isSelfIterativeMode <em>Self Iterative Mode</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isStepMode <em>Step Mode</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getPromptInstructions()
@@ -137,5 +138,28 @@ public interface PromptInstructions extends EObject {
 	 * @generated
 	 */
 	void setSelfIterativeMode(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Step Mode</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Step Mode</em>' attribute.
+	 * @see #setStepMode(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getPromptInstructions_StepMode()
+	 * @model default="false"
+	 * @generated
+	 */
+	boolean isStepMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isStepMode <em>Step Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Step Mode</em>' attribute.
+	 * @see #isStepMode()
+	 * @generated
+	 */
+	void setStepMode(boolean value);
 
 } // PromptInstructions

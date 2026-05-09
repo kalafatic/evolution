@@ -25,11 +25,16 @@ public class TaskExecutor {
     }
 
     public boolean executeTasks(List<Task> tasks) {
+        return executeTasks(tasks, null);
+    }
+
+    public boolean executeTasks(List<Task> tasks, eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
         context.log("[EXECUTOR] Routing " + tasks.size() + " tasks to the Kernel Control Plane.");
         try {
             // TaskExecutor is a helper that MUST route back through the IterationManager
             // to preserve the "Single Transition Authority" and PEV lifecycle.
-            eu.kalafatic.evolution.controller.orchestration.IterationManager kernel =
+            eu.kalafatic.evolution.controller.orchestration.IterationManager kernel = (aiService != null) ?
+                eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(context, aiService) :
                 eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(context);
             return kernel.executeTasksWithRetries(tasks);
         } catch (Exception e) {

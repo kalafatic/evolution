@@ -28,7 +28,7 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
  */
 public class InstructionsGroup extends AEvoGroup {
     private StyledText requestText;
-    private Button iterativeCheck, selfIterativeCheck, darwinCheck, autoApproveCheck, gitAutomationCheck;
+    private Button iterativeCheck, selfIterativeCheck, darwinCheck, autoApproveCheck, gitAutomationCheck, stepModeCheck;
     private org.eclipse.swt.widgets.Spinner maxIterationsSpinner;
     private Button sendButton, pauseButton, stopButton, attachButton;
     private Composite attachmentArea;
@@ -72,6 +72,7 @@ public class InstructionsGroup extends AEvoGroup {
         Composite composite = toolkit.createComposite(group);
         org.eclipse.swt.layout.GridLayout compLayout = new org.eclipse.swt.layout.GridLayout(11, false);
         compLayout.marginHeight = 0; compLayout.marginWidth = 0;
+        compLayout.numColumns = 12;
         composite.setLayout(compLayout);
         composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -158,6 +159,15 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
+        stepModeCheck = toolkit.createButton(composite, "Step Mode", SWT.CHECK);
+        stepModeCheck.setToolTipText("Enable step-by-step execution control in the workflow graph.");
+        stepModeCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.syncModelWithUI();
+            }
+        });
+
         toolkit.createLabel(composite, "Max Iterations:");
         maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(composite, SWT.BORDER);
         maxIterationsSpinner.setMinimum(1);
@@ -233,6 +243,7 @@ public class InstructionsGroup extends AEvoGroup {
                 darwinCheck.setSelection(thread.isDarwinMode());
                 gitAutomationCheck.setSelection(thread.isGitAutomation());
                 maxIterationsSpinner.setSelection(thread.getMaxIterations());
+                stepModeCheck.setSelection(thread.isStepMode());
             } else {
                 darwinCheck.setSelection(orchestrator.isDarwinMode());
                 if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
@@ -241,6 +252,7 @@ public class InstructionsGroup extends AEvoGroup {
                     selfIterativeCheck.setSelection(promptInstructions.isSelfIterativeMode());
                     gitAutomationCheck.setSelection(promptInstructions.isGitAutomation());
                     maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
+                    stepModeCheck.setSelection(promptInstructions.isStepMode());
                 }
             }
             if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
@@ -259,6 +271,7 @@ public class InstructionsGroup extends AEvoGroup {
                 thread.setDarwinMode(darwinCheck.getSelection());
                 thread.setGitAutomation(gitAutomationCheck.getSelection());
                 thread.setMaxIterations(maxIterationsSpinner.getSelection());
+                thread.setStepMode(stepModeCheck.getSelection());
             }
 
             orchestrator.setDarwinMode(darwinCheck.getSelection());
@@ -274,6 +287,7 @@ public class InstructionsGroup extends AEvoGroup {
             promptInstructions.setAutoApprove(autoApproveCheck.getSelection());
             promptInstructions.setGitAutomation(gitAutomationCheck.getSelection());
             promptInstructions.setPreferredMaxIterations(maxIterationsSpinner.getSelection());
+            promptInstructions.setStepMode(stepModeCheck.getSelection());
         }
     }
 

@@ -89,7 +89,12 @@
             nodeMap[node.id] = node;
 
             const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            g.setAttribute("class", "node " + (node.status === 'RUNNING' ? 'active' : ''));
+            let nodeClass = "node";
+            if (node.status === 'RUNNING') nodeClass += " active";
+            if (node.status === 'WAITING_USER') nodeClass += " pulse waiting";
+            if (node.status === 'FAILED') nodeClass += " failed";
+
+            g.setAttribute("class", nodeClass);
             g.setAttribute("transform", `translate(${node.x}, ${node.y})`);
             g.onclick = () => { if (window.javaAction) window.javaAction(node.id, 'CLICK'); };
 
@@ -112,13 +117,32 @@
             g.appendChild(text);
 
             if (node.actions && node.actions.length > 0) {
-                const badge = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                badge.setAttribute("cx", "110");
-                badge.setAttribute("cy", "10");
-                badge.setAttribute("r", "5");
-                badge.setAttribute("fill", "#10b981");
-                g.appendChild(badge);
-                g.onclick = () => { if (window.javaAction) window.javaAction(node.id, node.actions[0]); };
+                const actionGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                actionGroup.setAttribute("class", "actions");
+
+                node.actions.forEach((action, index) => {
+                    const actionBtn = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    actionBtn.setAttribute("cx", 120 - (index * 15));
+                    actionBtn.setAttribute("cy", "5");
+                    actionBtn.setAttribute("r", "6");
+                    actionBtn.setAttribute("class", "action-btn " + action.toLowerCase());
+                    actionBtn.setAttribute("title", action);
+                    actionBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (window.javaAction) window.javaAction(node.id, action);
+                    };
+                    actionGroup.appendChild(actionBtn);
+                });
+                g.appendChild(actionGroup);
+            }
+
+            if (node.runtimeState) {
+                const stateText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                stateText.setAttribute("x", "5");
+                stateText.setAttribute("y", "50");
+                stateText.setAttribute("class", "runtime-state");
+                stateText.textContent = node.runtimeState;
+                g.appendChild(stateText);
             }
 
             nodesGroup.appendChild(g);
