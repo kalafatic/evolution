@@ -58,6 +58,7 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         // POSITIVE SIGNALS
         List<String> posVerbs = Arrays.asList("create", "generate", "add", "write", "make", "save");
         List<String> posArtifacts = Arrays.asList("class", "interface", "file", "resource", "record", "enum", "entity", "controller", "service", "readme");
+        List<String> stopWords = Arrays.asList("which", "that", "to", "for", "with", "can", "does", "should", "is", "a", "an", "the", "in", "on", "at", "by", "from");
 
         for (String verb : posVerbs) {
             if (lower.startsWith(verb)) {
@@ -92,11 +93,27 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
                 if (artIdx != -1) {
                     String after = lower.substring(artIdx + art.length()).trim();
                     if (!after.isEmpty()) {
-                        String potentialTarget = after.split("\\s+")[0].replaceAll("[.!?,]$","");
+                        String[] parts = after.split("\\s+");
+                        String potentialTarget = parts[0].replaceAll("[.!?,]$","");
+
+                        // Reject stop words as targets
+                        if (stopWords.contains(potentialTarget)) {
+                            analysis.getSignals().add("description_pronoun_detected:" + potentialTarget);
+                            score -= 0.1;
+                            break;
+                        }
+
                         if (potentialTarget.length() > 1 && !posVerbs.contains(potentialTarget)) {
                             analysis.getExtractedTargets().add(potentialTarget);
                             targetCount = 1;
                             analysis.getSignals().add("lowercase_artifact_target");
+
+                            // If there are more words after the target, it's likely a description
+                            if (parts.length > 1) {
+                                analysis.getSignals().add("extended_description_detected");
+                                analysis.setMultiStep(true); // Treat descriptive tasks as multi-step to force planning
+                                score -= 0.1;
+                            }
                             break;
                         }
                     }
