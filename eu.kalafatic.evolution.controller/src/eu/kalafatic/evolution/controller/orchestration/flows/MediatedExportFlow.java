@@ -24,6 +24,9 @@ public class MediatedExportFlow implements IOrchestrationFlow {
         context.log("[KERNEL] Executing Hybrid Manual Export flow.");
         context.getOrchestrator().getTasks().clear();
 
+        // Temporarily force LOCAL mode for automated preparation steps
+        eu.kalafatic.evolution.model.orchestration.AiMode originalMode = context.getOrchestrator().getAiMode();
+        context.getOrchestrator().setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.LOCAL);
         // Mediation suppression for internal preparation steps
         AiMode originalMode = context.getOrchestrator().getAiMode();
         boolean mediated = originalMode == AiMode.MEDIATED;
@@ -35,6 +38,7 @@ public class MediatedExportFlow implements IOrchestrationFlow {
         try {
             return executeInternal(request, context);
         } finally {
+            context.getOrchestrator().setAiMode(originalMode);
             if (mediated) {
                 context.getOrchestrator().setAiMode(originalMode);
             }
