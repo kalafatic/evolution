@@ -56,6 +56,92 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 
         public void addEntity(String id, EntityType type) {
             entities.put(id, new GraphEntity(id, type));
+    @Override
+    public void onEvent(RuntimeEvent event) {
+        if (!sessionId.equals(event.getSessionId())) return;
+
+        switch (event.getType()) {
+            case MODE_CHANGED:
+                handleModeChanged(event);
+                break;
+            case TASK_STARTED:
+                handleTaskStarted(event);
+                break;
+            case TASK_COMPLETED:
+                handleTaskCompleted(event);
+                break;
+            case TASK_FAILED:
+                handleTaskFailed(event);
+                break;
+            case SUPERVISOR_STATUS_CHANGED:
+                handleSupervisorStatusChanged(event);
+                break;
+            case ITERATION_STARTED:
+                handleIterationStarted(event);
+                break;
+            case EXPORT_READY:
+                handleExportReady(event);
+                break;
+            case DEPLOYMENT_STATUS_CHANGED:
+                handleDeploymentStatusChanged(event);
+                break;
+            case MUTATING:
+                handleMutating(event);
+                break;
+            case STEP_WAITING:
+                handleStepWaiting(event);
+                break;
+            case MUTATION_REVIEW:
+                handleMutationReview(event);
+                break;
+            case STEP_RESUMED:
+                handleStepResumed(event);
+                break;
+        }
+    }
+
+    private void handleStepWaiting(RuntimeEvent event) {
+        String stepId = event.getPayload().toString();
+        WorkflowStep step = WorkflowStepRegistry.getInstance().getStep(stepId);
+        if (step != null) {
+            GraphEntity entity = entities.get(step.getEntityId());
+            if (entity == null) {
+                // Try to map generic mediated/evo entities if they don't exist yet
+                if ("mediated_flow".equals(step.getEntityId())) {
+                    setupMediatedTemplate();
+                    entity = entities.get("mediated_flow");
+                } else if ("evolution_loop".equals(step.getEntityId())) {
+                    setupSelfDevTemplate();
+                    entity = entities.get("evolution_loop");
+                }
+            }
+            if (entity != null) {
+                entity.setStatus("WAITING_USER");
+                entity.setRuntimeState("STEP: " + step.getStepType());
+                entity.getMetadata().put("currentStepId", stepId);
+                entity.getMetadata().put("stepDescription", step.getDescription());
+                entity.getActions().clear();
+                entity.getActions().add("CONTINUE");
+                entity.getActions().add("RETRY");
+                entity.getActions().add("SKIP");
+                entity.getActions().add("INSPECT");
+            }
+        }
+    }
+
+    private void handleStepResumed(RuntimeEvent event) {
+        String stepId = event.getPayload().toString();
+        WorkflowStep step = WorkflowStepRegistry.getInstance().getStep(stepId);
+        if (step != null) {
+            GraphEntity entity = entities.get(step.getEntityId());
+            if (entity != null) {
+                entity.setStatus("RUNNING");
+                entity.getActions().clear();
+                // Optionally restore original actions based on entity type
+                if (EntityType.SUPERVISOR.equals(entity.getType())) {
+                    entity.getActions().add("STOP_SUPERVISOR");
+                }
+            }
         }
 
         public void addLink(String from, String to, String type) {
@@ -136,6 +222,13 @@ public class WorkflowGraphManager implements RuntimeEventListener {
             String target = event.getMetadata().getOrDefault("target", "target").toString();
             addEntity(target, EntityType.DEPLOYMENT_TARGET);
             entities.get(target).setStatus(event.getPayload().toString());
+    private void handleModeChanged(RuntimeEvent event) {
+        String mode = event.getPayload().toString();
+        // Dynamic graph adjustment based on mode
+        if ("SELF_DEV_MODE".equals(mode) || "DARWIN_MODE".equals(mode)) {
+            setupSelfDevTemplate();
+        } else if ("HYBRID_MANUAL_EXPORT".equals(mode)) {
+            setupMediatedTemplate();
         }
 
         private void handleModeChanged(RuntimeEvent event) {
@@ -183,6 +276,50 @@ public class WorkflowGraphManager implements RuntimeEventListener {
             addLink("user", "supervisor", "trigger");
             addLink("supervisor", "evolution_loop", "manages");
         }
+    private void setupSelfDevTemplate() {
+        if (!entities.containsKey("supervisor")) {
+            addEntity("supervisor", EntityType.SUPERVISOR);
+            addLink("user", "supervisor", "trigger");
+        }
+        if (!entities.containsKey("evolution_loop")) {
+            addEntity("evolution_loop", EntityType.EVOLUTION_LOOP);
+            addLink("supervisor", "evolution_loop", "manages");
+        }
+    }
+
+    private void setupMediatedTemplate() {
+        if (!entities.containsKey("mediated_flow")) {
+            addEntity("mediated_flow", EntityType.MEDIATED_FLOW);
+            addLink("user", "mediated_flow", "trigger");
+        }
+        if (!entities.containsKey("zip_export")) {
+            addEntity("zip_export", EntityType.ZIP_EXPORT);
+            addLink("mediated_flow", "zip_export", "produces");
+        }
+    }
+
+    private void handleMutating(RuntimeEvent event) {
+        GraphEntity loop = entities.get("evolution_loop");
+        if (loop != null) loop.setStatus("MUTATING");
+    }
+
+    private void handleMutationReview(RuntimeEvent event) {
+        // Payload should contain variant metadata
+        if (event.getPayload() instanceof JSONArray) {
+            JSONArray variants = (JSONArray) event.getPayload();
+            String parentId = (String) event.getMetadata().getOrDefault("parentId", "evolution_loop");
+
+            for (int i = 0; i < variants.length(); i++) {
+                JSONObject v = variants.getJSONObject(i);
+                String vId = v.optString("id", "variant-" + i);
+                addEntity(vId, EntityType.DARWIN_VARIANT);
+                GraphEntity entity = entities.get(vId);
+                entity.setStatus("PENDING");
+                entity.setRuntimeState(v.optString("strategy", ""));
+                addLink(parentId, vId, "mutation");
+            }
+        }
+    }
 
         private void setupDarwinTemplate() {
             addEntity("darwin_engine", EntityType.SUPERVISOR);

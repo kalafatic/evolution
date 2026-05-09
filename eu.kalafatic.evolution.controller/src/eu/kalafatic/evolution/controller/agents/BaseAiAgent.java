@@ -68,6 +68,23 @@ public abstract class BaseAiAgent implements IAgent {
             sb.append("PROJECT ROOT: ").append(context.getProjectRoot().getAbsolutePath()).append("\n\n");
         }
 
+        if (bestPracticesService == null && context.getProjectRoot() != null) {
+            bestPracticesService = new BestPracticesService(context.getOrchestrator(), context.getProjectRoot());
+        }
+
+        if (bestPracticesService != null) {
+            if (context.getOrchestrator().getAiChat() != null && context.getOrchestrator().getAiChat().getPromptInstructions() != null) {
+                if (context.getOrchestrator().getAiChat().getPromptInstructions().isIterativeMode()) {
+                    sb.append("--- ITERATIVE LOOP CONTEXT ---\n");
+                    sb.append(bestPracticesService.getSpecialContext("iterative_loop.md")).append("\n\n");
+                }
+                if (context.getOrchestrator().getAiChat().getPromptInstructions().isSelfIterativeMode()) {
+                    sb.append("--- SELF DEVELOPMENT CONTEXT ---\n");
+                    sb.append(bestPracticesService.getSpecialContext("self_development.md")).append("\n\n");
+                }
+            }
+        }
+
         sb.append("INSTRUCTIONS:\n").append(getAgentInstructions()).append("\n\n");
 
         ConversationState state = ConversationState.load(context.getSharedMemory(), context.getSessionId());

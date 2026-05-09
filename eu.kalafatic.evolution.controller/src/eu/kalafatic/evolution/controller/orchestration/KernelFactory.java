@@ -14,10 +14,13 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
 public class KernelFactory {
 
     public static IterationManager create(TaskContext context) {
-        AiService aiService = new AiService();
+        return create(context, new AiService());
+    }
+
+    public static IterationManager create(TaskContext context, AiService aiService) {
         GitManager gitManager = new GitManager(context.getProjectRoot(), context);
         TaskPlanner taskPlanner = new TaskPlanner();
-        TaskExecutor taskExecutor = new TaskExecutor(context);
+        TaskExecutor taskExecutor = new TaskExecutor(context, context.getOrchestrator());
         Evaluator evaluator = new Evaluator(context.getProjectRoot(), context);
         IterationMemoryService memoryService = new IterationMemoryService(context.getProjectRoot());
         SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(context.getProjectRoot(), context);

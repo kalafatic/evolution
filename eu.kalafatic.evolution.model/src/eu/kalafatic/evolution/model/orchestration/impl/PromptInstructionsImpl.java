@@ -25,6 +25,7 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl#getPreferredMaxIterations <em>Preferred Max Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl#isIterativeMode <em>Iterative Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl#isSelfIterativeMode <em>Self Iterative Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl#isStepMode <em>Step Mode</em>}</li>
  * </ul>
  *
  * @generated
@@ -131,12 +132,55 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 	protected boolean selfIterativeMode = SELF_ITERATIVE_MODE_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #isStepMode() <em>Step Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isStepMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean STEP_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isStepMode() <em>Step Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isStepMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean stepMode = STEP_MODE_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	protected PromptInstructionsImpl() {
 		super();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isStepMode() {
+		return stepMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setStepMode(boolean newStepMode) {
+		boolean oldStepMode = stepMode;
+		stepMode = newStepMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.PROMPT_INSTRUCTIONS__STEP_MODE, oldStepMode, stepMode));
 	}
 
 	/**
@@ -282,6 +326,8 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 				return isIterativeMode();
 			case OrchestrationPackage.PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE:
 				return isSelfIterativeMode();
+			case OrchestrationPackage.PROMPT_INSTRUCTIONS__STEP_MODE:
+				return isStepMode();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -308,6 +354,9 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 				return;
 			case OrchestrationPackage.PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE:
 				setSelfIterativeMode((Boolean)newValue);
+				return;
+			case OrchestrationPackage.PROMPT_INSTRUCTIONS__STEP_MODE:
+				setStepMode((Boolean)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -336,6 +385,9 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 			case OrchestrationPackage.PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE:
 				setSelfIterativeMode(SELF_ITERATIVE_MODE_EDEFAULT);
 				return;
+			case OrchestrationPackage.PROMPT_INSTRUCTIONS__STEP_MODE:
+				setStepMode(STEP_MODE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -358,6 +410,8 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 				return iterativeMode != ITERATIVE_MODE_EDEFAULT;
 			case OrchestrationPackage.PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE:
 				return selfIterativeMode != SELF_ITERATIVE_MODE_EDEFAULT;
+			case OrchestrationPackage.PROMPT_INSTRUCTIONS__STEP_MODE:
+				return stepMode != STEP_MODE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -382,6 +436,8 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 		result.append(iterativeMode);
 		result.append(", selfIterativeMode: ");
 		result.append(selfIterativeMode);
+		result.append(", stepMode: ");
+		result.append(stepMode);
 		result.append(')');
 		return result.toString();
 	}

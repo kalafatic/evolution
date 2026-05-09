@@ -31,7 +31,39 @@ body {
 .node.active rect {
     stroke: #3b82f6;
     stroke-width: 3px;
-    animation: pulse 2s infinite;
+    animation: pulse-active 2s infinite;
+}
+
+.node.waiting rect {
+    stroke: #f59e0b;
+    stroke-width: 3px;
+    animation: pulse-waiting 1.5s infinite;
+}
+
+.node.failed rect {
+    stroke: #ef4444;
+}
+
+.action-btn {
+    cursor: pointer;
+    stroke: #ffffff;
+    stroke-width: 1px;
+    transition: transform 0.2s;
+}
+
+.action-btn:hover {
+    transform: scale(1.2);
+}
+
+.action-btn.continue { fill: #10b981; }
+.action-btn.retry { fill: #3b82f6; }
+.action-btn.skip { fill: #6b7280; }
+.action-btn.inspect { fill: #8b5cf6; }
+
+.runtime-state {
+    font-size: 10px !important;
+    fill: #6b7280 !important;
+    font-style: italic;
 }
 
 .node text {
@@ -56,10 +88,16 @@ body {
     animation: dash 1s linear infinite;
 }
 
-@keyframes pulse {
+@keyframes pulse-active {
     0% { stroke-opacity: 1; }
     50% { stroke-opacity: 0.5; }
     100% { stroke-opacity: 1; }
+}
+
+@keyframes pulse-waiting {
+    0% { fill: #ffffff; }
+    50% { fill: #fffbeb; }
+    100% { fill: #ffffff; }
 }
 
 @keyframes dash {

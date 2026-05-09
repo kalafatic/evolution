@@ -65,6 +65,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
 
     private void loadWorkflowHtml() {
         try {
+            if (Activator.getDefault() == null) return;
             URL url = FileLocator.find(Activator.getDefault().getBundle(), new Path("workflow/workflow.html"), null);
             if (url != null) {
                 browser.setUrl(FileLocator.toFileURL(url).toExternalForm());

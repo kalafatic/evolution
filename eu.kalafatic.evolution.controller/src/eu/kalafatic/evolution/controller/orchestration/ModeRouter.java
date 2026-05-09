@@ -40,6 +40,11 @@ public class ModeRouter {
 
         // 2. Map from existing model flags
         if (orchestrator != null) {
+            // MEDIATED mode is a top-level override for manual workflow
+            if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
+                return createHybridManualExportMode();
+            }
+
             if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
                 if (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
                     return createSelfDevMode();
@@ -52,9 +57,6 @@ public class ModeRouter {
                 if (orchestrator.getAiChat().getPromptInstructions().isIterativeMode()) {
                     return createAssistedCodingMode();
                 }
-            }
-            if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
-                return createHybridManualExportMode();
             }
         }
 

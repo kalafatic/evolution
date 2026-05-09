@@ -22,4 +22,19 @@ public class RuntimeEvent {
     public String getSource() { return source; }
     public Object getPayload() { return payload; }
     public Map<String, Object> getMetadata() { return metadata; }
+
+    public RuntimeEvent withMetadata(String key, Object value) {
+        this.metadata.put(key, value);
+        return this;
+    }
+
+    public RuntimeEvent withParent(String parentId) {
+        this.metadata.put("parentId", parentId);
+        return this;
+    }
+
+    public RuntimeEvent withEntityId(String entityId) {
+        this.metadata.put("entityId", entityId);
+        return this;
+    }
 }
