@@ -47,6 +47,10 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		return getSessionGraph(sessionId).getGraphJson();
 	}
 
+	public GraphEntity getEntity(String sessionId, String entityId) {
+		return getSessionGraph(sessionId).getEntity(entityId);
+	}
+
 	// Helper classes to maintain state per session
 	private static class SessionGraphData {
 		private final String sessionId;
@@ -60,6 +64,10 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 
 		public void addEntity(String id, EntityType type) {
 			entities.put(id, new GraphEntity(id, type));
+		}
+
+		public GraphEntity getEntity(String id) {
+			return entities.get(id);
 		}
 
 		public void onEvent(RuntimeEvent event) {

@@ -40,25 +40,25 @@ public class GraphActionExecutor {
 
     private void handleStepAction(String entityId, WorkflowStatus status) {
     	System.err.println("[GraphActionExecutor] Handling step action for entity: " + entityId + " with status: " + status);    
-//        GraphEntity entity = WorkflowGraphManager.getInstance(context.getSessionId()).getEntity(entityId);
-//        if (entity != null && entity.getMetadata().has("currentStepId")) {
-//            String stepId = entity.getMetadata().getString("currentStepId");
-//            StepModeController.getInstance().resumeStep(stepId, status);
-//        }
+        GraphEntity entity = WorkflowGraphManager.getInstance(context.getSessionId()).getEntity(context.getSessionId(), entityId);
+        if (entity != null && entity.getMetadata().has("currentStepId")) {
+            String stepId = entity.getMetadata().getString("currentStepId");
+            StepModeController.getInstance().resumeStep(stepId, status);
+        }
     }
 
     private void handleInspect(String entityId) {
     	System.err.println("[GraphActionExecutor] Handling inspect action for entity: " + entityId);
-//        GraphEntity entity = WorkflowGraphManager.getInstance(context.getSessionId()).getSessionGraph().getEntity(entityId);
-//        if (entity != null && entity.getMetadata().has("currentStepId")) {
-//            String stepId = entity.getMetadata().getString("currentStepId");
-//            WorkflowStep step = WorkflowStepRegistry.getInstance().getStep(stepId);
-//            if (step != null) {
-//                context.log("[INSPECT] Step: " + step.getDescription());
-//                context.log("[INSPECT] Type: " + step.getStepType());
-//                // In a real UI, this would open a dialog or a detail panel
-//            }
-//        }
+        GraphEntity entity = WorkflowGraphManager.getInstance(context.getSessionId()).getEntity(context.getSessionId(), entityId);
+        if (entity != null && entity.getMetadata().has("currentStepId")) {
+            String stepId = entity.getMetadata().getString("currentStepId");
+            WorkflowStep step = WorkflowStepRegistry.getInstance().getStep(stepId);
+            if (step != null) {
+                context.log("[INSPECT] Step: " + step.getDescription());
+                context.log("[INSPECT] Type: " + step.getStepType());
+                // In a real UI, this would open a dialog or a detail panel
+            }
+        }
     }
 
     private void handleNodeClick(String entityId) {
