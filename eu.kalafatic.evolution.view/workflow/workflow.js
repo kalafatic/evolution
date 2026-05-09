@@ -1,179 +1,208 @@
 (function() {
-    const svg = document.getElementById('workflow-svg');
-    const rootGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    const nodesGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    const linksGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    const svg = d3.select("#workflow-svg");
+    const container = d3.select("#workflow-container");
 
-    svg.appendChild(rootGroup);
-    rootGroup.appendChild(linksGroup);
-    rootGroup.appendChild(nodesGroup);
+    const width = window.innerWidth;
+    const height = window.innerHeight;
 
-    // Zoom/Pan State
-    let scale = 1;
-    let translateX = 0;
-    let translateY = 0;
-    let isDragging = false;
-    let startX, startY;
+    const gMain = svg.append("g");
+    const gLinks = gMain.append("g").attr("class", "links");
+    const gNodes = gMain.append("g").attr("class", "nodes");
 
-    svg.onmousedown = (e) => {
-        isDragging = true;
-        startX = e.clientX - translateX;
-        startY = e.clientY - translateY;
+    // Zoom setup
+    const zoom = d3.zoom()
+        .scaleExtent([0.1, 4])
+        .on("zoom", (event) => {
+            gMain.attr("transform", event.transform);
+        });
+
+    svg.call(zoom);
+
+    window.resetZoom = function() {
+        svg.transition().duration(750).call(
+            zoom.transform,
+            d3.zoomIdentity
+        );
     };
-
-    window.onmousemove = (e) => {
-        if (isDragging) {
-            translateX = e.clientX - startX;
-            translateY = e.clientY - startY;
-            updateTransform();
-        }
-    };
-
-    window.onmouseup = () => isDragging = false;
-
-    svg.onwheel = (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        scale *= delta;
-        updateTransform();
-    };
-
-    function updateTransform() {
-        rootGroup.setAttribute("transform", `translate(${translateX}, ${translateY}) scale(${scale})`);
-    }
 
     const typeIcons = {
-        'USER': '👤',
-        'SUPERVISOR': '🤖',
-        'EVOLUTION_LOOP': '🔄',
-        'LOCAL_LLM': '🏠',
-        'REMOTE_LLM': '☁️',
-        'ZIP_EXPORT': '📦',
-        'DEPLOYMENT_TARGET': '🚀'
+        'USER': '\uD83D\uDC64',        // 👤
+        'SUPERVISOR': '\uD83E\uDD16',  // 🤖
+        'EVOLUTION_LOOP': '\uD83D\uDD04', // 🔄
+        'LOCAL_LLM': '\uD83C\uDFE0',   // 🏠
+        'REMOTE_LLM': '\u2601\uFE0F',   // ☁️
+        'ZIP_EXPORT': '\uD83D\uDCE6',   // 📦
+        'DEPLOYMENT_TARGET': '\uD83D\uDE80', // 🚀
+        'DARWIN_VARIANT': '\uD83E\uDDEC', // 🧬
+        'SELF_DEV_TASK': '\uD83D\uDCC4', // 📄
+        'MEDIATED_FLOW': '\uD83D\uDD34'  // 🔴
     };
-
-    // Arrowhead definition
-    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-    const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-    marker.setAttribute("id", "arrowhead");
-    marker.setAttribute("markerWidth", "10");
-    marker.setAttribute("markerHeight", "7");
-    marker.setAttribute("refX", "10");
-    marker.setAttribute("refY", "3.5");
-    marker.setAttribute("orient", "auto");
-    const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    polygon.setAttribute("points", "0 0, 10 3.5, 0 7");
-    polygon.setAttribute("fill", "#9ca3af");
-    marker.appendChild(polygon);
-    defs.appendChild(marker);
-    svg.appendChild(defs);
 
     let graphData = { nodes: [], links: [] };
 
     window.updateGraph = function(data) {
-        console.log("[WorkflowJS] Updating graph with data:", JSON.stringify(data));
-        if (!data || !data.nodes) {
-            console.error("[WorkflowJS] Invalid graph data received:", data);
-            return;
-        }
+        console.log("[WorkflowJS] Updating graph", data);
+        if (!data || !data.nodes) return;
         graphData = data;
         render();
     };
 
     function render() {
-        console.log("[WorkflowJS] Rendering graph with", graphData.nodes.length, "nodes");
-        nodesGroup.innerHTML = '';
-        linksGroup.innerHTML = '';
+        const nodes = graphData.nodes;
+        const links = graphData.links;
 
-        const nodeMap = {};
+        // Simple Hierarchical Layout logic
+        const nodeMap = new Map();
+        nodes.forEach(n => nodeMap.set(n.id, n));
 
-        // Layout: Basic horizontal flow for now
-        let x = 50, y = 100;
-        graphData.nodes.forEach(node => {
-            node.x = node.x || x;
-            node.y = node.y || y;
-            nodeMap[node.id] = node;
+        // Assign levels
+        const levels = new Map();
+        const visited = new Set();
 
-            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            let nodeClass = "node";
-            if (node.status === 'RUNNING') nodeClass += " active";
-            if (node.status === 'WAITING_USER') nodeClass += " pulse waiting";
-            if (node.status === 'FAILED') nodeClass += " failed";
+        function assignLevel(nodeId, level) {
+            if (levels.has(nodeId) && levels.get(nodeId) >= level) return;
+            levels.set(nodeId, level);
+            links.filter(l => l.from === nodeId).forEach(l => assignLevel(l.to, level + 1));
+        }
 
-            g.setAttribute("class", nodeClass);
-            g.setAttribute("transform", `translate(${node.x}, ${node.y})`);
-            g.onclick = () => { if (window.javaAction) window.javaAction(node.id, 'CLICK'); };
+        // Find roots (nodes with no incoming links)
+        const targets = new Set(links.map(l => l.to));
+        const roots = nodes.filter(n => !targets.has(n.id));
+        if (roots.length === 0 && nodes.length > 0) roots.push(nodes[0]);
 
-            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            rect.setAttribute("width", "120");
-            rect.setAttribute("height", "40");
-            g.appendChild(rect);
+        roots.forEach(r => assignLevel(r.id, 0));
 
-            const icon = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            icon.setAttribute("x", "15");
-            icon.setAttribute("y", "25");
-            icon.style.fontSize = "16px";
-            icon.textContent = typeIcons[node.type] || '📄';
-            g.appendChild(icon);
+        // Group by level for X positioning
+        const levelGroups = d3.group(nodes, n => levels.get(n.id) || 0);
+        const nodeWidth = 180;
+        const nodeHeight = 60;
+        const levelSpacing = 250;
+        const siblingSpacing = 100;
 
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("x", "70");
-            text.setAttribute("y", "25");
-            text.textContent = node.id;
-            g.appendChild(text);
+        levelGroups.forEach((group, level) => {
+            const totalHeight = (group.length - 1) * siblingSpacing;
+            group.forEach((node, i) => {
+                node.x = level * levelSpacing + 50;
+                node.y = (height / 2) - (totalHeight / 2) + (i * siblingSpacing);
+            });
+        });
 
-            if (node.actions && node.actions.length > 0) {
-                const actionGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                actionGroup.setAttribute("class", "actions");
-
-                node.actions.forEach((action, index) => {
-                    const actionBtn = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                    actionBtn.setAttribute("cx", 120 - (index * 15));
-                    actionBtn.setAttribute("cy", "5");
-                    actionBtn.setAttribute("r", "6");
-                    actionBtn.setAttribute("class", "action-btn " + action.toLowerCase());
-                    actionBtn.setAttribute("title", action);
-                    actionBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        if (window.javaAction) window.javaAction(node.id, action);
-                    };
-                    actionGroup.appendChild(actionBtn);
+        // Specific Darwin Variant Positioning (Branching)
+        // If a node has multiple outgoing 'mutation' links, position them as branches
+        nodes.forEach(node => {
+            const children = links.filter(l => l.from === node.id);
+            const mutations = children.filter(l => l.type === 'mutation');
+            if (mutations.length > 1) {
+                const variants = mutations.map(l => nodeMap.get(l.to)).filter(n => n);
+                const totalVarHeight = (variants.length - 1) * siblingSpacing;
+                variants.forEach((v, i) => {
+                    v.x = node.x + levelSpacing;
+                    v.y = node.y - (totalVarHeight / 2) + (i * siblingSpacing);
                 });
-                g.appendChild(actionGroup);
-            }
-
-            if (node.runtimeState) {
-                const stateText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                stateText.setAttribute("x", "5");
-                stateText.setAttribute("y", "50");
-                stateText.setAttribute("class", "runtime-state");
-                stateText.textContent = node.runtimeState;
-                g.appendChild(stateText);
-            }
-
-            nodesGroup.appendChild(g);
-            x += 180;
-            if (x > 800) { x = 50; y += 100; }
-        });
-
-        graphData.links.forEach(link => {
-            const source = nodeMap[link.from];
-            const target = nodeMap[link.to];
-            if (source && target) {
-                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                const d = `M ${source.x + 120} ${source.y + 20} L ${target.x} ${target.y + 20}`;
-                path.setAttribute("d", d);
-                path.setAttribute("class", "link " + (link.active ? 'active' : ''));
-                linksGroup.appendChild(path);
             }
         });
+
+        // Draw Links
+        const linkGenerator = d3.linkHorizontal()
+            .x(d => d.x + (d.width || 140))
+            .y(d => d.y + 20);
+
+        const linkData = links.map(l => {
+            const source = nodeMap.get(l.from);
+            const target = nodeMap.get(l.to);
+            if (!source || !target) return null;
+            return {
+                source: { x: source.x, y: source.y, width: 140 },
+                target: { x: target.x - 140, y: target.y } // Adjust for horizontal link
+            };
+        }).filter(l => l);
+
+        const path = gLinks.selectAll(".link")
+            .data(links)
+            .join("path")
+            .attr("class", d => "link " + (d.active ? "active" : ""))
+            .attr("d", d => {
+                const s = nodeMap.get(d.from);
+                const t = nodeMap.get(d.to);
+                if (!s || !t) return "";
+                // Use curved diagonal
+                const x0 = s.x + 140;
+                const y0 = s.y + 20;
+                const x1 = t.x;
+                const y1 = t.y + 20;
+                return `M${x0},${y0} C${(x0 + x1) / 2},${y0} ${(x0 + x1) / 2},${y1} ${x1},${y1}`;
+            });
+
+        // Draw Nodes
+        const nodeGroups = gNodes.selectAll(".node")
+            .data(nodes, d => d.id)
+            .join("g")
+            .attr("class", d => {
+                let cls = "node";
+                if (d.status === 'RUNNING') cls += " active";
+                if (d.status === 'WAITING_USER') cls += " waiting";
+                if (d.status === 'FAILED') cls += " failed";
+                return cls;
+            })
+            .attr("transform", d => `translate(${d.x}, ${d.y})`)
+            .on("click", (event, d) => {
+                if (window.javaAction) window.javaAction(d.id, 'CLICK');
+            });
+
+        nodeGroups.selectAll("rect")
+            .data(d => [d])
+            .join("rect")
+            .attr("width", 140)
+            .attr("height", 40);
+
+        nodeGroups.selectAll(".node-type-icon")
+            .data(d => [d])
+            .join("text")
+            .attr("class", "node-type-icon")
+            .attr("x", 15)
+            .attr("y", 26)
+            .text(d => typeIcons[d.type] || '\uD83D\uDCC4');
+
+        nodeGroups.selectAll(".node-id")
+            .data(d => [d])
+            .join("text")
+            .attr("class", "node-id")
+            .attr("x", 45)
+            .attr("y", 25)
+            .text(d => d.id.length > 12 ? d.id.substring(0, 10) + ".." : d.id);
+
+        // Actions
+        nodeGroups.each(function(d) {
+            if (d.actions && d.actions.length > 0) {
+                const ag = d3.select(this).selectAll(".actions-group")
+                    .data([d])
+                    .join("g")
+                    .attr("class", "actions-group");
+
+                ag.selectAll("circle")
+                    .data(d.actions)
+                    .join("circle")
+                    .attr("cx", (action, i) => 140 - (i * 15) - 10)
+                    .attr("cy", 5)
+                    .attr("r", 6)
+                    .attr("class", action => "action-btn " + action.toLowerCase())
+                    .on("click", (event, action) => {
+                        event.stopPropagation();
+                        if (window.javaAction) window.javaAction(d.id, action);
+                    })
+                    .append("title")
+                    .text(action => action);
+            }
+        });
+
+        // Runtime State
+        nodeGroups.selectAll(".runtime-state")
+            .data(d => d.runtimeState ? [d] : [])
+            .join("text")
+            .attr("class", "runtime-state")
+            .attr("x", 5)
+            .attr("y", 55)
+            .text(d => d.runtimeState);
     }
-
-    window.resetZoom = function() {
-        scale = 1;
-        translateX = 0;
-        translateY = 0;
-        updateTransform();
-    };
 
 })();
