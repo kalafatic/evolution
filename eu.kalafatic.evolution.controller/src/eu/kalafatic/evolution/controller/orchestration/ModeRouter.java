@@ -65,6 +65,11 @@ public class ModeRouter {
             return createAssistedCodingMode();
         }
 
+        // 4. Analytical keywords detection - force Iterative (Assisted) mode to bypass Darwin mutation loop
+        if (lowerPrompt.matches(".*\\b(analyze|investigate|report|summarize|discovery|audit)\\b.*")) {
+            return createAssistedCodingMode();
+        }
+
         return null; // Not fast-routable
     }
 

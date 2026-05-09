@@ -48,8 +48,9 @@ public class DarwinEngine extends BaseAiAgent {
             sb.append("PRIMARY OBJECTIVE:\n");
             sb.append("→ Propose 2-3 distinct candidate state transitions (strategies) to achieve the goal.\n");
             sb.append("→ CRITICAL: Fulfillment of the current goal is the HIGHEST priority.\n");
+            sb.append("→ If the goal is ANALYTICAL (e.g., 'analyze project', 'investigate issue'), propose investigation strategies using the 'ANALYZE' operation in the 'structure' or 'test' domains.\n");
             sb.append("→ Each variant must be a complete, actionable strategy that targets the specific goal.\n");
-            sb.append("→ Avoid over-engineering or proposing unrelated structural changes unless they directly facilitate the goal.\n\n");
+            sb.append("→ Avoid over-engineering or proposing unrelated structural changes (like generic refactoring) unless they directly facilitate the user's specific goal.\n\n");
         }
 
         sb.append("STATE MODEL:\n")
