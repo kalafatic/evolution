@@ -334,6 +334,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
                     if (!isDisposed()) {
                         updateSelfDevStatus(supervisorStatus);
                         updateSessionStatus();
+                        syncWorkflowSession();
                         if (archViz != null) archViz.scheduleRefresh();
                         if (workflowGroup != null) workflowGroup.scheduleRefresh();
                         refreshBrowser();
@@ -383,13 +384,17 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
     @Override
     protected void refreshUI() {
         updateSessionStatus();
+        syncWorkflowSession();
+        if (archViz != null) archViz.scheduleRefresh();
+        if (workflowGroup != null) workflowGroup.scheduleRefresh();
+        refreshBrowser();
+    }
+
+    private void syncWorkflowSession() {
         if (editor != null && editor.getAiChatPage() != null && workflowGroup != null) {
             String currentChatSessionId = editor.getAiChatPage().getCurrentSessionName();
             workflowGroup.setSessionId(currentChatSessionId);
         }
-        if (archViz != null) archViz.scheduleRefresh();
-        if (workflowGroup != null) workflowGroup.scheduleRefresh();
-        refreshBrowser();
     }
 
     public void setupBrowserListeners(Browser browser) {
@@ -404,6 +409,8 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         browser.setText(getHtmlTemplate());
     }
 
+    private boolean isVizInitializing = false;
+
     private void refreshBrowser() {
         if (vizGroup == null || vizGroup.getBrowser() == null || vizGroup.getBrowser().isDisposed()) return;
 
@@ -411,7 +418,10 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         if (json.equals(lastJson) && isLoaded) return;
 
         if (!isLoaded) {
-            vizGroup.getBrowser().setText(getHtmlTemplate());
+            if (!isVizInitializing) {
+                isVizInitializing = true;
+                vizGroup.getBrowser().setText(getHtmlTemplate());
+            }
             return;
         }
 
@@ -421,10 +431,14 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
                 vizGroup.getBrowser().execute("updateGraph(" + json + ");");
                 lastJson = json;
                 initRetries = 0;
+                isVizInitializing = false;
             } else {
                 if (initRetries < MAX_INIT_RETRIES) {
                     initRetries++;
-                    vizGroup.getBrowser().setText(getHtmlTemplate());
+                    if (!isVizInitializing) {
+                        isVizInitializing = true;
+                        vizGroup.getBrowser().setText(getHtmlTemplate());
+                    }
                 }
             }
         } catch (Exception e) {

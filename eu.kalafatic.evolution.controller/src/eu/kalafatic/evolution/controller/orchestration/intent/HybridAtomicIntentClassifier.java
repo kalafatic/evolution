@@ -75,13 +75,32 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
             }
         }
 
-        // Detect potential target (simplistic: last word if it looks like an identifier)
+        // Detect potential target (simplistic: last word if it looks like an identifier or lowercase name after a positive artifact)
         Pattern targetPattern = Pattern.compile("\\b([A-Z][a-zA-Z0-9_]*|[a-z0-9_-]+\\.[a-z0-9]+)\\b");
         Matcher m = targetPattern.matcher(request);
         int targetCount = 0;
         while (m.find()) {
             targetCount++;
             analysis.getExtractedTargets().add(m.group());
+        }
+
+        // Fallback for lowercase artifact names if after a known artifact type (e.g., "create java class myclass")
+        if (targetCount == 0) {
+            for (String art : posArtifacts) {
+                int artIdx = lower.indexOf(art);
+                if (artIdx != -1) {
+                    String after = lower.substring(artIdx + art.length()).trim();
+                    if (!after.isEmpty()) {
+                        String potentialTarget = after.split("\\s+")[0].replaceAll("[.!?,]$","");
+                        if (potentialTarget.length() > 1 && !posVerbs.contains(potentialTarget)) {
+                            analysis.getExtractedTargets().add(potentialTarget);
+                            targetCount = 1;
+                            analysis.getSignals().add("lowercase_artifact_target");
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         if (targetCount == 1) {
@@ -138,7 +157,7 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         analysis.setDeterministic(analysis.getConfidence() > 0.7);
 
         boolean hasTarget = analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty();
-        analysis.setRequiresPlanning(analysis.getConfidence() < 0.75 || analysis.isMultiStep() || !hasTarget);
+        analysis.setRequiresPlanning(analysis.getConfidence() < 0.75 || analysis.isMultiStep() || !hasTarget || analysis.getSignals().contains("potential_conjunctions"));
 
         return analysis;
     }

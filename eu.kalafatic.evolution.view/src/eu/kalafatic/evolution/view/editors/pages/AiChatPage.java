@@ -457,10 +457,11 @@ public class AiChatPage extends AEvoPage {
 		ModeRouter modeRouter = new ModeRouter();
 		PlatformMode detectedMode = modeRouter.routeFast(request, orchestrator);
 		boolean isSimpleChat = (detectedMode != null && detectedMode.getType() == PlatformType.SIMPLE_CHAT);
+		boolean isMediated = (detectedMode != null && detectedMode.getType() == PlatformType.HYBRID_MANUAL_EXPORT) || (orchestrator != null && orchestrator.getAiMode() == AiMode.MEDIATED);
 		boolean isAtomicTask = eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate(request);
 
-		// Start Self-Dev Supervisor if (Self-Development OR Darwin mode is enabled) AND it's NOT a simple chat OR atomic task request.
-		if (!isSimpleChat && !isAtomicTask && orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
+		// Start Self-Dev Supervisor if (Self-Development OR Darwin mode is enabled) AND it's NOT a simple chat, atomic task OR mediated.
+		if (!isSimpleChat && !isAtomicTask && !isMediated && orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
 		    (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode() || orchestrator.isDarwinMode())) {
 			startSelfDevAction(request);
 			return;

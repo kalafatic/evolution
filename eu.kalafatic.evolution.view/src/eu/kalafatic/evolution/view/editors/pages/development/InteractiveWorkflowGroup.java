@@ -26,6 +26,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
     private Browser browser;
     private String sessionId;
     private GraphActionExecutor executor;
+    private boolean isLoaded = false;
 
     public InteractiveWorkflowGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, String sessionId) {
         super(editor, orchestrator);
@@ -46,6 +47,14 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
 
         try {
             browser = SWTFactory.createBrowser(browserContainer, 700);
+
+            browser.addProgressListener(new org.eclipse.swt.browser.ProgressAdapter() {
+                @Override
+                public void completed(org.eclipse.swt.browser.ProgressEvent event) {
+                    isLoaded = true;
+                    scheduleRefresh();
+                }
+            });
 
             new BrowserFunction(browser, "javaAction") {
                 @Override
@@ -77,7 +86,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
 
     @Override
     protected void refreshUI() {
-        if (browser != null && !browser.isDisposed()) {
+        if (browser != null && !browser.isDisposed() && isLoaded) {
             JSONObject graph = WorkflowGraphManager.getInstance(sessionId).getGraphJson(sessionId);
             browser.execute("if(window.updateGraph) window.updateGraph(" + graph.toString() + ");");
         }
