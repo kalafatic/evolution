@@ -65,6 +65,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isDarwinMode <em>Darwin Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getMaxIterations <em>Max Iterations</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isStepMode <em>Step Mode</em>}</li>
  * </ul>
  *
  * @generated
@@ -659,6 +660,26 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @ordered
 	 */
 	protected int maxIterations = MAX_ITERATIONS_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isStepMode() <em>Step Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isStepMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean STEP_MODE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isStepMode() <em>Step Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isStepMode()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean stepMode = STEP_MODE_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1368,6 +1389,29 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @generated
 	 */
 	@Override
+	public boolean isStepMode() {
+		return stepMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setStepMode(boolean newStepMode) {
+		boolean oldStepMode = stepMode;
+		stepMode = newStepMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__STEP_MODE, oldStepMode, stepMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.TASK__SUB_TASKS:
@@ -1446,6 +1490,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return isGitAutomation();
 			case OrchestrationPackage.TASK__MAX_ITERATIONS:
 				return getMaxIterations();
+			case OrchestrationPackage.TASK__STEP_MODE:
+				return isStepMode();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1555,6 +1601,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__MAX_ITERATIONS:
 				setMaxIterations((Integer)newValue);
 				return;
+			case OrchestrationPackage.TASK__STEP_MODE:
+				setStepMode((Boolean)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1660,6 +1709,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__MAX_ITERATIONS:
 				setMaxIterations(MAX_ITERATIONS_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__STEP_MODE:
+				setStepMode(STEP_MODE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1734,6 +1786,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
 			case OrchestrationPackage.TASK__MAX_ITERATIONS:
 				return maxIterations != MAX_ITERATIONS_EDEFAULT;
+			case OrchestrationPackage.TASK__STEP_MODE:
+				return stepMode != STEP_MODE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1806,6 +1860,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(gitAutomation);
 		result.append(", maxIterations: ");
 		result.append(maxIterations);
+		result.append(", stepMode: ");
+		result.append(stepMode);
 		result.append(')');
 		return result.toString();
 	}

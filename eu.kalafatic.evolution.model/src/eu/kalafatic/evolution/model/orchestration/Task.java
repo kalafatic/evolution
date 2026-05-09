@@ -46,6 +46,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isDarwinMode <em>Darwin Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#getMaxIterations <em>Max Iterations</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Task#isStepMode <em>Step Mode</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask()
@@ -720,5 +721,28 @@ public interface Task extends EObject {
 	 * @generated
 	 */
 	void setMaxIterations(int value);
+
+	/**
+	 * Returns the value of the '<em><b>Step Mode</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Step Mode</em>' attribute.
+	 * @see #setStepMode(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_StepMode()
+	 * @model default="false"
+	 * @generated
+	 */
+	boolean isStepMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#isStepMode <em>Step Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Step Mode</em>' attribute.
+	 * @see #isStepMode()
+	 * @generated
+	 */
+	void setStepMode(boolean value);
 
 } // Task
