@@ -119,7 +119,7 @@ public class ChatGroup extends AEvoGroup {
 
         browser = new Browser(group, SWT.BORDER);
         GridData gd = new GridData(GridData.FILL_BOTH);
-        gd.heightHint = 264;
+        gd.heightHint = 300;
         browser.setLayoutData(gd);
 
         browser.addProgressListener(new org.eclipse.swt.browser.ProgressAdapter() {
@@ -157,7 +157,7 @@ public class ChatGroup extends AEvoGroup {
                 URL chatUrl = new URL(bundleRoot, "chat.html");
                 //browser.setUrl(chatUrl.toString());
                 
-                String html = loadHtmlTemplate("/chat.html");
+                String html = SWTFactory.loadHtmlTemplate("/chat.html");
 
              // critical: inject base path so relative JS works
              //URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
@@ -174,7 +174,7 @@ public class ChatGroup extends AEvoGroup {
             }
         } catch (Exception e) {
             System.err.println("Failed to load chat.html via setUrl: " + e.getMessage());
-            String html = loadHtmlTemplate("/chat.html");
+            String html =  SWTFactory.loadHtmlTemplate("/chat.html");
             browser.setText(html);
         }
     }
@@ -473,18 +473,7 @@ public class ChatGroup extends AEvoGroup {
         };
     }
     
-    private String loadHtmlTemplate(String path) {
-        try (var is = getClass().getResourceAsStream(path)) {
-            if (is == null) {
-                return "<html><body>Error: Template not found at " + path + "</body></html>";
-            }
-            try (var reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                return reader.lines().collect(Collectors.joining("\n"));
-            }
-        } catch (Exception e) {
-            return "<html><body>Exception: " + e.getMessage() + "</body></html>";
-        }
-    }
+   
     
     private void handleEdit(int index, String oldText) {
         if (editCallback != null) {

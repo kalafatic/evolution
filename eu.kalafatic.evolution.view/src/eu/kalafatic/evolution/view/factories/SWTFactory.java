@@ -1,9 +1,13 @@
 package eu.kalafatic.evolution.view.factories;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
@@ -421,7 +425,18 @@ public class SWTFactory {
 		return browser;
 	}
 
-	
+	public static String loadHtmlTemplate(String path) {
+	        try (var is = SWTFactory.class.getResourceAsStream(path)) {
+	            if (is == null) {
+	                return "<html><body>Error: Template not found at " + path + "</body></html>";
+	            }
+	            try (var reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+	                return reader.lines().collect(Collectors.joining("\n"));
+	            }
+	        } catch (Exception e) {
+	            return "<html><body>Exception: " + e.getMessage() + "</body></html>";
+	        }
+	    }
 
 
 
