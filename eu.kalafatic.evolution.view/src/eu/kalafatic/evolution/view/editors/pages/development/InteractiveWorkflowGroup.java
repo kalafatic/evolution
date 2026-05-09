@@ -78,7 +78,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (browser != null && !browser.isDisposed()) {
-            JSONObject graph = WorkflowGraphManager.getInstance(sessionId).getGraphJson();
+            JSONObject graph = WorkflowGraphManager.getInstance(sessionId).getGraphJson(sessionId);
             browser.execute("if(window.updateGraph) window.updateGraph(" + graph.toString() + ");");
         }
     }
