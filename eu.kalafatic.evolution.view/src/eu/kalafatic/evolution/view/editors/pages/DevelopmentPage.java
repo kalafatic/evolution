@@ -179,7 +179,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
 
         // 2.5 Interactive AI Workflow
         String sessionId = (orchestrator != null && orchestrator.getSelfDevSession() != null) ?
-            orchestrator.getSelfDevSession().getId() : "default";
+            orchestrator.getSelfDevSession().getId() : "Default";
         workflowGroup = new eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup(
             toolkit, container, editor, orchestrator, sessionId);
 

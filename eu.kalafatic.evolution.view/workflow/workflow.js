@@ -71,11 +71,17 @@
     let graphData = { nodes: [], links: [] };
 
     window.updateGraph = function(data) {
+        console.log("[WorkflowJS] Updating graph with data:", JSON.stringify(data));
+        if (!data || !data.nodes) {
+            console.error("[WorkflowJS] Invalid graph data received:", data);
+            return;
+        }
         graphData = data;
         render();
     };
 
     function render() {
+        console.log("[WorkflowJS] Rendering graph with", graphData.nodes.length, "nodes");
         nodesGroup.innerHTML = '';
         linksGroup.innerHTML = '';
 
