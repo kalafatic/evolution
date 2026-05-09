@@ -81,30 +81,11 @@ public class ConversationState {
             state.setActiveTask(json.optString("active_task", ""));
             state.setHistorySummary(json.optString("history_summary", ""));
 
-            JSONArray msgs = json.optJSONArray("last_messages");
-            if (msgs != null) {
-                for (int i = 0; i < msgs.length(); i++) state.lastMessages.add(msgs.getString(i));
-            }
-
-            JSONArray ques = json.optJSONArray("open_questions");
-            if (ques != null) {
-                for (int i = 0; i < ques.length(); i++) state.openQuestions.add(ques.getString(i));
-            }
-
-            JSONArray decs = json.optJSONArray("decisions");
-            if (decs != null) {
-                for (int i = 0; i < decs.length(); i++) state.decisions.add(decs.getString(i));
-            }
-
-            JSONArray pQues = json.optJSONArray("pending_questions");
-            if (pQues != null) {
-                for (int i = 0; i < pQues.length(); i++) state.pendingQuestions.add(pQues.getString(i));
-            }
-
-            JSONArray cHist = json.optJSONArray("clarification_history");
-            if (cHist != null) {
-                for (int i = 0; i < cHist.length(); i++) state.clarificationHistory.add(cHist.getString(i));
-            }
+            state.lastMessages.addAll(eu.kalafatic.evolution.controller.parsers.JsonUtils.toStringList(json.optJSONArray("last_messages")));
+            state.openQuestions.addAll(eu.kalafatic.evolution.controller.parsers.JsonUtils.toStringList(json.optJSONArray("open_questions")));
+            state.decisions.addAll(eu.kalafatic.evolution.controller.parsers.JsonUtils.toStringList(json.optJSONArray("decisions")));
+            state.pendingQuestions.addAll(eu.kalafatic.evolution.controller.parsers.JsonUtils.toStringList(json.optJSONArray("pending_questions")));
+            state.clarificationHistory.addAll(eu.kalafatic.evolution.controller.parsers.JsonUtils.toStringList(json.optJSONArray("clarification_history")));
 
             state.setRequirementMet(json.optBoolean("is_requirement_met", true));
             if (json.has("confirmed_requirements")) {

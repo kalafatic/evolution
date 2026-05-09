@@ -25,6 +25,7 @@ public class AtomicIntentClassifierTest {
         assertNotAtomic("analyze workflow problems");
         assertNotAtomic("refactor entire service layer");
         assertNotAtomic("create java class Test and add many methods");
+        assertNotAtomic("analyze IterationManager.java");
     }
 
     private void assertAtomic(String request) {

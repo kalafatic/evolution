@@ -74,6 +74,49 @@ public class JsonUtils {
     }
 
     /**
+     * Converts a JSONArray to a List of Strings, robustly handling objects or non-string elements.
+     * Useful for smaller models that might return a list of objects instead of a list of strings.
+     *
+     * @param arr The JSONArray to convert.
+     * @return A list of strings.
+     */
+    public static List<String> toStringList(JSONArray arr) {
+        if (arr == null) return Collections.emptyList();
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < arr.length(); i++) {
+            Object obj = arr.opt(i);
+            if (obj == null) continue;
+
+            if (obj instanceof String) {
+                result.add((String) obj);
+            } else if (obj instanceof JSONObject) {
+                JSONObject jObj = (JSONObject) obj;
+                // Try specific fields often returned by LLMs for structured lists
+                if (jObj.has("reason")) {
+                    if (jObj.has("part")) {
+                        result.add(jObj.optString("part", "") + ": " + jObj.optString("reason", ""));
+                    } else {
+                        result.add(jObj.optString("reason", ""));
+                    }
+                } else if (jObj.has("description")) {
+                    if (jObj.has("field")) {
+                        result.add(jObj.optString("field", "") + ": " + jObj.optString("description", ""));
+                    } else {
+                        result.add(jObj.optString("description", ""));
+                    }
+                } else if (jObj.has("value")) {
+                    result.add(jObj.optString("value", ""));
+                } else {
+                    result.add(jObj.toString());
+                }
+            } else {
+                result.add(obj.toString());
+            }
+        }
+        return result;
+    }
+
+    /**
      * Fallback for small models that output "Key: Value" lines instead of JSON.
      */
     private static JSONObject attemptKeyValueParsing(String text) {
