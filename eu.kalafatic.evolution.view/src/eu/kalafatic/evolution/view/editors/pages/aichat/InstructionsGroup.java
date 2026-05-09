@@ -61,11 +61,9 @@ public class InstructionsGroup extends AEvoGroup {
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
         requestGridData.heightHint = 66;
         requestText.setLayoutData(requestGridData);
-
-        
-        
         
         Composite composite = SWTFactory.createComposite(group,2);
+        attachmentArea = SWTFactory.createComposite(group, SWT.BORDER, 1);
 
         // Left side: Buttons
         Composite btnComp = SWTFactory.createComposite(composite,5);
@@ -95,17 +93,15 @@ public class InstructionsGroup extends AEvoGroup {
 
         attachButton = SWTFactory.createButton(btnComp, "\ud83d\udcce" + "Attach MD");
        
-        attachmentArea = new Composite(btnComp, SWT.BORDER);
-        attachmentArea.setLayout(new GridLayout(1, false));
-        GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-		gd.widthHint = SWTFactory.LABEL_WIDTH;
-		gd.heightHint = SWTFactory.BUTTON_HEIGHT;
-        attachmentArea.setLayoutData(gd);
+//        attachmentArea = new Composite(btnComp, SWT.BORDER);
+//        attachmentArea.setLayout(new GridLayout(1, false));
+//        GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+//		gd.widthHint = SWTFactory.LABEL_WIDTH;
+//		gd.heightHint = SWTFactory.BUTTON_HEIGHT;
+//        attachmentArea.setLayoutData(gd);
 
         // Right side: Checkboxes and Spinners
-        Composite settingsComp = SWTFactory.createComposite(composite,SWT.NO , 7);
-
-        
+        Composite settingsComp = SWTFactory.createComposite(composite,SWT.NO , 7);        
 
         selfIterativeCheck = SWTFactory.createCheckButton(settingsComp, "Self Development");
         selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");

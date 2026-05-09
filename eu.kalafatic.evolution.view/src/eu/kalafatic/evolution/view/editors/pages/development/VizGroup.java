@@ -30,7 +30,7 @@ public class VizGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, DevelopmentPage page) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Network Visualization", 1, true, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Network Visualization", 1, false, true);
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 700;
         group.setLayoutData(gd);
