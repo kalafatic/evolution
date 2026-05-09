@@ -99,4 +99,11 @@ public abstract class AEvoGroup {
     public void setOrchestrator(Orchestrator orchestrator) {
         this.orchestrator = orchestrator;
     }
+
+    /**
+     * Disposes of any resources held by this group.
+     */
+    public void dispose() {
+        // Default implementation does nothing
+    }
 }
