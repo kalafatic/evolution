@@ -61,6 +61,13 @@ public class LlmRouter {
             } else if (mode == AiMode.REMOTE) {
                 return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
             } else if (mode == AiMode.MEDIATED) {
+                // If we are in HYBRID_MANUAL_EXPORT mode, we only mediate the FINAL prompt.
+                // Internal analysis/prep steps should use local model to avoid breaking the JSON pipeline.
+                if (context != null && context.getPlatformMode() != null &&
+                    context.getPlatformMode().getType() == eu.kalafatic.evolution.controller.orchestration.PlatformType.HYBRID_MANUAL_EXPORT) {
+                    return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
+                }
+
                 // For MEDIATED mode, we use local intelligence to prepare/optimize
                 if (context != null) context.log("LlmRouter-Mediated: Using local intelligence for preparation.");
                 String augmentedPrompt = buildContextLocally(orchestrator, prompt, temperature, proxyUrl, context);

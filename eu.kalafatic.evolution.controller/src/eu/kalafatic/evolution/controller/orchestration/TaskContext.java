@@ -166,9 +166,6 @@ public class TaskContext {
         if (approvalFuture != null && !approvalFuture.isDone()) {
             approvalFuture.complete(approved);
         }
-        if (inputFuture != null && !inputFuture.isDone()) {
-            provideInput(approved ? "Approved" : "Rejected");
-        }
     }
 
     public CompletableFuture<String> requestInput(String message) {

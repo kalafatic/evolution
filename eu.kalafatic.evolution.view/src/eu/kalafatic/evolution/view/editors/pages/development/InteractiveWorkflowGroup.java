@@ -80,9 +80,24 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
             }
             URL url = FileLocator.find(Activator.getDefault().getBundle(), new Path("workflow/workflow.html"), null);
             if (url != null) {
-                String externalForm = FileLocator.toFileURL(url).toExternalForm();
-                System.out.println("[WORKFLOW] Loading workflow HTML from: " + externalForm);
-                browser.setUrl(externalForm);
+                URL fileUrl = FileLocator.toFileURL(url);
+                String base = fileUrl.toString();
+                base = base.substring(0, base.lastIndexOf("/") + 1);
+
+                java.io.InputStream is = fileUrl.openStream();
+                java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is, java.nio.charset.StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line).append("\n");
+                }
+                reader.close();
+
+                String html = sb.toString();
+                html = html.replace("<head>", "<head><base href=\"" + base + "\">");
+
+                System.out.println("[WORKFLOW] Loading workflow HTML with base: " + base);
+                browser.setText(html, true);
             } else {
                 System.err.println("[WORKFLOW] Could not find workflow/workflow.html in bundle");
             }

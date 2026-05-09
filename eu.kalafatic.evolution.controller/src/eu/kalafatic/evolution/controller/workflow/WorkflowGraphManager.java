@@ -21,7 +21,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		return GLOBAL_INSTANCE;
 	}
 
-	private SessionGraphData getSessionGraph(String sessionId) {
+	public SessionGraphData getSessionGraph(String sessionId) {
 		if (sessionId == null)
 			sessionId = "Default";
 		return sessionGraphs.computeIfAbsent(sessionId, id -> new SessionGraphData(id));
@@ -48,10 +48,14 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 	}
 
 	// Helper classes to maintain state per session
-	private static class SessionGraphData {
+	public static class SessionGraphData {
 		private final String sessionId;
 		private final Map<String, GraphEntity> entities = new ConcurrentHashMap<>();
 		private final List<JSONObject> links = new CopyOnWriteArrayList<>();
+
+		public Map<String, GraphEntity> getEntities() {
+			return entities;
+		}
 
 		public SessionGraphData(String sessionId) {
 			this.sessionId = sessionId;
