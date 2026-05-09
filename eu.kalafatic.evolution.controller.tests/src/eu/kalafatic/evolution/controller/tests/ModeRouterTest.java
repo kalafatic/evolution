@@ -90,10 +90,18 @@ public class ModeRouterTest {
     @Test
     public void testMediatedModePriority() {
         orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED);
-        orchestrator.setDarwinMode(true); // Mediated should take precedence
+        orchestrator.setDarwinMode(true); // Mediated should take precedence for general tasks
 
-        PlatformMode mode = router.route("High priority task", orchestrator);
+        PlatformMode mode = router.route("Implement a new feature", orchestrator);
         assertEquals(PlatformType.HYBRID_MANUAL_EXPORT, mode.getType());
+    }
+
+    @Test
+    public void testAnalyticalKeywordsInMediatedMode() {
+        orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED);
+
+        PlatformMode mode = router.route("analyze project c:\\Users\\petrk\\git\\test-evo\\", orchestrator);
+        assertEquals(PlatformType.ASSISTED_CODING, mode.getType());
     }
 
     @Test
