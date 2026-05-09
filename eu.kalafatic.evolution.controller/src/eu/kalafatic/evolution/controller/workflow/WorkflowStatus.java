@@ -6,5 +6,6 @@ public enum WorkflowStatus {
     WAITING_USER,
     COMPLETED,
     FAILED,
-    SKIPPED
+    SKIPPED,
+    RETRY
 }

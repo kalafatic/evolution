@@ -156,7 +156,7 @@ public class IterationManager {
             transition(SystemState.ANALYZING, context);
 
             if (context.getPlatformMode().getType() == PlatformType.HYBRID_MANUAL_EXPORT) {
-                return handleExportFlow(request, context);
+                return new eu.kalafatic.evolution.controller.orchestration.flows.MediatedExportFlow(aiService).execute(request, context);
             }
 
             AtomicIntentAnalysis atomicAnalysis = atomicIntentClassifier.analyze(request, context);
@@ -284,39 +284,6 @@ public class IterationManager {
         }
     }
 
-    private OrchestratorResponse handleExportFlow(String request, TaskContext context) throws Exception {
-        context.log("[KERNEL] Executing Hybrid Manual Export flow.");
-        SelfDevRequestAnalyzer analyzer = new SelfDevRequestAnalyzer();
-        JSONObject analysis = analyzer.analyze(request, context);
-        transition(SystemState.EXPORTING, context);
-
-        checkStep("mediated_flow", "ANALYSIS", "Verify export analysis and file selection.");
-
-        ArchitectureSummarizer summarizer = new ArchitectureSummarizer();
-        String architectureSummary = summarizer.summarize(context, aiService);
-        ContextSelectionEngine contextEngine = new ContextSelectionEngine();
-        Map<String, String> contextFiles = contextEngine.selectContext(request, analysis, context);
-
-        checkStep("mediated_flow", "CONTEXT_SELECTION", "Review selected context files.");
-
-        PromptOptimizer optimizer = new PromptOptimizer();
-        String optimizedPrompt = optimizer.optimize(request, architectureSummary, context, aiService);
-
-        checkStep("mediated_flow", "PROMPT_GENERATION", "Review optimized prompt before export.");
-
-        ExportPackageBuilder builder = new ExportPackageBuilder();
-        File zipFile = builder.build(request, analysis, optimizedPrompt, architectureSummary, contextFiles, context);
-
-        checkStep("zip_export", "EXPORT_READY", "Export package generated at: " + zipFile.getName());
-
-        OrchestratorResponse response = new OrchestratorResponse();
-        response.setResultType(ResultType.CHAT);
-        String summary = "### Export Complete\\n\\nLocation: `" + zipFile.getAbsolutePath() + "`";
-        response.setSummary(summary);
-        response.setContent(summary);
-        transition(SystemState.DONE, context);
-        return response;
-    }
 
     private List<Task> decideFlow(String request, TaskContext context2) throws Exception {
         if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
@@ -325,15 +292,42 @@ public class IterationManager {
         return iterativePlan(request, context);
     }
 
-	private void transition(SystemState to, TaskContext ctx) {
+    private void transition(SystemState to, TaskContext ctx) {
         TransitionToken token = new TransitionToken();
         SystemState current = ctx.getStateHolder().getState();
         ctx.getStateHolder().applyTransition(token, to);
+
+        // Map SystemState to IterationStatus if model exists
+        if (currentIterationModel != null) {
+            switch (to) {
+                case INIT:
+                case ANALYZING:
+                case CLARIFYING:
+                case PLAN_LOCKED:
+                case MUTATING:
+                    currentIterationModel.setStatus(IterationStatus.RUNNING);
+                    break;
+                case EXECUTING:
+                case VERIFYING:
+                    currentIterationModel.setStatus(IterationStatus.RUNNING);
+                    break;
+                case DONE:
+                    currentIterationModel.setStatus(IterationStatus.DONE);
+                    break;
+                case FAILED:
+                    currentIterationModel.setStatus(IterationStatus.FAILED);
+                    break;
+                default:
+                    break;
+            }
+        }
 
         eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
             new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                 eu.kalafatic.evolution.controller.workflow.RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
                 ctx.getSessionId(), "Kernel", to.toString()));
+
+        ctx.log("[KERNEL] Transition: " + (current != null ? current : "NONE") + " -> " + to);
     }
 
     public EvaluationResult runIteration(Iteration iteration) {
@@ -352,7 +346,6 @@ public class IterationManager {
 
     private EvaluationResult runIterative() throws Exception {
         transition(SystemState.INIT, context);
-        currentIterationModel.setStatus(IterationStatus.RUNNING);
         transition(SystemState.ANALYZING, context);
         String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
         try {
@@ -364,25 +357,21 @@ public class IterationManager {
             EvaluationResult result = evaluator.evaluate();
             currentIterationModel.setEvaluationResult(result);
             if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
-                transition(SystemState.DONE, context);
                 gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
-                currentIterationModel.setStatus(IterationStatus.DONE);
+                transition(SystemState.DONE, context);
             } else {
-                transition(SystemState.FAILED, context);
                 gitManager.rollback();
-                currentIterationModel.setStatus(IterationStatus.FAILED);
+                transition(SystemState.FAILED, context);
             }
             return result;
         } catch (Exception e) {
-            transition(SystemState.FAILED, context);
             gitManager.rollback();
-            currentIterationModel.setStatus(IterationStatus.FAILED);
+            transition(SystemState.FAILED, context);
             throw e;
         }
     }
 
     private EvaluationResult runDarwin() throws Exception {
-        currentIterationModel.setStatus(IterationStatus.RUNNING);
         transition(SystemState.INIT, context);
         String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
         gitManager.ensureInitialCommit();
@@ -397,6 +386,20 @@ public class IterationManager {
             FailureMemory failureMemory = memoryService.getFailureMemory();
             transition(SystemState.MUTATING, context);
             List<BranchVariant> variants = darwinEngine.generateVariants(goal, snapshot, failureMemory, trajectory);
+
+            // Publish variants for the graph
+            JSONArray variantsJson = new JSONArray();
+            for (BranchVariant v : variants) {
+                JSONObject vObj = new JSONObject();
+                vObj.put("id", v.getId());
+                vObj.put("strategy", v.getStrategy());
+                variantsJson.put(vObj);
+            }
+            eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+                new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                    eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MUTATION_REVIEW,
+                    context.getSessionId(), "Kernel", variantsJson)
+                    .withParent("evolution_loop"));
 
             checkStep("evolution_loop", "MUTATION", "Darwin variants generated. Review before approval.");
 
@@ -420,10 +423,13 @@ public class IterationManager {
 
             checkStep("evolution_loop", "BRANCH_COMPARISON", "Evaluation complete. Best variant selected: " + (bestVariant != null ? bestVariant.getId() : "None"));
 
+            if (bestVariant != null) {
+                checkStep(bestVariant.getId(), "VARIANT_SELECTION", "Best variant " + bestVariant.getId() + " selected. Score: " + bestVariant.getScore());
+            }
+
             if (bestVariant == null || bestVariant.getScore() <= 0) {
-                transition(SystemState.FAILED, context);
-                currentIterationModel.setStatus(IterationStatus.FAILED);
                 gitManager.forceCheckout(originalBranch);
+                transition(SystemState.FAILED, context);
                 return failedResult();
             }
             transition(SystemState.EXECUTING, context);
@@ -433,20 +439,17 @@ public class IterationManager {
             EvaluationResult result = evaluator.evaluate();
             currentIterationModel.setEvaluationResult(result);
             if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
-                transition(SystemState.DONE, context);
                 gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
-                currentIterationModel.setStatus(IterationStatus.DONE);
+                transition(SystemState.DONE, context);
             } else {
-                transition(SystemState.FAILED, context);
                 gitManager.rollback();
-                currentIterationModel.setStatus(IterationStatus.FAILED);
+                transition(SystemState.FAILED, context);
             }
             return result;
         } catch (Exception e) {
-            transition(SystemState.FAILED, context);
             gitManager.forceCheckout(originalBranch);
             gitManager.rollback();
-            currentIterationModel.setStatus(IterationStatus.FAILED);
+            transition(SystemState.FAILED, context);
             throw e;
         }
     }
