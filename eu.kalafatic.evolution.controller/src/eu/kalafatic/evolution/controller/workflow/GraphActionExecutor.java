@@ -23,6 +23,7 @@ public class GraphActionExecutor {
 
     public void execute(String entityId, String action) {
         if (context != null) context.log("[GRAPH] Executing action '" + action + "' on entity '" + entityId + "'");
+        else System.out.println("[GRAPH] Executing action '" + action + "' on entity '" + entityId + "' (No Context)");
 
         try {
             if ("START_SUPERVISOR".equals(action)) {
@@ -76,6 +77,7 @@ public class GraphActionExecutor {
 
     private void handleNodeClick(String entityId) {
         // Logic to show details or logs for a specific node
-        context.log("[GRAPH] Selected node: " + entityId);
+        if (context != null) context.log("[GRAPH] Selected node: " + entityId);
+        else System.out.println("[GRAPH] Selected node: " + entityId + " (No Context)");
     }
 }

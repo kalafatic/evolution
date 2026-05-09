@@ -16,6 +16,7 @@ public class KernelFacade implements IOrchestrator {
 
     @Override
     public String execute(String request, TaskContext context) throws Exception {
+        if (context == null) throw new Exception("Cannot execute kernel command: No active task context.");
         OrchestratorResponse response = handle(new TaskRequest(request, context.getProjectRoot()), context);
         if (response.getResultType() == ResultType.ERROR) {
             throw new Exception(response.getContent());
