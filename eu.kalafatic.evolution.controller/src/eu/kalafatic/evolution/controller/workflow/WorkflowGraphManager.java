@@ -238,6 +238,8 @@ public class WorkflowGraphManager implements RuntimeEventListener {
         // Payload should contain variant metadata
         if (event.getPayload() instanceof JSONArray) {
             JSONArray variants = (JSONArray) event.getPayload();
+            String parentId = (String) event.getMetadata().getOrDefault("parentId", "evolution_loop");
+
             for (int i = 0; i < variants.length(); i++) {
                 JSONObject v = variants.getJSONObject(i);
                 String vId = v.optString("id", "variant-" + i);
@@ -245,7 +247,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
                 GraphEntity entity = entities.get(vId);
                 entity.setStatus("PENDING");
                 entity.setRuntimeState(v.optString("strategy", ""));
-                addLink("evolution_loop", vId, "mutation");
+                addLink(parentId, vId, "mutation");
             }
         }
     }

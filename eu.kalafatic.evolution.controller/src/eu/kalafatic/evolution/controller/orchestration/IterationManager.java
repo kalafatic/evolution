@@ -156,7 +156,7 @@ public class IterationManager {
             transition(SystemState.ANALYZING, context);
 
             if (context.getPlatformMode().getType() == PlatformType.HYBRID_MANUAL_EXPORT) {
-                return handleExportFlow(request, context);
+                return new eu.kalafatic.evolution.controller.orchestration.flows.MediatedExportFlow(aiService).execute(request, context);
             }
 
             AtomicIntentAnalysis atomicAnalysis = atomicIntentClassifier.analyze(request, context);
@@ -284,39 +284,6 @@ public class IterationManager {
         }
     }
 
-    private OrchestratorResponse handleExportFlow(String request, TaskContext context) throws Exception {
-        context.log("[KERNEL] Executing Hybrid Manual Export flow.");
-        SelfDevRequestAnalyzer analyzer = new SelfDevRequestAnalyzer();
-        JSONObject analysis = analyzer.analyze(request, context);
-        transition(SystemState.EXPORTING, context);
-
-        checkStep("mediated_flow", "ANALYSIS", "Verify export analysis and file selection.");
-
-        ArchitectureSummarizer summarizer = new ArchitectureSummarizer();
-        String architectureSummary = summarizer.summarize(context, aiService);
-        ContextSelectionEngine contextEngine = new ContextSelectionEngine();
-        Map<String, String> contextFiles = contextEngine.selectContext(request, analysis, context);
-
-        checkStep("mediated_flow", "CONTEXT_SELECTION", "Review selected context files.");
-
-        PromptOptimizer optimizer = new PromptOptimizer();
-        String optimizedPrompt = optimizer.optimize(request, architectureSummary, context, aiService);
-
-        checkStep("mediated_flow", "PROMPT_GENERATION", "Review optimized prompt before export.");
-
-        ExportPackageBuilder builder = new ExportPackageBuilder();
-        File zipFile = builder.build(request, analysis, optimizedPrompt, architectureSummary, contextFiles, context);
-
-        checkStep("zip_export", "EXPORT_READY", "Export package generated at: " + zipFile.getName());
-
-        OrchestratorResponse response = new OrchestratorResponse();
-        response.setResultType(ResultType.CHAT);
-        String summary = "### Export Complete\\n\\nLocation: `" + zipFile.getAbsolutePath() + "`";
-        response.setSummary(summary);
-        response.setContent(summary);
-        transition(SystemState.DONE, context);
-        return response;
-    }
 
     private List<Task> decideFlow(String request, TaskContext context2) throws Exception {
         if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
@@ -431,7 +398,8 @@ public class IterationManager {
             eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
                 new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                     eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MUTATION_REVIEW,
-                    context.getSessionId(), "Kernel", variantsJson));
+                    context.getSessionId(), "Kernel", variantsJson)
+                    .withParent("evolution_loop"));
 
             checkStep("evolution_loop", "MUTATION", "Darwin variants generated. Review before approval.");
 
