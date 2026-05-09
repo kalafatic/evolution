@@ -12,7 +12,10 @@ import java.io.File;
 import java.net.URL;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.json.JSONObject;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 
 import eu.kalafatic.evolution.controller.workflow.WorkflowGraphManager;
 import eu.kalafatic.evolution.controller.workflow.GraphActionExecutor;
@@ -52,35 +55,47 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
                 @Override
                 public void completed(org.eclipse.swt.browser.ProgressEvent event) {
                     isLoaded = true;
+                    setupJavaScriptBridges();
                     scheduleRefresh();
                 }
             });
 
-            new BrowserFunction(browser, "javaAction") {
-                @Override
-                public Object function(Object[] arguments) {
-                    if (arguments.length >= 2) {
-                        executor.execute(arguments[0].toString(), arguments[1].toString());
-                    }
-                    return null;
-                }
-            };
-
+            setupJavaScriptBridges();
             loadWorkflowHtml();
         } catch (Exception e) {
             toolkit.createLabel(browserContainer, "Browser Error: " + e.getMessage());
         }
     }
 
+    private void setupJavaScriptBridges() {
+        new BrowserFunction(browser, "javaAction") {
+            @Override
+            public Object function(Object[] arguments) {
+                if (arguments.length >= 2) {
+                    executor.execute(arguments[0].toString(), arguments[1].toString());
+                }
+                return null;
+            }
+        };
+    }
+
     private void loadWorkflowHtml() {
         try {
-            if (Activator.getDefault() == null) {
-                browser.setText(getFallbackHtml());
-                return;
+            Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.view");
+            if (bundle == null) {
+                bundle = FrameworkUtil.getBundle(getClass());
             }
-            URL url = FileLocator.find(Activator.getDefault().getBundle(), new Path("workflow/workflow.html"), null);
-            if (url != null) {
-                browser.setUrl(FileLocator.toFileURL(url).toExternalForm());
+
+            if (bundle != null) {
+                URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
+                String base = bundleRoot.toString();
+                String html = SWTFactory.loadHtmlTemplate("/workflow/workflow.html");
+
+                if (html.contains("<head>")) {
+                    html = html.replace("<head>", "<head><base href=\"" + base + "workflow/\">");
+                }
+
+                browser.setText(html, true);
             } else {
                 browser.setText(getFallbackHtml());
             }
