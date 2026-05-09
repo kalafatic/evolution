@@ -22,11 +22,40 @@ public class GraphActionExecutor {
                 new KernelFacade().execute("run evolution loop", context);
             } else if ("APPLY_PATCH".equals(action)) {
                 new KernelFacade().execute("apply patch", context);
+            } else if ("CONTINUE".equals(action)) {
+                handleStepAction(entityId, WorkflowStatus.COMPLETED);
+            } else if ("RETRY".equals(action)) {
+                handleStepAction(entityId, WorkflowStatus.PENDING);
+            } else if ("SKIP".equals(action)) {
+                handleStepAction(entityId, WorkflowStatus.SKIPPED);
+            } else if ("INSPECT".equals(action)) {
+                handleInspect(entityId);
             } else if ("CLICK".equals(action)) {
                 handleNodeClick(entityId);
             }
         } catch (Exception e) {
             context.log("[GRAPH] Execution failed: " + e.getMessage());
+        }
+    }
+
+    private void handleStepAction(String entityId, WorkflowStatus status) {
+        GraphEntity entity = WorkflowGraphManager.getInstance(context.getSessionId()).getEntity(entityId);
+        if (entity != null && entity.getMetadata().has("currentStepId")) {
+            String stepId = entity.getMetadata().getString("currentStepId");
+            StepModeController.getInstance().resumeStep(stepId, status);
+        }
+    }
+
+    private void handleInspect(String entityId) {
+        GraphEntity entity = WorkflowGraphManager.getInstance(context.getSessionId()).getEntity(entityId);
+        if (entity != null && entity.getMetadata().has("currentStepId")) {
+            String stepId = entity.getMetadata().getString("currentStepId");
+            WorkflowStep step = WorkflowStepRegistry.getInstance().getStep(stepId);
+            if (step != null) {
+                context.log("[INSPECT] Step: " + step.getDescription());
+                context.log("[INSPECT] Type: " + step.getStepType());
+                // In a real UI, this would open a dialog or a detail panel
+            }
         }
     }
 

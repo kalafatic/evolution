@@ -2873,13 +2873,22 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_SESSION__MAX_ITERATIONS = 6;
 
 	/**
+	 * The feature id for the '<em><b>Step Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_SESSION__STEP_MODE = 7;
+
+	/**
 	 * The number of structural features of the '<em>Chat Session</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_SESSION_FEATURE_COUNT = 7;
+	int CHAT_SESSION_FEATURE_COUNT = 8;
 
 	/**
 	 * The number of operations of the '<em>Chat Session</em>' class.
@@ -3046,13 +3055,22 @@ public interface OrchestrationPackage extends EPackage {
 	int PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE = 4;
 
 	/**
+	 * The feature id for the '<em><b>Step Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PROMPT_INSTRUCTIONS__STEP_MODE = 5;
+
+	/**
 	 * The number of structural features of the '<em>Prompt Instructions</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int PROMPT_INSTRUCTIONS_FEATURE_COUNT = 5;
+	int PROMPT_INSTRUCTIONS_FEATURE_COUNT = 6;
 
 	/**
 	 * The number of operations of the '<em>Prompt Instructions</em>' class.
@@ -5746,6 +5764,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getChatSession_MaxIterations();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isStepMode <em>Step Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Step Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#isStepMode()
+	 * @see #getChatSession()
+	 * @generated
+	 */
+	EAttribute getChatSession_StepMode();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage <em>Chat Message</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5907,6 +5936,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getPromptInstructions_SelfIterativeMode();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isStepMode <em>Step Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Step Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.PromptInstructions#isStepMode()
+	 * @see #getPromptInstructions()
+	 * @generated
+	 */
+	EAttribute getPromptInstructions_StepMode();
 
 	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
@@ -8010,6 +8050,14 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute CHAT_SESSION__MAX_ITERATIONS = eINSTANCE.getChatSession_MaxIterations();
 
 		/**
+		 * The meta object literal for the '<em><b>Step Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_SESSION__STEP_MODE = eINSTANCE.getChatSession_StepMode();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -8132,6 +8180,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE = eINSTANCE.getPromptInstructions_SelfIterativeMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Step Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute PROMPT_INSTRUCTIONS__STEP_MODE = eINSTANCE.getPromptInstructions_StepMode();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.

@@ -32,6 +32,9 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevBootstrapController;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -43,7 +46,7 @@ import eu.kalafatic.evolution.view.editors.pages.approval.VizGroup;
 import eu.kalafatic.evolution.view.editors.pages.iteration.SelfDevEditDialog;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
-public class DevelopmentPage extends AEvoPage {
+public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
 
     public static class SelfDevRow {
         public static final String SELF_DEV_LOOP = "Self-Dev Loop";
@@ -82,6 +85,7 @@ public class DevelopmentPage extends AEvoPage {
         super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
 
+        RuntimeEventBus.getInstance().subscribe(this);
         initImageRegistry();
         initMemoryService();
         createControl();
@@ -180,13 +184,13 @@ public class DevelopmentPage extends AEvoPage {
             toolkit, container, editor, orchestrator, sessionId);
 
         // 3. Architecture Visualization
-        Composite archGroup = SWTFactory.createExpandableGroup(toolkit, container, "Architecture Visualization", 1, true);
-        archGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        Composite archGroup = SWTFactory.createExpandableGroup(toolkit, container, "Architecture Visualization", 1, true, true);
+        archGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         Composite archComp = toolkit.createComposite(archGroup);
         archComp.setLayout(new org.eclipse.swt.layout.FillLayout());
-        GridData archGd = new GridData(GridData.FILL_HORIZONTAL);
-        archGd.heightHint = 400;
+        GridData archGd = new GridData(GridData.FILL_BOTH);
+        archGd.heightHint = 800;
         archComp.setLayoutData(archGd);
         archViz = new ArchitecturePage(archComp, editor, orchestrator);
 
@@ -330,6 +334,8 @@ public class DevelopmentPage extends AEvoPage {
                     if (!isDisposed()) {
                         updateSelfDevStatus(supervisorStatus);
                         updateSessionStatus();
+                        if (archViz != null) archViz.scheduleRefresh();
+                        if (workflowGroup != null) workflowGroup.scheduleRefresh();
                         refreshBrowser();
                     }
                 });
@@ -377,6 +383,10 @@ public class DevelopmentPage extends AEvoPage {
     @Override
     protected void refreshUI() {
         updateSessionStatus();
+        if (editor != null && editor.getAiChatPage() != null && workflowGroup != null) {
+            String currentChatSessionId = editor.getAiChatPage().getCurrentSessionName();
+            workflowGroup.setSessionId(currentChatSessionId);
+        }
         if (archViz != null) archViz.scheduleRefresh();
         if (workflowGroup != null) workflowGroup.scheduleRefresh();
         refreshBrowser();
@@ -633,9 +643,17 @@ public class DevelopmentPage extends AEvoPage {
     }
 
     @Override
+    public void onEvent(RuntimeEvent event) {
+        scheduleRefresh();
+    }
+
+    @Override
     public void dispose() {
+        RuntimeEventBus.getInstance().unsubscribe(this);
         if (pollTimer != null) pollTimer.cancel();
         if (imageRegistry != null) imageRegistry.dispose();
+        if (vizGroup != null) vizGroup.dispose();
+        if (workflowGroup != null) workflowGroup.dispose();
         super.dispose();
     }
 }

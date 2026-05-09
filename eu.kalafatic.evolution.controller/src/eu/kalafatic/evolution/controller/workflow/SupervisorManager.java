@@ -16,6 +16,8 @@ public class SupervisorManager {
     public void start() throws java.io.IOException {
         controller.startBootstrap();
         publishStatus("STARTING");
+        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+            RuntimeEventType.MODE_CHANGED, context.getSessionId(), "SupervisorManager", "SELF_DEV_MODE"));
     }
 
     public void stop() {

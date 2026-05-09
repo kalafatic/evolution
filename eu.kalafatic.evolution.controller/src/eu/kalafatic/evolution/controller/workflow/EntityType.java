@@ -15,6 +15,7 @@ public enum EntityType {
     RCP_HOST,
     DEPLOYMENT_TARGET,
     ITERATION_RESULT,
+    DARWIN_VARIANT,
     BEST_BRANCH,
     TASK_STATUS,
     HUMAN_STEP

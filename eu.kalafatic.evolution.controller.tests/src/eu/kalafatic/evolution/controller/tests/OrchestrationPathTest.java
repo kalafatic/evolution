@@ -30,12 +30,12 @@ public class OrchestrationPathTest {
 
     @Test
     public void testPathSanitization() throws Exception {
-        // We want to test the performAction method, but it is private.
+        // We want to test the applyPatch method, but it is private.
         // We can use reflection or test it through a public method if possible.
         // However, EvolutionOrchestrator.execute is complex because it calls AI.
 
-        // Let's use reflection to test performAction directly for 'file' type.
-        Method method = EvolutionOrchestrator.class.getDeclaredMethod("performAction", Task.class, IAgent.class, TaskContext.class, String.class, String.class);
+        // Let's use reflection to test applyPatch directly for 'file' type.
+        Method method = EvolutionOrchestrator.class.getDeclaredMethod("applyPatch", Task.class, IAgent.class, TaskContext.class, String.class, String.class);
         method.setAccessible(true);
 
         Task task = OrchestrationFactory.eINSTANCE.createTask();

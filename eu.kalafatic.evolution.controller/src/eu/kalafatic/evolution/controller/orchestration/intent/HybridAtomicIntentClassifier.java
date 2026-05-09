@@ -85,10 +85,25 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         }
 
         if (targetCount == 1) {
-            score += 0.15;
-            analysis.getSignals().add("single_artifact");
-            analysis.setTargetArtifact(analysis.getExtractedTargets().get(0));
-        } else if (targetCount > 1) {
+            String target = analysis.getExtractedTargets().get(0);
+            boolean isVerb = false;
+            for (String verb : posVerbs) {
+                if (verb.equalsIgnoreCase(target)) {
+                    isVerb = true;
+                    break;
+                }
+            }
+            if (!isVerb) {
+                score += 0.15;
+                analysis.getSignals().add("single_artifact");
+                analysis.setTargetArtifact(target);
+            } else {
+                targetCount = 0;
+                analysis.getExtractedTargets().clear();
+            }
+        }
+
+        if (targetCount > 1) {
             score -= 0.1;
             analysis.getSignals().add("multiple_targets");
             analysis.setMultiStep(true);
