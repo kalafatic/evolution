@@ -31,10 +31,16 @@ public class GlobalActionsGroup extends AEvoGroup {
         // No dynamic model data to refresh currently
     }
 
-    private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Global Actions", 6, true);
+    private Button iterativeCheck, selfIterativeCheck, darwinCheck, autoApproveCheck, gitAutomationCheck, stepModeCheck;
 
-        Button selectAllBtn = SWTFactory.createButton(group, "Select All");
+    private void createControl(FormToolkit toolkit, Composite parent) {
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Global Actions", 1, true);
+
+        Composite topComp = toolkit.createComposite(group);
+        topComp.setLayout(new GridLayout(6, false));
+        topComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button selectAllBtn = SWTFactory.createButton(topComp, "Select All");
         selectAllBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -42,7 +48,7 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        Button unselectAllBtn = SWTFactory.createButton(group, "Unselect All");
+        Button unselectAllBtn = SWTFactory.createButton(topComp, "Unselect All");
         unselectAllBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -50,11 +56,32 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        SWTFactory.createLabel(group, "Mode:");
-        executionModeCombo = SWTFactory.createCombo(group);
+        SWTFactory.createLabel(topComp, "Execution Mode:");
+        executionModeCombo = SWTFactory.createCombo(topComp);
         executionModeCombo.add("Sequential");
         executionModeCombo.add("Parallel (Max 3)");
         executionModeCombo.select(0);
+
+        // Batch Update Checkboxes in 3 columns
+        SWTFactory.createLabel(group, "Batch Update Selected Tasks:");
+        Composite batchComp = toolkit.createComposite(group);
+        batchComp.setLayout(new GridLayout(3, true));
+        batchComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        iterativeCheck = toolkit.createButton(batchComp, "Iterative Mode", SWT.CHECK);
+        selfIterativeCheck = toolkit.createButton(batchComp, "Self-Dev Mode", SWT.CHECK);
+        darwinCheck = toolkit.createButton(batchComp, "Darwin Mode", SWT.CHECK);
+        autoApproveCheck = toolkit.createButton(batchComp, "Auto-Approve", SWT.CHECK);
+        gitAutomationCheck = toolkit.createButton(batchComp, "Auto-Git", SWT.CHECK);
+        stepModeCheck = toolkit.createButton(batchComp, "Step Mode", SWT.CHECK);
+
+        Button applyBatchBtn = SWTFactory.createButton(batchComp, "Apply to Selected", 150);
+        applyBatchBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                applyBatchSettings();
+            }
+        });
 
         Composite compositeRemote = new Composite(parent, SWT.BORDER);
         compositeRemote.setLayout(new GridLayout(5, false));
@@ -103,5 +130,29 @@ public class GlobalActionsGroup extends AEvoGroup {
 
     public boolean isParallel() {
         return executionModeCombo.getText().startsWith("Parallel");
+    }
+
+    private void applyBatchSettings() {
+        if (orchestrator == null) return;
+        for (eu.kalafatic.evolution.model.orchestration.Task task : orchestrator.getTasks()) {
+            if (task.isSelected()) {
+                applyToTask(task);
+            }
+            for (eu.kalafatic.evolution.model.orchestration.Task sub : task.getSubTasks()) {
+                if (sub.isSelected()) {
+                    applyToTask(sub);
+                }
+            }
+        }
+        page.updateUIFromModel();
+    }
+
+    private void applyToTask(eu.kalafatic.evolution.model.orchestration.Task task) {
+        task.setIterativeMode(iterativeCheck.getSelection());
+        task.setSelfIterativeMode(selfIterativeCheck.getSelection());
+        task.setDarwinMode(darwinCheck.getSelection());
+        task.setApprovalRequired(!autoApproveCheck.getSelection());
+        task.setGitAutomation(gitAutomationCheck.getSelection());
+        task.setStepMode(stepModeCheck.getSelection());
     }
 }

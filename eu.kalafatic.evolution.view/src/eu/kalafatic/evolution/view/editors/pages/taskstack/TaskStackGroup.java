@@ -338,6 +338,24 @@ public class TaskStackGroup extends AEvoGroup {
             }
         });
 
+        // Step Mode Column
+        TreeViewerColumn stepModeCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        stepModeCol.getColumn().setText("Step Mode");
+        stepModeCol.getColumn().setWidth(70);
+        stepModeCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override public String getText(Object element) { return ((Task) element).isStepMode() ? "YES" : "NO"; }
+        });
+        stepModeCol.setEditingSupport(new EditingSupport(treeViewer) {
+            @Override protected CellEditor getCellEditor(Object element) { return new CheckboxCellEditor(treeViewer.getTree()); }
+            @Override protected boolean canEdit(Object element) { return true; }
+            @Override protected Object getValue(Object element) { return ((Task) element).isStepMode(); }
+            @Override protected void setValue(Object element, Object value) {
+                ((Task) element).setStepMode((Boolean) value);
+                treeViewer.update(element, null);
+                page.setDirty(true);
+            }
+        });
+
         // Max Iterations Column
         TreeViewerColumn maxIterCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
         maxIterCol.getColumn().setText("Max Iter");
