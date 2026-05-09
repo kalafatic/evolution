@@ -63,6 +63,23 @@ public class LlmRouter {
             } else if (mode == AiMode.MEDIATED) {
                 // For MEDIATED mode, we use local intelligence to prepare/optimize
                 if (context != null) context.log("LlmRouter-Mediated: Using local intelligence for preparation.");
+                String augmentedPrompt = buildContextLocally(orchestrator, prompt, temperature, proxyUrl, context);
+
+                if (context != null) {
+                    context.log("LlmRouter-Mediated: Prompt prepared. Requesting human-in-the-loop reasoning...");
+                    String mediationInstruction = "### HUMAN MEDIATION REQUIRED ###\n" +
+                            "Please process the following context-aware prompt in your preferred high-reasoning external LLM (e.g. GPT-4o, Claude 3.5, O1) " +
+                            "and paste the response below to continue the evolution.\n\n" +
+                            "--- START PREPARED PROMPT ---\n" +
+                            augmentedPrompt + "\n" +
+                            "--- END PREPARED PROMPT ---";
+
+                    String response = context.requestInput(mediationInstruction).get();
+                    if (response == null || response.isEmpty() || "Rejected".equalsIgnoreCase(response)) {
+                        throw new Exception("Mediation rejected or empty. Stopping flow.");
+                    }
+                    return response;
+                }
                 return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
             }
         } catch (Exception e) {
