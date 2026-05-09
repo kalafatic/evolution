@@ -24,4 +24,5 @@ public interface ChatSessionValidator {
 	boolean validateDarwinMode(boolean value);
 	boolean validateGitAutomation(boolean value);
 	boolean validateMaxIterations(int value);
+	boolean validateStepMode(boolean value);
 }

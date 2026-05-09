@@ -166,29 +166,6 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 	 * @generated
 	 */
 	@Override
-	public boolean isStepMode() {
-		return stepMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setStepMode(boolean newStepMode) {
-		boolean oldStepMode = stepMode;
-		stepMode = newStepMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.PROMPT_INSTRUCTIONS__STEP_MODE, oldStepMode, stepMode));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.PROMPT_INSTRUCTIONS;
 	}
@@ -306,6 +283,29 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 		selfIterativeMode = newSelfIterativeMode;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE, oldSelfIterativeMode, selfIterativeMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isStepMode() {
+		return stepMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setStepMode(boolean newStepMode) {
+		boolean oldStepMode = stepMode;
+		stepMode = newStepMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.PROMPT_INSTRUCTIONS__STEP_MODE, oldStepMode, stepMode));
 	}
 
 	/**

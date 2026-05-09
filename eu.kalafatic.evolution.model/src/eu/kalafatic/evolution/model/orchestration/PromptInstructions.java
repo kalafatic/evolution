@@ -18,7 +18,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#getPreferredMaxIterations <em>Preferred Max Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isIterativeMode <em>Iterative Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isSelfIterativeMode <em>Self Iterative Mode</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isStepMode <em>Step Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions#isStepMode <em>Step Mode</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getPromptInstructions()

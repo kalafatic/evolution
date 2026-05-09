@@ -275,6 +275,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute darwinMode : EBoolean
     Attribute gitAutomation : EBoolean
     Attribute maxIterations : EInt
+    Attribute stepMode : EBoolean
 
   Class ChatMessage
     Attribute index : EInt
@@ -292,6 +293,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute preferredMaxIterations : EInt
     Attribute iterativeMode : EBoolean
     Attribute selfIterativeMode : EBoolean
+    Attribute stepMode : EBoolean
 
   Enum TaskStatus
     Literal READY = 0

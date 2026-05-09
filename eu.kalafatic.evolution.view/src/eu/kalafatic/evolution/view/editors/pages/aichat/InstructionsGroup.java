@@ -342,6 +342,10 @@ public class InstructionsGroup extends AEvoGroup {
     public void setGitAutomation(boolean gitAutomation) {
         gitAutomationCheck.setSelection(gitAutomation);
     }
+    public boolean isStepMode() { return stepModeCheck.getSelection(); }
+    public void setStepMode(boolean stepMode) {
+    	stepModeCheck.setSelection(stepMode);
+    }
 
     public void setOrchestrationRunning(boolean running) {
         sendButton.setEnabled(!running);

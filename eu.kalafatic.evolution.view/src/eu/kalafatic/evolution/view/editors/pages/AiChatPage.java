@@ -373,6 +373,7 @@ public class AiChatPage extends AEvoPage {
             currentSession.setDarwinMode(instructionsGroup.isDarwin());
             currentSession.setGitAutomation(instructionsGroup.isGitAutomationCheck());
             currentSession.setMaxIterations(instructionsGroup.getMaxIterations());
+            currentSession.setStepMode(instructionsGroup.isStepMode());
         }
 
         boolean wasAutoApprove = promptInstructions.isAutoApprove();
@@ -380,6 +381,7 @@ public class AiChatPage extends AEvoPage {
         promptInstructions.setAutoApprove(isAutoApprove);
         promptInstructions.setPreferredMaxIterations(instructionsGroup.getMaxIterations());
         promptInstructions.setGitAutomation(instructionsGroup.isGitAutomationCheck());
+        promptInstructions.setStepMode(instructionsGroup.isStepMode());
 		
 		if (!wasAutoApprove && isAutoApprove) {
 			resumeWaitingSessions();

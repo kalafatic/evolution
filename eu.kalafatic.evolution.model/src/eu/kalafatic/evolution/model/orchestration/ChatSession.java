@@ -22,7 +22,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isDarwinMode <em>Darwin Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getMaxIterations <em>Max Iterations</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isStepMode <em>Step Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isStepMode <em>Step Mode</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession()

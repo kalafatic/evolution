@@ -208,29 +208,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @generated
 	 */
 	@Override
-	public boolean isStepMode() {
-		return stepMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setStepMode(boolean newStepMode) {
-		boolean oldStepMode = stepMode;
-		stepMode = newStepMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__STEP_MODE, oldStepMode, stepMode));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.CHAT_SESSION;
 	}
@@ -384,6 +361,29 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		maxIterations = newMaxIterations;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__MAX_ITERATIONS, oldMaxIterations, maxIterations));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isStepMode() {
+		return stepMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setStepMode(boolean newStepMode) {
+		boolean oldStepMode = stepMode;
+		stepMode = newStepMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__STEP_MODE, oldStepMode, stepMode));
 	}
 
 	/**

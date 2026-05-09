@@ -19,4 +19,5 @@ public interface PromptInstructionsValidator {
 	boolean validatePreferredMaxIterations(int value);
 	boolean validateIterativeMode(boolean value);
 	boolean validateSelfIterativeMode(boolean value);
+	boolean validateStepMode(boolean value);
 }
