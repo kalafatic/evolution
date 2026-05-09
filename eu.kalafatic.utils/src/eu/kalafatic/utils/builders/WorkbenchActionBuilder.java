@@ -1618,9 +1618,9 @@ public class WorkbenchActionBuilder extends ActionBarAdvisor {
 
 			@Override
 			public String getText() {
-				if ("org.eclipse.equinox.p2.ui.sdk.update".equals(commandId)) {
+				if ("org.eclipse.equinox.p2.ui.sdk.update".equals(commandId) || "eu.kalafatic.utils.p2.update".equals(commandId)) {
 					return "Check for Updates";
-				} else if ("org.eclipse.equinox.p2.ui.sdk.install".equals(commandId)) {
+				} else if ("org.eclipse.equinox.p2.ui.sdk.install".equals(commandId) || "eu.kalafatic.utils.p2.install".equals(commandId)) {
 					return "Install New Software...";
 				}
 				return super.getText();
