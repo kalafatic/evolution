@@ -44,6 +44,7 @@ public class TaskContext {
     private PlatformMode platformMode = null;
     private final SystemStateHolder stateHolder = new SystemStateHolder();
     private final Object pauseLock = new Object();
+    private AiService aiService = new AiService();
 
     public interface LogListener {
         void onLog(String message);
@@ -270,6 +271,14 @@ public class TaskContext {
 
     public String getState(String key) {
         return state.get(key);
+    }
+
+    public AiService getAiService() {
+        return aiService;
+    }
+
+    public void setAiService(AiService aiService) {
+        this.aiService = aiService;
     }
 
     public String getSharedMemory() {

@@ -72,7 +72,7 @@ public class SelfDevSupervisor {
                 iteration.setBranchName("selfdev/" + session.getId() + "/" + iteration.getId());
                 session.getIterations().add(iteration);
 
-                IterationManager iterationManager = createIterationManager(iteration);
+                IterationManager iterationManager = createIterationManager(iteration, context.getAiService());
                 EvaluationResult result = iterationManager.runIteration(iteration);
 
                 if (!result.isSuccess() || result.getDecision() == SelfDevDecision.ROLLBACK) {
@@ -120,8 +120,8 @@ public class SelfDevSupervisor {
         }
     }
 
-    protected IterationManager createIterationManager(Iteration iteration) {
-        return KernelFactory.create(context);
+    protected IterationManager createIterationManager(Iteration iteration, eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
+        return KernelFactory.create(context, aiService);
     }
 
     public void stopSession() {

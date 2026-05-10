@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector;
 import eu.kalafatic.evolution.controller.tools.FileTool;
 
 /**
@@ -74,6 +75,12 @@ public class ContextBuilder {
         }
 
         pkg.setConstraints(constraints);
+
+        // Inject Intelligent Attachment Context
+        if (context.getInstructionFiles() != null && !context.getInstructionFiles().isEmpty()) {
+            String attachmentContext = AttachmentInjector.inject(context.getInstructionFiles(), task.getName(), context);
+            pkg.setAttachmentContext(attachmentContext);
+        }
 
         return pkg;
     }
@@ -205,6 +212,10 @@ public class ContextBuilder {
         }
 
         sb.append("\n### DEPENDENCIES\n").append(ctx.getDependencies()).append("\n");
+
+        if (ctx.getAttachmentContext() != null && !ctx.getAttachmentContext().isEmpty()) {
+            sb.append(ctx.getAttachmentContext()).append("\n");
+        }
 
         sb.append("### RELEVANT CODE\n");
         sb.append("```java\n").append(ctx.getCode()).append("\n```\n\n");
