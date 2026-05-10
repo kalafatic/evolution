@@ -1,0 +1,101 @@
+package eu.kalafatic.evolution.controller.orchestration;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
+import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
+import java.util.Set;
+
+/**
+ * Centralized container for orchestration state.
+ * This class should be the single source of truth for the current orchestration lifecycle.
+ */
+public class OrchestrationState {
+    private String rawInput;
+    private IntentAnalysisResult intentAnalysis;
+    private Set<TaskIntent> taskIntents;
+    private String attachmentContext;
+    private List<Task> executionPlan = new ArrayList<>();
+    private List<String> diagnostics = new ArrayList<>();
+    private Map<String, Object> metadata = new ConcurrentHashMap<>();
+
+    // Evolution & Iteration state
+    private String currentIterationId;
+    private int iterationCount = 0;
+    private List<String> rejectionHistory = new ArrayList<>();
+
+    public String getRawInput() {
+        return rawInput;
+    }
+
+    public void setRawInput(String rawInput) {
+        this.rawInput = rawInput;
+    }
+
+    public IntentAnalysisResult getIntentAnalysis() {
+        return intentAnalysis;
+    }
+
+    public void setIntentAnalysis(IntentAnalysisResult intentAnalysis) {
+        this.intentAnalysis = intentAnalysis;
+    }
+
+    public Set<TaskIntent> getTaskIntents() {
+        return taskIntents;
+    }
+
+    public void setTaskIntents(Set<TaskIntent> taskIntents) {
+        this.taskIntents = taskIntents;
+    }
+
+    public String getAttachmentContext() {
+        return attachmentContext;
+    }
+
+    public void setAttachmentContext(String attachmentContext) {
+        this.attachmentContext = attachmentContext;
+    }
+
+    public List<Task> getExecutionPlan() {
+        return executionPlan;
+    }
+
+    public List<String> getDiagnostics() {
+        return diagnostics;
+    }
+
+    public void addDiagnostic(String message) {
+        this.diagnostics.add("[" + System.currentTimeMillis() + "] " + message);
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    public String getCurrentIterationId() {
+        return currentIterationId;
+    }
+
+    public void setCurrentIterationId(String currentIterationId) {
+        this.currentIterationId = currentIterationId;
+    }
+
+    public int getIterationCount() {
+        return iterationCount;
+    }
+
+    public void setIterationCount(int iterationCount) {
+        this.iterationCount = iterationCount;
+    }
+
+    public List<String> getRejectionHistory() {
+        return rejectionHistory;
+    }
+
+    public void addRejection(String reason) {
+        this.rejectionHistory.add(reason);
+    }
+}

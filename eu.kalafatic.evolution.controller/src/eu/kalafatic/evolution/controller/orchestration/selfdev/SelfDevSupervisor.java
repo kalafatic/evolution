@@ -31,9 +31,7 @@ public class SelfDevSupervisor {
     }
 
     public void startSession() {
-        if (context.getPlatformMode() == null) {
-            context.setPlatformMode(new ModeRouter().route(session.getInitialRequest(), context.getOrchestrator()));
-        }
+        // Mode routing is now handled by IterationManager.handle()
         String modeName = (context.getPlatformMode() != null) ? context.getPlatformMode().getType().toString().replace("_", " ") : "Self-Development";
         context.log("[SUPERVISOR] Starting " + modeName + " Session: " + session.getId());
 

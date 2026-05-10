@@ -43,6 +43,7 @@ public class TaskContext {
     private volatile boolean autoApprove = false;
     private PlatformMode platformMode = null;
     private final SystemStateHolder stateHolder = new SystemStateHolder();
+    private final OrchestrationState orchestrationState = new OrchestrationState();
     private final Object pauseLock = new Object();
     private AiService aiService = new AiService();
 
@@ -305,6 +306,10 @@ public class TaskContext {
 
     public SystemStateHolder getStateHolder() {
         return stateHolder;
+    }
+
+    public OrchestrationState getOrchestrationState() {
+        return orchestrationState;
     }
 
     public FileChangeTracker getFileChangeTracker() {
