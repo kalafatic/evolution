@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.controller.orchestration.behavior;
 
+import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -7,7 +8,64 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class BehaviorResolver {
 
+    public long resolveBitState(TaskContext context) {
+        int mode = BitState.MODE_LOCAL;
+        int supervision = BitState.SUPERVISION_AUTO;
+        int interaction = BitState.INTERACTION_CONTINUOUS;
+        int reasoning = BitState.REASONING_ATOMIC;
+
+        Orchestrator orchestrator = context.getOrchestrator();
+
+        // 1. MODE & SUPERVISION
+        if (orchestrator.getAiMode() == AiMode.MEDIATED) {
+            mode = BitState.MODE_MEDIATED;
+            supervision = BitState.SUPERVISION_MANUAL;
+        } else if (orchestrator.getAiMode() == AiMode.HYBRID) {
+            mode = BitState.MODE_HYBRID;
+            supervision = BitState.SUPERVISION_HYBRID;
+        } else if (orchestrator.getAiMode() == AiMode.REMOTE) {
+            mode = BitState.MODE_REMOTE;
+        }
+
+        // 2. REASONING
+        PlatformType type = context.getPlatformMode() != null ? context.getPlatformMode().getType() : PlatformType.SIMPLE_CHAT;
+
+        switch (type) {
+            case SELF_DEV_MODE:
+                reasoning = BitState.REASONING_EXPLORATORY;
+                break;
+            case DARWIN_MODE:
+                reasoning = BitState.REASONING_DARWIN;
+                break;
+            case ASSISTED_CODING:
+                reasoning = BitState.REASONING_CONSERVATIVE;
+                break;
+            case SIMPLE_CHAT:
+            default:
+                reasoning = BitState.REASONING_ATOMIC;
+                break;
+        }
+
+        if (orchestrator.isDarwinMode()) {
+            reasoning = BitState.REASONING_DARWIN;
+        }
+
+        // 3. INTERACTION
+        if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
+            var instructions = orchestrator.getAiChat().getPromptInstructions();
+            if (instructions.isStepMode()) {
+                interaction = BitState.INTERACTION_STEP;
+            }
+            if (instructions.isIterativeMode()) {
+                reasoning = BitState.REASONING_DARWIN;
+            }
+        }
+
+        return BitState.encode(mode, supervision, interaction, reasoning);
+    }
+
     public BehaviorProfile resolve(TaskContext context) {
+        // Legacy support - can be removed later if not needed
         BehaviorProfile profile = new BehaviorProfile();
         Orchestrator orchestrator = context.getOrchestrator();
 
