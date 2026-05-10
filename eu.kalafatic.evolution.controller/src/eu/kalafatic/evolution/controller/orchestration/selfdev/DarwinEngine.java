@@ -9,6 +9,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
+import eu.kalafatic.evolution.controller.orchestration.behavior.DarwinIterativeInstructionModule;
+import eu.kalafatic.evolution.controller.orchestration.behavior.InstructionModule;
+import eu.kalafatic.evolution.controller.orchestration.behavior.MediatedInstructionModule;
+import eu.kalafatic.evolution.controller.orchestration.behavior.SelfDevInstructionModule;
+import eu.kalafatic.evolution.controller.orchestration.behavior.StepModeInstructionModule;
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
@@ -44,37 +52,38 @@ public class DarwinEngine extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        boolean isSelfDev = context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE;
+        BehaviorResolver resolver = new BehaviorResolver();
+        BehaviorProfile profile = resolver.resolve(context);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("You are an AI operating inside a general-purpose iterative development system.\n");
+        sb.append("Role: Darwin Engine. Strategy: Iterative cognitive orchestration.\n\n");
 
-        boolean isMediated = context.getOrchestrator().getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED;
-
-        if (isMediated) {
-            sb.append("You are in REPOSITORY-AWARE MEDIATED mode. Darwin is used as an iterative cognitive exploration tool.\n");
-            sb.append("Your task is to generate competing ANALYSES and PROPOSALS for architectural refinement and problem-solving.\n\n");
-            sb.append("PRIMARY OBJECTIVE:\n");
-            sb.append("→ Explore multiple architectural interpretations of the codebase.\n");
-            sb.append("→ Generate competing solution strategies (variants) for the user to evaluate.\n");
-            sb.append("→ Focus on iterative understanding and improvement planning.\n");
-            sb.append("→ Reference ACTUAL repository code (classes, methods) in your proposals.\n");
-            sb.append("→ Explain the ORCHESTRATION and RUNTIME impact of each proposal.\n\n");
-        } else if (isSelfDev) {
-            sb.append("Your task is to IMPROVE decision quality and system intelligence by reasoning over STATE and FEEDBACK — not by generating isolated code.\n\n");
-            sb.append("PRIMARY OBJECTIVE:\n");
-            sb.append("→ Do not think in terms of 'code generation'.\n");
-            sb.append("→ Think in terms of: STATE TRANSITIONS, SYSTEM IMPROVEMENT, LONG-TERM EFFECTS.\n");
-            sb.append("→ Each iteration must improve the system state, not just produce code.\n\n");
-        } else {
-            sb.append("Your task is to propose the best STRATEGY to fulfill the user's goal by reasoning over STATE and FEEDBACK.\n\n");
-            sb.append("PRIMARY OBJECTIVE:\n");
-            sb.append("→ Propose 2-3 distinct candidate state transitions (strategies) to achieve the goal.\n");
-            sb.append("→ CRITICAL: Fulfillment of the current goal is the HIGHEST priority.\n");
-            sb.append("→ If the goal is ANALYTICAL (e.g., 'analyze project', 'investigate issue'), propose investigation strategies using the 'ANALYZE' operation in the 'structure' or 'test' domains.\n");
-            sb.append("→ Each variant must be a complete, actionable strategy that targets the specific goal.\n");
-            sb.append("→ Avoid over-engineering or proposing unrelated structural changes (like generic refactoring) unless they directly facilitate the user's specific goal.\n\n");
+        List<InstructionModule> modules = new ArrayList<>();
+        if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+            modules.add(new MediatedInstructionModule());
         }
+        if (profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
+            modules.add(new SelfDevInstructionModule());
+        }
+        if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE)) {
+            modules.add(new DarwinIterativeInstructionModule());
+        }
+        if (profile.hasTrait(BehaviorTrait.INTERACTION_STEP_MODE)) {
+            modules.add(new StepModeInstructionModule());
+        }
+
+        if (modules.isEmpty()) {
+            sb.append("Your task is to propose the best STRATEGY to fulfill the user's goal by reasoning over STATE and FEEDBACK.\n\n");
+        } else {
+            for (InstructionModule module : modules) {
+                sb.append(module.getInstructions()).append("\n\n");
+            }
+        }
+
+        sb.append("PRIMARY OBJECTIVE:\n")
+          .append("→ Propose 2-3 distinct candidate state transitions (strategies) to achieve the goal.\n")
+          .append("→ CRITICAL: Fulfillment of the current goal is the HIGHEST priority.\n")
+          .append("→ If the goal is ANALYTICAL (e.g., 'analyze project'), use ANALYZE operations in 'structure' or 'test' domains.\n\n");
 
         sb.append("STATE MODEL:\n")
           .append("→ Use the provided StateSnapshot (build, tests, coverage) to inform decisions.\n")

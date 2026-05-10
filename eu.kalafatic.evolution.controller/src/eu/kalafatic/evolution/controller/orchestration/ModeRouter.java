@@ -29,11 +29,6 @@ public class ModeRouter {
 
         if (lowerPrompt.equals("tell me a joke")) return createSimpleChatMode();
 
-        // 0. Analytical keywords detection - force Iterative (Assisted) mode early
-        // to ensure "analyze project" works correctly even in MEDIATED mode.
-        if (lowerPrompt.matches(".*\\b(analyze|investigate|report|summarize|discovery|audit)\\b.*")) {
-            return createAssistedCodingMode();
-        }
 
         // 1. Explicit mode keywords
         if (lowerPrompt.contains("mode: chat")) return createSimpleChatMode();

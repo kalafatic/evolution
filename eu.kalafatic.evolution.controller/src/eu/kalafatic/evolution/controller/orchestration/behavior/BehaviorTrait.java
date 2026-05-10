@@ -1,0 +1,23 @@
+package eu.kalafatic.evolution.controller.orchestration.behavior;
+
+public enum BehaviorTrait {
+    // SUPERVISION
+    SUPERVISION_MEDIATED,
+    SUPERVISION_AUTONOMOUS,
+
+    // WORKFLOW
+    WORKFLOW_SELF_DEV,
+    WORKFLOW_TASK_ORIENTED,
+
+    // REASONING
+    REASONING_DARWIN_ITERATIVE,
+    REASONING_ATOMIC,
+
+    // EXECUTION
+    EXECUTION_MANUAL,
+    EXECUTION_AUTOMATIC,
+
+    // INTERACTION
+    INTERACTION_STEP_MODE,
+    INTERACTION_STREAMING
+}
