@@ -25,9 +25,10 @@ public class AnalyticAgent extends BaseAiAgent {
     @Override
     // @evo:14:B reason=flexible-analysis
     protected String getAgentInstructions() {
-        return "Role: Analytic Agent. Goal: Analyze user prompt or task failure.\n\n" +
+        return "Role: Analytic Agent. Goal: Analyze user prompt or task failure with repository-first awareness.\n\n" +
                 "STRICT OUTPUT RULE: You MUST output ONLY a single JSON object. No preamble, no conversational text. Never output two JSON objects.\n\n" +
                 "ANALYSIS CRITERIA (for new requests):\n" +
+                "0. ARCHITECTURE FIRST: You must prioritize understanding the project's architecture and repository context before formulating any plans. Reference actual classes, methods, and orchestration patterns where relevant.\n" +
                 "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT. Note: 'analyze', 'investigate', 'report', and 'summarize' tasks should be categorized as RESEARCH to ensure they follow the standard iterative flow and bypass evolutionary mutation.\n" +
                 "2. INTENT: 'new' (task request), 'continue' (follow-up), 'chat' (greeting/casual), 'unclear'.\n" +
                 "3. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion', 'missingInformation' and 'contradictions' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.\n" +

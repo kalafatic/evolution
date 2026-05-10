@@ -49,7 +49,18 @@ public class DarwinEngine extends BaseAiAgent {
         StringBuilder sb = new StringBuilder();
         sb.append("You are an AI operating inside a general-purpose iterative development system.\n");
 
-        if (isSelfDev) {
+        boolean isMediated = context.getOrchestrator().getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED;
+
+        if (isMediated) {
+            sb.append("You are in REPOSITORY-AWARE MEDIATED mode. Darwin is used as an iterative cognitive exploration tool.\n");
+            sb.append("Your task is to generate competing ANALYSES and PROPOSALS for architectural refinement and problem-solving.\n\n");
+            sb.append("PRIMARY OBJECTIVE:\n");
+            sb.append("→ Explore multiple architectural interpretations of the codebase.\n");
+            sb.append("→ Generate competing solution strategies (variants) for the user to evaluate.\n");
+            sb.append("→ Focus on iterative understanding and improvement planning.\n");
+            sb.append("→ Reference ACTUAL repository code (classes, methods) in your proposals.\n");
+            sb.append("→ Explain the ORCHESTRATION and RUNTIME impact of each proposal.\n\n");
+        } else if (isSelfDev) {
             sb.append("Your task is to IMPROVE decision quality and system intelligence by reasoning over STATE and FEEDBACK — not by generating isolated code.\n\n");
             sb.append("PRIMARY OBJECTIVE:\n");
             sb.append("→ Do not think in terms of 'code generation'.\n");

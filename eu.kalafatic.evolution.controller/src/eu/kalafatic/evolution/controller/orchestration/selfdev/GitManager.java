@@ -57,8 +57,11 @@ public class GitManager {
     }
 
     public String getCurrentBranch() throws Exception {
+        if (!isGitRepository()) return "no-repo";
         try {
-            return shell.execute("git rev-parse --abbrev-ref HEAD", projectRoot, context).trim();
+            String output = shell.execute("git rev-parse --abbrev-ref HEAD", projectRoot, context);
+            if (output == null) return "main";
+            return output.trim();
         } catch (Exception e) {
             context.log("[GIT] Warning: Could not determine current branch (repo might be empty). Falling back to 'main'.");
             return "main";
