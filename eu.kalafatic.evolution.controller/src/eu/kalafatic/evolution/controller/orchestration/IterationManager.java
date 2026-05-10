@@ -546,6 +546,7 @@ public class IterationManager {
         record.setGoal(goal);
         record.setStrategy("Darwin Variant Selection");
         record.setResult("FAIL");
+        record.setStatus("REJECTED");
         record.setErrorMessage(message);
         record.setTimestamp(System.currentTimeMillis());
         memoryService.saveRecord(record);
