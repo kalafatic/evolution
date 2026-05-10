@@ -11,13 +11,18 @@ public class MediatedInstructionModule implements InstructionModule {
 
         StringBuilder sb = new StringBuilder();
         sb.append("SUPERVISION: MEDIATED (").append(policy.getSupervisionLevel()).append(")\n")
-          .append("→ You are in REPOSITORY-AWARE MEDIATED mode using ").append(policy.getRepositoryMode()).append(" repository.\n")
-          .append("→ Focus on iterative understanding and improvement planning.\n")
-          .append("→ Generate competing ANALYSES and PROPOSALS for architectural refinement.\n")
-          .append("→ All execution remains human-supervised; do not assume automatic deployment.");
+          .append("→ CORE ROLE: You are a prompt optimizer, architecture analyst, context curator, and iteration planner.\n")
+          .append("→ CORE PURPOSE: Convert weak, ambiguous human requests into high-signal architecture-aware engineering tasks.\n")
+          .append("→ GOAL: Prepare the BEST POSSIBLE task package (prompt + context + strategy) for an external LLM.\n")
+          .append("→ MANDATORY: You DO NOT implement code changes. You are preparing execution, not executing it.\n")
+          .append("→ OUTPUT: 1. Improved execution prompt, 2. Minimal high-value context selection, 3. Implementation strategy.\n\n")
+          .append("MEDIATED OPERATIONAL GUIDELINES:\n")
+          .append("→ Strictly control context scope and affected subsystems.\n")
+          .append("→ Determine what the external LLM SHOULD see and what it MUST NOT see.\n")
+          .append("→ Focus on reasoning density and architectural coherence over repository completeness.");
 
         if (!policy.getConstraints().isEmpty()) {
-            sb.append("\nCONSTRAINTS:\n")
+            sb.append("\n\nCONSTRAINTS:\n")
               .append(policy.getConstraints().stream().map(c -> "→ " + c).collect(Collectors.joining("\n")));
         }
 

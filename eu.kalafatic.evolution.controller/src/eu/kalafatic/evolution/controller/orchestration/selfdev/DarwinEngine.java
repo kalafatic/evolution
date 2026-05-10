@@ -128,20 +128,25 @@ public class DarwinEngine extends BaseAiAgent {
         if (currentPhase != null) {
             state.append("\n--- CURRENT EVOLUTION PHASE: ").append(currentPhase).append(" ---\n");
             if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(currentPhase)) {
-                state.append("GOAL: Understand and expand user request. Detect missing constraints and generate 2-3 interpretations/hypotheses.\n");
-                state.append("VARIANT GUIDANCE: Each variant must represent a different interpretation of the goal.\n");
+                state.append("PHASE: USER INTENT RECONSTRUCTION\n");
+                state.append("GOAL: Analyze explicit/implied intent, hidden expectations, and missing constraints. NEVER trust the raw prompt directly.\n");
+                state.append("OUTPUT: A REFORMULATED ENGINEERING OBJECTIVE. Generate 2-3 distinct interpretations.\n");
             } else if (EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS.equals(currentPhase)) {
-                state.append("GOAL: Generate 2-3 competing architectural designs based on the selected intent.\n");
-                state.append("VARIANT GUIDANCE: Focus on trade-offs, modularity, and structure. Do NOT write final implementation code yet.\n");
+                state.append("PHASE: ARCHITECTURE DISCOVERY & DESIGN\n");
+                state.append("GOAL: Analyze repository structure intelligently. Identify orchestrators, controllers, and architecture-defining files.\n");
+                state.append("OUTPUT: 2-3 competing architectural designs. Prioritize modularity and structure over implementation.\n");
             } else if (EvolutionConstants.PHASE_SELECTION_REFINEMENT.equals(currentPhase)) {
-                state.append("GOAL: Evaluate designs and refine the winning approach. Merge best ideas if applicable.\n");
-                state.append("VARIANT GUIDANCE: Finalize architectural decisions and prepare for implementation planning.\n");
+                state.append("PHASE: CONTEXT CURATION & SELECTION\n");
+                state.append("GOAL: Construct a STRICT CONTEXT MANIFEST. Categorize files into CORE, ARCHITECTURE, and DOCS context.\n");
+                state.append("OUTPUT: A refined selection of high-signal files. Explicitly exclude noise (binaries, generated code).\n");
             } else if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(currentPhase)) {
-                state.append("GOAL: Convert selected design into a detailed step-by-step action plan.\n");
-                state.append("VARIANT GUIDANCE: Define file structure, method breakdowns, and execution flow. PROPOSE ACTIONS ONLY.\n");
+                state.append("PHASE: PROMPT EVOLUTION & PLANNING\n");
+                state.append("GOAL: Construct the FINAL EXECUTION PROMPT. Brief an external LLM as a senior architect briefing an elite engineer.\n");
+                state.append("OUTPUT: Detailed step-by-step implementation plan and optimized execution prompt.\n");
             } else if (EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(currentPhase)) {
-                state.append("GOAL: Produce final production-ready implementation based on the plan.\n");
-                state.append("VARIANT GUIDANCE: Focus on code quality, completeness, and adherence to selected design.\n");
+                state.append("PHASE: IMPLEMENTATION GUIDANCE & PACKAGING\n");
+                state.append("GOAL: Provide architectural constraints, integration cautions, and validation expectations.\n");
+                state.append("OUTPUT: Final implementation-ready task package and ZIP content summary. DO NOT generate code unless explicitly requested.\n");
             }
         }
 

@@ -9,20 +9,18 @@ public class DarwinIterativeInstructionModule implements InstructionModule {
             return "";
         }
 
-        return "REASONING: DARWIN ITERATIVE\n" +
-               "→ Use a Darwinian approach: generate multiple competing variants.\n" +
-               "→ Each variant should explore a different hypothesis or strategy.\n" +
-               "→ MANDATORY: Follow the 5-phase evolution lifecycle (Intent → Architecture → Refinement → Planning → Synthesis).\n" +
-               "→ Do NOT attempt final implementation until Phase 5.\n" +
-               "→ Evaluate variants based on predicted success and phase-specific alignment.";
         StringBuilder sb = new StringBuilder();
-        sb.append("REASONING: DARWIN ITERATIVE (Exploration Level: ").append(policy.getExplorationLevel()).append(")\n")
-          .append("→ Use a Darwinian approach: generate multiple competing variants.\n")
-          .append("→ Each variant should explore a different hypothesis or strategy.\n")
-          .append("→ Evaluate variants based on predicted success and system impact.");
+        sb.append("REASONING: DARWIN ITERATIVE / EVOLUTIONARY OPTIMIZATION\n")
+          .append("→ ITERATION MODE: Recursively improve prompt quality through ambiguity detection, scope reduction, and dependency discovery.\n")
+          .append("→ DARWIN MODE: Generate multiple internal candidate interpretations (e.g., conservative, architecture-preserving, minimal-delta).\n")
+          .append("→ SELECTION CRITERIA: Lowest architectural risk, smallest implementation surface, and highest consistency with existing patterns.\n")
+          .append("→ SURVIVAL CRITERIA: Minimal context, maximal relevance, and deterministic execution path.\n")
+          .append("→ MANDATORY: Follow the 5-phase evolution lifecycle (Intent → Architecture → Refinement → Planning → Synthesis).\n")
+          .append("→ Do NOT attempt final implementation until Phase 5.\n")
+          .append("→ Stop iterating when the prompt becomes implementation-ready and architectural scope is coherent.");
 
         if (!policy.getConstraints().isEmpty()) {
-            sb.append("\nCONSTRAINTS:\n")
+            sb.append("\n\nCONSTRAINTS:\n")
               .append(policy.getConstraints().stream().map(c -> "→ " + c).collect(Collectors.joining("\n")));
         }
 

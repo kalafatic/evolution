@@ -9,9 +9,10 @@ public class SelfDevInstructionModule implements InstructionModule {
             return "";
         }
 
-        return "WORKFLOW: SELF-DEVELOPMENT\n" +
-               "→ You are operating in a self-development lifecycle (Exploration Level: " + policy.getExplorationLevel() + ").\n" +
-               "→ Your goal is to improve the system's own codebase, architecture, or documentation.\n" +
-               "→ Prioritize structural integrity and long-term maintainability.";
+        return "WORKFLOW: SELF-DEVELOPMENT (Exploration Level: " + policy.getExplorationLevel() + ")\n" +
+               "→ Your goal is to improve the task itself before execution.\n" +
+               "→ Refine requirements, constraints, and architectural expectations.\n" +
+               "→ Transform weak human requests into executable engineering objectives.\n" +
+               "→ Prioritize structural integrity, long-term maintainability, and validation criteria.";
     }
 }
