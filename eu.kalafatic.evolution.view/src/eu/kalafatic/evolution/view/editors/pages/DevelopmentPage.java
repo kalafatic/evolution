@@ -185,7 +185,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
             toolkit, container, editor, orchestrator, sessionId);
 
         // 3. Architecture Visualization
-        Composite archGroup = SWTFactory.createExpandableGroup(toolkit, container, "Architecture Visualization", 1, true, true);
+        Composite archGroup = SWTFactory.createExpandableGroup(toolkit, container, "Architecture Visualization", 1, false, true);
         archGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         Composite archComp = toolkit.createComposite(archGroup);
