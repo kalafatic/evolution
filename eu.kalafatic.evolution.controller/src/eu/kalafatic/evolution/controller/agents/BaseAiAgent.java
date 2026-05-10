@@ -12,6 +12,7 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
+import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector;
 import eu.kalafatic.evolution.controller.orchestration.util.DataScrubber;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.services.BestPracticesService;
@@ -96,6 +97,13 @@ public abstract class BaseAiAgent implements IAgent {
 
         if (lastFeedback != null) {
             sb.append("### PREVIOUS FEEDBACK (FAILURE RECOVERY)\n").append(lastFeedback).append("\n\n");
+        }
+
+        if (context.getInstructionFiles() != null && !context.getInstructionFiles().isEmpty()) {
+            String attachmentContext = AttachmentInjector.inject(context.getInstructionFiles(), request, context);
+            if (attachmentContext != null && !attachmentContext.isEmpty()) {
+                sb.append(attachmentContext).append("\n");
+            }
         }
 
         sb.append("CURRENT TASK:\n").append(request).append("\n\n");

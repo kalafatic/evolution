@@ -85,6 +85,7 @@ public class DarwinEvolutionTest {
 
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);
+        context.setAiService(aiService);
 
         // State Transition variant
         String variantJson = "[" +
@@ -127,6 +128,7 @@ public class DarwinEvolutionTest {
 
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);
+        context.setAiService(aiService);
 
         String failVariant = "[" +
             "{\"strategy\": \"Risky Refactor\", \"suffix\": \"risky\", \"actions\": [" +
@@ -201,7 +203,6 @@ public class DarwinEvolutionTest {
         SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(tempDir, context);
         DarwinEngine darwinEngine = new DarwinEngine(context, memoryService, stateProvider);
         darwinEngine.setAiService(aiService);
-        context.setAiService(aiService);
 
         return new IterationManager(
             context,
