@@ -188,6 +188,14 @@ public class IterationManager {
             AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
 
             // Atomic execution path
+            boolean isImplementation = state.getTaskIntents().contains(TaskIntent.IMPLEMENTATION);
+            boolean isDarwinMode = context.getOrchestrator().isDarwinMode();
+
+            if (isDarwinMode && isImplementation && atomicAnalysis != null) {
+                context.log("[KERNEL] Implementation task in Darwin mode detected. Forcing planning loop for evolutionary refinement.");
+                atomicAnalysis.setRequiresPlanning(true);
+            }
+
             if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() > 0.80 && !atomicAnalysis.isRequiresPlanning()) {
                 context.log("[KERNEL] Atomic task detected. Generating deterministic plan.");
                 List<Task> tasks = createAtomicFilePlan(request, atomicAnalysis, context);
@@ -385,6 +393,14 @@ public class IterationManager {
     private EvaluationResult runDarwin() throws Exception {
         transition(SystemState.INIT, context);
         String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
+
+        OrchestrationState state = context.getOrchestrationState();
+        if (state.getCurrentPhase() == null) {
+            state.setCurrentPhase(EvolutionConstants.PHASE_INTENT_EXPANSION);
+        }
+        currentIterationModel.setPhase(state.getCurrentPhase());
+        context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
+
         if (gitManager.isGitRepository()) {
             gitManager.ensureInitialCommit();
         }
@@ -420,21 +436,26 @@ public class IterationManager {
 
             // MEDIATED mode behavior: If in mediated mode, Darwin is used for analysis/proposal generation only.
             if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
-                context.log("[KERNEL] Darwin in MEDIATED mode: Stopping for user review/export of proposals.");
-                String input = context.requestInput("Darwin generated " + variants.size() + " analytical proposals. Review and select one to proceed with export, or reject to refine.").get();
+                context.log("[KERNEL] Darwin in MEDIATED mode (Phase: " + state.getCurrentPhase() + "): Stopping for user review/export of proposals.");
+                String input = context.requestInput("Darwin generated " + variants.size() + " proposals for phase " + state.getCurrentPhase() + ". Review and select one to proceed, or reject to refine.").get();
                 if ("Rejected".equalsIgnoreCase(input)) {
-                    recordRejection(goal, "Darwin analytical proposals rejected by user.");
+                    recordRejection(goal, "Darwin " + state.getCurrentPhase() + " proposals rejected by user.");
                     EvaluationResult res = failedResult();
                     res.setDecision(SelfDevDecision.CONTINUE);
                     currentIterationModel.setEvaluationResult(res);
                     transition(SystemState.FAILED, context);
                     return res;
                 }
-                // In MEDIATED mode, we don't execute or merge, we just finish for export.
+
+                // Advance phase in mediated mode too, but don't execute merge/tasks
+                advanceEvolutionPhase(state);
+
+                // In MEDIATED mode, we finish this iteration. Decision decides if we stop or continue to next phase iteration.
                 transition(SystemState.DONE, context);
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
-                res.setDecision(SelfDevDecision.STOP); // Stop loop, return to user/export
+                // Continue if we haven't reached synthesis, otherwise stop for export.
+                res.setDecision(EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(currentIterationModel.getPhase()) ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
                 currentIterationModel.setEvaluationResult(res);
                 return res;
             }
@@ -479,9 +500,23 @@ public class IterationManager {
             transition(SystemState.VERIFYING, context);
             EvaluationResult result = evaluator.evaluate();
             currentIterationModel.setEvaluationResult(result);
-            if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
-                gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
-                transition(SystemState.DONE, context);
+
+            if (result.isSuccess()) {
+                String completedPhase = state.getCurrentPhase();
+                advanceEvolutionPhase(state);
+
+                if (!EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(completedPhase)) {
+                    result.setDecision(SelfDevDecision.CONTINUE);
+                    context.log("[KERNEL] Phase " + completedPhase + " completed. Moving to " + state.getCurrentPhase());
+                }
+
+                if (result.getDecision() == SelfDevDecision.CONTINUE) {
+                    gitManager.commit("Darwin Evolution Phase " + completedPhase + " (Iteration " + currentIterationModel.getId() + ")");
+                    transition(SystemState.DONE, context);
+                } else {
+                    gitManager.commit("Darwin Evolution Finalized (Iteration " + currentIterationModel.getId() + ")");
+                    transition(SystemState.DONE, context);
+                }
             } else {
                 gitManager.rollback();
                 transition(SystemState.FAILED, context);
@@ -570,6 +605,19 @@ public class IterationManager {
         record.setErrorMessage(message);
         record.setTimestamp(System.currentTimeMillis());
         memoryService.saveRecord(record);
+    }
+
+    private void advanceEvolutionPhase(OrchestrationState state) {
+        String current = state.getCurrentPhase();
+        if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(current)) {
+            state.setCurrentPhase(EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS);
+        } else if (EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS.equals(current)) {
+            state.setCurrentPhase(EvolutionConstants.PHASE_SELECTION_REFINEMENT);
+        } else if (EvolutionConstants.PHASE_SELECTION_REFINEMENT.equals(current)) {
+            state.setCurrentPhase(EvolutionConstants.PHASE_IMPLEMENTATION_PLAN);
+        } else if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(current)) {
+            state.setCurrentPhase(EvolutionConstants.PHASE_FINAL_SYNTHESIS);
+        }
     }
 
     private void deleteDirectory(File directory) {

@@ -10,6 +10,8 @@ public class DarwinIterativeInstructionModule implements InstructionModule {
         return "REASONING: DARWIN ITERATIVE\n" +
                "→ Use a Darwinian approach: generate multiple competing variants.\n" +
                "→ Each variant should explore a different hypothesis or strategy.\n" +
-               "→ Evaluate variants based on predicted success and system impact.";
+               "→ MANDATORY: Follow the 5-phase evolution lifecycle (Intent → Architecture → Refinement → Planning → Synthesis).\n" +
+               "→ Do NOT attempt final implementation until Phase 5.\n" +
+               "→ Evaluate variants based on predicted success and phase-specific alignment.";
     }
 }
