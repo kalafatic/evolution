@@ -11,7 +11,7 @@ import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInj
 import eu.kalafatic.evolution.controller.tools.FileTool;
 
 /**
- * Builds a minimal ContextPackage from a Task.
+ * Builds a deterministic ContextPackage from a Task using a staged pipeline.
  */
 public class ContextBuilder {
     private static final int MAX_FILES = 5;
@@ -22,33 +22,34 @@ public class ContextBuilder {
     }
 
     public static ContextPackage build(Task task, TaskContext context, int attempt, String lastFeedback) {
+        // Pipeline: RAW_INPUT → ANALYSIS → ENRICHMENT → FILTERING → COMPRESSION → ASSEMBLY
+
+        // 1. RAW_INPUT & INITIALIZATION
         ContextPackage pkg = new ContextPackage();
         pkg.setGoal(task.getGoal());
         pkg.setStep(task.getName());
         pkg.setAttempt(attempt);
         pkg.setLastFeedback(lastFeedback);
 
-        // Architecture Context (replaces large architecture.md reading)
-        ArchitectureContext arch = new ArchitectureContext();
-        arch.getKeyRules().add("DO NOT rewrite or replace existing components (Orchestrator, Agents, ContextBuilder, Supervisor)");
-        arch.getKeyRules().add("Align responsibilities and simplify interactions");
-        arch.getKeyRules().add("Preserve all working behavior");
-        arch.setCurrentFocus(task.getName());
-        pkg.setArchitectureContext(arch);
+        OrchestrationState state = context.getOrchestrationState();
+        state.addDiagnostic("ContextBuilder: Starting pipeline for " + task.getName());
 
+        // 2. ANALYSIS (File selection)
         Set<String> scope = selectRelevantFiles(task, context);
         pkg.getScope().addAll(scope);
+        state.addDiagnostic("ContextBuilder: Selected " + scope.size() + " files for scope.");
 
+        // 3. ENRICHMENT (Reading content, dependencies, and attachments)
         StringBuilder codeBuilder = new StringBuilder();
         StringBuilder depBuilder = new StringBuilder();
         FileTool fileTool = new FileTool();
 
         for (String path : scope) {
             try {
-                // Sanitize path (remove [FILE:] prefix if somehow still there)
                 String cleanPath = path.replaceAll("^\\[FILE:|\\]$", "");
-
                 String content = fileTool.execute("READ " + cleanPath, context.getProjectRoot(), context);
+
+                // 4. COMPRESSION (Extracting relevant code)
                 codeBuilder.append("// FILE: ").append(cleanPath).append("\n");
                 codeBuilder.append(extractRelevantCode(content)).append("\n\n");
 
@@ -61,112 +62,71 @@ public class ContextBuilder {
         pkg.setCode(codeBuilder.toString());
         pkg.setDependencies(depBuilder.toString());
 
+        // 5. FILTERING (Constraints)
         List<String> constraints = new ArrayList<>();
         constraints.add("do not change public API unless required");
         constraints.add("keep compatibility with EMF model");
         constraints.add("modify only files in scope");
 
-        // Add task-specific description as a hint/constraint if it contains "don't" or "must"
         if (task.getDescription() != null) {
             String desc = task.getDescription().toLowerCase();
             if (desc.contains("must") || desc.contains("don't") || desc.contains("do not") || desc.contains("ensure")) {
                 constraints.add("Task Hint: " + task.getDescription());
             }
         }
-
         pkg.setConstraints(constraints);
 
-        // Inject Intelligent Attachment Context
+        // Enrichment: Attachment Injection
         if (context.getInstructionFiles() != null && !context.getInstructionFiles().isEmpty()) {
             String attachmentContext = AttachmentInjector.inject(context.getInstructionFiles(), task.getName(), context);
             pkg.setAttachmentContext(attachmentContext);
         }
 
+        // 6. ASSEMBLY (Handled in buildPrompt)
+        ArchitectureContext arch = new ArchitectureContext();
+        arch.getKeyRules().add("Single Transition Authority: ONLY IterationManager may change system state");
+        arch.getKeyRules().add("Stateless Execution: EvolutionOrchestrator is a blind executor");
+        arch.setCurrentFocus(task.getName());
+        pkg.setArchitectureContext(arch);
+
+        state.addDiagnostic("ContextBuilder: Pipeline complete.");
         return pkg;
     }
 
     private static Set<String> selectRelevantFiles(Task task, TaskContext context) {
         Set<String> files = new HashSet<>();
+        String combined = (task.getName() + " " + task.getDescription() + " " + task.getGoal());
 
-        String name = task.getName() != null ? task.getName() : "";
-        String desc = task.getDescription() != null ? task.getDescription() : "";
-        String goal = task.getGoal() != null ? task.getGoal() : "";
-
-        // 1. Look for [FILE:path] markers in name, description, and goal
-        String combined = (name + " " + desc + " " + goal);
         Pattern fileTagPattern = Pattern.compile("\\[FILE:([^\\]]+)\\]", Pattern.CASE_INSENSITIVE);
         Matcher tagMatcher = fileTagPattern.matcher(combined);
         while (tagMatcher.find()) {
             files.add(tagMatcher.group(1));
         }
 
-        // 2. Look for potential Java file paths
         Pattern javaPathPattern = Pattern.compile("([\\w/\\\\\\.-]+\\.java)", Pattern.CASE_INSENSITIVE);
         Matcher pathMatcher = javaPathPattern.matcher(combined);
         while (pathMatcher.find()) {
             files.add(pathMatcher.group(1));
         }
 
-        // 3. Fallback: If no files found, try to infer from task name (e.g., "Update ContextBuilder")
-        if (files.isEmpty() && task.getName() != null) {
-             // Simple heuristic: last word if it looks like a class
-             String[] words = name.split("\\s+");
-             if (words.length > 0) {
-                 String lastWord = words[words.length - 1];
-                 if (Character.isUpperCase(lastWord.charAt(0)) || lastWord.endsWith(".java")) {
-                     // We don't have the full path here, so this is risky without a search tool
-                     // For now, let's stick to explicit paths or well-formed strings
-                 }
-             }
-        }
-
-        // Limit scope to avoid prompt explosion
         if (files.size() > MAX_FILES) {
-            List<String> limited = new ArrayList<>(files).subList(0, MAX_FILES);
-            return new HashSet<>(limited);
+            return new HashSet<>(new ArrayList<>(files).subList(0, MAX_FILES));
         }
         return files;
     }
 
     private static String extractRelevantCode(String content) {
-        if (content.length() <= SMALL_FILE_LIMIT) {
-            return content;
-        }
-
+        if (content.length() <= SMALL_FILE_LIMIT) return content;
         String[] lines = content.split("\n");
         StringBuilder sb = new StringBuilder();
         int count = 0;
-        boolean inInterestingBlock = false;
-
         for (String line : lines) {
             count++;
-            // Include class/interface/enum definitions and first 100 lines
-            if (count < 100 || line.contains("class ") || line.contains("interface ") || line.contains("enum ")) {
+            if (count < 100 || line.contains("class ") || line.contains("interface ") || line.contains("public ")) {
                 sb.append(line).append("\n");
-                continue;
             }
-
-            // Include public methods (very simple heuristic)
-            if (line.trim().startsWith("public ") && line.contains("(")) {
-                sb.append(line).append("\n");
-                inInterestingBlock = true;
-                continue;
-            }
-
-            if (inInterestingBlock) {
-                sb.append(line).append("\n");
-                if (line.contains("}")) {
-                    inInterestingBlock = false;
-                }
-            }
-
-            if (count > 500) break; // Hard limit for safety
+            if (count > 500) break;
         }
-
-        if (count > 100) {
-            sb.append("\n// ... [TRUNCATED] ...\n");
-        }
-
         return sb.toString();
     }
 
@@ -175,7 +135,7 @@ public class ContextBuilder {
         Pattern importPattern = Pattern.compile("^import\\s+([\\w\\.]+);", Pattern.MULTILINE);
         Matcher matcher = importPattern.matcher(content);
         int count = 0;
-        while (matcher.find() && count < 10) {
+        while (matcher.find() && count < 5) {
             deps.append("  - uses ").append(matcher.group(1)).append("\n");
             count++;
         }
@@ -197,9 +157,7 @@ public class ContextBuilder {
         }
 
         sb.append("### CURRENT STEP\n").append(ctx.getStep());
-        if (ctx.getAttempt() > 1) {
-            sb.append(" (Attempt ").append(ctx.getAttempt()).append(")");
-        }
+        if (ctx.getAttempt() > 1) sb.append(" (Attempt ").append(ctx.getAttempt()).append(")");
         sb.append("\n\n");
 
         if (ctx.getLastFeedback() != null && !ctx.getLastFeedback().isEmpty()) {
@@ -207,23 +165,16 @@ public class ContextBuilder {
         }
 
         sb.append("### CONSTRAINTS\n");
-        for (String c : ctx.getConstraints()) {
-            sb.append("- ").append(c).append("\n");
-        }
+        for (String c : ctx.getConstraints()) sb.append("- ").append(c).append("\n");
 
         sb.append("\n### DEPENDENCIES\n").append(ctx.getDependencies()).append("\n");
 
         if (ctx.getAttachmentContext() != null && !ctx.getAttachmentContext().isEmpty()) {
-            sb.append(ctx.getAttachmentContext()).append("\n");
+            sb.append("### ATTACHMENTS\n").append(ctx.getAttachmentContext()).append("\n");
         }
 
-        sb.append("### RELEVANT CODE\n");
-        sb.append("```java\n").append(ctx.getCode()).append("\n```\n\n");
-
-        sb.append("### INSTRUCTION\n");
-        sb.append("Based on the context above, perform the task described in 'CURRENT STEP'.\n");
-        sb.append("Return ONLY the modified code or a diff that can be applied to the relevant files.\n");
-        sb.append("Keep the implementation minimal and robust.\n");
+        sb.append("### RELEVANT CODE\n```java\n").append(ctx.getCode()).append("\n```\n\n");
+        sb.append("### INSTRUCTION\nPerform the task described in 'CURRENT STEP' and return ONLY the modified code or a diff.\n");
 
         return sb.toString();
     }

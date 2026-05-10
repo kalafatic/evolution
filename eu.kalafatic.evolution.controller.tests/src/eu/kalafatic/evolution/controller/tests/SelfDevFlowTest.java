@@ -88,7 +88,7 @@ public class SelfDevFlowTest {
 
         SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
             @Override
-            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration) {
+            protected IterationManager createIterationManager(eu.kalafatic.evolution.model.orchestration.Iteration iteration, eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
                 return createMockedManager(context);
             }
         };
