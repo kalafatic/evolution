@@ -50,8 +50,9 @@ public class IntentService {
         if (matches(lower, "refactor", "restructure", "reorganize", "cleanup", "improve", "simplify")) {
             intents.add(TaskIntent.REFACTORING);
         }
-        if (matches(lower, "architecture", "design", "component", "layer", "structure", "system")) {
+        if (matches(lower, "architecture", "design", "component", "layer", "structure", "system", "relationship", "dependency", "lifecycle", "workflow", "event", "sync")) {
             intents.add(TaskIntent.ARCHITECTURE);
+            intents.add(TaskIntent.ANALYSIS);
         }
         if (matches(lower, "test", "verification", "junit", "coverage", "check", "validate", "assert")) {
             intents.add(TaskIntent.TESTING);

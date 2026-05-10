@@ -14,6 +14,7 @@ import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.agents.AgentFactory;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
+import eu.kalafatic.evolution.controller.agents.StructureAgent;
 import eu.kalafatic.evolution.controller.agents.CriticAgent;
 import eu.kalafatic.evolution.controller.agents.FinalResponseAgent;
 import eu.kalafatic.evolution.controller.agents.GeneralAgent;
@@ -70,6 +71,7 @@ public class IterationManager {
     private final IntentService intentService;
 
     private final AnalyticAgent analyticAgent;
+    private final StructureAgent structureAgent;
     private final PlannerAgent strategicPlanner;
     private final CriticAgent criticAgent;
     private final FinalResponseAgent finalResponseAgent;
@@ -100,6 +102,7 @@ public class IterationManager {
 
         availableAgents.addAll(AgentFactory.getAllAgents());
         analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
+        structureAgent = (StructureAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_STRUCTURE);
         strategicPlanner = (PlannerAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_PLANNER);
         criticAgent = (CriticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_CRITIC);
         finalResponseAgent = (FinalResponseAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_FINAL_RESPONSE);
@@ -133,8 +136,29 @@ public class IterationManager {
             ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());
             convState.addMessage("User: " + request);
 
-            // 1. ANALYZING stage
+            // 1. DISCOVERY phase (Repository-First Reasoning)
+            if (context.getPlatformMode() == null || context.getPlatformMode().getType() != PlatformType.SIMPLE_CHAT) {
+                if (gitManager.isGitRepository()) {
+                    transition(SystemState.ANALYZING, context); // Use ANALYZING as placeholder if no DISCOVERY state
+                    context.log("[KERNEL] Discovery: Inspecting repository structure.");
+                    String projectStructure = structureAgent.process("Provide a concise summary of the project structure and technology stack.", context, null);
+                    state.getMetadata().put("projectStructure", projectStructure);
+                    context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Discovery complete. Repository-aware context initialized.");
+                } else {
+                    context.log("[KERNEL] Discovery skipped: Not a git repository.");
+                }
+            }
+
+            // 2. ANALYZING stage
             transition(SystemState.ANALYZING, context);
+            context.log("[KERNEL] Repository-Aware Analysis: Synchronizing state with local repository.");
+            try {
+                if (gitManager.isGitRepository()) {
+                    gitManager.ensureInitialCommit(); // Ensure we have a baseline
+                }
+            } catch (Exception e) {
+                context.log("[KERNEL] Git synchronization failed: " + e.getMessage());
+            }
 
             // Mode Routing
             if (context.getPlatformMode() == null) {
@@ -154,6 +178,7 @@ public class IterationManager {
             }
 
             // Unified Intent Analysis
+            context.log("[KERNEL] Performing repository-grounded intent analysis.");
             intentService.analyze(request, context);
             AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
 
@@ -353,7 +378,9 @@ public class IterationManager {
     private EvaluationResult runDarwin() throws Exception {
         transition(SystemState.INIT, context);
         String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
-        gitManager.ensureInitialCommit();
+        if (gitManager.isGitRepository()) {
+            gitManager.ensureInitialCommit();
+        }
         String originalBranch = gitManager.getCurrentBranch();
         String snapshotBranch = "snapshot/" + currentIterationModel.getId() + "-" + System.currentTimeMillis();
         try {
@@ -381,6 +408,27 @@ public class IterationManager {
                     .withParent("evolution_loop"));
 
             checkStep("evolution_loop", "MUTATION", "Darwin variants generated. Review before approval.");
+
+            // MEDIATED mode behavior: If in mediated mode, Darwin is used for analysis/proposal generation only.
+            if (context.getOrchestrator().getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
+                context.log("[KERNEL] Darwin in MEDIATED mode: Stopping for user review/export of proposals.");
+                String input = context.requestInput("Darwin generated " + variants.size() + " analytical proposals. Review and select one to proceed with export, or reject to refine.").get();
+                if ("Rejected".equalsIgnoreCase(input)) {
+                    recordRejection(goal, "Darwin analytical proposals rejected by user.");
+                    EvaluationResult res = failedResult();
+                    res.setDecision(SelfDevDecision.CONTINUE);
+                    currentIterationModel.setEvaluationResult(res);
+                    transition(SystemState.FAILED, context);
+                    return res;
+                }
+                // In MEDIATED mode, we don't execute or merge, we just finish for export.
+                transition(SystemState.DONE, context);
+                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                res.setSuccess(true);
+                res.setDecision(SelfDevDecision.STOP); // Stop loop, return to user/export
+                currentIterationModel.setEvaluationResult(res);
+                return res;
+            }
 
             if (!context.isAutoApprove()) {
                 String input = context.requestInput("Darwin generated " + variants.size() + " variants. Review and approve to start evaluation.").get();

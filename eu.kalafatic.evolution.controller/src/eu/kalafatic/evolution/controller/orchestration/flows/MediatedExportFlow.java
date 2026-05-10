@@ -42,6 +42,8 @@ public class MediatedExportFlow implements IOrchestrationFlow {
     }
 
     private OrchestratorResponse executeInternal(String request, TaskContext context) throws Exception {
+        context.log("[EXPORT] Starting repository-aware iterative export preparation.");
+
         JSONObject analysis = null;
         while (true) {
             // 1. Analysis Task
@@ -73,6 +75,8 @@ public class MediatedExportFlow implements IOrchestrationFlow {
 
             ArchitectureSummarizer summarizer = new ArchitectureSummarizer();
             architectureSummary = summarizer.summarize(context, aiService);
+
+            context.log("[EXPORT] Selecting high-density repository context.");
             ContextSelectionEngine contextEngine = new ContextSelectionEngine();
             contextFiles = contextEngine.selectContext(request, analysis, context);
 
@@ -131,6 +135,7 @@ public class MediatedExportFlow implements IOrchestrationFlow {
         response.setSummary(summary);
         response.setContent(summary);
         manager.transition(SystemState.DONE, context);
+        context.log("[EXPORT] Mediated export package ready for repository: " + context.getProjectRoot().getName());
         return response;
     }
 

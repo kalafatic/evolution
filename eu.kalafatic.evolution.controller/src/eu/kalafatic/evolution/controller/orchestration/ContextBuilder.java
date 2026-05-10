@@ -37,7 +37,11 @@ public class ContextBuilder {
         // 2. ANALYSIS (File selection)
         Set<String> scope = selectRelevantFiles(task, context);
         pkg.getScope().addAll(scope);
-        state.addDiagnostic("ContextBuilder: Selected " + scope.size() + " files for scope.");
+
+        // 2b. ARCHITECTURAL EXPANSION
+        expandArchitecturalContext(scope, context);
+        pkg.getScope().addAll(scope); // Add expanded files back to scope
+        state.addDiagnostic("ContextBuilder: Selected " + scope.size() + " files for scope after architectural expansion.");
 
         // 3. ENRICHMENT (Reading content, dependencies, and attachments)
         StringBuilder codeBuilder = new StringBuilder();
@@ -91,6 +95,25 @@ public class ContextBuilder {
 
         state.addDiagnostic("ContextBuilder: Pipeline complete.");
         return pkg;
+    }
+
+    private static void expandArchitecturalContext(Set<String> scope, TaskContext context) {
+        Set<String> expansions = new HashSet<>();
+        for (String path : scope) {
+            // Auto-expand if orchestration or runtime components are detected
+            if (path.contains("IterationManager") || path.contains("Orchestrator") || path.contains("Supervisor") || path.contains("Kernel")) {
+                context.log("ContextBuilder: Expanding orchestration context for " + path);
+                expansions.add("eu.kalafatic.evolution.controller/src/eu/kalafatic/evolution/controller/orchestration/OrchestrationState.java");
+                expansions.add("eu.kalafatic.evolution.controller/src/eu/kalafatic/evolution/controller/workflow/RuntimeEventBus.java");
+                expansions.add("eu.kalafatic.evolution.model/src/eu/kalafatic/evolution/model/orchestration/Orchestrator.java");
+            }
+            if (path.contains("Agent")) {
+                context.log("ContextBuilder: Expanding agent context for " + path);
+                expansions.add("eu.kalafatic.evolution.controller/src/eu/kalafatic/evolution/controller/agents/BaseAiAgent.java");
+                expansions.add("eu.kalafatic.evolution.controller/src/eu/kalafatic/evolution/controller/agents/AgentFactory.java");
+            }
+        }
+        scope.addAll(expansions);
     }
 
     private static Set<String> selectRelevantFiles(Task task, TaskContext context) {

@@ -29,11 +29,6 @@ public class ModeRouter {
 
         if (lowerPrompt.equals("tell me a joke")) return createSimpleChatMode();
 
-        // 0. Analytical keywords detection - force Iterative (Assisted) mode early
-        // to ensure "analyze project" works correctly even in MEDIATED mode.
-        if (lowerPrompt.matches(".*\\b(analyze|investigate|report|summarize|discovery|audit)\\b.*")) {
-            return createAssistedCodingMode();
-        }
 
         // 1. Explicit mode keywords
         if (lowerPrompt.contains("mode: chat")) return createSimpleChatMode();
@@ -46,10 +41,8 @@ public class ModeRouter {
 
         // 2. Map from existing model flags
         if (orchestrator != null) {
-            // MEDIATED mode is a top-level override for manual workflow
-            if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
-                return createHybridManualExportMode();
-            }
+            // MEDIATED + SELF_DEV Support: If mediated, we only default to Export if no Iterative/Darwin flags are set.
+            boolean isMediated = orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED;
 
             if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
                 if (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
@@ -63,6 +56,11 @@ public class ModeRouter {
                 if (orchestrator.getAiChat().getPromptInstructions().isIterativeMode()) {
                     return createAssistedCodingMode();
                 }
+            }
+
+            // Fallback for MEDIATED if no iterative mode is active
+            if (isMediated) {
+                return createHybridManualExportMode();
             }
         }
 
