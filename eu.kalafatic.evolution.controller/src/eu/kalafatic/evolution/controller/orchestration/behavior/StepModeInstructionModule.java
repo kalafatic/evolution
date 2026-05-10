@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.behavior;
 
+import java.util.stream.Collectors;
+
 public class StepModeInstructionModule implements InstructionModule {
     @Override
     public String getInstructions(ExecutionPolicy policy) {
@@ -7,9 +9,17 @@ public class StepModeInstructionModule implements InstructionModule {
             return "";
         }
 
-        return "INTERACTION: STEP MODE\n" +
-               "→ Execution is paused after each step for human review.\n" +
-               "→ Provide clear, granular actions that can be easily verified.\n" +
-               "→ Assume each action will be explicitly approved or rejected.";
+        StringBuilder sb = new StringBuilder();
+        sb.append("INTERACTION: STEP MODE (Supervision: ").append(policy.getSupervisionLevel()).append(")\n")
+          .append("→ Execution is paused after each step for human review.\n")
+          .append("→ Provide clear, granular actions that can be easily verified.\n")
+          .append("→ Assume each action will be explicitly approved or rejected.");
+
+        if (!policy.getConstraints().isEmpty()) {
+            sb.append("\nCONSTRAINTS:\n")
+              .append(policy.getConstraints().stream().map(c -> "→ " + c).collect(Collectors.joining("\n")));
+        }
+
+        return sb.toString();
     }
 }
