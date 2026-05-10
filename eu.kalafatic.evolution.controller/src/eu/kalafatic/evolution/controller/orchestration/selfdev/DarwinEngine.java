@@ -13,6 +13,9 @@ import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.DiversityPressureController;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.EvolutionaryPenaltyModel;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.RejectionPatternAnalyzer;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -22,12 +25,21 @@ public class DarwinEngine extends BaseAiAgent {
     private final TaskContext context;
     private final IterationMemoryService memoryService;
     private final SystemStateSignalProvider stateProvider;
+    private final RejectionPatternAnalyzer rejectionAnalyzer = new RejectionPatternAnalyzer();
+    private final EvolutionaryPenaltyModel penaltyModel = new EvolutionaryPenaltyModel();
+    private final DiversityPressureController diversityController = new DiversityPressureController();
 
     public DarwinEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
         super("DarwinEngine", "DarwinEngine");
         this.context = context;
         this.memoryService = memoryService;
         this.stateProvider = stateProvider;
+    }
+
+    @Override
+    public void setAiService(eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
+        super.setAiService(aiService);
+        rejectionAnalyzer.setAiService(aiService);
     }
 
     @Override
@@ -150,6 +162,39 @@ public class DarwinEngine extends BaseAiAgent {
         context.log("[DARWIN] History Analysis: " + history);
         state.append("\n--- LEARNING FROM HISTORY ---\n");
         state.append(history).append("\n");
+
+        // Adaptive Feedback Learning
+        try {
+            context.log("[DARWIN] Running adaptive feedback analysis on " + memoryService.getRecords().size() + " records.");
+            JSONObject adaptiveAnalysis = rejectionAnalyzer.analyze(memoryService.getRecords(), context);
+            if (adaptiveAnalysis != null) {
+                penaltyModel.updateFromAnalysis(adaptiveAnalysis);
+                state.append("\n--- ADAPTIVE EVOLUTIONARY GUIDANCE ---\n");
+
+                JSONArray avoid = adaptiveAnalysis.optJSONArray("avoidGuidelines");
+                if (avoid != null && avoid.length() > 0) {
+                    state.append("AVOID PATTERNS:\n");
+                    for (int i = 0; i < avoid.length(); i++) state.append("- ").append(avoid.getString(i)).append("\n");
+                }
+
+                JSONArray prefer = adaptiveAnalysis.optJSONArray("preferGuidelines");
+                if (prefer != null && prefer.length() > 0) {
+                    state.append("PREFER APPROACHES:\n");
+                    for (int i = 0; i < prefer.length(); i++) state.append("- ").append(prefer.getString(i)).append("\n");
+                }
+
+                JSONArray diversity = adaptiveAnalysis.optJSONArray("diversityDirectives");
+                if (diversity != null && diversity.length() > 0) {
+                    state.append("DIVERSITY OBJECTIVES:\n");
+                    for (int i = 0; i < diversity.length(); i++) state.append("- ").append(diversity.getString(i)).append("\n");
+                    diversityController.increasePressure();
+                }
+
+                context.log("[DARWIN] Adaptive guidance injected. Pressure Level: " + diversityController.getPressureLevel());
+            }
+        } catch (Exception e) {
+            context.log("[DARWIN] Adaptive analysis failed: " + e.getMessage());
+        }
 
         // Adjust instructions based on PlatformMode
         PlatformMode mode = context.getPlatformMode();
