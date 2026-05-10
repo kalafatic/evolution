@@ -4,6 +4,9 @@ import java.io.File;
 import java.util.Map;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.*;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.export.*;
 import eu.kalafatic.evolution.controller.workflow.*;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -24,9 +27,11 @@ public class MediatedExportFlow implements IOrchestrationFlow {
         context.log("[KERNEL] Executing Hybrid Manual Export flow.");
         context.getOrchestrator().getTasks().clear();
 
+        BehaviorProfile profile = context.getBehaviorProfile();
+
         // Mediation suppression for internal preparation steps
         AiMode originalMode = context.getOrchestrator().getAiMode();
-        boolean mediated = originalMode == AiMode.MEDIATED;
+        boolean mediated = profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED);
         if (mediated) {
             context.log("[KERNEL] Temporarily suppressing MEDIATED mode for internal prep.");
             context.getOrchestrator().setAiMode(AiMode.LOCAL);

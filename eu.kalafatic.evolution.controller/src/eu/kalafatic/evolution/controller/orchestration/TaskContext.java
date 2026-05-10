@@ -42,6 +42,7 @@ public class TaskContext {
     private volatile boolean paused = false;
     private volatile boolean autoApprove = false;
     private PlatformMode platformMode = null;
+    private eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile behaviorProfile = null;
     private final SystemStateHolder stateHolder = new SystemStateHolder();
     private final OrchestrationState orchestrationState = new OrchestrationState();
     private final Object pauseLock = new Object();
@@ -302,6 +303,15 @@ public class TaskContext {
 
     public void setPlatformMode(PlatformMode platformMode) {
         this.platformMode = platformMode;
+        // Invalidate profile when mode changes
+        this.behaviorProfile = null;
+    }
+
+    public eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile getBehaviorProfile() {
+        if (behaviorProfile == null) {
+            behaviorProfile = new eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver().resolve(this);
+        }
+        return behaviorProfile;
     }
 
     public SystemStateHolder getStateHolder() {
