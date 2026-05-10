@@ -2,11 +2,14 @@ package eu.kalafatic.evolution.controller.orchestration.behavior;
 
 public class DarwinIterativeInstructionModule implements InstructionModule {
     @Override
-    public String getInstructions() {
-        return "REASONING: DARWIN_ITERATIVE\n" +
-               "→ Use iterative cognitive orchestration strategies.\n" +
-               "→ Generate multiple candidate state transitions (variants).\n" +
-               "→ Explore architectural interpretations and competing strategies.\n" +
-               "→ Reference ACTUAL repository code (classes, methods) and explain ORCHESTRATION impact.";
+    public String getInstructions(ExecutionPolicy policy) {
+        if (policy.getReasoningStrategy() != ExecutionPolicy.ReasoningStrategy.DARWIN) {
+            return "";
+        }
+
+        return "REASONING: DARWIN ITERATIVE\n" +
+               "→ Use a Darwinian approach: generate multiple competing variants.\n" +
+               "→ Each variant should explore a different hypothesis or strategy.\n" +
+               "→ Evaluate variants based on predicted success and system impact.";
     }
 }

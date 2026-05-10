@@ -2,10 +2,14 @@ package eu.kalafatic.evolution.controller.orchestration.behavior;
 
 public class ConservativeReasoningModule implements InstructionModule {
     @Override
-    public String getInstructions() {
+    public String getInstructions(ExecutionPolicy policy) {
+        if (policy.getReasoningStrategy() != ExecutionPolicy.ReasoningStrategy.CONSERVATIVE) {
+            return "";
+        }
+
         return "REASONING: CONSERVATIVE\n" +
-               "→ Generate only 1 or 2 very safe, low-risk variants.\n" +
-               "→ Avoid complex architectural changes or risky refactoring.\n" +
-               "→ Focus on direct, minimal fulfillment of the target goal.";
+               "→ Prioritize safety and minimal changes.\n" +
+               "→ Avoid large-scale refactorings unless absolutely necessary.\n" +
+               "→ Ensure all changes are well-tested and have low risk.";
     }
 }

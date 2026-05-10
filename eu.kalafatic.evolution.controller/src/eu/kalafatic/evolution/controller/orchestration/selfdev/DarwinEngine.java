@@ -9,6 +9,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BitState;
+import eu.kalafatic.evolution.controller.orchestration.behavior.PolicyResolver;
+import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy;
+import eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
@@ -39,6 +43,9 @@ public class DarwinEngine extends BaseAiAgent {
     private final EvolutionaryPenaltyModel penaltyModel = new EvolutionaryPenaltyModel();
     private final DiversityPressureController diversityController = new DiversityPressureController();
 
+    private final PolicyResolver policyResolver = new PolicyResolver();
+    private final PromptComposer promptComposer = new PromptComposer();
+
     public DarwinEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
         super("DarwinEngine", "DarwinEngine");
         this.context = context;
@@ -54,67 +61,8 @@ public class DarwinEngine extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        BehaviorProfile profile = context.getBehaviorProfile();
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("Role: Darwin Engine. Strategy: Iterative cognitive orchestration.\n\n");
-
-        List<InstructionModule> modules = new ArrayList<>();
-        if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
-            modules.add(new MediatedInstructionModule());
-        }
-        if (profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
-            modules.add(new SelfDevInstructionModule());
-        }
-        if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE)) {
-            modules.add(new DarwinIterativeInstructionModule());
-        }
-        if (profile.hasTrait(BehaviorTrait.REASONING_CONSERVATIVE)) {
-            modules.add(new ConservativeReasoningModule());
-        }
-        if (profile.hasTrait(BehaviorTrait.REASONING_EXPLORATORY)) {
-            modules.add(new ExploratoryReasoningModule());
-        }
-        if (profile.hasTrait(BehaviorTrait.INTERACTION_STEP_MODE)) {
-            modules.add(new StepModeInstructionModule());
-        }
-
-        if (modules.isEmpty()) {
-            sb.append("Your task is to propose the best STRATEGY to fulfill the user's goal by reasoning over STATE and FEEDBACK.\n\n");
-        } else {
-            for (InstructionModule module : modules) {
-                sb.append(module.getInstructions()).append("\n\n");
-            }
-        }
-
-        sb.append("PRIMARY OBJECTIVE:\n")
-          .append("→ Propose 2-3 distinct candidate state transitions (strategies) to achieve the goal.\n")
-          .append("→ CRITICAL: Fulfillment of the current goal is the HIGHEST priority.\n")
-          .append("→ If the goal is ANALYTICAL (e.g., 'analyze project'), use ANALYZE operations in 'structure' or 'test' domains.\n\n");
-
-        sb.append("STATE MODEL:\n")
-          .append("→ Use the provided StateSnapshot (build, tests, coverage) to inform decisions.\n")
-          .append("→ Analyze relationships between elements (files, modules, tests, failures, dependencies).\n")
-          .append("→ Identify weak points (failures, instability, complexity).\n")
-          .append("→ Propose actions that improve overall system health and achieve the target goal.\n\n")
-          .append("FAILURE FINGERPRINTING & ANTI-LOOP:\n")
-          .append("→ Avoid repeating actions that lead to the same failure fingerprints.\n")
-          .append("→ If a failure is REPEATING (count >= 2), you MUST change your strategy.\n\n")
-          .append("HYPOTHESIS-DRIVEN VARIANTS:\n")
-          .append("→ Every variant MUST include a hypothesis: a causal explanation of why the proposed changes will lead to the expected effects.\n")
-          .append("→ Expected effects must be measurable outcomes (e.g., 'build success', 'test X passes', 'new class prints text').\n\n")
-          .append("TRAJECTORY AWARENESS:\n")
-          .append("→ Consider the build/test trends. Prefer variants that improve ANY dimension.\n\n")
-          .append("PRIORITY LOGIC:\n")
-          .append("→ IF build == FAIL → focus on build fixes.\n")
-          .append("→ ELSE IF tests failing → focus on test fixes.\n")
-          .append("→ ELSE → fulfillment of the current goal.\n\n")
-          .append("ITERATION STRATEGY (DARWINIAN):\n")
-          .append("→ Generate 2–3 DIFFERENT candidate state transitions.\n")
-          .append("→ Each candidate must represent a distinct strategy.\n")
-          .append("→ Avoid cosmetic changes, repeated failed approaches, or low-impact modifications.");
-
-        return sb.toString();
+        // This is now handled by generateVariants using PromptComposer
+        return "Role: Darwin Engine. Strategy: Iterative cognitive orchestration.";
     }
 
     @Override
@@ -152,6 +100,21 @@ public class DarwinEngine extends BaseAiAgent {
 
     public List<BranchVariant> generateVariants(String goal, StateSnapshot snapshot, FailureMemory failureMemory, Trajectory trajectory) throws Exception {
         context.log("[DARWIN] Generating variants for goal: " + goal);
+
+        // 1. Read BitState from context
+        long bitState = context.getOrchestrationState().getBitState();
+
+        // 2. Pass BitState → PolicyResolver
+        ExecutionPolicy policy = policyResolver.resolve(bitState);
+
+        // 3. Use ExecutionPolicy to select InstructionModules
+        List<InstructionModule> modules = new ArrayList<>();
+        modules.add(new MediatedInstructionModule());
+        modules.add(new SelfDevInstructionModule());
+        modules.add(new DarwinIterativeInstructionModule());
+        modules.add(new ConservativeReasoningModule());
+        modules.add(new ExploratoryReasoningModule());
+        modules.add(new StepModeInstructionModule());
 
         StringBuilder state = new StringBuilder();
         state.append("Current Goal: ").append(goal).append("\n");
@@ -223,7 +186,9 @@ public class DarwinEngine extends BaseAiAgent {
             context.log("[DARWIN] Adaptive analysis failed: " + e.getMessage());
         }
 
-        String fullPrompt = buildPrompt(state.toString(), context, null);
+        // 4. Build final prompt via PromptComposer
+        String fullPrompt = buildPrompt(promptComposer.compose(policy, modules, state.toString()), context, null);
+
         context.log("Evo-DarwinEngine-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("Evo-DarwinEngine-Response: " + response);

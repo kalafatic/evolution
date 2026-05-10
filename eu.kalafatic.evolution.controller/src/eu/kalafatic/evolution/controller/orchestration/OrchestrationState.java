@@ -26,6 +26,7 @@ public class OrchestrationState {
     private String currentIterationId;
     private int iterationCount = 0;
     private List<String> rejectionHistory = new ArrayList<>();
+    private long bitState = 0;
 
     public String getRawInput() {
         return rawInput;
@@ -97,5 +98,13 @@ public class OrchestrationState {
 
     public void addRejection(String reason) {
         this.rejectionHistory.add(reason);
+    }
+
+    public long getBitState() {
+        return bitState;
+    }
+
+    public void setBitState(long bitState) {
+        this.bitState = bitState;
     }
 }

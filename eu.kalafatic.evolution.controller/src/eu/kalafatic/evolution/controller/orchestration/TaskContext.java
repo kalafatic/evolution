@@ -309,7 +309,10 @@ public class TaskContext {
 
     public eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile getBehaviorProfile() {
         if (behaviorProfile == null) {
-            behaviorProfile = new eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver().resolve(this);
+            eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver resolver = new eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver();
+            behaviorProfile = resolver.resolve(this);
+            // Also sync bitState in orchestrationState
+            orchestrationState.setBitState(resolver.resolveBitState(this));
         }
         return behaviorProfile;
     }
@@ -319,6 +322,10 @@ public class TaskContext {
     }
 
     public OrchestrationState getOrchestrationState() {
+        // Ensure bitState is initialized before returning
+        if (orchestrationState.getBitState() == 0) {
+            getBehaviorProfile();
+        }
         return orchestrationState;
     }
 
