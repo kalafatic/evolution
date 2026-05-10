@@ -54,4 +54,11 @@ public final class EvolutionConstants {
 
     public static final int MAX_PLANNING_ITERATIONS = 3;
     public static final double PLANNING_QUALITY_THRESHOLD = 0.9;
+
+    // Evolution Phases
+    public static final String PHASE_INTENT_EXPANSION = "INTENT_EXPANSION";
+    public static final String PHASE_ARCHITECTURE_VARIANTS = "ARCHITECTURE_VARIANTS";
+    public static final String PHASE_SELECTION_REFINEMENT = "SELECTION_REFINEMENT";
+    public static final String PHASE_IMPLEMENTATION_PLAN = "IMPLEMENTATION_PLAN";
+    public static final String PHASE_FINAL_SYNTHESIS = "FINAL_SYNTHESIS";
 }

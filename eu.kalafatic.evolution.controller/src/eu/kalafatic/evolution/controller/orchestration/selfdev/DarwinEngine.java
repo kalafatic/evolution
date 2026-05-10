@@ -17,6 +17,7 @@ import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.behavior.ConservativeReasoningModule;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.orchestration.behavior.DarwinIterativeInstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.ExploratoryReasoningModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.InstructionModule;
@@ -122,6 +123,27 @@ public class DarwinEngine extends BaseAiAgent {
         state.append("Supervision Level: ").append(policy.getSupervisionLevel()).append("\n");
         state.append("Reasoning Strategy: ").append(policy.getReasoningStrategy()).append("\n");
         state.append("Repository Isolation: ").append(policy.getRepositoryMode()).append("\n");
+
+        String currentPhase = context.getOrchestrationState().getCurrentPhase();
+        if (currentPhase != null) {
+            state.append("\n--- CURRENT EVOLUTION PHASE: ").append(currentPhase).append(" ---\n");
+            if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(currentPhase)) {
+                state.append("GOAL: Understand and expand user request. Detect missing constraints and generate 2-3 interpretations/hypotheses.\n");
+                state.append("VARIANT GUIDANCE: Each variant must represent a different interpretation of the goal.\n");
+            } else if (EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS.equals(currentPhase)) {
+                state.append("GOAL: Generate 2-3 competing architectural designs based on the selected intent.\n");
+                state.append("VARIANT GUIDANCE: Focus on trade-offs, modularity, and structure. Do NOT write final implementation code yet.\n");
+            } else if (EvolutionConstants.PHASE_SELECTION_REFINEMENT.equals(currentPhase)) {
+                state.append("GOAL: Evaluate designs and refine the winning approach. Merge best ideas if applicable.\n");
+                state.append("VARIANT GUIDANCE: Finalize architectural decisions and prepare for implementation planning.\n");
+            } else if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(currentPhase)) {
+                state.append("GOAL: Convert selected design into a detailed step-by-step action plan.\n");
+                state.append("VARIANT GUIDANCE: Define file structure, method breakdowns, and execution flow. PROPOSE ACTIONS ONLY.\n");
+            } else if (EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(currentPhase)) {
+                state.append("GOAL: Produce final production-ready implementation based on the plan.\n");
+                state.append("VARIANT GUIDANCE: Focus on code quality, completeness, and adherence to selected design.\n");
+            }
+        }
 
         if (snapshot != null) {
             state.append("\n--- CURRENT STATE SNAPSHOT ---\n");

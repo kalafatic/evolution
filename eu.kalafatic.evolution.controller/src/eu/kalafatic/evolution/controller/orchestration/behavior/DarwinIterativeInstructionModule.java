@@ -9,6 +9,12 @@ public class DarwinIterativeInstructionModule implements InstructionModule {
             return "";
         }
 
+        return "REASONING: DARWIN ITERATIVE\n" +
+               "→ Use a Darwinian approach: generate multiple competing variants.\n" +
+               "→ Each variant should explore a different hypothesis or strategy.\n" +
+               "→ MANDATORY: Follow the 5-phase evolution lifecycle (Intent → Architecture → Refinement → Planning → Synthesis).\n" +
+               "→ Do NOT attempt final implementation until Phase 5.\n" +
+               "→ Evaluate variants based on predicted success and phase-specific alignment.";
         StringBuilder sb = new StringBuilder();
         sb.append("REASONING: DARWIN ITERATIVE (Exploration Level: ").append(policy.getExplorationLevel()).append(")\n")
           .append("→ Use a Darwinian approach: generate multiple competing variants.\n")
