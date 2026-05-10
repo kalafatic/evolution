@@ -2,6 +2,9 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import eu.kalafatic.evolution.controller.orchestration.ModeRouter;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 import eu.kalafatic.evolution.controller.orchestration.KernelFactory;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -31,6 +34,8 @@ public class SelfDevSupervisor {
     }
 
     public void startSession() {
+        BehaviorProfile profile = context.getBehaviorProfile();
+
         // Mode routing is now handled by IterationManager.handle()
         String modeName = (context.getPlatformMode() != null) ? context.getPlatformMode().getType().toString().replace("_", " ") : "Self-Development";
         context.log("[SUPERVISOR] Starting " + modeName + " Session: " + session.getId());
@@ -91,7 +96,7 @@ public class SelfDevSupervisor {
 
                 restartManager.persistAndPrepareForRestart();
 
-                if (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE) {
+                if (profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
                     context.log("[SUPERVISOR] Delegating build and restart to external Supervisor...");
                     try {
                         bootstrapController.startBootstrap();

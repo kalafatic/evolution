@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Encapsulates behavior control and modularity for the platform.
+ * Pure configuration container for platform-level constraints and limits.
+ * Behavioral semantics are handled by BehaviorProfile.
  */
 public class PlatformMode {
     private PlatformType type;

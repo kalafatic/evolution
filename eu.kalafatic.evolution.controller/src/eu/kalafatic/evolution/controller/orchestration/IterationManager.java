@@ -29,6 +29,9 @@ import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequireme
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
 import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
@@ -128,6 +131,8 @@ public class IterationManager {
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
 
+        BehaviorProfile profile = context.getBehaviorProfile();
+
         try {
             context.getOrchestrator().getTasks().clear();
             context.setCurrentTaskName("Initialization");
@@ -137,7 +142,7 @@ public class IterationManager {
             convState.addMessage("User: " + request);
 
             // 1. DISCOVERY phase (Repository-First Reasoning)
-            if (context.getPlatformMode() == null || context.getPlatformMode().getType() != PlatformType.SIMPLE_CHAT) {
+            if (!profile.hasTrait(BehaviorTrait.REASONING_ATOMIC)) {
                 if (gitManager.isGitRepository()) {
                     transition(SystemState.ANALYZING, context); // Use ANALYZING as placeholder if no DISCOVERY state
                     context.log("[KERNEL] Discovery: Inspecting repository structure.");
@@ -173,7 +178,7 @@ public class IterationManager {
                         context.getSessionId(), "Kernel", mode.getType().toString()));
             }
 
-            if (context.getPlatformMode().getType() == PlatformType.HYBRID_MANUAL_EXPORT) {
+            if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
                 return new eu.kalafatic.evolution.controller.orchestration.flows.MediatedExportFlow(aiService, this).execute(request, context);
             }
 
@@ -202,8 +207,8 @@ public class IterationManager {
             }
 
             // Simple chat path
-            if (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
-                context.log("[KERNEL] SIMPLE_CHAT detected.");
+            if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
+                context.log("[KERNEL] ATOMIC/CHAT reasoning detected.");
                 transition(SystemState.EXECUTING, context);
                 GeneralAgent chatAgent = (GeneralAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
                 String chatResponse = chatAgent.process(request, context, null);
@@ -265,7 +270,7 @@ public class IterationManager {
 
             // 3. EVOLVING / PLANNING stage
             String category = analysis.optString("category", "CODING").toUpperCase();
-            if ((context.getPlatformMode().getType() == PlatformType.DARWIN_MODE || context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE)
+            if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE)
                 && ("CODING".equals(category) || "TOOL_USE".equals(category))) {
                 EvaluationResult res = runDarwin();
                 response.setSummary("Darwin evolution completed.");
@@ -336,7 +341,9 @@ public class IterationManager {
 
     public EvaluationResult runIteration(Iteration iteration) {
         this.currentIterationModel = iteration;
-        boolean darwinEnabled = (context.getPlatformMode() != null && (context.getPlatformMode().getType() == PlatformType.DARWIN_MODE || context.getPlatformMode().getType() == PlatformType.SELF_DEV_MODE)) || context.getOrchestrator().isDarwinMode();
+        BehaviorProfile profile = context.getBehaviorProfile();
+        boolean darwinEnabled = profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE);
+
         try {
             if (darwinEnabled && gitManager.isGitRepository()) return runDarwin();
             else return runIterative();
@@ -409,8 +416,10 @@ public class IterationManager {
 
             checkStep("evolution_loop", "MUTATION", "Darwin variants generated. Review before approval.");
 
+            BehaviorProfile profile = context.getBehaviorProfile();
+
             // MEDIATED mode behavior: If in mediated mode, Darwin is used for analysis/proposal generation only.
-            if (context.getOrchestrator().getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
+            if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
                 context.log("[KERNEL] Darwin in MEDIATED mode: Stopping for user review/export of proposals.");
                 String input = context.requestInput("Darwin generated " + variants.size() + " analytical proposals. Review and select one to proceed with export, or reject to refine.").get();
                 if ("Rejected".equalsIgnoreCase(input)) {

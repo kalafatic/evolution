@@ -12,7 +12,9 @@ import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
+import eu.kalafatic.evolution.controller.orchestration.behavior.ConservativeReasoningModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.DarwinIterativeInstructionModule;
+import eu.kalafatic.evolution.controller.orchestration.behavior.ExploratoryReasoningModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.InstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.MediatedInstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.SelfDevInstructionModule;
@@ -52,8 +54,7 @@ public class DarwinEngine extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        BehaviorResolver resolver = new BehaviorResolver();
-        BehaviorProfile profile = resolver.resolve(context);
+        BehaviorProfile profile = context.getBehaviorProfile();
 
         StringBuilder sb = new StringBuilder();
         sb.append("Role: Darwin Engine. Strategy: Iterative cognitive orchestration.\n\n");
@@ -67,6 +68,12 @@ public class DarwinEngine extends BaseAiAgent {
         }
         if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE)) {
             modules.add(new DarwinIterativeInstructionModule());
+        }
+        if (profile.hasTrait(BehaviorTrait.REASONING_CONSERVATIVE)) {
+            modules.add(new ConservativeReasoningModule());
+        }
+        if (profile.hasTrait(BehaviorTrait.REASONING_EXPLORATORY)) {
+            modules.add(new ExploratoryReasoningModule());
         }
         if (profile.hasTrait(BehaviorTrait.INTERACTION_STEP_MODE)) {
             modules.add(new StepModeInstructionModule());
@@ -216,20 +223,7 @@ public class DarwinEngine extends BaseAiAgent {
             context.log("[DARWIN] Adaptive analysis failed: " + e.getMessage());
         }
 
-        // Adjust instructions based on PlatformMode
-        PlatformMode mode = context.getPlatformMode();
-        String modeInfo = "";
-        if (mode != null) {
-            if (mode.getType() == PlatformType.ASSISTED_CODING) {
-                modeInfo = "\nPLATFORM MODE: ASSISTED_CODING. Generate only 1 or 2 very safe, conservative variants.\n";
-            } else if (mode.getType() == PlatformType.DARWIN_MODE) {
-                modeInfo = "\nPLATFORM MODE: DARWIN_MODE. Generate 2-3 competing variants.\n";
-            } else if (mode.getType() == PlatformType.SELF_DEV_MODE) {
-                modeInfo = "\nPLATFORM MODE: SELF_DEV_MODE. System self-improvement mode. Focus on structural health.\n";
-            }
-        }
-
-        String fullPrompt = buildPrompt(state.toString() + modeInfo, context, null);
+        String fullPrompt = buildPrompt(state.toString(), context, null);
         context.log("Evo-DarwinEngine-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
         context.log("Evo-DarwinEngine-Response: " + response);
