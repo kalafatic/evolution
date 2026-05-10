@@ -3,53 +3,76 @@ package eu.kalafatic.evolution.controller.orchestration.behavior;
 import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy.*;
 
 /**
- * Resolves semantic ExecutionPolicy from raw bitfield state.
+ * Resolves semantic ExecutionPolicy from raw bitfield state using a rule-based engine.
  */
 public class PolicyResolver {
 
+    private static final ExecutionMode[] MODES = {
+        ExecutionMode.LOCAL, ExecutionMode.HYBRID, ExecutionMode.REMOTE, ExecutionMode.PROXY, ExecutionMode.MEDIATED
+    };
+
+    private static final SupervisionLevel[] SUPERVISIONS = {
+        SupervisionLevel.AUTO, SupervisionLevel.MANUAL, SupervisionLevel.HYBRID
+    };
+
+    private static final InteractionMode[] INTERACTIONS = {
+        InteractionMode.CONTINUOUS, InteractionMode.STEP, InteractionMode.GUIDED
+    };
+
+    private static final ReasoningStrategy[] REASONING = {
+        ReasoningStrategy.ATOMIC, ReasoningStrategy.DARWIN, ReasoningStrategy.CONSERVATIVE, ReasoningStrategy.EXPLORATORY, ReasoningStrategy.ANALYTICAL
+    };
+
     public ExecutionPolicy resolve(long bitState) {
-        ExecutionPolicy policy = new ExecutionPolicy();
+        // STAGE 1: RAW DECODE (lookup-based mapping)
+        ExecutionPolicy policy = decode(bitState);
 
-        // Resolve Execution Mode
-        int mode = BitState.getMode(bitState);
-        switch (mode) {
-            case BitState.MODE_HYBRID: policy.setExecutionMode(ExecutionMode.HYBRID); break;
-            case BitState.MODE_REMOTE: policy.setExecutionMode(ExecutionMode.REMOTE); break;
-            case BitState.MODE_PROXY: policy.setExecutionMode(ExecutionMode.PROXY); break;
-            case BitState.MODE_MEDIATED: policy.setExecutionMode(ExecutionMode.MEDIATED); break;
-            case BitState.MODE_LOCAL:
-            default: policy.setExecutionMode(ExecutionMode.LOCAL); break;
-        }
+        // STAGE 2: POLICY RULE ENGINE
+        applyRules(policy);
 
-        // Resolve Supervision Level
-        int supervision = BitState.getSupervision(bitState);
-        switch (supervision) {
-            case BitState.SUPERVISION_MANUAL: policy.setSupervisionLevel(SupervisionLevel.MANUAL); break;
-            case BitState.SUPERVISION_HYBRID: policy.setSupervisionLevel(SupervisionLevel.HYBRID); break;
-            case BitState.SUPERVISION_AUTO:
-            default: policy.setSupervisionLevel(SupervisionLevel.AUTO); break;
-        }
-
-        // Resolve Interaction Mode
-        int interaction = BitState.getInteraction(bitState);
-        switch (interaction) {
-            case BitState.INTERACTION_STEP: policy.setInteractionMode(InteractionMode.STEP); break;
-            case BitState.INTERACTION_GUIDED: policy.setInteractionMode(InteractionMode.GUIDED); break;
-            case BitState.INTERACTION_CONTINUOUS:
-            default: policy.setInteractionMode(InteractionMode.CONTINUOUS); break;
-        }
-
-        // Resolve Reasoning Strategy
-        int reasoning = BitState.getReasoning(bitState);
-        switch (reasoning) {
-            case BitState.REASONING_DARWIN: policy.setReasoningStrategy(ReasoningStrategy.DARWIN); break;
-            case BitState.REASONING_CONSERVATIVE: policy.setReasoningStrategy(ReasoningStrategy.CONSERVATIVE); break;
-            case BitState.REASONING_EXPLORATORY: policy.setReasoningStrategy(ReasoningStrategy.EXPLORATORY); break;
-            case BitState.REASONING_ANALYTICAL: policy.setReasoningStrategy(ReasoningStrategy.ANALYTICAL); break;
-            case BitState.REASONING_ATOMIC:
-            default: policy.setReasoningStrategy(ReasoningStrategy.ATOMIC); break;
-        }
+        // STAGE 3: POLICY NORMALIZATION
+        normalize(policy);
 
         return policy;
+    }
+
+    private ExecutionPolicy decode(long bitState) {
+        ExecutionPolicy policy = new ExecutionPolicy();
+
+        int modeIdx = BitState.getMode(bitState);
+        policy.setExecutionMode(modeIdx >= 0 && modeIdx < MODES.length ? MODES[modeIdx] : ExecutionMode.LOCAL);
+
+        int supIdx = BitState.getSupervision(bitState);
+        policy.setSupervisionLevel(supIdx >= 0 && supIdx < SUPERVISIONS.length ? SUPERVISIONS[supIdx] : SupervisionLevel.AUTO);
+
+        int intIdx = BitState.getInteraction(bitState);
+        policy.setInteractionMode(intIdx >= 0 && intIdx < INTERACTIONS.length ? INTERACTIONS[intIdx] : InteractionMode.CONTINUOUS);
+
+        int reasIdx = BitState.getReasoning(bitState);
+        policy.setReasoningStrategy(reasIdx >= 0 && reasIdx < REASONING.length ? REASONING[reasIdx] : ReasoningStrategy.ATOMIC);
+
+        return policy;
+    }
+
+    private void applyRules(ExecutionPolicy policy) {
+        for (PolicyRule rule : RuleRegistry.getRules()) {
+            rule.apply(policy);
+        }
+    }
+
+    private void normalize(ExecutionPolicy policy) {
+        // Enforce consistent supervision for Mediated mode
+        if (policy.getExecutionMode() == ExecutionMode.MEDIATED) {
+            if (policy.getSupervisionLevel() == SupervisionLevel.AUTO) {
+                policy.setSupervisionLevel(SupervisionLevel.MANUAL);
+            }
+        }
+
+        // Ensure DARWIN always has a minimum exploration level
+        if (policy.getReasoningStrategy() == ReasoningStrategy.DARWIN) {
+            if (policy.getExplorationLevel() < 0.4) {
+                policy.setExplorationLevel(0.4);
+            }
+        }
     }
 }

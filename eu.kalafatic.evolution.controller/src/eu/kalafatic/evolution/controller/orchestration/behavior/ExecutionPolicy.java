@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.behavior;
 
-import eu.kalafatic.evolution.model.orchestration.AiMode;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Structured semantic orchestration policy.
@@ -10,11 +11,15 @@ public class ExecutionPolicy {
     public enum SupervisionLevel { AUTO, MANUAL, HYBRID }
     public enum InteractionMode { CONTINUOUS, STEP, GUIDED }
     public enum ReasoningStrategy { ATOMIC, DARWIN, CONSERVATIVE, EXPLORATORY, ANALYTICAL }
+    public enum RepositoryMode { ISOLATED, SHARED, VIRTUAL }
 
     private ExecutionMode executionMode;
     private SupervisionLevel supervisionLevel;
     private InteractionMode interactionMode;
     private ReasoningStrategy reasoningStrategy;
+    private RepositoryMode repositoryMode = RepositoryMode.ISOLATED;
+    private double explorationLevel = 0.5;
+    private final List<String> constraints = new ArrayList<>();
 
     public ExecutionMode getExecutionMode() { return executionMode; }
     public void setExecutionMode(ExecutionMode executionMode) { this.executionMode = executionMode; }
@@ -27,4 +32,13 @@ public class ExecutionPolicy {
 
     public ReasoningStrategy getReasoningStrategy() { return reasoningStrategy; }
     public void setReasoningStrategy(ReasoningStrategy reasoningStrategy) { this.reasoningStrategy = reasoningStrategy; }
+
+    public RepositoryMode getRepositoryMode() { return repositoryMode; }
+    public void setRepositoryMode(RepositoryMode repositoryMode) { this.repositoryMode = repositoryMode; }
+
+    public double getExplorationLevel() { return explorationLevel; }
+    public void setExplorationLevel(double explorationLevel) { this.explorationLevel = explorationLevel; }
+
+    public List<String> getConstraints() { return constraints; }
+    public void addConstraint(String constraint) { this.constraints.add(constraint); }
 }

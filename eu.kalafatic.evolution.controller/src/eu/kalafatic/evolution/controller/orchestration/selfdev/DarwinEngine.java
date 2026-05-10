@@ -119,6 +119,10 @@ public class DarwinEngine extends BaseAiAgent {
 
         StringBuilder state = new StringBuilder();
         state.append("Current Goal: ").append(goal).append("\n");
+        state.append("Orchestration Mode: ").append(policy.getExecutionMode()).append("\n");
+        state.append("Supervision Level: ").append(policy.getSupervisionLevel()).append("\n");
+        state.append("Reasoning Strategy: ").append(policy.getReasoningStrategy()).append("\n");
+        state.append("Repository Isolation: ").append(policy.getRepositoryMode()).append("\n");
 
         String currentPhase = context.getOrchestrationState().getCurrentPhase();
         if (currentPhase != null) {
