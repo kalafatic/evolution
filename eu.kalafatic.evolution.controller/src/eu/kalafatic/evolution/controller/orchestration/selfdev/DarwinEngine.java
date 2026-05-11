@@ -131,8 +131,9 @@ public class DarwinEngine extends BaseAiAgent {
             state.append("\n--- CURRENT EVOLUTION PHASE: ").append(currentPhase).append(" ---\n");
             if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(currentPhase)) {
                 state.append("PHASE: USER INTENT RECONSTRUCTION\n");
-                state.append("GOAL: Analyze explicit/implied intent, hidden expectations, and missing constraints. NEVER trust the raw prompt directly.\n");
-                state.append("OUTPUT: A REFORMULATED ENGINEERING OBJECTIVE. Generate 2-3 distinct interpretations.\n");
+                state.append("GOAL: Analyze explicit/implied intent, hidden expectations, and missing constraints.\n");
+                state.append("STRICT RULE: Reformulations MUST stay grounded in the user's primary objective. Do NOT propose unrelated configuration changes or structural boilerplate (like 'evo_config.xml') unless the user explicitly requested it.\n");
+                state.append("OUTPUT: A REFORMULATED ENGINEERING OBJECTIVE. Generate 2-3 distinct interpretations of the user's core goal.\n");
             } else if (EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS.equals(currentPhase)) {
                 state.append("PHASE: ARCHITECTURE DISCOVERY & DESIGN\n");
                 state.append("GOAL: Analyze repository structure intelligently. Identify orchestrators, controllers, and architecture-defining files.\n");

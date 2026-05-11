@@ -26,7 +26,7 @@ public class AnalyticAgent extends BaseAiAgent {
     // @evo:14:B reason=flexible-analysis
     protected String getAgentInstructions() {
         return "Role: Analytic Agent. Goal: Analyze user prompt or task failure with repository-first awareness.\n\n" +
-                "STRICT OUTPUT RULE: You MUST output ONLY a single JSON object. No preamble, no conversational text. Never output two JSON objects.\n\n" +
+                "STRICT OUTPUT RULE: You MUST output ONLY a single, valid JSON object. Do NOT include markdown code blocks (```json), conversational preamble, or follow-up text. Never output two JSON objects.\n\n" +
                 "ANALYSIS CRITERIA (for new requests):\n" +
                 "0. ARCHITECTURE FIRST: You must prioritize understanding the project's architecture and repository context before formulating any plans. Reference actual classes, methods, and orchestration patterns where relevant.\n" +
                 "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT. Note: 'analyze', 'investigate', 'report', and 'summarize' tasks should be categorized as RESEARCH to ensure they follow the standard iterative flow and bypass evolutionary mutation.\n" +
