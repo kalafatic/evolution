@@ -61,7 +61,6 @@ import eu.kalafatic.evolution.model.orchestration.Task;
  * Unified and refactored for architectural coherence.
  */
 public class IterationManager {
-    private static final ExecutorService variantExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
 
     private final TaskContext context;
     private final AiService aiService;
@@ -249,7 +248,7 @@ public class IterationManager {
             if (darwinEnabled && gitManager.isGitRepository()) {
                 return new eu.kalafatic.evolution.controller.orchestration.flows.DarwinFlow(aiService, this).runDarwin(context);
             } else {
-                return runIterative();
+                return runPEV();
             }
         } catch (Exception e) {
             EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -259,7 +258,10 @@ public class IterationManager {
         }
     }
 
-    private EvaluationResult runIterative() throws Exception {
+    /**
+     * Standard PEV (Plan-Execute-Verify) Cycle.
+     */
+    public EvaluationResult runPEV() throws Exception {
         transition(SystemState.INIT, context);
         transition(SystemState.ANALYZING, context);
         String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
@@ -270,9 +272,11 @@ public class IterationManager {
             boolean success = executeTasksWithRetries(tasks);
             transition(SystemState.VERIFYING, context);
             EvaluationResult result = evaluator.evaluate();
-            currentIterationModel.setEvaluationResult(result);
+            if (currentIterationModel != null) {
+                currentIterationModel.setEvaluationResult(result);
+            }
             if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
-                gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
+                if (currentIterationModel != null) gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
                 transition(SystemState.DONE, context);
             } else {
                 gitManager.rollback();
@@ -283,198 +287,6 @@ public class IterationManager {
             gitManager.rollback();
             transition(SystemState.FAILED, context);
             throw e;
-        }
-    }
-
-    private EvaluationResult runDarwin() throws Exception {
-        transition(SystemState.INIT, context);
-        String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
-
-        OrchestrationState state = context.getOrchestrationState();
-        if (state.getCurrentPhase() == null) {
-            state.setCurrentPhase(EvolutionConstants.PHASE_INTENT_EXPANSION);
-        }
-        currentIterationModel.setPhase(state.getCurrentPhase());
-        context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
-
-        if (gitManager.isGitRepository()) {
-            gitManager.ensureInitialCommit();
-        }
-        String originalBranch = gitManager.getCurrentBranch();
-        String snapshotBranch = "snapshot/" + currentIterationModel.getId() + "-" + System.currentTimeMillis();
-        try {
-            gitManager.createBranch(snapshotBranch);
-            transition(SystemState.ANALYZING, context);
-            Evaluator.Evaluation initialEval = evaluator.evaluateWithSnapshot();
-            StateSnapshot snapshot = initialEval.snapshot;
-            Trajectory trajectory = new Trajectory();
-            FailureMemory failureMemory = memoryService.getFailureMemory();
-            transition(SystemState.MUTATING, context);
-            List<BranchVariant> variants = darwinEngine.generateVariants(goal, snapshot, failureMemory, trajectory);
-
-            // Publish variants for the graph
-            JSONArray variantsJson = new JSONArray();
-            for (BranchVariant v : variants) {
-                JSONObject vObj = new JSONObject();
-                vObj.put("id", v.getId());
-                vObj.put("strategy", v.getStrategy());
-                variantsJson.put(vObj);
-            }
-            eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
-                new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
-                    eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MUTATION_REVIEW,
-                    context.getSessionId(), "Kernel", variantsJson)
-                    .withParent("evolution_loop"));
-
-            checkStep("evolution_loop", "MUTATION", "Darwin variants generated. Review before approval.");
-
-            BehaviorProfile profile = context.getBehaviorProfile();
-
-            // MEDIATED mode behavior: If in mediated mode, Darwin is used for analysis/proposal generation only.
-            if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
-                context.log("[KERNEL] Darwin in MEDIATED mode (Phase: " + state.getCurrentPhase() + "): Stopping for user review/export of proposals.");
-                String input = context.requestInput("Darwin generated " + variants.size() + " proposals for phase " + state.getCurrentPhase() + ". Review and select one to proceed, or reject to refine.").get();
-                if ("Rejected".equalsIgnoreCase(input)) {
-                    recordRejection(goal, "Darwin " + state.getCurrentPhase() + " proposals rejected by user.");
-                    EvaluationResult res = failedResult();
-                    res.setDecision(SelfDevDecision.CONTINUE);
-                    currentIterationModel.setEvaluationResult(res);
-                    transition(SystemState.FAILED, context);
-                    return res;
-                }
-
-                // Advance phase in mediated mode too, but don't execute merge/tasks
-                advanceEvolutionPhase(state);
-
-                // In MEDIATED mode, we finish this iteration. Decision decides if we stop or continue to next phase iteration.
-                transition(SystemState.DONE, context);
-                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                res.setSuccess(true);
-                // Continue if we haven't reached synthesis, otherwise stop for export.
-                res.setDecision(EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(currentIterationModel.getPhase()) ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
-                currentIterationModel.setEvaluationResult(res);
-                return res;
-            }
-
-            if (!context.isAutoApprove()) {
-                String input = context.requestInput("Darwin generated " + variants.size() + " variants. Review and approve to start evaluation.").get();
-                if (input != null && input.startsWith("EDIT PROPOSAL")) {
-                    updateVariantFromInput(variants, input);
-                } else if ("Rejected".equalsIgnoreCase(input)) {
-                    recordRejection(goal, "Darwin variants rejected by user.");
-                    EvaluationResult res = failedResult();
-                    res.setDecision(SelfDevDecision.CONTINUE);
-                    currentIterationModel.setEvaluationResult(res);
-                    transition(SystemState.FAILED, context);
-                    return res;
-                }
-                Boolean approved = context.requestApproval("Darwin generated " + variants.size() + " variants.").get();
-                if (approved != null && !approved) {
-                    recordRejection(goal, "Darwin variants rejected by user (Approval denied).");
-                    EvaluationResult res = failedResult();
-                    res.setDecision(SelfDevDecision.CONTINUE);
-                    currentIterationModel.setEvaluationResult(res);
-                    transition(SystemState.FAILED, context);
-                    return res;
-                }
-            }
-            transition(SystemState.PLAN_LOCKED, context);
-            gitManager.forceCheckout(snapshotBranch);
-            transition(SystemState.EXECUTING, context);
-            BranchVariant bestVariant = evaluateVariantsInternal(variants, taskPlanner, currentIterationModel);
-
-            checkStep("evolution_loop", "BRANCH_COMPARISON", "Evaluation complete. Best variant selected: " + (bestVariant != null ? bestVariant.getId() : "None"));
-
-            if (bestVariant == null || bestVariant.getScore() <= 0) {
-                gitManager.forceCheckout(originalBranch);
-                transition(SystemState.FAILED, context);
-                return failedResult();
-            }
-            transition(SystemState.EXECUTING, context);
-            gitManager.forceCheckout(originalBranch);
-            gitManager.merge(bestVariant.getBranchName());
-            transition(SystemState.VERIFYING, context);
-            EvaluationResult result = evaluator.evaluate();
-            currentIterationModel.setEvaluationResult(result);
-
-            if (result.isSuccess()) {
-                String completedPhase = state.getCurrentPhase();
-                advanceEvolutionPhase(state);
-
-                if (!EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(completedPhase)) {
-                    result.setDecision(SelfDevDecision.CONTINUE);
-                    context.log("[KERNEL] Phase " + completedPhase + " completed. Moving to " + state.getCurrentPhase());
-                }
-
-                if (result.getDecision() == SelfDevDecision.CONTINUE) {
-                    gitManager.commit("Darwin Evolution Phase " + completedPhase + " (Iteration " + currentIterationModel.getId() + ")");
-                    transition(SystemState.DONE, context);
-                } else {
-                    gitManager.commit("Darwin Evolution Finalized (Iteration " + currentIterationModel.getId() + ")");
-                    transition(SystemState.DONE, context);
-                }
-            } else {
-                gitManager.rollback();
-                transition(SystemState.FAILED, context);
-            }
-            return result;
-        } catch (Exception e) {
-            gitManager.forceCheckout(originalBranch);
-            gitManager.rollback();
-            transition(SystemState.FAILED, context);
-            throw e;
-        }
-    }
-
-    public BranchVariant evaluateVariantsInternal(List<BranchVariant> variants, TaskPlanner planner, Iteration iteration) throws Exception {
-        String baseBranch = gitManager.getCurrentBranch();
-        for (BranchVariant variant : variants) {
-            gitManager.createBranch(variant.getBranchName());
-            gitManager.forceCheckout(baseBranch);
-        }
-        List<CompletableFuture<BranchVariant>> futures = variants.stream()
-            .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner), variantExecutor))
-            .collect(Collectors.toList());
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        BranchVariant bestVariant = null;
-        double bestScore = -1.0;
-        for (CompletableFuture<BranchVariant> future : futures) {
-            BranchVariant variant = future.join();
-            if (variant.getScore() > bestScore) {
-                bestScore = variant.getScore();
-                bestVariant = variant;
-            }
-        }
-        return bestVariant;
-    }
-
-    private BranchVariant evaluateVariantParallel(BranchVariant variant, TaskPlanner planner) {
-        File tempDir = null;
-        try {
-            tempDir = Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
-            gitManager.createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
-            TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
-            variantContext.setPlatformMode(context.getPlatformMode());
-            variantContext.setAutoApprove(true);
-            List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
-            IterationManager variantManager = KernelFactory.create(variantContext);
-            boolean success = taskExecutor.executeTasks(tasks, aiService);
-            variant.setSuccess(success);
-            Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
-            EvaluationResult result = variantEvaluator.evaluate();
-            variant.setSuccess(result.isSuccess());
-            variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
-            return variant;
-        } catch (Exception e) {
-            variant.setScore(0.0);
-            return variant;
-        } finally {
-            if (tempDir != null) {
-                try {
-                    gitManager.removeWorktree(tempDir.getAbsolutePath());
-                    deleteDirectory(tempDir);
-                } catch (Exception e) {}
-            }
         }
     }
 

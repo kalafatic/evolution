@@ -11,12 +11,14 @@ public class ExecutionPolicy {
     public enum SupervisionLevel { AUTO, MANUAL, HYBRID }
     public enum InteractionMode { CONTINUOUS, STEP, GUIDED }
     public enum ReasoningStrategy { ATOMIC, DARWIN, CONSERVATIVE, EXPLORATORY, ANALYTICAL }
+    public enum WorkflowModel { TASK_ORIENTED, SELF_DEV, HYBRID, EXPORT_ONLY }
     public enum RepositoryMode { ISOLATED, SHARED, VIRTUAL }
 
     private ExecutionMode executionMode;
     private SupervisionLevel supervisionLevel;
     private InteractionMode interactionMode;
     private ReasoningStrategy reasoningStrategy;
+    private WorkflowModel workflowModel;
     private RepositoryMode repositoryMode = RepositoryMode.ISOLATED;
     private double explorationLevel = 0.5;
     private final List<String> constraints = new ArrayList<>();
@@ -32,6 +34,9 @@ public class ExecutionPolicy {
 
     public ReasoningStrategy getReasoningStrategy() { return reasoningStrategy; }
     public void setReasoningStrategy(ReasoningStrategy reasoningStrategy) { this.reasoningStrategy = reasoningStrategy; }
+
+    public WorkflowModel getWorkflowModel() { return workflowModel; }
+    public void setWorkflowModel(WorkflowModel workflowModel) { this.workflowModel = workflowModel; }
 
     public RepositoryMode getRepositoryMode() { return repositoryMode; }
     public void setRepositoryMode(RepositoryMode repositoryMode) { this.repositoryMode = repositoryMode; }

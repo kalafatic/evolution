@@ -311,8 +311,12 @@ public class TaskContext {
         if (behaviorProfile == null) {
             eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver resolver = new eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver();
             behaviorProfile = resolver.resolve(this);
-            // Also sync bitState in orchestrationState
-            orchestrationState.setBitState(resolver.resolveBitState(this));
+            // Single Authoritative Mutation Path: Synchronize bitState from current context/model
+            long resolvedBitState = resolver.resolveBitState(this);
+            if (orchestrationState.getBitState() != resolvedBitState) {
+                log("[KERNEL] Synchronizing Policy State: " + resolvedBitState);
+                orchestrationState.setBitState(resolvedBitState);
+            }
         }
         return behaviorProfile;
     }

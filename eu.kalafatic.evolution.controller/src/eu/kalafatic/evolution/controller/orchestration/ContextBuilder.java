@@ -80,9 +80,12 @@ public class ContextBuilder {
         }
         pkg.setConstraints(constraints);
 
-        // Enrichment: Attachment Injection
+        // Enrichment: Authoritative Attachment Injection
         if (context.getInstructionFiles() != null && !context.getInstructionFiles().isEmpty()) {
-            String attachmentContext = AttachmentInjector.inject(context.getInstructionFiles(), task.getName(), context);
+            String combined = (task.getName() != null ? task.getName() : "") + " " +
+                             (task.getDescription() != null ? task.getDescription() : "") + " " +
+                             (task.getGoal() != null ? task.getGoal() : "");
+            String attachmentContext = AttachmentInjector.inject(context.getInstructionFiles(), combined.trim(), context);
             pkg.setAttachmentContext(attachmentContext);
         }
 

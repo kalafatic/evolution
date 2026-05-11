@@ -23,6 +23,10 @@ public class PolicyResolver {
         ReasoningStrategy.ATOMIC, ReasoningStrategy.DARWIN, ReasoningStrategy.CONSERVATIVE, ReasoningStrategy.EXPLORATORY, ReasoningStrategy.ANALYTICAL
     };
 
+    private static final WorkflowModel[] WORKFLOWS = {
+        WorkflowModel.TASK_ORIENTED, WorkflowModel.SELF_DEV, WorkflowModel.HYBRID, WorkflowModel.EXPORT_ONLY
+    };
+
     public ExecutionPolicy resolve(long bitState) {
         // STAGE 1: RAW DECODE (lookup-based mapping)
         ExecutionPolicy policy = decode(bitState);
@@ -50,6 +54,9 @@ public class PolicyResolver {
 
         int reasIdx = BitState.getReasoning(bitState);
         policy.setReasoningStrategy(reasIdx >= 0 && reasIdx < REASONING.length ? REASONING[reasIdx] : ReasoningStrategy.ATOMIC);
+
+        int wfIdx = BitState.getWorkflow(bitState);
+        policy.setWorkflowModel(wfIdx >= 0 && wfIdx < WORKFLOWS.length ? WORKFLOWS[wfIdx] : WorkflowModel.TASK_ORIENTED);
 
         return policy;
     }

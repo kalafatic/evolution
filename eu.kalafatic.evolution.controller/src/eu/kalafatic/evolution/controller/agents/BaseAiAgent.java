@@ -107,12 +107,8 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
             sb.append("### PREVIOUS FEEDBACK (FAILURE RECOVERY)\n").append(lastFeedback).append("\n\n");
         }
 
-        if (context.getInstructionFiles() != null && !context.getInstructionFiles().isEmpty()) {
-            String attachmentContext = AttachmentInjector.inject(context.getInstructionFiles(), request, context);
-            if (attachmentContext != null && !attachmentContext.isEmpty()) {
-                sb.append(attachmentContext).append("\n");
-            }
-        }
+        // Context Authority: All grounding and attachment logic MUST flow through ContextBuilder.
+        // Direct injection in agents is deprecated to ensure a single authoritative scoring path.
 
         sb.append("CURRENT TASK:\n").append(request).append("\n\n");
 

@@ -9,7 +9,11 @@ import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
  */
 public class AiService {
 
-    private final LlmRouter llmRouter = new LlmRouter();
+    private LlmRouter llmRouter = LlmRouter.getInstance();
+
+    public void setLlmRouter(LlmRouter router) {
+        this.llmRouter = router;
+    }
 
     public String sendRequest(Orchestrator orchestrator, String prompt) throws Exception {
         return sendRequest(orchestrator, prompt, null, null);
