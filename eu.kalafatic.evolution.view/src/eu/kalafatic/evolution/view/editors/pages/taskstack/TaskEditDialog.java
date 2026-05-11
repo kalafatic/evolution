@@ -19,6 +19,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.window.Window;
 
+import eu.kalafatic.evolution.controller.orchestration.behavior.BitState;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
@@ -32,6 +33,10 @@ public class TaskEditDialog extends Dialog {
 
     private Text nameText;
     private Combo typeCombo;
+    private Combo modeCombo;
+    private Combo supervisionCombo;
+    private Combo reasoningCombo;
+    private Combo workflowCombo;
     private Text promptText;
     private Text goalText;
     private Text descriptionText;
@@ -78,6 +83,34 @@ public class TaskEditDialog extends Dialog {
         if (type != null) {
             typeCombo.setText(type);
         }
+
+        SWTFactory.createLabel(container, "Mode:");
+        modeCombo = new Combo(container, SWT.READ_ONLY);
+        modeCombo.setItems(BitState.MODES);
+        modeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        int mode = BitState.getMode(task.getBitState());
+        modeCombo.select(mode >= 0 && mode < BitState.MODES.length ? mode : 0);
+
+        SWTFactory.createLabel(container, "Supervision:");
+        supervisionCombo = new Combo(container, SWT.READ_ONLY);
+        supervisionCombo.setItems(BitState.SUPERVISIONS);
+        supervisionCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        int supervision = BitState.getSupervision(task.getBitState());
+        supervisionCombo.select(supervision >= 0 && supervision < BitState.SUPERVISIONS.length ? supervision : 0);
+
+        SWTFactory.createLabel(container, "Reasoning:");
+        reasoningCombo = new Combo(container, SWT.READ_ONLY);
+        reasoningCombo.setItems(BitState.REASONINGS);
+        reasoningCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        int reasoning = BitState.getReasoning(task.getBitState());
+        reasoningCombo.select(reasoning >= 0 && reasoning < BitState.REASONINGS.length ? reasoning : 0);
+
+        SWTFactory.createLabel(container, "Workflow:");
+        workflowCombo = new Combo(container, SWT.READ_ONLY);
+        workflowCombo.setItems(BitState.WORKFLOWS);
+        workflowCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        int workflow = BitState.getWorkflow(task.getBitState());
+        workflowCombo.select(workflow >= 0 && workflow < BitState.WORKFLOWS.length ? workflow : 0);
 
         SWTFactory.createLabel(container, "Prompt:");
         promptText = new Text(container, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
@@ -186,6 +219,22 @@ public class TaskEditDialog extends Dialog {
     protected void okPressed() {
         task.setName(nameText.getText());
         task.setType(typeCombo.getText());
+
+        int selectedMode = modeCombo.getSelectionIndex();
+        int selectedSupervision = supervisionCombo.getSelectionIndex();
+        int selectedReasoning = reasoningCombo.getSelectionIndex();
+        int selectedWorkflow = workflowCombo.getSelectionIndex();
+
+        long currentBitState = task.getBitState();
+        long newBitState = BitState.encode(
+            selectedMode != -1 ? selectedMode : 0,
+            selectedSupervision != -1 ? selectedSupervision : 0,
+            BitState.getInteraction(currentBitState),
+            selectedReasoning != -1 ? selectedReasoning : 0,
+            selectedWorkflow != -1 ? selectedWorkflow : 0
+        );
+        task.setBitState(newBitState);
+
         task.setPrompt(promptText.getText());
         task.setGoal(goalText.getText());
         task.setDescription(descriptionText.getText());

@@ -745,4 +745,27 @@ public interface Task extends EObject {
 	 */
 	void setStepMode(boolean value);
 
+	/**
+	 * Returns the value of the '<em><b>Bit State</b></em>' attribute.
+	 * The default value is <code>"0"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Bit State</em>' attribute.
+	 * @see #setBitState(long)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_BitState()
+	 * @model default="0"
+	 * @generated
+	 */
+	long getBitState();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getBitState <em>Bit State</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Bit State</em>' attribute.
+	 * @see #getBitState()
+	 * @generated
+	 */
+	void setBitState(long value);
+
 } // Task

@@ -356,13 +356,22 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__STEP_MODE = 31;
 
 	/**
+	 * The feature id for the '<em><b>Bit State</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__BIT_STATE = 32;
+
+	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 32;
+	int TASK_FEATURE_COUNT = 33;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -3584,6 +3593,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getTask_StepMode();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getBitState <em>Bit State</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Bit State</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getBitState()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_BitState();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -6386,6 +6406,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__STEP_MODE = eINSTANCE.getTask_StepMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Bit State</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__BIT_STATE = eINSTANCE.getTask_BitState();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.

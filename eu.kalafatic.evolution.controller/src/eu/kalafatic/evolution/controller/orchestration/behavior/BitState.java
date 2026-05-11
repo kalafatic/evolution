@@ -83,4 +83,11 @@ public class BitState {
     public static final int WORKFLOW_SELF_DEV = 1;
     public static final int WORKFLOW_HYBRID = 2;
     public static final int WORKFLOW_EXPORT_ONLY = 3;
+
+    // --- UI Labels ---
+    public static final String[] MODES = {"LOCAL", "HYBRID", "REMOTE", "PROXY", "MEDIATED"};
+    public static final String[] SUPERVISIONS = {"AUTO", "MANUAL", "HYBRID"};
+    public static final String[] INTERACTIONS = {"CONTINUOUS", "STEP", "GUIDED"};
+    public static final String[] REASONINGS = {"ATOMIC", "DARWIN", "CONSERVATIVE", "EXPLORATORY", "ANALYTICAL"};
+    public static final String[] WORKFLOWS = {"TASK", "SELF_DEV", "HYBRID", "EXPORT"};
 }
