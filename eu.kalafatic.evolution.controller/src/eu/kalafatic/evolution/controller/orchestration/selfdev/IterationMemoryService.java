@@ -209,6 +209,10 @@ public class IterationMemoryService {
         }
         sb.append("\n");
 
+        // Activation State Analysis
+        long activeCount = records.stream().filter(r -> "ACTIVE".equals(r.getActivationState())).count();
+        sb.append("- Explicitly Activated Lineage Branches: ").append(activeCount).append("\n");
+
         return sb.toString();
     }
 }

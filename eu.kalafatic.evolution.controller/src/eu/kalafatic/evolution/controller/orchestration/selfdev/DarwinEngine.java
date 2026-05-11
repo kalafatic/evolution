@@ -183,9 +183,24 @@ public class DarwinEngine extends BaseAiAgent {
             state.append(stateProvider.getSystemStateSignal());
         }
 
-        String history = memoryService.getHistoryAnalysis();
-        context.log("[DARWIN] History Analysis: " + history);
-        state.append("\n--- LEARNING FROM HISTORY ---\n");
+        // Activation Gate: Only ACTIVE branches influence subsequent iterations
+        ActivationGate gate = new ActivationGate();
+        List<IterationRecord> activeRecords = memoryService.getRecords().stream()
+                .filter(r -> "ACTIVE".equals(r.getStatus()))
+                .collect(Collectors.toList());
+
+        String history;
+        if (activeRecords.isEmpty()) {
+            history = "No active previous iteration history available. Fallback to general history analysis.\n" + memoryService.getHistoryAnalysis();
+        } else {
+            history = "ACTIVE LINEAGE HISTORY (Explicitly selected trajectories):\n" +
+                      activeRecords.stream()
+                        .map(r -> "- Iteration " + r.getIteration() + ": " + r.getStrategy() + " [Result: " + r.getResult() + "]")
+                        .collect(Collectors.joining("\n"));
+        }
+
+        context.log("[DARWIN] History Analysis (Filtered by Activation Gate): " + history);
+        state.append("\n--- LEARNING FROM HISTORY (ACTIVATED LINEAGE ONLY) ---\n");
         state.append(history).append("\n");
 
         // Adaptive Feedback Learning
@@ -248,7 +263,12 @@ public class DarwinEngine extends BaseAiAgent {
             }
             BranchVariant v = new BranchVariant();
             v.setId(obj.optString("id", "v" + i));
+            v.setBranchId(v.getId());
+            v.setLineageId(context.getSessionId());
+            v.setActivationState(BranchVariant.ActivationState.INACTIVE);
             v.setStrategy(obj.optString("strategy", "unknown"));
+            v.setSemanticAnchor(v.getStrategy());
+            v.setMutationTrace("Generated in phase: " + currentPhase);
             v.setScore(obj.optDouble("score", 0.0));
             String suffix = obj.optString("suffix", "variant-" + i);
             v.setBranchName("exp/" + sanitize(goal) + "/" + sanitize(suffix));

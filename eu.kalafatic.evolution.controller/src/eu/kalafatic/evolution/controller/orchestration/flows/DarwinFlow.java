@@ -13,6 +13,7 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationGate;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
@@ -99,10 +100,13 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             BehaviorProfile profile = context.getBehaviorProfile();
 
+            // Activation Gate Integration
+            ActivationGate activationGate = new ActivationGate();
+
             // MEDIATED mode behavior
             if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
                 context.log("[KERNEL] Darwin in MEDIATED mode: Stopping for user review.");
-                String input = context.requestInput("Darwin generated " + variants.size() + " proposals. Review and select one to proceed, or reject to refine.").get();
+                String input = context.requestInput("Darwin generated " + variants.size() + " proposals. Review and select one to proceed (e.g. 'Select v0'), or reject to refine.").get();
                 if ("Rejected".equalsIgnoreCase(input)) {
                     manager.recordRejection(goal, "Darwin " + state.getCurrentPhase() + " proposals rejected by user.");
                     EvaluationResult res = manager.failedResult();
@@ -110,6 +114,28 @@ public class DarwinFlow implements IOrchestrationFlow {
                     manager.transition(SystemState.FAILED, context);
                     return res;
                 }
+
+                // Activation Gate Recommendation
+                List<ActivationRecommendation> recommendations = activationGate.recommendActivations(variants);
+                recommendations.forEach(r -> context.log("[GATE] " + r.toString()));
+
+                // Decision Authority: Decision made by User based on recommendations
+                if (input.startsWith("Select ")) {
+                    String selectedId = input.substring(7).trim();
+                    variants.forEach(v -> {
+                        if (v.getId().equals(selectedId)) {
+                            v.setActivationState(BranchVariant.ActivationState.ACTIVE);
+                            v.setRank("winner");
+                            context.log("[KERNEL] Decision: Branch " + selectedId + " explicitly ACTIVATED by user.");
+                        } else {
+                            v.setActivationState(BranchVariant.ActivationState.INACTIVE);
+                            v.setRank("runner-up");
+                        }
+                    });
+                } else {
+                    context.log("[KERNEL] WARNING: No explicit branch activation decision. Darwin evolution may stall.");
+                }
+
                 manager.advanceEvolutionPhase(state);
                 manager.transition(SystemState.DONE, context);
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -135,18 +161,45 @@ public class DarwinFlow implements IOrchestrationFlow {
             manager.getGitManager().forceCheckout(snapshotBranch);
             manager.transition(SystemState.EXECUTING, context);
 
-            BranchVariant bestVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context);
+            // Filter already active branches (e.g. from previous steps)
+            List<BranchVariant> activeVariants = variants.stream()
+                    .filter(v -> v.getActivationState() == BranchVariant.ActivationState.ACTIVE)
+                    .collect(Collectors.toList());
+            BranchVariant selectedVariant = null;
 
-            manager.checkStep("evolution_loop", "BRANCH_COMPARISON", "Evaluation complete. Best variant selected: " + (bestVariant != null ? bestVariant.getId() : "None"));
+            if (!activeVariants.isEmpty()) {
+                context.log("[KERNEL] Activation Gate: Proceeding with " + activeVariants.size() + " ACTIVE branches.");
+                selectedVariant = evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModel, context);
+            } else {
+                context.log("[KERNEL] Authority: No ACTIVE branches. Evaluating all proposals to determine best candidate for activation.");
+                selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context);
 
-            if (bestVariant == null || bestVariant.getScore() <= 0) {
+                // Decision Authority: Mode Controller / Policy Layer
+                // ActivationGate only provides recommendations, it does NOT auto-activate.
+                if (!profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+                    List<ActivationRecommendation> recommendations = activationGate.recommendActivations(variants);
+                    ActivationRecommendation top = recommendations.isEmpty() ? null : recommendations.get(0);
+
+                    // EXPERIMENT mode logic can auto-accept top recommendation, but decision is external to Gate
+                    if (top != null && top.getConfidenceScore() >= top.getRecommendedActivationThreshold()) {
+                        selectedVariant.setActivationState(BranchVariant.ActivationState.ACTIVE);
+                        selectedVariant.setRank("winner");
+                        context.log("[KERNEL] Policy Decision: Variant " + selectedVariant.getId() + " activated based on Gate Recommendation (Confidence >= " + top.getRecommendedActivationThreshold() + ")");
+                    }
+                }
+            }
+
+            manager.checkStep("evolution_loop", "BRANCH_COMPARISON", "Evaluation complete. Selected variant: " + (selectedVariant != null ? selectedVariant.getId() : "None"));
+
+            if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE && selectedVariant.getScore() < 0.5)) {
+                context.log("[KERNEL] Activation Gate: Evolution halted. No ACTIVE or high-quality variant available (Score: " + (selectedVariant != null ? selectedVariant.getScore() : "N/A") + ")");
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.transition(SystemState.FAILED, context);
                 return manager.failedResult();
             }
 
             manager.getGitManager().forceCheckout(originalBranch);
-            manager.getGitManager().merge(bestVariant.getBranchName());
+            manager.getGitManager().merge(selectedVariant.getBranchName());
             manager.transition(SystemState.VERIFYING, context);
             EvaluationResult result = manager.getEvaluator().evaluate();
 

@@ -19,6 +19,14 @@ public class IterationRecord {
     private long timestamp;
     private String status;
 
+    // Extended fields
+    private String branchId;
+    private String lineageId;
+    private String rank;
+    private String activationState;
+    private String semanticAnchor;
+    private String mutationTrace;
+
     public int getIteration() { return iteration; }
     public void setIteration(int iteration) { this.iteration = iteration; }
 
@@ -61,4 +69,22 @@ public class IterationRecord {
 	public void setStatus(String status) {
 		this.status = status;
 	}
+
+    public String getBranchId() { return branchId; }
+    public void setBranchId(String branchId) { this.branchId = branchId; }
+
+    public String getLineageId() { return lineageId; }
+    public void setLineageId(String lineageId) { this.lineageId = lineageId; }
+
+    public String getRank() { return rank; }
+    public void setRank(String rank) { this.rank = rank; }
+
+    public String getActivationState() { return activationState; }
+    public void setActivationState(String activationState) { this.activationState = activationState; }
+
+    public String getSemanticAnchor() { return semanticAnchor; }
+    public void setSemanticAnchor(String semanticAnchor) { this.semanticAnchor = semanticAnchor; }
+
+    public String getMutationTrace() { return mutationTrace; }
+    public void setMutationTrace(String mutationTrace) { this.mutationTrace = mutationTrace; }
 }
