@@ -108,11 +108,15 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
                             targetCount = 1;
                             analysis.getSignals().add("lowercase_artifact_target");
 
-                            // If there are more words after the target, it's likely a description
-                            if (parts.length > 1) {
-                                analysis.getSignals().add("extended_description_detected");
-                                analysis.setMultiStep(true); // Treat descriptive tasks as multi-step to force planning
-                                score -= 0.1;
+                            // If there are many words after the target, it's likely a complex description
+                            if (parts.length > 5) {
+                                analysis.getSignals().add("complex_description_detected");
+                                analysis.setMultiStep(true); // Treat complex descriptive tasks as multi-step
+                                score -= 0.15;
+                            } else if (parts.length > 1) {
+                                analysis.getSignals().add("simple_description_detected");
+                                // Low-word count descriptions are often still atomic (e.g., "create class Printer to print text")
+                                score -= 0.05;
                             }
                             break;
                         }

@@ -327,7 +327,10 @@ public class IterationManager {
         boolean isImplementation = state.getTaskIntents() != null && state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.IMPLEMENTATION);
         boolean isDarwinMode = context.getOrchestrator().isDarwinMode();
 
-        if (isDarwinMode && isImplementation && atomicAnalysis != null) {
+        // High-confidence atomic tasks (e.g., create a single class) bypass Darwin to avoid over-engineering.
+        boolean highConfidenceAtomic = atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.85;
+
+        if (isDarwinMode && isImplementation && atomicAnalysis != null && !highConfidenceAtomic) {
             atomicAnalysis.setRequiresPlanning(true);
         }
 

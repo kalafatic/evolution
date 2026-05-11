@@ -30,7 +30,8 @@ public class ReviewerAgent extends BaseAiAgent {
 
     @Override
     protected String getFooterInstructions() {
-        return "Output MUST be a valid JSON object. Do not include any conversational preamble or follow-up text outside the JSON structure. Schema:\n" +
+        return "CRITICAL: Output MUST be a single, valid JSON object. Do NOT include any conversational preamble, markdown blocks (```json), or follow-up text. ONLY the JSON object.\n" +
+               "Schema:\n" +
                "{ \"success\": boolean, \"feedback\": \"Detailed explanation of why it failed and how to fix it\", \"comment\": \"Brief success message\" }";
     }
 
