@@ -1,8 +1,15 @@
 package eu.kalafatic.evolution.controller.orchestration.flows;
 
 import java.util.List;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
@@ -21,6 +28,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
  * Evolutionary Darwin loop orchestration flow.
  */
 public class DarwinFlow implements IOrchestrationFlow {
+    private static final ExecutorService variantExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
     private final AiService aiService;
     private final IterationManager manager;
 
@@ -127,7 +135,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             manager.getGitManager().forceCheckout(snapshotBranch);
             manager.transition(SystemState.EXECUTING, context);
 
-            BranchVariant bestVariant = manager.evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel);
+            BranchVariant bestVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context);
 
             manager.checkStep("evolution_loop", "BRANCH_COMPARISON", "Evaluation complete. Best variant selected: " + (bestVariant != null ? bestVariant.getId() : "None"));
 
@@ -161,5 +169,67 @@ public class DarwinFlow implements IOrchestrationFlow {
             manager.transition(SystemState.FAILED, context);
             throw e;
         }
+    }
+
+    public BranchVariant evaluateVariantsInternal(List<BranchVariant> variants, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, Iteration iteration, TaskContext context) throws Exception {
+        String baseBranch = manager.getGitManager().getCurrentBranch();
+        for (BranchVariant variant : variants) {
+            manager.getGitManager().createBranch(variant.getBranchName());
+            manager.getGitManager().forceCheckout(baseBranch);
+        }
+        List<CompletableFuture<BranchVariant>> futures = variants.stream()
+            .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context), variantExecutor))
+            .collect(Collectors.toList());
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        BranchVariant bestVariant = null;
+        double bestScore = -1.0;
+        for (CompletableFuture<BranchVariant> future : futures) {
+            BranchVariant variant = future.join();
+            if (variant.getScore() > bestScore) {
+                bestScore = variant.getScore();
+                bestVariant = variant;
+            }
+        }
+        return bestVariant;
+    }
+
+    private BranchVariant evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context) {
+        File tempDir = null;
+        try {
+            tempDir = Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
+            manager.getGitManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
+            TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
+            variantContext.setPlatformMode(context.getPlatformMode());
+            variantContext.setAutoApprove(true);
+            variantContext.setAiService(aiService);
+            List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
+            IterationManager variantManager = KernelFactory.create(variantContext, aiService);
+            boolean success = variantManager.executeTasksWithRetries(tasks);
+            variant.setSuccess(success);
+            // Context Authority: Use a variant-specific evaluator bound to the temporary worktree
+            Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
+            EvaluationResult result = variantEvaluator.evaluate();
+            variant.setSuccess(result.isSuccess());
+            variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
+            return variant;
+        } catch (Exception e) {
+            variant.setScore(0.0);
+            return variant;
+        } finally {
+            if (tempDir != null) {
+                try {
+                    manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
+                    deleteDirectory(tempDir);
+                } catch (Exception e) {}
+            }
+        }
+    }
+
+    private void deleteDirectory(File directory) {
+        File[] allContents = directory.listFiles();
+        if (allContents != null) {
+            for (File file : allContents) deleteDirectory(file);
+        }
+        directory.delete();
     }
 }

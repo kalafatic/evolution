@@ -28,5 +28,11 @@ public class RuntimeEventBus {
                 e.printStackTrace();
             }
         }
+        // Evolutionary Signal Propagation: Automatically update continuous system signals
+        eu.kalafatic.evolution.controller.orchestration.evolution.EvolutionRegistry registry =
+            eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getEvolutionRegistry();
+        if (registry != null) {
+            registry.processEvent(event, "default-trajectory");
+        }
     }
 }

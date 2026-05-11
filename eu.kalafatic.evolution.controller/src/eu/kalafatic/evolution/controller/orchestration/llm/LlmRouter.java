@@ -25,7 +25,16 @@ public class LlmRouter {
         return INSTANCE;
     }
 
-    private final ILlmProvider ollamaProvider = new OllamaProvider();
+    private ILlmProvider ollamaProvider = new OllamaProvider();
+
+    public void setLocalProvider(ILlmProvider provider) {
+        this.ollamaProvider = provider;
+    }
+
+    public ILlmProvider getLocalProvider() {
+        return ollamaProvider;
+    }
+
     private final ILlmProvider openAiProvider = new OpenAIProvider();
     private final ILlmProvider geminiProvider = new GeminiProvider();
 

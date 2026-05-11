@@ -13,6 +13,7 @@ public class BehaviorResolver {
         int supervision = BitState.SUPERVISION_AUTO;
         int interaction = BitState.INTERACTION_CONTINUOUS;
         int reasoning = BitState.REASONING_ATOMIC;
+        int workflow = BitState.WORKFLOW_TASK_ORIENTED;
 
         Orchestrator orchestrator = context.getOrchestrator();
 
@@ -33,16 +34,24 @@ public class BehaviorResolver {
         switch (type) {
             case SELF_DEV_MODE:
                 reasoning = BitState.REASONING_EXPLORATORY;
+                workflow = BitState.WORKFLOW_SELF_DEV;
                 break;
             case DARWIN_MODE:
                 reasoning = BitState.REASONING_DARWIN;
+                workflow = BitState.WORKFLOW_TASK_ORIENTED;
                 break;
             case ASSISTED_CODING:
                 reasoning = BitState.REASONING_CONSERVATIVE;
+                workflow = BitState.WORKFLOW_TASK_ORIENTED;
+                break;
+            case HYBRID_MANUAL_EXPORT:
+                reasoning = BitState.REASONING_ANALYTICAL;
+                workflow = BitState.WORKFLOW_EXPORT_ONLY;
                 break;
             case SIMPLE_CHAT:
             default:
                 reasoning = BitState.REASONING_ATOMIC;
+                workflow = BitState.WORKFLOW_TASK_ORIENTED;
                 break;
         }
 
@@ -59,9 +68,12 @@ public class BehaviorResolver {
             if (instructions.isIterativeMode()) {
                 reasoning = BitState.REASONING_DARWIN;
             }
+            if (instructions.isSelfIterativeMode()) {
+                workflow = BitState.WORKFLOW_SELF_DEV;
+            }
         }
 
-        return BitState.encode(mode, supervision, interaction, reasoning);
+        return BitState.encode(mode, supervision, interaction, reasoning, workflow);
     }
 
     public BehaviorProfile resolve(TaskContext context) {

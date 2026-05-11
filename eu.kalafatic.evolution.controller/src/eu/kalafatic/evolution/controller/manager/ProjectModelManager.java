@@ -28,6 +28,7 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.orchestration.evolution.EvolutionRegistry;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.controller.security.TokenSecurityService;
@@ -44,6 +45,7 @@ public class ProjectModelManager {
     private static final ProjectModelManager INSTANCE = new ProjectModelManager();
 
     private final ResourceSet resourceSet;
+    private final EvolutionRegistry evolutionRegistry = new EvolutionRegistry();
 
     private ProjectModelManager() {
         resourceSet = new ResourceSetImpl();
@@ -59,6 +61,10 @@ public class ProjectModelManager {
 
     public ResourceSet getResourceSet() {
         return resourceSet;
+    }
+
+    public EvolutionRegistry getEvolutionRegistry() {
+        return evolutionRegistry;
     }
 
     /**

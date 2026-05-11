@@ -111,16 +111,17 @@ public class DarwinEngine extends BaseAiAgent {
 
         // 3. Use ExecutionPolicy to select InstructionModules
         List<InstructionModule> modules = new ArrayList<>();
-        modules.add(new MediatedInstructionModule());
-        modules.add(new SelfDevInstructionModule());
-        modules.add(new DarwinIterativeInstructionModule());
-        modules.add(new ConservativeReasoningModule());
-        modules.add(new ExploratoryReasoningModule());
-        modules.add(new StepModeInstructionModule());
+        if (policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED) modules.add(new MediatedInstructionModule());
+        if (policy.getWorkflowModel() == ExecutionPolicy.WorkflowModel.SELF_DEV) modules.add(new SelfDevInstructionModule());
+        if (policy.getReasoningStrategy() == ExecutionPolicy.ReasoningStrategy.DARWIN) modules.add(new DarwinIterativeInstructionModule());
+        if (policy.getReasoningStrategy() == ExecutionPolicy.ReasoningStrategy.CONSERVATIVE) modules.add(new ConservativeReasoningModule());
+        if (policy.getReasoningStrategy() == ExecutionPolicy.ReasoningStrategy.EXPLORATORY) modules.add(new ExploratoryReasoningModule());
+        if (policy.getInteractionMode() == ExecutionPolicy.InteractionMode.STEP) modules.add(new StepModeInstructionModule());
 
         StringBuilder state = new StringBuilder();
         state.append("Current Goal: ").append(goal).append("\n");
-        state.append("Orchestration Mode: ").append(policy.getExecutionMode()).append("\n");
+        state.append("Execution Mode: ").append(policy.getExecutionMode()).append("\n");
+        state.append("Workflow Model: ").append(policy.getWorkflowModel()).append("\n");
         state.append("Supervision Level: ").append(policy.getSupervisionLevel()).append("\n");
         state.append("Reasoning Strategy: ").append(policy.getReasoningStrategy()).append("\n");
         state.append("Repository Isolation: ").append(policy.getRepositoryMode()).append("\n");

@@ -75,8 +75,9 @@ public class SelfDevSupervisor {
                 iteration.setBranchName("selfdev/" + session.getId() + "/" + iteration.getId());
                 session.getIterations().add(iteration);
 
-                IterationManager iterationManager = createIterationManager(iteration, context.getAiService());
-                EvaluationResult result = iterationManager.runIteration(iteration);
+                // Authority Hierarchy: Supervisor delegates ALL progress authority to the Kernel (IterationManager).
+                IterationManager kernel = createIterationManager(iteration, context.getAiService());
+                EvaluationResult result = kernel.runIteration(iteration);
 
                 if (!result.isSuccess() || result.getDecision() == SelfDevDecision.ROLLBACK) {
                     failureCount++;
