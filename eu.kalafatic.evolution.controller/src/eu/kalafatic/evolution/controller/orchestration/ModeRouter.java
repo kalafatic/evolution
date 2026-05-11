@@ -13,7 +13,7 @@ public class ModeRouter {
      * Resolves the appropriate orchestration flow based on the platform mode.
      */
     public IOrchestrationFlow resolveFlow(PlatformMode mode, AiService aiService, IterationManager manager) {
-        if (mode == null) return new eu.kalafatic.evolution.controller.agents.GeneralAgent(); // Fallback to basic chat
+        if (mode == null) return (IOrchestrationFlow) eu.kalafatic.evolution.controller.agents.AgentFactory.getAgent(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL); // Fallback to basic chat
 
         switch (mode.getType()) {
             case DARWIN_MODE:
@@ -27,7 +27,7 @@ public class ModeRouter {
                 return new IterativeFlow(aiService, manager);
             case SIMPLE_CHAT:
             default:
-                return new eu.kalafatic.evolution.controller.agents.GeneralAgent();
+                return (IOrchestrationFlow) eu.kalafatic.evolution.controller.agents.AgentFactory.getAgent(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL);
         }
     }
 
