@@ -22,7 +22,15 @@ import eu.kalafatic.evolution.controller.tools.ITool;
 /**
  * Base AI Agent that wraps existing AI model/chat code.
  */
-public abstract class BaseAiAgent implements IAgent {
+import eu.kalafatic.evolution.controller.orchestration.IOrchestrationFlow;
+import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
+import eu.kalafatic.evolution.controller.orchestration.ResultType;
+import eu.kalafatic.evolution.controller.orchestration.SystemState;
+
+/**
+ * Base AI Agent that wraps existing AI model/chat code.
+ */
+public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
     protected final String id;
     protected final String type;
     protected final List<ITool> tools = new ArrayList<>();
@@ -120,6 +128,30 @@ public abstract class BaseAiAgent implements IAgent {
     public String process(String request, TaskContext context, String lastFeedback) throws Exception {
         String prompt = buildPrompt(request, context, lastFeedback);
         return aiService.sendRequest(context.getOrchestrator(), prompt, context);
+    }
+
+    @Override
+    public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
+        OrchestratorResponse response = new OrchestratorResponse();
+        response.setResultType(ResultType.CHAT);
+
+        eu.kalafatic.evolution.controller.orchestration.IterationManager manager = context.getOrchestrator() instanceof eu.kalafatic.evolution.controller.orchestration.IterationManager ?
+            (eu.kalafatic.evolution.controller.orchestration.IterationManager) context.getOrchestrator() : null;
+
+        if (manager != null) manager.transition(SystemState.EXECUTING, context);
+
+        String result = process(request, context, null);
+
+        if (manager != null) {
+            ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());
+            convState.addMessage("Evo: " + result);
+            context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), convState));
+            manager.transition(SystemState.DONE, context);
+        }
+
+        response.setSummary(result);
+        response.setContent(result);
+        return response;
     }
 
     protected String getFooterInstructions() { return null; }

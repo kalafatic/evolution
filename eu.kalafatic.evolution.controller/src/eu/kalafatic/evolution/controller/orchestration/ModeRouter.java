@@ -1,11 +1,35 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.orchestration.flows.*;
 
 /**
  * Routes execution based on detected or assigned PlatformMode.
+ * Maps PlatformMode to concrete IOrchestrationFlow implementations.
  */
 public class ModeRouter {
+
+    /**
+     * Resolves the appropriate orchestration flow based on the platform mode.
+     */
+    public IOrchestrationFlow resolveFlow(PlatformMode mode, AiService aiService, IterationManager manager) {
+        if (mode == null) return new eu.kalafatic.evolution.controller.agents.GeneralAgent(); // Fallback to basic chat
+
+        switch (mode.getType()) {
+            case DARWIN_MODE:
+                return new DarwinFlow(aiService, manager);
+            case SELF_DEV_MODE:
+                return new IterativeFlow(aiService, manager);
+            case HYBRID_MANUAL_EXPORT:
+                return new MediatedExportFlow(aiService, manager);
+            case ASSISTED_CODING:
+                // We might need to distinguish between Atomic and Iterative here
+                return new IterativeFlow(aiService, manager);
+            case SIMPLE_CHAT:
+            default:
+                return new eu.kalafatic.evolution.controller.agents.GeneralAgent();
+        }
+    }
 
     /**
      * Detects or assigns PlatformMode based on user input and orchestrator state.

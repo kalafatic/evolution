@@ -24,8 +24,14 @@ public class AiService {
     }
 
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        // Unified routing via LlmRouter
-        return llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        return sendRequest(orchestrator, prompt, temperature, proxyUrl, context, null);
+    }
+
+    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context, String forcedModel) throws Exception {
+        if (forcedModel != null) {
+            orchestrator.setLocalModel(forcedModel);
+        }
+        return LlmRouter.getInstance().sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
     // Refactored to delegate to ProjectModelManager for unified model loading logic.
