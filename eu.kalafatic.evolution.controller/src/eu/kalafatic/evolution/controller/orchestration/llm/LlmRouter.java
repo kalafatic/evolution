@@ -19,6 +19,11 @@ import eu.kalafatic.evolution.controller.providers.ProviderConfig;
  * @evo:20:A reason=architecture-documentation-sync
  */
 public class LlmRouter {
+    private static final LlmRouter INSTANCE = new LlmRouter();
+
+    public static LlmRouter getInstance() {
+        return INSTANCE;
+    }
 
     private final ILlmProvider ollamaProvider = new OllamaProvider();
     private final ILlmProvider openAiProvider = new OpenAIProvider();

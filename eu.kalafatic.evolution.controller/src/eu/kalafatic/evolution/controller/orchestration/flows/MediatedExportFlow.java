@@ -24,10 +24,11 @@ public class MediatedExportFlow implements IOrchestrationFlow {
 
     @Override
     public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
-        context.log("[KERNEL] Executing Hybrid Manual Export flow.");
+        context.log("[KERNEL] Executing Mediated Export Flow.");
         context.getOrchestrator().getTasks().clear();
 
         BehaviorProfile profile = context.getBehaviorProfile();
+        OrchestrationState state = context.getOrchestrationState();
 
         // Mediation suppression for internal preparation steps
         AiMode originalMode = context.getOrchestrator().getAiMode();
@@ -38,6 +39,7 @@ public class MediatedExportFlow implements IOrchestrationFlow {
         }
 
         try {
+            manager.transition(SystemState.ANALYZING, context);
             return executeInternal(request, context);
         } finally {
             if (mediated) {

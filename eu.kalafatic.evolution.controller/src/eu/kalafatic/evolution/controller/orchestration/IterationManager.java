@@ -84,6 +84,18 @@ public class IterationManager {
 
     private Iteration currentIterationModel;
 
+    public TaskContext getContext() { return context; }
+    public AiService getAiService() { return aiService; }
+    public GitManager getGitManager() { return gitManager; }
+    public TaskPlanner getTaskPlanner() { return taskPlanner; }
+    public TaskExecutor getTaskExecutor() { return taskExecutor; }
+    public Evaluator getEvaluator() { return evaluator; }
+    public DarwinEngine getDarwinEngine() { return darwinEngine; }
+    public IterationMemoryService getMemoryService() { return memoryService; }
+    public AnalyticAgent getAnalyticAgent() { return analyticAgent; }
+    public FinalResponseAgent getFinalResponseAgent() { return finalResponseAgent; }
+    public Iteration getCurrentIterationModel() { return currentIterationModel; }
+
     public IterationManager(
             TaskContext context,
             AiService aiService,
@@ -132,6 +144,7 @@ public class IterationManager {
         response.setResultType(ResultType.CHAT);
 
         BehaviorProfile profile = context.getBehaviorProfile();
+        ModeRouter router = new ModeRouter();
 
         try {
             context.getOrchestrator().getTasks().clear();
@@ -144,30 +157,22 @@ public class IterationManager {
             // 1. DISCOVERY phase (Repository-First Reasoning)
             if (!profile.hasTrait(BehaviorTrait.REASONING_ATOMIC)) {
                 if (gitManager.isGitRepository()) {
-                    transition(SystemState.ANALYZING, context); // Use ANALYZING as placeholder if no DISCOVERY state
+                    transition(SystemState.ANALYZING, context);
                     context.log("[KERNEL] Discovery: Inspecting repository structure.");
                     String projectStructure = structureAgent.process("Provide a concise summary of the project structure and technology stack.", context, null);
                     state.getMetadata().put("projectStructure", projectStructure);
                     context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Discovery complete. Repository-aware context initialized.");
-                } else {
-                    context.log("[KERNEL] Discovery skipped: Not a git repository.");
                 }
             }
 
-            // 2. ANALYZING stage
+            // 2. ANALYZING stage & Git Synchronization
             transition(SystemState.ANALYZING, context);
-            context.log("[KERNEL] Repository-Aware Analysis: Synchronizing state with local repository.");
-            try {
-                if (gitManager.isGitRepository()) {
-                    gitManager.ensureInitialCommit(); // Ensure we have a baseline
-                }
-            } catch (Exception e) {
-                context.log("[KERNEL] Git synchronization failed: " + e.getMessage());
+            if (gitManager.isGitRepository()) {
+                gitManager.ensureInitialCommit();
             }
 
             // Mode Routing
             if (context.getPlatformMode() == null) {
-                ModeRouter router = new ModeRouter();
                 PlatformMode mode = router.route(request, context.getOrchestrator());
                 context.setPlatformMode(mode);
                 context.log("Platform Mode: " + mode.getType());
@@ -178,131 +183,14 @@ public class IterationManager {
                         context.getSessionId(), "Kernel", mode.getType().toString()));
             }
 
-            if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
-                return new eu.kalafatic.evolution.controller.orchestration.flows.MediatedExportFlow(aiService, this).execute(request, context);
-            }
-
             // Unified Intent Analysis
             context.log("[KERNEL] Performing repository-grounded intent analysis.");
             intentService.analyze(request, context);
             AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
 
-            // Atomic execution path
-            boolean isImplementation = state.getTaskIntents().contains(TaskIntent.IMPLEMENTATION);
-            boolean isDarwinMode = context.getOrchestrator().isDarwinMode();
-
-            if (isDarwinMode && isImplementation && atomicAnalysis != null) {
-                context.log("[KERNEL] Implementation task in Darwin mode detected. Forcing planning loop for evolutionary refinement.");
-                atomicAnalysis.setRequiresPlanning(true);
-            }
-
-            if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() > 0.80 && !atomicAnalysis.isRequiresPlanning()) {
-                context.log("[KERNEL] Atomic task detected. Generating deterministic plan.");
-                List<Task> tasks = createAtomicFilePlan(request, atomicAnalysis, context);
-                state.getExecutionPlan().addAll(tasks);
-                context.getOrchestrator().getTasks().addAll(tasks);
-
-                checkStep("evolution_loop", "ATOMIC_PLAN", "Review atomic execution plan.");
-
-                transition(SystemState.PLAN_LOCKED, context);
-                boolean success = executeTasksWithRetries(tasks);
-                transition(SystemState.VERIFYING, context);
-                String path = tasks.get(0).getName().replaceFirst("(?i)^Write\\s+", "");
-                String finalResponse = "WORK DONE: Created file " + path + ".";
-                response.setSummary(finalResponse);
-                transition(success ? SystemState.DONE : SystemState.FAILED, context);
-                return response;
-            }
-
-            // Simple chat path
-            if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
-                context.log("[KERNEL] ATOMIC/CHAT reasoning detected.");
-                transition(SystemState.EXECUTING, context);
-                GeneralAgent chatAgent = (GeneralAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
-                String chatResponse = chatAgent.process(request, context, null);
-                convState.addMessage("Evo: " + chatResponse);
-                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), convState));
-                response.setSummary(chatResponse);
-                response.setContent(chatResponse);
-                transition(SystemState.DONE, context);
-                return response;
-            }
-
-            // Deep analysis for complex tasks
-            JSONObject analysis = analyticAgent.analyze(request, context);
-            context.log("[KERNEL] Analysis Result: " + analysis.toString());
-            state.getMetadata().put("deepAnalysis", analysis);
-
-            // 2. ATTACHING stage (handled in ContextBuilder/AttachmentInjector later, but we record intents)
-            transition(SystemState.ANALYZING, context); // Still in analysis/context prep
-
-            // Policy check
-            IPolicyEngine policyEngine = new RuleBasedPolicyEngine();
-            String policyResponse = policyEngine.evaluate(analysis, request, context);
-            if (policyResponse != null) {
-                response.setSummary(policyResponse);
-                transition(SystemState.DONE, context);
-                return response;
-            }
-
-            IntentAnalyzer intentParser = new IntentAnalyzer(aiService);
-            IntentAnalysisResult deepAnalysis = intentParser.parseResult(analysis);
-            if (analysis.has("structuredIntent")) {
-                deepAnalysis = intentParser.parseResult(analysis.getJSONObject("structuredIntent"));
-            }
-            state.setIntentAnalysis(deepAnalysis);
-
-            // Clarification loop
-            if (clarificationManager.shouldClarify(deepAnalysis) && !context.getOrchestrator().isDarwinMode() && !context.isAutoApprove()) {
-                transition(SystemState.CLARIFYING, context);
-                String question = clarificationManager.generateClarificationQuestion(deepAnalysis, context);
-                clarificationManager.updateState(convState, deepAnalysis, question);
-                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), convState));
-                String clarification = context.requestInput(question).get();
-                if (clarification != null && !clarification.isEmpty() && !clarification.equalsIgnoreCase("Rejected")) {
-                    convState.addClarification(clarification);
-                    convState.setRequirementMet(true);
-                    context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), convState));
-                    return handle(new TaskRequest(request + "\\nClarification: " + clarification, taskRequest.getProjectRoot()));
-                } else {
-                    response.setSummary("Generation stopped: Clarification required.");
-                    transition(SystemState.FAILED, context);
-                    return response;
-                }
-            }
-
-            if (!context.getOrchestrator().isDarwinMode()) {
-                freezeRequirements(convState, deepAnalysis, context);
-                context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), convState));
-            }
-
-            // 3. EVOLVING / PLANNING stage
-            String category = analysis.optString("category", "CODING").toUpperCase();
-            if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE)
-                && ("CODING".equals(category) || "TOOL_USE".equals(category))) {
-                EvaluationResult res = runDarwin();
-                response.setSummary("Darwin evolution completed.");
-                transition(SystemState.DONE, context);
-                return response;
-            }
-
-            // Iterative Planning
-            List<Task> tasks = iterativePlan(analysis.optString("refinedPrompt", request), context);
-            state.getExecutionPlan().addAll(tasks);
-            context.getOrchestrator().getTasks().addAll(tasks);
-
-            checkStep("evolution_loop", "PLANNING", "Plan generated. Review tasks before execution.");
-
-            // 4. EXECUTING stage
-            transition(SystemState.PLAN_LOCKED, context);
-            boolean success = executeTasksWithRetries(tasks);
-
-            // 5. VERIFYING stage
-            transition(SystemState.VERIFYING, context);
-            String finalResponse = finalResponseAgent.generateFinalResponse(request, tasks, context);
-            response.setSummary(finalResponse);
-            transition(success ? SystemState.DONE : SystemState.FAILED, context);
-            return response;
+            // Flow Resolution & Execution
+            IOrchestrationFlow flow = resolveFlow(router, atomicAnalysis);
+            return flow.execute(request, context);
 
         } catch (Exception e) {
             state.addDiagnostic("Critical error: " + e.getMessage());
@@ -311,7 +199,7 @@ public class IterationManager {
         }
     }
 
-    private void checkStep(String entityId, String type, String description) throws Exception {
+    public void checkStep(String entityId, String type, String description) throws Exception {
         if (context.getOrchestrator().getAiChat() != null &&
             context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
             context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode()) {
@@ -353,8 +241,11 @@ public class IterationManager {
         boolean darwinEnabled = profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE);
 
         try {
-            if (darwinEnabled && gitManager.isGitRepository()) return runDarwin();
-            else return runIterative();
+            if (darwinEnabled && gitManager.isGitRepository()) {
+                return new eu.kalafatic.evolution.controller.orchestration.flows.DarwinFlow(aiService, this).runDarwin(context);
+            } else {
+                return runIterative();
+            }
         } catch (Exception e) {
             EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
             result.setSuccess(false);
@@ -530,7 +421,7 @@ public class IterationManager {
         }
     }
 
-    private BranchVariant evaluateVariantsInternal(List<BranchVariant> variants, TaskPlanner planner, Iteration iteration) throws Exception {
+    public BranchVariant evaluateVariantsInternal(List<BranchVariant> variants, TaskPlanner planner, Iteration iteration) throws Exception {
         String baseBranch = gitManager.getCurrentBranch();
         for (BranchVariant variant : variants) {
             gitManager.createBranch(variant.getBranchName());
@@ -582,14 +473,14 @@ public class IterationManager {
         }
     }
 
-    private EvaluationResult failedResult() {
+    public EvaluationResult failedResult() {
         EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
         res.setSuccess(false);
         res.setDecision(SelfDevDecision.ROLLBACK);
         return res;
     }
 
-    private void recordRejection(String goal, String message) {
+    public void recordRejection(String goal, String message) {
         IterationRecord record = new IterationRecord();
         int iterNum = 0;
         try {
@@ -607,7 +498,35 @@ public class IterationManager {
         memoryService.saveRecord(record);
     }
 
-    private void advanceEvolutionPhase(OrchestrationState state) {
+    public IOrchestrationFlow resolveFlow(ModeRouter router, AtomicIntentAnalysis atomicAnalysis) {
+        BehaviorProfile profile = context.getBehaviorProfile();
+        OrchestrationState state = context.getOrchestrationState();
+
+        if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
+            return new eu.kalafatic.evolution.controller.orchestration.flows.MediatedExportFlow(aiService, this);
+        }
+
+        // Atomic optimization
+        boolean isImplementation = state.getTaskIntents() != null && state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.IMPLEMENTATION);
+        boolean isDarwinMode = context.getOrchestrator().isDarwinMode();
+
+        if (isDarwinMode && isImplementation && atomicAnalysis != null) {
+            atomicAnalysis.setRequiresPlanning(true);
+        }
+
+        if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() > 0.80 && !atomicAnalysis.isRequiresPlanning()) {
+            return new eu.kalafatic.evolution.controller.orchestration.flows.AtomicFlow(aiService, this);
+        }
+
+        // Simple chat path
+        if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
+            return new eu.kalafatic.evolution.controller.agents.GeneralAgent();
+        }
+
+        return router.resolveFlow(context.getPlatformMode(), aiService, this);
+    }
+
+    public void advanceEvolutionPhase(OrchestrationState state) {
         String current = state.getCurrentPhase();
         if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(current)) {
             state.setCurrentPhase(EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS);
@@ -641,7 +560,7 @@ public class IterationManager {
         return analysis.isAtomic() && analysis.getConfidence() > 0.80 && !analysis.isRequiresPlanning();
     }
 
-    private List<Task> createAtomicFilePlan(String request, AtomicIntentAnalysis analysis, TaskContext context) {
+    public List<Task> createAtomicFilePlan(String request, AtomicIntentAnalysis analysis, TaskContext context) {
         List<Task> tasks = new ArrayList<>();
         String path = (analysis != null && analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty()) ?
                       analysis.getTargetArtifact() : "generated_file";
@@ -655,7 +574,7 @@ public class IterationManager {
         return tasks;
     }
 
-    private List<Task> iterativePlan(String request, TaskContext context) throws Exception {
+    public List<Task> iterativePlan(String request, TaskContext context) throws Exception {
         context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Starting iterative planning.");
         List<Task> currentTasks = strategicPlanner.plan(request, context);
         for (int i = 1; i <= EvolutionConstants.MAX_PLANNING_ITERATIONS; i++) {
@@ -748,7 +667,7 @@ public class IterationManager {
         return true;
     }
 
-    private void updateVariantFromInput(List<BranchVariant> variants, String input) {
+    public void updateVariantFromInput(List<BranchVariant> variants, String input) {
         // ... (implementation same as before, simplified for brevity here if needed, but keeping it for completeness)
         try {
             String[] lines = input.split("\n");
