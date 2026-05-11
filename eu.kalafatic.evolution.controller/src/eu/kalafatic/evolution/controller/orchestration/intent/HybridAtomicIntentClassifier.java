@@ -99,7 +99,7 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
                         // Reject stop words as targets
                         if (stopWords.contains(potentialTarget)) {
                             analysis.getSignals().add("description_pronoun_detected:" + potentialTarget);
-                            score -= 0.1;
+                            // Do not penalize stop words if they follow an artifact, it indicates a description
                             break;
                         }
 
@@ -179,7 +179,11 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         analysis.setDeterministic(analysis.getConfidence() > 0.7);
 
         boolean hasTarget = analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty();
-        analysis.setRequiresPlanning(analysis.getConfidence() < 0.75 || analysis.isMultiStep() || !hasTarget || analysis.getSignals().contains("potential_conjunctions"));
+        // High confidence atomic tasks don't strictly require a named target in the prompt (e.g. "create a java class")
+        boolean simpleCreation = analysis.getConfidence() >= 0.80 && !analysis.isMultiStep();
+
+        analysis.setRequiresPlanning((analysis.getConfidence() < 0.75 || !hasTarget) && !simpleCreation
+                || analysis.isMultiStep() || analysis.getSignals().contains("potential_conjunctions"));
 
         return analysis;
     }

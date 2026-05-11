@@ -377,7 +377,7 @@ public class IterationManager {
 
     public static boolean isSimpleFileCreate(String request) {
         AtomicIntentAnalysis analysis = HybridAtomicIntentClassifier.heuristicAnalyze(request);
-        return analysis.isAtomic() && analysis.getConfidence() > 0.80 && !analysis.isRequiresPlanning();
+        return analysis.isAtomic() && analysis.getConfidence() >= 0.80 && !analysis.isRequiresPlanning();
     }
 
     public List<Task> createAtomicFilePlan(String request, AtomicIntentAnalysis analysis, TaskContext context) {
