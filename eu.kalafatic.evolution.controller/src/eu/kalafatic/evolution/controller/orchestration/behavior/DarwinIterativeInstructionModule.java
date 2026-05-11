@@ -12,7 +12,7 @@ public class DarwinIterativeInstructionModule implements InstructionModule {
         StringBuilder sb = new StringBuilder();
         sb.append("REASONING: DARWIN ITERATIVE / EVOLUTIONARY OPTIMIZATION\n")
           .append("→ ITERATION MODE: Recursively improve prompt quality through ambiguity detection, scope reduction, and dependency discovery.\n")
-          .append("→ DARWIN MODE: Generate multiple internal candidate interpretations (e.g., conservative, architecture-preserving, minimal-delta).\n")
+          .append("→ DARWIN MODE: Generate multiple internal candidate interpretations representing different engineering trade-offs (e.g., modular vs. monolithic, simple vs. feature-rich, high-performance vs. easy-to-read).\n")
           .append("→ SELECTION CRITERIA: Lowest architectural risk, smallest implementation surface, and highest consistency with existing patterns.\n")
           .append("→ SURVIVAL CRITERIA: Minimal context, maximal relevance, and deterministic execution path.\n")
           .append("→ MANDATORY: Follow the 5-phase evolution lifecycle (Intent → Architecture → Refinement → Planning → Synthesis).\n")
