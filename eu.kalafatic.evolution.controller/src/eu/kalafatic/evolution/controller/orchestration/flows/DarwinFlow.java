@@ -10,7 +10,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.Trajectory;
+import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;

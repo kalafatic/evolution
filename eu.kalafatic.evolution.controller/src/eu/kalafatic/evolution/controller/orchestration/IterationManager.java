@@ -14,6 +14,7 @@ import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.agents.AgentFactory;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.agents.StructureAgent;
 import eu.kalafatic.evolution.controller.agents.CriticAgent;
 import eu.kalafatic.evolution.controller.agents.FinalResponseAgent;
@@ -43,7 +44,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemorySe
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.Trajectory;
+import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.workflow.StepModeController;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
@@ -184,13 +185,17 @@ public class IterationManager {
             }
 
             // Unified Intent Analysis
+            transition(SystemState.ANALYZING, context);
             context.log("[KERNEL] Performing repository-grounded intent analysis.");
             intentService.analyze(request, context);
             AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
 
             // Flow Resolution & Execution
             IOrchestrationFlow flow = resolveFlow(router, atomicAnalysis);
-            return flow.execute(request, context);
+            transition(SystemState.EXECUTING, context);
+            OrchestratorResponse result = flow.execute(request, context);
+            transition(SystemState.DONE, context);
+            return result;
 
         } catch (Exception e) {
             state.addDiagnostic("Critical error: " + e.getMessage());
@@ -520,7 +525,7 @@ public class IterationManager {
 
         // Simple chat path
         if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
-            return new eu.kalafatic.evolution.controller.agents.GeneralAgent();
+            return (IOrchestrationFlow) AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
         }
 
         return router.resolveFlow(context.getPlatformMode(), aiService, this);

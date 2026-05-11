@@ -135,19 +135,11 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
 
-        eu.kalafatic.evolution.controller.orchestration.IterationManager manager = context.getOrchestrator() instanceof eu.kalafatic.evolution.controller.orchestration.IterationManager ?
-            (eu.kalafatic.evolution.controller.orchestration.IterationManager) context.getOrchestrator() : null;
-
-        if (manager != null) manager.transition(SystemState.EXECUTING, context);
-
         String result = process(request, context, null);
 
-        if (manager != null) {
-            ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());
-            convState.addMessage("Evo: " + result);
-            context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), convState));
-            manager.transition(SystemState.DONE, context);
-        }
+        ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());
+        convState.addMessage("Evo: " + result);
+        context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), convState));
 
         response.setSummary(result);
         response.setContent(result);
