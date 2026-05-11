@@ -27,6 +27,7 @@ import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
 
+import eu.kalafatic.evolution.controller.orchestration.behavior.BitState;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -256,7 +257,7 @@ public class TaskStackGroup extends AEvoGroup {
         // Type Column
         TreeViewerColumn typeCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
         typeCol.getColumn().setText("Type");
-        typeCol.getColumn().setWidth(100);
+        typeCol.getColumn().setWidth(80);
         typeCol.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -265,6 +266,44 @@ public class TaskStackGroup extends AEvoGroup {
             }
         });
         typeCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "type"));
+
+        // Mode Column
+        TreeViewerColumn modeCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        modeCol.getColumn().setText("Mode");
+        modeCol.getColumn().setWidth(80);
+        modeCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                int mode = BitState.getMode(((Task) element).getBitState());
+                if (mode >= 0 && mode < BitState.MODES.length) {
+                    return BitState.MODES[mode];
+                }
+                return BitState.MODES[0];
+            }
+        });
+        modeCol.setEditingSupport(new EditingSupport(treeViewer) {
+            @Override protected CellEditor getCellEditor(Object element) {
+                return new org.eclipse.jface.viewers.ComboBoxCellEditor(treeViewer.getTree(), BitState.MODES, SWT.READ_ONLY);
+            }
+            @Override protected boolean canEdit(Object element) { return true; }
+            @Override protected Object getValue(Object element) {
+                return BitState.getMode(((Task) element).getBitState());
+            }
+            @Override protected void setValue(Object element, Object value) {
+                Task task = (Task) element;
+                int selectedMode = (Integer) value;
+                long currentBitState = task.getBitState();
+                task.setBitState(BitState.encode(
+                    selectedMode,
+                    BitState.getSupervision(currentBitState),
+                    BitState.getInteraction(currentBitState),
+                    BitState.getReasoning(currentBitState),
+                    BitState.getWorkflow(currentBitState)
+                ));
+                treeViewer.update(element, null);
+                page.setDirty(true);
+            }
+        });
 
         // Iterative Column
         TreeViewerColumn iterativeCol = new TreeViewerColumn(treeViewer, SWT.CENTER);

@@ -10,6 +10,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 
+import eu.kalafatic.evolution.controller.orchestration.behavior.BitState;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
@@ -185,17 +186,24 @@ public class TaskStackPage extends AEvoPage {
     }
 
     public void addDefaultModeTests() {
-        String[] modes = {"SIMPLE_CHAT", "ASSISTED_CODING", "DARWIN_MODE", "SELF_DEV_MODE", "HEADLESS_MODE"};
+        String[] modes = {"SIMPLE_CHAT", "ASSISTED_CODING", "DARWIN_MODE", "SELF_DEV_MODE", "HEADLESS_MODE", "PROMPT_HELLO", "PROMPT_CREATE_LOCAL", "PROMPT_CREATE_MEDIATED", "PROMPT_ANALYZE_MEDIATED"};
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
         String timestamp = sdf.format(new Date());
         for (String mode : modes) {
-            String name = "Default Test: " + mode;
+            String name = switch(mode) {
+                case "PROMPT_HELLO" -> "Hello Task";
+                case "PROMPT_CREATE_LOCAL" -> "Create Java Class (LOCAL)";
+                case "PROMPT_CREATE_MEDIATED" -> "Create Java Class (MEDIATED)";
+                case "PROMPT_ANALYZE_MEDIATED" -> "Analyze IterationManager (MEDIATED)";
+                default -> "Default Test: " + mode;
+            };
+
             boolean exists = orchestrator.getTasks().stream().anyMatch(t -> name.equals(t.getName()));
             if (!exists) {
                 Task testPlan = OrchestrationFactory.eINSTANCE.createTask();
                 testPlan.setId("DT-" + mode + "-" + timestamp);
                 testPlan.setName(name);
-                testPlan.setType(mode);
+                testPlan.setType(mode.startsWith("PROMPT_") ? "coding" : mode);
                 testPlan.setStatus(TaskStatus.READY);
                 testPlan.setSelected(true);
 
@@ -205,9 +213,27 @@ public class TaskStackPage extends AEvoPage {
                     case "DARWIN_MODE" -> "Optimize the EvolutionOrchestrator performance.";
                     case "SELF_DEV_MODE" -> "Improve the TaskStackPage UI with better execution controls.";
                     case "HEADLESS_MODE" -> "Verify headless execution using the Self-Development Supervisor.";
+                    case "PROMPT_HELLO" -> "hello";
+                    case "PROMPT_CREATE_LOCAL" -> "create java class which can print text";
+                    case "PROMPT_CREATE_MEDIATED" -> "create java class which can print text";
+                    case "PROMPT_ANALYZE_MEDIATED" -> "analyze IterationManager.java";
                     default -> "";
                 };
                 testPlan.setDescription(description);
+                testPlan.setPrompt(description);
+
+                // Configure BitState for PROMPT modes
+                if (mode.equals("PROMPT_CREATE_LOCAL")) {
+                    testPlan.setBitState(BitState.encode(BitState.MODE_LOCAL, BitState.SUPERVISION_AUTO, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_DARWIN, BitState.WORKFLOW_TASK_ORIENTED));
+                    testPlan.setDarwinMode(true);
+                } else if (mode.equals("PROMPT_CREATE_MEDIATED")) {
+                    testPlan.setBitState(BitState.encode(BitState.MODE_MEDIATED, BitState.SUPERVISION_MANUAL, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_DARWIN, BitState.WORKFLOW_TASK_ORIENTED));
+                    testPlan.setDarwinMode(true);
+                } else if (mode.equals("PROMPT_ANALYZE_MEDIATED")) {
+                    testPlan.setBitState(BitState.encode(BitState.MODE_MEDIATED, BitState.SUPERVISION_MANUAL, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_DARWIN, BitState.WORKFLOW_SELF_DEV));
+                    testPlan.setDarwinMode(true);
+                    testPlan.setSelfIterativeMode(true);
+                }
 
                 String[] subtaskNames = switch(mode) {
                     case "SIMPLE_CHAT" -> new String[]{"Intent Analysis (Skip Loop)", "Direct Agent Dispatch", "Response Generation"};

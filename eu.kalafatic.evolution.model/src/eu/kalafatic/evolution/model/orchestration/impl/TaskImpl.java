@@ -66,6 +66,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getMaxIterations <em>Max Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isStepMode <em>Step Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getBitState <em>Bit State</em>}</li>
  * </ul>
  *
  * @generated
@@ -680,6 +681,49 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @ordered
 	 */
 	protected boolean stepMode = STEP_MODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getBitState() <em>Bit State</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getBitState()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final long BIT_STATE_EDEFAULT = 0L;
+
+	/**
+	 * The cached value of the '{@link #getBitState() <em>Bit State</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getBitState()
+	 * @generated
+	 * @ordered
+	 */
+	protected long bitState = BIT_STATE_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public long getBitState() {
+		return bitState;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setBitState(long newBitState) {
+		long oldBitState = bitState;
+		bitState = newBitState;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__BIT_STATE, oldBitState, bitState));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1492,6 +1536,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return getMaxIterations();
 			case OrchestrationPackage.TASK__STEP_MODE:
 				return isStepMode();
+			case OrchestrationPackage.TASK__BIT_STATE:
+				return getBitState();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1604,6 +1650,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__STEP_MODE:
 				setStepMode((Boolean)newValue);
 				return;
+			case OrchestrationPackage.TASK__BIT_STATE:
+				setBitState((Long)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1712,6 +1761,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__STEP_MODE:
 				setStepMode(STEP_MODE_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__BIT_STATE:
+				setBitState(BIT_STATE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1788,6 +1840,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return maxIterations != MAX_ITERATIONS_EDEFAULT;
 			case OrchestrationPackage.TASK__STEP_MODE:
 				return stepMode != STEP_MODE_EDEFAULT;
+			case OrchestrationPackage.TASK__BIT_STATE:
+				return bitState != BIT_STATE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1862,6 +1916,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(maxIterations);
 		result.append(", stepMode: ");
 		result.append(stepMode);
+		result.append(", bitState: ");
+		result.append(bitState);
 		result.append(')');
 		return result.toString();
 	}
