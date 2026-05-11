@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BranchVariant {
+    public enum ActivationState { ACTIVE, INACTIVE, ARCHIVED }
+
     private String id;
     private String branchName;
     private List<String> changedFiles = new ArrayList<>();
@@ -14,6 +16,14 @@ public class BranchVariant {
     private double score;
     private boolean success;
     private String errorMessage;
+
+    // Extended Darwin Branch Model fields
+    private String branchId;
+    private String lineageId;
+    private String rank; // winner / runner-up / noise
+    private ActivationState activationState = ActivationState.INACTIVE;
+    private String semanticAnchor;
+    private String mutationTrace;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -44,6 +54,25 @@ public class BranchVariant {
 
     public Hypothesis getHypothesis() { return hypothesis; }
     public void setHypothesis(Hypothesis hypothesis) { this.hypothesis = hypothesis; }
+
+    // Getters and Setters for extended fields
+    public String getBranchId() { return branchId; }
+    public void setBranchId(String branchId) { this.branchId = branchId; }
+
+    public String getLineageId() { return lineageId; }
+    public void setLineageId(String lineageId) { this.lineageId = lineageId; }
+
+    public String getRank() { return rank; }
+    public void setRank(String rank) { this.rank = rank; }
+
+    public ActivationState getActivationState() { return activationState; }
+    public void setActivationState(ActivationState activationState) { this.activationState = activationState; }
+
+    public String getSemanticAnchor() { return semanticAnchor; }
+    public void setSemanticAnchor(String semanticAnchor) { this.semanticAnchor = semanticAnchor; }
+
+    public String getMutationTrace() { return mutationTrace; }
+    public void setMutationTrace(String mutationTrace) { this.mutationTrace = mutationTrace; }
 
     public static class Action {
         private String domain;
