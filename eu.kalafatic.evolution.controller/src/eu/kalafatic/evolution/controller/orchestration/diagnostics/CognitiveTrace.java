@@ -8,11 +8,17 @@ import java.util.Map;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
+import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ITraceContract;
 
 /**
  * Represents a complete causal chain of reasoning events for an orchestration lifecycle.
  */
-public final class CognitiveTrace {
+public final class CognitiveTrace implements ICapability, ITraceContract {
     private final String traceId;
     private final String iterationId;
     private final String lineageId;
@@ -22,12 +28,63 @@ public final class CognitiveTrace {
     private final List<EvaluationSignal> associatedSignals = new ArrayList<>();
     private String finalOutcome;
     private final Map<Long, Double> confidenceEvolution = new HashMap<>();
+    private CapabilityStatus status = CapabilityStatus.STOPPED;
 
     public CognitiveTrace(String traceId, String iterationId, String lineageId) {
         this.traceId = traceId;
         this.iterationId = iterationId;
         this.lineageId = lineageId;
         this.timestamps.put("START", System.currentTimeMillis());
+    }
+
+    @Override
+    public String getCapabilityId() {
+        return "capability.trace";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public CapabilityStatus getStatus() {
+        return status;
+    }
+
+    @Override
+    public void initialize(CapabilityContext context) throws CapabilityException {
+        status = CapabilityStatus.INITIALIZED;
+    }
+
+    @Override
+    public void start() throws CapabilityException {
+        status = CapabilityStatus.STARTED;
+    }
+
+    @Override
+    public void stop() throws CapabilityException {
+        status = CapabilityStatus.STOPPED;
+    }
+
+    @Override
+    public List<String> getSupportedContracts() {
+        return Collections.singletonList(ITraceContract.ID);
+    }
+
+    @Override
+    public List<String> getDependencies() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public CapabilityHealth getHealth() {
+        return new CapabilityHealth(1.0, "Healthy", 0);
+    }
+
+    @Override
+    public List<CausalNode> getNodes() {
+        return getCausalChain();
     }
 
     public String getTraceId() { return traceId; }

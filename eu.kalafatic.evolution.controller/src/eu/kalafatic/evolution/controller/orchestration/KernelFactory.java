@@ -7,6 +7,10 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemorySe
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SystemStateSignalProvider;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.scheduling.KernelScheduler;
+import eu.kalafatic.evolution.controller.orchestration.decision.ActivationResolver;
 
 /**
  * Factory for creating the Kernel's control plane with production dependencies.
@@ -29,6 +33,14 @@ public class KernelFactory {
         SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(context.getProjectRoot(), context);
         DarwinEngine darwinEngine = new DarwinEngine(context, memoryService, stateProvider);
         darwinEngine.setAiService(aiService);
+
+        // Register static capabilities
+        try {
+            CapabilityRegistry.getInstance().register(new KernelScheduler());
+            CapabilityRegistry.getInstance().register(new ActivationResolver());
+        } catch (CapabilityException e) {
+            context.log("[KERNEL] Factory capability registration error: " + e.getMessage());
+        }
 
         return new IterationManager(
             context,

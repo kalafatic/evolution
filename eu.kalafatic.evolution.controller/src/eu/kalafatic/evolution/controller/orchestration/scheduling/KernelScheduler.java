@@ -6,14 +6,22 @@ import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISchedulingContract;
+import java.util.Collections;
 
 /**
  * Central execution governor for Darwin variants and evaluation tasks.
  */
-public class KernelScheduler {
+public class KernelScheduler implements ICapability, ISchedulingContract {
     private final ExecutionBudget budget;
     private final BackpressureController backpressure;
     private SchedulingPolicy policy;
+    private CapabilityStatus status = CapabilityStatus.STOPPED;
 
     public KernelScheduler() {
         this(ExecutionBudget.defaultProfile());
@@ -29,6 +37,52 @@ public class KernelScheduler {
         this.policy = policy;
     }
 
+    @Override
+    public String getCapabilityId() {
+        return "capability.scheduling";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public CapabilityStatus getStatus() {
+        return status;
+    }
+
+    @Override
+    public void initialize(CapabilityContext context) throws CapabilityException {
+        status = CapabilityStatus.INITIALIZED;
+    }
+
+    @Override
+    public void start() throws CapabilityException {
+        status = CapabilityStatus.STARTED;
+    }
+
+    @Override
+    public void stop() throws CapabilityException {
+        status = CapabilityStatus.STOPPED;
+    }
+
+    @Override
+    public List<String> getSupportedContracts() {
+        return Collections.singletonList(ISchedulingContract.ID);
+    }
+
+    @Override
+    public List<String> getDependencies() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public CapabilityHealth getHealth() {
+        return new CapabilityHealth(1.0, "Healthy", 0);
+    }
+
+    @Override
     public ScheduledExecutionPlan schedule(List<BranchVariant> proposals, TaskContext context) {
         BackpressureStatus status = backpressure.currentStatus();
         context.log("[SCHEDULER] Analyzing " + proposals.size() + " proposals under " + status.getMemoryPressure() + " memory pressure.");

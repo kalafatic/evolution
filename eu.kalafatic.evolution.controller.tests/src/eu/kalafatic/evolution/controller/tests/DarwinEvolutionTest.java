@@ -39,6 +39,7 @@ public class DarwinEvolutionTest {
 
     @Before
     public void setUp() throws Exception {
+        eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry.getInstance().shutdown();
         System.setProperty("evolution.darwin.parallel.disabled", "true");
         tempDir = Files.createTempDirectory("darwin-test").toFile();
 

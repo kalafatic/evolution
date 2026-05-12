@@ -17,15 +17,95 @@ import java.util.List;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
+import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IEvaluationContract;
+import java.util.Collections;
 
-public class Evaluator {
+public class Evaluator implements ICapability, IEvaluationContract {
     private final File projectRoot;
     private final TaskContext context;
     private eu.kalafatic.evolution.controller.tools.ITool mavenTool = new MavenTool();
+    private CapabilityStatus status = CapabilityStatus.STOPPED;
+
+    public eu.kalafatic.evolution.controller.tools.ITool getMavenTool() {
+        return mavenTool;
+    }
 
     public Evaluator(File projectRoot, TaskContext context) {
         this.projectRoot = projectRoot;
         this.context = context;
+    }
+
+    @Override
+    public String getCapabilityId() {
+        return "capability.evaluator";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public CapabilityStatus getStatus() {
+        return status;
+    }
+
+    @Override
+    public void initialize(CapabilityContext context) throws CapabilityException {
+        status = CapabilityStatus.INITIALIZED;
+    }
+
+    @Override
+    public void start() throws CapabilityException {
+        status = CapabilityStatus.STARTED;
+    }
+
+    @Override
+    public void stop() throws CapabilityException {
+        status = CapabilityStatus.STOPPED;
+    }
+
+    @Override
+    public List<String> getSupportedContracts() {
+        return Collections.singletonList(IEvaluationContract.ID);
+    }
+
+    @Override
+    public List<String> getDependencies() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public CapabilityHealth getHealth() {
+        return new CapabilityHealth(1.0, "Healthy", 0);
+    }
+
+    @Override
+    public List<EvaluationSignal> evaluate(String variantId) {
+        try {
+            // This is a bridge between the contract and the existing implementation.
+            // In a real refactor, the logic would be properly decoupled.
+            context.getMetadata().put("variantId", variantId);
+            evaluate();
+            // The signal is emitted via RuntimeEventBus in emitSignal.
+            return new ArrayList<>(); // Existing logic uses the bus.
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    @Override
+    public EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.tools.ITool mavenTool) throws Exception {
+        Evaluator evaluator = new Evaluator(projectRoot, context);
+        if (mavenTool != null) {
+            evaluator.setMavenTool(mavenTool);
+        }
+        return evaluator.evaluate();
     }
 
     public EvaluationResult evaluate() throws Exception {
