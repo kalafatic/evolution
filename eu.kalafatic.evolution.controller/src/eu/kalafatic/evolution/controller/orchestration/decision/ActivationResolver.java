@@ -2,9 +2,11 @@ package eu.kalafatic.evolution.controller.orchestration.decision;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
+import eu.kalafatic.evolution.controller.orchestration.scheduling.ScheduledExecutionPlan;
 
 /**
  * Central deterministic decision authority for Darwin branch activation.
@@ -38,8 +40,27 @@ public class ActivationResolver {
                                     List<ActivationRecommendation> recommendations,
                                     List<ResolverPolicy> policies,
                                     SemanticWorkspace workspace) {
+        return resolve(iterationId, signals, recommendations, policies, workspace, null);
+    }
+
+    public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals,
+                                    List<ActivationRecommendation> recommendations,
+                                    List<ResolverPolicy> policies,
+                                    SemanticWorkspace workspace,
+                                    ScheduledExecutionPlan executionPlan) {
 
         DecisionSnapshot finalDecision = null;
+
+        // Filtering based on ScheduledExecutionPlan
+        if (executionPlan != null) {
+            signals = signals.stream()
+                .filter(s -> executionPlan.isApproved(s.getVariantId()))
+                .collect(Collectors.toList());
+
+            recommendations = recommendations.stream()
+                .filter(r -> executionPlan.isApproved(r.getBranchId()))
+                .collect(Collectors.toList());
+        }
 
         // Reinforce workspace artifacts if they were used in selection (placeholder for logic)
         if (workspace != null) {

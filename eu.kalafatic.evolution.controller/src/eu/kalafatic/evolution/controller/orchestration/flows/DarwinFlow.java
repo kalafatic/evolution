@@ -17,6 +17,7 @@ import eu.kalafatic.evolution.controller.orchestration.intent.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.decision.*;
+import eu.kalafatic.evolution.controller.orchestration.scheduling.*;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationGate;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
@@ -39,6 +40,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
  */
 public class DarwinFlow implements IOrchestrationFlow {
     private static final ExecutorService variantExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
+    private final KernelScheduler scheduler = new KernelScheduler();
     private final AiService aiService;
     private final IterationManager manager;
 
@@ -113,7 +115,15 @@ public class DarwinFlow implements IOrchestrationFlow {
             FailureMemory failureMemory = manager.getMemoryService().getFailureMemory();
 
             manager.transition(SystemState.MUTATING, context);
-            List<BranchVariant> variants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
+            List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
+
+            // Kernel Scheduling Layer
+            ScheduledExecutionPlan executionPlan = scheduler.schedule(rawVariants, context);
+            context.log("[KERNEL] Scheduler decision: " + executionPlan.getDecisionReason());
+            List<BranchVariant> variants = executionPlan.getScheduledVariants();
+            context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
+            eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().setBudget(executionPlan.getAppliedBudget());
+            scheduler.getBackpressure().resetCounters();
 
             // Publish variants for the graph
             JSONArray variantsJson = new JSONArray();
@@ -210,10 +220,10 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             if (!activeVariants.isEmpty()) {
                 context.log("[KERNEL] Activation Gate: Proceeding with " + activeVariants.size() + " ACTIVE branches.");
-                selectedVariant = evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModel, context);
+                selectedVariant = evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
             } else {
                 context.log("[KERNEL] Authority: No ACTIVE branches. Evaluating all proposals to determine best candidate for activation.");
-                selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context);
+                selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
 
                 // Decision Authority: Use ActivationResolver for auto-activation policy
                 if (!profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && selectedVariant != null) {
@@ -268,7 +278,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
     }
 
-    public BranchVariant evaluateVariantsInternal(List<BranchVariant> variants, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, Iteration iteration, TaskContext context) throws Exception {
+    public BranchVariant evaluateVariantsInternal(List<BranchVariant> variants, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, Iteration iteration, TaskContext context, ScheduledExecutionPlan executionPlan) throws Exception {
         String baseBranch = manager.getGitManager().getCurrentBranch();
         for (BranchVariant variant : variants) {
             manager.getGitManager().createBranch(variant.getBranchName());
@@ -286,7 +296,14 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         try {
             List<CompletableFuture<BranchVariant>> futures = variants.stream()
-                .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context), variantExecutor))
+                .map(variant -> CompletableFuture.supplyAsync(() -> {
+                    scheduler.getBackpressure().incrementEvaluations();
+                    try {
+                        return evaluateVariantParallel(variant, planner, context);
+                    } finally {
+                        scheduler.getBackpressure().decrementEvaluations();
+                    }
+                }, variantExecutor))
                 .collect(Collectors.toList());
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         } finally {
@@ -304,7 +321,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         policies.add(new TrajectoryStabilityPolicy(context.getSemanticWorkspace()));
         policies.add(new HighestScorePolicy());
 
-        DecisionSnapshot decision = resolver.resolve(iteration.getId(), collectedSignals, recommendations, policies, context.getSemanticWorkspace());
+        DecisionSnapshot decision = resolver.resolve(iteration.getId(), collectedSignals, recommendations, policies, context.getSemanticWorkspace(), executionPlan);
         context.log("[KERNEL] Authority Decision: " + decision.toString());
 
         BranchVariant bestVariant = null;
