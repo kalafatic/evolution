@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
@@ -40,9 +42,27 @@ public class SemanticWorkspace {
     }
 
     public List<WorkspaceArtifact> findArtifactsByType(String type) {
-        return artifacts.values().stream()
+        return findArtifactsByType(type, null);
+    }
+
+    public List<WorkspaceArtifact> findArtifactsByType(String type, CognitiveTrace trace) {
+        List<WorkspaceArtifact> result = artifacts.values().stream()
                 .filter(a -> type.equals(a.getArtifactType()))
                 .collect(Collectors.toList());
+
+        if (trace != null && !result.isEmpty()) {
+            trace.addNode(new CausalNode(
+                "workspace-retrieval-" + System.currentTimeMillis(),
+                "WORKSPACE_RETRIEVAL",
+                "SemanticWorkspace",
+                List.of(type),
+                result.stream().map(a -> a.getArtifactId()).collect(Collectors.toList()),
+                1.0,
+                "Retrieved " + result.size() + " artifacts of type: " + type
+            ));
+        }
+
+        return result;
     }
 
     public List<WorkspaceArtifact> findArtifactsByTag(String tag) {
@@ -59,6 +79,10 @@ public class SemanticWorkspace {
      * Applies decay mechanics to all artifacts in the workspace.
      */
     public void applyDecay() {
+        applyDecay(null);
+    }
+
+    public void applyDecay(CognitiveTrace trace) {
         int initialCount = artifacts.size();
         for (WorkspaceArtifact artifact : artifacts.values()) {
             double currentDecay = artifact.getDecayScore();
@@ -70,6 +94,19 @@ public class SemanticWorkspace {
 
         // Remove artifacts that have decayed too much
         artifacts.entrySet().removeIf(entry -> entry.getValue().getDecayScore() < 0.1);
+        int finalCount = artifacts.size();
+
+        if (trace != null && initialCount != finalCount) {
+            trace.addNode(new CausalNode(
+                "workspace-decay-" + System.currentTimeMillis(),
+                "WORKSPACE_DECAY",
+                "SemanticWorkspace",
+                List.of("count=" + initialCount),
+                List.of("count=" + finalCount),
+                1.0,
+                "Memory decay applied. Removed " + (initialCount - finalCount) + " stale artifacts."
+            ));
+        }
 
         RuntimeEventBus.getInstance().publish(new RuntimeEvent(
             RuntimeEventType.MEMORY_DECAY_APPLIED,

@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.orchestration.scheduling.ScheduledExecutionPlan;
 
 /**
@@ -48,6 +50,15 @@ public class ActivationResolver {
                                     List<ResolverPolicy> policies,
                                     SemanticWorkspace workspace,
                                     ScheduledExecutionPlan executionPlan) {
+        return resolve(iterationId, signals, recommendations, policies, workspace, executionPlan, null);
+    }
+
+    public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals,
+                                    List<ActivationRecommendation> recommendations,
+                                    List<ResolverPolicy> policies,
+                                    SemanticWorkspace workspace,
+                                    ScheduledExecutionPlan executionPlan,
+                                    CognitiveTrace trace) {
 
         DecisionSnapshot finalDecision = null;
 
@@ -69,6 +80,20 @@ public class ActivationResolver {
 
         for (ResolverPolicy policy : policies) {
             DecisionSnapshot decision = policy.resolve(iterationId, signals, recommendations);
+
+            // DIAGNOSTICS: Record resolver decision in trace
+            if (trace != null) {
+                trace.addNode(new CausalNode(
+                    "resolver-policy-" + policy.getClass().getSimpleName() + "-" + System.currentTimeMillis(),
+                    "RESOLVER_POLICY",
+                    "ActivationResolver",
+                    signals.stream().map(s -> s.getVariantId()).distinct().collect(Collectors.toList()),
+                    decision.getSelectedVariantId() != null ? List.of(decision.getSelectedVariantId()) : List.of(),
+                    decision.getResolverConfidence(),
+                    decision.getActivationReason()
+                ));
+            }
+
             if (decision.getSelectedVariantId() != null) {
                 return decision;
             }

@@ -2,8 +2,10 @@ package eu.kalafatic.evolution.controller.orchestration.scheduling;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 
 /**
  * Central execution governor for Darwin variants and evaluation tasks.
@@ -50,6 +52,17 @@ public class KernelScheduler {
 
         List<BranchVariant> selected = policy.selectVariants(proposals, activeBudget);
         String reason = "Scheduled " + selected.size() + " out of " + proposals.size() + " proposals based on " + policy.getClass().getSimpleName();
+
+        // DIAGNOSTICS: Emit causal node for scheduling decision
+        context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
+            "scheduler-decision-" + System.currentTimeMillis(),
+            "SCHEDULING",
+            "KernelScheduler",
+            proposals.stream().map(v -> v.getId()).collect(Collectors.toList()),
+            selected.stream().map(v -> v.getId()).collect(Collectors.toList()),
+            1.0,
+            reason
+        ));
 
         return new ScheduledExecutionPlan(selected, reason, activeBudget);
     }

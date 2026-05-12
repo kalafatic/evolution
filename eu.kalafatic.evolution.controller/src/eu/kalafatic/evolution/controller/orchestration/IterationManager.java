@@ -30,6 +30,9 @@ import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequireme
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
 import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.ReplayEngine;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
@@ -254,6 +257,17 @@ public class IterationManager {
 
         ctx.log("[KERNEL] Transition: " + (current != null ? current : "NONE") + " -> " + to);
         ctx.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Transition: " + (current != null ? current : "NONE") + " -> " + to);
+
+        // DIAGNOSTICS: Record transition in trace
+        ctx.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
+            "state-transition-" + System.currentTimeMillis(),
+            "STATE_TRANSITION",
+            "IterationManager",
+            List.of(current != null ? current.toString() : "NONE"),
+            List.of(to.toString()),
+            1.0,
+            "Transition to " + to
+        ));
     }
 
     public EvaluationResult runIteration(Iteration iteration) {
@@ -306,7 +320,7 @@ public class IterationManager {
                 }
 
                 // Memory decay at the end of successful implementation
-                context.getSemanticWorkspace().applyDecay();
+                context.getSemanticWorkspace().applyDecay(context.getOrchestrationState().getCognitiveTrace());
 
                 transition(SystemState.DONE, context);
             } else {
@@ -375,6 +389,11 @@ public class IterationManager {
         }
 
         return router.resolveFlow(context.getPlatformMode(), aiService, this);
+    }
+
+    public void replayIteration(CognitiveTrace trace) {
+        ReplayEngine engine = new ReplayEngine();
+        engine.replay(trace, this, context);
     }
 
     public void advanceEvolutionPhase(OrchestrationState state) {
