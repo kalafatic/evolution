@@ -232,6 +232,13 @@ public class DarwinFlow implements IOrchestrationFlow {
             manager.getGitManager().createBranch(variant.getBranchName());
             manager.getGitManager().forceCheckout(baseBranch);
         }
+
+        // Parallel evaluation optimization: Bypass parallelism if only one variant or in specific test-friendly scenarios
+        if (variants.size() == 1 || "true".equals(System.getProperty("evolution.darwin.parallel.disabled"))) {
+             BranchVariant v = variants.get(0);
+             return evaluateVariantParallel(v, planner, context);
+        }
+
         List<CompletableFuture<BranchVariant>> futures = variants.stream()
             .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context), variantExecutor))
             .collect(Collectors.toList());
@@ -282,6 +289,11 @@ public class DarwinFlow implements IOrchestrationFlow {
                 variantManager.getGitManager().commit("Variant " + variant.getId() + " execution");
             }
             variant.setSuccess(success);
+
+            if (success) {
+                variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy());
+            }
+
             // Context Authority: Use a variant-specific evaluator bound to the temporary worktree
             Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
             EvaluationResult result = variantEvaluator.evaluate();

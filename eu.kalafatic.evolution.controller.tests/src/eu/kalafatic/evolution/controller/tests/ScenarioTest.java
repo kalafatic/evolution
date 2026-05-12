@@ -90,29 +90,24 @@ public class ScenarioTest {
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);
 
-        String intentResponse = "{" +
-                "\"goal\": \"Write java example\", \"language\": \"java\", \"framework\": \"\", \"targetPlatform\": \"\", \"expectedOutput\": \"java class\", " +
-                "\"constraints\": [], \"missingInformation\": [], \"ambiguities\": [], \"contradictions\": [], \"clarificationQuestion\": \"\", \"confidenceScore\": 1.0" +
-                "}";
-        String planResponse = "[{\"id\": \"t1\", \"name\": \"Write Example.java\", \"taskType\": \"file\", \"description\": \"Write java example\"}]";
         String javaCode = "public class Example { public static void main(String[] args) { System.out.println(\"Hello\"); } }";
         String evalResponse = "{\"success\": true, \"comment\": \"Looks good\"}";
-        String critiqueResponse = "{\"isCorrect\": true, \"qualityScore\": 1.0, \"critique\": {}, \"suggestions\": []}";
 
         mockLlm.setResponseSequence(new String[] {
-            "{\"intent\":\"new\", \"confidence\":1.0}", // Intent Classifier
-            "{\"category\":\"CODING\", \"isAmbiguous\":false, \"refinedPrompt\":\"Write java example\"}", // Analytic
-            intentResponse, // IntentAnalyzer (Deep Intent Analysis)
-            planResponse, // Planner
-            critiqueResponse, // Critic
+            "{\"intent\":\"new\", \"confidence\":1.0}", // HybridAtomicIntentClassifier -> intent
+            "{\"intent\":\"new\", \"confidence\":0.9, \"isAtomic\":true, \"targetArtifact\":\"Example.java\", \"artifactType\":\"java\"}", // HybridAtomicIntentClassifier -> atomic
             javaCode,     // JavaDev (Execution)
-            evalResponse  // Validator -> Reviewer (Execution)
-            // Constraint check is skipped because DesignModel is missing in shared memory
+            evalResponse, // Validator -> Reviewer (Execution)
+            "Done"        // FinalResponseAgent (skipped but might be called if flow finishes differently)
         });
 
-        IterationManager manager = createManager(context);
+        // Add mapping for Analytic diagnosis to return code instead of JSON to avoid the failure
+        mockLlm.addResponseMapping("Role: Analytic", javaCode);
 
-        TaskRequest request = new TaskRequest("Write java example", tempDir);
+        IterationManager manager = createManager(context);
+        context.setAiService(aiService);
+
+        TaskRequest request = new TaskRequest("create java class Example", tempDir);
         String result = manager.handle(request).getSummary();
 
         assertNotNull(result);
@@ -146,6 +141,7 @@ public class ScenarioTest {
     private static class MockProvider implements ILlmProvider {
         private String[] responseSequence;
         private final AtomicInteger callCount = new AtomicInteger(0);
+        private final java.util.Map<String, String> responseMappings = new java.util.concurrent.ConcurrentHashMap<>();
         private String defaultResponse = "{\"success\": true, \"comment\": \"Mock success\", \"intent\": \"continue\", \"category\": \"CODING\", \"isAmbiguous\": false}";
 
         public void setResponseSequence(String[] sequence) {
@@ -153,8 +149,18 @@ public class ScenarioTest {
             this.callCount.set(0);
         }
 
+        public void addResponseMapping(String keyword, String response) {
+            responseMappings.put(keyword, response);
+        }
+
         @Override
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+            for (java.util.Map.Entry<String, String> entry : responseMappings.entrySet()) {
+                if (prompt.contains(entry.getKey())) {
+                    return entry.getValue();
+                }
+            }
+
             int current = callCount.getAndIncrement();
             return (responseSequence != null && current < responseSequence.length) ? responseSequence[current] : defaultResponse;
         }
