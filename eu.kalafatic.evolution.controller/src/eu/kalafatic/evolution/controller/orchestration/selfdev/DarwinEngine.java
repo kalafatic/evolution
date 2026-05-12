@@ -125,7 +125,25 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
     @Override
     protected String getFooterInstructions() {
-        return "Output MUST be a valid JSON array of 2-3 objects. Each object is a structured PROPOSAL for a state transition.\n" +
+        double eps = 0.5;
+        if (context != null && context.getOrchestrationState() != null) {
+            Object epsObj = context.getOrchestrationState().getMetadata().get("eps");
+            if (epsObj instanceof Double) eps = (Double) epsObj;
+        }
+
+        int variantCount = 1;
+        if (eps > 0.7) variantCount = 4;
+        else if (eps > 0.5) variantCount = 3;
+        else if (eps > 0.3) variantCount = 2;
+
+        String countInstruction = "Output MUST be a valid JSON array of EXACTLY " + variantCount + " object" + (variantCount > 1 ? "s" : "") + ".";
+        if (variantCount == 1) {
+            countInstruction += " Since this is a low-complexity task (EPS=" + String.format("%.2f", eps) + "), focus on the most direct and canonical engineering solution.";
+        } else {
+            countInstruction += " Provide distinct engineering hypotheses for this task (EPS=" + String.format("%.2f", eps) + ").";
+        }
+
+        return countInstruction + "\n" +
                "CRITICAL: Do NOT include any conversation, explanation, or <think> tags. ONLY return the JSON array.\n" +
                "Schema:\n" +
                "[\n" +
@@ -318,6 +336,14 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // 4. Build final prompt via PromptComposer
         String fullPrompt = buildPrompt(promptComposer.compose(policy, modules, state.toString()), context, null);
+
+        // MODULATION: Inject EPS context into the prompt
+        Object epsObj = context.getOrchestrationState().getMetadata().get("eps");
+        double eps = (epsObj instanceof Double) ? (Double) epsObj : 0.5;
+        fullPrompt += "\n[SYSTEM_DIRECTIVE] Evolution Pressure Scalar (EPS): " + String.format("%.2f", eps) + ".\n";
+        if (eps < 0.4) {
+            fullPrompt += "This is a low-pressure task. Do NOT over-engineer. Propose a single, deterministic, and safe implementation path.";
+        }
 
         context.log("Evo-DarwinEngine-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);

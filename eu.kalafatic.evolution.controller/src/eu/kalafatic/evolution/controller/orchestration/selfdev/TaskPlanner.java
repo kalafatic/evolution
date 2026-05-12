@@ -37,6 +37,17 @@ public class TaskPlanner extends BaseAiAgent {
 
             String op = action.getOperation().toUpperCase();
             String target = action.getTarget();
+
+            // Smart extension appending for known artifact types
+            if (target != null && !target.contains(".") && !target.isEmpty()) {
+                String domain = action.getDomain() != null ? action.getDomain().toLowerCase() : "";
+                if ("java".equals(domain) || "class".equals(domain) || "interface".equals(domain) || "enum".equals(domain) || "record".equals(domain)) {
+                    target = target.substring(0, 1).toUpperCase() + target.substring(1) + ".java";
+                } else if ("script".equals(domain)) {
+                    target = target + ".sh";
+                }
+            }
+
             task.setName(op + " " + target);
 
             String type = "llm";

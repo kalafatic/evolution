@@ -73,32 +73,6 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         OrchestrationState state = context.getOrchestrationState();
 
-        // [ORCHESTRATION DEPTH SCALING]
-        // If atomic analysis suggests NO planning is required and confidence is high,
-        // scale depth down by bypassing heavy Darwin loops.
-        eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis atomicAnalysis =
-            (eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
-
-        if (atomicAnalysis != null && !atomicAnalysis.isRequiresPlanning() && atomicAnalysis.getConfidence() >= 0.8) {
-            context.log("[KERNEL] High-confidence atomic task detected (Depth Scaling). Bypassing heavy Darwin loops.");
-
-            // Execute as a single-pass or simple iteration
-            manager.transition(SystemState.EXECUTING, context);
-            List<Task> tasks = manager.getTaskPlanner().generateTasks(context, goal);
-            boolean success = manager.executeTasksWithRetries(tasks);
-
-            if (success) {
-                manager.getGitManager().commit("Atomic Task Execution: " + goal);
-                manager.transition(SystemState.DONE, context);
-            } else {
-                manager.transition(SystemState.FAILED, context);
-            }
-
-            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-            res.setSuccess(success);
-            res.setDecision(SelfDevDecision.STOP);
-            return res;
-        }
         if (state.getCurrentPhase() == null) {
             state.setCurrentPhase(EvolutionConstants.PHASE_INTENT_EXPANSION);
         }

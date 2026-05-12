@@ -19,12 +19,11 @@ public class ModeRouter {
             case DARWIN_MODE:
                 return new DarwinFlow(aiService, manager);
             case SELF_DEV_MODE:
-                return new IterativeFlow(aiService, manager);
+                return new DarwinFlow(aiService, manager);
             case HYBRID_MANUAL_EXPORT:
                 return new MediatedExportFlow(aiService, manager);
             case ASSISTED_CODING:
-                // We might need to distinguish between Atomic and Iterative here
-                return new IterativeFlow(aiService, manager);
+                return new DarwinFlow(aiService, manager);
             case SIMPLE_CHAT:
             default:
                 return (IOrchestrationFlow) eu.kalafatic.evolution.controller.agents.AgentFactory.getAgent(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL);

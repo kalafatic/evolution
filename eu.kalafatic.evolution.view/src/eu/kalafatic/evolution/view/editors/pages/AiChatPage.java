@@ -488,15 +488,15 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 		if (currentSession == null) initializeSessions();
 
-		// --- FAST MODE ROUTING: Determine if this is a simple chat or atomic task request before starting Self-Dev/Darwin ---
+		// --- FAST MODE ROUTING: Determine if this is a simple chat request before starting Self-Dev/Darwin ---
 		ModeRouter modeRouter = new ModeRouter();
 		PlatformMode detectedMode = modeRouter.routeFast(request, orchestrator);
 		boolean isSimpleChat = (detectedMode != null && detectedMode.getType() == PlatformType.SIMPLE_CHAT);
 		boolean isMediated = (detectedMode != null && detectedMode.getType() == PlatformType.HYBRID_MANUAL_EXPORT) || (orchestrator != null && orchestrator.getAiMode() == AiMode.MEDIATED);
-		boolean isAtomicTask = eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate(request);
 
-		// Start Self-Dev Supervisor if (Self-Development OR Darwin mode is enabled) AND it's NOT a simple chat, atomic task OR mediated.
-		if (!isSimpleChat && !isAtomicTask && !isMediated && orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
+		// Start Self-Dev Supervisor if (Self-Development OR Darwin mode is enabled) AND it's NOT a simple chat OR mediated.
+		// Darwin is now the unified basic flow for all implementation requests.
+		if (!isSimpleChat && !isMediated && orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
 		    (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode() || orchestrator.isDarwinMode())) {
 			startSelfDevAction(request);
 			return;
