@@ -45,6 +45,7 @@ public class TaskContext {
     private eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile behaviorProfile = null;
     private final SystemStateHolder stateHolder = new SystemStateHolder();
     private final OrchestrationState orchestrationState = new OrchestrationState();
+    private final Map<String, Object> metadata = new ConcurrentHashMap<>();
     private final Object pauseLock = new Object();
     private AiService aiService = new AiService();
 
@@ -339,5 +340,9 @@ public class TaskContext {
 
     public SelfDevProtocol getProtocol() {
         return protocol;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
     }
 }

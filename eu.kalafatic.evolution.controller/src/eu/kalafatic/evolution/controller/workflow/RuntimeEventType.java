@@ -24,6 +24,8 @@ public enum RuntimeEventType {
     MUTATING(EventCategory.AGENT),
     MUTATION_REVIEW(EventCategory.AGENT),
     REASONING_STEP(EventCategory.AGENT),
+    EVALUATION_SIGNAL_CREATED(EventCategory.AGENT),
+    VARIANT_EVALUATED(EventCategory.AGENT),
 
     // 4. EXECUTION (Tools & Side Effects)
     TOOL_EXECUTION_STARTED(EventCategory.EXECUTION),

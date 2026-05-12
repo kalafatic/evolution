@@ -203,7 +203,7 @@ public class DarwinEngine extends BaseAiAgent {
         state.append("\n--- LEARNING FROM HISTORY (ACTIVATED LINEAGE ONLY) ---\n");
         state.append(history).append("\n");
 
-        // Adaptive Feedback Learning
+        // Adaptive Feedback Learning: Extract guidance from rejected patterns
         try {
             context.log("[DARWIN] Running adaptive feedback analysis on " + memoryService.getRecords().size() + " records.");
             JSONObject adaptiveAnalysis = rejectionAnalyzer.analyze(memoryService.getRecords(), context);
@@ -233,7 +233,7 @@ public class DarwinEngine extends BaseAiAgent {
                 context.log("[DARWIN] Adaptive guidance injected. Pressure Level: " + diversityController.getPressureLevel());
             }
         } catch (Exception e) {
-            context.log("[DARWIN] Adaptive analysis failed: " + e.getMessage());
+            context.log("[DARWIN] WARNING: Adaptive feedback analysis failed (non-critical). Continuing evolution loop. Error: " + e.getMessage());
         }
 
         // 4. Build final prompt via PromptComposer
