@@ -328,6 +328,15 @@ public interface OrchestrationFactory extends EFactory {
 	ChatMessage createChatMessage();
 
 	/**
+	 * Returns a new object of class '<em>Supervisor Settings</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Supervisor Settings</em>'.
+	 * @generated
+	 */
+	SupervisorSettings createSupervisorSettings();
+
+	/**
 	 * Returns a new object of class '<em>Prompt Instructions</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

@@ -43,6 +43,7 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup;
+import eu.kalafatic.evolution.view.editors.pages.development.SupervisorGroup;
 import eu.kalafatic.evolution.view.editors.pages.development.VizGroup;
 import eu.kalafatic.evolution.view.editors.pages.iteration.SelfDevEditDialog;
 import eu.kalafatic.evolution.view.factories.SWTFactory;
@@ -76,6 +77,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
 
     private VizGroup vizGroup;
     private InteractiveWorkflowGroup workflowGroup;
+    private SupervisorGroup supervisorGroup;
     private ArchitecturePage archViz;
     private boolean isLoaded = false;
     private int initRetries = 0;
@@ -174,6 +176,9 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
                 }
             }
         });
+
+        // 1.5 Supervisor Group
+        supervisorGroup = new SupervisorGroup(toolkit, container, editor, orchestrator);
 
         // 2. Network Visualization
         vizGroup = new VizGroup(toolkit, container, editor, orchestrator, this);
@@ -393,6 +398,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
     protected void refreshUI() {
         updateSessionStatus();
         syncWorkflowSession();
+        if (supervisorGroup != null) supervisorGroup.refreshUI();
         if (archViz != null) archViz.scheduleRefresh();
         if (workflowGroup != null) workflowGroup.scheduleRefresh();
         refreshBrowser();
@@ -423,9 +429,10 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         if (vizGroup == null || vizGroup.getBrowser() == null || vizGroup.getBrowser().isDisposed()) return;
 
         String json = getModelAsJson();
-        if (json.equals(lastJson) && isLoaded) return;
+        if (json.equals(lastJson)) return; // Always update lastJson even if not loaded yet
 
         if (!isLoaded) {
+            lastJson = json;
             if (!isVizInitializing) {
                 isVizInitializing = true;
                 vizGroup.getBrowser().setText(getHtmlTemplate());
@@ -445,6 +452,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
                     initRetries++;
                     if (!isVizInitializing) {
                         isVizInitializing = true;
+                        lastJson = json;
                         vizGroup.getBrowser().setText(getHtmlTemplate());
                     }
                 }

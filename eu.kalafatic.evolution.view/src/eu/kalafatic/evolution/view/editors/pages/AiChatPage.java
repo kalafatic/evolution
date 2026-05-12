@@ -89,7 +89,6 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	private long lastStatusUpdate = 0;
 
 	private ChatMgmtGroup chatMgmtGroup;
-	private AiSettingsGroup aiSettingsGroup;
 	private InstructionsGroup instructionsGroup;
 	private ChatGroup chatGroup;
 	private SystemStatusGroup systemStatusGroup;
@@ -178,8 +177,8 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		modeIndicatorLabel.setFont(bannerFont);
 		modeIndicatorLabel.setText("INITIALIZING...");
 
+		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
 		chatMgmtGroup = new ChatMgmtGroup(toolkit, content, editor, orchestrator, this);
-		aiSettingsGroup = new AiSettingsGroup(toolkit, content, this, orchestrator);
 		chatGroup = new ChatGroup(toolkit, content, editor, orchestrator, chatFont, this);
 		chatGroup.setEditCallback((index, oldText) -> {
 			Display.getDefault().asyncExec(() -> {
@@ -191,7 +190,6 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			});
 		});
 		instructionsGroup = new InstructionsGroup(toolkit, chatGroup.getControl(), this, orchestrator, true);
-		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
 
 		feedbackGroup = new FeedbackGroup(toolkit, content, editor, orchestrator, this);
 
@@ -290,7 +288,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		case REMOTE: modeIndicatorLabel.setBackground(colorRemote); break;
 		case MEDIATED: modeIndicatorLabel.setBackground(colorHybrid); break;
 		}
-		if (aiSettingsGroup != null) {
+		if (chatMgmtGroup != null) {
 			updateScrolledContent();
 		}
 	}
@@ -305,8 +303,8 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		section.put("AiMode", orchestrator.getAiMode().getValue());
 		if (orchestrator.getLocalModel() != null) section.put("LocalModel", orchestrator.getLocalModel());
 		if (orchestrator.getRemoteModel() != null) section.put("RemoteModel", orchestrator.getRemoteModel());
-		if (aiSettingsGroup.getRemoteToken() != null) section.put("RemoteToken_" + orchestrator.getRemoteModel(), aiSettingsGroup.getRemoteToken());
-		if (aiSettingsGroup.getRemoteUrl() != null) section.put("RemoteUrl_" + orchestrator.getRemoteModel(), aiSettingsGroup.getRemoteUrl());
+		if (chatMgmtGroup.getRemoteToken() != null) section.put("RemoteToken_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteToken());
+		if (chatMgmtGroup.getRemoteUrl() != null) section.put("RemoteUrl_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteUrl());
 	}
 
 	public void loadLastUsedSettings() {
@@ -346,22 +344,22 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	public void syncModelWithUI() {
 		if (orchestrator == null || isUpdating) return;
 		isUpdating = true;
-		orchestrator.setAiMode(AiMode.get(aiSettingsGroup.getAiModeIndex()));
+		orchestrator.setAiMode(AiMode.get(chatMgmtGroup.getAiModeIndex()));
 
-		String localModel = aiSettingsGroup.getLocalModel();
+		String localModel = chatMgmtGroup.getLocalModel();
 		orchestrator.setLocalModel(localModel);
 		orchestrator.setHybridModel(localModel);
 		if (orchestrator.getOllama() != null) {
 			orchestrator.getOllama().setModel(localModel);
 		}
 
-		String remoteModel = aiSettingsGroup.getRemoteModel();
+		String remoteModel = chatMgmtGroup.getRemoteModel();
 		orchestrator.setRemoteModel(remoteModel);
 		ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel);
 		if (config != null) orchestrator.setOpenAiModel(config.getDefaultModel());
 
 		eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
-		    .updateToken(orchestrator, remoteModel, aiSettingsGroup.getRemoteToken());
+		    .updateToken(orchestrator, remoteModel, chatMgmtGroup.getRemoteToken());
 		
 		if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());		
     	
@@ -396,7 +394,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			resumeWaitingSessions();
 		}
 
-		orchestrator.getAiChat().setUrl(aiSettingsGroup.getRemoteUrl());
+		orchestrator.getAiChat().setUrl(chatMgmtGroup.getRemoteUrl());
 		saveLastUsedSettings();
 		editor.setDirty(true);
 		updateModeDisplay();
@@ -857,7 +855,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
 					String token = requestToken(provider);
-					if (token != null) { aiSettingsGroup.setRemoteToken(token); syncModelWithUI(); future.complete(token); }
+					if (token != null) { chatMgmtGroup.setRemoteToken(token); syncModelWithUI(); future.complete(token); }
 					else future.completeExceptionally(new Exception("Token request cancelled by user."));
 				}));
 				SelfDevSession session = OrchestrationFactory.eINSTANCE.createSelfDevSession();
@@ -1007,9 +1005,9 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 	@Override
 	protected void refreshUI() {
-		if (orchestrator != null && aiSettingsGroup != null && !isUpdating) {
+		if (orchestrator != null && chatMgmtGroup != null && !isUpdating) {
 			isUpdating = true;
-			aiSettingsGroup.updateUI();
+			chatMgmtGroup.updateUI();
 			instructionsGroup.updateUI();
 			if (feedbackGroup != null) feedbackGroup.updateUI();
 			updateStatusInfo();
@@ -1445,7 +1443,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 					String newToken = requestToken(provider);
 					if (newToken != null) {
 					    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().updateToken(orchestrator, provider, newToken);
-					    aiSettingsGroup.setRemoteToken(newToken);
+					    chatMgmtGroup.setRemoteToken(newToken);
 					    syncModelWithUI();
 					    future.complete(newToken);
 					} else future.completeExceptionally(new Exception("Token request cancelled by user."));
