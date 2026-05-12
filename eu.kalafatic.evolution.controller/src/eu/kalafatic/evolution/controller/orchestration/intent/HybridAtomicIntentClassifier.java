@@ -57,7 +57,7 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
 
         // POSITIVE SIGNALS
         List<String> posVerbs = Arrays.asList("create", "generate", "add", "write", "make", "save");
-        List<String> posArtifacts = Arrays.asList("class", "interface", "file", "resource", "record", "enum", "entity", "controller", "service", "readme");
+        List<String> posArtifacts = Arrays.asList("class", "interface", "file", "resource", "record", "enum", "entity", "controller", "service", "readme", "java", "script", "module");
         List<String> stopWords = Arrays.asList("which", "that", "to", "for", "with", "can", "does", "should", "is", "a", "an", "the", "in", "on", "at", "by", "from");
 
         for (String verb : posVerbs) {
@@ -72,6 +72,7 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
             if (lower.contains(" " + art) || lower.contains(art + " ")) {
                 score += 0.1;
                 analysis.getSignals().add("artifact_terminology");
+                analysis.setArtifactType(art);
                 break;
             }
         }
@@ -82,8 +83,18 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         Matcher m = targetPattern.matcher(request);
         int targetCount = 0;
         while (m.find()) {
-            targetCount++;
-            analysis.getExtractedTargets().add(m.group());
+            String target = m.group();
+            boolean isVerb = false;
+            for (String verb : posVerbs) {
+                if (verb.equalsIgnoreCase(target)) {
+                    isVerb = true;
+                    break;
+                }
+            }
+            if (!isVerb) {
+                targetCount++;
+                analysis.getExtractedTargets().add(target);
+            }
         }
 
         // Fallback for lowercase artifact names if after a known artifact type (e.g., "create java class myclass")
@@ -99,8 +110,9 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
                         // Reject stop words as targets
                         if (stopWords.contains(potentialTarget)) {
                             analysis.getSignals().add("description_pronoun_detected:" + potentialTarget);
-                            // Do not penalize stop words if they follow an artifact, it indicates a description
-                            break;
+                            // Do not penalize stop words if they follow an artifact, it indicates a description.
+                            // Continue searching for a target if this was just a connector.
+                            continue;
                         }
 
                         if (potentialTarget.length() > 1 && !posVerbs.contains(potentialTarget)) {
@@ -127,21 +139,9 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
 
         if (targetCount == 1) {
             String target = analysis.getExtractedTargets().get(0);
-            boolean isVerb = false;
-            for (String verb : posVerbs) {
-                if (verb.equalsIgnoreCase(target)) {
-                    isVerb = true;
-                    break;
-                }
-            }
-            if (!isVerb) {
-                score += 0.15;
-                analysis.getSignals().add("single_artifact");
-                analysis.setTargetArtifact(target);
-            } else {
-                targetCount = 0;
-                analysis.getExtractedTargets().clear();
-            }
+            score += 0.15;
+            analysis.getSignals().add("single_artifact");
+            analysis.setTargetArtifact(target);
         }
 
         if (targetCount > 1) {

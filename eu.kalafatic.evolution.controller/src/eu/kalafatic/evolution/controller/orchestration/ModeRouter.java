@@ -74,6 +74,10 @@ public class ModeRouter {
                 }
             }
             if (orchestrator.isDarwinMode()) {
+                // If mediated, we still prefer Export for general tasks unless specifically analytical
+                if (isMediated && !isAnalytical(lowerPrompt)) {
+                    return createHybridManualExportMode();
+                }
                 return createDarwinMode();
             }
             if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
@@ -84,6 +88,9 @@ public class ModeRouter {
 
             // Fallback for MEDIATED if no iterative mode is active
             if (isMediated) {
+                if (isAnalytical(lowerPrompt)) {
+                    return createAssistedCodingMode();
+                }
                 return createHybridManualExportMode();
             }
         }
@@ -144,5 +151,11 @@ public class ModeRouter {
 
     private PlatformMode createHybridManualExportMode() {
         return new PlatformMode(PlatformType.HYBRID_MANUAL_EXPORT, AutonomyLevel.LOW, 1, false);
+    }
+
+    private boolean isAnalytical(String prompt) {
+        if (prompt == null) return false;
+        String lower = prompt.toLowerCase();
+        return lower.contains("analyze") || lower.contains("investigate") || lower.contains("report") || lower.contains("summarize");
     }
 }

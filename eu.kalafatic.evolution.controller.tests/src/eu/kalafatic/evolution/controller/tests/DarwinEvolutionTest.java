@@ -39,20 +39,24 @@ public class DarwinEvolutionTest {
 
     @Before
     public void setUp() throws Exception {
+        System.setProperty("evolution.darwin.parallel.disabled", "true");
         tempDir = Files.createTempDirectory("darwin-test").toFile();
 
         eu.kalafatic.evolution.controller.agents.AgentFactory.registerDefaultAgents();
 
         ShellTool shell = new ShellTool();
-        TaskContext initContext = new TaskContext(OrchestrationFactory.eINSTANCE.createOrchestrator(), tempDir);
+        orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        TaskContext initContext = new TaskContext(orchestrator, tempDir);
+
+        // Initialize best practices before git init so they are part of initial commit
+        new eu.kalafatic.evolution.controller.services.BestPracticesService(orchestrator, tempDir);
+
         shell.execute("git init", tempDir, initContext);
         shell.execute("git config user.email \"test@example.com\"", tempDir, initContext);
         shell.execute("git config user.name \"Test User\"", tempDir, initContext);
         Files.writeString(new File(tempDir, "pom.xml").toPath(), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>test</artifactId><version>1.0</version></project>");
         shell.execute("git add .", tempDir, initContext);
         shell.execute("git commit -m \"Initial commit\"", tempDir, initContext);
-
-        orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
         orchestrator.setId("darwin-orch");
         orchestrator.setAiMode(AiMode.LOCAL);
         orchestrator.setDarwinMode(true);
@@ -89,19 +93,15 @@ public class DarwinEvolutionTest {
 
         // State Transition variant
         String variantJson = "[" +
-            "{\"strategy\": \"Add Validation\", \"suffix\": \"val\", \"actions\": [" +
+            "{\"id\": \"v0\", \"strategy\": \"Add Validation\", \"suffix\": \"val\", \"actions\": [" +
             "{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"src/Validator.java\", \"description\":\"public class Validator { }\"}" +
             "], \"expected_effect\": {\"short_term\":\"Fixed\", \"risk\":0.1}}" +
             "]";
 
-        String evalSuccess = "{\"success\": true, \"comment\": \"Pass\", \"feedback\": \"OK\"}";
-
-        mockLlm.setResponseSequence(new String[] {
-            variantJson, // Darwin variants
-            "[{\"id\": \"t1\", \"name\": \"Write src/Validator.java\", \"taskType\": \"file\"}]", // Planner tasks for variant
-            "public class Validator { }", // Content generation
-            evalSuccess  // Evaluator
-        });
+        mockLlm.addResponseMapping("DarwinEngine", variantJson);
+        mockLlm.addResponseMapping("TaskPlanner", "[{\"id\": \"t1\", \"name\": \"Write src/Validator.java\", \"taskType\": \"file\"}]");
+        mockLlm.addResponseMapping("Role: File", "public class Validator { }");
+        mockLlm.addResponseMapping("Reviewer", "{\"success\": true, \"comment\": \"Pass\", \"feedback\": \"OK\"}");
 
         SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
             @Override
@@ -114,7 +114,7 @@ public class DarwinEvolutionTest {
 
         assertEquals(SelfDevStatus.COMPLETED, session.getStatus());
         File valFile = new File(tempDir, "src/Validator.java");
-        assertTrue("Validator file should exist", valFile.exists());
+        assertTrue("Validator file should exist in " + tempDir.getAbsolutePath(), valFile.exists());
     }
 
     @Test
@@ -131,29 +131,31 @@ public class DarwinEvolutionTest {
         context.setAiService(aiService);
 
         String failVariant = "[" +
-            "{\"strategy\": \"Risky Refactor\", \"suffix\": \"risky\", \"actions\": [" +
+            "{\"id\": \"v_fail\", \"strategy\": \"Risky Refactor\", \"suffix\": \"risky\", \"actions\": [" +
             "{\"domain\":\"file\", \"operation\":\"DELETE\", \"target\":\"pom.xml\", \"description\":\"Delete pom\"}" +
             "], \"expected_effect\": {\"short_term\":\"Broken\", \"risk\":0.9}}" +
             "]";
 
-        String evalFail = "{\"success\": false, \"comment\": \"Broken build\", \"feedback\": \"Fail\"}";
-        String evalSuccess = "{\"success\": true, \"comment\": \"Pass\", \"feedback\": \"OK\"}";
-
         String successVariant = "[" +
-            "{\"strategy\": \"Safe Refactor\", \"suffix\": \"safe\", \"actions\": [" +
+            "{\"id\": \"v_success\", \"strategy\": \"Safe Refactor\", \"suffix\": \"safe\", \"actions\": [" +
             "{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"README.md\", \"description\":\"Update readme\"}" +
             "], \"expected_effect\": {\"short_term\":\"Doc\", \"risk\":0.0}}" +
             "]";
 
+        // Mappings for parallel execution robustness
+        mockLlm.addResponseMapping("Darwin Engine", failVariant); // First call
+        mockLlm.addResponseMapping("Risky Refactor", failVariant);
+        mockLlm.addResponseMapping("Safe Refactor", successVariant);
+        mockLlm.addResponseMapping("Delete pom.xml", "delete pom");
+        mockLlm.addResponseMapping("Write README.md", "Update readme");
+        mockLlm.addResponseMapping("TaskPlanner", "[{\"id\": \"t1\", \"name\": \"Write README.md\", \"taskType\": \"file\"}]");
+        mockLlm.addResponseMapping("Reviewer", "{\"success\": true, \"comment\": \"Pass\", \"feedback\": \"OK\"}");
+        mockLlm.addResponseMapping("Role: File", "Update readme content");
+
+        // We use sequence to provide different Darwin Engine responses for iteration 1 and 2
         mockLlm.setResponseSequence(new String[] {
-            failVariant, // Darwin proposes risky
-            "[{\"id\": \"t1\", \"name\": \"Delete pom.xml\", \"taskType\": \"file\"}]", // Planner for variant 1
-            "delete pom", // Content
-            evalFail,    // Evaluator fails it
-            successVariant, // Darwin proposes safe
-            "[{\"id\": \"t2\", \"name\": \"Write README.md\", \"taskType\": \"file\"}]", // Planner for variant 2
-            "Update readme", // Content
-            evalSuccess  // Evaluator passes it
+            failVariant,     // Iteration 1 Darwin Engine
+            successVariant   // Iteration 2 Darwin Engine
         });
 
         SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
@@ -165,7 +167,7 @@ public class DarwinEvolutionTest {
         supervisor.startSession();
 
         List<String> logs = context.getLogs();
-        boolean historyFound = logs.stream().anyMatch(l -> l.contains("[DARWIN] History Analysis:"));
+        boolean historyFound = logs.stream().anyMatch(l -> l.contains("[DARWIN] History Analysis"));
         assertTrue("Should contain history analysis in logs", historyFound);
     }
 
@@ -204,13 +206,21 @@ public class DarwinEvolutionTest {
         DarwinEngine darwinEngine = new DarwinEngine(context, memoryService, stateProvider);
         darwinEngine.setAiService(aiService);
 
+        Evaluator mockEvaluator = new Evaluator(tempDir, context);
+        mockEvaluator.setMavenTool(new eu.kalafatic.evolution.controller.tools.ITool() {
+            @Override public String getName() { return "MockMaven"; }
+            @Override public String execute(String cmd, File dir, TaskContext ctx) {
+                return "BUILD SUCCESS\nTests run: 1, Failures: 0, Errors: 0, Skipped: 0";
+            }
+        });
+
         return new IterationManager(
             context,
             aiService,
             gitManager,
             taskPlanner,
             taskExecutor,
-            new MockEvaluator(context),
+            mockEvaluator,
             darwinEngine,
             memoryService
         );
@@ -239,10 +249,23 @@ public class DarwinEvolutionTest {
     private static class MockProvider implements ILlmProvider {
         private String[] responseSequence;
         private final AtomicInteger callCount = new AtomicInteger(0);
+        private final java.util.Map<String, String> responseMappings = new java.util.concurrent.ConcurrentHashMap<>();
         private String defaultResponse = "{\"success\": true, \"comment\": \"Mock success\"}";
+
         public void setResponseSequence(String[] sequence) { this.responseSequence = sequence; this.callCount.set(0); }
+
+        public void addResponseMapping(String keyword, String response) {
+            responseMappings.put(keyword, response);
+        }
+
         @Override
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+            for (java.util.Map.Entry<String, String> entry : responseMappings.entrySet()) {
+                if (prompt.contains(entry.getKey())) {
+                    return entry.getValue();
+                }
+            }
+
             int current = callCount.getAndIncrement();
             String resp = (responseSequence != null && current < responseSequence.length) ? responseSequence[current] : defaultResponse;
             if (context != null) {

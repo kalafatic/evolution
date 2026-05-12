@@ -40,6 +40,18 @@ public class GitManager {
     public String commit(String message) throws Exception {
         context.log("[GIT] Committing changes: " + message);
         executeWithRetry("git add .");
+
+        // Check if there are any changes to commit to avoid "nothing to commit" error
+        try {
+            String status = executeWithRetry("git status --porcelain");
+            if (status == null || status.trim().isEmpty()) {
+                context.log("[GIT] Nothing to commit, working tree clean.");
+                return "SUCCESS: Nothing to commit";
+            }
+        } catch (Exception e) {
+            // Fallback to trying commit anyway if status fails
+        }
+
         // Sanitize message to avoid shell injection
         String safeMessage = message.replace("\"", "\\\"");
         return executeWithRetry("git commit -m \"" + safeMessage + "\"");

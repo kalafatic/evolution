@@ -15,7 +15,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 public class Evaluator {
     private final File projectRoot;
     private final TaskContext context;
-    private final MavenTool mavenTool = new MavenTool();
+    private eu.kalafatic.evolution.controller.tools.ITool mavenTool = new MavenTool();
 
     public Evaluator(File projectRoot, TaskContext context) {
         this.projectRoot = projectRoot;
@@ -29,6 +29,10 @@ public class Evaluator {
     public static class Evaluation {
         public EvaluationResult result;
         public StateSnapshot snapshot;
+    }
+
+    public void setMavenTool(eu.kalafatic.evolution.controller.tools.ITool mavenTool) {
+        this.mavenTool = mavenTool;
     }
 
     public Evaluation evaluateWithSnapshot() throws Exception {
