@@ -59,7 +59,48 @@ public class DarwinFlow implements IOrchestrationFlow {
 
     @Override
     public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
-        context.log("[KERNEL] Executing Darwin Flow.");
+        OrchestrationState state = context.getOrchestrationState();
+        Object epsObj = state.getMetadata().get("eps");
+        double eps = (epsObj instanceof Double) ? (Double) epsObj : 0.5;
+
+        // Unified Darwin Orchestrator: Dynamic delegation based on EPS
+        if (eps < 0.25) {
+            context.log("[KERNEL] EPS=" + String.format("%.2f", eps) + " (Low). Delegating to AtomicFlow for direct convergence.");
+            state.getCognitiveTrace().addNode(new CausalNode(
+                "eps-delegation-" + System.currentTimeMillis(),
+                "STRATEGY_SELECTION",
+                "DarwinFlow",
+                List.of("eps=" + eps),
+                List.of("AtomicFlow"),
+                1.0,
+                "Low pressure detected. Selecting direct atomic execution."
+            ));
+            return new AtomicFlow(aiService, manager).execute(request, context);
+        } else if (eps < 0.6) {
+            context.log("[KERNEL] EPS=" + String.format("%.2f", eps) + " (Medium). Delegating to IterativeFlow for light refinement.");
+            state.getCognitiveTrace().addNode(new CausalNode(
+                "eps-delegation-" + System.currentTimeMillis(),
+                "STRATEGY_SELECTION",
+                "DarwinFlow",
+                List.of("eps=" + eps),
+                List.of("IterativeFlow"),
+                1.0,
+                "Medium pressure detected. Selecting iterative refinement."
+            ));
+            return new IterativeFlow(aiService, manager).execute(request, context);
+        }
+
+        context.log("[KERNEL] EPS=" + String.format("%.2f", eps) + " (High). Proceeding with Full Darwin Evolution.");
+        state.getCognitiveTrace().addNode(new CausalNode(
+            "eps-delegation-" + System.currentTimeMillis(),
+            "STRATEGY_SELECTION",
+            "DarwinFlow",
+            List.of("eps=" + eps),
+            List.of("DarwinFlow"),
+            1.0,
+            "High pressure detected. Selecting full evolutionary branching."
+        ));
+
         runDarwin(context);
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
@@ -73,32 +114,6 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         OrchestrationState state = context.getOrchestrationState();
 
-        // [ORCHESTRATION DEPTH SCALING]
-        // If atomic analysis suggests NO planning is required and confidence is high,
-        // scale depth down by bypassing heavy Darwin loops.
-        eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis atomicAnalysis =
-            (eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
-
-        if (atomicAnalysis != null && !atomicAnalysis.isRequiresPlanning() && atomicAnalysis.getConfidence() >= 0.8) {
-            context.log("[KERNEL] High-confidence atomic task detected (Depth Scaling). Bypassing heavy Darwin loops.");
-
-            // Execute as a single-pass or simple iteration
-            manager.transition(SystemState.EXECUTING, context);
-            List<Task> tasks = manager.getTaskPlanner().generateTasks(context, goal);
-            boolean success = manager.executeTasksWithRetries(tasks);
-
-            if (success) {
-                manager.getGitManager().commit("Atomic Task Execution: " + goal);
-                manager.transition(SystemState.DONE, context);
-            } else {
-                manager.transition(SystemState.FAILED, context);
-            }
-
-            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-            res.setSuccess(success);
-            res.setDecision(SelfDevDecision.STOP);
-            return res;
-        }
         if (state.getCurrentPhase() == null) {
             state.setCurrentPhase(EvolutionConstants.PHASE_INTENT_EXPANSION);
         }

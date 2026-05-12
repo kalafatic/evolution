@@ -403,19 +403,18 @@ public class IterationManager {
             return new eu.kalafatic.evolution.controller.orchestration.flows.MediatedExportFlow(aiService, this);
         }
 
-        // Atomic optimization
-        boolean isImplementation = state.getTaskIntents() != null && state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.IMPLEMENTATION);
-        boolean isDarwinMode = context.getOrchestrator().isDarwinMode();
+        // Unified Darwin Flow for all implementation-related tasks.
+        // No longer bypass Darwin via AtomicFlow or IterativeFlow for state-changing intents.
+        boolean hasStateChangeIntent = state.getTaskIntents() != null && (
+                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.IMPLEMENTATION) ||
+                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.REFACTORING) ||
+                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.DEBUGGING) ||
+                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.TESTING) ||
+                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.OPTIMIZATION)
+        );
 
-        // High-confidence atomic tasks (e.g., create a single class) bypass Darwin to avoid over-engineering.
-        boolean highConfidenceAtomic = atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.80;
-
-        if (isDarwinMode && isImplementation && atomicAnalysis != null && !highConfidenceAtomic) {
-            atomicAnalysis.setRequiresPlanning(true);
-        }
-
-        if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() > 0.80 && !atomicAnalysis.isRequiresPlanning()) {
-            return new eu.kalafatic.evolution.controller.orchestration.flows.AtomicFlow(aiService, this);
+        if (hasStateChangeIntent) {
+            return new eu.kalafatic.evolution.controller.orchestration.flows.DarwinFlow(aiService, this);
         }
 
         // Simple chat path
@@ -465,6 +464,9 @@ public class IterationManager {
         return analysis.isAtomic() && analysis.getConfidence() >= 0.80 && !analysis.isRequiresPlanning();
     }
 
+    /**
+     * Generates a single-step atomic plan for simple file creation tasks.
+     */
     public List<Task> createAtomicFilePlan(String request, AtomicIntentAnalysis analysis, TaskContext context) {
         List<Task> tasks = new ArrayList<>();
         String path = (analysis != null && analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty()) ?

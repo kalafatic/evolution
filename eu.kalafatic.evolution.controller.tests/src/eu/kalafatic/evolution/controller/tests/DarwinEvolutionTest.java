@@ -199,18 +199,20 @@ public class DarwinEvolutionTest {
     }
 
     @Test
-    public void testAtomicTaskDetection_NotRoutedToDarwin() throws Exception {
-        // This test simulates the logic in AiChatPage.handleSend()
+    public void testAtomicTaskDetection_RoutedToDarwin() throws Exception {
+        // This test simulates the refactored logic in AiChatPage.handleSend()
         orchestrator.setDarwinMode(true);
         String request = "create a java class Hello";
 
-        // Check if atomic
-        boolean isAtomic = eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate(request);
-        assertTrue("Request should be detected as atomic", isAtomic);
+        // --- FAST MODE ROUTING (Refactored) ---
+        eu.kalafatic.evolution.controller.orchestration.ModeRouter modeRouter = new eu.kalafatic.evolution.controller.orchestration.ModeRouter();
+        eu.kalafatic.evolution.controller.orchestration.PlatformMode detectedMode = modeRouter.routeFast(request, orchestrator);
+        boolean isSimpleChat = (detectedMode != null && detectedMode.getType() == eu.kalafatic.evolution.controller.orchestration.PlatformType.SIMPLE_CHAT);
+        boolean isMediated = (detectedMode != null && detectedMode.getType() == eu.kalafatic.evolution.controller.orchestration.PlatformType.HYBRID_MANUAL_EXPORT);
 
-        // Simulation of AiChatPage.handleSend routing
-        boolean wouldRouteToDarwin = orchestrator.isDarwinMode() && !isAtomic;
-        assertFalse("Atomic task should NOT be routed to Darwin even if Darwin mode is enabled", wouldRouteToDarwin);
+        // Darwin is now the unified basic flow for all implementation requests.
+        boolean wouldRouteToDarwin = !isSimpleChat && !isMediated && orchestrator.isDarwinMode();
+        assertTrue("Atomic task SHOULD be routed to Darwin in the refactored unified flow", wouldRouteToDarwin);
     }
 
     @Test

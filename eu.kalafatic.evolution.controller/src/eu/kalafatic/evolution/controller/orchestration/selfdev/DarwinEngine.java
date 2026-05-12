@@ -125,7 +125,20 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
     @Override
     protected String getFooterInstructions() {
-        return "Output MUST be a valid JSON array of 2-3 objects. Each object is a structured PROPOSAL for a state transition.\n" +
+        double eps = 0.5;
+        if (context != null && context.getOrchestrationState() != null) {
+            Object epsObj = context.getOrchestrationState().getMetadata().get("eps");
+            if (epsObj instanceof Double) eps = (Double) epsObj;
+        }
+
+        // Full Darwin Evolution range (EPS >= 0.6)
+        int variantCount = 3;
+        if (eps > 0.8) variantCount = 4;
+
+        String countInstruction = "Output MUST be a valid JSON array of EXACTLY " + variantCount + " object" + (variantCount > 1 ? "s" : "") + ".";
+        countInstruction += " Provide distinct engineering hypotheses for this evolutionary task (EPS=" + String.format("%.2f", eps) + ").";
+
+        return countInstruction + "\n" +
                "CRITICAL: Do NOT include any conversation, explanation, or <think> tags. ONLY return the JSON array.\n" +
                "Schema:\n" +
                "[\n" +
@@ -318,6 +331,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // 4. Build final prompt via PromptComposer
         String fullPrompt = buildPrompt(promptComposer.compose(policy, modules, state.toString()), context, null);
+
+        // MODULATION: Inject EPS context into the prompt
+        Object epsObj = context.getOrchestrationState().getMetadata().get("eps");
+        double eps = (epsObj instanceof Double) ? (Double) epsObj : 0.5;
+        fullPrompt += "\n[SYSTEM_DIRECTIVE] Evolution Pressure Scalar (EPS): " + String.format("%.2f", eps) + ".\n";
 
         context.log("Evo-DarwinEngine-Thinking: " + fullPrompt);
         String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);

@@ -32,20 +32,35 @@ public class IntentService {
         state.getMetadata().put("atomicAnalysis", atomicAnalysis);
         state.addDiagnostic("Atomic analysis: atomic=" + atomicAnalysis.isAtomic() + ", confidence=" + atomicAnalysis.getConfidence());
 
-        // 3. Ambiguity & Depth Scaling Analysis
+        // 3. Evolution Pressure Scalar (EPS) Analysis
+        double eps = calculateEPS(request, atomicAnalysis, intents);
+        state.getMetadata().put("eps", eps);
+        state.addDiagnostic("Orchestration Scaling: EPS=" + String.format("%.2f", eps));
+
+        // Emit Ambiguity Signal to SignalBus (based on ambiguity component of EPS)
         double ambiguityScore = calculateAmbiguity(request, atomicAnalysis);
         state.getMetadata().put("ambiguityScore", ambiguityScore);
-
-        // Scale depth based on ambiguity and confidence
-        int depth = 1; // Default
-        if (ambiguityScore > 0.7) depth = 3; // High ambiguity requires deeper exploration
-        else if (atomicAnalysis.getConfidence() < 0.5) depth = 2;
-
-        state.getMetadata().put("orchestrationDepth", depth);
-        state.addDiagnostic("Orchestration Scaling: ambiguity=" + ambiguityScore + ", depth=" + depth);
-
-        // Emit Ambiguity Signal to SignalBus
         emitAmbiguitySignal(request, ambiguityScore, context);
+    }
+
+    private double calculateEPS(String request, AtomicIntentAnalysis atomic, Set<TaskIntent> intents) {
+        double ambiguity = calculateAmbiguity(request, atomic);
+
+        double risk = 0.0;
+        if (intents.contains(TaskIntent.ARCHITECTURE)) risk += 0.5;
+        if (intents.contains(TaskIntent.REFACTORING)) risk += 0.3;
+        if (intents.contains(TaskIntent.DEBUGGING)) risk += 0.2;
+        if (intents.contains(TaskIntent.IMPLEMENTATION)) risk += 0.1;
+        risk = Math.min(1.0, risk);
+
+        double complexity = 0.0;
+        if (request.length() > 100) complexity += 0.2;
+        if (atomic != null && atomic.isMultiStep()) complexity += 0.4;
+        if (atomic != null && atomic.getExtractedTargets().size() > 1) complexity += 0.2;
+        complexity = Math.min(1.0, complexity);
+
+        double eps = (ambiguity * 0.4) + (risk * 0.4) + (complexity * 0.2);
+        return Math.max(0.1, Math.min(1.0, eps));
     }
 
     private double calculateAmbiguity(String request, AtomicIntentAnalysis atomic) {
