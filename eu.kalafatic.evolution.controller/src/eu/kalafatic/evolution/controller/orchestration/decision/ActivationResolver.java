@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.decision;
 import java.util.List;
 import java.util.ArrayList;
 import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
+import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
 
 /**
@@ -30,8 +31,20 @@ public class ActivationResolver {
     public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals,
                                     List<ActivationRecommendation> recommendations,
                                     List<ResolverPolicy> policies) {
+        return resolve(iterationId, signals, recommendations, policies, null);
+    }
+
+    public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals,
+                                    List<ActivationRecommendation> recommendations,
+                                    List<ResolverPolicy> policies,
+                                    SemanticWorkspace workspace) {
 
         DecisionSnapshot finalDecision = null;
+
+        // Reinforce workspace artifacts if they were used in selection (placeholder for logic)
+        if (workspace != null) {
+            // Future: Logic to reinforce artifacts based on signals
+        }
 
         for (ResolverPolicy policy : policies) {
             DecisionSnapshot decision = policy.resolve(iterationId, signals, recommendations);

@@ -6,15 +6,17 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
  */
 public class ActivationRecommendation {
     private final String branchId;
+    private final String strategy;
     private final double confidenceScore;
     private final int rankingPosition;
     private final double semanticAlignmentScore;
     private final String rationale;
     private final double recommendedActivationThreshold;
 
-    public ActivationRecommendation(String branchId, double confidenceScore, int rankingPosition,
+    public ActivationRecommendation(String branchId, String strategy, double confidenceScore, int rankingPosition,
                                    double semanticAlignmentScore, String rationale, double recommendedActivationThreshold) {
         this.branchId = branchId;
+        this.strategy = strategy;
         this.confidenceScore = confidenceScore;
         this.rankingPosition = rankingPosition;
         this.semanticAlignmentScore = semanticAlignmentScore;
@@ -23,6 +25,7 @@ public class ActivationRecommendation {
     }
 
     public String getBranchId() { return branchId; }
+    public String getStrategy() { return strategy; }
     public double getConfidenceScore() { return confidenceScore; }
     public int getRankingPosition() { return rankingPosition; }
     public double getSemanticAlignmentScore() { return semanticAlignmentScore; }

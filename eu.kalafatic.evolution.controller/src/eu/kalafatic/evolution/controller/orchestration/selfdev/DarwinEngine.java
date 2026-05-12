@@ -186,6 +186,17 @@ public class DarwinEngine extends BaseAiAgent {
             state.append(stateProvider.getSystemStateSignal());
         }
 
+        // PERSISTENCE: Inject successful historical mutation patterns from Workspace
+        List<WorkspaceArtifact> patterns = context.getSemanticWorkspace().findArtifactsByType("mutation-pattern");
+        if (!patterns.isEmpty()) {
+            state.append("\n--- SUCCESSFUL HISTORICAL MUTATION PATTERNS ---\n");
+            for (WorkspaceArtifact p : patterns) {
+                if (p.getConfidence() > 0.8) {
+                    state.append("- ").append(p.getContent()).append("\n");
+                }
+            }
+        }
+
         IntentExpansionResult expansion = (IntentExpansionResult) context.getMetadata().get("intentExpansion");
         if (expansion != null) {
             state.append("\n--- STRUCTURED INTENT HYPOTHESES ---\n");

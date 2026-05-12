@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 /**
  * Determines which semantic artifacts should be injected into the context.
@@ -21,11 +24,29 @@ public class ContextResolver {
             artifact.setRelevanceScore(score);
         }
 
-        return allArtifacts.stream()
+        List<WorkspaceArtifact> relevant = allArtifacts.stream()
                 .filter(a -> a.getRelevanceScore() >= MIN_RELEVANCE_THRESHOLD)
                 .sorted(Comparator.comparingDouble(WorkspaceArtifact::getRelevanceScore).reversed())
                 .limit(MAX_ARTIFACTS_PER_INJECTION)
                 .collect(Collectors.toList());
+
+        if (relevant.size() > MAX_ARTIFACTS_PER_INJECTION * 0.8) {
+            RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+                RuntimeEventType.CONTEXT_OVERLOAD_DETECTED,
+                "GLOBAL",
+                "ContextResolver",
+                "High density of relevant artifacts (" + relevant.size() + ") detected."));
+        }
+
+        if (!relevant.isEmpty()) {
+            RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+                RuntimeEventType.CONTEXT_RETRIEVED,
+                "GLOBAL",
+                "ContextResolver",
+                "Retrieved " + relevant.size() + " semantic artifacts."));
+        }
+
+        return relevant;
     }
 
     private double calculateRelevance(String currentGoal, WorkspaceArtifact artifact) {
@@ -49,15 +70,26 @@ public class ContextResolver {
             }
         }
 
-        // 3. Weight by confidence and decay
+        // 3. Exact tag boost
+        for (String tag : artifact.getSemanticTags()) {
+            if (goalLower.equals(tag.toLowerCase())) {
+                score += 0.4;
+            }
+        }
+
+        // 4. Weight by confidence and decay
         score *= artifact.getConfidence();
         score *= artifact.getDecayScore();
 
-        // 4. Boost by type
+        // 5. Boost by type
         if ("architecture-summary".equals(artifact.getArtifactType())) {
             score += 0.2;
         } else if ("implementation-decision".equals(artifact.getArtifactType())) {
-            score += 0.1;
+            score += 0.15;
+        } else if ("clarification-conclusion".equals(artifact.getArtifactType())) {
+            score += 0.2;
+        } else if ("failure-cause".equals(artifact.getArtifactType())) {
+            score += 0.25;
         }
 
         return Math.min(1.0, score);

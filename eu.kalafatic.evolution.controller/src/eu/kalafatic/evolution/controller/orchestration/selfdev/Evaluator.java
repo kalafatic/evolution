@@ -10,6 +10,7 @@ import eu.kalafatic.evolution.controller.orchestration.evolution.SignalSeverity;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.tools.MavenTool;
 import java.util.ArrayList;
 import java.util.List;
@@ -99,6 +100,17 @@ public class Evaluator {
 
     private void emitSignal(EvaluationResult result, StateSnapshot snapshot) {
         String variantId = context.getMetadata().getOrDefault("variantId", "unknown").toString();
+
+        // PERSISTENCE: Publish reusable observations into workspace
+        if (!result.isSuccess() && !snapshot.build.errorTypes.isEmpty()) {
+            String errorFingerprint = snapshot.build.errorTypes.toString() + (snapshot.tests.failingTests.isEmpty() ? "" : snapshot.tests.failingTests.toString());
+            WorkspaceArtifact artifact = new WorkspaceArtifact("failure-" + System.currentTimeMillis(), "failure-cause");
+            artifact.setContent("Build/Test failure detected: " + errorFingerprint);
+            artifact.setConfidence(1.0);
+            artifact.getSemanticTags().add("failure");
+            artifact.getSemanticTags().addAll(snapshot.build.errorTypes.stream().map(Enum::name).collect(java.util.stream.Collectors.toList()));
+            context.getSemanticWorkspace().addArtifact(artifact);
+        }
         double score = result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5;
         SignalSeverity severity = result.isSuccess() ? SignalSeverity.INFO : (result.getTestPassRate() > 0 ? SignalSeverity.WARNING : SignalSeverity.CRITICAL);
         String explanation = result.isSuccess() ? "Build and tests passed." : "Build or tests failed. " + String.join(", ", result.getErrors());
