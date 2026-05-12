@@ -13,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.*;
+import eu.kalafatic.evolution.controller.orchestration.intent.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.decision.*;
@@ -71,6 +72,30 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
 
         context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
+
+        if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(state.getCurrentPhase())) {
+            manager.transition(SystemState.ANALYZING, context);
+            IntentExpansionResult expansion = manager.getIntentExpansionEngine().expand(goal, context);
+            state.setIntentAnalysis(null); // Clear old simple analysis
+            state.getMetadata().put("intentExpansion", expansion);
+
+            ClarificationPlanner planner = manager.getClarificationPlanner();
+            ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion);
+            context.log("[KERNEL] Intent Expansion Strategy: " + strategy);
+
+            if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER) {
+                String clarificationRequest = planner.formatClarificationRequest(expansion);
+                String userResponse = context.requestInput(clarificationRequest).get();
+                if ("Rejected".equalsIgnoreCase(userResponse)) {
+                    manager.recordRejection(goal, "User rejected clarification request.");
+                    return manager.failedResult();
+                }
+                // Update goal with clarification and restart phase
+                goal = goal + " (Clarification: " + userResponse + ")";
+                context.getOrchestrator().getSelfDevSession().setInitialRequest(goal);
+                return runDarwin(context);
+            }
+        }
 
         if (manager.getGitManager().isGitRepository()) {
             manager.getGitManager().ensureInitialCommit();

@@ -28,6 +28,8 @@ import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
 import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.DiversityPressureController;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.EvolutionaryPenaltyModel;
@@ -181,6 +183,19 @@ public class DarwinEngine extends BaseAiAgent {
 
         if (stateProvider != null) {
             state.append(stateProvider.getSystemStateSignal());
+        }
+
+        IntentExpansionResult expansion = (IntentExpansionResult) context.getMetadata().get("intentExpansion");
+        if (expansion != null) {
+            state.append("\n--- STRUCTURED INTENT HYPOTHESES ---\n");
+            state.append("Original Intent was expanded into the following coherent hypotheses:\n");
+            for (IntentHypothesis h : expansion.getHypotheses()) {
+                state.append("- Hypothesis [").append(h.getId()).append("]: ").append(h.getDescription()).append("\n");
+                for (IntentHypothesis.DimensionValue dv : h.getDimensionValues()) {
+                    state.append("  * ").append(dv.getDimensionId()).append(": ").append(dv.getValue()).append("\n");
+                }
+            }
+            state.append("\nYour variants MUST be derived from these structured hypotheses.\n");
         }
 
         // Activation Gate: Only ACTIVE branches influence subsequent iterations
