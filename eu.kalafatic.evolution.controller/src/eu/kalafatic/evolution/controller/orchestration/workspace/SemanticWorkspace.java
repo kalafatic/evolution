@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 /**
  * Persistent reasoning environment for the orchestration kernel.
@@ -19,6 +22,13 @@ public class SemanticWorkspace {
 
     public void addArtifact(WorkspaceArtifact artifact) {
         artifacts.put(artifact.getArtifactId(), artifact);
+
+        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+            RuntimeEventType.ARTIFACT_PROMOTED,
+            "GLOBAL",
+            "SemanticWorkspace",
+            artifact.getArtifactId())
+            .withMetadata("type", artifact.getArtifactType()));
     }
 
     public WorkspaceArtifact getArtifact(String id) {
@@ -49,6 +59,7 @@ public class SemanticWorkspace {
      * Applies decay mechanics to all artifacts in the workspace.
      */
     public void applyDecay() {
+        int initialCount = artifacts.size();
         for (WorkspaceArtifact artifact : artifacts.values()) {
             double currentDecay = artifact.getDecayScore();
             artifact.setDecayScore(currentDecay * DECAY_FACTOR);
@@ -59,6 +70,12 @@ public class SemanticWorkspace {
 
         // Remove artifacts that have decayed too much
         artifacts.entrySet().removeIf(entry -> entry.getValue().getDecayScore() < 0.1);
+
+        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+            RuntimeEventType.MEMORY_DECAY_APPLIED,
+            "GLOBAL",
+            "SemanticWorkspace",
+            "Pruned " + (initialCount - artifacts.size()) + " stale artifacts."));
     }
 
     /**
@@ -69,6 +86,12 @@ public class SemanticWorkspace {
         if (artifact != null) {
             artifact.setDecayScore(Math.min(1.0, artifact.getDecayScore() + 0.1));
             artifact.setConfidence(Math.min(1.0, artifact.getConfidence() + 0.05));
+
+            RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+                RuntimeEventType.TRAJECTORY_STRENGTHENED,
+                "GLOBAL",
+                "SemanticWorkspace",
+                "Reinforced artifact: " + id));
         }
     }
 }

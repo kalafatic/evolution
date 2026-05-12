@@ -160,7 +160,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                     userPolicies.add(new ManualSelectionPolicy(selectedId));
                 }
 
-                DecisionSnapshot userDecision = userResolver.resolve(iterId, new ArrayList<>(), recommendations, userPolicies);
+                DecisionSnapshot userDecision = userResolver.resolve(iterId, new ArrayList<>(), recommendations, userPolicies, context.getSemanticWorkspace());
                 context.log("[KERNEL] Authority Decision (Mediated): " + userDecision.toString());
 
                 if (userDecision.getSelectedVariantId() != null) {
@@ -220,9 +220,10 @@ public class DarwinFlow implements IOrchestrationFlow {
                     List<ActivationRecommendation> recommendations = activationGate.recommendActivations(variants);
                     ActivationResolver autoResolver = new ActivationResolver();
                     List<ResolverPolicy> autoPolicies = new ArrayList<>();
+                    autoPolicies.add(new TrajectoryStabilityPolicy(context.getSemanticWorkspace()));
                     autoPolicies.add(new ConfidenceThresholdPolicy(activationGate.getDefaultActivationThreshold()));
 
-                    DecisionSnapshot autoDecision = autoResolver.resolve(iterId, new ArrayList<>(), recommendations, autoPolicies);
+                    DecisionSnapshot autoDecision = autoResolver.resolve(iterId, new ArrayList<>(), recommendations, autoPolicies, context.getSemanticWorkspace());
                     context.log("[KERNEL] Authority Decision (Autonomous): " + autoDecision.toString());
 
                     if (autoDecision.getSelectedVariantId() != null && autoDecision.getSelectedVariantId().equals(selectedVariant.getId())) {
@@ -298,9 +299,12 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         ActivationResolver resolver = new ActivationResolver();
         List<ResolverPolicy> policies = new ArrayList<>();
+
+        // Prioritize historical stability
+        policies.add(new TrajectoryStabilityPolicy(context.getSemanticWorkspace()));
         policies.add(new HighestScorePolicy());
 
-        DecisionSnapshot decision = resolver.resolve(iteration.getId(), collectedSignals, recommendations, policies);
+        DecisionSnapshot decision = resolver.resolve(iteration.getId(), collectedSignals, recommendations, policies, context.getSemanticWorkspace());
         context.log("[KERNEL] Authority Decision: " + decision.toString());
 
         BranchVariant bestVariant = null;
@@ -352,6 +356,13 @@ public class DarwinFlow implements IOrchestrationFlow {
             // For backward compatibility during this foundational step, we still set it on the variant,
             // but the source of truth for the logic is now mirrored in the signal.
             variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
+
+            // Record trajectory telemetry
+            if (result.isSuccess()) {
+                context.getSemanticWorkspace().getTrajectoryMemory().recordSuccessfulStrategy(variant.getStrategy());
+            } else {
+                context.getSemanticWorkspace().getTrajectoryMemory().recordFailureLoop(variant.getStrategy());
+            }
 
             return variant;
         } catch (Exception e) {

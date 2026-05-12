@@ -304,6 +304,10 @@ public class IterationManager {
                     decisionArtifact.getSemanticTags().add("implementation");
                     context.getSemanticWorkspace().addArtifact(decisionArtifact);
                 }
+
+                // Memory decay at the end of successful implementation
+                context.getSemanticWorkspace().applyDecay();
+
                 transition(SystemState.DONE, context);
             } else {
                 gitManager.rollback();

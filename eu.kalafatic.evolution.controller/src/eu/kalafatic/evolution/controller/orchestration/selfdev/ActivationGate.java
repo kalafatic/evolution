@@ -51,6 +51,7 @@ public class ActivationGate {
 
             recommendations.add(new ActivationRecommendation(
                 v.getId(),
+                v.getStrategy(),
                 confidence,
                 i + 1,
                 semanticAlign,

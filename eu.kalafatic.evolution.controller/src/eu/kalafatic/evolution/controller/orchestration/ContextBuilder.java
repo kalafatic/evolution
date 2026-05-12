@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import eu.kalafatic.evolution.model.orchestration.Task;
@@ -68,13 +69,28 @@ public class ContextBuilder {
         pkg.setCode(codeBuilder.toString());
         pkg.setDependencies(depBuilder.toString());
 
-        // 4b. SEMANTIC WORKSPACE INJECTION
+        // 4b. SEMANTIC WORKSPACE INJECTION (Trajectory & Hypothesis Aware)
         ContextResolver resolver = new ContextResolver();
-        List<WorkspaceArtifact> artifacts = resolver.resolveRelevantArtifacts(pkg.getGoal(), context.getSemanticWorkspace());
-        String workspacePrompt = resolver.formatArtifactsForPrompt(artifacts);
+
+        // Enhance goal with trajectory and hypothesis metadata for better semantic retrieval
+        String semanticGoal = pkg.getGoal();
+        String currentPhase = context.getOrchestrationState().getCurrentPhase();
+        if (currentPhase != null) {
+            semanticGoal += " Phase: " + currentPhase;
+        }
+
+        List<WorkspaceArtifact> artifacts = resolver.resolveRelevantArtifacts(semanticGoal, context.getSemanticWorkspace());
+
+        // Filter artifacts based on current trajectory stability
+        double stability = context.getSemanticWorkspace().getTrajectoryMemory().getSuccessfulStrategies().size() > 0 ? 0.8 : 0.4;
+        List<WorkspaceArtifact> filteredArtifacts = artifacts.stream()
+                .filter(a -> a.getConfidence() > (1.0 - stability))
+                .collect(Collectors.toList());
+
+        String workspacePrompt = resolver.formatArtifactsForPrompt(filteredArtifacts);
         if (!workspacePrompt.isEmpty()) {
             pkg.setAttachmentContext((pkg.getAttachmentContext() != null ? pkg.getAttachmentContext() : "") + "\n" + workspacePrompt);
-            state.addDiagnostic("ContextBuilder: Injected " + artifacts.size() + " semantic artifacts.");
+            state.addDiagnostic("ContextBuilder: Injected " + filteredArtifacts.size() + " adaptive semantic artifacts.");
         }
 
         // 5. FILTERING (Constraints)

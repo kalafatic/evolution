@@ -67,8 +67,20 @@ public class IntentExpansionEngine extends BaseAiAgent {
     public IntentExpansionResult expand(String prompt, TaskContext context) throws Exception {
         context.log("[INTENT EXPANSION] Analyzing intent space for: " + prompt);
 
+        // PERSISTENCE: Check Semantic Workspace for prior resolutions
+        List<WorkspaceArtifact> priorConclusions = context.getSemanticWorkspace().findArtifactsByType("clarification-conclusion");
+        String priorContext = "";
+        if (!priorConclusions.isEmpty()) {
+            StringBuilder sb = new StringBuilder("\nPRIOR CLARIFICATIONS:\n");
+            for (WorkspaceArtifact a : priorConclusions) {
+                sb.append("- ").append(a.getContent()).append("\n");
+            }
+            priorContext = sb.toString();
+            context.log("[INTENT EXPANSION] Found " + priorConclusions.size() + " prior clarifications in workspace.");
+        }
+
         String systemPrompt = getAgentInstructions() + "\n\n" + getFooterInstructions();
-        String userPrompt = "Analyze the following user request and expand the intent space:\n\n" + prompt;
+        String userPrompt = "Analyze the following user request and expand the intent space:\n\n" + prompt + priorContext;
 
         String response = aiService.sendRequest(context.getOrchestrator(), systemPrompt + "\n\n" + userPrompt, context);
         JSONObject json = JsonUtils.extractJsonObject(response);
