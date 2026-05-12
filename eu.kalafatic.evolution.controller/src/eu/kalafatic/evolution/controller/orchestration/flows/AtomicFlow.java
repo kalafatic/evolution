@@ -36,12 +36,11 @@ public class AtomicFlow implements IOrchestrationFlow {
 
         manager.transition(SystemState.VERIFYING, context);
         String path = tasks.get(0).getName().replaceFirst("(?i)^Write\\s+", "");
-        String finalResponse = "WORK DONE: Created file " + path + ".";
+        String summary = "Created file " + path + ".";
 
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
-        response.setSummary(finalResponse);
-        response.setContent(finalResponse);
+        response.setSummary(summary);
 
         manager.transition(success ? SystemState.DONE : SystemState.FAILED, context);
         return response;

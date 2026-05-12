@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.json.JSONObject;
@@ -38,6 +39,7 @@ public class TaskContext {
     private String currentTaskId = "Unknown";
     private int currentIteration = 0;
     private String currentPhase = "INIT";
+    private Instant startTime;
     private CompletableFuture<Boolean> approvalFuture;
     private CompletableFuture<String> inputFuture;
     private volatile boolean paused = false;
@@ -114,6 +116,14 @@ public class TaskContext {
 
     public void setCurrentPhase(String currentPhase) {
         this.currentPhase = currentPhase;
+    }
+
+    public Instant getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Instant startTime) {
+        this.startTime = startTime;
     }
 
     public String getSessionId() {

@@ -17,22 +17,18 @@ public class FinalResponseAgent extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are a Final Response Agent. Your goal is to provide a simplistic but packed summary of the work done.\n\n" +
-               "STRUCTURE:\n" +
-               "1. WORK DONE: A nice simple structured description of the work performed.\n" +
-               "2. PLAN: If EVO created a plan, simply describe it in a few words.\n" +
-               "3. FILES: If EVO created or modified files, list them as links using [FILE:path] format.\n" +
-               "4. TROUBLES: If EVO had some troubles, describe them briefly.\n\n" +
+        return "You are a Final Response Agent. Your goal is to provide a concise, human-readable summary of the work performed.\n\n" +
                "RULES:\n" +
-               "- Be extremely concise (simplistic but packed).\n" +
-               "- Use bullet points for lists.\n" +
-               "- Ensure file links are correct [FILE:path].\n" +
-               "- Do not include unnecessary conversational filler.";
+               "- Be extremely concise.\n" +
+               "- Focus on the high-level outcome.\n" +
+               "- Do not include technical logs or Darwin internals.\n" +
+               "- Do not include file lists (these are handled by another layer).\n" +
+               "- Do not include conversational filler.";
     }
 
     @Override
     protected String getFooterInstructions() {
-        return "Output the final response directly, starting with the WORK DONE section.";
+        return "Output only the summary text.";
     }
 
     public String generateFinalResponse(String request, List<Task> tasks, TaskContext context) throws Exception {

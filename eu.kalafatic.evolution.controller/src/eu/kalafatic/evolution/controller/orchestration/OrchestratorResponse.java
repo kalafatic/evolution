@@ -12,6 +12,7 @@ public class OrchestratorResponse {
     private String summary;
     private ResultType resultType;
     private String content;
+    private FinalResponse finalResponse;
     private Map<String, Object> metadata = new HashMap<>();
     private List<String> debugLogs = new ArrayList<>();
 
@@ -39,6 +40,18 @@ public class OrchestratorResponse {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public FinalResponse getFinalResponse() {
+        return finalResponse;
+    }
+
+    public void setFinalResponse(FinalResponse finalResponse) {
+        this.finalResponse = finalResponse;
+        if (finalResponse != null) {
+            this.content = finalResponse.toString();
+            this.summary = finalResponse.getSummary();
+        }
     }
 
     public Map<String, Object> getMetadata() {

@@ -83,12 +83,11 @@ public class IterativeFlow implements IOrchestrationFlow {
 
         // VERIFYING stage
         manager.transition(SystemState.VERIFYING, context);
-        String finalResponse = manager.getFinalResponseAgent().generateFinalResponse(request, tasks, context);
+        String summary = manager.getFinalResponseAgent().generateFinalResponse(request, tasks, context);
 
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
-        response.setSummary(finalResponse);
-        response.setContent(finalResponse);
+        response.setSummary(summary);
 
         manager.transition(success ? SystemState.DONE : SystemState.FAILED, context);
         return response;
