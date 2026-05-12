@@ -9,49 +9,48 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 public class BehaviorResolver {
 
     public long resolveBitState(TaskContext context) {
-        int mode = BitState.MODE_LOCAL;
-        int supervision = BitState.SUPERVISION_AUTO;
-        int interaction = BitState.INTERACTION_CONTINUOUS;
-        int reasoning = BitState.REASONING_ATOMIC;
-        int workflow = BitState.WORKFLOW_TASK_ORIENTED;
-
         Orchestrator orchestrator = context.getOrchestrator();
 
-        // 1. MODE & SUPERVISION
-        if (orchestrator.getAiMode() == AiMode.MEDIATED) {
-            mode = BitState.MODE_MEDIATED;
-            supervision = BitState.SUPERVISION_MANUAL;
-        } else if (orchestrator.getAiMode() == AiMode.HYBRID) {
-            mode = BitState.MODE_HYBRID;
-            supervision = BitState.SUPERVISION_HYBRID;
-        } else if (orchestrator.getAiMode() == AiMode.REMOTE) {
-            mode = BitState.MODE_REMOTE;
+        // 1. MODE (Strictly from model)
+        int mode = BitState.MODE_LOCAL;
+        if (orchestrator.getAiMode() != null) {
+            switch (orchestrator.getAiMode()) {
+                case LOCAL:    mode = BitState.MODE_LOCAL; break;
+                case HYBRID:   mode = BitState.MODE_HYBRID; break;
+                case REMOTE:   mode = BitState.MODE_REMOTE; break;
+                case PROXY:    mode = BitState.MODE_PROXY; break;
+                case MEDIATED: mode = BitState.MODE_MEDIATED; break;
+            }
         }
 
-        // 2. REASONING
+        // 2. SUPERVISION (Default based on mode, but overridable)
+        int supervision = BitState.SUPERVISION_AUTO;
+        if (mode == BitState.MODE_MEDIATED) {
+            supervision = BitState.SUPERVISION_MANUAL;
+        } else if (mode == BitState.MODE_HYBRID) {
+            supervision = BitState.SUPERVISION_HYBRID;
+        }
+
+        // 3. REASONING
+        int reasoning = BitState.REASONING_ATOMIC;
         PlatformType type = context.getPlatformMode() != null ? context.getPlatformMode().getType() : PlatformType.SIMPLE_CHAT;
 
         switch (type) {
             case SELF_DEV_MODE:
                 reasoning = BitState.REASONING_EXPLORATORY;
-                workflow = BitState.WORKFLOW_SELF_DEV;
                 break;
             case DARWIN_MODE:
                 reasoning = BitState.REASONING_DARWIN;
-                workflow = BitState.WORKFLOW_TASK_ORIENTED;
                 break;
             case ASSISTED_CODING:
                 reasoning = BitState.REASONING_CONSERVATIVE;
-                workflow = BitState.WORKFLOW_TASK_ORIENTED;
                 break;
             case HYBRID_MANUAL_EXPORT:
                 reasoning = BitState.REASONING_ANALYTICAL;
-                workflow = BitState.WORKFLOW_EXPORT_ONLY;
                 break;
             case SIMPLE_CHAT:
             default:
                 reasoning = BitState.REASONING_ATOMIC;
-                workflow = BitState.WORKFLOW_TASK_ORIENTED;
                 break;
         }
 
@@ -59,14 +58,26 @@ public class BehaviorResolver {
             reasoning = BitState.REASONING_DARWIN;
         }
 
-        // 3. INTERACTION
+        // 4. WORKFLOW
+        int workflow = BitState.WORKFLOW_TASK_ORIENTED;
+        if (type == PlatformType.SELF_DEV_MODE) {
+            workflow = BitState.WORKFLOW_SELF_DEV;
+        } else if (type == PlatformType.HYBRID_MANUAL_EXPORT) {
+            workflow = BitState.WORKFLOW_EXPORT_ONLY;
+        }
+
+        // 5. INTERACTION & ITERATIVE Overrides
+        int interaction = BitState.INTERACTION_CONTINUOUS;
         if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
             var instructions = orchestrator.getAiChat().getPromptInstructions();
             if (instructions.isStepMode()) {
                 interaction = BitState.INTERACTION_STEP;
             }
             if (instructions.isIterativeMode()) {
-                reasoning = BitState.REASONING_DARWIN;
+                // If iterative but NOT darwin, use ITERATIVE reasoning
+                if (reasoning != BitState.REASONING_DARWIN) {
+                    reasoning = BitState.REASONING_ITERATIVE;
+                }
             }
             if (instructions.isSelfIterativeMode()) {
                 workflow = BitState.WORKFLOW_SELF_DEV;

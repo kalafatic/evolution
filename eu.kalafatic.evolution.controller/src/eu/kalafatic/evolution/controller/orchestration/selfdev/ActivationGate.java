@@ -73,6 +73,8 @@ public class ActivationGate {
             "Semantic alignment score for variant strategy: " + v.getStrategy()
         );
 
+        eu.kalafatic.evolution.controller.orchestration.evolution.SignalBus.getInstance().publish(signal);
+
         RuntimeEventBus.getInstance().publish(new RuntimeEvent(
             RuntimeEventType.EVALUATION_SIGNAL_CREATED,
             "system",
@@ -94,6 +96,8 @@ public class ActivationGate {
             SignalSeverity.INFO,
             "Calculated complexity based on action count: " + v.getActions().size()
         );
+
+        eu.kalafatic.evolution.controller.orchestration.evolution.SignalBus.getInstance().publish(signal);
 
         RuntimeEventBus.getInstance().publish(new RuntimeEvent(
             RuntimeEventType.EVALUATION_SIGNAL_CREATED,

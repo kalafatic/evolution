@@ -91,6 +91,8 @@ public class ConstraintAgent extends BaseAiAgent {
             explanation
         );
 
+        eu.kalafatic.evolution.controller.orchestration.evolution.SignalBus.getInstance().publish(signal);
+
         RuntimeEventBus.getInstance().publish(new RuntimeEvent(
             RuntimeEventType.EVALUATION_SIGNAL_CREATED,
             context.getSessionId(),

@@ -31,6 +31,45 @@ public class IntentService {
         AtomicIntentAnalysis atomicAnalysis = atomicClassifier.analyze(request, context);
         state.getMetadata().put("atomicAnalysis", atomicAnalysis);
         state.addDiagnostic("Atomic analysis: atomic=" + atomicAnalysis.isAtomic() + ", confidence=" + atomicAnalysis.getConfidence());
+
+        // 3. Ambiguity & Depth Scaling Analysis
+        double ambiguityScore = calculateAmbiguity(request, atomicAnalysis);
+        state.getMetadata().put("ambiguityScore", ambiguityScore);
+
+        // Scale depth based on ambiguity and confidence
+        int depth = 1; // Default
+        if (ambiguityScore > 0.7) depth = 3; // High ambiguity requires deeper exploration
+        else if (atomicAnalysis.getConfidence() < 0.5) depth = 2;
+
+        state.getMetadata().put("orchestrationDepth", depth);
+        state.addDiagnostic("Orchestration Scaling: ambiguity=" + ambiguityScore + ", depth=" + depth);
+
+        // Emit Ambiguity Signal to SignalBus
+        emitAmbiguitySignal(request, ambiguityScore, context);
+    }
+
+    private double calculateAmbiguity(String request, AtomicIntentAnalysis atomic) {
+        double score = 0.0;
+        String lower = request.toLowerCase();
+        if (request.length() < 30) score += 0.3;
+        if (atomic != null && !atomic.isAtomic()) score += 0.2;
+        if (!lower.contains("class") && !lower.contains("file") && !lower.contains("method")) score += 0.2;
+        if (lower.split("\\s+").length < 5) score += 0.3;
+        return Math.min(1.0, score);
+    }
+
+    private void emitAmbiguitySignal(String request, double score, TaskContext context) {
+        eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal signal =
+            new eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal(
+                "global",
+                "AmbiguityDetector",
+                1.0 - score, // Clarity score
+                0.8,
+                score > 0.7 ? eu.kalafatic.evolution.controller.orchestration.evolution.SignalSeverity.WARNING :
+                              eu.kalafatic.evolution.controller.orchestration.evolution.SignalSeverity.INFO,
+                "Intent ambiguity detected. Score: " + score
+            );
+        eu.kalafatic.evolution.controller.orchestration.evolution.SignalBus.getInstance().publish(signal);
     }
 
     public static Set<TaskIntent> classify(String request) {

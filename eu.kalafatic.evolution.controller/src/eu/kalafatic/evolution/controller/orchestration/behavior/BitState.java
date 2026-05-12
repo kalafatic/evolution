@@ -74,9 +74,10 @@ public class BitState {
     // --- REASONING Constants ---
     public static final int REASONING_ATOMIC = 0;
     public static final int REASONING_DARWIN = 1;
-    public static final int REASONING_CONSERVATIVE = 2;
-    public static final int REASONING_EXPLORATORY = 3;
-    public static final int REASONING_ANALYTICAL = 4;
+    public static final int REASONING_ITERATIVE = 2;
+    public static final int REASONING_CONSERVATIVE = 3;
+    public static final int REASONING_EXPLORATORY = 4;
+    public static final int REASONING_ANALYTICAL = 5;
 
     // --- WORKFLOW Constants ---
     public static final int WORKFLOW_TASK_ORIENTED = 0;
@@ -88,6 +89,6 @@ public class BitState {
     public static final String[] MODES = {"LOCAL", "HYBRID", "REMOTE", "PROXY", "MEDIATED"};
     public static final String[] SUPERVISIONS = {"AUTO", "MANUAL", "HYBRID"};
     public static final String[] INTERACTIONS = {"CONTINUOUS", "STEP", "GUIDED"};
-    public static final String[] REASONINGS = {"ATOMIC", "DARWIN", "CONSERVATIVE", "EXPLORATORY", "ANALYTICAL"};
+    public static final String[] REASONINGS = {"ATOMIC", "DARWIN", "ITERATIVE", "CONSERVATIVE", "EXPLORATORY", "ANALYTICAL"};
     public static final String[] WORKFLOWS = {"TASK", "SELF_DEV", "HYBRID", "EXPORT"};
 }
