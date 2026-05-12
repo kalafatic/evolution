@@ -465,13 +465,22 @@ public class IterationManager {
     }
 
     /**
-     * @deprecated Replaced by Darwin-integrated TaskPlanner logic.
+     * Generates a single-step atomic plan for simple file creation tasks.
      */
-    @Deprecated
     public List<Task> createAtomicFilePlan(String request, AtomicIntentAnalysis analysis, TaskContext context) {
         List<Task> tasks = new ArrayList<>();
         String path = (analysis != null && analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty()) ?
                       analysis.getTargetArtifact() : "generated_file";
+
+        // Smart extension appending for known artifact types
+        if (analysis != null && analysis.getArtifactType() != null && !path.equals("generated_file") && !path.contains(".")) {
+            String type = analysis.getArtifactType().toLowerCase();
+            if ("java".equals(type) || "class".equals(type) || "interface".equals(type) || "enum".equals(type) || "record".equals(type)) {
+                path = path.substring(0, 1).toUpperCase() + path.substring(1) + ".java";
+            } else if ("script".equals(type)) {
+                path = path + ".sh";
+            }
+        }
 
         Task t = OrchestrationFactory.eINSTANCE.createTask();
         t.setId("atomic-task-1");
