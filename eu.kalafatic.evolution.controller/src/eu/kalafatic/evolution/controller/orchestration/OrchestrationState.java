@@ -7,8 +7,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Centralized container for orchestration state.
@@ -30,6 +32,7 @@ public class OrchestrationState {
     private long bitState = 0;
     private String currentPhase;
     private final SemanticWorkspace semanticWorkspace = new SemanticWorkspace();
+    private CognitiveTrace cognitiveTrace;
 
     public String getRawInput() {
         return rawInput;
@@ -121,5 +124,16 @@ public class OrchestrationState {
 
     public SemanticWorkspace getSemanticWorkspace() {
         return semanticWorkspace;
+    }
+
+    public CognitiveTrace getCognitiveTrace() {
+        if (cognitiveTrace == null) {
+            cognitiveTrace = new CognitiveTrace(UUID.randomUUID().toString(), currentIterationId, "main");
+        }
+        return cognitiveTrace;
+    }
+
+    public void setCognitiveTrace(CognitiveTrace cognitiveTrace) {
+        this.cognitiveTrace = cognitiveTrace;
     }
 }

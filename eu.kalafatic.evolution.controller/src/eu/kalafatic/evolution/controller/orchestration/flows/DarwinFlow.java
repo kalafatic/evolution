@@ -26,6 +26,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
 import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
@@ -116,6 +117,17 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             manager.transition(SystemState.MUTATING, context);
             List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
+
+            // DIAGNOSTICS: Record mutation in trace
+            context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
+                "darwin-mutation-" + System.currentTimeMillis(),
+                "MUTATION",
+                "DarwinEngine",
+                List.of(goal),
+                rawVariants.stream().map(v -> v.getId()).collect(Collectors.toList()),
+                1.0,
+                "Generated " + rawVariants.size() + " variants."
+            ));
 
             // Kernel Scheduling Layer
             ScheduledExecutionPlan executionPlan = scheduler.schedule(rawVariants, context);
@@ -321,7 +333,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         policies.add(new TrajectoryStabilityPolicy(context.getSemanticWorkspace()));
         policies.add(new HighestScorePolicy());
 
-        DecisionSnapshot decision = resolver.resolve(iteration.getId(), collectedSignals, recommendations, policies, context.getSemanticWorkspace(), executionPlan);
+        DecisionSnapshot decision = resolver.resolve(iteration.getId(), collectedSignals, recommendations, policies, context.getSemanticWorkspace(), executionPlan, context.getOrchestrationState().getCognitiveTrace());
         context.log("[KERNEL] Authority Decision: " + decision.toString());
 
         BranchVariant bestVariant = null;

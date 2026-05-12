@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import java.util.ArrayList;
@@ -147,6 +148,17 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
         // PERSISTENCE: Save clarification conclusions to Semantic Workspace
         persistClarifications(result, context);
+
+        // DIAGNOSTICS: Emit causal node for intent expansion
+        context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
+            "intent-expansion-" + System.currentTimeMillis(),
+            "INTENT_EXPANSION",
+            "IntentExpansionEngine",
+            List.of(prompt),
+            result.getHypotheses().stream().map(h -> h.getId()).collect(java.util.stream.Collectors.toList()),
+            result.getConfidence().getOverallConfidence(),
+            result.getConfidence().getRationale()
+        ));
 
         return result;
     }
