@@ -30,6 +30,7 @@ import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.DiversityPressureController;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.EvolutionaryPenaltyModel;
@@ -329,7 +330,29 @@ public class DarwinEngine extends BaseAiAgent {
 
             variants.add(v);
         }
+
+        // PERSISTENCE: Save successful historical mutation patterns
+        persistSuccessfulPatterns(variants, context);
+
         return variants;
+    }
+
+    private void persistSuccessfulPatterns(List<BranchVariant> variants, TaskContext context) {
+        for (BranchVariant variant : variants) {
+            if (variant.getScore() > 0.8) {
+                String artifactId = "mutation-pattern-" + variant.getId() + "-" + System.currentTimeMillis();
+                WorkspaceArtifact artifact = new WorkspaceArtifact(artifactId, "mutation-pattern");
+                artifact.setContent("Successful mutation pattern identified: " + variant.getStrategy());
+                artifact.setConfidence(variant.getScore());
+                artifact.getSemanticTags().add("mutation");
+                artifact.getSemanticTags().add(variant.getStrategy());
+                artifact.setSourceIteration("it-" + context.getCurrentIteration());
+                artifact.setLineageId(variant.getLineageId());
+
+                context.getSemanticWorkspace().addArtifact(artifact);
+                context.log("[WORKSPACE] Persisted mutation pattern: " + variant.getStrategy());
+            }
+        }
     }
 
     private String sanitize(String s) {

@@ -8,6 +8,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector;
+import eu.kalafatic.evolution.controller.orchestration.workspace.ContextResolver;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.tools.FileTool;
 
 /**
@@ -65,6 +67,15 @@ public class ContextBuilder {
 
         pkg.setCode(codeBuilder.toString());
         pkg.setDependencies(depBuilder.toString());
+
+        // 4b. SEMANTIC WORKSPACE INJECTION
+        ContextResolver resolver = new ContextResolver();
+        List<WorkspaceArtifact> artifacts = resolver.resolveRelevantArtifacts(pkg.getGoal(), context.getSemanticWorkspace());
+        String workspacePrompt = resolver.formatArtifactsForPrompt(artifacts);
+        if (!workspacePrompt.isEmpty()) {
+            pkg.setAttachmentContext((pkg.getAttachmentContext() != null ? pkg.getAttachmentContext() : "") + "\n" + workspacePrompt);
+            state.addDiagnostic("ContextBuilder: Injected " + artifacts.size() + " semantic artifacts.");
+        }
 
         // 5. FILTERING (Constraints)
         List<String> constraints = new ArrayList<>();

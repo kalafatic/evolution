@@ -14,6 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
+import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import eu.kalafatic.utils.log.Log;
 
 /**
@@ -332,6 +333,10 @@ public class TaskContext {
             getBehaviorProfile();
         }
         return orchestrationState;
+    }
+
+    public SemanticWorkspace getSemanticWorkspace() {
+        return getOrchestrationState().getSemanticWorkspace();
     }
 
     public FileChangeTracker getFileChangeTracker() {

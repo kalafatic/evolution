@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
+import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import java.util.Set;
 
 /**
@@ -28,6 +29,7 @@ public class OrchestrationState {
     private List<String> rejectionHistory = new ArrayList<>();
     private long bitState = 0;
     private String currentPhase;
+    private final SemanticWorkspace semanticWorkspace = new SemanticWorkspace();
 
     public String getRawInput() {
         return rawInput;
@@ -115,5 +117,9 @@ public class OrchestrationState {
 
     public void setCurrentPhase(String currentPhase) {
         this.currentPhase = currentPhase;
+    }
+
+    public SemanticWorkspace getSemanticWorkspace() {
+        return semanticWorkspace;
     }
 }

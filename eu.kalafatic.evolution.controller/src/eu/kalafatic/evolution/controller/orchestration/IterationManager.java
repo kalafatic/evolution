@@ -36,6 +36,7 @@ import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionEngine;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
@@ -169,6 +170,14 @@ public class IterationManager {
                     context.log("[KERNEL] Discovery: Inspecting repository structure.");
                     String projectStructure = structureAgent.process("Provide a concise summary of the project structure and technology stack.", context, null);
                     state.getMetadata().put("projectStructure", projectStructure);
+
+                    // PERSISTENCE: Store architecture summary in Semantic Workspace
+                    WorkspaceArtifact archArtifact = new WorkspaceArtifact("arch-summary-" + System.currentTimeMillis(), "architecture-summary");
+                    archArtifact.setContent(projectStructure);
+                    archArtifact.getSemanticTags().add("architecture");
+                    archArtifact.getSemanticTags().add("structure");
+                    context.getSemanticWorkspace().addArtifact(archArtifact);
+
                     context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Discovery complete. Repository-aware context initialized.");
                 }
             }
@@ -284,7 +293,17 @@ public class IterationManager {
                 currentIterationModel.setEvaluationResult(result);
             }
             if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
-                if (currentIterationModel != null) gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
+                if (currentIterationModel != null) {
+                    gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
+
+                    // PERSISTENCE: Record successful implementation decision
+                    WorkspaceArtifact decisionArtifact = new WorkspaceArtifact("impl-decision-" + currentIterationModel.getId(), "implementation-decision");
+                    decisionArtifact.setContent("Successfully implemented: " + goal);
+                    decisionArtifact.setSourceIteration(currentIterationModel.getId());
+                    decisionArtifact.getSemanticTags().add("success");
+                    decisionArtifact.getSemanticTags().add("implementation");
+                    context.getSemanticWorkspace().addArtifact(decisionArtifact);
+                }
                 transition(SystemState.DONE, context);
             } else {
                 gitManager.rollback();
