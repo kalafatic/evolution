@@ -20,7 +20,7 @@ public class PolicyResolver {
     };
 
     private static final ReasoningStrategy[] REASONING = {
-        ReasoningStrategy.ATOMIC, ReasoningStrategy.DARWIN, ReasoningStrategy.CONSERVATIVE, ReasoningStrategy.EXPLORATORY, ReasoningStrategy.ANALYTICAL
+        ReasoningStrategy.ATOMIC, ReasoningStrategy.DARWIN, ReasoningStrategy.ITERATIVE, ReasoningStrategy.CONSERVATIVE, ReasoningStrategy.EXPLORATORY, ReasoningStrategy.ANALYTICAL
     };
 
     private static final WorkflowModel[] WORKFLOWS = {

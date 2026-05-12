@@ -10,7 +10,7 @@ public class ExecutionPolicy {
     public enum ExecutionMode { LOCAL, HYBRID, REMOTE, PROXY, MEDIATED }
     public enum SupervisionLevel { AUTO, MANUAL, HYBRID }
     public enum InteractionMode { CONTINUOUS, STEP, GUIDED }
-    public enum ReasoningStrategy { ATOMIC, DARWIN, CONSERVATIVE, EXPLORATORY, ANALYTICAL }
+    public enum ReasoningStrategy { ATOMIC, DARWIN, ITERATIVE, CONSERVATIVE, EXPLORATORY, ANALYTICAL }
     public enum WorkflowModel { TASK_ORIENTED, SELF_DEV, HYBRID, EXPORT_ONLY }
     public enum RepositoryMode { ISOLATED, SHARED, VIRTUAL }
 

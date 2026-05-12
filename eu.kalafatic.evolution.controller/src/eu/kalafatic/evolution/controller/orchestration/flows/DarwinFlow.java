@@ -19,7 +19,12 @@ import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IEva
 import eu.kalafatic.evolution.controller.orchestration.intent.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
-import eu.kalafatic.evolution.controller.orchestration.decision.*;
+import eu.kalafatic.evolution.controller.orchestration.decision.DecisionResolver;
+import eu.kalafatic.evolution.controller.orchestration.decision.DecisionSnapshot;
+import eu.kalafatic.evolution.controller.orchestration.decision.ResolverPolicy;
+import eu.kalafatic.evolution.controller.orchestration.decision.ManualSelectionPolicy;
+import eu.kalafatic.evolution.controller.orchestration.decision.TrajectoryStabilityPolicy;
+import eu.kalafatic.evolution.controller.orchestration.decision.HighestScorePolicy;
 import eu.kalafatic.evolution.controller.orchestration.scheduling.*;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationGate;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
@@ -67,6 +72,33 @@ public class DarwinFlow implements IOrchestrationFlow {
         String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
 
         OrchestrationState state = context.getOrchestrationState();
+
+        // [ORCHESTRATION DEPTH SCALING]
+        // If atomic analysis suggests NO planning is required and confidence is high,
+        // scale depth down by bypassing heavy Darwin loops.
+        eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis atomicAnalysis =
+            (eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
+
+        if (atomicAnalysis != null && !atomicAnalysis.isRequiresPlanning() && atomicAnalysis.getConfidence() >= 0.8) {
+            context.log("[KERNEL] High-confidence atomic task detected (Depth Scaling). Bypassing heavy Darwin loops.");
+
+            // Execute as a single-pass or simple iteration
+            manager.transition(SystemState.EXECUTING, context);
+            List<Task> tasks = manager.getTaskPlanner().generateTasks(context, goal);
+            boolean success = manager.executeTasksWithRetries(tasks);
+
+            if (success) {
+                manager.getGitManager().commit("Atomic Task Execution: " + goal);
+                manager.transition(SystemState.DONE, context);
+            } else {
+                manager.transition(SystemState.FAILED, context);
+            }
+
+            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+            res.setSuccess(success);
+            res.setDecision(SelfDevDecision.STOP);
+            return res;
+        }
         if (state.getCurrentPhase() == null) {
             state.setCurrentPhase(EvolutionConstants.PHASE_INTENT_EXPANSION);
         }
@@ -160,8 +192,8 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             BehaviorProfile profile = context.getBehaviorProfile();
 
-            // Activation Gate Integration
-            ActivationGate activationGate = new ActivationGate();
+            // Decision Authority
+            DecisionResolver decisionResolver = new DecisionResolver();
 
             // MEDIATED mode behavior
             if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
@@ -175,34 +207,13 @@ public class DarwinFlow implements IOrchestrationFlow {
                     return res;
                 }
 
-                // Activation Gate Recommendation
-                List<ActivationRecommendation> recommendations = activationGate.recommendActivations(variants);
-                recommendations.forEach(r -> context.log("[GATE] " + r.toString()));
-
-                // Decision Authority: ActivationResolver handles user selection
-                ActivationResolver userResolver = new ActivationResolver();
-                List<ResolverPolicy> userPolicies = new ArrayList<>();
+                String manualId = null;
                 if (input.startsWith("Select ")) {
-                    String selectedId = input.substring(7).trim();
-                    userPolicies.add(new ManualSelectionPolicy(selectedId));
+                    manualId = input.substring(7).trim();
+                    context.log("[KERNEL] User selected variant: " + manualId);
                 }
 
-                DecisionSnapshot userDecision = userResolver.resolve(iterId, new ArrayList<>(), recommendations, userPolicies, context.getSemanticWorkspace());
-                context.log("[KERNEL] Authority Decision (Mediated): " + userDecision.toString());
-
-                if (userDecision.getSelectedVariantId() != null) {
-                    variants.forEach(v -> {
-                        if (v.getId().equals(userDecision.getSelectedVariantId())) {
-                            v.setActivationState(BranchVariant.ActivationState.ACTIVE);
-                            v.setRank("winner");
-                        } else {
-                            v.setActivationState(BranchVariant.ActivationState.INACTIVE);
-                            v.setRank("runner-up");
-                        }
-                    });
-                } else {
-                    context.log("[KERNEL] WARNING: No explicit branch activation decision. Darwin evolution may stall.");
-                }
+                decisionResolver.resolveWinner(iterId, variants, context, manualId);
 
                 manager.advanceEvolutionPhase(state);
                 manager.transition(SystemState.DONE, context);
@@ -236,27 +247,15 @@ public class DarwinFlow implements IOrchestrationFlow {
             BranchVariant selectedVariant = null;
 
             if (!activeVariants.isEmpty()) {
-                context.log("[KERNEL] Activation Gate: Proceeding with " + activeVariants.size() + " ACTIVE branches.");
+                context.log("[KERNEL] Authority: Proceeding with " + activeVariants.size() + " ACTIVE branches.");
                 selectedVariant = evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
             } else {
                 context.log("[KERNEL] Authority: No ACTIVE branches. Evaluating all proposals to determine best candidate for activation.");
                 selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
 
-                // Decision Authority: Use ActivationResolver for auto-activation policy
+                // Decision Authority: Resolve winner autonomously
                 if (!profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && selectedVariant != null) {
-                    List<ActivationRecommendation> recommendations = activationGate.recommendActivations(variants);
-                    ActivationResolver autoResolver = new ActivationResolver();
-                    List<ResolverPolicy> autoPolicies = new ArrayList<>();
-                    autoPolicies.add(new TrajectoryStabilityPolicy(context.getSemanticWorkspace()));
-                    autoPolicies.add(new ConfidenceThresholdPolicy(activationGate.getDefaultActivationThreshold()));
-
-                    DecisionSnapshot autoDecision = autoResolver.resolve(iterId, new ArrayList<>(), recommendations, autoPolicies, context.getSemanticWorkspace());
-                    context.log("[KERNEL] Authority Decision (Autonomous): " + autoDecision.toString());
-
-                    if (autoDecision.getSelectedVariantId() != null && autoDecision.getSelectedVariantId().equals(selectedVariant.getId())) {
-                        selectedVariant.setActivationState(BranchVariant.ActivationState.ACTIVE);
-                        selectedVariant.setRank("winner");
-                    }
+                    decisionResolver.resolveWinner(iterId, variants, context);
                 }
             }
 
@@ -303,15 +302,6 @@ public class DarwinFlow implements IOrchestrationFlow {
             manager.getGitManager().forceCheckout(baseBranch);
         }
 
-        // Authority Layer: Collect signals during parallel execution
-        List<EvaluationSignal> collectedSignals = Collections.synchronizedList(new ArrayList<>());
-        RuntimeEventListener signalListener = event -> {
-            if (event.getType() == RuntimeEventType.EVALUATION_SIGNAL_CREATED && event.getPayload() instanceof EvaluationSignal) {
-                collectedSignals.add((EvaluationSignal) event.getPayload());
-            }
-        };
-        eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().subscribe(signalListener);
-
         try {
             ISchedulingContract scheduler = CapabilityRegistry.getInstance().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
             List<CompletableFuture<BranchVariant>> futures = variants.stream()
@@ -329,23 +319,13 @@ public class DarwinFlow implements IOrchestrationFlow {
                 }, variantExecutor))
                 .collect(Collectors.toList());
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        } finally {
-            eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().unsubscribe(signalListener);
+        } catch (Exception e) {
+            context.log("[KERNEL] Variant evaluation error: " + e.getMessage());
         }
 
-        // Decision Authority: Use ActivationResolver to determine winner from signals
-        ActivationGate gate = new ActivationGate();
-        List<ActivationRecommendation> recommendations = gate.recommendActivations(variants);
-
-        ActivationResolver resolver = new ActivationResolver();
-        List<ResolverPolicy> policies = new ArrayList<>();
-
-        // Prioritize historical stability
-        policies.add(new TrajectoryStabilityPolicy(context.getSemanticWorkspace()));
-        policies.add(new HighestScorePolicy());
-
-        DecisionSnapshot decision = resolver.resolve(iteration.getId(), collectedSignals, recommendations, policies, context.getSemanticWorkspace(), executionPlan, context.getOrchestrationState().getCognitiveTrace());
-        context.log("[KERNEL] Authority Decision: " + decision.toString());
+        // Decision Authority: Use DecisionResolver to determine winner from signals in SignalBus
+        DecisionResolver decisionResolver = new DecisionResolver();
+        DecisionSnapshot decision = decisionResolver.resolveWinner(iteration.getId(), variants, context);
 
         BranchVariant bestVariant = null;
         if (decision.getSelectedVariantId() != null) {
