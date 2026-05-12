@@ -34,6 +34,8 @@ import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionEngine;
+import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
@@ -72,6 +74,8 @@ public class IterationManager {
     private final IterationMemoryService memoryService;
     private final ClarificationManager clarificationManager = new ClarificationManager();
     private final IntentService intentService;
+    private final IntentExpansionEngine intentExpansionEngine;
+    private final ClarificationPlanner clarificationPlanner = new ClarificationPlanner();
 
     private final AnalyticAgent analyticAgent;
     private final StructureAgent structureAgent;
@@ -91,6 +95,8 @@ public class IterationManager {
     public TaskExecutor getTaskExecutor() { return taskExecutor; }
     public Evaluator getEvaluator() { return evaluator; }
     public DarwinEngine getDarwinEngine() { return darwinEngine; }
+    public IntentExpansionEngine getIntentExpansionEngine() { return intentExpansionEngine; }
+    public ClarificationPlanner getClarificationPlanner() { return clarificationPlanner; }
     public IterationMemoryService getMemoryService() { return memoryService; }
     public AnalyticAgent getAnalyticAgent() { return analyticAgent; }
     public FinalResponseAgent getFinalResponseAgent() { return finalResponseAgent; }
@@ -114,6 +120,8 @@ public class IterationManager {
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
         this.intentService = new IntentService(aiService);
+        this.intentExpansionEngine = new IntentExpansionEngine();
+        this.intentExpansionEngine.setAiService(aiService);
 
         availableAgents.addAll(AgentFactory.getAllAgents());
         analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);

@@ -102,6 +102,8 @@ public class DarwinEvolutionTest {
             "], \"expected_effect\": {\"short_term\":\"Fixed\", \"risk\":0.1}}" +
             "]";
 
+        String expansionJson = "{\"dimensions\": [], \"hypotheses\": [{\"id\": \"h1\", \"description\": \"Add Validation\", \"confidence\": 0.9}], \"confidence\": {\"overallConfidence\": 0.9}}";
+
         mockLlm.addResponseMapping("DarwinEngine", variantJson);
         mockLlm.addResponseMapping("TaskPlanner", "[{\"id\": \"t1\", \"name\": \"Write src/Validator.java\", \"taskType\": \"file\"}]");
         mockLlm.addResponseMapping("Role: File", "public class Validator { }");
@@ -109,6 +111,7 @@ public class DarwinEvolutionTest {
         String evalSuccess = "{\"success\": true, \"comment\": \"Pass\", \"feedback\": \"OK\"}";
 
         mockLlm.setResponseSequence(new String[] {
+            expansionJson, // Intent Expansion Phase 1
             "{}", // Initial adaptive analysis (no history yet)
             variantJson, // Darwin variants
             "public class Validator { }", // Content generation (Planner skipped as actions are structured)
@@ -164,10 +167,13 @@ public class DarwinEvolutionTest {
         mockLlm.addResponseMapping("Reviewer", "{\"success\": true, \"comment\": \"Pass\", \"feedback\": \"OK\"}");
         mockLlm.addResponseMapping("Role: File", "Update readme content");
 
+        String expansionJson = "{\"dimensions\": [], \"hypotheses\": [{\"id\": \"h1\", \"description\": \"Refactor\", \"confidence\": 0.9}], \"confidence\": {\"overallConfidence\": 0.9}}";
+        String evalFail = "{\"success\": false, \"comment\": \"Fail\", \"feedback\": \"BROKEN\"}";
+        String evalSuccess = "{\"success\": true, \"comment\": \"Pass\", \"feedback\": \"OK\"}";
+
         // We use sequence to provide different Darwin Engine responses for iteration 1 and 2
         mockLlm.setResponseSequence(new String[] {
-            failVariant,     // Iteration 1 Darwin Engine
-            successVariant   // Iteration 2 Darwin Engine
+            expansionJson, // Intent Expansion Phase 1
             "{}", // Adaptive analysis iteration 1
             failVariant, // Darwin proposes risky
             "delete pom", // Content (variant 1)
