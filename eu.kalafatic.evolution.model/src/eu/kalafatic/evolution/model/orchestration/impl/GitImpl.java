@@ -131,6 +131,92 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 	protected String testStatus = TEST_STATUS_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getBranchName() <em>Branch Name</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getBranchName()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String BRANCH_NAME_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getBranchName() <em>Branch Name</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getBranchName()
+	 * @generated
+	 * @ordered
+	 */
+	protected String branchName = BRANCH_NAME_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getCommitMsg() <em>Commit Msg</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getCommitMsg()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String COMMIT_MSG_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getCommitMsg() <em>Commit Msg</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getCommitMsg()
+	 * @generated
+	 * @ordered
+	 */
+	protected String commitMsg = COMMIT_MSG_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getBranchName() {
+		return branchName;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setBranchName(String newBranchName) {
+		String oldBranchName = branchName;
+		branchName = newBranchName;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GIT__BRANCH_NAME, oldBranchName, branchName));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getCommitMsg() {
+		return commitMsg;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setCommitMsg(String newCommitMsg) {
+		String oldCommitMsg = commitMsg;
+		commitMsg = newCommitMsg;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GIT__COMMIT_MSG, oldCommitMsg, commitMsg));
+	}
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -282,6 +368,10 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 				return getLocalPath();
 			case OrchestrationPackage.GIT__TEST_STATUS:
 				return getTestStatus();
+			case OrchestrationPackage.GIT__BRANCH_NAME:
+				return getBranchName();
+			case OrchestrationPackage.GIT__COMMIT_MSG:
+				return getCommitMsg();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -308,6 +398,12 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 				return;
 			case OrchestrationPackage.GIT__TEST_STATUS:
 				setTestStatus((String)newValue);
+				return;
+			case OrchestrationPackage.GIT__BRANCH_NAME:
+				setBranchName((String)newValue);
+				return;
+			case OrchestrationPackage.GIT__COMMIT_MSG:
+				setCommitMsg((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -336,6 +432,12 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 			case OrchestrationPackage.GIT__TEST_STATUS:
 				setTestStatus(TEST_STATUS_EDEFAULT);
 				return;
+			case OrchestrationPackage.GIT__BRANCH_NAME:
+				setBranchName(BRANCH_NAME_EDEFAULT);
+				return;
+			case OrchestrationPackage.GIT__COMMIT_MSG:
+				setCommitMsg(COMMIT_MSG_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -358,6 +460,10 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 				return LOCAL_PATH_EDEFAULT == null ? localPath != null : !LOCAL_PATH_EDEFAULT.equals(localPath);
 			case OrchestrationPackage.GIT__TEST_STATUS:
 				return TEST_STATUS_EDEFAULT == null ? testStatus != null : !TEST_STATUS_EDEFAULT.equals(testStatus);
+			case OrchestrationPackage.GIT__BRANCH_NAME:
+				return BRANCH_NAME_EDEFAULT == null ? branchName != null : !BRANCH_NAME_EDEFAULT.equals(branchName);
+			case OrchestrationPackage.GIT__COMMIT_MSG:
+				return COMMIT_MSG_EDEFAULT == null ? commitMsg != null : !COMMIT_MSG_EDEFAULT.equals(commitMsg);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -382,6 +488,10 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 		result.append(localPath);
 		result.append(", testStatus: ");
 		result.append(testStatus);
+		result.append(", branchName: ");
+		result.append(branchName);
+		result.append(", commitMsg: ");
+		result.append(commitMsg);
 		result.append(')');
 		return result.toString();
 	}

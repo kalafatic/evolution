@@ -49,7 +49,13 @@ public class AiFlowPage extends Composite {
 		public void notifyChanged(Notification notification) {
 			super.notifyChanged(notification);
 			if (notification.isTouch()) return;
-			refreshBrowser();
+
+			// Only refresh on actual data changes to avoid loops
+			int type = notification.getEventType();
+			if (type == Notification.SET || type == Notification.ADD || type == Notification.REMOVE
+					|| type == Notification.ADD_MANY || type == Notification.REMOVE_MANY) {
+				refreshBrowser();
+			}
 		}
 	};
 
@@ -176,9 +182,10 @@ public class AiFlowPage extends Composite {
 			if (browser == null || browser.isDisposed()) return;
 
 			String json = getModelAsJson();
-			if (json.equals(lastJson) && isLoaded) return; // No change, avoid update
+			if (json.equals(lastJson)) return; // Always update lastJson even if not loaded yet
 
 			if (!isLoaded) {
+				lastJson = json;
 				// Only set text if not already loading to avoid "blinking"
 				if (browser.getUrl() == null || browser.getUrl().isEmpty() || browser.getUrl().equals("about:blank")) {
 					browser.setText(getHtmlTemplate());
@@ -196,6 +203,7 @@ public class AiFlowPage extends Composite {
 					// If template is lost, set it again, but only if not already loading
 					if (browser.getUrl() == null || browser.getUrl().isEmpty() || browser.getUrl().equals("about:blank")) {
 						isLoaded = false;
+						lastJson = json;
 						browser.setText(getHtmlTemplate());
 					}
 				}

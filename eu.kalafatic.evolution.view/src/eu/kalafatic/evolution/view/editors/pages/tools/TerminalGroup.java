@@ -33,7 +33,7 @@ public class TerminalGroup extends AToolGroup {
 
     // @evo:13:A reason=fill-terminal-group
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Terminal", 1, true, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Terminal", 1, false, true);
 
         outputText = new Text(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
         outputText.setLayoutData(new GridData(GridData.FILL_BOTH));

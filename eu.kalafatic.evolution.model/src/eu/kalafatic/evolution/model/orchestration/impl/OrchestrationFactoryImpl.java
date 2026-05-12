@@ -46,6 +46,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
+import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.SessionType;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
@@ -139,10 +140,22 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.REVIEW_SESSION: return createReviewSession();
 			case OrchestrationPackage.CHAT_SESSION: return createChatSession();
 			case OrchestrationPackage.CHAT_MESSAGE: return createChatMessage();
+			case OrchestrationPackage.SUPERVISOR_SETTINGS: return createSupervisorSettings();
 			case OrchestrationPackage.PROMPT_INSTRUCTIONS: return createPromptInstructions();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public SupervisorSettings createSupervisorSettings() {
+		SupervisorSettingsImpl supervisorSettings = new SupervisorSettingsImpl();
+		return supervisorSettings;
 	}
 
 	/**

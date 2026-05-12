@@ -736,13 +736,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__MONITORING_HISTORY = 29;
 
 	/**
+	 * The feature id for the '<em><b>Supervisor Settings</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__SUPERVISOR_SETTINGS = 30;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 30;
+	int ORCHESTRATOR_FEATURE_COUNT = 31;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -1164,13 +1173,31 @@ public interface OrchestrationPackage extends EPackage {
 	int GIT__TEST_STATUS = 4;
 
 	/**
+	 * The feature id for the '<em><b>Branch Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GIT__BRANCH_NAME = 5;
+
+	/**
+	 * The feature id for the '<em><b>Commit Msg</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GIT__COMMIT_MSG = 6;
+
+	/**
 	 * The number of structural features of the '<em>Git</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int GIT_FEATURE_COUNT = 5;
+	int GIT_FEATURE_COUNT = 7;
 
 	/**
 	 * The number of operations of the '<em>Git</em>' class.
@@ -3018,6 +3045,43 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_MESSAGE_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl <em>Supervisor Settings</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSupervisorSettings()
+	 * @generated
+	 */
+	int SUPERVISOR_SETTINGS = 35;
+
+	/**
+	 * The feature id for the '<em><b>Executable Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__EXECUTABLE_PATH = 0;
+
+	/**
+	 * The feature id for the '<em><b>Deployed</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__DEPLOYED = 1;
+
+	/**
+	 * The number of structural features of the '<em>Supervisor Settings</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS_FEATURE_COUNT = 2;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl <em>Prompt Instructions</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3025,7 +3089,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getPromptInstructions()
 	 * @generated
 	 */
-	int PROMPT_INSTRUCTIONS = 35;
+	int PROMPT_INSTRUCTIONS = 36;
 
 	/**
 	 * The feature id for the '<em><b>Auto Approve</b></em>' attribute.
@@ -4411,6 +4475,28 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getGit_TestStatus();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Git#getBranchName <em>Branch Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Branch Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Git#getBranchName()
+	 * @see #getGit()
+	 * @generated
+	 */
+	EAttribute getGit_BranchName();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Git#getCommitMsg <em>Commit Msg</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Commit Msg</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Git#getCommitMsg()
+	 * @see #getGit()
+	 * @generated
+	 */
+	EAttribute getGit_CommitMsg();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Maven <em>Maven</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -4808,6 +4894,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getEvoProject_Orchestrations();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSupervisorSettings <em>Supervisor Settings</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Supervisor Settings</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getSupervisorSettings()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_SupervisorSettings();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Rule <em>Rule</em>}'.
@@ -5913,6 +6010,38 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getChatMessage_Timestamp();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings <em>Supervisor Settings</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Supervisor Settings</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings
+	 * @generated
+	 */
+	EClass getSupervisorSettings();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getExecutablePath <em>Executable Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Executable Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getExecutablePath()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EAttribute getSupervisorSettings_ExecutablePath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#isDeployed <em>Deployed</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Deployed</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#isDeployed()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EAttribute getSupervisorSettings_Deployed();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions <em>Prompt Instructions</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -6716,6 +6845,14 @@ public interface OrchestrationPackage extends EPackage {
 		EReference ORCHESTRATOR__MONITORING_HISTORY = eINSTANCE.getOrchestrator_MonitoringHistory();
 
 		/**
+		 * The meta object literal for the '<em><b>Supervisor Settings</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__SUPERVISOR_SETTINGS = eINSTANCE.getOrchestrator_SupervisorSettings();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl <em>Server Settings</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -7020,6 +7157,22 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute GIT__TEST_STATUS = eINSTANCE.getGit_TestStatus();
+
+		/**
+		 * The meta object literal for the '<em><b>Branch Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GIT__BRANCH_NAME = eINSTANCE.getGit_BranchName();
+
+		/**
+		 * The meta object literal for the '<em><b>Commit Msg</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GIT__COMMIT_MSG = eINSTANCE.getGit_CommitMsg();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MavenImpl <em>Maven</em>}' class.
@@ -8186,6 +8339,32 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_MESSAGE__TIMESTAMP = eINSTANCE.getChatMessage_Timestamp();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl <em>Supervisor Settings</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSupervisorSettings()
+		 * @generated
+		 */
+		EClass SUPERVISOR_SETTINGS = eINSTANCE.getSupervisorSettings();
+
+		/**
+		 * The meta object literal for the '<em><b>Executable Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SUPERVISOR_SETTINGS__EXECUTABLE_PATH = eINSTANCE.getSupervisorSettings_ExecutablePath();
+
+		/**
+		 * The meta object literal for the '<em><b>Deployed</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SUPERVISOR_SETTINGS__DEPLOYED = eINSTANCE.getSupervisorSettings_Deployed();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl <em>Prompt Instructions</em>}' class.

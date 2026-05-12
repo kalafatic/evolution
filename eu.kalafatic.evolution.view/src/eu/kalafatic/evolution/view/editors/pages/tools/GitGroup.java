@@ -133,6 +133,8 @@ public class GitGroup extends AToolGroup {
             gitRepoText.setText(git.getRepositoryUrl() != null ? git.getRepositoryUrl() : "");
             gitBranchText.setText(git.getBranch() != null ? git.getBranch() : "");
             gitLocalPathText.setText(git.getLocalPath() != null ? git.getLocalPath() : "");
+            branchNameText.setText(git.getBranchName() != null ? git.getBranchName() : "");
+            commitMsgText.setText(git.getCommitMsg() != null ? git.getCommitMsg() : "");
             updateGroupStatus();
         }
     }
@@ -146,6 +148,8 @@ public class GitGroup extends AToolGroup {
         git.setRepositoryUrl(gitRepoText.getText());
         git.setBranch(gitBranchText.getText());
         git.setLocalPath(gitLocalPathText.getText());
+        git.setBranchName(branchNameText.getText());
+        git.setCommitMsg(commitMsgText.getText());
     }
 
     @Override

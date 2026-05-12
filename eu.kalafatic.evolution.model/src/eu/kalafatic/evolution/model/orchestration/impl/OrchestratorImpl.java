@@ -20,6 +20,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
+import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
 
@@ -77,6 +78,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getServerSettings <em>Server Settings</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getServerSessions <em>Server Sessions</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMonitoringHistory <em>Monitoring History</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getSupervisorSettings <em>Supervisor Settings</em>}</li>
  * </ul>
  *
  * @generated
@@ -501,6 +503,61 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected EList<MonitoringData> monitoringHistory;
+
+	/**
+	 * The cached value of the '{@link #getSupervisorSettings() <em>Supervisor Settings</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 * @ordered
+	 */
+	protected SupervisorSettings supervisorSettings;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public SupervisorSettings getSupervisorSettings() {
+		return supervisorSettings;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetSupervisorSettings(SupervisorSettings newSupervisorSettings, NotificationChain msgs) {
+		SupervisorSettings oldSupervisorSettings = supervisorSettings;
+		supervisorSettings = newSupervisorSettings;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, oldSupervisorSettings, newSupervisorSettings);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSupervisorSettings(SupervisorSettings newSupervisorSettings) {
+		if (newSupervisorSettings != supervisorSettings) {
+			NotificationChain msgs = null;
+			if (supervisorSettings != null)
+				msgs = ((InternalEObject)supervisorSettings).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, null, msgs);
+			if (newSupervisorSettings != null)
+				msgs = ((InternalEObject)newSupervisorSettings).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, null, msgs);
+			msgs = basicSetSupervisorSettings(newSupervisorSettings, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, newSupervisorSettings, newSupervisorSettings));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1459,6 +1516,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return ((InternalEList<?>)getServerSessions()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				return ((InternalEList<?>)getMonitoringHistory()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
+				return basicSetSupervisorSettings(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1531,6 +1590,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getServerSessions();
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				return getMonitoringHistory();
+			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
+				return getSupervisorSettings();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1640,6 +1701,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				getMonitoringHistory().clear();
 				getMonitoringHistory().addAll((Collection<? extends MonitoringData>)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
+				setSupervisorSettings((SupervisorSettings)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1742,6 +1806,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				getMonitoringHistory().clear();
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
+				setSupervisorSettings((SupervisorSettings)null);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1814,6 +1881,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return serverSessions != null && !serverSessions.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
 				return monitoringHistory != null && !monitoringHistory.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
+				return supervisorSettings != null;
 		}
 		return super.eIsSet(featureID);
 	}

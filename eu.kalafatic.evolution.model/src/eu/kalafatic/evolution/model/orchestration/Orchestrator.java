@@ -657,4 +657,26 @@ public interface Orchestrator extends EObject {
 	 */
 	EList<MonitoringData> getMonitoringHistory();
 
+	/**
+	 * Returns the value of the '<em><b>Supervisor Settings</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Supervisor Settings</em>' containment reference.
+	 * @see #setSupervisorSettings(SupervisorSettings)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_SupervisorSettings()
+	 * @model containment="true"
+	 * @generated
+	 */
+	SupervisorSettings getSupervisorSettings();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSupervisorSettings <em>Supervisor Settings</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Supervisor Settings</em>' containment reference.
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	void setSupervisorSettings(SupervisorSettings value);
+
 } // Orchestrator
