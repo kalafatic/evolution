@@ -3,6 +3,11 @@ package eu.kalafatic.evolution.controller.agents;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
+import eu.kalafatic.evolution.controller.orchestration.evolution.SignalSeverity;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 /**
  * Specialized agent for architectural constraint verification.
@@ -63,6 +68,34 @@ public class ConstraintAgent extends BaseAiAgent {
         }
 
         context.log("ConstraintAgent: Compliance for '" + taskDescription + "': success=" + evaluation.optBoolean("success") + ", comment=" + evaluation.optString("comment"));
+
+        // Emit Evaluation Signal
+        emitSignal(evaluation, taskDescription, context);
+
         return evaluation;
+    }
+
+    private void emitSignal(JSONObject evaluation, String taskDescription, TaskContext context) {
+        String variantId = context.getMetadata().getOrDefault("variantId", "unknown").toString();
+        boolean success = evaluation.optBoolean("success", false);
+        double score = success ? 1.0 : 0.0;
+        SignalSeverity severity = success ? SignalSeverity.INFO : SignalSeverity.WARNING;
+        String explanation = evaluation.optString("feedback", evaluation.optString("comment", "No explanation"));
+
+        EvaluationSignal signal = new EvaluationSignal(
+            variantId,
+            "ConstraintAgent",
+            score,
+            0.9, // high confidence for architectural rules
+            severity,
+            explanation
+        );
+
+        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+            RuntimeEventType.EVALUATION_SIGNAL_CREATED,
+            context.getSessionId(),
+            "ConstraintAgent",
+            signal
+        ).withMetadata("task", taskDescription));
     }
 }

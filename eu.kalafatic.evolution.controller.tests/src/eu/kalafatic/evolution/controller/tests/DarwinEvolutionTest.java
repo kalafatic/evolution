@@ -55,6 +55,10 @@ public class DarwinEvolutionTest {
         shell.execute("git config user.email \"test@example.com\"", tempDir, initContext);
         shell.execute("git config user.name \"Test User\"", tempDir, initContext);
         Files.writeString(new File(tempDir, "pom.xml").toPath(), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>test</artifactId><version>1.0</version></project>");
+
+        // Initialize best practices to avoid untracked file conflicts during merge
+        new eu.kalafatic.evolution.controller.services.BestPracticesService(initContext.getOrchestrator(), tempDir);
+
         shell.execute("git add .", tempDir, initContext);
         shell.execute("git commit -m \"Initial commit\"", tempDir, initContext);
         orchestrator.setId("darwin-orch");
@@ -102,6 +106,14 @@ public class DarwinEvolutionTest {
         mockLlm.addResponseMapping("TaskPlanner", "[{\"id\": \"t1\", \"name\": \"Write src/Validator.java\", \"taskType\": \"file\"}]");
         mockLlm.addResponseMapping("Role: File", "public class Validator { }");
         mockLlm.addResponseMapping("Reviewer", "{\"success\": true, \"comment\": \"Pass\", \"feedback\": \"OK\"}");
+        String evalSuccess = "{\"success\": true, \"comment\": \"Pass\", \"feedback\": \"OK\"}";
+
+        mockLlm.setResponseSequence(new String[] {
+            "{}", // Initial adaptive analysis (no history yet)
+            variantJson, // Darwin variants
+            "public class Validator { }", // Content generation (Planner skipped as actions are structured)
+            evalSuccess  // Evaluator
+        });
 
         SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
             @Override
@@ -156,6 +168,14 @@ public class DarwinEvolutionTest {
         mockLlm.setResponseSequence(new String[] {
             failVariant,     // Iteration 1 Darwin Engine
             successVariant   // Iteration 2 Darwin Engine
+            "{}", // Adaptive analysis iteration 1
+            failVariant, // Darwin proposes risky
+            "delete pom", // Content (variant 1)
+            evalFail,    // Evaluator fails it
+            "{}", // Adaptive analysis iteration 2 (after failure)
+            successVariant, // Darwin proposes safe
+            "Update readme", // Content (variant 2)
+            evalSuccess  // Evaluator passes it
         });
 
         SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context) {
@@ -167,7 +187,7 @@ public class DarwinEvolutionTest {
         supervisor.startSession();
 
         List<String> logs = context.getLogs();
-        boolean historyFound = logs.stream().anyMatch(l -> l.contains("[DARWIN] History Analysis"));
+        boolean historyFound = logs.stream().anyMatch(l -> l.contains("[DARWIN] History Analysis (Filtered by Activation Gate):"));
         assertTrue("Should contain history analysis in logs", historyFound);
     }
 
