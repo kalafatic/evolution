@@ -14,10 +14,12 @@ import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationGate;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
+import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
 import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
@@ -234,15 +236,32 @@ public class DarwinFlow implements IOrchestrationFlow {
             .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context), variantExecutor))
             .collect(Collectors.toList());
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        // Signal-Based Authority: The orchestrator processes signals to determine the best variant
         BranchVariant bestVariant = null;
         double bestScore = -1.0;
         for (CompletableFuture<BranchVariant> future : futures) {
             BranchVariant variant = future.join();
+
+            // In a full implementation, we would subscribe to the event bus here
+            // and collect EvaluationSignal objects. For this foundational refactor,
+            // we use the score that the Evaluator computed and included in the signal
+            // (which was also set on the variant for backward compatibility during migration).
+
             if (variant.getScore() > bestScore) {
                 bestScore = variant.getScore();
                 bestVariant = variant;
             }
         }
+
+        if (bestVariant != null) {
+            eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+                new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                    eu.kalafatic.evolution.controller.workflow.RuntimeEventType.VARIANT_EVALUATED,
+                    context.getSessionId(), "Authority", bestVariant.getId())
+                    .withMetadata("score", bestVariant.getScore()));
+        }
+
         return bestVariant;
     }
 
@@ -252,18 +271,27 @@ public class DarwinFlow implements IOrchestrationFlow {
             tempDir = Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
             manager.getGitManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
             TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
+            variantContext.getMetadata().put("variantId", variant.getId());
             variantContext.setPlatformMode(context.getPlatformMode());
             variantContext.setAutoApprove(true);
             variantContext.setAiService(aiService);
             List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
             IterationManager variantManager = KernelFactory.create(variantContext, aiService);
             boolean success = variantManager.executeTasksWithRetries(tasks);
+            if (success) {
+                variantManager.getGitManager().commit("Variant " + variant.getId() + " execution");
+            }
             variant.setSuccess(success);
             // Context Authority: Use a variant-specific evaluator bound to the temporary worktree
             Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
             EvaluationResult result = variantEvaluator.evaluate();
             variant.setSuccess(result.isSuccess());
+
+            // The score is now produced via EvaluationSignal in Evaluator.emitSignal
+            // For backward compatibility during this foundational step, we still set it on the variant,
+            // but the source of truth for the logic is now mirrored in the signal.
             variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
+
             return variant;
         } catch (Exception e) {
             variant.setScore(0.0);

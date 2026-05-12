@@ -21,6 +21,9 @@ public class KernelFactory {
         GitManager gitManager = new GitManager(context.getProjectRoot(), context);
         TaskPlanner taskPlanner = new TaskPlanner();
         TaskExecutor taskExecutor = new TaskExecutor(context, context.getOrchestrator());
+        if (taskExecutor.getOrchestrator() != null) {
+            taskExecutor.getOrchestrator().setAiService(aiService);
+        }
         Evaluator evaluator = new Evaluator(context.getProjectRoot(), context);
         IterationMemoryService memoryService = new IterationMemoryService(context.getProjectRoot());
         SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(context.getProjectRoot(), context);

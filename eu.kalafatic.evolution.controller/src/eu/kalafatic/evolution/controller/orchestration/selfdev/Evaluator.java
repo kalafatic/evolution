@@ -5,6 +5,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
+import eu.kalafatic.evolution.controller.orchestration.evolution.SignalSeverity;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.tools.MavenTool;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,10 +83,37 @@ public class Evaluator {
         }
 
         if (context != null) context.log("[EVALUATOR] Evaluation finished. Success: " + result.isSuccess() + ", Decision: " + result.getDecision());
+
+        // Emit Standardized Evaluation Signal
+        emitSignal(result, snapshot);
+
         Evaluation eval = new Evaluation();
         eval.result = result;
         eval.snapshot = snapshot;
         return eval;
+    }
+
+    private void emitSignal(EvaluationResult result, StateSnapshot snapshot) {
+        String variantId = context.getMetadata().getOrDefault("variantId", "unknown").toString();
+        double score = result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5;
+        SignalSeverity severity = result.isSuccess() ? SignalSeverity.INFO : (result.getTestPassRate() > 0 ? SignalSeverity.WARNING : SignalSeverity.CRITICAL);
+        String explanation = result.isSuccess() ? "Build and tests passed." : "Build or tests failed. " + String.join(", ", result.getErrors());
+
+        EvaluationSignal signal = new EvaluationSignal(
+            variantId,
+            "MavenEvaluator",
+            score,
+            1.0, // Confidence for deterministic maven evaluation
+            severity,
+            explanation
+        );
+
+        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+            RuntimeEventType.EVALUATION_SIGNAL_CREATED,
+            context.getSessionId(),
+            "MavenEvaluator",
+            signal
+        ));
     }
 
     private List<StateSnapshot.ErrorType> parseErrorTypes(String output) {

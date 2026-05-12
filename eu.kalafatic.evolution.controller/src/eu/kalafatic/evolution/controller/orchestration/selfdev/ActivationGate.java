@@ -3,6 +3,11 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
+import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
+import eu.kalafatic.evolution.controller.orchestration.evolution.SignalSeverity;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 /**
  * Pure recommendation layer for Darwin branch activation.
@@ -38,6 +43,12 @@ public class ActivationGate {
             double semanticAlign = 0.9; // Placeholder for semantic analysis
             String rationale = determineRationale(v, i + 1);
 
+            // Emit Semantic Alignment Signal
+            emitSemanticSignal(v, semanticAlign);
+
+            // Emit Complexity Signal (Placeholder)
+            emitComplexitySignal(v);
+
             recommendations.add(new ActivationRecommendation(
                 v.getId(),
                 confidence,
@@ -49,6 +60,46 @@ public class ActivationGate {
         }
 
         return recommendations;
+    }
+
+    private void emitSemanticSignal(BranchVariant v, double semanticAlign) {
+        EvaluationSignal signal = new EvaluationSignal(
+            v.getId(),
+            "SemanticAnalyzer",
+            semanticAlign,
+            0.7, // confidence
+            SignalSeverity.INFO,
+            "Semantic alignment score for variant strategy: " + v.getStrategy()
+        );
+
+        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+            RuntimeEventType.EVALUATION_SIGNAL_CREATED,
+            "system",
+            "SemanticAnalyzer",
+            signal
+        ));
+    }
+
+    private void emitComplexitySignal(BranchVariant v) {
+        // Placeholder complexity calculation
+        double complexityScore = 1.0 - (v.getActions().size() * 0.1);
+        complexityScore = Math.max(0.1, complexityScore);
+
+        EvaluationSignal signal = new EvaluationSignal(
+            v.getId(),
+            "ComplexityScorer",
+            complexityScore,
+            0.6, // confidence
+            SignalSeverity.INFO,
+            "Calculated complexity based on action count: " + v.getActions().size()
+        );
+
+        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+            RuntimeEventType.EVALUATION_SIGNAL_CREATED,
+            "system",
+            "ComplexityScorer",
+            signal
+        ));
     }
 
     private String determineRationale(BranchVariant v, int rank) {

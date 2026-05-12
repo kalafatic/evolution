@@ -49,6 +49,10 @@ public class DarwinEvolutionTest {
         shell.execute("git config user.email \"test@example.com\"", tempDir, initContext);
         shell.execute("git config user.name \"Test User\"", tempDir, initContext);
         Files.writeString(new File(tempDir, "pom.xml").toPath(), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>test</artifactId><version>1.0</version></project>");
+
+        // Initialize best practices to avoid untracked file conflicts during merge
+        new eu.kalafatic.evolution.controller.services.BestPracticesService(initContext.getOrchestrator(), tempDir);
+
         shell.execute("git add .", tempDir, initContext);
         shell.execute("git commit -m \"Initial commit\"", tempDir, initContext);
 
@@ -97,9 +101,9 @@ public class DarwinEvolutionTest {
         String evalSuccess = "{\"success\": true, \"comment\": \"Pass\", \"feedback\": \"OK\"}";
 
         mockLlm.setResponseSequence(new String[] {
+            "{}", // Initial adaptive analysis (no history yet)
             variantJson, // Darwin variants
-            "[{\"id\": \"t1\", \"name\": \"Write src/Validator.java\", \"taskType\": \"file\"}]", // Planner tasks for variant
-            "public class Validator { }", // Content generation
+            "public class Validator { }", // Content generation (Planner skipped as actions are structured)
             evalSuccess  // Evaluator
         });
 
@@ -146,13 +150,13 @@ public class DarwinEvolutionTest {
             "]";
 
         mockLlm.setResponseSequence(new String[] {
+            "{}", // Adaptive analysis iteration 1
             failVariant, // Darwin proposes risky
-            "[{\"id\": \"t1\", \"name\": \"Delete pom.xml\", \"taskType\": \"file\"}]", // Planner for variant 1
-            "delete pom", // Content
+            "delete pom", // Content (variant 1)
             evalFail,    // Evaluator fails it
+            "{}", // Adaptive analysis iteration 2 (after failure)
             successVariant, // Darwin proposes safe
-            "[{\"id\": \"t2\", \"name\": \"Write README.md\", \"taskType\": \"file\"}]", // Planner for variant 2
-            "Update readme", // Content
+            "Update readme", // Content (variant 2)
             evalSuccess  // Evaluator passes it
         });
 
@@ -165,7 +169,7 @@ public class DarwinEvolutionTest {
         supervisor.startSession();
 
         List<String> logs = context.getLogs();
-        boolean historyFound = logs.stream().anyMatch(l -> l.contains("[DARWIN] History Analysis:"));
+        boolean historyFound = logs.stream().anyMatch(l -> l.contains("[DARWIN] History Analysis (Filtered by Activation Gate):"));
         assertTrue("Should contain history analysis in logs", historyFound);
     }
 
