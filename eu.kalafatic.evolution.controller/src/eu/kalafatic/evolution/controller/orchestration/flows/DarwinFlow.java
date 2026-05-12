@@ -313,6 +313,11 @@ public class DarwinFlow implements IOrchestrationFlow {
                 variantManager.getGitManager().commit("Variant " + variant.getId() + " execution");
             }
             variant.setSuccess(success);
+
+            if (success) {
+                variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy());
+            }
+
             // Context Authority: Use a variant-specific evaluator bound to the temporary worktree
             Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
             EvaluationResult result = variantEvaluator.evaluate();
