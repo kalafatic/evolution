@@ -56,6 +56,7 @@ public class KernelUnitTest {
 
         context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);
+        context.getMetadata().put("testMode", true);
 
         // Initialize as git repo for tests that require it or to avoid failure in repository-first reasoning
         eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();

@@ -64,6 +64,8 @@ public class DecisionResolver {
         // APPLY THE DECISION (AUTHORITY)
         applyDecision(decision, variants, context);
 
+        context.getOrchestrationState().getMetadata().put("lastDecisionSnapshot", decision);
+
         return decision;
     }
 
