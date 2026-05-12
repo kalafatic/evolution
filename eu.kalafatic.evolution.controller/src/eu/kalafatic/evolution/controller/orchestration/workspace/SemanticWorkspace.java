@@ -10,17 +10,75 @@ import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrac
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
+import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IWorkspaceContract;
+import java.util.Collections;
 
 /**
  * Persistent reasoning environment for the orchestration kernel.
  * Maintains semantic context state and tracks active trajectories.
  */
-public class SemanticWorkspace {
+public class SemanticWorkspace implements ICapability, IWorkspaceContract {
     private final Map<String, WorkspaceArtifact> artifacts = new ConcurrentHashMap<>();
     private final TrajectoryMemory trajectoryMemory = new TrajectoryMemory();
+    private CapabilityStatus status = CapabilityStatus.STOPPED;
 
     // Decay constant
     private static final double DECAY_FACTOR = 0.95;
+
+    @Override
+    public String getCapabilityId() {
+        return "capability.workspace";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public CapabilityStatus getStatus() {
+        return status;
+    }
+
+    @Override
+    public void initialize(CapabilityContext context) throws CapabilityException {
+        status = CapabilityStatus.INITIALIZED;
+    }
+
+    @Override
+    public void start() throws CapabilityException {
+        status = CapabilityStatus.STARTED;
+    }
+
+    @Override
+    public void stop() throws CapabilityException {
+        status = CapabilityStatus.STOPPED;
+    }
+
+    @Override
+    public List<String> getSupportedContracts() {
+        return Collections.singletonList(IWorkspaceContract.ID);
+    }
+
+    @Override
+    public List<String> getDependencies() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public CapabilityHealth getHealth() {
+        return new CapabilityHealth(1.0, "Healthy", 0);
+    }
+
+    @Override
+    public List<WorkspaceArtifact> getArtifactsByTag(String tag) {
+        return findArtifactsByTag(tag);
+    }
 
     public void addArtifact(WorkspaceArtifact artifact) {
         artifacts.put(artifact.getArtifactId(), artifact);

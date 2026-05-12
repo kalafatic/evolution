@@ -39,8 +39,15 @@ import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
+import java.util.Collections;
 
-public class DarwinEngine extends BaseAiAgent {
+public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationContract {
     private final TaskContext context;
     private final IterationMemoryService memoryService;
     private final SystemStateSignalProvider stateProvider;
@@ -50,6 +57,7 @@ public class DarwinEngine extends BaseAiAgent {
 
     private final PolicyResolver policyResolver = new PolicyResolver();
     private final PromptComposer promptComposer = new PromptComposer();
+    private CapabilityStatus status = CapabilityStatus.STOPPED;
 
     public DarwinEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
         super("DarwinEngine", "DarwinEngine");
@@ -62,6 +70,51 @@ public class DarwinEngine extends BaseAiAgent {
     public void setAiService(eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
         super.setAiService(aiService);
         rejectionAnalyzer.setAiService(aiService);
+    }
+
+    @Override
+    public String getCapabilityId() {
+        return "capability.mutation";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public CapabilityStatus getStatus() {
+        return status;
+    }
+
+    @Override
+    public void initialize(CapabilityContext context) throws CapabilityException {
+        status = CapabilityStatus.INITIALIZED;
+    }
+
+    @Override
+    public void start() throws CapabilityException {
+        status = CapabilityStatus.STARTED;
+    }
+
+    @Override
+    public void stop() throws CapabilityException {
+        status = CapabilityStatus.STOPPED;
+    }
+
+    @Override
+    public List<String> getSupportedContracts() {
+        return Collections.singletonList(IMutationContract.ID);
+    }
+
+    @Override
+    public List<String> getDependencies() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public CapabilityHealth getHealth() {
+        return new CapabilityHealth(1.0, "Healthy", 0);
     }
 
     @Override

@@ -13,6 +13,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.*;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISchedulingContract;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IEvaluationContract;
 import eu.kalafatic.evolution.controller.orchestration.intent.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
@@ -41,7 +44,6 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
  */
 public class DarwinFlow implements IOrchestrationFlow {
     private static final ExecutorService variantExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
-    private final KernelScheduler scheduler = new KernelScheduler();
     private final AiService aiService;
     private final IterationManager manager;
 
@@ -130,12 +132,15 @@ public class DarwinFlow implements IOrchestrationFlow {
             ));
 
             // Kernel Scheduling Layer
+            ISchedulingContract scheduler = CapabilityRegistry.getInstance().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
             ScheduledExecutionPlan executionPlan = scheduler.schedule(rawVariants, context);
             context.log("[KERNEL] Scheduler decision: " + executionPlan.getDecisionReason());
             List<BranchVariant> variants = executionPlan.getScheduledVariants();
             context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
             eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().setBudget(executionPlan.getAppliedBudget());
-            scheduler.getBackpressure().resetCounters();
+            if (scheduler instanceof KernelScheduler) {
+                ((KernelScheduler)scheduler).getBackpressure().resetCounters();
+            }
 
             // Publish variants for the graph
             JSONArray variantsJson = new JSONArray();
@@ -267,7 +272,8 @@ public class DarwinFlow implements IOrchestrationFlow {
             manager.getGitManager().forceCheckout(originalBranch);
             manager.getGitManager().merge(selectedVariant.getBranchName());
             manager.transition(SystemState.VERIFYING, context);
-            EvaluationResult result = manager.getEvaluator().evaluate();
+            IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
+            EvaluationResult result = evaluator.evaluate(context.getProjectRoot(), context, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
 
             if (result.isSuccess()) {
                 String completedPhase = state.getCurrentPhase();
@@ -307,13 +313,18 @@ public class DarwinFlow implements IOrchestrationFlow {
         eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().subscribe(signalListener);
 
         try {
+            ISchedulingContract scheduler = CapabilityRegistry.getInstance().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
             List<CompletableFuture<BranchVariant>> futures = variants.stream()
                 .map(variant -> CompletableFuture.supplyAsync(() -> {
-                    scheduler.getBackpressure().incrementEvaluations();
+                    if (scheduler instanceof KernelScheduler) {
+                        ((KernelScheduler)scheduler).getBackpressure().incrementEvaluations();
+                    }
                     try {
                         return evaluateVariantParallel(variant, planner, context);
                     } finally {
-                        scheduler.getBackpressure().decrementEvaluations();
+                        if (scheduler instanceof KernelScheduler) {
+                            ((KernelScheduler)scheduler).getBackpressure().decrementEvaluations();
+                        }
                     }
                 }, variantExecutor))
                 .collect(Collectors.toList());
@@ -377,8 +388,8 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
 
             // Context Authority: Use a variant-specific evaluator bound to the temporary worktree
-            Evaluator variantEvaluator = new Evaluator(tempDir, variantContext);
-            EvaluationResult result = variantEvaluator.evaluate();
+            IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
+            EvaluationResult result = evaluator.evaluate(tempDir, variantContext, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
             variant.setSuccess(result.isSuccess());
 
             // The score is now produced via EvaluationSignal in Evaluator.emitSignal

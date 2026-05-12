@@ -1,5 +1,5 @@
 # AI Kernel Architecture
-## Experimental Darwin-Orchestrated AI Platform
+## Modular Capability and Plugin Platform
 
 ---
 
@@ -7,7 +7,7 @@
 
 The platform is not designed as a traditional chatbot.
 
-It is designed as a lightweight AI operating system kernel capable of:
+It is evolved into a modular capability platform capable of:
 
 - coordinating small local LLMs
 - supporting manual and automatic decision workflows
@@ -32,13 +32,13 @@ The system prioritizes:
 
 The architecture intentionally separates:
 
-| Layer | Responsibility |
-|---|---|
-| Darwin | generate possibilities |
-| Evaluators | compute signals |
-| Gate | rank proposals |
-| Kernel | decide winner |
-| Executor | apply selected branch |
+| Layer | Responsibility | Extension Model |
+|---|---|---|
+| Darwin | generate possibilities | `IMutationContract` |
+| Evaluators | compute signals | `IEvaluationContract` |
+| Gate | rank proposals | Internal logic |
+| Kernel | decide winner | `IResolverContract` |
+| Executor | apply selected branch | Core logic |
 
 ---
 

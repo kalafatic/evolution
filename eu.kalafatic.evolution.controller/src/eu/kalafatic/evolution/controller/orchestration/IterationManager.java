@@ -39,6 +39,8 @@ import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionEngine;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
@@ -123,6 +125,19 @@ public class IterationManager {
         this.evaluator = evaluator;
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
+
+        // Register Capabilities
+        try {
+            CapabilityRegistry.getInstance().register(evaluator);
+            CapabilityRegistry.getInstance().register(darwinEngine);
+            CapabilityRegistry.getInstance().register(context.getSemanticWorkspace());
+            CapabilityRegistry.getInstance().register(context.getOrchestrationState().getCognitiveTrace());
+            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.orchestration.scheduling.KernelScheduler());
+            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.orchestration.decision.ActivationResolver());
+        } catch (CapabilityException e) {
+            context.log("[KERNEL] Capability registration error: " + e.getMessage());
+        }
+
         this.intentService = new IntentService(aiService);
         this.intentExpansionEngine = new IntentExpansionEngine();
         this.intentExpansionEngine.setAiService(aiService);

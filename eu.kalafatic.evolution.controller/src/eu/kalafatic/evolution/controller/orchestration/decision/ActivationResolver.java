@@ -9,6 +9,13 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecomme
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.orchestration.scheduling.ScheduledExecutionPlan;
+import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IResolverContract;
+import java.util.Collections;
 
 /**
  * Central deterministic decision authority for Darwin branch activation.
@@ -20,7 +27,61 @@ import eu.kalafatic.evolution.controller.orchestration.scheduling.ScheduledExecu
  * - call LLMs
  * - generate variants
  */
-public class ActivationResolver {
+public class ActivationResolver implements ICapability, IResolverContract {
+
+    private CapabilityStatus status = CapabilityStatus.STOPPED;
+
+    @Override
+    public String getCapabilityId() {
+        return "capability.resolver";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public CapabilityStatus getStatus() {
+        return status;
+    }
+
+    @Override
+    public void initialize(CapabilityContext context) throws CapabilityException {
+        status = CapabilityStatus.INITIALIZED;
+    }
+
+    @Override
+    public void start() throws CapabilityException {
+        status = CapabilityStatus.STARTED;
+    }
+
+    @Override
+    public void stop() throws CapabilityException {
+        status = CapabilityStatus.STOPPED;
+    }
+
+    @Override
+    public List<String> getSupportedContracts() {
+        return Collections.singletonList(IResolverContract.ID);
+    }
+
+    @Override
+    public List<String> getDependencies() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public CapabilityHealth getHealth() {
+        return new CapabilityHealth(1.0, "Healthy", 0);
+    }
+
+    @Override
+    public void resolve(DecisionSnapshot snapshot) {
+        // Implementation for IResolverContract if needed,
+        // but existing resolve methods are more specific.
+        // For now, this is a placeholder to satisfy the contract.
+    }
 
     /**
      * Resolves the activation decision using a list of policies.
