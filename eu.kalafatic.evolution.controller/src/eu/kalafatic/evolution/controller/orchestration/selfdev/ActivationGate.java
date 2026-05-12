@@ -111,4 +111,11 @@ public class ActivationGate {
             return "Higher risk or experimental path.";
         }
     }
+
+    /**
+     * @return the default activation threshold for recommendations
+     */
+    public double getDefaultActivationThreshold() {
+        return DEFAULT_ACTIVATION_THRESHOLD;
+    }
 }

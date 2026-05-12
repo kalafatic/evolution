@@ -1,11 +1,13 @@
 package eu.kalafatic.evolution.controller.orchestration.flows;
 
+import java.util.Collections;
 import java.util.List;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -13,6 +15,7 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
+import eu.kalafatic.evolution.controller.orchestration.decision.*;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationGate;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
@@ -21,6 +24,9 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
 import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
@@ -121,14 +127,22 @@ public class DarwinFlow implements IOrchestrationFlow {
                 List<ActivationRecommendation> recommendations = activationGate.recommendActivations(variants);
                 recommendations.forEach(r -> context.log("[GATE] " + r.toString()));
 
-                // Decision Authority: Decision made by User based on recommendations
+                // Decision Authority: ActivationResolver handles user selection
+                ActivationResolver userResolver = new ActivationResolver();
+                List<ResolverPolicy> userPolicies = new ArrayList<>();
                 if (input.startsWith("Select ")) {
                     String selectedId = input.substring(7).trim();
+                    userPolicies.add(new ManualSelectionPolicy(selectedId));
+                }
+
+                DecisionSnapshot userDecision = userResolver.resolve(iterId, new ArrayList<>(), recommendations, userPolicies);
+                context.log("[KERNEL] Authority Decision (Mediated): " + userDecision.toString());
+
+                if (userDecision.getSelectedVariantId() != null) {
                     variants.forEach(v -> {
-                        if (v.getId().equals(selectedId)) {
+                        if (v.getId().equals(userDecision.getSelectedVariantId())) {
                             v.setActivationState(BranchVariant.ActivationState.ACTIVE);
                             v.setRank("winner");
-                            context.log("[KERNEL] Decision: Branch " + selectedId + " explicitly ACTIVATED by user.");
                         } else {
                             v.setActivationState(BranchVariant.ActivationState.INACTIVE);
                             v.setRank("runner-up");
@@ -176,17 +190,19 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.log("[KERNEL] Authority: No ACTIVE branches. Evaluating all proposals to determine best candidate for activation.");
                 selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context);
 
-                // Decision Authority: Mode Controller / Policy Layer
-                // ActivationGate only provides recommendations, it does NOT auto-activate.
-                if (!profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+                // Decision Authority: Use ActivationResolver for auto-activation policy
+                if (!profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && selectedVariant != null) {
                     List<ActivationRecommendation> recommendations = activationGate.recommendActivations(variants);
-                    ActivationRecommendation top = recommendations.isEmpty() ? null : recommendations.get(0);
+                    ActivationResolver autoResolver = new ActivationResolver();
+                    List<ResolverPolicy> autoPolicies = new ArrayList<>();
+                    autoPolicies.add(new ConfidenceThresholdPolicy(activationGate.getDefaultActivationThreshold()));
 
-                    // EXPERIMENT mode logic can auto-accept top recommendation, but decision is external to Gate
-                    if (top != null && top.getConfidenceScore() >= top.getRecommendedActivationThreshold()) {
+                    DecisionSnapshot autoDecision = autoResolver.resolve(iterId, new ArrayList<>(), recommendations, autoPolicies);
+                    context.log("[KERNEL] Authority Decision (Autonomous): " + autoDecision.toString());
+
+                    if (autoDecision.getSelectedVariantId() != null && autoDecision.getSelectedVariantId().equals(selectedVariant.getId())) {
                         selectedVariant.setActivationState(BranchVariant.ActivationState.ACTIVE);
                         selectedVariant.setRank("winner");
-                        context.log("[KERNEL] Policy Decision: Variant " + selectedVariant.getId() + " activated based on Gate Recommendation (Confidence >= " + top.getRecommendedActivationThreshold() + ")");
                     }
                 }
             }
@@ -232,26 +248,41 @@ public class DarwinFlow implements IOrchestrationFlow {
             manager.getGitManager().createBranch(variant.getBranchName());
             manager.getGitManager().forceCheckout(baseBranch);
         }
-        List<CompletableFuture<BranchVariant>> futures = variants.stream()
-            .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context), variantExecutor))
-            .collect(Collectors.toList());
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        // Signal-Based Authority: The orchestrator processes signals to determine the best variant
-        BranchVariant bestVariant = null;
-        double bestScore = -1.0;
-        for (CompletableFuture<BranchVariant> future : futures) {
-            BranchVariant variant = future.join();
-
-            // In a full implementation, we would subscribe to the event bus here
-            // and collect EvaluationSignal objects. For this foundational refactor,
-            // we use the score that the Evaluator computed and included in the signal
-            // (which was also set on the variant for backward compatibility during migration).
-
-            if (variant.getScore() > bestScore) {
-                bestScore = variant.getScore();
-                bestVariant = variant;
+        // Authority Layer: Collect signals during parallel execution
+        List<EvaluationSignal> collectedSignals = Collections.synchronizedList(new ArrayList<>());
+        RuntimeEventListener signalListener = event -> {
+            if (event.getType() == RuntimeEventType.EVALUATION_SIGNAL_CREATED && event.getPayload() instanceof EvaluationSignal) {
+                collectedSignals.add((EvaluationSignal) event.getPayload());
             }
+        };
+        eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().subscribe(signalListener);
+
+        try {
+            List<CompletableFuture<BranchVariant>> futures = variants.stream()
+                .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context), variantExecutor))
+                .collect(Collectors.toList());
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        } finally {
+            eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().unsubscribe(signalListener);
+        }
+
+        // Decision Authority: Use ActivationResolver to determine winner from signals
+        ActivationGate gate = new ActivationGate();
+        List<ActivationRecommendation> recommendations = gate.recommendActivations(variants);
+
+        ActivationResolver resolver = new ActivationResolver();
+        List<ResolverPolicy> policies = new ArrayList<>();
+        policies.add(new HighestScorePolicy());
+
+        DecisionSnapshot decision = resolver.resolve(iteration.getId(), collectedSignals, recommendations, policies);
+        context.log("[KERNEL] Authority Decision: " + decision.toString());
+
+        BranchVariant bestVariant = null;
+        if (decision.getSelectedVariantId() != null) {
+            bestVariant = variants.stream()
+                .filter(v -> v.getId().equals(decision.getSelectedVariantId()))
+                .findFirst().orElse(null);
         }
 
         if (bestVariant != null) {
@@ -259,7 +290,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                     eu.kalafatic.evolution.controller.workflow.RuntimeEventType.VARIANT_EVALUATED,
                     context.getSessionId(), "Authority", bestVariant.getId())
-                    .withMetadata("score", bestVariant.getScore()));
+                    .withMetadata("score", decision.getAggregatedScores().getOrDefault(bestVariant.getId(), 0.0)));
         }
 
         return bestVariant;
