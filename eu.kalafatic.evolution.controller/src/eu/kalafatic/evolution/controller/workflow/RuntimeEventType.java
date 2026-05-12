@@ -53,7 +53,14 @@ public enum RuntimeEventType {
     STEP_WAITING(EventCategory.SUPERVISOR),
     STEP_RESUMED(EventCategory.SUPERVISOR),
     STEP_COMPLETED(EventCategory.SUPERVISOR),
-    STEP_FAILED(EventCategory.SUPERVISOR);
+    STEP_FAILED(EventCategory.SUPERVISOR),
+
+    // 7. WORKSPACE (Semantic Reasoning Environment)
+    CONTEXT_RETRIEVED(EventCategory.WORKSPACE),
+    ARTIFACT_PROMOTED(EventCategory.WORKSPACE),
+    TRAJECTORY_STRENGTHENED(EventCategory.WORKSPACE),
+    MEMORY_DECAY_APPLIED(EventCategory.WORKSPACE),
+    CONTEXT_OVERLOAD_DETECTED(EventCategory.WORKSPACE);
 
     private final EventCategory category;
 

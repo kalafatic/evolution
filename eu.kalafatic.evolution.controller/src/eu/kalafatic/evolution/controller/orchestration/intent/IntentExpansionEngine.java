@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import java.util.ArrayList;
 import java.util.List;
@@ -132,6 +133,26 @@ public class IntentExpansionEngine extends BaseAiAgent {
             result.setConfidence(c);
         }
 
+        // PERSISTENCE: Save clarification conclusions to Semantic Workspace
+        persistClarifications(result, context);
+
         return result;
+    }
+
+    private void persistClarifications(IntentExpansionResult result, TaskContext context) {
+        for (IntentDimension dim : result.getDimensions()) {
+            if (dim.getConfidence() > 0.7 && dim.getInferredValue() != null && !dim.getInferredValue().isEmpty()) {
+                String artifactId = "clarification-" + dim.getDimensionId() + "-" + System.currentTimeMillis();
+                WorkspaceArtifact artifact = new WorkspaceArtifact(artifactId, "clarification-conclusion");
+                artifact.setContent("Intent clarified: " + dim.getName() + " is resolved to: " + dim.getInferredValue());
+                artifact.setConfidence(dim.getConfidence());
+                artifact.getSemanticTags().add(dim.getName());
+                artifact.getSemanticTags().add("intent");
+                artifact.setSourceIteration("it-" + context.getCurrentIteration());
+
+                context.getSemanticWorkspace().addArtifact(artifact);
+                context.log("[WORKSPACE] Persisted intent clarification: " + dim.getName());
+            }
+        }
     }
 }

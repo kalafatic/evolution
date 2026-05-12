@@ -6,5 +6,6 @@ public enum EventCategory {
     AGENT,      // Reasoning Layer
     EXECUTION,  // Tools & Side Effects
     UI,         // Presentation Layer
-    SUPERVISOR  // Governance Layer
+    SUPERVISOR, // Governance Layer
+    WORKSPACE   // Semantic Reasoning Environment
 }
