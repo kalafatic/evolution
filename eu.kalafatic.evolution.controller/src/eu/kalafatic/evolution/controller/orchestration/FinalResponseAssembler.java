@@ -58,7 +58,23 @@ public class FinalResponseAssembler {
         // From decision snapshot (selected branch explanation)
         DecisionSnapshot snapshot = (DecisionSnapshot) state.getMetadata().get("lastDecisionSnapshot");
         if (snapshot != null && snapshot.getActivationReason() != null) {
-            proposals.add("Selected strategy: " + snapshot.getActivationReason());
+            String reason = snapshot.getActivationReason();
+            if (!reason.equalsIgnoreCase("Highest Score") && !reason.equalsIgnoreCase("No high-quality variant found.")) {
+                proposals.add("Evolutionary Strategy: " + reason);
+            }
+        }
+
+        // From intent expansion (Ambiguities/Dimensions)
+        Object expansion = state.getMetadata().get("intentExpansion");
+        if (expansion instanceof eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult) {
+            eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult exp = (eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult) expansion;
+            if (exp.getDimensions() != null) {
+                for (eu.kalafatic.evolution.controller.orchestration.intent.IntentDimension dim : exp.getDimensions()) {
+                    if (dim.getAmbiguityScore() > 0.5) {
+                        proposals.add("Ambiguity detected in " + dim.getName() + ": " + dim.getRationale());
+                    }
+                }
+            }
         }
 
         return proposals.stream().distinct().collect(Collectors.toList());

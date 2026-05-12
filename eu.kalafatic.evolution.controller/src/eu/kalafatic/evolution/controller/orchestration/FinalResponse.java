@@ -57,12 +57,12 @@ public class FinalResponse {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("TASK RESULT\n");
-        sb.append("-----------\n");
-        sb.append("Summary:\n").append(summary).append("\n\n");
+        sb.append("### TASK RESULT\n\n");
+
+        sb.append("**Summary**\n").append(summary).append("\n\n");
 
         if (proposals != null && !proposals.isEmpty()) {
-            sb.append("Suggestions:\n");
+            sb.append("**Suggestions**\n");
             for (String p : proposals) {
                 sb.append("- ").append(p).append("\n");
             }
@@ -70,15 +70,15 @@ public class FinalResponse {
         }
 
         if (files != null && !files.isEmpty()) {
-            sb.append("Files:\n");
+            sb.append("**Files**\n");
             for (FileReference f : files) {
-                sb.append("- ").append(f.getDisplayName()).append(" (").append(f.getEclipseUri()).append(")\n");
+                sb.append("- [").append(f.getDisplayName()).append("](").append(f.getEclipseUri()).append(")\n");
             }
             sb.append("\n");
         }
 
         if (metrics != null) {
-            sb.append("Execution time:\n").append(metrics.formatDuration()).append("\n");
+            sb.append("**Execution time**: ").append(metrics.formatDuration()).append("\n");
         }
 
         return sb.toString();
