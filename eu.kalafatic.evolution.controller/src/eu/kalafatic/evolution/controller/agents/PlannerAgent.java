@@ -50,7 +50,7 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
         // This is a fail-safe in case the IntentGate incorrectly passed a non-actionable request.
         // It now also considers shared memory for context.
         String contextLower = (request + " " + context.getSharedMemory()).toLowerCase();
-        if (!contextLower.matches(".*\\b(create|write|fix|generate|modify|delete|run|execute|add|implement|test|build|check|simple|example|hello|hi|greet)\\b.*")) {
+        if (!contextLower.matches(".*\\b(create|write|fix|generate|modify|delete|run|execute|add|implement|test|build|check|simple|example|hello|hi|greet|analyze|investigate|report|summarize|discovery|inspect|trace|audit)\\b.*")) {
             context.log("Planner: Safety Guard - Request and context do not clearly contain an action. Returning clarification task.");
             List<Task> fallbackTasks = new ArrayList<>();
             Task t = OrchestrationFactory.eINSTANCE.createTask();
