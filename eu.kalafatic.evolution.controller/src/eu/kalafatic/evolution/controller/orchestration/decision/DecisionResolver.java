@@ -15,6 +15,12 @@ import eu.kalafatic.evolution.controller.orchestration.scheduling.ScheduledExecu
 /**
  * Centralized decision authority for orchestration.
  * This component is the ONLY ONE allowed to activate variants and select winners.
+ *
+ * <p><b>ARCHITECTURAL INVARIANT: DECISION AUTHORITY</b></p>
+ * DecisionResolver is the sole authority for variant activation and winner selection.
+ * It consumes signals from the SignalBus and applies deterministic policies
+ * (HighestScore, TrajectoryStability, etc.) to resolve the system's next state.
+ * No other component is permitted to modify variant activation states.
  */
 public class DecisionResolver {
 
