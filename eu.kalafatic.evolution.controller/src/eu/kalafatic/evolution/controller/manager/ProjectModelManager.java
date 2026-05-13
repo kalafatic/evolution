@@ -158,8 +158,16 @@ public class ProjectModelManager {
         if (orchestrator.getLlm() == null) {
             LLM llm = OrchestrationFactory.eINSTANCE.createLLM();
             llm.setModel("gpt-4o");
-            llm.setTemperature(1.0f);
+            llm.setTemperature(0.4f);
             orchestrator.setLlm(llm);
+        }
+        if (orchestrator.getSupervisorSettings() == null) {
+            SupervisorSettings supervisor = OrchestrationFactory.eINSTANCE.createSupervisorSettings();
+            String userHome = System.getProperty("user.home");
+            // OS-independent paths using user.home
+            supervisor.setExecutablePath(new java.io.File(userHome, "supervisor/bin/").getPath());
+            supervisor.setSourcePath(new java.io.File(userHome, "supervisor/sources/").getPath());
+            orchestrator.setSupervisorSettings(supervisor);
         }
         if (orchestrator.getOllama() == null) {
             Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();

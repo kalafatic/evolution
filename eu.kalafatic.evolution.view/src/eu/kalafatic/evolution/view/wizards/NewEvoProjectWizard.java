@@ -204,12 +204,12 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
             // LLM Settings
             if (!llmPage.isSkipped()) {
-                float temp = 1.0f;
+                float temp = 0.4f;
                 try { temp = Float.parseFloat(llmPage.getTemperature()); } catch (NumberFormatException e) {}
                 modelManager.updateLlmSettings(orchestrator, llmPage.getLlmModel(), temp);
                 modelManager.updateRemoteModel(orchestrator, llmPage.getLlmModel());
             } else {
-                modelManager.updateLlmSettings(orchestrator, "gpt-4o", 1.0f);
+                modelManager.updateLlmSettings(orchestrator, "gpt-4o", 0.4f);
                 modelManager.updateRemoteModel(orchestrator, "gpt-4o");
             }
 

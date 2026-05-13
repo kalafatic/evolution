@@ -32,12 +32,18 @@ public class SupervisorSettingsPage extends AWizardPage {
         label.setText("Executable Path:");
         executablePathText = new Text(container, SWT.BORDER);
         executablePathText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+            executablePathText.setText(orchestrator.getSupervisorSettings().getExecutablePath() != null ? orchestrator.getSupervisorSettings().getExecutablePath() : "");
+        }
         SWTFactory.createEditButton(container, executablePathText);
 
         label = new Label(container, SWT.NONE);
         label.setText("Source Path:");
         sourcePathText = new Text(container, SWT.BORDER);
         sourcePathText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+            sourcePathText.setText(orchestrator.getSupervisorSettings().getSourcePath() != null ? orchestrator.getSupervisorSettings().getSourcePath() : "");
+        }
         SWTFactory.createEditButton(container, sourcePathText);
 
         label = new Label(container, SWT.NONE);
