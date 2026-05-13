@@ -34,6 +34,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
 import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
+import eu.kalafatic.evolution.controller.orchestration.evolution.ResultSynthesizer;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
@@ -66,45 +67,16 @@ public class DarwinFlow implements IOrchestrationFlow {
     @Override
     public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
         OrchestrationState state = context.getOrchestrationState();
-        Object epsObj = state.getMetadata().get("eps");
-        double eps = (epsObj instanceof Double) ? (Double) epsObj : 0.5;
 
-        // Unified Darwin Orchestrator: Dynamic delegation based on EPS
-        if (eps < 0.25) {
-            context.log("[KERNEL] EPS=" + String.format("%.2f", eps) + " (Low). Delegating to AtomicFlow for direct convergence.");
-            state.getCognitiveTrace().addNode(new CausalNode(
-                "eps-delegation-" + System.currentTimeMillis(),
-                "STRATEGY_SELECTION",
-                "DarwinFlow",
-                List.of("eps=" + eps),
-                List.of("AtomicFlow"),
-                1.0,
-                "Low pressure detected. Selecting direct atomic execution."
-            ));
-            return new AtomicFlow(aiService, manager).execute(request, context);
-        } else if (eps < 0.6) {
-            context.log("[KERNEL] EPS=" + String.format("%.2f", eps) + " (Medium). Delegating to IterativeFlow for light refinement.");
-            state.getCognitiveTrace().addNode(new CausalNode(
-                "eps-delegation-" + System.currentTimeMillis(),
-                "STRATEGY_SELECTION",
-                "DarwinFlow",
-                List.of("eps=" + eps),
-                List.of("IterativeFlow"),
-                1.0,
-                "Medium pressure detected. Selecting iterative refinement."
-            ));
-            return new IterativeFlow(aiService, manager).execute(request, context);
-        }
-
-        context.log("[KERNEL] EPS=" + String.format("%.2f", eps) + " (High). Proceeding with Full Darwin Evolution.");
+        context.log("[KERNEL] Strategy-Driven Evolution: Starting Full Darwin Evolution.");
         state.getCognitiveTrace().addNode(new CausalNode(
-            "eps-delegation-" + System.currentTimeMillis(),
+            "darwin-start-" + System.currentTimeMillis(),
             "STRATEGY_SELECTION",
             "DarwinFlow",
-            List.of("eps=" + eps),
+            Collections.emptyList(),
             List.of("DarwinFlow"),
             1.0,
-            "High pressure detected. Selecting full evolutionary branching."
+            "Executing dynamic branch strategy system."
         ));
 
         runDarwin(context);
@@ -298,9 +270,34 @@ public class DarwinFlow implements IOrchestrationFlow {
             if (result.isSuccess()) {
                 String completedPhase = state.getCurrentPhase();
                 manager.advanceEvolutionPhase(state);
+
+                // CURIOSITY TRIGGER: If stable solution exists, enable curiosity
+                if (result.getTestPassRate() >= 1.0) {
+                    context.log("[KERNEL] Stable solution achieved. Enabling Curiosity Phase.");
+                    state.setCuriosityEnabled(true);
+                    state.getMetadata().put("artifact_stable", true);
+                }
+
                 if (!EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(completedPhase)) {
                     result.setDecision(SelfDevDecision.CONTINUE);
+                } else if (state.isCuriosityEnabled()) {
+                    boolean proceedToCuriosity = context.isAutoApprove();
+                    if (!proceedToCuriosity) {
+                        String input = context.requestInput("Stable solution reached. Would you like to proceed with the Curiosity Phase to explore enhancements? (Yes/No)").get();
+                        proceedToCuriosity = "Yes".equalsIgnoreCase(input);
+                    }
+
+                    if (proceedToCuriosity) {
+                        context.log("[KERNEL] Final synthesis complete. Triggering Curiosity Phase.");
+                        result.setDecision(SelfDevDecision.CONTINUE);
+                        state.setCurrentPhase("PHASE_CURIOSITY_EXPLORATION");
+                        state.setCuriosityEnabled(false); // Reset to avoid loop
+                    } else {
+                        context.log("[KERNEL] User opted out of Curiosity Phase.");
+                        result.setDecision(SelfDevDecision.STOP);
+                    }
                 }
+
                 manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase);
                 manager.transition(SystemState.DONE, context);
             } else {
@@ -347,6 +344,10 @@ public class DarwinFlow implements IOrchestrationFlow {
         // Decision Authority: Use DecisionResolver to determine winner from signals in SignalBus
         DecisionResolver decisionResolver = new DecisionResolver();
         DecisionSnapshot decision = decisionResolver.resolveWinner(iteration.getId(), variants, context);
+
+        // Synthesis Layer: Merge insights from all branches
+        ResultSynthesizer synthesizer = new ResultSynthesizer();
+        synthesizer.synthesize(variants, context);
 
         BranchVariant bestVariant = null;
         if (decision.getSelectedVariantId() != null) {

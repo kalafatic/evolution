@@ -10,6 +10,7 @@ public class BranchVariant {
     private String branchName;
     private List<String> changedFiles = new ArrayList<>();
     private String strategy; // description of approach
+    private String strategyType; // IMPLEMENTATION, ANALYTICAL, CURIOSITY, STABILIZATION, EXPLORATION
     private List<Action> actions = new ArrayList<>();
     private ExpectedEffect expectedEffect;
     private Hypothesis hypothesis;
@@ -33,6 +34,9 @@ public class BranchVariant {
 
     public String getStrategy() { return strategy; }
     public void setStrategy(String strategy) { this.strategy = strategy; }
+
+    public String getStrategyType() { return strategyType; }
+    public void setStrategyType(String strategyType) { this.strategyType = strategyType; }
 
     public double getScore() { return score; }
     public void setScore(double score) { this.score = score; }
