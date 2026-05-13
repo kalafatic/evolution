@@ -52,6 +52,9 @@ public class IterativeFlow implements IOrchestrationFlow {
             String question = clarificationManager.generateClarificationQuestion(deepAnalysis, context);
             clarificationManager.updateState(convState, deepAnalysis, question);
             context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), convState));
+
+            // Delegate decision to AuthorityController
+            AuthorityController authority = new AuthorityController();
             String clarification = context.requestInput(question).get();
             if (clarification != null && !clarification.isEmpty() && !clarification.equalsIgnoreCase("Rejected")) {
                 convState.addClarification(clarification);

@@ -213,29 +213,20 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             BehaviorProfile profile = context.getBehaviorProfile();
 
-            // Decision Authority
-            DecisionResolver decisionResolver = new DecisionResolver();
+            // Decision Authority delegated to AuthorityController
+            AuthorityController authority = new AuthorityController();
+            AuthorityController.AuthorityDecision decision = authority.decide(iterId, variants, context);
 
-            // MEDIATED mode behavior
+            if (!decision.isApproved()) {
+                manager.recordRejection(goal, decision.getReason());
+                EvaluationResult res = manager.failedResult();
+                res.setDecision(SelfDevDecision.CONTINUE);
+                manager.transition(SystemState.FAILED, context);
+                return res;
+            }
+
+            // MEDIATED mode: if user already selected a winner in authority phase, we can shortcut or proceed with evaluation of that specific variant
             if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
-                context.log("[KERNEL] Darwin in MEDIATED mode: Stopping for user review.");
-                String input = context.requestInput("Darwin generated " + variants.size() + " proposals. Review and select one to proceed (e.g. 'Select v0'), or reject to refine.").get();
-                if ("Rejected".equalsIgnoreCase(input)) {
-                    manager.recordRejection(goal, "Darwin " + state.getCurrentPhase() + " proposals rejected by user.");
-                    EvaluationResult res = manager.failedResult();
-                    res.setDecision(SelfDevDecision.CONTINUE);
-                    manager.transition(SystemState.FAILED, context);
-                    return res;
-                }
-
-                String manualId = null;
-                if (input.startsWith("Select ")) {
-                    manualId = input.substring(7).trim();
-                    context.log("[KERNEL] User selected variant: " + manualId);
-                }
-
-                decisionResolver.resolveWinner(iterId, variants, context, manualId);
-
                 manager.advanceEvolutionPhase(state);
                 manager.transition(SystemState.DONE, context);
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -244,24 +235,11 @@ public class DarwinFlow implements IOrchestrationFlow {
                 return res;
             }
 
-            if (!context.isAutoApprove()) {
-                String input = context.requestInput("Darwin generated " + variants.size() + " variants. Review and approve to start evaluation.").get();
-                if (input != null && input.startsWith("EDIT PROPOSAL")) {
-                    manager.updateVariantFromInput(variants, input);
-                } else if ("Rejected".equalsIgnoreCase(input)) {
-                    manager.recordRejection(goal, "Darwin variants rejected by user.");
-                    EvaluationResult res = manager.failedResult();
-                    res.setDecision(SelfDevDecision.CONTINUE);
-                    manager.transition(SystemState.FAILED, context);
-                    return res;
-                }
-            }
-
             manager.transition(SystemState.PLAN_LOCKED, context);
             manager.getGitManager().forceCheckout(snapshotBranch);
             manager.transition(SystemState.EXECUTING, context);
 
-            // Filter already active branches (e.g. from previous steps)
+            // Filter already active branches (as decided by AuthorityController)
             List<BranchVariant> activeVariants = variants.stream()
                     .filter(v -> v.getActivationState() == BranchVariant.ActivationState.ACTIVE)
                     .collect(Collectors.toList());
@@ -271,12 +249,13 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.log("[KERNEL] Authority: Proceeding with " + activeVariants.size() + " ACTIVE branches.");
                 selectedVariant = evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
             } else {
-                context.log("[KERNEL] Authority: No ACTIVE branches. Evaluating all proposals to determine best candidate for activation.");
+                context.log("[KERNEL] Authority: No ACTIVE branches after authority phase. Evaluating all proposals to determine best candidate for final activation.");
                 selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
 
-                // Decision Authority: Resolve winner autonomously
-                if (!profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && selectedVariant != null) {
-                    decisionResolver.resolveWinner(iterId, variants, context);
+                // Re-invoke authority for final autonomous selection after scoring if no winner was previously active
+                final AuthorityController.AuthorityDecision finalDecision = authority.decide(iterId, variants, context);
+                if (finalDecision.getSelectedVariantId() != null) {
+                    selectedVariant = variants.stream().filter(v -> v.getId().equals(finalDecision.getSelectedVariantId())).findFirst().orElse(null);
                 }
             }
 
@@ -344,9 +323,9 @@ public class DarwinFlow implements IOrchestrationFlow {
             context.log("[KERNEL] Variant evaluation error: " + e.getMessage());
         }
 
-        // Decision Authority: Use DecisionResolver to determine winner from signals in SignalBus
-        DecisionResolver decisionResolver = new DecisionResolver();
-        DecisionSnapshot decision = decisionResolver.resolveWinner(iteration.getId(), variants, context);
+        // Decision Authority: Use AuthorityController for final resolution
+        AuthorityController authority = new AuthorityController();
+        AuthorityController.AuthorityDecision decision = authority.decide(iteration.getId(), variants, context);
 
         BranchVariant bestVariant = null;
         if (decision.getSelectedVariantId() != null) {
@@ -355,12 +334,12 @@ public class DarwinFlow implements IOrchestrationFlow {
                 .findFirst().orElse(null);
         }
 
-        if (bestVariant != null) {
+        if (bestVariant != null && decision.getSnapshot() != null) {
             eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
                 new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                     eu.kalafatic.evolution.controller.workflow.RuntimeEventType.VARIANT_EVALUATED,
                     context.getSessionId(), "Authority", bestVariant.getId())
-                    .withMetadata("score", decision.getAggregatedScores().getOrDefault(bestVariant.getId(), 0.0)));
+                    .withMetadata("score", decision.getSnapshot().getAggregatedScores().getOrDefault(bestVariant.getId(), 0.0)));
         }
 
         return bestVariant;
@@ -393,10 +372,9 @@ public class DarwinFlow implements IOrchestrationFlow {
             EvaluationResult result = evaluator.evaluate(tempDir, variantContext, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
             variant.setSuccess(result.isSuccess());
 
-            // The score is now produced via EvaluationSignal in Evaluator.emitSignal
-            // For backward compatibility during this foundational step, we still set it on the variant,
-            // but the source of truth for the logic is now mirrored in the signal.
-            variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
+            // Evaluators are now pure signal producers.
+            // We do NOT modify variant scores directly here anymore.
+            // Variant scores will be aggregated by the DecisionResolver from signals in the SignalBus.
 
             // Record trajectory telemetry
             if (result.isSuccess()) {
@@ -407,7 +385,6 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             return variant;
         } catch (Exception e) {
-            variant.setScore(0.0);
             return variant;
         } finally {
             if (tempDir != null) {

@@ -4,6 +4,7 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 
@@ -29,7 +30,7 @@ public class AnalyticAgent extends BaseAiAgent {
                 "STRICT OUTPUT RULE: You MUST output ONLY a single, valid JSON object. Do NOT include markdown code blocks (```json), conversational preamble, or follow-up text. Never output two JSON objects.\n\n" +
                 "ANALYSIS CRITERIA (for new requests):\n" +
                 "0. ARCHITECTURE FIRST: You must prioritize understanding the project's architecture and repository context before formulating any plans. Reference actual classes, methods, and orchestration patterns where relevant.\n" +
-                "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT. Note: 'analyze', 'investigate', 'report', and 'summarize' tasks should be categorized as RESEARCH to ensure they follow the standard iterative flow and bypass evolutionary mutation.\n" +
+                "1. CATEGORY: CODING, RESEARCH, TOOL_USE, CHAT. Note: 'analyze', 'investigate', 'report', 'summarize', and 'discovery' tasks MUST be categorized as RESEARCH to ensure they follow the standard iterative flow and bypass evolutionary mutation.\n" +
                 "2. INTENT: 'new' (task request), 'continue' (follow-up), 'chat' (greeting/casual), 'unclear'.\n" +
                 "3. AMBIGUITY: ATOMIC tasks (e.g., 'create class', 'write file') are NOT ambiguous. If isAmbiguous is false, 'clarificationQuestion', 'missingInformation' and 'contradictions' MUST be empty strings/arrays. DO NOT hallucinate requirements not in the original prompt.\n" +
                 "4. CONTRADICTIONS: Detect if the user request contains conflicting instructions (e.g., 'use Java but also use Python for the same class').\n" +
@@ -83,34 +84,46 @@ public class AnalyticAgent extends BaseAiAgent {
 
     // @evo:14:B reason=traceability-support
     public JSONObject analyze(String prompt, TaskContext context) throws Exception {
-        // Step 1: Perform Deep Intent Analysis
+        // Step 1: Perform Deep Intent Analysis using the specialized IntentAnalyzer
         IntentAnalyzer intentAnalyzer = new IntentAnalyzer(aiService);
         IntentAnalysisResult intentResult = intentAnalyzer.analyze(prompt, context);
 
-        // Step 2: Fallback to existing logic for Category/RefinedPrompt/Clarification if needed
-        // or map intentResult back to expected JSON for IterationManager compatibility
-        String fullPrompt = buildPrompt(prompt, context, null);
-        context.log("Evo-Analytic-Thinking: " + fullPrompt);
-        String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
-        context.log("Evo-Analytic-Response: " + response);
+        // Step 2: Map intentResult to the expected AnalyticAgent JSON schema
+        // This avoids a second redundant LLM call for general prompts while ensuring
+        // the kernel receives the structured data it needs.
+        JSONObject analysis = new JSONObject();
+        analysis.put("intent", "new");
+        analysis.put("confidence", intentResult.getConfidenceScore());
 
-        JSONObject analysis = JsonUtils.extractJsonObject(response);
-
-        if (analysis == null) {
-             analysis = new JSONObject();
-             analysis.put("intent", "new");
-             analysis.put("confidence", intentResult.getConfidenceScore());
-             analysis.put("category", "CODING");
-             analysis.put("isAmbiguous", intentResult.isAmbiguous());
-             analysis.put("refinedPrompt", prompt);
+        // Determine category based on intent goals and constraints
+        String goalLower = intentResult.getGoal().toLowerCase();
+        if (goalLower.matches(".*\\b(analyze|investigate|report|summarize|discovery|inspect|trace|audit)\\b.*")) {
+            analysis.put("category", "RESEARCH");
+        } else if (goalLower.matches(".*\\b(chat|hello|hi|hey|greetings)\\b.*")) {
+            analysis.put("category", "CHAT");
+        } else {
+            analysis.put("category", "CODING");
         }
 
-        // Ensure mandatory keys for Policy Engine if not present
-        if (!analysis.has("intent")) {
-            analysis.put("intent", "new");
-        }
+        analysis.put("objective", intentResult.getGoal());
+        analysis.put("isAmbiguous", intentResult.isAmbiguous());
 
-        // Enrich with structured intent if available
+        JSONArray missingInfo = new JSONArray();
+        intentResult.getMissingInformation().forEach(m -> {
+            JSONObject mObj = new JSONObject();
+            mObj.put("field", m.getField());
+            mObj.put("description", m.getDescription());
+            missingInfo.put(mObj);
+        });
+        analysis.put("missingInformation", missingInfo);
+
+        analysis.put("contradictions", new JSONArray(intentResult.getContradictions()));
+        analysis.put("clarificationQuestion", intentResult.getClarificationQuestion());
+
+        // Construct a refined prompt if not provided by LLM (or use the original as base)
+        analysis.put("refinedPrompt", prompt);
+
+        // Enrich with structured intent for downstream components
         analysis.put("structuredIntent", new JSONObject()
             .put("goal", intentResult.getGoal())
             .put("language", intentResult.getLanguage())
@@ -119,10 +132,6 @@ public class AnalyticAgent extends BaseAiAgent {
             .put("expectedOutput", intentResult.getExpectedOutput())
             .put("constraints", intentResult.getConstraints())
             .put("confidence", intentResult.getConfidenceScore()));
-
-        if (!analysis.has("confidence")) {
-            analysis.put("confidence", intentResult.getConfidenceScore());
-        }
 
         return analysis;
     }

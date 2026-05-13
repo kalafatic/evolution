@@ -30,17 +30,23 @@ public class ActivationGate {
             return new ArrayList<>();
         }
 
-        // Sort variants by score to determine ranking
-        List<BranchVariant> sorted = new ArrayList<>(variants);
-        sorted.sort(Comparator.comparingDouble(BranchVariant::getScore).reversed());
+        // ActivationGate now consumes signals from the SignalBus for its recommendations.
+        // It no longer relies on variant.getScore() which is deprecated.
+        List<eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal> allSignals =
+            eu.kalafatic.evolution.controller.orchestration.evolution.SignalBus.getInstance().getAllSignals();
 
         List<ActivationRecommendation> recommendations = new ArrayList<>();
-        for (int i = 0; i < sorted.size(); i++) {
-            BranchVariant v = sorted.get(i);
+        for (int i = 0; i < variants.size(); i++) {
+            BranchVariant v = variants.get(i);
 
-            // Heuristic scoring for recommendation
-            double confidence = v.getScore();
-            double semanticAlign = 0.9; // Placeholder for semantic analysis
+            List<eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal> vSignals =
+                allSignals.stream().filter(s -> s.getVariantId().equals(v.getId())).collect(java.util.stream.Collectors.toList());
+
+            // Aggregated confidence from signals
+            double confidence = vSignals.stream().mapToDouble(s -> s.getScore() * s.getConfidence()).average().orElse(0.5);
+            double semanticAlign = vSignals.stream()
+                .filter(s -> s.getEvaluatorId().equals("SemanticAnalyzer"))
+                .mapToDouble(s -> s.getScore()).findFirst().orElse(0.9);
             String rationale = determineRationale(v, i + 1);
 
             // Emit Semantic Alignment Signal
