@@ -1,5 +1,8 @@
 package eu.kalafatic.evolution.view.provider;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -7,35 +10,30 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.jface.viewers.ITreeContentProvider;
+
+import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.Compiler;
+import eu.kalafatic.evolution.model.orchestration.Database;
+import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
+import eu.kalafatic.evolution.model.orchestration.FileConfig;
+import eu.kalafatic.evolution.model.orchestration.Git;
+import eu.kalafatic.evolution.model.orchestration.LLM;
+import eu.kalafatic.evolution.model.orchestration.Maven;
+import eu.kalafatic.evolution.model.orchestration.NeuronAI;
+import eu.kalafatic.evolution.model.orchestration.Ollama;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.nature.EvolutionNature;
-import eu.kalafatic.evolution.model.orchestration.Agent;
-import eu.kalafatic.evolution.model.orchestration.Git;
-import eu.kalafatic.evolution.model.orchestration.Maven;
-import eu.kalafatic.evolution.model.orchestration.LLM;
-import eu.kalafatic.evolution.model.orchestration.Compiler;
-import eu.kalafatic.evolution.model.orchestration.Ollama;
-import eu.kalafatic.evolution.model.orchestration.AiChat;
-import eu.kalafatic.evolution.model.orchestration.NeuronAI;
-import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
-import eu.kalafatic.evolution.model.orchestration.Compiler;
-import eu.kalafatic.evolution.model.orchestration.Eclipse;
-import eu.kalafatic.evolution.model.orchestration.Database;
-import eu.kalafatic.evolution.model.orchestration.FileConfig;
-
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import org.eclipse.emf.ecore.EAttribute;
 
 public class OrchestrationNavigatorContentProvider implements ITreeContentProvider {
 

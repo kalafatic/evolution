@@ -1,0 +1,115 @@
+Kernel
+ ├─ Policy Engine
+ ├─ Flow Resolver
+ ├─ Event Bus
+ └─ State Store
+
+Flows
+ ├─ DarwinFlow
+ ├─ IterativeFlow
+ └─ AtomicFlow
+
+Agents
+ ├─ Planner
+ ├─ Analyzer
+ ├─ Executor
+ └─ Validator
+
+UI
+ ├─ Interactive Diagram
+ ├─ Step Mode
+ └─ Runtime Monitor
+
+
+FIX UI:
+FIX IT RIGHT WAY.
+
+FIX SIMPLE WORKFLOW prompt: "create java class which can print text" (LOCAL-iterative/darwin):
+FIX SIMPLE WORKFLOW prompt: "create java class which can print text" (MEDIATED-iterative/darwin/steps):
+FIX SIMPLE WORKFLOW prompt: "analyze IterationManager.java" (MEDIATED-iterative/darwin/steps):
+
+FIX SIMPLE WORKFLOW prompt: "analyze project c:\Users\petrk\git\test-evo\" (LOCAL-iterative/darwin):
+FIX SIMPLE WORKFLOW prompt: "analyze project c:\Users\petrk\git\test-evo\" (MEDIATED-iterative/darwin/steps):
+
+FIX SIMPLE WORKFLOW prompt: "analyze project c:\Users\petrk\git\evolution\" (LOCAL-iterative/darwin):
+FIX SIMPLE WORKFLOW prompt: "analyze project c:\Users\petrk\git\\evolution\" (MEDIATED-iterative/darwin/steps):
+
+
+BASED ON AI_KERNEL_ARCHITECTURE.md AND AI_KERNEL_ARCHITECTURE_REFACTOR.md Kernel Architecture (READ MD FILES).
+You are strictly prohibited from deviating from the specified architecture and instructions!!
+FIX IMPROVE CURRENT IMPLEMENTATION.
+BELOW IS SUGGESTION:
+
+
+BASED ON ARCHITECTURE_GUIDELINES.MD Kernel Architecture (READ MD FILES).
+You are strictly prohibited from deviating from the specified architecture and instructions!!
+
+FIX IMPROVE CURRENT IMPLEMENTATION.
+BELOW IS SUGGESTION:
+
+FIX BASED ON Kernel Architecture + Control Plane Consolidation (READ MD FILES):
+
+IMPROVE CURRENT IMPLEMENTATION OF  Intent  Extraction.
+BELOW IS SUGGESTION:
+
+write prompt for jules to implement it
+
+analyze project c:\Users\petrk\git\test-evo\
+create java class which can print text and write it to Test1.java
+print text given by parameter
+Create a simple Java class with a single statement to print text to the console.
+
+IMPROVE SELF DEVELOPMENT FLOW-DO NOT REMOVE CURRENT CODE-IMPROVE/MERGE/ADAPT IT:
+Self-development controls will be on iterations page  in self development group-connect actions and architecture together.
+
+I want general-purpose + robust + “clever” with small models, how to do that?
+
+I currently developing orchestrator with agents and iterative "darwin"style (2-3 proposals every iteration and selecting fittest) AI platform
+
+IMPROVE SELF DEVELOPMENT-DO NOT REMOVE CURRENT CODE-IMPROVE/MERGE/ADAPT IT:
+Edit Self-development group table iterations page (I want you to refactor interactive tree table to edit default loop setings)
+Supervisor
+-child source: absolute path of its source code
+-child build: absolute path of its builded code
+Evo RCP
+-absolute path of its source code
+-absolute path of its builded code
+-absolute path of its deployed code
+
+
+Self-development controls will be on iterations page  in self development group-connect actions and architecture together.
+
+FIX CHAT LOGIC ERROR (PROMPT: "create java class which can print text")
+-ITERATIVE 3X, DARWIN
+NO SELF DEVELOPMENT BUT FLOW SHOW SUPERVISOR-WHY??
+
+IMPROVE MODE/MODEL HANDLING:
+1.use existing model manager and add method to filter loaded models by multiplemode parameters (e.g LOCAL|HYBRID)
+
+1.mode LOCAL-using local server like ollama+USES only locally managed models
+2.mode PROXY-using remote server like ollama+USES their own models (:cloud)
+3.mode HYBRID-using local server like ollama+USES locally managed models AND FORWARDS TO API based heavy models or cloud models managed models
+4.mode REMOTE-USES API based heavy models or cloud models managed models
+5.mode MEDIATED--using local server like ollama+USES only locally managed models to reformulate prompt+selects cca 10 files for context (java,md..) and then forwards to API based heavy models or cloud models managed models
+
+6.behavior - ITERATIVE (default)-using selected model for multiple iterations and selecting best output for next iteration
+7.behavior - DARWIN (default)-using selected model for multiple iterations and selecting best output for next iteration but also mutating prompt or approach based on previous output (like genetic algorithm)
+8.behavior - STEPS-using selected model for multiple iterations but also showing steps and allowing user to intervene or select next step
+9.behavior - SELF-DEVELOPMENT-using selected model for self development (using external supervisor for restarting RCP and providing feedback on iterations)
+10.behavior - STEP mode-using selected model for multiple iterations but also showing steps and allowing user to intervene or select next step
+11.behavior - AUTOAPPROVE-using selected model for multiple iterations and automatically approving output without user intervention
+
+
+6.FIX AND APPLY THIS LOGIC ACROSS PROJECT (UI model controls like combo, tables..)
+---
+
+
+
+FIXING AI FLOW!!!
+add plan/add task opens task dialog
+-test cloud
+-test hybrid mode
+
+-test export
+-test self-dev mode
+-
