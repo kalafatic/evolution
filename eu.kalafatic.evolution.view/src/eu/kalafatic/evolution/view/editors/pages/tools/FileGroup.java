@@ -35,6 +35,7 @@ public class FileGroup extends AToolGroup {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "File Tool Settings", 3, false);
         SWTFactory.createLabel(group, "Project Root:");
         fileLocalPathText = SWTFactory.createText(group);
+        fileLocalPathText.setText(orchestrator.getFileConfig() != null && orchestrator.getFileConfig().getLocalPath() != null ? orchestrator.getFileConfig().getLocalPath() : "");
         fileLocalPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         SWTFactory.createEditButton(group, fileLocalPathText);
 

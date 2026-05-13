@@ -28,6 +28,7 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.controller.orchestration.evolution.EvolutionRegistry;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
@@ -262,6 +263,19 @@ public class ProjectModelManager {
     public void updateOrchestratorGeneral(Orchestrator orchestrator, String id, String name) {
         orchestrator.setId(id);
         orchestrator.setName(name);
+    }
+
+    public void updateSupervisorSettings(Orchestrator orchestrator, String executablePath, String sourcePath, String commands, String settings, boolean deployed) {
+        SupervisorSettings supervisor = orchestrator.getSupervisorSettings();
+        if (supervisor == null) {
+            supervisor = OrchestrationFactory.eINSTANCE.createSupervisorSettings();
+            orchestrator.setSupervisorSettings(supervisor);
+        }
+        supervisor.setExecutablePath(executablePath);
+        supervisor.setSourcePath(sourcePath);
+        supervisor.setCommands(commands);
+        supervisor.setSettings(settings);
+        supervisor.setDeployed(deployed);
     }
 
     public void updateCompilerSettings(Orchestrator orchestrator, String sourceVersion) {

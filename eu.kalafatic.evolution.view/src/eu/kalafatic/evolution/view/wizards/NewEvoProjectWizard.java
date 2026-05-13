@@ -65,6 +65,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
     private AiChatSettingsPage aiChatPage;
     private NeuronAISettingsPage neuronAIPage;
     private AgentSettingsPage agentPage;
+    private SupervisorSettingsPage supervisorPage;
 
     public NewEvoProjectWizard() {
         setWindowTitle("New Evo Project");
@@ -90,8 +91,9 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         aiChatPage = new AiChatSettingsPage();
         neuronAIPage = new NeuronAISettingsPage();
         agentPage = new AgentSettingsPage();
+        supervisorPage = new SupervisorSettingsPage();
 
-        for (AWizardPage page : new AWizardPage[] { configPage, gitPage, ollamaPage, llmPage, mavenPage, aiChatPage, neuronAIPage, agentPage }) {
+        for (AWizardPage page : new AWizardPage[] { configPage, gitPage, ollamaPage, llmPage, mavenPage, aiChatPage, neuronAIPage, agentPage, supervisorPage }) {
             if (page != null) {
                 page.setOrchestrator(orchestrator);
             }
@@ -105,7 +107,8 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
         addPage(mavenPage);
         addPage(aiChatPage);
         addPage(neuronAIPage);
-        addPage(agentPage);        
+        addPage(agentPage);
+        addPage(supervisorPage);
     }
 
     @Override
@@ -236,6 +239,11 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 }
             }
 
+            // Supervisor Settings
+            if (!supervisorPage.isSkipped()) {
+                modelManager.updateSupervisorSettings(orchestrator, supervisorPage.getExecutablePath(), supervisorPage.getSourcePath(), supervisorPage.getCommands(), supervisorPage.getSettings(), supervisorPage.isDeployed());
+            }
+
             modelManager.setFileConfig(orchestrator, project.getLocation().append("resources").toOSString());
 
             evoProject.getOrchestrations().add(orchestrator);
@@ -286,7 +294,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                                 try {
                                     IViewPart view = page.showView("eu.kalafatic.views.EvoNavigator");
                                     if (view instanceof eu.kalafatic.evolution.view.views.EvoNavigator) {
-                                        ((eu.kalafatic.evolution.view.views.EvoNavigator) view).refresh();
+                                        ((eu.kalafatic.evolution.view.views.EvoNavigator) view).refreshAndExpand(project);
                                     }
                                 } catch (PartInitException e) {
                                     e.printStackTrace();
