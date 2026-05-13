@@ -525,6 +525,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		taskRequest.getContext().put("sessionId", sessionId);
 
 		TaskContext context = new TaskContext(orchestrator, getProjectRoot());
+		context.setStartTime(java.time.Instant.now());
 		context.setSessionId(sessionId);
 		state.currentContext = context;
 		editor.setCurrentContext(context);
@@ -587,25 +588,16 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 
-						String finalMsg = response.getSummary();
-						if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
-							long done = orchestrator.getTasks().stream().filter(t -> t.getStatus() == eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE).count();
-							long total = orchestrator.getTasks().size();
-							finalMsg = "I have completed " + done + " of " + total + " tasks. " + response.getSummary();
-						}
-
-						chatGroup.appendText("Final Response: " + finalMsg, colorEvolution, SWT.BOLD);
-
-						if (response.getContent() != null && !response.getContent().equals(response.getSummary())) {
-							chatGroup.appendText("\n" + response.getContent(), colorEvolution, SWT.NORMAL);
-						}
+						String finalMsg = response.getContent() != null ? response.getContent() : response.getSummary();
+						chatGroup.appendText(finalMsg, colorEvolution, SWT.NORMAL);
 
 						editor.setDirty(true);
 						feedbackGroup.showSatisfaction(true); updateScrolledContent();
 					} else {
 						ChatSession targetSession = orchestrator.getAiChat().getSessions().stream().filter(t -> t.getId().equals(sessionId)).findFirst().orElse(null);
 						if (targetSession != null) {
-							chatGroup.appendTextToSession(targetSession, "Final Response: " + response.getSummary(), colorEvolution, SWT.BOLD);
+							String finalMsg = response.getContent() != null ? response.getContent() : response.getSummary();
+							chatGroup.appendTextToSession(targetSession, finalMsg, colorEvolution, SWT.NORMAL);
 						}
 					}
 				});
@@ -827,6 +819,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		state.orchestrationSession = new Thread(() -> {
 			try {
 				TaskContext context = new TaskContext(orchestrator, projectRoot);
+				context.setStartTime(java.time.Instant.now());
 				context.setSessionId(sessionId);
 				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
 				context.setPlatformMode(new eu.kalafatic.evolution.controller.orchestration.ModeRouter().route(finalRequest, orchestrator));
@@ -866,10 +859,10 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				orchestrator.setSelfDevSession(session);
 				SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context);
 				supervisor.startSession();
-				String summary = context.getOrchestrator().getTasks().stream()
-						.filter(t -> t.getResultSummary() != null && !t.getResultSummary().isEmpty())
-						.map(t -> "- " + t.getResultSummary())
-						.collect(Collectors.joining("\n"));
+
+				// Assembly Final Response for Supervisor sessions too
+				eu.kalafatic.evolution.controller.orchestration.FinalResponseAssembler assembler = new eu.kalafatic.evolution.controller.orchestration.FinalResponseAssembler();
+				eu.kalafatic.evolution.controller.orchestration.FinalResponse finalResponse = assembler.assemble(context, modeLabel + " session finished. Status: " + session.getStatus(), session.getStatus() == eu.kalafatic.evolution.model.orchestration.SelfDevStatus.COMPLETED, context.getStartTime());
 
 				Display.getDefault().asyncExec(() -> {
 					if (sessionId.equals(getCurrentSessionName())) instructionsGroup.resetBackground();
@@ -880,17 +873,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
 						chatGroup.setThinking(false);
 
-						String taskSummary = context.getOrchestrator().getTasks().stream()
-								.filter(t -> t.getResultSummary() != null && !t.getResultSummary().isEmpty())
-								.map(t -> "- " + t.getResultSummary())
-								.collect(Collectors.joining("\n"));
-
-						String finalMsg = modeLabel + " session finished. Status: " + session.getStatus();
-						if (!taskSummary.isEmpty()) {
-							finalMsg += "\n\nAccomplishments:\n" + taskSummary;
-						}
-
-						chatGroup.appendText("Final Response: " + finalMsg, colorEvolution, SWT.BOLD);
+						chatGroup.appendText(finalResponse.toString(), colorEvolution, SWT.NORMAL);
 						editor.setDirty(true);
 						feedbackGroup.showSatisfaction(true); updateScrolledContent();
 						if (state.currentStackTask != null) {

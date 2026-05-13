@@ -59,7 +59,13 @@ public class FinalResponse {
         StringBuilder sb = new StringBuilder();
         sb.append("### TASK RESULT\n\n");
 
-        sb.append("**Summary**\n").append(summary).append("\n\n");
+        if (executionSummary != null && !executionSummary.isEmpty()) {
+            sb.append(executionSummary).append("\n\n");
+        }
+
+        if (summary != null && !summary.isEmpty()) {
+            sb.append("**Summary**\n").append(summary).append("\n\n");
+        }
 
         if (proposals != null && !proposals.isEmpty()) {
             sb.append("**Suggestions**\n");
