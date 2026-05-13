@@ -18,6 +18,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getUsername <em>Username</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getLocalPath <em>Local Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getTestStatus <em>Test Status</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getPassword <em>Password</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getGit()
@@ -156,6 +157,28 @@ public interface Git extends EObject {
 	 * @generated
 	 */
 	void setBranchName(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Password</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Password</em>' attribute.
+	 * @see #setPassword(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getGit_Password()
+	 * @model
+	 * @generated
+	 */
+	String getPassword();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Git#getPassword <em>Password</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Password</em>' attribute.
+	 * @see #getPassword()
+	 * @generated
+	 */
+	void setPassword(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Commit Msg</b></em>' attribute.

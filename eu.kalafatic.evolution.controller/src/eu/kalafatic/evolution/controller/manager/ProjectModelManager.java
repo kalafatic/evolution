@@ -171,7 +171,7 @@ public class ProjectModelManager {
         }
     }
 
-    public void updateGitSettings(Orchestrator orchestrator, String url, String branch, String username, String localPath) {
+    public void updateGitSettings(Orchestrator orchestrator, String url, String branch, String username, String password, String localPath) {
         Git git = orchestrator.getGit();
         if (git == null) {
             git = OrchestrationFactory.eINSTANCE.createGit();
@@ -180,6 +180,7 @@ public class ProjectModelManager {
         git.setRepositoryUrl(url);
         git.setBranch(branch);
         git.setUsername(username);
+        git.setPassword(password);
         git.setLocalPath(localPath);
     }
 
