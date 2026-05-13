@@ -181,6 +181,9 @@ public class LLMSettingsPage extends AWizardPage {
         new Label(groupLinks, SWT.NONE).setText("Temperature:");
         tempText = new Text(groupLinks, SWT.BORDER);
         tempText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        if (orchestrator != null && orchestrator.getLlm() != null) {
+            tempText.setText(String.valueOf(orchestrator.getLlm().getTemperature()));
+        }
 
         Link pullModelLink = new Link(groupLinks, SWT.NONE);
         pullModelLink.setText("<a>Setup/Pull Ollama Model...</a>");
