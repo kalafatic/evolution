@@ -68,6 +68,11 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 /**
  * The Kernel Control Plane. Sole authority for state transitions and strategic orchestration.
  * Unified and refactored for architectural coherence.
+ *
+ * <p><b>ARCHITECTURAL INVARIANT: SINGLE TRANSITION AUTHORITY</b></p>
+ * Only IterationManager is permitted to change the system state. All components
+ * MUST request state transitions through the {@code transition(SystemState, TaskContext)} method.
+ * This ensures a deterministic and traceable state machine.
  */
 public class IterationManager {
 
@@ -292,8 +297,9 @@ public class IterationManager {
                 eu.kalafatic.evolution.controller.workflow.RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
                 ctx.getSessionId(), "Kernel", to.toString()));
 
-        ctx.log("[KERNEL] Transition: " + (current != null ? current : "NONE") + " -> " + to);
-        ctx.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Transition: " + (current != null ? current : "NONE") + " -> " + to);
+        String logMsg = String.format("[KERNEL] [%d] [%d] Transition: %s -> %s", System.currentTimeMillis(), Thread.currentThread().getId(), (current != null ? current : "NONE"), to);
+        ctx.log(logMsg);
+        ctx.getOrchestrationState().addDiagnostic("[OrchestrationTrace] " + logMsg);
 
         // DIAGNOSTICS: Record transition in trace
         ctx.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(

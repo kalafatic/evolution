@@ -14,6 +14,11 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 /**
  * Central system backplane for orchestration signals.
  * All proposal intelligence flows through this channel.
+ *
+ * <p><b>ARCHITECTURAL INVARIANT: PROPAGATION ONLY</b></p>
+ * The SignalBus is a passive propagation and archival layer. It distributes
+ * telemetry and signals but MUST NOT make decisions, decide outcomes,
+ * or trigger variant activation. It serves as the data source for the DecisionResolver.
  */
 public class SignalBus {
     private static final SignalBus INSTANCE = new SignalBus();

@@ -44,6 +44,7 @@ public class IntentService {
     }
 
     private double calculateEPS(String request, AtomicIntentAnalysis atomic, Set<TaskIntent> intents) {
+        // EPS = min(1.0, (AmbiguityScore * 0.4) + (StructuralRisk * 0.4) + (ComplexityScore * 0.2))
         double ambiguity = calculateAmbiguity(request, atomic);
 
         double risk = 0.0;
@@ -60,7 +61,7 @@ public class IntentService {
         complexity = Math.min(1.0, complexity);
 
         double eps = (ambiguity * 0.4) + (risk * 0.4) + (complexity * 0.2);
-        return Math.max(0.1, Math.min(1.0, eps));
+        return Math.min(1.0, Math.max(0.1, eps));
     }
 
     private double calculateAmbiguity(String request, AtomicIntentAnalysis atomic) {

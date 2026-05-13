@@ -46,6 +46,12 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 
 /**
  * Evolutionary Darwin loop orchestration flow.
+ *
+ * <p><b>ARCHITECTURAL INVARIANT: EXPLORATION ONLY</b></p>
+ * DarwinFlow and the DarwinEngine are restricted to exploring the intent space.
+ * They may generate hypotheses, create branch variants, and mutate proposals,
+ * but they are STRICTLY PROHIBITED from ranking variants, selecting winners,
+ * or activating branches. All decision authority is delegated to the DecisionResolver.
  */
 public class DarwinFlow implements IOrchestrationFlow {
     private static final ExecutorService variantExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
