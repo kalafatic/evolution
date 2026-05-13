@@ -194,6 +194,86 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 	protected String timestamp = TIMESTAMP_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getPriority() <em>Priority</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPriority()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int PRIORITY_EDEFAULT = 0;
+
+	/**
+	 * The cached value of the '{@link #getPriority() <em>Priority</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPriority()
+	 * @generated
+	 * @ordered
+	 */
+	protected int priority = PRIORITY_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getSequenceNumber() <em>Sequence Number</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSequenceNumber()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final long SEQUENCE_NUMBER_EDEFAULT = 0L;
+
+	/**
+	 * The cached value of the '{@link #getSequenceNumber() <em>Sequence Number</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSequenceNumber()
+	 * @generated
+	 * @ordered
+	 */
+	protected long sequenceNumber = SEQUENCE_NUMBER_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getTurnId() <em>Turn Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTurnId()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String TURN_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getTurnId() <em>Turn Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTurnId()
+	 * @generated
+	 * @ordered
+	 */
+	protected String turnId = TURN_ID_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isIsTerminal() <em>Is Terminal</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isIsTerminal()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean IS_TERMINAL_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isIsTerminal() <em>Is Terminal</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isIsTerminal()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean isTerminal = IS_TERMINAL_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -402,6 +482,98 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @generated
 	 */
 	@Override
+	public int getPriority() {
+		return priority;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPriority(int newPriority) {
+		int oldPriority = priority;
+		priority = newPriority;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_MESSAGE__PRIORITY, oldPriority, priority));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public long getSequenceNumber() {
+		return sequenceNumber;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSequenceNumber(long newSequenceNumber) {
+		long oldSequenceNumber = sequenceNumber;
+		sequenceNumber = newSequenceNumber;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_MESSAGE__SEQUENCE_NUMBER, oldSequenceNumber, sequenceNumber));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getTurnId() {
+		return turnId;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setTurnId(String newTurnId) {
+		String oldTurnId = turnId;
+		turnId = newTurnId;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_MESSAGE__TURN_ID, oldTurnId, turnId));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isIsTerminal() {
+		return isTerminal;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setIsTerminal(boolean newIsTerminal) {
+		boolean oldIsTerminal = isTerminal;
+		isTerminal = newIsTerminal;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL, oldIsTerminal, isTerminal));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.CHAT_MESSAGE__INDEX:
@@ -420,6 +592,14 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 				return getAgentType();
 			case OrchestrationPackage.CHAT_MESSAGE__TIMESTAMP:
 				return getTimestamp();
+			case OrchestrationPackage.CHAT_MESSAGE__PRIORITY:
+				return getPriority();
+			case OrchestrationPackage.CHAT_MESSAGE__SEQUENCE_NUMBER:
+				return getSequenceNumber();
+			case OrchestrationPackage.CHAT_MESSAGE__TURN_ID:
+				return getTurnId();
+			case OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL:
+				return isIsTerminal();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -455,6 +635,18 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 				return;
 			case OrchestrationPackage.CHAT_MESSAGE__TIMESTAMP:
 				setTimestamp((String)newValue);
+				return;
+			case OrchestrationPackage.CHAT_MESSAGE__PRIORITY:
+				setPriority((Integer)newValue);
+				return;
+			case OrchestrationPackage.CHAT_MESSAGE__SEQUENCE_NUMBER:
+				setSequenceNumber((Long)newValue);
+				return;
+			case OrchestrationPackage.CHAT_MESSAGE__TURN_ID:
+				setTurnId((String)newValue);
+				return;
+			case OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL:
+				setIsTerminal((Boolean)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -492,6 +684,18 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_MESSAGE__TIMESTAMP:
 				setTimestamp(TIMESTAMP_EDEFAULT);
 				return;
+			case OrchestrationPackage.CHAT_MESSAGE__PRIORITY:
+				setPriority(PRIORITY_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHAT_MESSAGE__SEQUENCE_NUMBER:
+				setSequenceNumber(SEQUENCE_NUMBER_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHAT_MESSAGE__TURN_ID:
+				setTurnId(TURN_ID_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL:
+				setIsTerminal(IS_TERMINAL_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -520,6 +724,14 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 				return AGENT_TYPE_EDEFAULT == null ? agentType != null : !AGENT_TYPE_EDEFAULT.equals(agentType);
 			case OrchestrationPackage.CHAT_MESSAGE__TIMESTAMP:
 				return TIMESTAMP_EDEFAULT == null ? timestamp != null : !TIMESTAMP_EDEFAULT.equals(timestamp);
+			case OrchestrationPackage.CHAT_MESSAGE__PRIORITY:
+				return priority != PRIORITY_EDEFAULT;
+			case OrchestrationPackage.CHAT_MESSAGE__SEQUENCE_NUMBER:
+				return sequenceNumber != SEQUENCE_NUMBER_EDEFAULT;
+			case OrchestrationPackage.CHAT_MESSAGE__TURN_ID:
+				return TURN_ID_EDEFAULT == null ? turnId != null : !TURN_ID_EDEFAULT.equals(turnId);
+			case OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL:
+				return isTerminal != IS_TERMINAL_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -550,6 +762,14 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 		result.append(agentType);
 		result.append(", timestamp: ");
 		result.append(timestamp);
+		result.append(", priority: ");
+		result.append(priority);
+		result.append(", sequenceNumber: ");
+		result.append(sequenceNumber);
+		result.append(", turnId: ");
+		result.append(turnId);
+		result.append(", isTerminal: ");
+		result.append(isTerminal);
 		result.append(')');
 		return result.toString();
 	}

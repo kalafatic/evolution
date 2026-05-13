@@ -616,238 +616,58 @@ public class ChatGroup extends AEvoGroup {
         appendTextToSession(currentSession, text, color, style);
     }
 
-    public void appendTextToSession(ChatSession thread, String text, org.eclipse.swt.graphics.Color color, int style) {
-        if (thread == null || text == null || text.trim().isEmpty()) return;
-    	if (color == null) {
-    		color = Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
-		}
-    	
-        String trimmedText = text.trim();
-        String sender = "Evo";
-        String content = trimmedText;
-        String agentType = "ai";
-        String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-
-        // Match patterns like:
-        // USER [DARWIN] [12:14:11]: create java class...
-        // EVO [12:14:11]: Initializing DARWIN loop...
-        // TOOL [SHELLTOOL] [12:14:11]: Running git...
-        // LLMROUTER-LOCAL [12:14:14]: Using Ollama...
-        // EVO-DARWINENGINE-THINKING [12:14:14]: Role: DarwinEngine...
-        java.util.regex.Pattern logPattern = java.util.regex.Pattern.compile("^([A-Z][A-Z0-9-]*)(?:\\s+\\[([^\\]]*)\\])?(?:\\s+\\[(\\d{2}:\\d{2}:\\d{2})\\])?:\\s*([\\s\\S]*)$", java.util.regex.Pattern.CASE_INSENSITIVE);
-        java.util.regex.Matcher matcher = logPattern.matcher(trimmedText);
-
-        if (matcher.find()) {
-            sender = matcher.group(1);
-            String extra = matcher.group(2);
-            String foundTime = matcher.group(3);
-            content = matcher.group(4);
-
-            if (extra != null && extra.matches("\\d{2}:\\d{2}:\\d{2}") && foundTime == null) {
-                foundTime = extra;
-                extra = null;
+    public void addMessage(ChatMessage msg) {
+        if (currentSession != null && msg != null) {
+            // Downgrade previous waiting messages to avoid multiple pulsing bubbles
+            if (msg.getAgentType() != null && msg.getAgentType().contains("waiting")) {
+                for (ChatMessage existing : currentSession.getMessages()) {
+                    if (existing.getAgentType() != null && existing.getAgentType().contains("waiting")) {
+                        existing.setAgentType("response");
+                    }
+                }
             }
 
-            if (foundTime != null) timestamp = foundTime;
-
-            String senderUpper = sender.toUpperCase();
-            if (senderUpper.startsWith("USER")) agentType = "user";
-            else if (senderUpper.startsWith("EVO")) agentType = "ai";
-            else if (senderUpper.startsWith("TOOL")) agentType = "tool";
-            else if (senderUpper.startsWith("LLMROUTER")) agentType = "orchestrator";
-
-            String agentSource = (sender + (extra != null ? "-" + extra : "")).toLowerCase();
-            if (agentSource.contains("planner")) agentType = "planner";
-            else if (agentSource.contains("architect")) agentType = "architect";
-            else if (agentSource.contains("javadev")) agentType = "javadev";
-            else if (agentSource.contains("tester")) agentType = "tester";
-            else if (agentSource.contains("reviewer")) agentType = "reviewer";
-            else if (agentSource.contains("analytic") || agentSource.contains("analysis")) agentType = "analytic";
-            else if (agentSource.contains("general")) agentType = "general";
-            else if (agentSource.contains("terminal")) agentType = "terminal";
-            else if (agentSource.contains("file")) agentType = "file";
-            else if (agentSource.contains("maven")) agentType = "maven";
-            else if (agentSource.contains("git")) agentType = "git";
-            else if (agentSource.contains("structure")) agentType = "structure";
-            else if (agentSource.contains("websearch")) agentType = "websearch";
-            else if (agentSource.contains("quality")) agentType = "quality";
-            else if (agentSource.contains("observability")) agentType = "observability";
-            else if (agentSource.contains("orchestrator")) agentType = "orchestrator";
-            else if (agentSource.contains("darwinengine")) agentType = "darwin";
-
-            if (agentSource.contains("thinking")) agentType = "thinking";
-            else if (agentSource.contains("response") && !agentType.equals("darwin")) agentType = "response";
-        } else if (trimmedText.startsWith("You: ")) {
-            sender = "You";
-            content = trimmedText.substring(5);
-            agentType = "user";
-        } else if (trimmedText.startsWith("User [") && trimmedText.contains("]: ")) {
-            int closeBracket = trimmedText.indexOf("]: ");
-            sender = trimmedText.substring(0, closeBracket + 1);
-            content = trimmedText.substring(closeBracket + 3);
-            agentType = "user";
-        } else if (trimmedText.startsWith("Final Response: ")) {
-            sender = "Final Response";
-            content = trimmedText.substring(16);
-            agentType = "final-response";
-            if (content.contains("CLARIFY:")) {
-                agentType = "waiting";
-            }
-        } else if (trimmedText.startsWith("Error: ")) {
-            sender = "Error";
-            content = trimmedText.substring(7);
-            agentType = "error";
-        } else if (trimmedText.startsWith("Result Summary: ")) {
-            sender = "Result Summary";
-            content = trimmedText.substring(16);
-            agentType = "result-summary";
-        } else if (trimmedText.startsWith("Evo-") && trimmedText.contains(": ")) {
-            int colon = trimmedText.indexOf(": ");
-            sender = trimmedText.substring(0, colon);
-            content = trimmedText.substring(colon + 2).trim();
-
-            String senderLower = sender.toLowerCase();
-            if (senderLower.contains("-planner-")) agentType = "planner";
-            else if (senderLower.contains("-architect-")) agentType = "architect";
-            else if (senderLower.contains("-javadev-")) agentType = "javadev";
-            else if (senderLower.contains("-tester-")) agentType = "tester";
-            else if (senderLower.contains("-reviewer-")) agentType = "reviewer";
-            else if (senderLower.contains("-analytic-") || senderLower.contains("-analysis-")) agentType = "analytic";
-            else if (senderLower.contains("-general-")) agentType = "general";
-            else if (senderLower.contains("-terminal-")) agentType = "terminal";
-            else if (senderLower.contains("-file-")) agentType = "file";
-            else if (senderLower.contains("-maven-")) agentType = "maven";
-            else if (senderLower.contains("-git-")) agentType = "git";
-            else if (senderLower.contains("-structure-")) agentType = "structure";
-            else if (senderLower.contains("-websearch-")) agentType = "websearch";
-            else if (senderLower.contains("-quality-")) agentType = "quality";
-            else if (senderLower.contains("-observability-")) agentType = "observability";
-            else if (senderLower.contains("-orchestrator-")) agentType = "orchestrator";
-            else if (senderLower.contains("-darwinengine-")) agentType = "darwin";
-
-            if (senderLower.contains("-thinking")) agentType = "thinking";
-            else if (senderLower.contains("-response") && !agentType.equals("darwin")) agentType = "response";
-        } else if (trimmedText.startsWith("Evolution: ")) {
-            sender = "Evo";
-            content = trimmedText.substring(11);
-            agentType = "ai";
-        } else if (trimmedText.startsWith("Evo: ")) {
-            sender = "Evo";
-            content = trimmedText.substring(5);
-            agentType = "ai";
-        } else if (trimmedText.startsWith("User Interaction: ")) {
-            sender = "User Interaction";
-            content = trimmedText.substring(18);
-            agentType = "user";
-        } else if (trimmedText.startsWith("LlmRouter: ") || trimmedText.startsWith("LlmRouter-")) {
-            int colon = trimmedText.indexOf(": ");
-            sender = trimmedText.substring(0, colon);
-            content = trimmedText.substring(colon + 2);
-            agentType = "orchestrator";
-        } else if (trimmedText.contains("Agent [")) {
-            int start = trimmedText.indexOf("Agent [");
-            int end = trimmedText.indexOf("]", start);
-            if (end != -1) {
-                sender = trimmedText.substring(start, end + 1);
-                content = trimmedText.substring(end + 1).trim();
-                if (content.startsWith(":")) content = content.substring(1).trim();
-                String agentName = sender.toLowerCase();
-                if (agentName.contains("planner")) agentType = "planner";
-                else if (agentName.contains("architect")) agentType = "architect";
-                else if (agentName.contains("javadev")) agentType = "javadev";
-                else if (agentName.contains("tester")) agentType = "tester";
-                else if (agentName.contains("reviewer")) agentType = "reviewer";
-            }
-        } else if (trimmedText.contains("Tool [")) {
-            int start = trimmedText.indexOf("Tool [");
-            int end = trimmedText.indexOf("]", start);
-            if (end != -1) {
-                sender = trimmedText.substring(start, end + 1);
-                content = trimmedText.substring(end + 1).trim();
-                if (content.startsWith(":")) content = content.substring(1).trim();
-                agentType = "tool";
-            }
+            msg.setIndex(currentSession.getMessages().size());
+            currentSession.getMessages().add(msg);
+            refreshBrowser();
         }
+    }
 
-        if (content.contains("[DARWIN_BRANCHES]")) {
-            agentType = "darwin-branches";
-            content = content.replace("[DARWIN_BRANCHES]", "").trim();
-        } else if (sender.toLowerCase().contains("-darwinengine-") || sender.toLowerCase().equals("evo-darwinengine")) {
-            if (!agentType.equals("thinking")) {
-                agentType = "darwin";
-            }
-        }
-
-        boolean needsApproval = content.toLowerCase().contains("waiting for user") ||
-            content.toLowerCase().contains("guidance?") ||
-            content.toLowerCase().contains("clarify") ||
-            content.toLowerCase().contains("clarification") ||
-            content.contains("[PROPOSAL:") ||
-            content.toLowerCase().contains("ambiguous") ||
-            content.toLowerCase().contains("approve") ||
-            content.toLowerCase().contains("approval") ||
-            content.toLowerCase().contains("proceed?");
-
-        if (agentType.equals("darwin-branches")) {
-            needsApproval = true;
-        }
-
-        if (needsApproval && !agentType.contains("waiting") && !agentType.contains("user")) {
-            agentType += " waiting";
-        }
-
-        // Downgrade previous waiting messages to avoid multiple pulsing bubbles
-        for (ChatMessage existing : thread.getMessages()) {
-            if (existing.getAgentType() != null && existing.getAgentType().contains("waiting")) {
-                existing.setAgentType("response");
-            }
-        }
-
-        // Clean up technical markers for human-readability
-        content = content.replaceAll("\\[KERNEL\\]", "")
-                        .replaceAll("\\[STRATEGY\\]", "")
-                        .replaceAll("\\[ANALYSIS\\]", "")
-                        .replaceAll("\\[DIAGNOSIS\\]", "")
-                        .replaceAll("\\[SUPERVISOR\\]", "")
-                        .replaceAll("\\[EVO\\]", "")
-                        .replaceAll("\\[DARWIN\\]", "")
-                        .replaceAll("\\[DARWINENGINE\\]", "")
-                        .replaceAll("\\[THINKING\\]", "")
-                        .replaceAll("\\[ORCHESTRATOR\\]", "")
-                        .trim();
-
-        String finalContent = content;
-
-        try {
-            final String fSender = sender;
-            final String fContent = finalContent;
-            final String fAgentType = agentType;
-            final String fHexColor = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
-            final boolean isBold = (style & SWT.BOLD) != 0;
-            final boolean isItalic = (style & SWT.ITALIC) != 0;
-            final String fTimestamp = timestamp;
-            Display.getDefault().asyncExec(() -> {
-                try {
-                    ChatMessage msg = OrchestrationFactory.eINSTANCE.createChatMessage();
-                    msg.setIndex(thread.getMessages().size());
-                    msg.setSender(fSender);
-                    msg.setText(fContent);
-                    msg.setColor(fHexColor);
-                    msg.setIsBold(isBold);
-                    msg.setIsItalic(isItalic);
-                    msg.setAgentType(fAgentType);
-                    msg.setTimestamp(fTimestamp);
-                    thread.getMessages().add(msg);
-
-                    if (thread == currentSession) {
+    public void addMessageToSession(String sessionId, ChatMessage msg) {
+        if (orchestrator != null && orchestrator.getAiChat() != null && msg != null) {
+            orchestrator.getAiChat().getSessions().stream()
+                .filter(s -> sessionId.equals(s.getId()))
+                .findFirst()
+                .ifPresent(s -> {
+                    // Downgrade previous waiting messages
+                    if (msg.getAgentType() != null && msg.getAgentType().contains("waiting")) {
+                        for (ChatMessage existing : s.getMessages()) {
+                            if (existing.getAgentType() != null && existing.getAgentType().contains("waiting")) {
+                                existing.setAgentType("response");
+                            }
+                        }
+                    }
+                    msg.setIndex(s.getMessages().size());
+                    s.getMessages().add(msg);
+                    if (s == currentSession) {
                         refreshBrowser();
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
+                });
+        }
+    }
+
+    public void appendTextToSession(ChatSession thread, String text, org.eclipse.swt.graphics.Color color, int style) {
+        // LEGACY: Routing to new controller via page if possible, otherwise direct add
+        if (page != null) {
+            page.handleLegacyLog(thread != null ? thread.getId() : "Default", text, color, style);
+        } else {
+            // Fallback for non-page contexts
+            if (thread == null || text == null || text.trim().isEmpty()) return;
+            ChatMessage msg = OrchestrationFactory.eINSTANCE.createChatMessage();
+            msg.setText(text);
+            msg.setSender("System");
+            msg.setAgentType("ai");
+            addMessageToSession(thread.getId(), msg);
         }
     }
 
@@ -950,6 +770,10 @@ public class ChatGroup extends AEvoGroup {
         obj.put("isItalic", m.isIsItalic());
         obj.put("agentType", m.getAgentType() != null ? m.getAgentType() : "ai");
         obj.put("timestamp", m.getTimestamp() != null ? m.getTimestamp() : "");
+        obj.put("priority", m.getPriority());
+        obj.put("sequenceNumber", m.getSequenceNumber());
+        obj.put("turnId", m.getTurnId());
+        obj.put("isTerminal", m.isIsTerminal());
         return obj;
     }
 
