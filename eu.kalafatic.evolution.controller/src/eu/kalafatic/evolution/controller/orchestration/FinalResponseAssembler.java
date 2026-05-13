@@ -41,17 +41,41 @@ public class FinalResponseAssembler {
         String executionStatus = buildExecutionStatus(context, success);
         String accomplishments = buildAccomplishments(context);
 
-        // Combine everything into a cohesive summary
+        // Standardized Summary Construction
         StringBuilder sb = new StringBuilder();
+
+        // A. Status & Accomplishments
         if (executionStatus != null && !executionStatus.isEmpty()) {
             sb.append(executionStatus).append(" ");
         }
         if (accomplishments != null && !accomplishments.isEmpty()) {
             sb.append(accomplishments).append(" ");
         }
-        if (summary != null && !summary.isEmpty() && !accomplishments.contains(summary)) {
+        if (summary != null && !summary.isEmpty() && !sb.toString().contains(summary)) {
             sb.append(summary);
         }
+
+        // B. Mediated Context Injection (if applicable)
+        Object mediatedTarget = state.getMetadata().get("mediatedTarget");
+        if (mediatedTarget instanceof eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetDescriptor) {
+            eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetDescriptor target = (eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetDescriptor) mediatedTarget;
+            sb.append("\n\n---\n### 🧠 Mediated Target Intelligence\n");
+            sb.append("**Target Path:** `").append(target.getRootPath()).append("`\n");
+            sb.append("**Detected Technologies:** ").append(target.getDetectedTechnologies().stream().sorted().collect(Collectors.joining(", "))).append("\n");
+            sb.append("**Inferred Architecture:** ").append(target.getArchitectureInference()).append("\n");
+
+            Object curated = state.getMetadata().get("mediatedCuratedFiles");
+            if (curated instanceof List) {
+                List<?> curatedList = (List<?>) curated;
+                sb.append("**Curated Context:** ").append(curatedList.size()).append(" high-signal files selected for synthesis.\n");
+            }
+
+            Object synthesized = state.getMetadata().get("mediatedSynthesizedPrompt");
+            if (synthesized instanceof String && !((String) synthesized).isEmpty()) {
+                sb.append("\n#### 📝 Proposed Evolution Prompt\n```markdown\n").append(synthesized).append("\n```\n");
+            }
+        }
+
         String finalSummary = sb.toString().trim();
 
         return new FinalResponse(
@@ -91,7 +115,7 @@ public class FinalResponseAssembler {
             }
         }
 
-        return proposals.stream().distinct().collect(Collectors.toList());
+        return proposals.stream().distinct().sorted().collect(Collectors.toList());
     }
 
     private List<FileReference> collectFiles(TaskContext context) {
@@ -136,6 +160,7 @@ public class FinalResponseAssembler {
             .filter(t -> t.getResultSummary() != null && !t.getResultSummary().isEmpty())
             .map(Task::getResultSummary)
             .distinct()
+            .sorted()
             .collect(Collectors.joining(" "));
     }
 }

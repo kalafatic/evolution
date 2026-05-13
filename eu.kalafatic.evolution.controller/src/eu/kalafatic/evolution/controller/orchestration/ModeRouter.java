@@ -21,7 +21,7 @@ public class ModeRouter {
             case SELF_DEV_MODE:
                 return new DarwinFlow(aiService, manager);
             case HYBRID_MANUAL_EXPORT:
-                return new MediatedExportFlow(aiService, manager);
+                return new MediatedAnalysisFlow(aiService, manager);
             case ASSISTED_CODING:
                 return new DarwinFlow(aiService, manager);
             case SIMPLE_CHAT:
@@ -58,6 +58,7 @@ public class ModeRouter {
         if (lowerPrompt.contains("mode: assisted")) return createAssistedCodingMode();
         if (lowerPrompt.contains("mode: darwin")) return createDarwinMode();
         if (lowerPrompt.contains("mode: self-dev")) return createSelfDevMode();
+        if (lowerPrompt.contains("mode: mediated") || lowerPrompt.contains("analyze target")) return createHybridManualExportMode();
         if (lowerPrompt.contains("mode: export") || lowerPrompt.contains("prepare export") || lowerPrompt.contains("manual self-dev package") || lowerPrompt.contains("export for chatgpt")) {
             return createHybridManualExportMode();
         }
