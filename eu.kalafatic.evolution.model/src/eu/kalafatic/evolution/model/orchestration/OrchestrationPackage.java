@@ -1191,13 +1191,22 @@ public interface OrchestrationPackage extends EPackage {
 	int GIT__COMMIT_MSG = 6;
 
 	/**
+	 * The feature id for the '<em><b>Password</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GIT__PASSWORD = 7;
+
+	/**
 	 * The number of structural features of the '<em>Git</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int GIT_FEATURE_COUNT = 7;
+	int GIT_FEATURE_COUNT = 8;
 
 	/**
 	 * The number of operations of the '<em>Git</em>' class.
@@ -4486,6 +4495,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getGit_BranchName();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Git#getPassword <em>Password</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Password</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Git#getPassword()
+	 * @see #getGit()
+	 * @generated
+	 */
+	EAttribute getGit_Password();
+
+	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Git#getCommitMsg <em>Commit Msg</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -7173,6 +7193,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute GIT__COMMIT_MSG = eINSTANCE.getGit_CommitMsg();
+
+		/**
+		 * The meta object literal for the '<em><b>Password</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GIT__PASSWORD = eINSTANCE.getGit_Password();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.MavenImpl <em>Maven</em>}' class.

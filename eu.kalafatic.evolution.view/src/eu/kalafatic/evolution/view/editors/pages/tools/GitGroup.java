@@ -21,7 +21,7 @@ import eu.kalafatic.evolution.view.factories.SWTFactory;
 import java.io.File;
 
 public class GitGroup extends AToolGroup {
-    private Text gitRepoText, gitBranchText, gitLocalPathText;
+    private Text gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, gitLocalPathText;
     private Text branchNameText, commitMsgText;
 
     public GitGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
@@ -38,6 +38,14 @@ public class GitGroup extends AToolGroup {
         SWTFactory.createLabel(group, "Branch:");
         gitBranchText = SWTFactory.createText(group);
         SWTFactory.createEditButton(group, gitBranchText);
+
+        SWTFactory.createLabel(group, "Username:");
+        gitUsernameText = SWTFactory.createText(group);
+        SWTFactory.createEditButton(group, gitUsernameText);
+
+        SWTFactory.createLabel(group, "Password:");
+        gitPasswordText = SWTFactory.createPasswordText(group);
+        SWTFactory.createEditButton(group, gitPasswordText);
 
         SWTFactory.createLabel(group, "Local Path:");
         gitLocalPathText = SWTFactory.createText(group);
@@ -102,8 +110,28 @@ public class GitGroup extends AToolGroup {
             File workingDir = getWorkingDir();
             TaskContext context = new TaskContext(orchestrator, workingDir);
             eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
-            String result = shell.execute("git --version", workingDir, context);
-            MessageDialog.openInformation(group.getShell(), "Git Test", "Git is available:\n" + result);
+
+            String gitVersion = shell.execute("git --version", workingDir, context);
+            StringBuilder statusMsg = new StringBuilder("Git is available: " + gitVersion + "\n");
+
+            String url = gitRepoText.getText();
+            if (url != null && !url.isEmpty()) {
+                String user = gitUsernameText.getText();
+                String pass = gitPasswordText.getText();
+                String remoteUrl = url;
+                if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
+                    if (url.startsWith("https://")) {
+                        remoteUrl = "https://" + java.net.URLEncoder.encode(user, "UTF-8") + ":" +
+                                    java.net.URLEncoder.encode(pass, "UTF-8") + "@" + url.substring(8);
+                    }
+                }
+
+                statusMsg.append("Testing remote connectivity...\n");
+                String remoteResult = shell.execute("git ls-remote " + remoteUrl + " HEAD", workingDir, context);
+                statusMsg.append("Remote connection successful!");
+            }
+
+            MessageDialog.openInformation(group.getShell(), "Git Test", statusMsg.toString());
             if (orchestrator.getGit() != null) {
                 orchestrator.getGit().setTestStatus("SUCCESS");
                 updateGroupStatus();
@@ -132,6 +160,8 @@ public class GitGroup extends AToolGroup {
             Git git = orchestrator.getGit();
             gitRepoText.setText(git.getRepositoryUrl() != null ? git.getRepositoryUrl() : "");
             gitBranchText.setText(git.getBranch() != null ? git.getBranch() : "");
+            gitUsernameText.setText(git.getUsername() != null ? git.getUsername() : "");
+            gitPasswordText.setText(git.getPassword() != null ? git.getPassword() : "");
             gitLocalPathText.setText(git.getLocalPath() != null ? git.getLocalPath() : "");
             branchNameText.setText(git.getBranchName() != null ? git.getBranchName() : "");
             commitMsgText.setText(git.getCommitMsg() != null ? git.getCommitMsg() : "");
@@ -147,6 +177,8 @@ public class GitGroup extends AToolGroup {
         Git git = orchestrator.getGit();
         git.setRepositoryUrl(gitRepoText.getText());
         git.setBranch(gitBranchText.getText());
+        git.setUsername(gitUsernameText.getText());
+        git.setPassword(gitPasswordText.getText());
         git.setLocalPath(gitLocalPathText.getText());
         git.setBranchName(branchNameText.getText());
         git.setCommitMsg(commitMsgText.getText());
@@ -166,6 +198,6 @@ public class GitGroup extends AToolGroup {
 
     @Override
     public Text[] getTextFields() {
-        return new Text[] { gitRepoText, gitBranchText, gitLocalPathText };
+        return new Text[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, gitLocalPathText };
     }
 }

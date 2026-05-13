@@ -23,8 +23,10 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 
+import org.eclipse.swt.widgets.DirectoryDialog;
+
 public class GitSettingsPage extends AWizardPage {
-    private Text repoUrlText, branchText, usernameText, localPathText;
+    private Text repoUrlText, branchText, usernameText, passwordText, localPathText;
     private Button skipCheck;
     private ControlDecoration gitDecorator, infoDecorator;
     private Job validationJob;
@@ -38,10 +40,13 @@ public class GitSettingsPage extends AWizardPage {
     @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
-        if (visible && orchestrator != null) {
-            // Update model with any values already entered if needed,
-            // but usually we do it on performFinish.
-            // Here we could pre-populate from model if it was already set.
+        if (visible && orchestrator != null && orchestrator.getGit() != null) {
+            eu.kalafatic.evolution.model.orchestration.Git git = orchestrator.getGit();
+            if (git.getRepositoryUrl() != null) repoUrlText.setText(git.getRepositoryUrl());
+            if (git.getBranch() != null) branchText.setText(git.getBranch());
+            if (git.getUsername() != null) usernameText.setText(git.getUsername());
+            if (git.getPassword() != null) passwordText.setText(git.getPassword());
+            if (git.getLocalPath() != null) localPathText.setText(git.getLocalPath());
         }
     }
 
@@ -89,10 +94,42 @@ public class GitSettingsPage extends AWizardPage {
         usernameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         usernameText.setText("admin");
 
+        new Label(container, SWT.NONE).setText("Password/Token:");
+        passwordText = new Text(container, SWT.BORDER | SWT.PASSWORD);
+        passwordText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
         new Label(container, SWT.NONE).setText("Local Path:");
-        localPathText = new Text(container, SWT.BORDER);
+        Composite pathComp = new Composite(container, SWT.NONE);
+        pathComp.setLayout(new GridLayout(2, false));
+        pathComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        localPathText = new Text(pathComp, SWT.BORDER);
         localPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         localPathText.setText("repo");
+
+        Button browseBtn = new Button(pathComp, SWT.PUSH);
+        browseBtn.setText("Browse...");
+        browseBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                DirectoryDialog dialog = new DirectoryDialog(getShell());
+                dialog.setText("Select Local Git Repository Directory");
+                String selected = dialog.open();
+                if (selected != null) {
+                    localPathText.setText(selected);
+                }
+            }
+        });
+
+        Button testBtn = new Button(container, SWT.PUSH);
+        testBtn.setText("Test Connection");
+        testBtn.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
+        testBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                testConnection();
+            }
+        });
 
         skipCheck = new Button(container, SWT.CHECK);
         skipCheck.setText("Skip this step and setup later");
@@ -158,6 +195,52 @@ public class GitSettingsPage extends AWizardPage {
         setErrorMessage("Git is required to clone the repository.");
     }
 
+    private void testConnection() {
+        String url = repoUrlText.getText();
+        if (url == null || url.isEmpty() || url.equals("https://github.com/kalafatic/evo.git")) {
+            org.eclipse.jface.dialogs.MessageDialog.openWarning(getShell(), "Git Test", "Please enter a valid repository URL first.");
+            return;
+        }
+
+        Job job = new Job("Testing Git Connection") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                try {
+                    String user = usernameText.getText();
+                    String pass = passwordText.getText();
+
+                    // Construct URL with credentials if provided
+                    String remoteUrl = url;
+                    if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
+                         if (url.startsWith("https://")) {
+                             remoteUrl = "https://" + java.net.URLEncoder.encode(user, "UTF-8") + ":" +
+                                         java.net.URLEncoder.encode(pass, "UTF-8") + "@" + url.substring(8);
+                         }
+                    }
+
+                    ProcessBuilder pb = new ProcessBuilder("git", "ls-remote", remoteUrl, "HEAD");
+                    Process process = pb.start();
+                    boolean success = (process.waitFor() == 0);
+
+                    Display.getDefault().asyncExec(() -> {
+                        if (success) {
+                            org.eclipse.jface.dialogs.MessageDialog.openInformation(getShell(), "Git Test", "Connection successful!");
+                        } else {
+                            org.eclipse.jface.dialogs.MessageDialog.openError(getShell(), "Git Test", "Connection failed. Check URL and credentials.");
+                        }
+                    });
+                } catch (Exception e) {
+                    Display.getDefault().asyncExec(() -> {
+                        org.eclipse.jface.dialogs.MessageDialog.openError(getShell(), "Git Test", "Error: " + e.getMessage());
+                    });
+                }
+                return Status.OK_STATUS;
+            }
+        };
+        job.setUser(true);
+        job.schedule();
+    }
+
     private void openUrl(String url) {
         try {
             IWorkbenchBrowserSupport support = PlatformUI.getWorkbench().getBrowserSupport();
@@ -170,6 +253,7 @@ public class GitSettingsPage extends AWizardPage {
     public String getRepoUrl() { return repoUrlText.getText(); }
     public String getBranch() { return branchText.getText(); }
     public String getUsername() { return usernameText.getText(); }
+    public String getPassword() { return passwordText.getText(); }
     public String getLocalPath() { return localPathText.getText(); }
     public boolean isSkipped() { return skipCheck.getSelection(); }
 }

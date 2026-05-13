@@ -104,7 +104,7 @@ public class AddOrchestrationWizard extends Wizard implements INewWizard {
 
             // Git Settings
             if (!gitPage.isSkipped()) {
-                modelManager.updateGitSettings(orchestrator, gitPage.getRepoUrl(), gitPage.getBranch(), gitPage.getUsername(), gitPage.getLocalPath());
+                modelManager.updateGitSettings(orchestrator, gitPage.getRepoUrl(), gitPage.getBranch(), gitPage.getUsername(), gitPage.getPassword(), gitPage.getLocalPath());
             }
 
             // Ollama Settings

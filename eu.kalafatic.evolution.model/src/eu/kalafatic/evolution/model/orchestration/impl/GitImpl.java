@@ -25,6 +25,7 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl#getUsername <em>Username</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl#getLocalPath <em>Local Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl#getTestStatus <em>Test Status</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GitImpl#getPassword <em>Password</em>}</li>
  * </ul>
  *
  * @generated
@@ -161,6 +162,26 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 	protected static final String COMMIT_MSG_EDEFAULT = null;
 
 	/**
+	 * The default value of the '{@link #getPassword() <em>Password</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPassword()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String PASSWORD_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getPassword() <em>Password</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPassword()
+	 * @generated
+	 * @ordered
+	 */
+	protected String password = PASSWORD_EDEFAULT;
+
+	/**
 	 * The cached value of the '{@link #getCommitMsg() <em>Commit Msg</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -169,6 +190,29 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 	 * @ordered
 	 */
 	protected String commitMsg = COMMIT_MSG_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getPassword() {
+		return password;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPassword(String newPassword) {
+		String oldPassword = password;
+		password = newPassword;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GIT__PASSWORD, oldPassword, password));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -370,6 +414,8 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 				return getTestStatus();
 			case OrchestrationPackage.GIT__BRANCH_NAME:
 				return getBranchName();
+			case OrchestrationPackage.GIT__PASSWORD:
+				return getPassword();
 			case OrchestrationPackage.GIT__COMMIT_MSG:
 				return getCommitMsg();
 		}
@@ -401,6 +447,9 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 				return;
 			case OrchestrationPackage.GIT__BRANCH_NAME:
 				setBranchName((String)newValue);
+				return;
+			case OrchestrationPackage.GIT__PASSWORD:
+				setPassword((String)newValue);
 				return;
 			case OrchestrationPackage.GIT__COMMIT_MSG:
 				setCommitMsg((String)newValue);
@@ -435,6 +484,9 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 			case OrchestrationPackage.GIT__BRANCH_NAME:
 				setBranchName(BRANCH_NAME_EDEFAULT);
 				return;
+			case OrchestrationPackage.GIT__PASSWORD:
+				setPassword(PASSWORD_EDEFAULT);
+				return;
 			case OrchestrationPackage.GIT__COMMIT_MSG:
 				setCommitMsg(COMMIT_MSG_EDEFAULT);
 				return;
@@ -462,6 +514,8 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 				return TEST_STATUS_EDEFAULT == null ? testStatus != null : !TEST_STATUS_EDEFAULT.equals(testStatus);
 			case OrchestrationPackage.GIT__BRANCH_NAME:
 				return BRANCH_NAME_EDEFAULT == null ? branchName != null : !BRANCH_NAME_EDEFAULT.equals(branchName);
+			case OrchestrationPackage.GIT__PASSWORD:
+				return PASSWORD_EDEFAULT == null ? password != null : !PASSWORD_EDEFAULT.equals(password);
 			case OrchestrationPackage.GIT__COMMIT_MSG:
 				return COMMIT_MSG_EDEFAULT == null ? commitMsg != null : !COMMIT_MSG_EDEFAULT.equals(commitMsg);
 		}
@@ -490,6 +544,8 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 		result.append(testStatus);
 		result.append(", branchName: ");
 		result.append(branchName);
+		result.append(", password: ");
+		result.append(password);
 		result.append(", commitMsg: ");
 		result.append(commitMsg);
 		result.append(')');
