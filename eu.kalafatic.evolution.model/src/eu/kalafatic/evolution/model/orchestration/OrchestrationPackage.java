@@ -3036,13 +3036,49 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_MESSAGE__TIMESTAMP = 7;
 
 	/**
+	 * The feature id for the '<em><b>Priority</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_MESSAGE__PRIORITY = 8;
+
+	/**
+	 * The feature id for the '<em><b>Sequence Number</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_MESSAGE__SEQUENCE_NUMBER = 9;
+
+	/**
+	 * The feature id for the '<em><b>Turn Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_MESSAGE__TURN_ID = 10;
+
+	/**
+	 * The feature id for the '<em><b>Is Terminal</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_MESSAGE__IS_TERMINAL = 11;
+
+	/**
 	 * The number of structural features of the '<em>Chat Message</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_MESSAGE_FEATURE_COUNT = 8;
+	int CHAT_MESSAGE_FEATURE_COUNT = 12;
 
 	/**
 	 * The number of operations of the '<em>Chat Message</em>' class.
@@ -6057,6 +6093,50 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getChatMessage_Timestamp();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getPriority <em>Priority</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Priority</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatMessage#getPriority()
+	 * @see #getChatMessage()
+	 * @generated
+	 */
+	EAttribute getChatMessage_Priority();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getSequenceNumber <em>Sequence Number</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Sequence Number</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatMessage#getSequenceNumber()
+	 * @see #getChatMessage()
+	 * @generated
+	 */
+	EAttribute getChatMessage_SequenceNumber();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getTurnId <em>Turn Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Turn Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatMessage#getTurnId()
+	 * @see #getChatMessage()
+	 * @generated
+	 */
+	EAttribute getChatMessage_TurnId();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#isIsTerminal <em>Is Terminal</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Is Terminal</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatMessage#isIsTerminal()
+	 * @see #getChatMessage()
+	 * @generated
+	 */
+	EAttribute getChatMessage_IsTerminal();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings <em>Supervisor Settings</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -8427,6 +8507,38 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_MESSAGE__TIMESTAMP = eINSTANCE.getChatMessage_Timestamp();
+
+		/**
+		 * The meta object literal for the '<em><b>Priority</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_MESSAGE__PRIORITY = eINSTANCE.getChatMessage_Priority();
+
+		/**
+		 * The meta object literal for the '<em><b>Sequence Number</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_MESSAGE__SEQUENCE_NUMBER = eINSTANCE.getChatMessage_SequenceNumber();
+
+		/**
+		 * The meta object literal for the '<em><b>Turn Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_MESSAGE__TURN_ID = eINSTANCE.getChatMessage_TurnId();
+
+		/**
+		 * The meta object literal for the '<em><b>Is Terminal</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_MESSAGE__IS_TERMINAL = eINSTANCE.getChatMessage_IsTerminal();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl <em>Supervisor Settings</em>}' class.

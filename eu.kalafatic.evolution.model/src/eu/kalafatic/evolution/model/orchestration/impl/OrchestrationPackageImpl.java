@@ -3054,6 +3054,46 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getChatMessage_Priority() {
+		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(8);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatMessage_SequenceNumber() {
+		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(9);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatMessage_TurnId() {
+		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(10);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatMessage_IsTerminal() {
+		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(11);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getPromptInstructions() {
 		return promptInstructionsEClass;
 	}
@@ -3562,6 +3602,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__IS_ITALIC);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__AGENT_TYPE);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__TIMESTAMP);
+		createEAttribute(chatMessageEClass, CHAT_MESSAGE__PRIORITY);
+		createEAttribute(chatMessageEClass, CHAT_MESSAGE__SEQUENCE_NUMBER);
+		createEAttribute(chatMessageEClass, CHAT_MESSAGE__TURN_ID);
+		createEAttribute(chatMessageEClass, CHAT_MESSAGE__IS_TERMINAL);
 
 		supervisorSettingsEClass = createEClass(SUPERVISOR_SETTINGS);
 		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__EXECUTABLE_PATH);
@@ -3920,6 +3964,10 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getChatMessage_IsItalic(), ecorePackage.getEBoolean(), "isItalic", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatMessage_AgentType(), ecorePackage.getEString(), "agentType", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatMessage_Timestamp(), ecorePackage.getEString(), "timestamp", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatMessage_Priority(), ecorePackage.getEInt(), "priority", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatMessage_SequenceNumber(), ecorePackage.getELong(), "sequenceNumber", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatMessage_TurnId(), ecorePackage.getEString(), "turnId", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatMessage_IsTerminal(), ecorePackage.getEBoolean(), "isTerminal", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(promptInstructionsEClass, PromptInstructions.class, "PromptInstructions", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getPromptInstructions_AutoApprove(), ecorePackage.getEBoolean(), "autoApprove", null, 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

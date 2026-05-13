@@ -204,4 +204,92 @@ public interface ChatMessage extends EObject {
 	 */
 	void setTimestamp(String value);
 
+	/**
+	 * Returns the value of the '<em><b>Priority</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Priority</em>' attribute.
+	 * @see #setPriority(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatMessage_Priority()
+	 * @model
+	 * @generated
+	 */
+	int getPriority();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getPriority <em>Priority</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Priority</em>' attribute.
+	 * @see #getPriority()
+	 * @generated
+	 */
+	void setPriority(int value);
+
+	/**
+	 * Returns the value of the '<em><b>Sequence Number</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Sequence Number</em>' attribute.
+	 * @see #setSequenceNumber(long)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatMessage_SequenceNumber()
+	 * @model
+	 * @generated
+	 */
+	long getSequenceNumber();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getSequenceNumber <em>Sequence Number</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Sequence Number</em>' attribute.
+	 * @see #getSequenceNumber()
+	 * @generated
+	 */
+	void setSequenceNumber(long value);
+
+	/**
+	 * Returns the value of the '<em><b>Turn Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Turn Id</em>' attribute.
+	 * @see #setTurnId(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatMessage_TurnId()
+	 * @model
+	 * @generated
+	 */
+	String getTurnId();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getTurnId <em>Turn Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Turn Id</em>' attribute.
+	 * @see #getTurnId()
+	 * @generated
+	 */
+	void setTurnId(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Is Terminal</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Is Terminal</em>' attribute.
+	 * @see #setIsTerminal(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatMessage_IsTerminal()
+	 * @model
+	 * @generated
+	 */
+	boolean isIsTerminal();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#isIsTerminal <em>Is Terminal</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Is Terminal</em>' attribute.
+	 * @see #isIsTerminal()
+	 * @generated
+	 */
+	void setIsTerminal(boolean value);
+
 } // ChatMessage

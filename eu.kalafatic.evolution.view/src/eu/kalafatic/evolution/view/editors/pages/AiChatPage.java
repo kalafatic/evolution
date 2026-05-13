@@ -75,6 +75,9 @@ import eu.kalafatic.evolution.controller.workflow.WorkflowStepRegistry;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStep;
 import eu.kalafatic.evolution.controller.workflow.StepModeController;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
+import eu.kalafatic.evolution.view.controller.ConversationOutputController;
+import eu.kalafatic.evolution.view.controller.MessagePriority;
+import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 
 /**
  * @evo:16:A reason=darwin-mode-sync
@@ -93,6 +96,8 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	private ChatGroup chatGroup;
 	private SystemStatusGroup systemStatusGroup;
 	private FeedbackGroup feedbackGroup;
+	private ConversationOutputController outputController;
+	private String currentTurnId;
 
 	private int editingMessageIndex = -1;
 	private String editingVariantId = null;
@@ -123,12 +128,17 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, editor, orchestrator);
 		initResources();
+		this.outputController = new ConversationOutputController(msg -> {
+			if (isDisposed()) return;
+			chatGroup.addMessageToSession(msg.getTurnId().split("_")[0], msg); // TurnId starts with sessionId
+		});
 		createControl();
 		RuntimeEventBus.getInstance().subscribe(this);
 		addDisposeListener(new DisposeListener() {
 			@Override
 			public void widgetDisposed(DisposeEvent e) {
 				RuntimeEventBus.getInstance().unsubscribe(AiChatPage.this);
+				if (outputController != null) outputController.dispose();
 				if (chatFont != null && !chatFont.isDisposed()) chatFont.dispose();
 				if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
 				if (colorWaiting != null && !colorWaiting.isDisposed()) colorWaiting.dispose();
@@ -509,8 +519,12 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) orchestrator.setId("chat-" + System.currentTimeMillis());
 		}
 		if (assistAdapter != null) assistAdapter.closeProposalPopup();
-		chatGroup.appendText("You: " + request, colorUser, SWT.BOLD);
-		chatGroup.appendText("\n\nEvo: Initializing orchestration...", colorEvolution, SWT.ITALIC);
+
+		String sessionId = getCurrentSessionName();
+		currentTurnId = sessionId + "_" + System.currentTimeMillis();
+
+		outputController.submitMessage(sessionId, currentTurnId, "You", request, "user", MessagePriority.NORMAL, false);
+		outputController.submitMessage(sessionId, currentTurnId, "Evo", "Initializing orchestration...", "ai", MessagePriority.PROGRESS, false);
 		instructionsGroup.setRequest("");
 		state.isRunning = true;
 		instructionsGroup.setOrchestrationRunning(true);
@@ -519,7 +533,6 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 		TaskRequest taskRequest = new TaskRequest(request, getProjectRoot());
 		taskRequest.getContext().put("orchestrator", orchestrator);
-		String sessionId = getCurrentSessionName();
 		taskRequest.getContext().put("sessionId", sessionId);
 
 		TaskContext context = new TaskContext(orchestrator, getProjectRoot());
@@ -571,10 +584,9 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 							state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
 							state.currentStackTask.setResultSummary("Error: " + response.getSummary());
 						}
-						if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
-							chatGroup.setThinking(false);
-							chatGroup.appendText("\n\nError: " + response.getContent(), colorError, SWT.BOLD);
-						}
+
+						chatGroup.setThinking(false);
+						outputController.submitMessage(sessionId, currentTurnId, "Error", response.getContent(), "error", MessagePriority.FINAL, true);
 						return;
 					}
 
@@ -583,20 +595,13 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 						state.currentStackTask.setResultSummary(response.getSummary());
 					}
 
+					chatGroup.setThinking(false);
+					String finalMsg = response.getContent() != null ? response.getContent() : response.getSummary();
+					outputController.submitMessage(sessionId, currentTurnId, "Evo", finalMsg, "final-response", MessagePriority.FINAL, true);
+
 					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
-						chatGroup.setThinking(false);
-
-						String finalMsg = response.getContent() != null ? response.getContent() : response.getSummary();
-						chatGroup.appendText(finalMsg, colorEvolution, SWT.NORMAL);
-
 						editor.setDirty(true);
 						feedbackGroup.showSatisfaction(true); updateScrolledContent();
-					} else {
-						ChatSession targetSession = orchestrator.getAiChat().getSessions().stream().filter(t -> t.getId().equals(sessionId)).findFirst().orElse(null);
-						if (targetSession != null) {
-							String finalMsg = response.getContent() != null ? response.getContent() : response.getSummary();
-							chatGroup.appendTextToSession(targetSession, finalMsg, colorEvolution, SWT.NORMAL);
-						}
 					}
 				});
 			} catch (Exception e) {
@@ -805,14 +810,17 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			NeuronService.getInstance().train(orchestrator, finalRequest, "coding", 5);
 			if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) orchestrator.setId(idPrefix + System.currentTimeMillis());
 		}
-		chatGroup.appendText("User [" + modeLabel + "]: " + finalRequest, colorUser, SWT.BOLD);
+
+		String sessionId = getCurrentSessionName();
+		currentTurnId = sessionId + "_" + System.currentTimeMillis();
+
+		outputController.submitMessage(sessionId, currentTurnId, "User [" + modeLabel + "]", finalRequest, "user", MessagePriority.NORMAL, false);
 		String loopSuffix = (isSelfDev) ? " Supervisor loop" : " loop";
-		chatGroup.appendText("\n\nEvo: Initializing " + modeLabel + loopSuffix + "...", colorEvolution, SWT.ITALIC | SWT.BOLD);
+		outputController.submitMessage(sessionId, currentTurnId, "Evo", "Initializing " + modeLabel + loopSuffix + "...", "ai", MessagePriority.PROGRESS, false);
 		instructionsGroup.setRequest("");
 		state.isRunning = true;
 		instructionsGroup.setOrchestrationRunning(true);
 		chatGroup.setThinking(true);
-		String sessionId = getCurrentSessionName();
 		final File projectRoot = getProjectRoot();
 		state.orchestrationSession = new Thread(() -> {
 			try {
@@ -868,10 +876,11 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
 						state.currentStackTask.setResultSummary("Self-Development session finished.");
 					}
-					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
-						chatGroup.setThinking(false);
 
-						chatGroup.appendText(finalResponse.toString(), colorEvolution, SWT.NORMAL);
+					chatGroup.setThinking(false);
+					outputController.submitMessage(sessionId, currentTurnId, "Evo", finalResponse.toString(), "final-response", MessagePriority.FINAL, true);
+
+					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
 						editor.setDirty(true);
 						feedbackGroup.showSatisfaction(true); updateScrolledContent();
 						if (state.currentStackTask != null) {
@@ -1247,32 +1256,109 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		processLogEntry(log, getCurrentSessionName());
 	}
 
+	public void handleLegacyLog(String sessionId, String log, Color color, int style) {
+		processLogEntry(log, sessionId);
+	}
+
 	private void processLogEntry(String log, String sessionId) {
 		if (log == null || log.isEmpty()) return;
 		
-		Display.getDefault().asyncExec(() -> {
-			if (isDisposed()) return;
-			Color color = Display.getDefault().getSystemColor(SWT.COLOR_GREEN);
-			int style = SWT.NORMAL;
-			if (log.startsWith("Evo:") || log.startsWith("Orchestrator:")) { color = colorEvolution; style = SWT.ITALIC; }
-			else if (log.contains("Agent [") && log.contains("Planner")) { color = colorPlanner; style = SWT.BOLD; }
-			else if (log.contains("Agent [") && log.contains("Architect")) { color = colorArchitect; style = SWT.BOLD; }
-			else if (log.contains("Agent [") && log.contains("JavaDev")) { color = colorJavaDev; style = SWT.BOLD; }
-			else if (log.contains("Agent [") && log.contains("Tester")) { color = colorTester; style = SWT.BOLD; }
-			else if (log.contains("Agent [") && log.contains("Reviewer")) { color = colorReviewer; style = SWT.BOLD; }
-			else if (log.contains("Agent [") && log.contains("File")) { color = colorJavaDev; style = SWT.BOLD; }
-			else if (log.startsWith("Orchestrator Error:") || log.contains("Exception:")) { color = colorError; style = SWT.BOLD; }
+		String trimmedText = log.trim();
+        String sender = "Evo";
+        String content = trimmedText;
+        String agentType = "ai";
+        MessagePriority priority = MessagePriority.PROGRESS;
 
-			if (sessionId.equals(getCurrentSessionName())) {
-				chatGroup.appendText(log, color, style);
-			} else {
-				ChatSession targetSession = orchestrator.getAiChat().getSessions().stream().filter(t -> t.getId().equals(sessionId)).findFirst().orElse(null);
-				if (targetSession != null) {
-					chatGroup.appendTextToSession(targetSession, log, color, style);
-				}
-			}
-			editor.setDirty(true);
-		});
+        java.util.regex.Pattern logPattern = java.util.regex.Pattern.compile("^([A-Z][A-Z0-9-]*)(?:\\s+\\[([^\\]]*)\\])?(?:\\s+\\[(\\d{2}:\\d{2}:\\d{2})\\])?:\\s*([\\s\\S]*)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher matcher = logPattern.matcher(trimmedText);
+
+        if (matcher.find()) {
+            sender = matcher.group(1);
+            String extra = matcher.group(2);
+            content = matcher.group(4);
+
+            String senderUpper = sender.toUpperCase();
+            if (senderUpper.startsWith("USER")) agentType = "user";
+            else if (senderUpper.startsWith("EVO")) agentType = "ai";
+            else if (senderUpper.startsWith("TOOL")) agentType = "tool";
+            else if (senderUpper.startsWith("LLMROUTER")) agentType = "orchestrator";
+
+            String agentSource = (sender + (extra != null ? "-" + extra : "")).toLowerCase();
+            if (agentSource.contains("planner")) agentType = "planner";
+            else if (agentSource.contains("architect")) agentType = "architect";
+            else if (agentSource.contains("javadev")) agentType = "javadev";
+            else if (agentSource.contains("tester")) agentType = "tester";
+            else if (agentSource.contains("reviewer")) agentType = "reviewer";
+            else if (agentSource.contains("analytic") || agentSource.contains("analysis")) agentType = "analytic";
+            else if (agentSource.contains("general")) agentType = "general";
+            else if (agentSource.contains("terminal")) agentType = "terminal";
+            else if (agentSource.contains("file")) agentType = "file";
+            else if (agentSource.contains("maven")) agentType = "maven";
+            else if (agentSource.contains("git")) agentType = "git";
+            else if (agentSource.contains("structure")) agentType = "structure";
+            else if (agentSource.contains("websearch")) agentType = "websearch";
+            else if (agentSource.contains("quality")) agentType = "quality";
+            else if (agentSource.contains("observability")) agentType = "observability";
+            else if (agentSource.contains("orchestrator")) agentType = "orchestrator";
+            else if (agentSource.contains("darwinengine")) agentType = "darwin";
+
+            if (agentSource.contains("thinking")) agentType = "thinking";
+            else if (agentSource.contains("response") && !agentType.equals("darwin")) {
+		agentType = "response";
+		priority = MessagePriority.NORMAL;
+            }
+        } else if (trimmedText.startsWith("Final Response: ")) {
+            sender = "Final Response";
+            content = trimmedText.substring(16);
+            agentType = "final-response";
+            priority = MessagePriority.FINAL;
+        } else if (trimmedText.startsWith("Error: ")) {
+            sender = "Error";
+            content = trimmedText.substring(7);
+            agentType = "error";
+            priority = MessagePriority.FINAL;
+        } else if (trimmedText.startsWith("Result Summary: ")) {
+            sender = "Result Summary";
+            content = trimmedText.substring(16);
+            agentType = "result-summary";
+            priority = MessagePriority.FINAL;
+        }
+
+        if (content.contains("[DARWIN_BRANCHES]")) {
+            agentType = "darwin-branches";
+            content = content.replace("[DARWIN_BRANCHES]", "").trim();
+            priority = MessagePriority.USER_ACTION_REQUIRED;
+        }
+
+        boolean needsApproval = content.toLowerCase().contains("waiting for user") ||
+                content.toLowerCase().contains("guidance?") ||
+                content.toLowerCase().contains("clarify") ||
+                content.toLowerCase().contains("clarification") ||
+                content.contains("[PROPOSAL:") ||
+                content.toLowerCase().contains("ambiguous") ||
+                content.toLowerCase().contains("approve") ||
+                content.toLowerCase().contains("approval") ||
+                content.toLowerCase().contains("proceed?");
+
+        if (needsApproval && !agentType.contains("user")) {
+		if (!agentType.contains("waiting")) agentType += " waiting";
+            priority = MessagePriority.USER_ACTION_REQUIRED;
+        }
+
+        // Clean up technical markers for human-readability
+        content = content.replaceAll("\\[KERNEL\\]", "")
+                        .replaceAll("\\[STRATEGY\\]", "")
+                        .replaceAll("\\[ANALYSIS\\]", "")
+                        .replaceAll("\\[DIAGNOSIS\\]", "")
+                        .replaceAll("\\[SUPERVISOR\\]", "")
+                        .replaceAll("\\[EVO\\]", "")
+                        .replaceAll("\\[DARWIN\\]", "")
+                        .replaceAll("\\[DARWINENGINE\\]", "")
+                        .replaceAll("\\[THINKING\\]", "")
+                        .replaceAll("\\[ORCHESTRATOR\\]", "")
+                        .trim();
+
+        outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, sender, content, agentType, priority, priority == MessagePriority.FINAL);
 	}
 
 	public String getCurrentSessionName() { return currentSession != null ? currentSession.getId() : "Default"; }

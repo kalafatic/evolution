@@ -18,6 +18,10 @@ window.ChatApp = window.ChatApp || {};
             state.pendingMessages = messages;
             return;
         }
+
+        // Ensure strictly monotonic order by sequence number before rendering
+        messages.sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
+
         state.messages = messages;
         const wrapper = document.getElementById('messages-wrapper');
         if (!wrapper) return;
