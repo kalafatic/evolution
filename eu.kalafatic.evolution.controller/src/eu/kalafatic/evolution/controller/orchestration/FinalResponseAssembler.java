@@ -38,15 +38,29 @@ public class FinalResponseAssembler {
             selectedVariantId = snapshot.getSelectedVariantId();
         }
 
-        String executionSummary = buildExecutionSummary(context, success);
+        String executionStatus = buildExecutionStatus(context, success);
+        String accomplishments = buildAccomplishments(context);
+
+        // Combine everything into a cohesive summary
+        StringBuilder sb = new StringBuilder();
+        if (executionStatus != null && !executionStatus.isEmpty()) {
+            sb.append(executionStatus).append(" ");
+        }
+        if (accomplishments != null && !accomplishments.isEmpty()) {
+            sb.append(accomplishments).append(" ");
+        }
+        if (summary != null && !summary.isEmpty() && !accomplishments.contains(summary)) {
+            sb.append(summary);
+        }
+        String finalSummary = sb.toString().trim();
 
         return new FinalResponse(
-            summary,
+            finalSummary,
             proposals,
             files,
             success,
             selectedVariantId,
-            executionSummary,
+            executionStatus,
             metrics
         );
     }
@@ -103,10 +117,25 @@ public class FinalResponseAssembler {
         return refs;
     }
 
-    private String buildExecutionSummary(TaskContext context, boolean success) {
-        long completedTasks = context.getOrchestrator().getTasks().stream()
+    private String buildExecutionStatus(TaskContext context, boolean success) {
+        if (!success) return "Execution failed.";
+
+        List<Task> tasks = context.getOrchestrator().getTasks();
+        if (tasks.isEmpty()) return "Execution completed.";
+
+        long completedTasks = tasks.stream()
             .filter(t -> t.getStatus() == eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE)
             .count();
-        return "Execution " + (success ? "succeeded" : "failed") + " with " + completedTasks + " tasks completed.";
+
+        return "I have completed " + completedTasks + " of " + tasks.size() + " tasks.";
+    }
+
+    private String buildAccomplishments(TaskContext context) {
+        List<Task> tasks = context.getOrchestrator().getTasks();
+        return tasks.stream()
+            .filter(t -> t.getResultSummary() != null && !t.getResultSummary().isEmpty())
+            .map(Task::getResultSummary)
+            .distinct()
+            .collect(Collectors.joining(" "));
     }
 }

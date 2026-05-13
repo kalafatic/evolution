@@ -230,13 +230,13 @@ public class IterationManager {
             IOrchestrationFlow flow = resolveFlow(router, atomicAnalysis);
             transition(SystemState.EXECUTING, context);
             OrchestratorResponse result = flow.execute(request, context);
+            transition(SystemState.DONE, context);
 
             // Centralized Final Response Assembly
             FinalResponseAssembler assembler = new FinalResponseAssembler();
             FinalResponse finalResponse = assembler.assemble(context, result.getSummary(), true, context.getStartTime());
             result.setFinalResponse(finalResponse);
 
-            transition(SystemState.DONE, context);
             return result;
 
         } catch (Exception e) {
@@ -273,8 +273,10 @@ public class IterationManager {
     }
 
     public void transition(SystemState to, TaskContext ctx) {
-        TransitionToken token = new TransitionToken();
         SystemState current = ctx.getStateHolder().getState();
+        if (current == to) return;
+
+        TransitionToken token = new TransitionToken();
         ctx.getStateHolder().applyTransition(token, to);
 
         if (currentIterationModel != null) {
