@@ -1,0 +1,33 @@
+package eu.kalafatic.evolution.controller.orchestration.mediated.scanner;
+
+import static org.junit.Assert.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetDescriptor;
+
+public class TargetScannerTest {
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
+
+    @Test
+    public void testScan() throws IOException {
+        folder.newFolder("src");
+        folder.newFile("src/Main.java");
+        folder.newFile("pom.xml");
+        folder.newFolder(".git");
+        folder.newFile(".git/config");
+
+        TargetScanner scanner = new TargetScanner();
+        TargetDescriptor target = scanner.scan(folder.getRoot());
+
+        assertNotNull(target);
+        assertEquals(2, target.getFiles().size()); // Main.java and pom.xml
+        assertTrue(target.getDetectedTechnologies().contains("Java"));
+        assertTrue(target.getDetectedTechnologies().contains("Maven"));
+        assertFalse(target.getFiles().stream().anyMatch(f -> f.getPath().contains(".git")));
+    }
+}

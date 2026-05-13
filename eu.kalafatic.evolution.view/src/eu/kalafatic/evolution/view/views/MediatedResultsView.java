@@ -1,0 +1,44 @@
+package eu.kalafatic.evolution.view.views;
+
+import org.eclipse.jface.text.TextViewer;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.ui.part.ViewPart;
+import org.eclipse.jface.text.Document;
+
+/**
+ * View for presenting mediated analysis results.
+ */
+public class MediatedResultsView extends ViewPart {
+    public static final String ID = "eu.kalafatic.evolution.view.mediatedResultsView";
+    private TextViewer resultsViewer;
+    private Label targetLabel;
+
+    @Override
+    public void createPartControl(Composite parent) {
+        Composite container = new Composite(parent, SWT.NONE);
+        container.setLayout(new GridLayout(1, false));
+
+        targetLabel = new Label(container, SWT.NONE);
+        targetLabel.setText("Target: None");
+        targetLabel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+
+        resultsViewer = new TextViewer(container, SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER);
+        resultsViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        resultsViewer.setDocument(new Document());
+        resultsViewer.setEditable(false);
+    }
+
+    public void setResults(String targetPath, String content) {
+        targetLabel.setText("Target: " + targetPath);
+        resultsViewer.getDocument().set(content);
+    }
+
+    @Override
+    public void setFocus() {
+        resultsViewer.getControl().setFocus();
+    }
+}

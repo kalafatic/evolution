@@ -651,6 +651,10 @@
             name="New AI Session">
       </command>
       <command
+            id="eu.kalafatic.evolution.view.mediatedAnalysis"
+            name="General Mediated Analysis">
+      </command>
+      <command
             id="eu.kalafatic.utils.p2.update"
             name="Check for Updates">
       </command>
@@ -700,6 +704,10 @@
       <handler
             class="eu.kalafatic.evolution.view.handlers.NewAiSessionHandler"
             commandId="eu.kalafatic.evolution.view.newAiSession">
+      </handler>
+      <handler
+            class="eu.kalafatic.evolution.view.handlers.MediatedAnalysisHandler"
+            commandId="eu.kalafatic.evolution.view.mediatedAnalysis">
       </handler>
       <handler
             class="eu.kalafatic.utils.p2.UpdateHandler"
