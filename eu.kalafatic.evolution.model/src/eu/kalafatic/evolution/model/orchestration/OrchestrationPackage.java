@@ -3082,13 +3082,40 @@ public interface OrchestrationPackage extends EPackage {
 	int SUPERVISOR_SETTINGS__DEPLOYED = 1;
 
 	/**
+	 * The feature id for the '<em><b>Source Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__SOURCE_PATH = 2;
+
+	/**
+	 * The feature id for the '<em><b>Commands</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__COMMANDS = 3;
+
+	/**
+	 * The feature id for the '<em><b>Settings</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__SETTINGS = 4;
+
+	/**
 	 * The number of structural features of the '<em>Supervisor Settings</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int SUPERVISOR_SETTINGS_FEATURE_COUNT = 2;
+	int SUPERVISOR_SETTINGS_FEATURE_COUNT = 5;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl <em>Prompt Instructions</em>}' class.
@@ -6062,6 +6089,39 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getSupervisorSettings_Deployed();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSourcePath <em>Source Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Source Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSourcePath()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EAttribute getSupervisorSettings_SourcePath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getCommands <em>Commands</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Commands</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getCommands()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EAttribute getSupervisorSettings_Commands();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSettings <em>Settings</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Settings</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSettings()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EAttribute getSupervisorSettings_Settings();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions <em>Prompt Instructions</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -8393,6 +8453,30 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute SUPERVISOR_SETTINGS__DEPLOYED = eINSTANCE.getSupervisorSettings_Deployed();
+
+		/**
+		 * The meta object literal for the '<em><b>Source Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SUPERVISOR_SETTINGS__SOURCE_PATH = eINSTANCE.getSupervisorSettings_SourcePath();
+
+		/**
+		 * The meta object literal for the '<em><b>Commands</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SUPERVISOR_SETTINGS__COMMANDS = eINSTANCE.getSupervisorSettings_Commands();
+
+		/**
+		 * The meta object literal for the '<em><b>Settings</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SUPERVISOR_SETTINGS__SETTINGS = eINSTANCE.getSupervisorSettings_Settings();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl <em>Prompt Instructions</em>}' class.

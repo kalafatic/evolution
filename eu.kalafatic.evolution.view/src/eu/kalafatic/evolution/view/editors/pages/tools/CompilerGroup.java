@@ -29,26 +29,32 @@ public class CompilerGroup extends AToolGroup {
 
         SWTFactory.createLabel(group, "Java Source Version:");
         sourceVersionText = SWTFactory.createText(group);
+        sourceVersionText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getSourceVersion() != null ? orchestrator.getCompiler().getSourceVersion() : "");
         SWTFactory.createEditButton(group, sourceVersionText);
 
         SWTFactory.createLabel(group, "Java Target Version:");
         targetVersionText = SWTFactory.createText(group);
+        targetVersionText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getTargetVersion() != null ? orchestrator.getCompiler().getTargetVersion() : "");
         SWTFactory.createEditButton(group, targetVersionText);
 
         SWTFactory.createLabel(group, "C Path (gcc):");
         cPathText = SWTFactory.createText(group);
+        cPathText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getCPath() != null ? orchestrator.getCompiler().getCPath() : "");
         SWTFactory.createEditButton(group, cPathText);
 
         SWTFactory.createLabel(group, "C++ Path (g++):");
         cppPathText = SWTFactory.createText(group);
+        cppPathText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getCppPath() != null ? orchestrator.getCompiler().getCppPath() : "");
         SWTFactory.createEditButton(group, cppPathText);
 
         SWTFactory.createLabel(group, "Make Path:");
         makePathText = SWTFactory.createText(group);
+        makePathText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getMakePath() != null ? orchestrator.getCompiler().getMakePath() : "");
         SWTFactory.createEditButton(group, makePathText);
 
         SWTFactory.createLabel(group, "CMake Path:");
         cmakePathText = SWTFactory.createText(group);
+        cmakePathText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getCmakePath() != null ? orchestrator.getCompiler().getCmakePath() : "");
         SWTFactory.createEditButton(group, cmakePathText);
 
         SWTFactory.createLabel(group, "");

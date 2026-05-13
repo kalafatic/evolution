@@ -161,6 +161,66 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getSupervisorSettings_SourcePath() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSupervisorSettings_Commands() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSupervisorSettings_Settings() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSupervisorSettings_SourcePath() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSupervisorSettings_Commands() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSupervisorSettings_Settings() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EAttribute getTask_StepMode() {
 		return (EAttribute)taskEClass.getEStructuralFeatures().get(31);
 	}
@@ -3536,6 +3596,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		supervisorSettingsEClass = createEClass(SUPERVISOR_SETTINGS);
 		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__EXECUTABLE_PATH);
 		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__DEPLOYED);
+		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__SOURCE_PATH);
+		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__COMMANDS);
+		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__SETTINGS);
 
 		promptInstructionsEClass = createEClass(PROMPT_INSTRUCTIONS);
 		createEAttribute(promptInstructionsEClass, PROMPT_INSTRUCTIONS__AUTO_APPROVE);
@@ -3673,6 +3736,9 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEClass(supervisorSettingsEClass, SupervisorSettings.class, "SupervisorSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getSupervisorSettings_ExecutablePath(), ecorePackage.getEString(), "executablePath", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getSupervisorSettings_Deployed(), ecorePackage.getEBoolean(), "deployed", "false", 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSupervisorSettings_SourcePath(), ecorePackage.getEString(), "sourcePath", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSupervisorSettings_Commands(), ecorePackage.getEString(), "commands", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSupervisorSettings_Settings(), ecorePackage.getEString(), "settings", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSettingsEClass, ServerSettings.class, "ServerSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getServerSettings_Port(), ecorePackage.getEInt(), "port", "48080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

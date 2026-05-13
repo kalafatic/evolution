@@ -30,7 +30,9 @@ import eu.kalafatic.evolution.model.orchestration.Compiler;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
+import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
+import eu.kalafatic.evolution.view.provider.OrchestrationNavigatorContentProvider.ModelProperty;
 
 public class OrchestrationNavigatorLabelProvider extends LabelProvider implements ITableLabelProvider {
 
@@ -67,8 +69,17 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
                 return "AI Chat";
             } else if (element instanceof NeuronAI) {
                 return "Neuron AI: " + ((NeuronAI) element).getModel();
+            } else if (element instanceof SupervisorSettings) {
+                return "Supervisor";
+            } else if (element instanceof ModelProperty) {
+                return ((ModelProperty) element).label;
             }
         } else if (columnIndex == 1) {
+            if (element instanceof ModelProperty) {
+                ModelProperty mp = (ModelProperty) element;
+                Object val = mp.owner.eGet(mp.attribute);
+                return val != null ? String.valueOf(val) : "";
+            }
             if (element instanceof Task) {
                 Task task = (Task) element;
                 return task.getStatus() != null ? task.getStatus().toString() : "PENDING";
@@ -123,6 +134,10 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
             return "AI Chat";
         } else if (element instanceof NeuronAI) {
             return "Neuron AI: " + ((NeuronAI) element).getModel();
+        } else if (element instanceof SupervisorSettings) {
+            return "Supervisor";
+        } else if (element instanceof ModelProperty) {
+            return ((ModelProperty) element).label;
         }
         return super.getText(element);
     }
@@ -169,6 +184,10 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
         } else if (element instanceof AiChat) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_chat.svg");
         } else if (element instanceof NeuronAI) {
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
+        } else if (element instanceof SupervisorSettings) {
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/orchestrator.png");
+        } else if (element instanceof ModelProperty) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         }
         return super.getImage(element);

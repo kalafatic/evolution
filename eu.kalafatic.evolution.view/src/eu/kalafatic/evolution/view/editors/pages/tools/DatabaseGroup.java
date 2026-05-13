@@ -30,18 +30,22 @@ public class DatabaseGroup extends AToolGroup {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Database Tool Settings", 3, false);
         SWTFactory.createLabel(group, "JDBC URL:");
         dbUrlText = SWTFactory.createText(group);
+        dbUrlText.setText(orchestrator.getDatabase() != null && orchestrator.getDatabase().getUrl() != null ? orchestrator.getDatabase().getUrl() : "");
         SWTFactory.createEditButton(group, dbUrlText);
 
         SWTFactory.createLabel(group, "Driver Class:");
         dbDriverText = SWTFactory.createText(group);
+        dbDriverText.setText(orchestrator.getDatabase() != null && orchestrator.getDatabase().getDriver() != null ? orchestrator.getDatabase().getDriver() : "");
         SWTFactory.createEditButton(group, dbDriverText);
 
         SWTFactory.createLabel(group, "Username:");
         dbUsernameText = SWTFactory.createText(group);
+        dbUsernameText.setText(orchestrator.getDatabase() != null && orchestrator.getDatabase().getUsername() != null ? orchestrator.getDatabase().getUsername() : "");
         SWTFactory.createEditButton(group, dbUsernameText);
 
         SWTFactory.createLabel(group, "Password:");
         dbPasswordText = SWTFactory.createPasswordText(group);
+        dbPasswordText.setText(orchestrator.getDatabase() != null && orchestrator.getDatabase().getPassword() != null ? orchestrator.getDatabase().getPassword() : "");
         SWTFactory.createEditButton(group, dbPasswordText);
 
         SWTFactory.createLabel(group, "");

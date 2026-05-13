@@ -28,10 +28,12 @@ public class MavenGroup extends AToolGroup {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Maven Tool Settings", 3, false);
         SWTFactory.createLabel(group, "Goals:");
         mavenGoalsText = SWTFactory.createText(group);
+        mavenGoalsText.setText(orchestrator.getMaven() != null ? orchestrator.getMaven().getGoals().toString() : "");
         SWTFactory.createEditButton(group, mavenGoalsText);
 
         SWTFactory.createLabel(group, "Profiles:");
         mavenProfilesText = SWTFactory.createText(group);
+        mavenProfilesText.setText(orchestrator.getMaven() != null ? orchestrator.getMaven().getProfiles().toString() : "");
         SWTFactory.createEditButton(group, mavenProfilesText);
 
         SWTFactory.createLabel(group, "");

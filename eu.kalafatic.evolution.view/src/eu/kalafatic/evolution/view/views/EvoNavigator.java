@@ -16,7 +16,13 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IWorkbenchActionConstants;
+import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.viewers.TextCellEditor;
+import org.eclipse.jface.viewers.TreeViewerColumn;
+import eu.kalafatic.evolution.view.provider.OrchestrationNavigatorContentProvider.ModelProperty;
 import org.eclipse.ui.IDecoratorManager;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
@@ -51,9 +57,67 @@ public class EvoNavigator extends CommonNavigator {
 		column1.setText("Element");
 		column1.setWidth(300);
 
-		org.eclipse.swt.widgets.TreeColumn column2 = new org.eclipse.swt.widgets.TreeColumn(tree, SWT.LEFT);
-		column2.setText("Status");
-		column2.setWidth(200);
+		TreeViewerColumn column2 = new TreeViewerColumn(getCommonViewer(), SWT.LEFT);
+		column2.getColumn().setText("Status");
+		column2.getColumn().setWidth(200);
+		column2.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				return ((org.eclipse.jface.viewers.ITableLabelProvider) getCommonViewer().getLabelProvider()).getColumnText(element, 1);
+			}
+		});
+
+		column2.setEditingSupport(new EditingSupport(getCommonViewer()) {
+			@Override
+			protected boolean canEdit(Object element) {
+				return element instanceof eu.kalafatic.evolution.model.orchestration.Task ||
+					   element instanceof eu.kalafatic.evolution.model.orchestration.Orchestrator ||
+					   element instanceof ModelProperty;
+			}
+
+			@Override
+			protected CellEditor getCellEditor(Object element) {
+				return new TextCellEditor(getCommonViewer().getTree());
+			}
+
+			@Override
+			protected Object getValue(Object element) {
+				if (element instanceof eu.kalafatic.evolution.model.orchestration.Task) {
+					return ((eu.kalafatic.evolution.model.orchestration.Task) element).getName();
+				}
+				if (element instanceof eu.kalafatic.evolution.model.orchestration.Orchestrator) {
+					return ((eu.kalafatic.evolution.model.orchestration.Orchestrator) element).getName();
+				}
+				if (element instanceof ModelProperty) {
+					ModelProperty mp = (ModelProperty) element;
+					Object val = mp.owner.eGet(mp.attribute);
+					return val != null ? String.valueOf(val) : "";
+				}
+				return "";
+			}
+
+			@Override
+			protected void setValue(Object element, Object value) {
+				if (element instanceof eu.kalafatic.evolution.model.orchestration.Task) {
+					((eu.kalafatic.evolution.model.orchestration.Task) element).setName(String.valueOf(value));
+				} else if (element instanceof eu.kalafatic.evolution.model.orchestration.Orchestrator) {
+					((eu.kalafatic.evolution.model.orchestration.Orchestrator) element).setName(String.valueOf(value));
+				} else if (element instanceof ModelProperty) {
+					ModelProperty mp = (ModelProperty) element;
+					String strVal = String.valueOf(value);
+					if (mp.attribute.getEType().getInstanceClass() == boolean.class || mp.attribute.getEType().getInstanceClass() == Boolean.class) {
+						mp.owner.eSet(mp.attribute, Boolean.parseBoolean(strVal));
+					} else if (mp.attribute.getEType().getInstanceClass() == int.class || mp.attribute.getEType().getInstanceClass() == Integer.class) {
+						try { mp.owner.eSet(mp.attribute, Integer.parseInt(strVal)); } catch (Exception e) {}
+					} else if (mp.attribute.getEType().getInstanceClass() == float.class || mp.attribute.getEType().getInstanceClass() == Float.class) {
+						try { mp.owner.eSet(mp.attribute, Float.parseFloat(strVal)); } catch (Exception e) {}
+					} else {
+						mp.owner.eSet(mp.attribute, strVal);
+					}
+				}
+				getCommonViewer().update(element, null);
+			}
+		});
 
 		makeActions();
 		contributeToActionBars();
@@ -122,7 +186,7 @@ public class EvoNavigator extends CommonNavigator {
 						getCommonViewer().refresh();
 						if (resource != null) {
 							getCommonViewer().setSelection(new StructuredSelection(resource), true);
-							getCommonViewer().expandToLevel(resource, 1);
+							getCommonViewer().expandAll();
 						}
 
 						// Trigger decorator refresh

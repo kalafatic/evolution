@@ -29,14 +29,17 @@ public class EclipseGroup extends AToolGroup {
 
         SWTFactory.createLabel(group, "Workspace Path:");
         eclipseWorkspaceText = SWTFactory.createText(group);
+        eclipseWorkspaceText.setText(orchestrator.getEclipse() != null && orchestrator.getEclipse().getWorkspace() != null ? orchestrator.getEclipse().getWorkspace() : "");
         SWTFactory.createEditButton(group, eclipseWorkspaceText);
 
         SWTFactory.createLabel(group, "Eclipse Installation:");
         eclipseInstallationText = SWTFactory.createText(group);
+        eclipseInstallationText.setText(orchestrator.getEclipse() != null && orchestrator.getEclipse().getInstallation() != null ? orchestrator.getEclipse().getInstallation() : "");
         SWTFactory.createEditButton(group, eclipseInstallationText);
 
         SWTFactory.createLabel(group, "Target Platform:");
         eclipseTargetPlatformText = SWTFactory.createText(group);
+        eclipseTargetPlatformText.setText(orchestrator.getEclipse() != null && orchestrator.getEclipse().getTargetPlatform() != null ? orchestrator.getEclipse().getTargetPlatform() : "");
         SWTFactory.createEditButton(group, eclipseTargetPlatformText);
 
         SWTFactory.createLabel(group, "");

@@ -33,30 +33,37 @@ public class GitGroup extends AToolGroup {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Git Tool Settings", 3, true);
         SWTFactory.createLabel(group, "Repository URL:");
         gitRepoText = SWTFactory.createText(group);
+        gitRepoText.setText(orchestrator.getGit() != null && orchestrator.getGit().getRepositoryUrl() != null ? orchestrator.getGit().getRepositoryUrl() : "");
         SWTFactory.createEditButton(group, gitRepoText);
 
         SWTFactory.createLabel(group, "Branch:");
         gitBranchText = SWTFactory.createText(group);
+        gitBranchText.setText(orchestrator.getGit() != null && orchestrator.getGit().getBranch() != null ? orchestrator.getGit().getBranch() : "");
         SWTFactory.createEditButton(group, gitBranchText);
 
         SWTFactory.createLabel(group, "Username:");
         gitUsernameText = SWTFactory.createText(group);
+        gitUsernameText.setText(orchestrator.getGit() != null && orchestrator.getGit().getUsername() != null ? orchestrator.getGit().getUsername() : "");
         SWTFactory.createEditButton(group, gitUsernameText);
 
         SWTFactory.createLabel(group, "Password:");
         gitPasswordText = SWTFactory.createPasswordText(group);
+        gitPasswordText.setText(orchestrator.getGit() != null && orchestrator.getGit().getPassword() != null ? orchestrator.getGit().getPassword() : "");
         SWTFactory.createEditButton(group, gitPasswordText);
 
         SWTFactory.createLabel(group, "Local Path:");
         gitLocalPathText = SWTFactory.createText(group);
+        gitLocalPathText.setText(orchestrator.getGit() != null && orchestrator.getGit().getLocalPath() != null ? orchestrator.getGit().getLocalPath() : "");
         SWTFactory.createEditButton(group, gitLocalPathText);
 
         SWTFactory.createLabel(group, "Branch Name:");
         branchNameText = SWTFactory.createText(group);
+        branchNameText.setText(orchestrator.getGit() != null && orchestrator.getGit().getBranchName() != null ? orchestrator.getGit().getBranchName() : "");
         SWTFactory.createLabel(group, "");
 
         SWTFactory.createLabel(group, "Commit Msg:");
         commitMsgText = SWTFactory.createText(group);
+        commitMsgText.setText(orchestrator.getGit() != null && orchestrator.getGit().getCommitMsg() != null ? orchestrator.getGit().getCommitMsg() : "");
         SWTFactory.createLabel(group, "");
 
         Composite btnComp = toolkit.createComposite(group);
