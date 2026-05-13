@@ -1,22 +1,49 @@
 package eu.kalafatic.evolution.controller.workflow;
 
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import java.io.File;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+/**
+ * Handles packaging of mediated context and prompts into a ZIP archive.
+ */
 public class MediatedExportManager {
-    private final TaskContext context;
 
-    public MediatedExportManager(TaskContext context) {
-        this.context = context;
+    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot) throws IOException {
+        String fileName = "mediated_export_" + sessionId + "_" + System.currentTimeMillis() + ".zip";
+        File zipFile = new File(projectRoot, fileName);
+
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
+            // 1. Add Prompt
+            addStringToZip(zos, "PROMPT.md", prompt);
+
+            // 2. Add Selected File Contents
+            for (String relativePath : selectedPaths) {
+                File file = new File(projectRoot, relativePath);
+                if (file.exists() && file.isFile()) {
+                    addFileToZip(zos, "context/" + relativePath, file);
+                }
+            }
+        }
+
+        return zipFile;
     }
 
-    public void notifyExportReady(File zipFile) {
-        RuntimeEvent event = new RuntimeEvent(
-            RuntimeEventType.EXPORT_READY,
-            context.getSessionId(),
-            "MediatedExportManager",
-            zipFile.getAbsolutePath()
-        );
-        RuntimeEventBus.getInstance().publish(event);
+    private void addStringToZip(ZipOutputStream zos, String entryName, String content) throws IOException {
+        ZipEntry entry = new ZipEntry(entryName);
+        zos.putNextEntry(entry);
+        zos.write(content.getBytes(StandardCharsets.UTF_8));
+        zos.closeEntry();
+    }
+
+    private void addFileToZip(ZipOutputStream zos, String entryName, File file) throws IOException {
+        ZipEntry entry = new ZipEntry(entryName);
+        zos.putNextEntry(entry);
+        byte[] bytes = Files.readAllBytes(file.toPath());
+        zos.write(bytes);
+        zos.closeEntry();
     }
 }
