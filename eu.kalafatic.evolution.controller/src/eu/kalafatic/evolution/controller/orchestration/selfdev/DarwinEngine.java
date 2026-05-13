@@ -32,6 +32,8 @@ import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionRes
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
+import eu.kalafatic.evolution.controller.orchestration.evolution.strategy.BranchSelector;
+import eu.kalafatic.evolution.controller.orchestration.evolution.strategy.EvolutionBranch;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.DiversityPressureController;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.EvolutionaryPenaltyModel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.RejectionPatternAnalyzer;
@@ -125,25 +127,36 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
     @Override
     protected String getFooterInstructions() {
+        return getFooterInstructions(Collections.emptyList());
+    }
+
+    protected String getFooterInstructions(List<EvolutionBranch> selectedStrategies) {
         double eps = 0.5;
         if (context != null && context.getOrchestrationState() != null) {
             Object epsObj = context.getOrchestrationState().getMetadata().get("eps");
             if (epsObj instanceof Double) eps = (Double) epsObj;
         }
 
-        // Full Darwin Evolution range (EPS >= 0.6)
-        int variantCount = 3;
-        if (eps > 0.8) variantCount = 4;
+        int variantCount = Math.max(1, selectedStrategies.size());
 
-        String countInstruction = "Output MUST be a valid JSON array of EXACTLY " + variantCount + " object" + (variantCount > 1 ? "s" : "") + ".";
-        countInstruction += " Provide distinct engineering hypotheses for this evolutionary task (EPS=" + String.format("%.2f", eps) + ").";
+        StringBuilder countInstruction = new StringBuilder();
+        countInstruction.append("Output MUST be a valid JSON array of EXACTLY ").append(variantCount).append(" object").append(variantCount > 1 ? "s" : "").append(".\n");
 
-        return countInstruction + "\n" +
+        if (!selectedStrategies.isEmpty()) {
+            countInstruction.append("Each object in the array MUST correspond to one of the following strategies in the specified order:\n");
+            for (int i = 0; i < selectedStrategies.size(); i++) {
+                EvolutionBranch strategy = selectedStrategies.get(i);
+                countInstruction.append(i + 1).append(". ").append(strategy.getType().name()).append(": ").append(strategy.getInstructions()).append("\n");
+            }
+        }
+
+        return countInstruction.toString() + "\n" +
                "CRITICAL: Do NOT include any conversation, explanation, or <think> tags. ONLY return the JSON array.\n" +
                "Schema:\n" +
                "[\n" +
                "  {\n" +
                "    \"id\": \"string-id\",\n" +
+               "    \"strategy_type\": \"<IMPLEMENTATION | ANALYTICAL | CURIOSITY | STABILIZATION | EXPLORATION>\",\n" +
                "    \"strategy\": \"<high-level intent>\",\n" +
                "    \"score\": 0.0-1.0, // Predicted probability of success/correctness\n" +
                "    \"suffix\": \"<short string for branch name>\",\n" +
@@ -329,8 +342,22 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             context.log("[DARWIN] WARNING: Adaptive feedback analysis failed (non-critical). Continuing evolution loop. Error: " + e.getMessage());
         }
 
-        // 4. Build final prompt via PromptComposer
-        String fullPrompt = buildPrompt(promptComposer.compose(policy, modules, state.toString()), context, null);
+        // 4. Dynamic Strategy Selection
+        BranchSelector selector = new BranchSelector();
+        List<EvolutionBranch> selectedStrategies = selector.select(context);
+
+        // 5. Build final prompt via PromptComposer with dynamic footer
+        String composedPrompt = promptComposer.compose(policy, modules, state.toString());
+        String footer = getFooterInstructions(selectedStrategies);
+        String fullPrompt = buildPrompt(composedPrompt, context, null);
+
+        // Replace default footer with dynamic footer
+        String defaultFooter = getFooterInstructions();
+        if (defaultFooter != null && fullPrompt.contains(defaultFooter)) {
+            fullPrompt = fullPrompt.replace(defaultFooter, footer);
+        } else {
+            fullPrompt += "\nFINAL DIRECTIVE:\n" + footer;
+        }
 
         // MODULATION: Inject EPS context into the prompt
         Object epsObj = context.getOrchestrationState().getMetadata().get("eps");
@@ -364,6 +391,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             v.setBranchId(v.getId());
             v.setLineageId(context.getSessionId());
             v.setActivationState(BranchVariant.ActivationState.INACTIVE);
+            v.setStrategyType(obj.optString("strategy_type", "UNKNOWN"));
             v.setStrategy(obj.optString("strategy", "unknown"));
             v.setSemanticAnchor(v.getStrategy());
             v.setMutationTrace("Generated in phase: " + currentPhase);

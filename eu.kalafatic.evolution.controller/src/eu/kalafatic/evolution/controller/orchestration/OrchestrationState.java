@@ -28,6 +28,7 @@ public class OrchestrationState {
     // Evolution & Iteration state
     private String currentIterationId;
     private int iterationCount = 0;
+    private boolean curiosityEnabled = false;
     private List<String> rejectionHistory = new ArrayList<>();
     private long bitState = 0;
     private String currentPhase;
@@ -96,6 +97,14 @@ public class OrchestrationState {
 
     public void setIterationCount(int iterationCount) {
         this.iterationCount = iterationCount;
+    }
+
+    public boolean isCuriosityEnabled() {
+        return curiosityEnabled;
+    }
+
+    public void setCuriosityEnabled(boolean curiosityEnabled) {
+        this.curiosityEnabled = curiosityEnabled;
     }
 
     public List<String> getRejectionHistory() {
