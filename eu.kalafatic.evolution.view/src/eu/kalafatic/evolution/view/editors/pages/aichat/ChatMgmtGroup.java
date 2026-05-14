@@ -104,18 +104,14 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
 
         // AI Settings part (merged)
-        Composite aiSettingsComp = SWTFactory.createComposite(group);
-//        aiSettingsComp.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
-//        aiSettingsComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 7, 1));
-
-        compositeLocal = SWTFactory.createComposite(aiSettingsComp, SWT.BORDER, 3);
+        compositeLocal = SWTFactory.createComposite(group, SWT.BORDER, 3);
 
         SWTFactory.createLabel(compositeLocal, "AI Mode:");
         aiModeCombo = SWTFactory.createCombo(compositeLocal);
         for (AiMode mode : AiMode.values()) {
             aiModeCombo.add(mode.getName());
         }
-        Button targetButton = SWTFactory.createButton(compositeLocal, "Target", 70);
+        Button targetButton = SWTFactory.createButton(compositeLocal, "Target");
         targetButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -141,11 +137,12 @@ public class ChatMgmtGroup extends AEvoGroup {
         localModelCombo = selectModel(compositeLocal);
         SWTFactory.createLabel(compositeLocal, "");
 
-        compositeRemote = SWTFactory.createComposite(aiSettingsComp, SWT.BORDER, 3);
+        compositeRemote = SWTFactory.createComposite(group, SWT.BORDER, 3);
+        
         SWTFactory.createLabel(compositeRemote, "AI Remote:");
         aiRemoteCombo = SWTFactory.createCombo(compositeRemote);
 
-        Button connectionButton = SWTFactory.createButton(compositeRemote, "Test Connection", 120);
+        Button connectionButton = SWTFactory.createButton(compositeRemote, "Test Connection");
         connectionButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) {
                 if (orchestrator != null) {
