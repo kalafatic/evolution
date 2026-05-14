@@ -4,6 +4,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
@@ -98,6 +100,32 @@ public abstract class AEvoGroup {
      */
     public void setOrchestrator(Orchestrator orchestrator) {
         this.orchestrator = orchestrator;
+    }
+
+    protected void setTextSafe(Text text, String value) {
+        if (text == null || text.isDisposed()) return;
+        String safeValue = value != null ? value : "";
+        if (!text.getText().equals(safeValue)) {
+            text.setText(safeValue);
+        }
+    }
+
+    protected void setSelectionSafe(Button button, boolean selected) {
+        if (button == null || button.isDisposed()) return;
+        if (button.getSelection() != selected) {
+            button.setSelection(selected);
+        }
+    }
+
+    protected void selectSafe(Combo combo, String value) {
+        if (combo == null || combo.isDisposed()) return;
+        String safeValue = value != null ? value : "";
+        int index = combo.indexOf(safeValue);
+        if (index >= 0 && combo.getSelectionIndex() != index) {
+            combo.select(index);
+        } else if (index < 0 && !combo.getText().equals(safeValue)) {
+            combo.setText(safeValue);
+        }
     }
 
     /**

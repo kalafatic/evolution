@@ -24,8 +24,9 @@ public class SWTBinding {
             Display.getDefault().asyncExec(() -> {
                 if (!text.isDisposed()) {
                     String newValue = (String) event.getNewValue();
-                    if (!text.getText().equals(newValue)) {
-                        text.setText(newValue != null ? newValue : "");
+                    String safeValue = newValue != null ? newValue : "";
+                    if (!text.getText().equals(safeValue)) {
+                        text.setText(safeValue);
                     }
                 }
             });
@@ -33,7 +34,10 @@ public class SWTBinding {
 
         // View -> Model
         text.addModifyListener(e -> {
-            property.setValue(text.getText());
+            String val = text.getText();
+            if (property.getValue() == null || !property.getValue().equals(val)) {
+                property.setValue(val);
+            }
         });
 
         // Initial sync
@@ -47,7 +51,8 @@ public class SWTBinding {
             Display.getDefault().asyncExec(() -> {
                 if (!combo.isDisposed()) {
                     String newValue = (String) event.getNewValue();
-                    int index = combo.indexOf(newValue != null ? newValue : "");
+                    String safeValue = newValue != null ? newValue : "";
+                    int index = combo.indexOf(safeValue);
                     if (index >= 0 && combo.getSelectionIndex() != index) {
                         combo.select(index);
                     }
@@ -78,10 +83,13 @@ public class SWTBinding {
         list.addChangeListener(event -> {
             Display.getDefault().asyncExec(() -> {
                 if (!combo.isDisposed()) {
-                    String currentSelection = combo.getText();
-                    combo.setItems(list.getList().toArray(new String[0]));
-                    int index = combo.indexOf(currentSelection);
-                    if (index >= 0) combo.select(index);
+                    String[] newItems = list.getList().toArray(new String[0]);
+                    if (!java.util.Arrays.equals(combo.getItems(), newItems)) {
+                        String currentSelection = combo.getText();
+                        combo.setItems(newItems);
+                        int index = combo.indexOf(currentSelection);
+                        if (index >= 0) combo.select(index);
+                    }
                 }
             });
         });
@@ -107,7 +115,10 @@ public class SWTBinding {
         checkbox.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                property.setValue(checkbox.getSelection());
+                boolean val = checkbox.getSelection();
+                if (property.getValue() == null || property.getValue() != val) {
+                    property.setValue(val);
+                }
             }
         });
 

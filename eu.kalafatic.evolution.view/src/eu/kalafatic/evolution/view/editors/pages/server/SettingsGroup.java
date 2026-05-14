@@ -94,8 +94,8 @@ public class SettingsGroup extends AToolGroup {
         if (orchestrator == null) return;
         ServerSettings settings = orchestrator.getServerSettings();
         if (settings != null) {
-            portText.setText(String.valueOf(settings.getPort()));
-            autoStartCheck.setSelection(settings.isAutoStart());
+            setTextSafe(portText, String.valueOf(settings.getPort()));
+            setSelectionSafe(autoStartCheck, settings.isAutoStart());
         }
     }
 

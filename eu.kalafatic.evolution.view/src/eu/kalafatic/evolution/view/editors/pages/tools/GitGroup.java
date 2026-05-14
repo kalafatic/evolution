@@ -165,13 +165,13 @@ public class GitGroup extends AToolGroup {
     protected void refreshUI() {
         if (orchestrator.getGit() != null) {
             Git git = orchestrator.getGit();
-            gitRepoText.setText(git.getRepositoryUrl() != null ? git.getRepositoryUrl() : "");
-            gitBranchText.setText(git.getBranch() != null ? git.getBranch() : "");
-            gitUsernameText.setText(git.getUsername() != null ? git.getUsername() : "");
-            gitPasswordText.setText(git.getPassword() != null ? git.getPassword() : "");
-            gitLocalPathText.setText(git.getLocalPath() != null ? git.getLocalPath() : "");
-            branchNameText.setText(git.getBranchName() != null ? git.getBranchName() : "");
-            commitMsgText.setText(git.getCommitMsg() != null ? git.getCommitMsg() : "");
+            setTextSafe(gitRepoText, git.getRepositoryUrl());
+            setTextSafe(gitBranchText, git.getBranch());
+            setTextSafe(gitUsernameText, git.getUsername());
+            setTextSafe(gitPasswordText, git.getPassword());
+            setTextSafe(gitLocalPathText, git.getLocalPath());
+            setTextSafe(branchNameText, git.getBranchName());
+            setTextSafe(commitMsgText, git.getCommitMsg());
             updateGroupStatus();
         }
     }
