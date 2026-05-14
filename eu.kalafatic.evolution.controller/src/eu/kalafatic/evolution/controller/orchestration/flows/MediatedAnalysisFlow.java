@@ -12,6 +12,7 @@ import eu.kalafatic.evolution.controller.orchestration.mediated.analysis.Semanti
 import eu.kalafatic.evolution.controller.orchestration.mediated.analysis.StagingValidator;
 import eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.mediated.scanner.TargetScanner;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.controller.workflow.MediatedExportManager;
@@ -136,8 +137,14 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
         final File[] exportPackage = new File[1];
         runPass(context, "Export Packaging", "Creating ZIP bundle for external LLM...", () -> {
             try {
+                String sessionId = context.getSessionId();
+                ChatSession session = context.getOrchestrator().getAiChat().getSessions().stream()
+                        .filter(s -> s.getId().equals(sessionId))
+                        .findFirst().orElse(null);
+                String outputPath = session != null ? session.getOutputPath() : null;
+
                 MediatedExportManager exportManager = new MediatedExportManager();
-                exportPackage[0] = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt[0], selectedPaths, root);
+                exportPackage[0] = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt[0], selectedPaths, root, outputPath);
                 context.log("[MEDIATED] Export bundle ready: " + exportPackage[0].getName());
             } catch (Exception e) {
                 throw new RuntimeException("Failed to create export package", e);

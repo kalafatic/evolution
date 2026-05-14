@@ -2954,13 +2954,22 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_SESSION__TARGET_TYPE = 9;
 
 	/**
+	 * The feature id for the '<em><b>Output Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_SESSION__OUTPUT_PATH = 10;
+
+	/**
 	 * The number of structural features of the '<em>Chat Session</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_SESSION_FEATURE_COUNT = 10;
+	int CHAT_SESSION_FEATURE_COUNT = 11;
 
 	/**
 	 * The number of operations of the '<em>Chat Session</em>' class.
@@ -6035,6 +6044,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getChatSession_TargetType();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getOutputPath <em>Output Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Output Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getOutputPath()
+	 * @see #getChatSession()
+	 * @generated
+	 */
+	EAttribute getChatSession_OutputPath();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage <em>Chat Message</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -8489,6 +8509,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_SESSION__TARGET_TYPE = eINSTANCE.getChatSession_TargetType();
+
+		/**
+		 * The meta object literal for the '<em><b>Output Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_SESSION__OUTPUT_PATH = eINSTANCE.getChatSession_OutputPath();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.

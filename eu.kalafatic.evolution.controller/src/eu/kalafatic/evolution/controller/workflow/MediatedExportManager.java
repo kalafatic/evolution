@@ -12,9 +12,16 @@ import java.util.zip.ZipOutputStream;
  */
 public class MediatedExportManager {
 
-    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot) throws IOException {
+    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath) throws IOException {
         String fileName = "mediated_export_" + sessionId + "_" + System.currentTimeMillis() + ".zip";
-        File zipFile = new File(projectRoot, fileName);
+        File targetDir = projectRoot;
+        if (outputPath != null && !outputPath.isEmpty()) {
+            targetDir = new File(outputPath);
+            if (!targetDir.exists()) {
+                targetDir.mkdirs();
+            }
+        }
+        File zipFile = new File(targetDir, fileName);
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
             // 1. Add Prompt

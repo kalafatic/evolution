@@ -116,18 +116,8 @@ public class ChatMgmtGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 eu.kalafatic.evolution.model.orchestration.ChatSession session = page.getCurrentSession();
                 if (session != null) {
-                    eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog dlg = new eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog(page.getShell());
-                    String currentPath = session.getTargetPath();
-                    if (currentPath == null || currentPath.isEmpty()) {
-                        currentPath = page.getProjectRoot().getAbsolutePath();
-                    }
-                    dlg.setInitialPath(currentPath);
-                    dlg.setInitialType(session.getTargetType());
-                    if (dlg.open() == org.eclipse.jface.window.Window.OK) {
-                        session.setTargetPath(dlg.getSelectedPath());
-                        session.setTargetType(dlg.getSelectedType());
-                        editor.setDirty(true);
-                    }
+                    eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog dlg = new eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog(page.getShell(), session, page.getProjectRoot(), editor);
+                    dlg.open();
                 }
             }
         });

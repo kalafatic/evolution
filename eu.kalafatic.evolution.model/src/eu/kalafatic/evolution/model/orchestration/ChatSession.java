@@ -23,6 +23,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getMaxIterations <em>Max Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isStepMode <em>Step Mode</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getOutputPath <em>Output Path</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession()
@@ -245,5 +246,27 @@ public interface ChatSession extends EObject {
 	 * @generated
 	 */
 	void setTargetType(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Output Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Output Path</em>' attribute.
+	 * @see #setOutputPath(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_OutputPath()
+	 * @model
+	 * @generated
+	 */
+	String getOutputPath();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getOutputPath <em>Output Path</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Output Path</em>' attribute.
+	 * @see #getOutputPath()
+	 * @generated
+	 */
+	void setOutputPath(String value);
 
 } // ChatSession

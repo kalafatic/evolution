@@ -84,6 +84,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getChatSession_OutputPath() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(10);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EAttribute getChatSession_TargetPath() {
 		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(8);
 	}
@@ -3978,6 +3988,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getChatSession_StepMode(), ecorePackage.getEBoolean(), "stepMode", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_TargetPath(), ecorePackage.getEString(), "targetPath", null, 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_TargetType(), ecorePackage.getEString(), "targetType", null, 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_OutputPath(), ecorePackage.getEString(), "outputPath", null, 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(chatMessageEClass, ChatMessage.class, "ChatMessage", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getChatMessage_Index(), ecorePackage.getEInt(), "index", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
