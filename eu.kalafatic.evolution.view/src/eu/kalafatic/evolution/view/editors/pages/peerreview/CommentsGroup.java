@@ -159,7 +159,7 @@ public class CommentsGroup extends AEvoGroup {
         this.currentFile = filePath;
         this.currentLine = lineNum;
         if (lineLabel != null && !lineLabel.isDisposed()) {
-            lineLabel.setText("Selected Line: " + lineNum + " in " + filePath);
+            setTextSafe(lineLabel, "Selected Line: " + lineNum + " in " + filePath);
         }
     }
 
@@ -167,7 +167,7 @@ public class CommentsGroup extends AEvoGroup {
     public void refreshUI() {
         ReviewSession session = PeerReviewService.getInstance().getActiveSession();
         if (session != null && statusLabel != null && !statusLabel.isDisposed()) {
-            statusLabel.setText("Status: " + session.getDecision().toString());
+            setTextSafe(statusLabel, "Status: " + session.getDecision().toString());
         }
     }
 }

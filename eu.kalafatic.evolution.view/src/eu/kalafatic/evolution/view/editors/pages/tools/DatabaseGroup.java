@@ -86,10 +86,10 @@ public class DatabaseGroup extends AToolGroup {
     protected void refreshUI() {
         if (orchestrator.getDatabase() != null) {
             Database db = orchestrator.getDatabase();
-            dbUrlText.setText(db.getUrl() != null ? db.getUrl() : "");
-            dbDriverText.setText(db.getDriver() != null ? db.getDriver() : "");
-            dbUsernameText.setText(db.getUsername() != null ? db.getUsername() : "");
-            dbPasswordText.setText(db.getPassword() != null ? db.getPassword() : "");
+            setTextSafe(dbUrlText, db.getUrl());
+            setTextSafe(dbDriverText, db.getDriver());
+            setTextSafe(dbUsernameText, db.getUsername());
+            setTextSafe(dbPasswordText, db.getPassword());
             updateGroupStatus();
         }
     }

@@ -200,19 +200,20 @@ public class ChatMgmtGroup extends AEvoGroup {
     public void load(){
         if (orchestrator != null) {
             AiMode mode = orchestrator.getAiMode();
-            aiModeCombo.select(mode.getValue());
+            if (aiModeCombo.getSelectionIndex() != mode.getValue()) {
+                aiModeCombo.select(mode.getValue());
+            }
 
             // 1. Populate AI Remote combo
             String currentRemote = aiRemoteCombo.getText();
-            aiRemoteCombo.removeAll();
             List<String> remoteModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.REMOTE);
-            for (String n : remoteModels)
-                aiRemoteCombo.add(n);
-
-            if (!currentRemote.isEmpty()) {
-                int idx = aiRemoteCombo.indexOf(currentRemote);
-                if (idx >= 0)
-                    aiRemoteCombo.select(idx);
+            String[] newRemoteItems = remoteModels.toArray(new String[0]);
+            if (!java.util.Arrays.equals(aiRemoteCombo.getItems(), newRemoteItems)) {
+                aiRemoteCombo.setItems(newRemoteItems);
+                if (!currentRemote.isEmpty()) {
+                    int idx = aiRemoteCombo.indexOf(currentRemote);
+                    if (idx >= 0) aiRemoteCombo.select(idx);
+                }
             }
 
             String remoteModel = orchestrator.getRemoteModel();
@@ -220,25 +221,18 @@ public class ChatMgmtGroup extends AEvoGroup {
                 remoteModel = "deepseek";
             }
             if (remoteModel != null) {
-                int index = aiRemoteCombo.indexOf(remoteModel);
-                if (index >= 0) {
-                    aiRemoteCombo.select(index);
-                } else {
-                    aiRemoteCombo.add(remoteModel);
-                    aiRemoteCombo.select(aiRemoteCombo.indexOf(remoteModel));
-                }
+                selectSafe(aiRemoteCombo, remoteModel);
             }
 
             eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved = eu.kalafatic.evolution.controller.security.TokenSecurityService
                     .getInstance().resolve(orchestrator, aiRemoteCombo.getText());
 
-            remoteTokenText.setText((resolved != null && resolved.token != null) ? resolved.token : "");
-            remoteUrlText.setText((resolved != null && resolved.url != null) ? resolved.url : "");
+            setTextSafe(remoteTokenText, (resolved != null && resolved.token != null) ? resolved.token : "");
+            setTextSafe(remoteUrlText, (resolved != null && resolved.url != null) ? resolved.url : "");
 
             // 2. Populate Model combo
             if (localModelCombo != null) {
                 String currentLocal = localModelCombo.getText();
-                localModelCombo.removeAll();
 
                 List<String> modelsToShow;
                 if (mode == AiMode.PROXY) {
@@ -250,13 +244,13 @@ public class ChatMgmtGroup extends AEvoGroup {
                             AiMode.HYBRID);
                 }
 
-                for (String n : modelsToShow)
-                    localModelCombo.add(n);
-
-                if (!currentLocal.isEmpty()) {
-                    int idx = localModelCombo.indexOf(currentLocal);
-                    if (idx >= 0)
-                        localModelCombo.select(idx);
+                String[] newLocalItems = modelsToShow.toArray(new String[0]);
+                if (!java.util.Arrays.equals(localModelCombo.getItems(), newLocalItems)) {
+                    localModelCombo.setItems(newLocalItems);
+                    if (!currentLocal.isEmpty()) {
+                        int idx = localModelCombo.indexOf(currentLocal);
+                        if (idx >= 0) localModelCombo.select(idx);
+                    }
                 }
 
                 String model = orchestrator.getLocalModel();
@@ -266,13 +260,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                         model = orchestrator.getOllama().getModel();
                 }
                 if (model != null) {
-                    int idx = localModelCombo.indexOf(model);
-                    if (idx >= 0) {
-                        localModelCombo.select(idx);
-                    } else {
-                        localModelCombo.add(model);
-                        localModelCombo.select(localModelCombo.indexOf(model));
-                    }
+                    selectSafe(localModelCombo, model);
                 }
             }
         }
@@ -305,7 +293,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     public void setRemoteToken(String token) {
-        remoteTokenText.setText(token);
+        setTextSafe(remoteTokenText, token);
     }
 
     private void handleDetailedConfig() {
@@ -340,22 +328,14 @@ public class ChatMgmtGroup extends AEvoGroup {
 
     public void setSessionSelection(String sessionId) {
         if (sessionCombo.isDisposed()) return;
-        for (int i = 0; i < sessionCombo.getItemCount(); i++) {
-            if (sessionCombo.getItem(i).equals(sessionId)) {
-                sessionCombo.select(i);
-                return;
-            }
-        }
+        selectSafe(sessionCombo, sessionId);
     }
 
     public void updateSessionCombo(String[] threads, String current) {
         if (sessionCombo.isDisposed()) return;
-        sessionCombo.setItems(threads);
-        for (int i = 0; i < threads.length; i++) {
-            if (threads[i].equals(current)) {
-                sessionCombo.select(i);
-                break;
-            }
+        if (!java.util.Arrays.equals(sessionCombo.getItems(), threads)) {
+            sessionCombo.setItems(threads);
         }
+        selectSafe(sessionCombo, current);
     }
 }

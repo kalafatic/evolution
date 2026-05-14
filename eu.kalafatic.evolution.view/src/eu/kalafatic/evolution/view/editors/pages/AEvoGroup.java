@@ -4,10 +4,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -110,6 +113,37 @@ public abstract class AEvoGroup {
         }
     }
 
+    protected void setTextSafe(Label label, String value) {
+        if (label == null || label.isDisposed()) return;
+        String safeValue = value != null ? value : "";
+        if (!label.getText().equals(safeValue)) {
+            label.setText(safeValue);
+        }
+    }
+
+    protected void setTextSafe(StyledText text, String value) {
+        if (text == null || text.isDisposed()) return;
+        String safeValue = value != null ? value : "";
+        if (!text.getText().equals(safeValue)) {
+            text.setText(safeValue);
+        }
+    }
+
+    protected void setTextSafe(org.eclipse.swt.widgets.Group group, String value) {
+        if (group == null || group.isDisposed()) return;
+        String safeValue = value != null ? value : "";
+        if (!group.getText().equals(safeValue)) {
+            group.setText(safeValue);
+        }
+    }
+
+    protected void setBackgroundSafe(Control control, Color color) {
+        if (control == null || control.isDisposed()) return;
+        if (color != null && !color.equals(control.getBackground())) {
+            control.setBackground(color);
+        }
+    }
+
     protected void setSelectionSafe(Button button, boolean selected) {
         if (button == null || button.isDisposed()) return;
         if (button.getSelection() != selected) {
@@ -125,6 +159,14 @@ public abstract class AEvoGroup {
             combo.select(index);
         } else if (index < 0 && !combo.getText().equals(safeValue)) {
             combo.setText(safeValue);
+        }
+    }
+
+    protected void setTextSafe(Button button, String value) {
+        if (button == null || button.isDisposed()) return;
+        String safeValue = value != null ? value : "";
+        if (!button.getText().equals(safeValue)) {
+            button.setText(safeValue);
         }
     }
 

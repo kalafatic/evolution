@@ -139,7 +139,7 @@ public class FileGroup extends AToolGroup {
     protected void refreshUI() {
         if (orchestrator.getFileConfig() != null) {
             FileConfig config = orchestrator.getFileConfig();
-            fileLocalPathText.setText(config.getLocalPath() != null ? config.getLocalPath() : "");
+            setTextSafe(fileLocalPathText, config.getLocalPath());
             updateGroupStatus();
         }
     }

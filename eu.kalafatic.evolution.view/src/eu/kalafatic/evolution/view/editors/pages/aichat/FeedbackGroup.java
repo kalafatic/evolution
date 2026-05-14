@@ -59,11 +59,11 @@ public class FeedbackGroup extends AEvoGroup {
         FeedbackLevel level = task.getFeedbackLevel();
         if (levelButtons != null) {
             for (int i = 0; i < levelButtons.length; i++) {
-                levelButtons[i].setSelection(FeedbackLevel.values()[i] == level);
+                setSelectionSafe(levelButtons[i], FeedbackLevel.values()[i] == level);
             }
         }
         if (autoEscalateCheck != null) {
-            autoEscalateCheck.setSelection(task.isAutoEscalate());
+            setSelectionSafe(autoEscalateCheck, task.isAutoEscalate());
         }
 
         // Update (auto) status
@@ -213,7 +213,7 @@ public class FeedbackGroup extends AEvoGroup {
         if (message != null) {
             message = message.replaceAll("(?s)<think>.*?</think>", "").trim();
             if (message.length() > 100) message = message.substring(0, 97) + "...";
-            promptLabel.setText(message);
+            setTextSafe(promptLabel, message);
         }
         updateVisibility(inputBox);
         inputText.setFocus();
@@ -238,14 +238,14 @@ public class FeedbackGroup extends AEvoGroup {
     private void updateLevelSelection(int selectedIndex) {
         isUpdating = true;
         for (int i = 0; i < levelButtons.length; i++) {
-            levelButtons[i].setSelection(i == selectedIndex);
+            setSelectionSafe(levelButtons[i], i == selectedIndex);
         }
         isUpdating = false;
     }
 
     public void setAutoStatus(String text) {
         if (autoStatusLabel != null && !autoStatusLabel.isDisposed()) {
-            autoStatusLabel.setText(text != null ? text : "");
+            setTextSafe(autoStatusLabel, text);
         }
     }
 

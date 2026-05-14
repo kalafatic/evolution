@@ -48,19 +48,23 @@ public class SystemStatusGroup extends AEvoGroup {
 
     public void updateOllamaStatus(String text, org.eclipse.swt.graphics.Color color) {
         if (ollamaStatusLabel.isDisposed()) return;
-        ollamaStatusLabel.setText(text);
-        ollamaStatusLabel.setForeground(color);
+        setTextSafe(ollamaStatusLabel, text);
+        if (color != null && !color.equals(ollamaStatusLabel.getForeground())) {
+            ollamaStatusLabel.setForeground(color);
+        }
     }
 
     public void updateModelStatus(String text) {
         if (modelStatusLabel.isDisposed()) return;
-        modelStatusLabel.setText(text);
+        setTextSafe(modelStatusLabel, text);
     }
 
     public void updateProgress(String status, int progress) {
         if (statusLabel.isDisposed()) return;
-        statusLabel.setText(status);
-        progressBar.setSelection(progress);
+        setTextSafe(statusLabel, status);
+        if (progressBar.getSelection() != progress) {
+            progressBar.setSelection(progress);
+        }
     }
 
     public boolean isDisposed() {

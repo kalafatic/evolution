@@ -57,7 +57,7 @@ public class NeuronContextGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (contextPreview != null && !contextPreview.isDisposed()) {
-            contextPreview.setText(service.getLearnedContext());
+            setTextSafe(contextPreview, service.getLearnedContext());
         }
     }
 }

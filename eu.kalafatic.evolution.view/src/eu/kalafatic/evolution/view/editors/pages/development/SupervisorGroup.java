@@ -76,11 +76,11 @@ public class SupervisorGroup extends AEvoGroup {
     public void load() {
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
             SupervisorSettings settings = orchestrator.getSupervisorSettings();
-            executablePathText.setText(settings.getExecutablePath() != null ? settings.getExecutablePath() : "");
-            sourcePathText.setText(settings.getSourcePath() != null ? settings.getSourcePath() : "");
-            commandsText.setText(settings.getCommands() != null ? settings.getCommands() : "");
-            settingsText.setText(settings.getSettings() != null ? settings.getSettings() : "");
-            deployedCheck.setSelection(settings.isDeployed());
+            setTextSafe(executablePathText, settings.getExecutablePath());
+            setTextSafe(sourcePathText, settings.getSourcePath());
+            setTextSafe(commandsText, settings.getCommands());
+            setTextSafe(settingsText, settings.getSettings());
+            setSelectionSafe(deployedCheck, settings.isDeployed());
         }
     }
 

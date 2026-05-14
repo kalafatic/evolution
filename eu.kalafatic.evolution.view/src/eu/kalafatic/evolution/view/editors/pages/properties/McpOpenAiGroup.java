@@ -76,15 +76,17 @@ public class McpOpenAiGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (orchestrator != null) {
-            aiModeCombo.select(orchestrator.getAiMode().getValue());
-            mcpUrlText.setText(orchestrator.getMcpServerUrl() != null ? orchestrator.getMcpServerUrl() : "");
+            if (aiModeCombo.getSelectionIndex() != orchestrator.getAiMode().getValue()) {
+                aiModeCombo.select(orchestrator.getAiMode().getValue());
+            }
+            setTextSafe(mcpUrlText, orchestrator.getMcpServerUrl());
 
             eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
                     eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().resolve(orchestrator, "openai");
 
-            openAiTokenText.setText((resolved != null && resolved.token != null) ? resolved.token : "");
-            openAiModelText.setText((resolved != null && resolved.model != null) ? resolved.model : "");
-            offlineBtn.setSelection(orchestrator.isOfflineMode());
+            setTextSafe(openAiTokenText, (resolved != null && resolved.token != null) ? resolved.token : "");
+            setTextSafe(openAiModelText, (resolved != null && resolved.model != null) ? resolved.model : "");
+            setSelectionSafe(offlineBtn, orchestrator.isOfflineMode());
         }
     }
 
