@@ -177,6 +177,20 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         return tasks.get(id);
     }
 
+    private Orchestrator orchestrator;
+
+    public Orchestrator getOrchestrator() {
+        return orchestrator;
+    }
+
+    public void setOrchestrator(Orchestrator orchestrator) {
+        this.orchestrator = orchestrator;
+    }
+
+    public void registerContext(String id, TaskContext context) {
+        contexts.put(id, context);
+    }
+
     public void provideApproval(String taskId, boolean approved) {
         TaskContext context = contexts.get(taskId);
         if (context != null) {

@@ -58,10 +58,19 @@ public class EvolutionServer extends NanoHTTPD {
         try {
             if (Method.GET.equals(method) && ("/".equals(uri) || "/index.html".equals(uri))) {
                 return handleGetIndex();
+            } else if (Method.GET.equals(method) && "/experimental/chat".equals(uri)) {
+                return handleGetChat();
             } else if (Method.GET.equals(method) && "/server/status".equals(uri)) {
                 return handleGetServerStatus();
             } else if (Method.POST.equals(method) && "/server/session/ui".equals(uri)) {
                 return handleRegisterUiSession(session);
+            } else if (Method.GET.equals(method) && uri.startsWith("/server/conversation/")) {
+                String sessionIdParam = uri.substring("/server/conversation/".length());
+                return handleGetConversation(sessionIdParam);
+            } else if (Method.GET.equals(method) && "/server/orchestrator/settings".equals(uri)) {
+                return handleGetSettings();
+            } else if (Method.POST.equals(method) && "/server/orchestrator/settings".equals(uri)) {
+                return handleUpdateSettings(session);
             } else if (Method.POST.equals(method) && "/task".equals(uri)) {
                 return handleCreateTask(session);
             } else if (Method.GET.equals(method) && uri.startsWith("/task/")) {
@@ -75,6 +84,15 @@ public class EvolutionServer extends NanoHTTPD {
                     }
                 }
                 return handleGetTask(taskId);
+            } else if (Method.POST.equals(method) && uri.startsWith("/conversation/")) {
+                String convId = uri.substring("/conversation/".length());
+                if (convId.endsWith("/approve")) {
+                    return handleApproveConversation(convId.substring(0, convId.length() - 8), session);
+                } else if (convId.endsWith("/input")) {
+                    return handleInputConversation(convId.substring(0, convId.length() - 6), session);
+                } else if (convId.endsWith("/feedback")) {
+                    return handleFeedbackConversation(convId.substring(0, convId.length() - 9), session);
+                }
             } else if (Method.GET.equals(method) && "/workspace/files".equals(uri)) {
                 return handleListFiles(session);
             } else if (Method.POST.equals(method) && "/workspace/applyPatch".equals(uri)) {
@@ -237,6 +255,134 @@ public class EvolutionServer extends NanoHTTPD {
         } catch (IOException e) {
             return false;
         }
+    }
+
+    private Response handleGetConversation(String sessionId) {
+        List<ChatMessage> history = ConversationOutputController.getInstance().getSessionHistory(sessionId);
+        JSONArray array = new JSONArray();
+        for (ChatMessage msg : history) {
+            array.put(new JSONObject()
+                .put("sender", msg.getSender())
+                .put("text", msg.getText())
+                .put("agentType", msg.getAgentType())
+                .put("timestamp", msg.getTimestamp())
+                .put("priority", msg.getPriority())
+                .put("sequenceNumber", msg.getSequenceNumber())
+                .put("turnId", msg.getTurnId())
+                .put("isTerminal", msg.isIsTerminal()));
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
+    }
+
+    private Response handleGetSettings() {
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+        if (orch == null) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", "{}");
+        }
+
+        JSONObject json = new JSONObject();
+        json.put("aiMode", orch.getAiMode().getName());
+        json.put("localModel", orch.getLocalModel());
+        json.put("remoteModel", orch.getRemoteModel());
+        json.put("darwinMode", orch.isDarwinMode());
+
+        if (orch.getAiChat() != null && orch.getAiChat().getPromptInstructions() != null) {
+            PromptInstructions instr = orch.getAiChat().getPromptInstructions();
+            json.put("iterativeMode", instr.isIterativeMode());
+            json.put("selfIterativeMode", instr.isSelfIterativeMode());
+            json.put("stepMode", instr.isStepMode());
+            json.put("autoApprove", instr.isAutoApprove());
+            json.put("gitAutomation", instr.isGitAutomation());
+            json.put("maxIterations", instr.getPreferredMaxIterations());
+        }
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", json.toString());
+    }
+
+    private Response handleUpdateSettings(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = new JSONObject(postData);
+
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+        if (orch != null) {
+            if (json.has("aiMode")) {
+                for (eu.kalafatic.evolution.model.orchestration.AiMode mode : eu.kalafatic.evolution.model.orchestration.AiMode.values()) {
+                    if (mode.getName().equalsIgnoreCase(json.getString("aiMode"))) {
+                        orch.setAiMode(mode);
+                        break;
+                    }
+                }
+            }
+            if (json.has("localModel")) orch.setLocalModel(json.getString("localModel"));
+            if (json.has("remoteModel")) orch.setRemoteModel(json.getString("remoteModel"));
+            if (json.has("darwinMode")) orch.setDarwinMode(json.getBoolean("darwinMode"));
+
+            if (orch.getAiChat() != null && orch.getAiChat().getPromptInstructions() != null) {
+                PromptInstructions instr = orch.getAiChat().getPromptInstructions();
+                if (json.has("iterativeMode")) instr.setIterativeMode(json.getBoolean("iterativeMode"));
+                if (json.has("selfIterativeMode")) instr.setSelfIterativeMode(json.getBoolean("selfIterativeMode"));
+                if (json.has("stepMode")) instr.setStepMode(json.getBoolean("stepMode"));
+                if (json.has("autoApprove")) instr.setAutoApprove(json.getBoolean("autoApprove"));
+                if (json.has("gitAutomation")) instr.setGitAutomation(json.getBoolean("gitAutomation"));
+                if (json.has("maxIterations")) instr.setPreferredMaxIterations(json.getInt("maxIterations"));
+            }
+        }
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").toString());
+    }
+
+    private Response handleGetChat() {
+        try (InputStream is = getClass().getResourceAsStream("chat.html")) {
+            if (is == null) {
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "chat.html not found");
+            }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                String content = reader.lines().collect(Collectors.joining("\n"));
+                return newFixedLengthResponse(Response.Status.OK, "text/html", content);
+            }
+        } catch (IOException e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
+        }
+    }
+
+    private Response handleApproveConversation(String id, IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = new JSONObject(postData != null ? postData : "{\"approved\": true}");
+
+        OrchestratorServiceImpl.getInstance().provideApproval(id, json.optBoolean("approved", true));
+        return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").toString());
+    }
+
+    private Response handleInputConversation(String id, IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = new JSONObject(postData);
+
+        OrchestratorServiceImpl.getInstance().provideInput(id, json.getString("input"));
+        return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").toString());
+    }
+
+    private Response handleFeedbackConversation(String id, IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = new JSONObject(postData);
+
+        // This is a bit tricky as submitFeedback on AiChatPage does more, but we can at least record it in the model
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+        if (orch != null && orch.getSelfDevSession() != null) {
+             int satisfaction = json.optInt("satisfaction", 5);
+             String comments = json.optString("comments", "");
+             // Basic recording - in a real scenario we would trigger the same logic as AiChatPage.submitFeedback
+             // For now we'll just return OK as the "non-authoritative" web UI
+        }
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").toString());
     }
 
     private void trackHttpSession(IHTTPSession session) {

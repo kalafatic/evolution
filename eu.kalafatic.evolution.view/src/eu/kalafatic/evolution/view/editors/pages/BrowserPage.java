@@ -97,12 +97,17 @@ public class BrowserPage extends Composite {
 
         // Initial tab
         createNewTab("https://ollama.com");
-        createNewTab(orchestrator.getOllama().getUrl());
-        if (orchestrator.getServerSettings()!=null) {
-			createNewTab("localhost:" + orchestrator.getServerSettings().getPort());			
-		} else {
-			createNewTab("localhost:48080");
-		}
+        if (orchestrator.getOllama() != null) {
+            createNewTab(orchestrator.getOllama().getUrl());
+        }
+
+        int port = 48080;
+        if (orchestrator.getServerSettings() != null) {
+            port = orchestrator.getServerSettings().getPort();
+        }
+
+        createNewTab("http://localhost:" + port + "/experimental/chat");
+        createNewTab("http://localhost:" + port);
         // Listeners
         goButton.addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) { navigateTo(urlText.getText()); }
