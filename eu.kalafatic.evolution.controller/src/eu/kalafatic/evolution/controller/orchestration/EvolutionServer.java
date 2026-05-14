@@ -4,8 +4,11 @@ import fi.iki.elonen.NanoHTTPD;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
+import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.SessionType;
 
