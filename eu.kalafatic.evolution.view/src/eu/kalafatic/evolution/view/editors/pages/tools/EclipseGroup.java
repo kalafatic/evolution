@@ -13,7 +13,7 @@ import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 import java.io.File;
 
 public class EclipseGroup extends AToolGroup {
@@ -25,25 +25,25 @@ public class EclipseGroup extends AToolGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Eclipse Development Settings", 3, false);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Eclipse Development Settings", 3, false);
 
-        SWTFactory.createLabel(group, "Workspace Path:");
-        eclipseWorkspaceText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Workspace Path:");
+        eclipseWorkspaceText = GUIFactory.INSTANCE.createText(group);
         eclipseWorkspaceText.setText(orchestrator.getEclipse() != null && orchestrator.getEclipse().getWorkspace() != null ? orchestrator.getEclipse().getWorkspace() : "");
-        SWTFactory.createEditButton(group, eclipseWorkspaceText);
+        GUIFactory.INSTANCE.createEditButton(group, eclipseWorkspaceText);
 
-        SWTFactory.createLabel(group, "Eclipse Installation:");
-        eclipseInstallationText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Eclipse Installation:");
+        eclipseInstallationText = GUIFactory.INSTANCE.createText(group);
         eclipseInstallationText.setText(orchestrator.getEclipse() != null && orchestrator.getEclipse().getInstallation() != null ? orchestrator.getEclipse().getInstallation() : "");
-        SWTFactory.createEditButton(group, eclipseInstallationText);
+        GUIFactory.INSTANCE.createEditButton(group, eclipseInstallationText);
 
-        SWTFactory.createLabel(group, "Target Platform:");
-        eclipseTargetPlatformText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Target Platform:");
+        eclipseTargetPlatformText = GUIFactory.INSTANCE.createText(group);
         eclipseTargetPlatformText.setText(orchestrator.getEclipse() != null && orchestrator.getEclipse().getTargetPlatform() != null ? orchestrator.getEclipse().getTargetPlatform() : "");
-        SWTFactory.createEditButton(group, eclipseTargetPlatformText);
+        GUIFactory.INSTANCE.createEditButton(group, eclipseTargetPlatformText);
 
-        SWTFactory.createLabel(group, "");
-        Button testBtn = SWTFactory.createButton(group, "Test Eclipse");
+        GUIFactory.INSTANCE.createLabel(group, "");
+        Button testBtn = GUIFactory.INSTANCE.createButton(group, "Test Eclipse");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

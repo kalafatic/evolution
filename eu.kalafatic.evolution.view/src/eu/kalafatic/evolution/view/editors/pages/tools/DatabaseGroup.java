@@ -15,7 +15,7 @@ import eu.kalafatic.evolution.model.orchestration.Database;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 import java.io.File;
 
 public class DatabaseGroup extends AToolGroup {
@@ -27,29 +27,29 @@ public class DatabaseGroup extends AToolGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Database Tool Settings", 3, false);
-        SWTFactory.createLabel(group, "JDBC URL:");
-        dbUrlText = SWTFactory.createText(group);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Database Tool Settings", 3, false);
+        GUIFactory.INSTANCE.createLabel(group, "JDBC URL:");
+        dbUrlText = GUIFactory.INSTANCE.createText(group);
         dbUrlText.setText(orchestrator.getDatabase() != null && orchestrator.getDatabase().getUrl() != null ? orchestrator.getDatabase().getUrl() : "");
-        SWTFactory.createEditButton(group, dbUrlText);
+        GUIFactory.INSTANCE.createEditButton(group, dbUrlText);
 
-        SWTFactory.createLabel(group, "Driver Class:");
-        dbDriverText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Driver Class:");
+        dbDriverText = GUIFactory.INSTANCE.createText(group);
         dbDriverText.setText(orchestrator.getDatabase() != null && orchestrator.getDatabase().getDriver() != null ? orchestrator.getDatabase().getDriver() : "");
-        SWTFactory.createEditButton(group, dbDriverText);
+        GUIFactory.INSTANCE.createEditButton(group, dbDriverText);
 
-        SWTFactory.createLabel(group, "Username:");
-        dbUsernameText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Username:");
+        dbUsernameText = GUIFactory.INSTANCE.createText(group);
         dbUsernameText.setText(orchestrator.getDatabase() != null && orchestrator.getDatabase().getUsername() != null ? orchestrator.getDatabase().getUsername() : "");
-        SWTFactory.createEditButton(group, dbUsernameText);
+        GUIFactory.INSTANCE.createEditButton(group, dbUsernameText);
 
-        SWTFactory.createLabel(group, "Password:");
-        dbPasswordText = SWTFactory.createPasswordText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Password:");
+        dbPasswordText = GUIFactory.INSTANCE.createPasswordText(group);
         dbPasswordText.setText(orchestrator.getDatabase() != null && orchestrator.getDatabase().getPassword() != null ? orchestrator.getDatabase().getPassword() : "");
-        SWTFactory.createEditButton(group, dbPasswordText);
+        GUIFactory.INSTANCE.createEditButton(group, dbPasswordText);
 
-        SWTFactory.createLabel(group, "");
-        Button testBtn = SWTFactory.createButton(group, "Test DB");
+        GUIFactory.INSTANCE.createLabel(group, "");
+        Button testBtn = GUIFactory.INSTANCE.createButton(group, "Test DB");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

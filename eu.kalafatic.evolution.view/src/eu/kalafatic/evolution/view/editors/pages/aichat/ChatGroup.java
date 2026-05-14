@@ -42,7 +42,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 /**
  * @evo.lastModified: 13:A
@@ -74,7 +74,7 @@ public class ChatGroup extends AEvoGroup {
 
     // @evo:13:A reason=fill-chat-group
     private void createControl(FormToolkit toolkit, Composite parent, Font chatFont) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat", 1, true, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Chat", 1, true, true);
 
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();
@@ -113,7 +113,7 @@ public class ChatGroup extends AEvoGroup {
                 }
             });
 
-            SWTFactory.createMaximizeButton(toolbar, section, false);
+            GUIFactory.INSTANCE.createMaximizeButton(toolbar, section, false);
             section.setTextClient(toolbar);
         }
 
@@ -157,7 +157,7 @@ public class ChatGroup extends AEvoGroup {
                 URL chatUrl = new URL(bundleRoot, "chat.html");
                 //browser.setUrl(chatUrl.toString());
                 
-                String html = SWTFactory.loadHtmlTemplate("/chat.html");
+                String html = GUIFactory.INSTANCE.loadHtmlTemplate(getClass(), "/chat.html");
 
              // critical: inject base path so relative JS works
              //URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
@@ -174,7 +174,7 @@ public class ChatGroup extends AEvoGroup {
             }
         } catch (Exception e) {
             System.err.println("Failed to load chat.html via setUrl: " + e.getMessage());
-            String html =  SWTFactory.loadHtmlTemplate("/chat.html");
+            String html =  GUIFactory.INSTANCE.loadHtmlTemplate(getClass(), "/chat.html");
             browser.setText(html);
         }
     }

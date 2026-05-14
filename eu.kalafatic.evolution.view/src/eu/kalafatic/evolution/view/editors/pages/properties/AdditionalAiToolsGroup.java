@@ -7,7 +7,7 @@ import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class AdditionalAiToolsGroup extends AEvoGroup {
     private Text aiChatUrlText, neuronAiUrlText, compilerSourceText;
@@ -18,16 +18,16 @@ public class AdditionalAiToolsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Additional AI & Tools", 3, false);
-        SWTFactory.createLabel(group, "AI Chat URL:");
-        aiChatUrlText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, aiChatUrlText);
-        SWTFactory.createLabel(group, "Neuron AI URL:");
-        neuronAiUrlText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, neuronAiUrlText);
-        SWTFactory.createLabel(group, "Compiler Source:");
-        compilerSourceText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, compilerSourceText);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Additional AI & Tools", 3, false);
+        GUIFactory.INSTANCE.createLabel(group, "AI Chat URL:");
+        aiChatUrlText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, aiChatUrlText);
+        GUIFactory.INSTANCE.createLabel(group, "Neuron AI URL:");
+        neuronAiUrlText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, neuronAiUrlText);
+        GUIFactory.INSTANCE.createLabel(group, "Compiler Source:");
+        compilerSourceText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, compilerSourceText);
     }
 
     @Override

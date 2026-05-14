@@ -6,7 +6,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.ui.forms.widgets.FormToolkit;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -27,12 +27,12 @@ public class SystemStatusGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "System Status", 4, false);
-        SWTFactory.createLabel(group, "Ollama Status:");
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "System Status", 4, false);
+        GUIFactory.INSTANCE.createLabel(group, "Ollama Status:");
         ollamaStatusLabel = new Label(group, SWT.NONE);
         ollamaStatusLabel.setText("Unknown");
         ollamaStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createLabel(group, "Model:");
+        GUIFactory.INSTANCE.createLabel(group, "Model:");
         modelStatusLabel = new Label(group, SWT.NONE);
         modelStatusLabel.setText("Not Configured");
         modelStatusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));

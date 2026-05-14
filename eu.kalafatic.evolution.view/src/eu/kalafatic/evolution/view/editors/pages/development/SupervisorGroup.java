@@ -15,7 +15,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class SupervisorGroup extends AEvoGroup {
 
@@ -31,25 +31,25 @@ public class SupervisorGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Supervisor Settings", 3, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Supervisor Settings", 3, true);
 
-        SWTFactory.createLabel(group, "Executable Path:");
-        executablePathText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, executablePathText);
+        GUIFactory.INSTANCE.createLabel(group, "Executable Path:");
+        executablePathText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, executablePathText);
 
-        SWTFactory.createLabel(group, "Source Path:");
-        sourcePathText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, sourcePathText);
+        GUIFactory.INSTANCE.createLabel(group, "Source Path:");
+        sourcePathText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, sourcePathText);
 
-        SWTFactory.createLabel(group, "Commands:");
-        commandsText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Commands:");
+        commandsText = GUIFactory.INSTANCE.createText(group);
         new org.eclipse.swt.widgets.Label(group, SWT.NONE);
 
-        SWTFactory.createLabel(group, "Settings:");
-        settingsText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Settings:");
+        settingsText = GUIFactory.INSTANCE.createText(group);
         new org.eclipse.swt.widgets.Label(group, SWT.NONE);
 
-        SWTFactory.createLabel(group, "Deployed:");
+        GUIFactory.INSTANCE.createLabel(group, "Deployed:");
         deployedCheck = toolkit.createButton(group, "", SWT.CHECK);
         deployedCheck.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
 

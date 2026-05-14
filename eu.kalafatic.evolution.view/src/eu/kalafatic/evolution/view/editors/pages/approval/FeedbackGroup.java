@@ -10,7 +10,7 @@ import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class FeedbackGroup extends AEvoGroup {
     private Scale ratingScale;
@@ -22,9 +22,9 @@ public class FeedbackGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "User Feedback & Satisfaction", 2, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "User Feedback & Satisfaction", 2, true);
 
-        SWTFactory.createLabel(group, "Rating (1-5):");
+        GUIFactory.INSTANCE.createLabel(group, "Rating (1-5):");
         ratingScale = new Scale(group, SWT.HORIZONTAL);
         ratingScale.setMinimum(1);
         ratingScale.setMaximum(5);
@@ -41,7 +41,7 @@ public class FeedbackGroup extends AEvoGroup {
             }
         });
 
-        SWTFactory.createLabel(group, "Comments:");
+        GUIFactory.INSTANCE.createLabel(group, "Comments:");
         commentsText = toolkit.createText(group, "", SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
         GridData commentsGD = new GridData(GridData.FILL_HORIZONTAL);
         commentsGD.heightHint = 40;

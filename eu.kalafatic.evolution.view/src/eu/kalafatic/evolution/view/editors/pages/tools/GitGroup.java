@@ -17,7 +17,7 @@ import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 import java.io.File;
 
 public class GitGroup extends AToolGroup {
@@ -30,48 +30,48 @@ public class GitGroup extends AToolGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Git Tool Settings", 3, true);
-        SWTFactory.createLabel(group, "Repository URL:");
-        gitRepoText = SWTFactory.createText(group);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Git Tool Settings", 3, true);
+        GUIFactory.INSTANCE.createLabel(group, "Repository URL:");
+        gitRepoText = GUIFactory.INSTANCE.createText(group);
         gitRepoText.setText(orchestrator.getGit() != null && orchestrator.getGit().getRepositoryUrl() != null ? orchestrator.getGit().getRepositoryUrl() : "");
-        SWTFactory.createEditButton(group, gitRepoText);
+        GUIFactory.INSTANCE.createEditButton(group, gitRepoText);
 
-        SWTFactory.createLabel(group, "Branch:");
-        gitBranchText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Branch:");
+        gitBranchText = GUIFactory.INSTANCE.createText(group);
         gitBranchText.setText(orchestrator.getGit() != null && orchestrator.getGit().getBranch() != null ? orchestrator.getGit().getBranch() : "");
-        SWTFactory.createEditButton(group, gitBranchText);
+        GUIFactory.INSTANCE.createEditButton(group, gitBranchText);
 
-        SWTFactory.createLabel(group, "Username:");
-        gitUsernameText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Username:");
+        gitUsernameText = GUIFactory.INSTANCE.createText(group);
         gitUsernameText.setText(orchestrator.getGit() != null && orchestrator.getGit().getUsername() != null ? orchestrator.getGit().getUsername() : "");
-        SWTFactory.createEditButton(group, gitUsernameText);
+        GUIFactory.INSTANCE.createEditButton(group, gitUsernameText);
 
-        SWTFactory.createLabel(group, "Password:");
-        gitPasswordText = SWTFactory.createPasswordText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Password:");
+        gitPasswordText = GUIFactory.INSTANCE.createPasswordText(group);
         gitPasswordText.setText(orchestrator.getGit() != null && orchestrator.getGit().getPassword() != null ? orchestrator.getGit().getPassword() : "");
-        SWTFactory.createEditButton(group, gitPasswordText);
+        GUIFactory.INSTANCE.createEditButton(group, gitPasswordText);
 
-        SWTFactory.createLabel(group, "Local Path:");
-        gitLocalPathText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Local Path:");
+        gitLocalPathText = GUIFactory.INSTANCE.createText(group);
         gitLocalPathText.setText(orchestrator.getGit() != null && orchestrator.getGit().getLocalPath() != null ? orchestrator.getGit().getLocalPath() : "");
-        SWTFactory.createEditButton(group, gitLocalPathText);
+        GUIFactory.INSTANCE.createEditButton(group, gitLocalPathText);
 
-        SWTFactory.createLabel(group, "Branch Name:");
-        branchNameText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Branch Name:");
+        branchNameText = GUIFactory.INSTANCE.createText(group);
         branchNameText.setText(orchestrator.getGit() != null && orchestrator.getGit().getBranchName() != null ? orchestrator.getGit().getBranchName() : "");
-        SWTFactory.createLabel(group, "");
+        GUIFactory.INSTANCE.createLabel(group, "");
 
-        SWTFactory.createLabel(group, "Commit Msg:");
-        commitMsgText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Commit Msg:");
+        commitMsgText = GUIFactory.INSTANCE.createText(group);
         commitMsgText.setText(orchestrator.getGit() != null && orchestrator.getGit().getCommitMsg() != null ? orchestrator.getGit().getCommitMsg() : "");
-        SWTFactory.createLabel(group, "");
+        GUIFactory.INSTANCE.createLabel(group, "");
 
         Composite btnComp = toolkit.createComposite(group);
         btnComp.setLayout(new GridLayout(5, false));
         GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
         btnComp.setLayoutData(btnGd);
 
-        Button branchBtn = SWTFactory.createButton(btnComp, "New Branch");
+        Button branchBtn = GUIFactory.INSTANCE.createButton(btnComp, "New Branch");
         branchBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -79,7 +79,7 @@ public class GitGroup extends AToolGroup {
             }
         });
 
-        Button commitBtn = SWTFactory.createButton(btnComp, "Commit");
+        Button commitBtn = GUIFactory.INSTANCE.createButton(btnComp, "Commit");
         commitBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -87,7 +87,7 @@ public class GitGroup extends AToolGroup {
             }
         });
 
-        Button pullBtn = SWTFactory.createButton(btnComp, "Pull");
+        Button pullBtn = GUIFactory.INSTANCE.createButton(btnComp, "Pull");
         pullBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -95,7 +95,7 @@ public class GitGroup extends AToolGroup {
             }
         });
 
-        Button pushBtn = SWTFactory.createButton(btnComp, "Push");
+        Button pushBtn = GUIFactory.INSTANCE.createButton(btnComp, "Push");
         pushBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -103,7 +103,7 @@ public class GitGroup extends AToolGroup {
             }
         });
 
-        Button testBtn = SWTFactory.createButton(btnComp, "Test Git");
+        Button testBtn = GUIFactory.INSTANCE.createButton(btnComp, "Test Git");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

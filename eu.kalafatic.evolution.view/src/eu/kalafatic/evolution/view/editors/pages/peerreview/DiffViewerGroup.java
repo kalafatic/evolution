@@ -19,7 +19,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.PeerReviewPage;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class DiffViewerGroup extends AEvoGroup {
     private Browser browser;
@@ -32,7 +32,7 @@ public class DiffViewerGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Diff Viewer", 1, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Diff Viewer", 1, true);
         group.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         try {

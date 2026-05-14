@@ -31,7 +31,7 @@ import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class LLMSettingsPage extends AWizardPage {
     private Combo modelCombo;
@@ -80,9 +80,9 @@ public class LLMSettingsPage extends AWizardPage {
         Composite container = new Composite(parent, SWT.NONE);
         container.setLayout(new GridLayout(1, false));        
         
-        final Group groupMode = SWTFactory.createGroup(container, "Mode", 4);
+        final Group groupMode = GUIFactory.INSTANCE.createGroup(container, "Mode", 4);
 
-        SWTFactory.createLabel(groupMode, "AI Mode:");
+        GUIFactory.INSTANCE.createLabel(groupMode, "AI Mode:");
         aiModeCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
         GridData gd = new GridData();
 		gd.widthHint = 100;
@@ -92,7 +92,7 @@ public class LLMSettingsPage extends AWizardPage {
             aiModeCombo.add(mode.getName());
         }
 
-        Label remoteLabel = SWTFactory.createLabel(groupMode, "AI Remote:");
+        Label remoteLabel = GUIFactory.INSTANCE.createLabel(groupMode, "AI Remote:");
   
         aiRemoteCombo = new Combo(groupMode, SWT.DROP_DOWN | SWT.READ_ONLY);
         aiRemoteCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -108,7 +108,7 @@ public class LLMSettingsPage extends AWizardPage {
             }
         });
 
-        final Group groupLinks = SWTFactory.createGroup(container, "Setup", 2);
+        final Group groupLinks = GUIFactory.INSTANCE.createGroup(container, "Setup", 2);
         
         new Label(groupLinks, SWT.NONE).setText("LLM Model:");
         modelCombo = new Combo(groupLinks, SWT.DROP_DOWN | SWT.READ_ONLY);

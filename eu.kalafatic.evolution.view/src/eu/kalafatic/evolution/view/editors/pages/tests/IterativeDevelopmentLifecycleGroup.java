@@ -8,7 +8,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.editors.pages.TestsPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -31,7 +31,7 @@ public class IterativeDevelopmentLifecycleGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Iterative Development Lifecycle", 1, false);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Iterative Development Lifecycle", 1, false);
         group.setLayout(new GridLayout(2, false));
 
         runBtn = toolkit.createButton(group, "Run Lifecycle Simulation", SWT.PUSH);

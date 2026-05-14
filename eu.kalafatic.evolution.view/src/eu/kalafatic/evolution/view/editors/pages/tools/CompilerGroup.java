@@ -13,7 +13,7 @@ import eu.kalafatic.evolution.model.orchestration.Compiler;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 import java.io.File;
 
 public class CompilerGroup extends AToolGroup {
@@ -25,40 +25,40 @@ public class CompilerGroup extends AToolGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Compiler & Language Settings", 3, false);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Compiler & Language Settings", 3, false);
 
-        SWTFactory.createLabel(group, "Java Source Version:");
-        sourceVersionText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Java Source Version:");
+        sourceVersionText = GUIFactory.INSTANCE.createText(group);
         sourceVersionText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getSourceVersion() != null ? orchestrator.getCompiler().getSourceVersion() : "");
-        SWTFactory.createEditButton(group, sourceVersionText);
+        GUIFactory.INSTANCE.createEditButton(group, sourceVersionText);
 
-        SWTFactory.createLabel(group, "Java Target Version:");
-        targetVersionText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Java Target Version:");
+        targetVersionText = GUIFactory.INSTANCE.createText(group);
         targetVersionText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getTargetVersion() != null ? orchestrator.getCompiler().getTargetVersion() : "");
-        SWTFactory.createEditButton(group, targetVersionText);
+        GUIFactory.INSTANCE.createEditButton(group, targetVersionText);
 
-        SWTFactory.createLabel(group, "C Path (gcc):");
-        cPathText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "C Path (gcc):");
+        cPathText = GUIFactory.INSTANCE.createText(group);
         cPathText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getCPath() != null ? orchestrator.getCompiler().getCPath() : "");
-        SWTFactory.createEditButton(group, cPathText);
+        GUIFactory.INSTANCE.createEditButton(group, cPathText);
 
-        SWTFactory.createLabel(group, "C++ Path (g++):");
-        cppPathText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "C++ Path (g++):");
+        cppPathText = GUIFactory.INSTANCE.createText(group);
         cppPathText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getCppPath() != null ? orchestrator.getCompiler().getCppPath() : "");
-        SWTFactory.createEditButton(group, cppPathText);
+        GUIFactory.INSTANCE.createEditButton(group, cppPathText);
 
-        SWTFactory.createLabel(group, "Make Path:");
-        makePathText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Make Path:");
+        makePathText = GUIFactory.INSTANCE.createText(group);
         makePathText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getMakePath() != null ? orchestrator.getCompiler().getMakePath() : "");
-        SWTFactory.createEditButton(group, makePathText);
+        GUIFactory.INSTANCE.createEditButton(group, makePathText);
 
-        SWTFactory.createLabel(group, "CMake Path:");
-        cmakePathText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "CMake Path:");
+        cmakePathText = GUIFactory.INSTANCE.createText(group);
         cmakePathText.setText(orchestrator.getCompiler() != null && orchestrator.getCompiler().getCmakePath() != null ? orchestrator.getCompiler().getCmakePath() : "");
-        SWTFactory.createEditButton(group, cmakePathText);
+        GUIFactory.INSTANCE.createEditButton(group, cmakePathText);
 
-        SWTFactory.createLabel(group, "");
-        Button testBtn = SWTFactory.createButton(group, "Test Compilers");
+        GUIFactory.INSTANCE.createLabel(group, "");
+        Button testBtn = GUIFactory.INSTANCE.createButton(group, "Test Compilers");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

@@ -23,7 +23,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.TestsPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class PredefinedTestsGroup extends AEvoGroup {
 	private TestsPage page;
@@ -144,7 +144,7 @@ public class PredefinedTestsGroup extends AEvoGroup {
 	}
 
 	private void createControl(Composite parent) {
-		group = SWTFactory.createExpandableGroup(toolkit, parent, "Predefined Tests", 1, true, true);
+		group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Predefined Tests", 1, true, true);
 
 		tableComposite = toolkit.createComposite(group);
 		tableComposite.setLayoutData(new GridData(GridData.FILL_BOTH));

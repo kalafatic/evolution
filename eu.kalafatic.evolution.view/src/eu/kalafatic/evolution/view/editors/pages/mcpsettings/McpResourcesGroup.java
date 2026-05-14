@@ -11,7 +11,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -33,7 +33,7 @@ public class McpResourcesGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Available Resources", 1, false);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Available Resources", 1, false);
 
         resourcesTable = new Table(group, SWT.BORDER | SWT.FULL_SELECTION);
         resourcesTable.setHeaderVisible(true);
@@ -48,7 +48,7 @@ public class McpResourcesGroup extends AEvoGroup {
             col.setWidth(widths[i]);
         }
 
-        Button refreshBtn = SWTFactory.createButton(group, "Refresh Resources", 150);
+        Button refreshBtn = GUIFactory.INSTANCE.createButton(group, "Refresh Resources", 150);
         refreshBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

@@ -23,7 +23,7 @@ import eu.kalafatic.evolution.controller.workflow.GraphActionExecutor;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 import eu.kalafatic.evolution.view.application.Activator;
 
 public class InteractiveWorkflowGroup2 extends AEvoGroup {
@@ -40,7 +40,7 @@ public class InteractiveWorkflowGroup2 extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Interactive AI Workflow", 1, true, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Interactive AI Workflow", 1, true, true);
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 700;
         group.setLayoutData(gd);
@@ -50,7 +50,7 @@ public class InteractiveWorkflowGroup2 extends AEvoGroup {
         browserContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         try {
-            browser = SWTFactory.createBrowser(browserContainer, 300);
+            browser = GUIFactory.INSTANCE.createBrowser(browserContainer, 300);
           
             browser.addProgressListener(new org.eclipse.swt.browser.ProgressAdapter() {
                 @Override
@@ -88,7 +88,7 @@ public class InteractiveWorkflowGroup2 extends AEvoGroup {
                 URL chatUrl = new URL(bundleRoot, "/workflow/workflow.html");
                 //browser.setUrl(chatUrl.toString());
                 
-                String html = SWTFactory.loadHtmlTemplate("/workflow/workflow.html");
+                String html = GUIFactory.INSTANCE.loadHtmlTemplate(getClass(), "/workflow/workflow.html");
 
              // critical: inject base path so relative JS works
              //URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
@@ -105,7 +105,7 @@ public class InteractiveWorkflowGroup2 extends AEvoGroup {
             }
         } catch (Exception e) {
             System.err.println("Failed to load chat.html via setUrl: " + e.getMessage());
-            String html =  SWTFactory.loadHtmlTemplate("/workflow/workflow.html");
+            String html =  GUIFactory.INSTANCE.loadHtmlTemplate(getClass(), "/workflow/workflow.html");
             browser.setText(html);
         }
     }

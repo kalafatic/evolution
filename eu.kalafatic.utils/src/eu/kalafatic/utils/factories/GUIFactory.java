@@ -10,16 +10,22 @@
  ******************************************************************************/
 package eu.kalafatic.utils.factories;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.eclipse.jface.fieldassist.ControlDecoration;
 import org.eclipse.jface.fieldassist.FieldDecoration;
 import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.jface.resource.FontRegistry;
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StyledText;
@@ -60,6 +66,8 @@ import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
+import org.eclipse.ui.forms.widgets.ExpandableComposite;
+import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 import org.eclipse.ui.forms.events.ExpansionAdapter;
 import org.eclipse.ui.forms.events.ExpansionEvent;
 import org.eclipse.ui.forms.events.HyperlinkEvent;
@@ -85,6 +93,12 @@ import eu.kalafatic.utils.time.DateUtils;
  * A factory for creating GUI objects.
  */
 public class GUIFactory {
+
+	public static final GUIFactory INSTANCE = new GUIFactory();
+
+	public static final int LABEL_WIDTH = FUIConstants.LABEL_WIDTH;
+	public static final int BUTTON_HEIGHT = FUIConstants.BUTTON_HEIGHT;
+	public static final int BUTTON_WIDTH = FUIConstants.BUTTON_WIDTH;
 
 	/** The Constant NAME. */
 	public static final String NAME = "name";
@@ -115,8 +129,6 @@ public class GUIFactory {
 
 	/** The SECTIO n_ style. */
 	public final int SECTION_STYLE = Section.TITLE_BAR | Section.TWISTIE | Section.COMPACT;
-
-	public static final GUIFactory INSTANCE = new GUIFactory();
 
 	/** The GridLayout Constants. */
 	public static final GridLayout DEF_GL, CONTAINER_GL, SECTION_GL;
@@ -406,6 +418,7 @@ public class GUIFactory {
 		return composite;
 	}
 
+
 	// ---------------------------------------------------------------
 
 	/**
@@ -603,12 +616,16 @@ public class GUIFactory {
 	 * @return the label
 	 */
 	public Label createLabel(Composite composite, String name, int style) {
+		return createLabel(composite, name, style, LABEL_WIDTH);
+	}
+
+	public Label createLabel(Composite composite, String name, int style, int width) {
 		Label label = new Label(composite, style);
-		label.setText(name);
+		label.setText(name == null ? "" : name);
 		label.setToolTipText(name);
 
 		GridData gridData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING | GridData.HORIZONTAL_ALIGN_FILL);
-		gridData.widthHint = FUIConstants.LABEL_WIDTH;
+		gridData.widthHint = width;
 		label.setLayoutData(gridData);
 
 		return label;
@@ -616,19 +633,6 @@ public class GUIFactory {
 
 	// ---------------------------------------------------------------
 
-	/**
-	 * Creates a new GUI object.
-	 * @param composite the composite
-	 * @param name the name
-	 * @param style the style
-	 * @param width the width
-	 * @return the label
-	 */
-	public Label createLabel(Composite composite, String name, int style, int width) {
-		Label label = createLabel(composite, name, style);
-		((GridData) label.getLayoutData()).widthHint = width;
-		return label;
-	}
 
 	// ---------------------------------------------------------------
 
@@ -756,6 +760,31 @@ public class GUIFactory {
 
 		text.setFont(fontRegistry.get("text-text"));
 
+		return text;
+	}
+
+	public Text createText(Composite parent) {
+		Text text = new Text(parent, SWT.BORDER);
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
+	}
+
+	public Text createText(Composite parent, String string, int style) {
+		Text text = new Text(parent, style);
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		text.setText(string);
+		return text;
+	}
+
+	public Text createPasswordText(Composite parent) {
+		Text text = new Text(parent, SWT.BORDER | SWT.PASSWORD);
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
+	}
+
+	public Text createMultiLineText(Composite parent) {
+		Text text = new Text(parent, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
+		text.setLayoutData(new GridData(GridData.FILL_BOTH));
 		return text;
 	}
 
@@ -912,6 +941,28 @@ public class GUIFactory {
 		Button button = createButton(composite, name, style);
 		button.addListener(SWT.Selection, listener);
 		return button;
+	}
+
+	public Button createCheckButton(Composite parent, String text) {
+		Button btn = new Button(parent, SWT.CHECK);
+		btn.setText(text);
+		return btn;
+	}
+
+	public Button createEditButton(Composite parent, Text textWidget) {
+		GridData gd = new GridData();
+		gd.widthHint = BUTTON_WIDTH;
+		Button btn = new Button(parent, SWT.PUSH);
+		btn.setLayoutData(gd);
+		btn.setText("Edit");
+		btn.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				textWidget.setFocus();
+				textWidget.setSelection(0, textWidget.getText().length());
+			}
+		});
+		return btn;
 	}
 
 	// ---------------------------------------------------------------
@@ -1156,6 +1207,14 @@ public class GUIFactory {
 		for (Object[] objects : items) {
 			combo.add((String) objects[0], (Image) objects[1]);
 		}
+		return combo;
+	}
+
+	public Combo createCombo(Composite parent, Object... items) {
+		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);
+		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+		combo.setLayoutData(gd);
+		combo.setItems(items != null ? java.util.Arrays.stream(items).map(Object::toString).toArray(String[]::new) : new String[0]);
 		return combo;
 	}
 
@@ -1596,6 +1655,245 @@ public class GUIFactory {
 
 	public FormToolkit getToolkit() {
 		return toolkit;
+	}
+
+	public Group createMaximizableGroup(Composite parent, String text, int columns) {
+		if (!(parent instanceof SashForm)) {
+			return createGroup(parent, text, columns);
+		}
+		SashForm sashForm = (SashForm) parent;
+		Composite container = new Composite(sashForm, SWT.NONE);
+		container.setLayout(new GridLayout(1, false));
+
+		Composite header = new Composite(container, SWT.NONE);
+		GridLayout headerLayout = new GridLayout(2, false);
+		headerLayout.marginHeight = 0;
+		headerLayout.marginWidth = 0;
+		header.setLayout(headerLayout);
+		header.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		Label label = new Label(header, SWT.NONE);
+		label.setText(text);
+		label.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
+		label.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		Button maxBtn = new Button(header, SWT.PUSH | SWT.FLAT);
+		GridData maxGd = new GridData();
+		maxGd.widthHint = 20;
+		maxGd.heightHint = 20;
+		maxBtn.setLayoutData(maxGd);
+		maxBtn.setText("\u25FB");
+		maxBtn.setToolTipText("Maximize");
+		Color orange = new Color(header.getDisplay(), 255, 140, 0);
+		maxBtn.setBackground(orange);
+		maxBtn.setForeground(header.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+		maxBtn.addDisposeListener(new DisposeListener() {
+			@Override
+			public void widgetDisposed(DisposeEvent e) {
+				if (orange != null && !orange.isDisposed())
+					orange.dispose();
+			}
+		});
+
+		Group group = new Group(container, SWT.NONE);
+		group.setLayout(new GridLayout(columns, false));
+		group.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		maxBtn.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (sashForm.getMaximizedControl() == container) {
+					sashForm.setMaximizedControl(null);
+					int[] weights = (int[]) sashForm.getData("lastWeights");
+					if (weights != null) {
+						sashForm.setWeights(weights);
+					}
+					maxBtn.setText("\u25FB");
+					maxBtn.setToolTipText("Maximize");
+				} else {
+					sashForm.setData("lastWeights", sashForm.getWeights());
+					sashForm.setMaximizedControl(container);
+					maxBtn.setText("\u25F2");
+					maxBtn.setToolTipText("Restore");
+				}
+				sashForm.layout(true);
+			}
+		});
+
+		return group;
+	}
+
+	public Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns,
+			boolean expanded) {
+		return createExpandableGroup(toolkit, parent, title, columns, expanded, false);
+	}
+
+	public Composite createExpandableGroup(FormToolkit toolkit, Composite parent, String title, int columns,
+			boolean expanded, boolean fillBoth) {
+		int style = Section.TITLE_BAR | Section.TWISTIE;
+		if (expanded) {
+			style |= Section.EXPANDED;
+		}
+
+		final Section section = new Section(parent, style);
+		GridData gd = new GridData(fillBoth ? GridData.FILL_BOTH : GridData.FILL_HORIZONTAL);
+		if (fillBoth && !expanded) {
+			gd.grabExcessVerticalSpace = false;
+			gd.verticalAlignment = GridData.BEGINNING;
+		}
+		section.setLayoutData(gd);
+		section.setText(title);
+
+		section.addExpansionListener(new ExpansionAdapter() {
+			@Override
+			public void expansionStateChanged(ExpansionEvent e) {
+				if (fillBoth) {
+					GridData gd = (GridData) section.getLayoutData();
+					gd.grabExcessVerticalSpace = e.getState();
+					gd.verticalAlignment = e.getState() ? GridData.FILL : GridData.BEGINNING;
+				}
+				reflow(parent);
+			}
+		});
+
+		Button maxBtn = createMaximizeButton(parent, section, true);
+		section.setTextClient(maxBtn);
+
+		Composite client = new Composite(section, SWT.NONE);
+		client.setLayout(new GridLayout(columns, false));
+		section.setClient(client);
+
+		return client;
+	}
+
+	public Button createMaximizeButton(Composite parent, final Section section, boolean single) {
+		// Maximize Button
+		Button maxBtn = new Button(single ? section : parent, SWT.PUSH | SWT.FLAT);
+		GridData maxGd = new GridData();
+		maxGd.widthHint = 20;
+		maxGd.heightHint = 20;
+		maxBtn.setLayoutData(maxGd);
+		maxBtn.setText("\u25FB");
+		maxBtn.setToolTipText("Maximize");
+
+		maxBtn.setBackground(section.getDisplay().getSystemColor(SWT.COLOR_BLUE));
+		maxBtn.setForeground(section.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
+		section.addExpansionListener(new ExpansionAdapter() {
+			@Override
+			public void expansionStateChanged(ExpansionEvent e) {
+				reflow(parent);
+			}
+		});
+
+		maxBtn.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				toggleMaximize(section, maxBtn);
+			}
+		});
+		return maxBtn;
+	}
+
+	private void toggleMaximize(Section section, Button maxBtn) {
+		Composite parent = section.getParent();
+		if (parent instanceof SashForm) {
+			SashForm sash = (SashForm) parent;
+			if (sash.getMaximizedControl() == section) {
+				sash.setMaximizedControl(null);
+				int[] weights = (int[]) sash.getData("lastWeights");
+				if (weights != null)
+					sash.setWeights(weights);
+				maxBtn.setText("\u25FB");
+				maxBtn.setToolTipText("Maximize");
+			} else {
+				sash.setData("lastWeights", sash.getWeights());
+				sash.setMaximizedControl(section);
+				maxBtn.setText("\u25F2");
+				maxBtn.setToolTipText("Restore");
+			}
+		} else {
+			// Toggle visibility of siblings
+			boolean currentlyMaximized = Boolean.TRUE.equals(section.getData("isMaximized"));
+			if (currentlyMaximized) {
+				for (org.eclipse.swt.widgets.Control child : parent.getChildren()) {
+					child.setVisible(true);
+					if (child.getLayoutData() instanceof GridData) {
+						((GridData) child.getLayoutData()).exclude = false;
+					}
+				}
+				section.setData("isMaximized", false);
+				Object oldLd = section.getData("originalLayoutData");
+				if (oldLd instanceof GridData) {
+					section.setLayoutData((GridData) oldLd);
+				}
+				maxBtn.setText("\u25FB");
+				maxBtn.setToolTipText("Maximize");
+			} else {
+				for (org.eclipse.swt.widgets.Control child : parent.getChildren()) {
+					if (child != section) {
+						child.setVisible(false);
+						if (child.getLayoutData() instanceof GridData) {
+							((GridData) child.getLayoutData()).exclude = true;
+						}
+					}
+				}
+				section.setData("isMaximized", true);
+				section.setData("originalLayoutData", section.getLayoutData());
+				section.setLayoutData(new GridData(GridData.FILL_BOTH));
+				maxBtn.setText("\u25F2");
+				maxBtn.setToolTipText("Restore");
+			}
+		}
+		reflow(parent);
+	}
+
+	private void reflow(Composite parent) {
+		Composite c = parent;
+		while (c != null) {
+			if (c instanceof SharedScrolledComposite) {
+				((SharedScrolledComposite) c).reflow(true);
+				break;
+			}
+			c = c.getParent();
+		}
+		parent.layout(true, true);
+	}
+
+	public void setControlEnabled(boolean enabled, boolean forceVisible, Control... controls) {
+		for (Control control : controls) {
+			control.setEnabled(enabled);
+
+			if (enabled || forceVisible) {
+				control.setVisible(true);
+			}
+			if (control instanceof Composite) {
+				setControlEnabled(enabled, forceVisible, ((Composite) control).getChildren());
+			}
+		}
+	}
+
+	public Browser createBrowser(Composite parent, int height) {
+		Browser browser = new Browser(parent, SWT.NONE);
+
+		GridData gd = new GridData(GridData.FILL_BOTH);
+		gd.heightHint = height;
+		browser.setLayoutData(gd);
+
+		return browser;
+	}
+
+	public String loadHtmlTemplate(Class<?> clazz, String path) {
+		try (var is = clazz.getResourceAsStream(path)) {
+			if (is == null) {
+				return "<html><body>Error: Template not found at " + path + "</body></html>";
+			}
+			try (var reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+				return reader.lines().collect(Collectors.joining("\n"));
+			}
+		} catch (Exception e) {
+			return "<html><body>Exception: " + e.getMessage() + "</body></html>";
+		}
 	}
 
 	public void decorate(Control control, boolean show) {

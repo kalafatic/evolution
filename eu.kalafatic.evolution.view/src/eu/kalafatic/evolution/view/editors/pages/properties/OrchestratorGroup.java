@@ -7,7 +7,7 @@ import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class OrchestratorGroup extends AEvoGroup {
     private Text orchIdText, orchNameText;
@@ -18,13 +18,13 @@ public class OrchestratorGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Orchestrator", 3, true);
-        SWTFactory.createLabel(group, "ID:");
-        orchIdText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, orchIdText);
-        SWTFactory.createLabel(group, "Name:");
-        orchNameText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, orchNameText);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Orchestrator", 3, true);
+        GUIFactory.INSTANCE.createLabel(group, "ID:");
+        orchIdText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, orchIdText);
+        GUIFactory.INSTANCE.createLabel(group, "Name:");
+        orchNameText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, orchNameText);
     }
 
     @Override

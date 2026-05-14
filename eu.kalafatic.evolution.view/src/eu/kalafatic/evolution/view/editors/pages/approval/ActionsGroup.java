@@ -9,7 +9,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -28,7 +28,7 @@ public class ActionsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, ApprovalPage page) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Approval Actions", 2, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Approval Actions", 2, true);
         group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Button approveBtn = toolkit.createButton(group, "Approve & Apply Changes", SWT.PUSH);

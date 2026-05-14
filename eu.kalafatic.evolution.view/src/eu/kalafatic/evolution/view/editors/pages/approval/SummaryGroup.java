@@ -8,7 +8,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -28,9 +28,9 @@ public class SummaryGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "AI Rationale & Plan", 1, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "AI Rationale & Plan", 1, true);
 
-        SWTFactory.createLabel(group, "Rationale and Strategy:");
+        GUIFactory.INSTANCE.createLabel(group, "Rationale and Strategy:");
         rationaleText = new org.eclipse.swt.widgets.Text(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP | SWT.READ_ONLY);
         GridData rationaleGD = new GridData(GridData.FILL_HORIZONTAL);
         rationaleGD.heightHint = 80;
