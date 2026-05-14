@@ -15,10 +15,15 @@ public class MediatedTargetDialog extends Dialog {
     private Combo typeCombo;
     private String selectedPath;
     private String selectedType;
+    private String initialPath;
+    private String initialType;
 
     public MediatedTargetDialog(Shell parentShell) {
         super(parentShell);
     }
+
+    public void setInitialPath(String path) { this.initialPath = path; }
+    public void setInitialType(String type) { this.initialType = type; }
 
     @Override
     protected Control createDialogArea(Composite parent) {
@@ -32,6 +37,7 @@ public class MediatedTargetDialog extends Dialog {
 
         pathText = new Text(container, SWT.BORDER);
         pathText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        if (initialPath != null) pathText.setText(initialPath);
 
         Button browseButton = new Button(container, SWT.PUSH);
         browseButton.setText("Browse...");
@@ -47,6 +53,14 @@ public class MediatedTargetDialog extends Dialog {
         typeCombo = new Combo(container, SWT.READ_ONLY);
         typeCombo.setItems(new String[] {"Project", "Folder", "PDF", "HTML", "Markdown"});
         typeCombo.select(0);
+        if (initialType != null) {
+            for (int i = 0; i < typeCombo.getItemCount(); i++) {
+                if (typeCombo.getItem(i).equalsIgnoreCase(initialType)) {
+                    typeCombo.select(i);
+                    break;
+                }
+            }
+        }
         typeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
         return area;

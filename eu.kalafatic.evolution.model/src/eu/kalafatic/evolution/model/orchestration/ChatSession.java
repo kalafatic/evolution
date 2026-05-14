@@ -202,4 +202,48 @@ public interface ChatSession extends EObject {
 	 */
 	void setStepMode(boolean value);
 
+	/**
+	 * Returns the value of the '<em><b>Target Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Target Path</em>' attribute.
+	 * @see #setTargetPath(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_TargetPath()
+	 * @model
+	 * @generated
+	 */
+	String getTargetPath();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getTargetPath <em>Target Path</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Target Path</em>' attribute.
+	 * @see #getTargetPath()
+	 * @generated
+	 */
+	void setTargetPath(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Target Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Target Type</em>' attribute.
+	 * @see #setTargetType(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_TargetType()
+	 * @model
+	 * @generated
+	 */
+	String getTargetType();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getTargetType <em>Target Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Target Type</em>' attribute.
+	 * @see #getTargetType()
+	 * @generated
+	 */
+	void setTargetType(String value);
+
 } // ChatSession

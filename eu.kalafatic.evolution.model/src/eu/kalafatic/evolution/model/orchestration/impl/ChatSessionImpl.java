@@ -38,6 +38,8 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getMaxIterations <em>Max Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isStepMode <em>Step Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getTargetPath <em>Target Path</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getTargetType <em>Target Type</em>}</li>
  * </ul>
  *
  * @generated
@@ -192,6 +194,46 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @ordered
 	 */
 	protected boolean stepMode = STEP_MODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getTargetPath() <em>Target Path</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTargetPath()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String TARGET_PATH_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getTargetPath() <em>Target Path</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTargetPath()
+	 * @generated
+	 * @ordered
+	 */
+	protected String targetPath = TARGET_PATH_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getTargetType() <em>Target Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTargetType()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String TARGET_TYPE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getTargetType() <em>Target Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTargetType()
+	 * @generated
+	 * @ordered
+	 */
+	protected String targetType = TARGET_TYPE_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -392,6 +434,52 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @generated
 	 */
 	@Override
+	public String getTargetPath() {
+		return targetPath;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setTargetPath(String newTargetPath) {
+		String oldTargetPath = targetPath;
+		targetPath = newTargetPath;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__TARGET_PATH, oldTargetPath, targetPath));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getTargetType() {
+		return targetType;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setTargetType(String newTargetType) {
+		String oldTargetType = targetType;
+		targetType = newTargetType;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__TARGET_TYPE, oldTargetType, targetType));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
@@ -424,6 +512,10 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return getMaxIterations();
 			case OrchestrationPackage.CHAT_SESSION__STEP_MODE:
 				return isStepMode();
+			case OrchestrationPackage.CHAT_SESSION__TARGET_PATH:
+				return getTargetPath();
+			case OrchestrationPackage.CHAT_SESSION__TARGET_TYPE:
+				return getTargetType();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -462,6 +554,12 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__STEP_MODE:
 				setStepMode((Boolean)newValue);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__TARGET_PATH:
+				setTargetPath((String)newValue);
+				return;
+			case OrchestrationPackage.CHAT_SESSION__TARGET_TYPE:
+				setTargetType((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -498,6 +596,12 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__STEP_MODE:
 				setStepMode(STEP_MODE_EDEFAULT);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__TARGET_PATH:
+				setTargetPath(TARGET_PATH_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHAT_SESSION__TARGET_TYPE:
+				setTargetType(TARGET_TYPE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -526,6 +630,10 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return maxIterations != MAX_ITERATIONS_EDEFAULT;
 			case OrchestrationPackage.CHAT_SESSION__STEP_MODE:
 				return stepMode != STEP_MODE_EDEFAULT;
+			case OrchestrationPackage.CHAT_SESSION__TARGET_PATH:
+				return TARGET_PATH_EDEFAULT == null ? targetPath != null : !TARGET_PATH_EDEFAULT.equals(targetPath);
+			case OrchestrationPackage.CHAT_SESSION__TARGET_TYPE:
+				return TARGET_TYPE_EDEFAULT == null ? targetType != null : !TARGET_TYPE_EDEFAULT.equals(targetType);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -554,6 +662,10 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		result.append(maxIterations);
 		result.append(", stepMode: ");
 		result.append(stepMode);
+		result.append(", targetPath: ");
+		result.append(targetPath);
+		result.append(", targetType: ");
+		result.append(targetType);
 		result.append(')');
 		return result.toString();
 	}
