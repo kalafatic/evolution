@@ -63,7 +63,7 @@ public class InstructionsGroup extends AEvoGroup {
         requestText.setLayoutData(requestGridData);
         
         Composite composite = GUIFactory.INSTANCE.createComposite(group,2);
-        attachmentArea = GUIFactory.INSTANCE.createComposite(group, SWT.BORDER, 1);
+        attachmentArea = GUIFactory.INSTANCE.createComposite(group, 1, SWT.BORDER);
 
         // Left side: Buttons
         Composite btnComp = GUIFactory.INSTANCE.createComposite(composite,5);
@@ -101,7 +101,7 @@ public class InstructionsGroup extends AEvoGroup {
 //        attachmentArea.setLayoutData(gd);
 
         // Right side: Checkboxes and Spinners
-        Composite settingsComp = GUIFactory.INSTANCE.createComposite(composite,SWT.NO , 7);
+        Composite settingsComp = GUIFactory.INSTANCE.createComposite(composite, 7, SWT.NO);
 
         selfIterativeCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Self Development");
         selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");
