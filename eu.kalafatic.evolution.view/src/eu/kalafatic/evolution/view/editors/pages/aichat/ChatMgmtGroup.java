@@ -46,10 +46,11 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat Management", 7, true);
+        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat Management", 1, true);
        
-        
-        Button newSessionButton = SWTFactory.createButton(group, "New Session");
+        Composite sessionsComp = SWTFactory.createComposite(group, SWT.BORDER, 7);
+
+        Button newSessionButton = SWTFactory.createButton(sessionsComp, "New Session");
         newSessionButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -58,8 +59,8 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
 
 
-        SWTFactory.createLabel(group, "Select Session:");
-        sessionCombo = SWTFactory.createCombo(group);
+        SWTFactory.createLabel(sessionsComp, "Select Session:");
+        sessionCombo = SWTFactory.createCombo(sessionsComp);
         sessionCombo.add(page.getCurrentSessionName());
         sessionCombo.select(0);
         sessionCombo.addSelectionListener(new SelectionAdapter() {
@@ -70,7 +71,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
 
        
-        Button byDateButton = SWTFactory.createButton(group, "By Date");
+        Button byDateButton = SWTFactory.createButton(sessionsComp, "By Date");
         byDateButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -78,7 +79,7 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
         
-        Button cleanButton = SWTFactory.createButton(group, "Clean");
+        Button cleanButton = SWTFactory.createButton(sessionsComp, "Clean");
         cleanButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -86,7 +87,7 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
 
-        Button saveButton = SWTFactory.createButton(group, "Save");
+        Button saveButton = SWTFactory.createButton(sessionsComp, "Save");
         saveButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -94,7 +95,7 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
 
-        Button copyAllButton = SWTFactory.createButton(group, "Copy All");
+        Button copyAllButton = SWTFactory.createButton(sessionsComp, "Copy All");
         copyAllButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -114,7 +115,27 @@ public class ChatMgmtGroup extends AEvoGroup {
         for (AiMode mode : AiMode.values()) {
             aiModeCombo.add(mode.getName());
         }
-        SWTFactory.createLabel(compositeLocal, "");
+        Button targetButton = SWTFactory.createButton(compositeLocal, "Target", 70);
+        targetButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                eu.kalafatic.evolution.model.orchestration.ChatSession session = page.getCurrentSession();
+                if (session != null) {
+                    eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog dlg = new eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog(page.getShell());
+                    String currentPath = session.getTargetPath();
+                    if (currentPath == null || currentPath.isEmpty()) {
+                        currentPath = page.getProjectRoot().getAbsolutePath();
+                    }
+                    dlg.setInitialPath(currentPath);
+                    dlg.setInitialType(session.getTargetType());
+                    if (dlg.open() == org.eclipse.jface.window.Window.OK) {
+                        session.setTargetPath(dlg.getSelectedPath());
+                        session.setTargetType(dlg.getSelectedType());
+                        editor.setDirty(true);
+                    }
+                }
+            }
+        });
 
         SWTFactory.createLabel(compositeLocal, "Model:");
         localModelCombo = selectModel(compositeLocal);
