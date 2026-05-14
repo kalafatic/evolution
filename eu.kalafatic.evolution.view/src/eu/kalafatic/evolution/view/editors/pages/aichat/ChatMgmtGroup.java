@@ -48,7 +48,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat Management", 1, true);
        
-        Composite sessionsComp = SWTFactory.createComposite(group, SWT.BORDER, 7);
+        Composite sessionsComp = SWTFactory.createComposite(group, SWT.BORDER | SWT.COLOR_WHITE, 7);
 
         Button newSessionButton = SWTFactory.createButton(sessionsComp, "New Session");
         newSessionButton.addSelectionListener(new SelectionAdapter() {
@@ -104,9 +104,9 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
 
         // AI Settings part (merged)
-        Composite aiSettingsComp = toolkit.createComposite(group);
-        aiSettingsComp.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
-        aiSettingsComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 7, 1));
+        Composite aiSettingsComp = SWTFactory.createComposite(group);
+//        aiSettingsComp.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
+//        aiSettingsComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 7, 1));
 
         compositeLocal = SWTFactory.createComposite(aiSettingsComp, SWT.BORDER, 3);
 

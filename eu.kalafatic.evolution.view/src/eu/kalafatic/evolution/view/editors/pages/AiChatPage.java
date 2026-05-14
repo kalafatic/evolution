@@ -196,6 +196,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
 		chatMgmtGroup = new ChatMgmtGroup(toolkit, content, editor, orchestrator, this);
+		
 		chatGroup = new ChatGroup(toolkit, content, editor, orchestrator, chatFont, this);
 		chatGroup.setEditCallback((index, oldText) -> {
 			Display.getDefault().asyncExec(() -> {
