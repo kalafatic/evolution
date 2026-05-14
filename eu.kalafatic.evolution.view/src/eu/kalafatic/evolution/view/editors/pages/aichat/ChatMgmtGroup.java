@@ -48,7 +48,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Chat Management", 1, true);
        
-        Composite sessionsComp = GUIFactory.INSTANCE.createComposite(group, SWT.BORDER, 7);
+        Composite sessionsComp = GUIFactory.INSTANCE.createComposite(group, 7, SWT.BORDER);
 
         Button newSessionButton = GUIFactory.INSTANCE.createButton(sessionsComp, "New Session");
         newSessionButton.addSelectionListener(new SelectionAdapter() {
@@ -104,7 +104,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
 
         // AI Settings part (merged)
-        compositeLocal = GUIFactory.INSTANCE.createComposite(group, SWT.BORDER, 3);
+        compositeLocal = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
         compositeLocal.setBackground(lightGreen);
         
         GUIFactory.INSTANCE.createLabel(compositeLocal, "AI Mode:");
@@ -136,7 +136,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         localModelCombo = selectModel(compositeLocal);
 //        GUIFactory.INSTANCE.createLabel(compositeLocal);
 
-        compositeRemote = GUIFactory.INSTANCE.createComposite(group, SWT.BORDER, 3);
+        compositeRemote = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
         
         GUIFactory.INSTANCE.createLabel(compositeRemote, "AI Remote:");
         aiRemoteCombo = GUIFactory.INSTANCE.createCombo(compositeRemote);

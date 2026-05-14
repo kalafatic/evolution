@@ -172,7 +172,7 @@ public class TaskEditDialog extends Dialog {
        
 
         GUIFactory.INSTANCE.createLabel(container, "Attachments:");
-        Composite attachComp = GUIFactory.INSTANCE.createComposite(container, SWT.NONE, 2);
+        Composite attachComp = GUIFactory.INSTANCE.createComposite(container, 2, SWT.NONE);
 
         attachmentsViewer = new ListViewer(attachComp, SWT.BORDER | SWT.V_SCROLL);
         attachmentsViewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
