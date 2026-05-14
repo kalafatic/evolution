@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view.controller;
+package eu.kalafatic.evolution.controller.orchestration;
 
 /**
  * Message priorities for the Conversation Output Controller.
@@ -37,5 +37,12 @@ public enum MessagePriority {
 
     public int getLevel() {
         return level;
+    }
+
+    public static MessagePriority fromLevel(int level) {
+        for (MessagePriority p : values()) {
+            if (p.level == level) return p;
+        }
+        return NORMAL;
     }
 }

@@ -75,8 +75,8 @@ import eu.kalafatic.evolution.controller.workflow.WorkflowStepRegistry;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStep;
 import eu.kalafatic.evolution.controller.workflow.StepModeController;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
-import eu.kalafatic.evolution.view.controller.ConversationOutputController;
-import eu.kalafatic.evolution.view.controller.MessagePriority;
+import eu.kalafatic.evolution.controller.orchestration.ConversationOutputController;
+import eu.kalafatic.evolution.controller.orchestration.MessagePriority;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 
 /**
@@ -125,20 +125,27 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	private Font chatFont, bannerFont;
 	private Color lightGreen;
 
+	private final java.util.function.Consumer<ChatMessage> messageSubscriber = msg -> {
+		if (isDisposed()) return;
+		Display.getDefault().asyncExec(() -> {
+			if (isDisposed()) return;
+			chatGroup.addMessageToSession(msg.getTurnId().split("_")[0], msg);
+		});
+	};
+
 	public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, editor, orchestrator);
+		OrchestratorServiceImpl.getInstance().setOrchestrator(orchestrator);
 		initResources();
-		this.outputController = new ConversationOutputController(msg -> {
-			if (isDisposed()) return;
-			chatGroup.addMessageToSession(msg.getTurnId().split("_")[0], msg); // TurnId starts with sessionId
-		});
+		this.outputController = ConversationOutputController.getInstance();
+		this.outputController.subscribe(messageSubscriber);
 		createControl();
 		RuntimeEventBus.getInstance().subscribe(this);
 		addDisposeListener(new DisposeListener() {
 			@Override
 			public void widgetDisposed(DisposeEvent e) {
 				RuntimeEventBus.getInstance().unsubscribe(AiChatPage.this);
-				if (outputController != null) outputController.dispose();
+				if (outputController != null) outputController.unsubscribe(messageSubscriber);
 				if (chatFont != null && !chatFont.isDisposed()) chatFont.dispose();
 				if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
 				if (colorWaiting != null && !colorWaiting.isDisposed()) colorWaiting.dispose();
@@ -539,6 +546,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		context.setStartTime(java.time.Instant.now());
 		context.setSessionId(sessionId);
 		state.currentContext = context;
+		OrchestratorServiceImpl.getInstance().registerContext(sessionId, context);
 		editor.setCurrentContext(context);
 
 		context.addLogListener(log -> Display.getDefault().asyncExec(() -> {
@@ -830,6 +838,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
 				context.setPlatformMode(new eu.kalafatic.evolution.controller.orchestration.ModeRouter().route(finalRequest, orchestrator));
 				state.currentContext = context;
+				OrchestratorServiceImpl.getInstance().registerContext(sessionId, context);
 				Display.getDefault().asyncExec(() -> editor.setCurrentContext(context));
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) processLogEntry(log, sessionId); }));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {

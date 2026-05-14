@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.view.controller;
+package eu.kalafatic.evolution.controller.orchestration;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -6,13 +6,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-
-import org.eclipse.swt.widgets.Display;
 
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -20,17 +19,34 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 /**
  * Lightweight Conversation Output Controller (Presentation Stabilization Layer).
  * Handles filtering, reordering, buffering, and terminal bubble protection.
+ * Headless-friendly and supports multiple subscribers.
  */
 public class ConversationOutputController {
     private static final long STABILIZATION_BUFFER_MS = 300;
 
+    private static ConversationOutputController instance;
+
+    public static synchronized ConversationOutputController getInstance() {
+        if (instance == null) {
+            instance = new ConversationOutputController();
+        }
+        return instance;
+    }
+
     private final Map<String, SessionBuffer> sessionBuffers = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final AtomicLong globalSequence = new AtomicLong(0);
-    private final Consumer<ChatMessage> outputConsumer;
+    private final List<Consumer<ChatMessage>> subscribers = new CopyOnWriteArrayList<>();
 
-    public ConversationOutputController(Consumer<ChatMessage> outputConsumer) {
-        this.outputConsumer = outputConsumer;
+    public ConversationOutputController() {
+    }
+
+    public void subscribe(Consumer<ChatMessage> subscriber) {
+        subscribers.add(subscriber);
+    }
+
+    public void unsubscribe(Consumer<ChatMessage> subscriber) {
+        subscribers.remove(subscriber);
     }
 
     /**
@@ -89,12 +105,25 @@ public class ConversationOutputController {
             // Ensure stable ordering by sequence number
             Collections.sort(toEmit, Comparator.comparingLong(ChatMessage::getSequenceNumber));
 
-            Display.getDefault().asyncExec(() -> {
-                for (ChatMessage msg : toEmit) {
-                    outputConsumer.accept(msg);
+            for (ChatMessage msg : toEmit) {
+                for (Consumer<ChatMessage> subscriber : subscribers) {
+                    try {
+                        subscriber.accept(msg);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-            });
+            }
         }
+    }
+
+    public List<ChatMessage> getSessionHistory(String sessionId) {
+        SessionBuffer buffer = sessionBuffers.get(sessionId);
+        if (buffer == null) return Collections.emptyList();
+
+        List<ChatMessage> history = new ArrayList<>(buffer.getAllMessages());
+        Collections.sort(history, Comparator.comparingLong(ChatMessage::getSequenceNumber));
+        return history;
     }
 
     public void dispose() {
@@ -103,10 +132,12 @@ public class ConversationOutputController {
 
     private static class SessionBuffer {
         private final Map<String, List<ChatMessage>> pendingByTurn = new ConcurrentHashMap<>();
+        private final Map<String, List<ChatMessage>> historyByTurn = new ConcurrentHashMap<>();
         private final Map<String, Boolean> finalizedTurns = new ConcurrentHashMap<>();
 
         public void add(ChatMessage msg) {
             pendingByTurn.computeIfAbsent(msg.getTurnId(), k -> Collections.synchronizedList(new ArrayList<>())).add(msg);
+            historyByTurn.computeIfAbsent(msg.getTurnId(), k -> Collections.synchronizedList(new ArrayList<>())).add(msg);
         }
 
         public List<ChatMessage> consume(String turnId) {
@@ -116,6 +147,16 @@ public class ConversationOutputController {
             List<ChatMessage> result = new ArrayList<>(pending);
             pending.clear();
             return result;
+        }
+
+        public List<ChatMessage> getAllMessages() {
+            List<ChatMessage> all = new ArrayList<>();
+            for (List<ChatMessage> messages : historyByTurn.values()) {
+                synchronized (messages) {
+                    all.addAll(messages);
+                }
+            }
+            return all;
         }
 
         public void markFinalized(String turnId) {
