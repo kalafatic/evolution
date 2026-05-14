@@ -50,8 +50,8 @@ public class ResourcesGroup extends AToolGroup {
         List<MonitoringData> history = orchestrator.getMonitoringHistory();
         if (!history.isEmpty()) {
             MonitoringData last = history.get(history.size() - 1);
-            cpuLabel.setText(String.format("%.2f %%", last.getCpuUsage() * 100));
-            memLabel.setText(String.format("%d MB / %d MB", last.getMemoryUsage() / 1024 / 1024, last.getTotalMemory() / 1024 / 1024));
+            setTextSafe(cpuLabel, String.format("%.2f %%", last.getCpuUsage() * 100));
+            setTextSafe(memLabel, String.format("%d MB / %d MB", last.getMemoryUsage() / 1024 / 1024, last.getTotalMemory() / 1024 / 1024));
         }
     }
 

@@ -79,11 +79,10 @@ public class AiChatModelsGroup extends AEvoGroup {
             String hybridModel = orchestrator.getHybridModel() != null ? orchestrator.getHybridModel() : "";
             String remoteModel = orchestrator.getRemoteModel() != null ? orchestrator.getRemoteModel() : "";
 
-            localModelText.setText(localModel);
-            hybridModelText.setText(hybridModel);
+            setTextSafe(localModelText, localModel);
+            setTextSafe(hybridModelText, hybridModel);
             if (orchestrator.getRemoteModel() != null) {
-                int index = remoteModelCombo.indexOf(remoteModel);
-                if (index >= 0) remoteModelCombo.select(index);
+                selectSafe(remoteModelCombo, remoteModel);
             }
 
             // Verify local/hybrid models

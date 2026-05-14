@@ -234,25 +234,29 @@ public class InstructionsGroup extends AEvoGroup {
         if (orchestrator != null) {
             eu.kalafatic.evolution.model.orchestration.ChatSession thread = page.getCurrentSession();
             if (thread != null) {
-                iterativeCheck.setSelection(thread.isIterativeMode());
-                selfIterativeCheck.setSelection(thread.isSelfIterativeMode());
-                darwinCheck.setSelection(thread.isDarwinMode());
-                gitAutomationCheck.setSelection(thread.isGitAutomation());
-                maxIterationsSpinner.setSelection(thread.getMaxIterations());
-                stepModeCheck.setSelection(thread.isStepMode());
+                setSelectionSafe(iterativeCheck, thread.isIterativeMode());
+                setSelectionSafe(selfIterativeCheck, thread.isSelfIterativeMode());
+                setSelectionSafe(darwinCheck, thread.isDarwinMode());
+                setSelectionSafe(gitAutomationCheck, thread.isGitAutomation());
+                if (maxIterationsSpinner.getSelection() != thread.getMaxIterations()) {
+                    maxIterationsSpinner.setSelection(thread.getMaxIterations());
+                }
+                setSelectionSafe(stepModeCheck, thread.isStepMode());
             } else {
-                darwinCheck.setSelection(orchestrator.isDarwinMode());
+                setSelectionSafe(darwinCheck, orchestrator.isDarwinMode());
                 if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
                     PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
-                    iterativeCheck.setSelection(promptInstructions.isIterativeMode());
-                    selfIterativeCheck.setSelection(promptInstructions.isSelfIterativeMode());
-                    gitAutomationCheck.setSelection(promptInstructions.isGitAutomation());
-                    maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
-                    stepModeCheck.setSelection(promptInstructions.isStepMode());
+                    setSelectionSafe(iterativeCheck, promptInstructions.isIterativeMode());
+                    setSelectionSafe(selfIterativeCheck, promptInstructions.isSelfIterativeMode());
+                    setSelectionSafe(gitAutomationCheck, promptInstructions.isGitAutomation());
+                    if (maxIterationsSpinner.getSelection() != promptInstructions.getPreferredMaxIterations()) {
+                        maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
+                    }
+                    setSelectionSafe(stepModeCheck, promptInstructions.isStepMode());
                 }
             }
             if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
-                autoApproveCheck.setSelection(orchestrator.getAiChat().getPromptInstructions().isAutoApprove());
+                setSelectionSafe(autoApproveCheck, orchestrator.getAiChat().getPromptInstructions().isAutoApprove());
             }
         }
     }
@@ -288,7 +292,7 @@ public class InstructionsGroup extends AEvoGroup {
     }
 
     public String getRequest() { return requestText.getText().trim(); }
-    public void setRequest(String text) { requestText.setText(text); }
+    public void setRequest(String text) { setTextSafe(requestText, text); }
 
     public void setCaretToEnd() {
         if (requestText != null && !requestText.isDisposed()) {
@@ -300,8 +304,8 @@ public class InstructionsGroup extends AEvoGroup {
     public void focusAndHighlight(Color bgColor, Color fgColor) {
         if (requestText != null && !requestText.isDisposed()) {
             requestText.setFocus();
-            requestText.setBackground(bgColor);
-            if (fgColor != null) {
+            setBackgroundSafe(requestText, bgColor);
+            if (fgColor != null && !fgColor.equals(requestText.getForeground())) {
                 requestText.setForeground(fgColor);
             }
         }
@@ -309,8 +313,10 @@ public class InstructionsGroup extends AEvoGroup {
 
     public void resetBackground() {
         if (requestText != null && !requestText.isDisposed()) {
-            requestText.setBackground(null);
-            requestText.setForeground(null);
+            setBackgroundSafe(requestText, null);
+            if (requestText.getForeground() != null) {
+                requestText.setForeground(null);
+            }
         }
     }
     public boolean isIterative() { return iterativeCheck.getSelection(); }
@@ -344,14 +350,16 @@ public class InstructionsGroup extends AEvoGroup {
     }
 
     public void setOrchestrationRunning(boolean running) {
-        sendButton.setEnabled(!running);
-        pauseButton.setEnabled(true);
-        stopButton.setEnabled(true);
-        pauseButton.setText("⏸️ Pause");
+        if (sendButton.getEnabled() != !running) {
+            sendButton.setEnabled(!running);
+        }
+        if (!pauseButton.getEnabled()) pauseButton.setEnabled(true);
+        if (!stopButton.getEnabled()) stopButton.setEnabled(true);
+        setTextSafe(pauseButton, "⏸️ Pause");
     }
 
     public void setPaused(boolean paused) {
-        pauseButton.setText(paused ? "▶️ Resume" : "⏸️ Pause");
+        setTextSafe(pauseButton, paused ? "▶️ Resume" : "⏸️ Pause");
     }
 
     public List<String> getInstructionFiles() {

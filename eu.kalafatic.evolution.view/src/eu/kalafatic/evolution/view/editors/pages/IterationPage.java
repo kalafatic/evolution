@@ -18,6 +18,7 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -351,21 +352,35 @@ public class IterationPage extends AEvoPage {
     }
 
     private void updateFlow(boolean success) {
+        boolean changed = false;
         for (int i = 0; i < 6; i++) {
+            Color targetColor;
+            String targetText;
             if (success) {
-                flowSteps[i].setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN));
-                flowSteps[i].setText(stepNames[i] + " \u2714");
+                targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN);
+                targetText = stepNames[i] + " \u2714";
             } else {
                 if (i <= 3) {
-                    flowSteps[i].setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN));
-                    flowSteps[i].setText(stepNames[i] + " \u2714");
+                    targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN);
+                    targetText = stepNames[i] + " \u2714";
                 } else {
-                    flowSteps[i].setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
-                    flowSteps[i].setText(stepNames[i] + " \u2718");
+                    targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+                    targetText = stepNames[i] + " \u2718";
                 }
             }
+
+            if (!targetColor.equals(flowSteps[i].getForeground())) {
+                flowSteps[i].setForeground(targetColor);
+                changed = true;
+            }
+            if (!targetText.equals(flowSteps[i].getText())) {
+                flowSteps[i].setText(targetText);
+                changed = true;
+            }
         }
-        flowComposite.layout();
+        if (changed) {
+            flowComposite.layout();
+        }
     }
 
     private void startPolling() {

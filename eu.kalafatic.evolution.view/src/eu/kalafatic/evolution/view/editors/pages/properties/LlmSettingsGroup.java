@@ -43,8 +43,8 @@ public class LlmSettingsGroup extends AEvoGroup {
     protected void refreshUI() {
         if (orchestrator != null && orchestrator.getLlm() != null) {
             String model = orchestrator.getLlm().getModel() != null ? orchestrator.getLlm().getModel() : "";
-            llmModelText.setText(model);
-            llmTempText.setText(String.valueOf(orchestrator.getLlm().getTemperature()));
+            setTextSafe(llmModelText, model);
+            setTextSafe(llmTempText, String.valueOf(orchestrator.getLlm().getTemperature()));
 
             // Verify token
             eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =

@@ -30,8 +30,8 @@ public class OrchestratorGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (orchestrator != null) {
-            orchIdText.setText(orchestrator.getId() != null ? orchestrator.getId() : "");
-            orchNameText.setText(orchestrator.getName() != null ? orchestrator.getName() : "");
+            setTextSafe(orchIdText, orchestrator.getId());
+            setTextSafe(orchNameText, orchestrator.getName());
         }
     }
 

@@ -80,9 +80,9 @@ public class EclipseGroup extends AToolGroup {
     protected void refreshUI() {
         if (orchestrator.getEclipse() != null) {
             Eclipse eclipse = orchestrator.getEclipse();
-            eclipseWorkspaceText.setText(eclipse.getWorkspace() != null ? eclipse.getWorkspace() : "");
-            eclipseInstallationText.setText(eclipse.getInstallation() != null ? eclipse.getInstallation() : "");
-            eclipseTargetPlatformText.setText(eclipse.getTargetPlatform() != null ? eclipse.getTargetPlatform() : "");
+            setTextSafe(eclipseWorkspaceText, eclipse.getWorkspace());
+            setTextSafe(eclipseInstallationText, eclipse.getInstallation());
+            setTextSafe(eclipseTargetPlatformText, eclipse.getTargetPlatform());
             updateGroupStatus();
         }
     }

@@ -59,8 +59,11 @@ public class FeedbackGroup extends AEvoGroup {
     public void refreshUI() {
         if (orchestrator != null && orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
             Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
-            ratingScale.setSelection(last.getRating() > 0 ? last.getRating() : 3);
-            commentsText.setText(last.getComments() != null ? last.getComments() : "");
+            int rating = last.getRating() > 0 ? last.getRating() : 3;
+            if (ratingScale.getSelection() != rating) {
+                ratingScale.setSelection(rating);
+            }
+            setTextSafe(commentsText, last.getComments());
         }
     }
 }

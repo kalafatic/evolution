@@ -206,11 +206,11 @@ public class ServerPage extends AEvoPage {
         boolean running = ServerManager.getInstance().isRunning();
         int port = ServerManager.getInstance().getPort();
         if (running) {
-            modeIndicatorLabel.setText("SERVER RUNNING ON PORT " + port);
-            modeIndicatorLabel.setBackground(lightGreen);
+            setTextSafe(modeIndicatorLabel, "SERVER RUNNING ON PORT " + port);
+            setBackgroundSafe(modeIndicatorLabel, lightGreen);
         } else {
-            modeIndicatorLabel.setText("SERVER STOPPED");
-            modeIndicatorLabel.setBackground(colorWaiting);
+            setTextSafe(modeIndicatorLabel, "SERVER STOPPED");
+            setBackgroundSafe(modeIndicatorLabel, colorWaiting);
         }
     }
 

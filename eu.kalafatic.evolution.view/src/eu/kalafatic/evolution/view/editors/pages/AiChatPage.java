@@ -192,7 +192,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		modeIndicatorLabel = new Label(content, SWT.CENTER);
 		modeIndicatorLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		modeIndicatorLabel.setFont(bannerFont);
-		modeIndicatorLabel.setText("INITIALIZING...");
+		setTextSafe(modeIndicatorLabel, "INITIALIZING...");
 
 		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
 		chatMgmtGroup = new ChatMgmtGroup(toolkit, content, editor, orchestrator, this);
@@ -297,14 +297,14 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		}
 		if (modelName == null) modelName = "NOT SET";
 
-		modeIndicatorLabel.setText(mode.getName().toUpperCase() + " MODE ACTIVE - " + modelName.toUpperCase());
+		setTextSafe(modeIndicatorLabel, mode.getName().toUpperCase() + " MODE ACTIVE - " + modelName.toUpperCase());
 		modeIndicatorLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
-		modeIndicatorLabel.setBackground(lightGreen);
+		setBackgroundSafe(modeIndicatorLabel, lightGreen);
 		switch (mode) {
-		case LOCAL: modeIndicatorLabel.setBackground(colorLocal); break;
-		case HYBRID: modeIndicatorLabel.setBackground(colorHybrid); break;
-		case REMOTE: modeIndicatorLabel.setBackground(colorRemote); break;
-		case MEDIATED: modeIndicatorLabel.setBackground(colorHybrid); break;
+		case LOCAL: setBackgroundSafe(modeIndicatorLabel, colorLocal); break;
+		case HYBRID: setBackgroundSafe(modeIndicatorLabel, colorHybrid); break;
+		case REMOTE: setBackgroundSafe(modeIndicatorLabel, colorRemote); break;
+		case MEDIATED: setBackgroundSafe(modeIndicatorLabel, colorHybrid); break;
 		}
 		if (chatMgmtGroup != null) {
 			updateScrolledContent();
@@ -559,8 +559,8 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		context.addApprovalListener(msg -> Display.getDefault().asyncExec(() -> {
 			if (!sessionId.equals(getCurrentSessionName())) return;
 			if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-				modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
-				modeIndicatorLabel.setBackground(colorWaiting);
+				setTextSafe(modeIndicatorLabel, "WAITING FOR USER APPROVAL...");
+				setBackgroundSafe(modeIndicatorLabel, colorWaiting);
 			}
 			chatGroup.markLastAiMessageAsWaiting();
 			instructionsGroup.setOrchestrationRunning(false);
@@ -570,8 +570,8 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		context.addInputListener(msg -> Display.getDefault().asyncExec(() -> {
 			if (!sessionId.equals(getCurrentSessionName())) return;
 			if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-				modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
-				modeIndicatorLabel.setBackground(colorWaiting);
+				setTextSafe(modeIndicatorLabel, "WAITING FOR USER INPUT...");
+				setBackgroundSafe(modeIndicatorLabel, colorWaiting);
 			}
 			chatGroup.markLastAiMessageAsWaiting();
 			instructionsGroup.setOrchestrationRunning(false);
@@ -845,8 +845,8 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
 					if (!sessionId.equals(getCurrentSessionName())) return;
 					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-						modeIndicatorLabel.setText("WAITING FOR USER APPROVAL...");
-						modeIndicatorLabel.setBackground(colorWaiting);
+						setTextSafe(modeIndicatorLabel, "WAITING FOR USER APPROVAL...");
+						setBackgroundSafe(modeIndicatorLabel, colorWaiting);
 					}
 					chatGroup.markLastAiMessageAsWaiting();
 					instructionsGroup.setOrchestrationRunning(false);
@@ -856,8 +856,8 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
 					if (!sessionId.equals(getCurrentSessionName())) return;
 					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-						modeIndicatorLabel.setText("WAITING FOR USER INPUT...");
-						modeIndicatorLabel.setBackground(colorWaiting);
+						setTextSafe(modeIndicatorLabel, "WAITING FOR USER INPUT...");
+						setBackgroundSafe(modeIndicatorLabel, colorWaiting);
 					}
 					chatGroup.markLastAiMessageAsWaiting();
 					instructionsGroup.setOrchestrationRunning(false);
@@ -1478,8 +1478,8 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			switch (event.getType()) {
 				case STEP_WAITING:
 					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-						modeIndicatorLabel.setText("WAITING FOR STEP APPROVAL...");
-						modeIndicatorLabel.setBackground(colorWaiting);
+						setTextSafe(modeIndicatorLabel, "WAITING FOR STEP APPROVAL...");
+						setBackgroundSafe(modeIndicatorLabel, colorWaiting);
 					}
 					instructionsGroup.setOrchestrationRunning(false);
 					instructionsGroup.focusAndHighlight(colorLightOrange, null);

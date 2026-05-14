@@ -43,12 +43,12 @@ public class SummaryGroup extends AEvoGroup {
             SelfDevSession session = orchestrator.getSelfDevSession();
             if (!session.getIterations().isEmpty()) {
                 Iteration last = session.getIterations().get(session.getIterations().size() - 1);
-                rationaleText.setText(last.getRationale() != null ? last.getRationale() : (session.getRationale() != null ? session.getRationale() : "No rationale provided."));
+                setTextSafe(rationaleText, last.getRationale() != null ? last.getRationale() : (session.getRationale() != null ? session.getRationale() : "No rationale provided."));
             } else {
-                rationaleText.setText(session.getRationale() != null ? session.getRationale() : "No rationale provided.");
+                setTextSafe(rationaleText, session.getRationale() != null ? session.getRationale() : "No rationale provided.");
             }
         } else {
-            rationaleText.setText("No active session rationale.");
+            setTextSafe(rationaleText, "No active session rationale.");
         }
     }
 }
