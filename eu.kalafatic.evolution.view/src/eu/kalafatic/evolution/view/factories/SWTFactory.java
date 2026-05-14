@@ -171,12 +171,13 @@ public class SWTFactory {
 		Text text = new Text(parent, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
 		text.setLayoutData(new GridData(GridData.FILL_BOTH));
 		return text;
-	}
-
-	public static Combo createCombo(Composite parent) {
+	}	
+	
+	public static Combo createCombo(Composite parent, Object... items) {
 		Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);
 		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
 		combo.setLayoutData(gd);
+		combo.setItems(items != null ? java.util.Arrays.stream(items).map(Object::toString).toArray(String[]::new) : new String[0]);
 		return combo;
 	}
 

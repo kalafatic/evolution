@@ -167,7 +167,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		colorError = display.getSystemColor(SWT.COLOR_RED);
 		colorWhite = display.getSystemColor(SWT.COLOR_WHITE);
 		colorLocal = display.getSystemColor(SWT.COLOR_GREEN);
-		colorHybrid = display.getSystemColor(SWT.COLOR_CYAN);
+		colorHybrid = display.getSystemColor(SWT.COLOR_GRAY);
 		colorRemote = display.getSystemColor(SWT.COLOR_MAGENTA);
 		colorWaiting = new Color(display, 255, 140, 0); // Dark Orange
 		colorLightOrange = new Color(display, 255, 200, 150);

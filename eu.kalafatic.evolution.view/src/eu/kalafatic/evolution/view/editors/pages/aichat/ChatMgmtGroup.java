@@ -48,7 +48,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat Management", 1, true);
        
-        Composite sessionsComp = SWTFactory.createComposite(group, SWT.BORDER | SWT.COLOR_WHITE, 7);
+        Composite sessionsComp = SWTFactory.createComposite(group, SWT.BORDER, 7);
 
         Button newSessionButton = SWTFactory.createButton(sessionsComp, "New Session");
         newSessionButton.addSelectionListener(new SelectionAdapter() {
@@ -105,13 +105,12 @@ public class ChatMgmtGroup extends AEvoGroup {
 
         // AI Settings part (merged)
         compositeLocal = SWTFactory.createComposite(group, SWT.BORDER, 3);
-
-        SWTFactory.createLabel(compositeLocal, "AI Mode:");
-        aiModeCombo = SWTFactory.createCombo(compositeLocal);
-        for (AiMode mode : AiMode.values()) {
-            aiModeCombo.add(mode.getName());
-        }
-        Button targetButton = SWTFactory.createButton(compositeLocal, "Target");
+        compositeLocal.setBackground(lightGreen);
+        
+        SWTFactory.createLabel(compositeLocal, "AI Mode:"); 
+        aiModeCombo = SWTFactory.createCombo(compositeLocal, AiMode.values()); 
+        Button targetButton = SWTFactory.createButton(compositeLocal, "Target"); 
+        
         targetButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -135,7 +134,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 
         SWTFactory.createLabel(compositeLocal, "Model:");
         localModelCombo = selectModel(compositeLocal);
-        SWTFactory.createLabel(compositeLocal, "");
+//        SWTFactory.createLabel(compositeLocal);
 
         compositeRemote = SWTFactory.createComposite(group, SWT.BORDER, 3);
         
@@ -202,9 +201,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     private Combo selectModel(Composite parent) {
-        Combo combo = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);
-        combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
+        Combo combo = SWTFactory.createCombo(parent);
         // selection listener
         combo.addListener(SWT.Selection, e -> {
             int index = combo.getSelectionIndex();
