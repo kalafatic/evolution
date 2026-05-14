@@ -144,24 +144,29 @@ public class MultiPageEditor extends MultiPageEditorPart {
             super.notifyChanged(notification);
             if (notification.isTouch()) return;
 
-            if (notification.getEventType() == Notification.SET ||
-                notification.getEventType() == Notification.ADD ||
-                notification.getEventType() == Notification.REMOVE) {
+            int eventType = notification.getEventType();
+            if (eventType == Notification.SET ||
+                eventType == Notification.ADD ||
+                eventType == Notification.REMOVE ||
+                eventType == Notification.UNSET ||
+                eventType == Notification.MOVE) {
+
                 Display.getDefault().asyncExec(() -> {
                     if (!getContainer().isDisposed()) {
                         setDirty(true);
                     }
                 });
-            }
-                       
-            if (refreshScheduled.compareAndSet(false, true)) {
-                Display.getDefault().asyncExec(() -> {
-                    refreshScheduled.set(false);
 
-                    if (!getContainer().isDisposed()) {
-                        refreshPages();
-                    }
-                });
+                // Only schedule refresh for meaningful changes
+                if (refreshScheduled.compareAndSet(false, true)) {
+                    Display.getDefault().asyncExec(() -> {
+                        refreshScheduled.set(false);
+
+                        if (!getContainer().isDisposed()) {
+                            refreshPages();
+                        }
+                    });
+                }
             }
         }
     };
