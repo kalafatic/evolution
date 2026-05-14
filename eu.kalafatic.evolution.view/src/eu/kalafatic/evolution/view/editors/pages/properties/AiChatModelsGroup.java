@@ -19,7 +19,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class AiChatModelsGroup extends AEvoGroup {
     private Text localModelText, hybridModelText;
@@ -34,15 +34,15 @@ public class AiChatModelsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "AI Chat Models (per Mode)", 3, false);
-        SWTFactory.createLabel(group, "Local Model:");
-        localModelText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, localModelText);
-        SWTFactory.createLabel(group, "Hybrid Model:");
-        hybridModelText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, hybridModelText);
-        SWTFactory.createLabel(group, "Remote Model:");
-        remoteModelCombo = SWTFactory.createCombo(group);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "AI Chat Models (per Mode)", 3, false);
+        GUIFactory.INSTANCE.createLabel(group, "Local Model:");
+        localModelText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, localModelText);
+        GUIFactory.INSTANCE.createLabel(group, "Hybrid Model:");
+        hybridModelText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, hybridModelText);
+        GUIFactory.INSTANCE.createLabel(group, "Remote Model:");
+        remoteModelCombo = GUIFactory.INSTANCE.createCombo(group);
         remoteModelCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
         for (String providerName : AiProviders.PROVIDERS.keySet()) {
             remoteModelCombo.add(providerName);

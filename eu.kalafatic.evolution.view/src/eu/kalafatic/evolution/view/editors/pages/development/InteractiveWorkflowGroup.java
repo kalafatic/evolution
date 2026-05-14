@@ -22,7 +22,7 @@ import eu.kalafatic.evolution.controller.workflow.GraphActionExecutor;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 import eu.kalafatic.evolution.view.application.Activator;
 
 public class InteractiveWorkflowGroup extends AEvoGroup {
@@ -39,7 +39,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Interactive AI Workflow", 1, true, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Interactive AI Workflow", 1, true, true);
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 700;
         group.setLayoutData(gd);
@@ -49,7 +49,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
         browserContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         try {
-            browser = SWTFactory.createBrowser(browserContainer, 700);
+            browser = GUIFactory.INSTANCE.createBrowser(browserContainer, 700);
 
             browser.addProgressListener(new org.eclipse.swt.browser.ProgressAdapter() {
                 @Override
@@ -89,7 +89,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
             if (bundle != null) {
                 URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
                 String base = bundleRoot.toString();
-                String html = SWTFactory.loadHtmlTemplate("/workflow/workflow.html");
+                String html = GUIFactory.INSTANCE.loadHtmlTemplate(getClass(), "/workflow/workflow.html");
 
                 if (html.contains("<head>")) {
                     html = html.replace("<head>", "<head><base href=\"" + base + "workflow/\">");

@@ -22,7 +22,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 /**
  * @evo:16:A reason=darwin-checkbox-ui
@@ -48,13 +48,13 @@ public class InstructionsGroup extends AEvoGroup {
 
     private void createControl(FormToolkit toolkit, Composite parent, boolean nested) {
     	if (nested) {
-            group = SWTFactory.createComposite(parent);
+            group = GUIFactory.INSTANCE.createComposite(parent);
            
             // Add a separator line
-            org.eclipse.swt.widgets.Label separator = SWTFactory.createLabel(group, "", org.eclipse.swt.SWT.SEPARATOR | org.eclipse.swt.SWT.HORIZONTAL);
+            org.eclipse.swt.widgets.Label separator = GUIFactory.INSTANCE.createLabel(group, "", org.eclipse.swt.SWT.SEPARATOR | org.eclipse.swt.SWT.HORIZONTAL);
             separator.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         } else {
-            group = SWTFactory.createExpandableGroup(toolkit, parent, "Instructions", 1, true);
+            group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Instructions", 1, true);
         }
         requestText = new StyledText(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         page.setupContextAssist(requestText);
@@ -62,18 +62,18 @@ public class InstructionsGroup extends AEvoGroup {
         requestGridData.heightHint = 66;
         requestText.setLayoutData(requestGridData);
         
-        Composite composite = SWTFactory.createComposite(group,2);
-        attachmentArea = SWTFactory.createComposite(group, SWT.BORDER, 1);
+        Composite composite = GUIFactory.INSTANCE.createComposite(group,2);
+        attachmentArea = GUIFactory.INSTANCE.createComposite(group, SWT.BORDER, 1);
 
         // Left side: Buttons
-        Composite btnComp = SWTFactory.createComposite(composite,5);
+        Composite btnComp = GUIFactory.INSTANCE.createComposite(composite,5);
 
-        sendButton = SWTFactory.createButton(btnComp, "▶️ Send");
+        sendButton = GUIFactory.INSTANCE.createButton(btnComp, "▶️ Send");
         sendButton.setBackground(lightGreen);
         sendButton.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
         sendButton.setToolTipText("Start a classic, iterative or autonomous iterative self-development session to improve the codebase.");
 
-        pauseButton = SWTFactory.createButton(btnComp, "⏸️ Pause");
+        pauseButton = GUIFactory.INSTANCE.createButton(btnComp, "⏸️ Pause");
         pauseButton.setEnabled(true);
         pauseButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -82,7 +82,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        stopButton = SWTFactory.createButton(btnComp, "⏹️ Stop");
+        stopButton = GUIFactory.INSTANCE.createButton(btnComp, "⏹️ Stop");
         stopButton.setEnabled(true);
         stopButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -91,19 +91,19 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        attachButton = SWTFactory.createButton(btnComp, "\ud83d\udcce" + "Attach MD");
+        attachButton = GUIFactory.INSTANCE.createButton(btnComp, "\ud83d\udcce" + "Attach MD");
        
 //        attachmentArea = new Composite(btnComp, SWT.BORDER);
 //        attachmentArea.setLayout(new GridLayout(1, false));
 //        GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-//		gd.widthHint = SWTFactory.LABEL_WIDTH;
-//		gd.heightHint = SWTFactory.BUTTON_HEIGHT;
+//		gd.widthHint = GUIFactory.LABEL_WIDTH;
+//		gd.heightHint = GUIFactory.BUTTON_HEIGHT;
 //        attachmentArea.setLayoutData(gd);
 
         // Right side: Checkboxes and Spinners
-        Composite settingsComp = SWTFactory.createComposite(composite,SWT.NO , 7);        
+        Composite settingsComp = GUIFactory.INSTANCE.createComposite(composite,SWT.NO , 7);
 
-        selfIterativeCheck = SWTFactory.createCheckButton(settingsComp, "Self Development");
+        selfIterativeCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Self Development");
         selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");
         selfIterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -116,7 +116,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        darwinCheck = SWTFactory.createCheckButton(settingsComp, "Darwin");
+        darwinCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Darwin");
         darwinCheck.setSelection(true);
         darwinCheck.setToolTipText("Enable Darwin style iterations (multiple branches, survival of the fittest).");
         darwinCheck.addSelectionListener(new SelectionAdapter() {
@@ -126,7 +126,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        autoApproveCheck = SWTFactory.createCheckButton(settingsComp, "Auto-Approve");
+        autoApproveCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Auto-Approve");
         autoApproveCheck.setToolTipText("Automatically approve plans and file deletions.");
         autoApproveCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -135,7 +135,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        gitAutomationCheck = SWTFactory.createCheckButton(settingsComp, "Auto-Git");
+        gitAutomationCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Auto-Git");
         gitAutomationCheck.setToolTipText("Automatically create branches and commit changes.");
         gitAutomationCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -144,7 +144,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        stepModeCheck = SWTFactory.createCheckButton(settingsComp, "Step Mode");
+        stepModeCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Step Mode");
         stepModeCheck.setToolTipText("Enable step-by-step execution control in the workflow graph.");
         stepModeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -153,7 +153,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        iterativeCheck = SWTFactory.createCheckButton(settingsComp, "Iterative");
+        iterativeCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Iterative");
         iterativeCheck.setSelection(true);
         iterativeCheck.setToolTipText("Enable iterative development based on your prompt.");
         iterativeCheck.addSelectionListener(new SelectionAdapter() {
@@ -163,7 +163,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
         
-        Composite iterComp = SWTFactory.createComposite(settingsComp,2);
+        Composite iterComp = GUIFactory.INSTANCE.createComposite(settingsComp,2);
         
         maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(iterComp, SWT.BORDER);
         maxIterationsSpinner.setMinimum(1);
@@ -175,7 +175,7 @@ public class InstructionsGroup extends AEvoGroup {
                 page.syncModelWithUI();
             }
         });
-        SWTFactory.createLabel(iterComp, "Max Iterations",SWT.NONE,70);
+        GUIFactory.INSTANCE.createLabel(iterComp, "Max Iterations",SWT.NONE,70);
 
         attachButton.setToolTipText("Add External Instructions (.md)");
         attachButton.addSelectionListener(new SelectionAdapter() {

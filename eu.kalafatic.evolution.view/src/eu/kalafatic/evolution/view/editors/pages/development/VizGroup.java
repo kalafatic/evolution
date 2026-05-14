@@ -10,7 +10,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import eu.kalafatic.evolution.view.editors.pages.DevelopmentPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -30,7 +30,7 @@ public class VizGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent, DevelopmentPage page) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Network Visualization", 1, false, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Network Visualization", 1, false, true);
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 700;
         group.setLayoutData(gd);
@@ -59,7 +59,7 @@ public class VizGroup extends AEvoGroup {
                 @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { if (browser != null) browser.execute("resetZoom();"); }
             });
             
-           SWTFactory.createMaximizeButton(toolbar, section, false);	
+           GUIFactory.INSTANCE.createMaximizeButton(toolbar, section, false);
            
            section.setTextClient(toolbar);
         }
@@ -69,7 +69,7 @@ public class VizGroup extends AEvoGroup {
         browserContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         try {
-		browser = SWTFactory.createBrowser(browserContainer,700);
+		browser = GUIFactory.INSTANCE.createBrowser(browserContainer,700);
           
             page.setupBrowserListeners(browser);
             

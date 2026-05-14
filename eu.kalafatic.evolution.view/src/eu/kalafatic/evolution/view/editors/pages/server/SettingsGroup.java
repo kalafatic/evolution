@@ -19,7 +19,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.tools.AToolGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class SettingsGroup extends AToolGroup {
 
@@ -53,7 +53,7 @@ public class SettingsGroup extends AToolGroup {
         btnComp.setLayout(new GridLayout(3, false));
         btnComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
-        Button startBtn = SWTFactory.createButton(btnComp, "Start");
+        Button startBtn = GUIFactory.INSTANCE.createButton(btnComp, "Start");
         startBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -66,7 +66,7 @@ public class SettingsGroup extends AToolGroup {
             }
         });
 
-        Button stopBtn = SWTFactory.createButton(btnComp, "Stop");
+        Button stopBtn = GUIFactory.INSTANCE.createButton(btnComp, "Stop");
         stopBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -75,7 +75,7 @@ public class SettingsGroup extends AToolGroup {
             }
         });
 
-        Button restartBtn = SWTFactory.createButton(btnComp, "Restart");
+        Button restartBtn = GUIFactory.INSTANCE.createButton(btnComp, "Restart");
         restartBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

@@ -33,7 +33,7 @@ import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 /**
  * @evo.lastModified: 13:A
@@ -52,7 +52,7 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Models", 1, true, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Models", 1, true, true);
 
         viewer = new TableViewer(group, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
         Table table = viewer.getTable();
@@ -79,7 +79,7 @@ public class ModelsGroup extends AEvoGroup {
         buttonBar.setLayout(new GridLayout(8, false));
         buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
         
-        Button reloadButton = SWTFactory.createButton(buttonBar, "Reload");
+        Button reloadButton = GUIFactory.INSTANCE.createButton(buttonBar, "Reload");
         reloadButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -89,7 +89,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button testButton = SWTFactory.createButton(buttonBar, "Test Model");
+        Button testButton = GUIFactory.INSTANCE.createButton(buttonBar, "Test Model");
         testButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -97,7 +97,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button useButton = SWTFactory.createButton(buttonBar, "Use");
+        Button useButton = GUIFactory.INSTANCE.createButton(buttonBar, "Use");
         useButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -105,7 +105,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button addButton = SWTFactory.createButton(buttonBar, "Add");
+        Button addButton = GUIFactory.INSTANCE.createButton(buttonBar, "Add");
         addButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -113,7 +113,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button downloadButton = SWTFactory.createButton(buttonBar, "Download");
+        Button downloadButton = GUIFactory.INSTANCE.createButton(buttonBar, "Download");
         downloadButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -121,7 +121,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button editButton = SWTFactory.createButton(buttonBar, "Edit");
+        Button editButton = GUIFactory.INSTANCE.createButton(buttonBar, "Edit");
         editButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -129,7 +129,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button removeButton = SWTFactory.createButton(buttonBar, "Remove");
+        Button removeButton = GUIFactory.INSTANCE.createButton(buttonBar, "Remove");
         removeButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -137,7 +137,7 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        Button saveButton = SWTFactory.createButton(buttonBar, "Save to Model");
+        Button saveButton = GUIFactory.INSTANCE.createButton(buttonBar, "Save to Model");
         saveButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

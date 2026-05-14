@@ -19,7 +19,7 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
 import eu.kalafatic.evolution.view.editors.pages.OllamaViewModel;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 import eu.kalafatic.evolution.view.factories.SWTBinding;
 
 public class OllamaSettingsGroup extends AEvoGroup {
@@ -46,23 +46,23 @@ public class OllamaSettingsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Ollama Settings", 3, false);
-        SWTFactory.createLabel(group, "URL:");
-        ollamaUrlText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, ollamaUrlText);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Ollama Settings", 3, false);
+        GUIFactory.INSTANCE.createLabel(group, "URL:");
+        ollamaUrlText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, ollamaUrlText);
 
-        SWTFactory.createLabel(group, "Model:");
-        ollamaModelText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, ollamaModelText);
+        GUIFactory.INSTANCE.createLabel(group, "Model:");
+        ollamaModelText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, ollamaModelText);
 
-        SWTFactory.createLabel(group, "Select Model:");
-        modelCombo = SWTFactory.createCombo(group);
+        GUIFactory.INSTANCE.createLabel(group, "Select Model:");
+        modelCombo = GUIFactory.INSTANCE.createCombo(group);
 
-        SWTFactory.createLabel(group, "");
-        SWTFactory.createLabel(group, "Model Path:");
-        ollamaPathText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "");
+        GUIFactory.INSTANCE.createLabel(group, "Model Path:");
+        ollamaPathText = GUIFactory.INSTANCE.createText(group);
         
-        Button browseOllamaBtn = SWTFactory.createButton(group, "...");
+        Button browseOllamaBtn = GUIFactory.INSTANCE.createButton(group, "...");
         browseOllamaBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -74,10 +74,10 @@ public class OllamaSettingsGroup extends AEvoGroup {
             }
         });
 
-        SWTFactory.createLabel(group, "Version:");
-        ollamaVersionText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Version:");
+        ollamaVersionText = GUIFactory.INSTANCE.createText(group);
         ollamaVersionText.setEditable(false);
-        SWTFactory.createLabel(group, "");
+        GUIFactory.INSTANCE.createLabel(group, "");
 
         ollamaUrlDecorator = new ControlDecoration(ollamaUrlText, SWT.TOP | SWT.LEFT);
         ollamaUrlDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());

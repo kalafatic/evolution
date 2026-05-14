@@ -11,7 +11,7 @@ import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class AgentsGroup extends AEvoGroup {
     private Table agentsTable;
@@ -22,7 +22,7 @@ public class AgentsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Agents", 1, false);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Agents", 1, false);
         agentsTable = new Table(group, SWT.BORDER | SWT.FULL_SELECTION);
         agentsTable.setHeaderVisible(true);
         agentsTable.setLinesVisible(true);

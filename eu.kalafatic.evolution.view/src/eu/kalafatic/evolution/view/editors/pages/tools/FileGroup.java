@@ -19,7 +19,7 @@ import eu.kalafatic.evolution.model.orchestration.FileConfig;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 import java.io.File;
 
 public class FileGroup extends AToolGroup {
@@ -32,27 +32,27 @@ public class FileGroup extends AToolGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "File Tool Settings", 3, false);
-        SWTFactory.createLabel(group, "Project Root:");
-        fileLocalPathText = SWTFactory.createText(group);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "File Tool Settings", 3, false);
+        GUIFactory.INSTANCE.createLabel(group, "Project Root:");
+        fileLocalPathText = GUIFactory.INSTANCE.createText(group);
         fileLocalPathText.setText(orchestrator.getFileConfig() != null && orchestrator.getFileConfig().getLocalPath() != null ? orchestrator.getFileConfig().getLocalPath() : "");
         fileLocalPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        SWTFactory.createEditButton(group, fileLocalPathText);
+        GUIFactory.INSTANCE.createEditButton(group, fileLocalPathText);
 
-        SWTFactory.createLabel(group, "Path:");
-        filePathText = SWTFactory.createText(group);
-        SWTFactory.createLabel(group, "");
+        GUIFactory.INSTANCE.createLabel(group, "Path:");
+        filePathText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "");
 
-        SWTFactory.createLabel(group, "New Path:");
-        newFilePathText = SWTFactory.createText(group);
-        SWTFactory.createLabel(group, "");
+        GUIFactory.INSTANCE.createLabel(group, "New Path:");
+        newFilePathText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "");
 
         Composite btnComp = toolkit.createComposite(group);
         btnComp.setLayout(new GridLayout(5, false));
         GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
         btnComp.setLayoutData(btnGd);
 
-        Button createFileBtn = SWTFactory.createButton(btnComp, "Create File");
+        Button createFileBtn = GUIFactory.INSTANCE.createButton(btnComp, "Create File");
         createFileBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -60,7 +60,7 @@ public class FileGroup extends AToolGroup {
             }
         });
 
-        Button createFolderBtn = SWTFactory.createButton(btnComp, "Create Folder");
+        Button createFolderBtn = GUIFactory.INSTANCE.createButton(btnComp, "Create Folder");
         createFolderBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -68,7 +68,7 @@ public class FileGroup extends AToolGroup {
             }
         });
 
-        Button removeBtn = SWTFactory.createButton(btnComp, "Remove");
+        Button removeBtn = GUIFactory.INSTANCE.createButton(btnComp, "Remove");
         removeBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -76,7 +76,7 @@ public class FileGroup extends AToolGroup {
             }
         });
 
-        Button renameBtn = SWTFactory.createButton(btnComp, "Rename");
+        Button renameBtn = GUIFactory.INSTANCE.createButton(btnComp, "Rename");
         renameBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -84,7 +84,7 @@ public class FileGroup extends AToolGroup {
             }
         });
 
-        Button testBtn = SWTFactory.createButton(btnComp, "Test File");
+        Button testBtn = GUIFactory.INSTANCE.createButton(btnComp, "Test File");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

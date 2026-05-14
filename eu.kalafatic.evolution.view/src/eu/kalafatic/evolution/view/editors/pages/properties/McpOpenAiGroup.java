@@ -15,7 +15,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class McpOpenAiGroup extends AEvoGroup {
     private Combo aiModeCombo;
@@ -30,9 +30,9 @@ public class McpOpenAiGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "MCP & OpenAI (Hybrid Architecture)", 3, false);
-        SWTFactory.createLabel(group, "AI Mode:");
-        aiModeCombo = SWTFactory.createCombo(group);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "MCP & OpenAI (Hybrid Architecture)", 3, false);
+        GUIFactory.INSTANCE.createLabel(group, "AI Mode:");
+        aiModeCombo = GUIFactory.INSTANCE.createCombo(group);
         aiModeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
         for (AiMode mode : AiMode.values()) {
             aiModeCombo.add(mode.getName());
@@ -44,7 +44,7 @@ public class McpOpenAiGroup extends AEvoGroup {
             }
         });
 
-        SWTFactory.createLabel(group, "Offline Mode (Legacy):");
+        GUIFactory.INSTANCE.createLabel(group, "Offline Mode (Legacy):");
         offlineBtn = new Button(group, SWT.CHECK);
         offlineBtn.setLayoutData(new GridData(GridData.FILL_HORIZONTAL, GridData.CENTER, true, false, 2, 1));
         offlineBtn.addSelectionListener(new SelectionAdapter() {
@@ -54,12 +54,12 @@ public class McpOpenAiGroup extends AEvoGroup {
             }
         });
 
-        SWTFactory.createLabel(group, "MCP Server URL:");
-        mcpUrlText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, mcpUrlText);
-        SWTFactory.createLabel(group, "OpenAI Token:");
-        openAiTokenText = SWTFactory.createPasswordText(group);
-        Button editTokenBtn = SWTFactory.createEditButton(group, openAiTokenText);
+        GUIFactory.INSTANCE.createLabel(group, "MCP Server URL:");
+        mcpUrlText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, mcpUrlText);
+        GUIFactory.INSTANCE.createLabel(group, "OpenAI Token:");
+        openAiTokenText = GUIFactory.INSTANCE.createPasswordText(group);
+        Button editTokenBtn = GUIFactory.INSTANCE.createEditButton(group, openAiTokenText);
         editTokenBtn.setText("\u2699");
         editTokenBtn.setToolTipText("Detailed Configuration");
         editTokenBtn.addSelectionListener(new SelectionAdapter() {
@@ -68,9 +68,9 @@ public class McpOpenAiGroup extends AEvoGroup {
                 handleDetailedConfig();
             }
         });
-        SWTFactory.createLabel(group, "OpenAI Model:");
-        openAiModelText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, openAiModelText);
+        GUIFactory.INSTANCE.createLabel(group, "OpenAI Model:");
+        openAiModelText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, openAiModelText);
     }
 
     @Override

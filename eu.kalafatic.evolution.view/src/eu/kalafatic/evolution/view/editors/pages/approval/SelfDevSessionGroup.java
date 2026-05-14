@@ -8,7 +8,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -28,21 +28,21 @@ public class SelfDevSessionGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Self-Dev Session Details", 2, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Self-Dev Session Details", 2, true);
 
-        SWTFactory.createLabel(group, "Session ID:");
+        GUIFactory.INSTANCE.createLabel(group, "Session ID:");
         sessionIdLabel = toolkit.createLabel(group, "");
         sessionIdLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        SWTFactory.createLabel(group, "Status:");
+        GUIFactory.INSTANCE.createLabel(group, "Status:");
         statusLabel = toolkit.createLabel(group, "");
         statusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        SWTFactory.createLabel(group, "Iterations:");
+        GUIFactory.INSTANCE.createLabel(group, "Iterations:");
         iterationsLabel = toolkit.createLabel(group, "");
         iterationsLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        SWTFactory.createLabel(group, "Git Branch:");
+        GUIFactory.INSTANCE.createLabel(group, "Git Branch:");
         branchLabel = toolkit.createLabel(group, "");
         branchLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
     }

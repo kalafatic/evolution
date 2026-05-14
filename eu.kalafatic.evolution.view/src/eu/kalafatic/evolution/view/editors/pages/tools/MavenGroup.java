@@ -13,7 +13,7 @@ import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 import java.io.File;
 
 public class MavenGroup extends AToolGroup {
@@ -25,19 +25,19 @@ public class MavenGroup extends AToolGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Maven Tool Settings", 3, false);
-        SWTFactory.createLabel(group, "Goals:");
-        mavenGoalsText = SWTFactory.createText(group);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Maven Tool Settings", 3, false);
+        GUIFactory.INSTANCE.createLabel(group, "Goals:");
+        mavenGoalsText = GUIFactory.INSTANCE.createText(group);
         mavenGoalsText.setText(orchestrator.getMaven() != null ? orchestrator.getMaven().getGoals().toString() : "");
-        SWTFactory.createEditButton(group, mavenGoalsText);
+        GUIFactory.INSTANCE.createEditButton(group, mavenGoalsText);
 
-        SWTFactory.createLabel(group, "Profiles:");
-        mavenProfilesText = SWTFactory.createText(group);
+        GUIFactory.INSTANCE.createLabel(group, "Profiles:");
+        mavenProfilesText = GUIFactory.INSTANCE.createText(group);
         mavenProfilesText.setText(orchestrator.getMaven() != null ? orchestrator.getMaven().getProfiles().toString() : "");
-        SWTFactory.createEditButton(group, mavenProfilesText);
+        GUIFactory.INSTANCE.createEditButton(group, mavenProfilesText);
 
-        SWTFactory.createLabel(group, "");
-        Button testBtn = SWTFactory.createButton(group, "Test Maven");
+        GUIFactory.INSTANCE.createLabel(group, "");
+        Button testBtn = GUIFactory.INSTANCE.createButton(group, "Test Maven");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

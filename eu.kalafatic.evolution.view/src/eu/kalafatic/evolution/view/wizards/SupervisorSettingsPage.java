@@ -7,7 +7,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class SupervisorSettingsPage extends AWizardPage {
     private Text executablePathText;
@@ -35,7 +35,7 @@ public class SupervisorSettingsPage extends AWizardPage {
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
             executablePathText.setText(orchestrator.getSupervisorSettings().getExecutablePath() != null ? orchestrator.getSupervisorSettings().getExecutablePath() : "");
         }
-        SWTFactory.createEditButton(container, executablePathText);
+        GUIFactory.INSTANCE.createEditButton(container, executablePathText);
 
         label = new Label(container, SWT.NONE);
         label.setText("Source Path:");
@@ -44,7 +44,7 @@ public class SupervisorSettingsPage extends AWizardPage {
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
             sourcePathText.setText(orchestrator.getSupervisorSettings().getSourcePath() != null ? orchestrator.getSupervisorSettings().getSourcePath() : "");
         }
-        SWTFactory.createEditButton(container, sourcePathText);
+        GUIFactory.INSTANCE.createEditButton(container, sourcePathText);
 
         label = new Label(container, SWT.NONE);
         label.setText("Commands:");

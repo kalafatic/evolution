@@ -10,7 +10,7 @@ import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class LlmSettingsGroup extends AEvoGroup {
     private Text llmModelText, llmTempText;
@@ -22,13 +22,13 @@ public class LlmSettingsGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "LLM Settings", 3, false);
-        SWTFactory.createLabel(group, "Model:");
-        llmModelText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, llmModelText);
-        SWTFactory.createLabel(group, "Temperature:");
-        llmTempText = SWTFactory.createText(group);
-        SWTFactory.createEditButton(group, llmTempText);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "LLM Settings", 3, false);
+        GUIFactory.INSTANCE.createLabel(group, "Model:");
+        llmModelText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, llmModelText);
+        GUIFactory.INSTANCE.createLabel(group, "Temperature:");
+        llmTempText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createEditButton(group, llmTempText);
 
         llmTempDecorator = new ControlDecoration(llmTempText, SWT.TOP | SWT.LEFT);
         llmTempDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());

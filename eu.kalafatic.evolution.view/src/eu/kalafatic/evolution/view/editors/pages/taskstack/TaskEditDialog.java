@@ -22,7 +22,7 @@ import org.eclipse.jface.window.Window;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BitState;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,10 +72,10 @@ public class TaskEditDialog extends Dialog {
         gridData.widthHint = 700;
         container.setLayoutData(gridData);
         
-        SWTFactory.createLabel(container, "Name:");
+        GUIFactory.INSTANCE.createLabel(container, "Name:");
         nameText = createText(container, task.getName());
 
-        SWTFactory.createLabel(container, "Type:");
+        GUIFactory.INSTANCE.createLabel(container, "Type:");
         typeCombo = new Combo(container, SWT.READ_ONLY);
         typeCombo.setItems(new String[]{"chat", "coding", "llm", "file", "shell", "git", "maven", "approval"});
         typeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -84,48 +84,48 @@ public class TaskEditDialog extends Dialog {
             typeCombo.setText(type);
         }
 
-        SWTFactory.createLabel(container, "Mode:");
+        GUIFactory.INSTANCE.createLabel(container, "Mode:");
         modeCombo = new Combo(container, SWT.READ_ONLY);
         modeCombo.setItems(BitState.MODES);
         modeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         int mode = BitState.getMode(task.getBitState());
         modeCombo.select(mode >= 0 && mode < BitState.MODES.length ? mode : 0);
 
-        SWTFactory.createLabel(container, "Supervision:");
+        GUIFactory.INSTANCE.createLabel(container, "Supervision:");
         supervisionCombo = new Combo(container, SWT.READ_ONLY);
         supervisionCombo.setItems(BitState.SUPERVISIONS);
         supervisionCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         int supervision = BitState.getSupervision(task.getBitState());
         supervisionCombo.select(supervision >= 0 && supervision < BitState.SUPERVISIONS.length ? supervision : 0);
 
-        SWTFactory.createLabel(container, "Reasoning:");
+        GUIFactory.INSTANCE.createLabel(container, "Reasoning:");
         reasoningCombo = new Combo(container, SWT.READ_ONLY);
         reasoningCombo.setItems(BitState.REASONINGS);
         reasoningCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         int reasoning = BitState.getReasoning(task.getBitState());
         reasoningCombo.select(reasoning >= 0 && reasoning < BitState.REASONINGS.length ? reasoning : 0);
 
-        SWTFactory.createLabel(container, "Workflow:");
+        GUIFactory.INSTANCE.createLabel(container, "Workflow:");
         workflowCombo = new Combo(container, SWT.READ_ONLY);
         workflowCombo.setItems(BitState.WORKFLOWS);
         workflowCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         int workflow = BitState.getWorkflow(task.getBitState());
         workflowCombo.select(workflow >= 0 && workflow < BitState.WORKFLOWS.length ? workflow : 0);
 
-        SWTFactory.createLabel(container, "Prompt:");
+        GUIFactory.INSTANCE.createLabel(container, "Prompt:");
         promptText = new Text(container, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
         GridData gdPrompt = new GridData(GridData.FILL_BOTH);
         gdPrompt.heightHint = 100;
         promptText.setLayoutData(gdPrompt);
         promptText.setText(task.getPrompt() != null ? task.getPrompt() : "");
 
-        SWTFactory.createLabel(container, "Goal:");
+        GUIFactory.INSTANCE.createLabel(container, "Goal:");
         goalText = createText(container, task.getGoal() != null ? task.getGoal() : "");
 
-        SWTFactory.createLabel(container, "Description:");
+        GUIFactory.INSTANCE.createLabel(container, "Description:");
         descriptionText = createText(container, task.getDescription() != null ? task.getDescription() : "");
 
-        SWTFactory.createLabel(container, "Execution Controls:");
+        GUIFactory.INSTANCE.createLabel(container, "Execution Controls:");
         Composite controlsComp = new Composite(container, SWT.NONE);
         controlsComp.setLayout(new GridLayout(4, true));
         controlsComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -154,7 +154,7 @@ public class TaskEditDialog extends Dialog {
         stepModeCheck.setText("Step Mode");
         stepModeCheck.setSelection(task.isStepMode());
         
-        SWTFactory.createLabel(controlsComp, "Max Iterations:");
+        GUIFactory.INSTANCE.createLabel(controlsComp, "Max Iterations:");
         
         maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(controlsComp, SWT.BORDER);
         maxIterationsSpinner.setMinimum(1);
@@ -171,17 +171,17 @@ public class TaskEditDialog extends Dialog {
         
        
 
-        SWTFactory.createLabel(container, "Attachments:");
-        Composite attachComp = SWTFactory.createComposite(container, SWT.NONE, 2);
+        GUIFactory.INSTANCE.createLabel(container, "Attachments:");
+        Composite attachComp = GUIFactory.INSTANCE.createComposite(container, SWT.NONE, 2);
 
         attachmentsViewer = new ListViewer(attachComp, SWT.BORDER | SWT.V_SCROLL);
         attachmentsViewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
         attachmentsViewer.setContentProvider(ArrayContentProvider.getInstance());
         attachmentsViewer.setInput(attachmentsList);
 
-        Composite btnComp = SWTFactory.createComposite(attachComp);
+        Composite btnComp = GUIFactory.INSTANCE.createComposite(attachComp);
 
-        Button addBtn = SWTFactory.createButton(btnComp, "Add");
+        Button addBtn = GUIFactory.INSTANCE.createButton(btnComp, "Add");
         addBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -193,7 +193,7 @@ public class TaskEditDialog extends Dialog {
             }
         });
 
-        Button removeBtn =SWTFactory.createButton(btnComp, "Remove");
+        Button removeBtn =GUIFactory.INSTANCE.createButton(btnComp, "Remove");
         removeBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {

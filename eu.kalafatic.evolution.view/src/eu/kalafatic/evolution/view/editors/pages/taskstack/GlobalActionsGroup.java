@@ -11,7 +11,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
@@ -36,13 +36,13 @@ public class GlobalActionsGroup extends AEvoGroup {
     private Button iterativeCheck, selfIterativeCheck, darwinCheck, autoApproveCheck, gitAutomationCheck, stepModeCheck;
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Global Actions", 1, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Global Actions", 1, true);
 
         Composite topComp = toolkit.createComposite(group);
         topComp.setLayout(new GridLayout(6, false));
         topComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        Button selectAllBtn = SWTFactory.createButton(topComp, "Select All");
+        Button selectAllBtn = GUIFactory.INSTANCE.createButton(topComp, "Select All");
         selectAllBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -50,7 +50,7 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        Button unselectAllBtn = SWTFactory.createButton(topComp, "Unselect All");
+        Button unselectAllBtn = GUIFactory.INSTANCE.createButton(topComp, "Unselect All");
         unselectAllBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -58,14 +58,14 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        SWTFactory.createLabel(topComp, "Execution Mode:");
-        executionModeCombo = SWTFactory.createCombo(topComp);
+        GUIFactory.INSTANCE.createLabel(topComp, "Execution Mode:");
+        executionModeCombo = GUIFactory.INSTANCE.createCombo(topComp);
         executionModeCombo.add("Sequential");
         executionModeCombo.add("Parallel (Max 3)");
         executionModeCombo.select(0);
 
         // Batch Update Checkboxes in 3 columns
-        SWTFactory.createLabel(group, "Batch Update Selected Tasks:");
+        GUIFactory.INSTANCE.createLabel(group, "Batch Update Selected Tasks:");
         Composite batchComp = toolkit.createComposite(group);
         batchComp.setLayout(new GridLayout(3, true));
         batchComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -77,7 +77,7 @@ public class GlobalActionsGroup extends AEvoGroup {
         gitAutomationCheck = toolkit.createButton(batchComp, "Auto-Git", SWT.CHECK);
         stepModeCheck = toolkit.createButton(batchComp, "Step Mode", SWT.CHECK);
 
-        Button applyBatchBtn = SWTFactory.createButton(batchComp, "Apply to Selected", 150);
+        Button applyBatchBtn = GUIFactory.INSTANCE.createButton(batchComp, "Apply to Selected", 150);
         applyBatchBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -89,7 +89,7 @@ public class GlobalActionsGroup extends AEvoGroup {
         compositeRemote.setLayout(new GridLayout(5, false));
         compositeRemote.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        Button executeBtn = SWTFactory.createButton(compositeRemote, "Execute Selected", 150);
+        Button executeBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Execute Selected", 150);
         executeBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {  
@@ -108,7 +108,7 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        Button addPlanBtn = SWTFactory.createButton(compositeRemote, "Add Plan (Session)", 150);
+        Button addPlanBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Add Plan (Session)", 150);
         addPlanBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -116,7 +116,7 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        Button addTaskBtn = SWTFactory.createButton(compositeRemote, "Add Task to Plan", 150);
+        Button addTaskBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Add Task to Plan", 150);
         addTaskBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -124,7 +124,7 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        Button addDefaultsBtn = SWTFactory.createButton(compositeRemote, "Add Default Tests", 150);
+        Button addDefaultsBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Add Default Tests", 150);
         addDefaultsBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -132,7 +132,7 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        Button clearBtn = SWTFactory.createButton(compositeRemote, "Remove Selected", 150);
+        Button clearBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Remove Selected", 150);
         clearBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

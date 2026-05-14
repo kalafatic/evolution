@@ -10,7 +10,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class McpConfigGroup extends AEvoGroup {
     private Text mcpUrlText;
@@ -23,9 +23,9 @@ public class McpConfigGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "MCP Configuration", 3, true);
-        SWTFactory.createLabel(group, "Server URL:");
-        mcpUrlText = SWTFactory.createText(group);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "MCP Configuration", 3, true);
+        GUIFactory.INSTANCE.createLabel(group, "Server URL:");
+        mcpUrlText = GUIFactory.INSTANCE.createText(group);
         mcpUrlText.addModifyListener(e -> {
             if (orchestrator != null) {
                 orchestrator.setMcpServerUrl(mcpUrlText.getText());
@@ -33,7 +33,7 @@ public class McpConfigGroup extends AEvoGroup {
             }
         });
 
-        Button testBtn = SWTFactory.createButton(group, "Test Connection");
+        Button testBtn = GUIFactory.INSTANCE.createButton(group, "Test Connection");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

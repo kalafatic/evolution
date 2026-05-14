@@ -17,7 +17,7 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.view.editors.pages.TestsPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -41,7 +41,7 @@ public class TestTableGroup extends AEvoGroup {
     }
 
     private void createControl(Composite parent, String title, List<Test> tests, boolean expanded) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, title, 1, expanded);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, title, 1, expanded);
 
         Composite tableComposite = toolkit.createComposite(group);
         tableComposite.setLayoutData(new GridData(GridData.FILL_BOTH));

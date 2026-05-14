@@ -13,7 +13,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -29,7 +29,7 @@ public class ProposedTasksGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Proposed Tasks", 1, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Proposed Tasks", 1, true);
         group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         ((GridData)group.getLayoutData()).heightHint = 145;
 

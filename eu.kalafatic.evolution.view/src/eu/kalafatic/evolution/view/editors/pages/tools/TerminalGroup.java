@@ -13,7 +13,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.tools.ShellTool;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import java.io.File;
 
@@ -33,7 +33,7 @@ public class TerminalGroup extends AToolGroup {
 
     // @evo:13:A reason=fill-terminal-group
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Terminal", 1, false, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Terminal", 1, false, true);
 
         outputText = new Text(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
         outputText.setLayoutData(new GridData(GridData.FILL_BOTH));

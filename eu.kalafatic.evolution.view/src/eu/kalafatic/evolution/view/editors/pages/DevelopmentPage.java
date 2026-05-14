@@ -46,7 +46,7 @@ import eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflow
 import eu.kalafatic.evolution.view.editors.pages.development.SupervisorGroup;
 import eu.kalafatic.evolution.view.editors.pages.development.VizGroup;
 import eu.kalafatic.evolution.view.editors.pages.iteration.SelfDevEditDialog;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
 
@@ -138,7 +138,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         container.setLayout(new GridLayout(1, false));
 
         // 1. Self-Development Section
-        Composite selfDevComp = SWTFactory.createExpandableGroup(toolkit, container, "Self-Development", 1, true);
+        Composite selfDevComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Self-Development", 1, true);
         selfDevComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Composite sdStatusComp = toolkit.createComposite(selfDevComp);
@@ -190,7 +190,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
             toolkit, container, editor, orchestrator, sessionId);
 
         // 3. Architecture Visualization
-        Composite archGroup = SWTFactory.createExpandableGroup(toolkit, container, "Architecture Visualization", 1, false, true);
+        Composite archGroup = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Architecture Visualization", 1, false, true);
         archGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         Composite archComp = toolkit.createComposite(archGroup);

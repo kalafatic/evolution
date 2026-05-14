@@ -25,7 +25,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.controller.orchestration.behavior.BitState;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -75,7 +75,7 @@ public class TaskStackGroup extends AEvoGroup {
     }
 
     private void createControl(Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Task/Prompt Stack", 1, true, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Task/Prompt Stack", 1, true, true);
         group.setLayout(new GridLayout(1, false));
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 400;

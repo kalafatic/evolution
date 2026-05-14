@@ -36,7 +36,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 /**
  * @evo:22:A reason=self-dev-bootstrap-ui
@@ -118,21 +118,21 @@ public class IterationPage extends AEvoPage {
     }
 
     private void createControl() {
-        Composite container = SWTFactory.createComposite(this, 1);
+        Composite container = GUIFactory.INSTANCE.createComposite(this, 1);
         container.setLayoutData(new GridData(GridData.FILL_BOTH));
         this.setContent(container);
 
         // Top Bar
-        Composite topBar = SWTFactory.createComposite(container, 6);
+        Composite topBar = GUIFactory.INSTANCE.createComposite(container, 6);
 
         prevBtn = toolkit.createButton(topBar, "< Prev", SWT.PUSH);
-        iterationLabel = SWTFactory.createLabel(topBar, "Iteration: N/A");
+        iterationLabel = GUIFactory.INSTANCE.createLabel(topBar, "Iteration: N/A");
         iterationLabel.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
         nextBtn = toolkit.createButton(topBar, "Next >", SWT.PUSH);
 
-        sessionStatusLabel = SWTFactory.createLabel(topBar, "Session: READY");
+        sessionStatusLabel = GUIFactory.INSTANCE.createLabel(topBar, "Session: READY");
         sessionStatusLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
-        sessionProgressLabel = SWTFactory.createLabel(topBar, "Progress: 0%");
+        sessionProgressLabel = GUIFactory.INSTANCE.createLabel(topBar, "Progress: 0%");
 
         prevBtn.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -155,11 +155,11 @@ public class IterationPage extends AEvoPage {
         });
 
         // 1. Branches Section
-        Composite branchesComp = SWTFactory.createExpandableGroup(toolkit, container, "Branches", 1, true);
+        Composite branchesComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Branches", 1, true);
 
-        goalLabel = SWTFactory.createLabel(branchesComp, "Goal: ");
+        goalLabel = GUIFactory.INSTANCE.createLabel(branchesComp, "Goal: ");
         goalLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        resultLabel = SWTFactory.createLabel(branchesComp, "Result: ");
+        resultLabel = GUIFactory.INSTANCE.createLabel(branchesComp, "Result: ");
         resultLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         branchTable = new TableViewer(branchesComp, SWT.BORDER | SWT.FULL_SELECTION);
@@ -180,21 +180,21 @@ public class IterationPage extends AEvoPage {
         });
 
         // Flow View
-        SWTFactory.createLabel(branchesComp, "Evolution Flow:");
-        flowComposite = SWTFactory.createComposite(branchesComp, 11);
+        GUIFactory.INSTANCE.createLabel(branchesComp, "Evolution Flow:");
+        flowComposite = GUIFactory.INSTANCE.createComposite(branchesComp, 11);
         flowComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         for (int i = 0; i < 6; i++) {
-            flowSteps[i] = SWTFactory.createLabel(flowComposite, stepNames[i], SWT.CENTER);
+            flowSteps[i] = GUIFactory.INSTANCE.createLabel(flowComposite, stepNames[i], SWT.CENTER);
             flowSteps[i].setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false));
             if (i < 5) {
-                Label arrow = SWTFactory.createLabel(flowComposite, "\u2192", SWT.CENTER);
+                Label arrow = GUIFactory.INSTANCE.createLabel(flowComposite, "\u2192", SWT.CENTER);
                 arrow.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
             }
         }
 
         // 2. Logs Section
-        Composite logComp = SWTFactory.createExpandableGroup(toolkit, container, "Logs", 1, true, true);
+        Composite logComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Logs", 1, true, true);
 
         logText = new StyledText(logComp, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
         logText.setLayoutData(new GridData(GridData.FILL_BOTH));

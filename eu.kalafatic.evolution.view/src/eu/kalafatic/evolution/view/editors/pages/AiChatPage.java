@@ -52,7 +52,7 @@ import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 import eu.kalafatic.evolution.view.editors.pages.aichat.*;
 import eu.kalafatic.evolution.view.dialogs.ProjectSetupWizardDialog;
 import org.eclipse.jface.window.Window;

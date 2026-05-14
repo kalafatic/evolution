@@ -22,7 +22,7 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
 import eu.kalafatic.evolution.view.editors.pages.properties.ModelDetailsDialog;
-import eu.kalafatic.evolution.view.factories.SWTFactory;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class ChatMgmtGroup extends AEvoGroup {
     private Combo sessionCombo;
@@ -46,11 +46,11 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = SWTFactory.createExpandableGroup(toolkit, parent, "Chat Management", 1, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Chat Management", 1, true);
        
-        Composite sessionsComp = SWTFactory.createComposite(group, SWT.BORDER, 7);
+        Composite sessionsComp = GUIFactory.INSTANCE.createComposite(group, SWT.BORDER, 7);
 
-        Button newSessionButton = SWTFactory.createButton(sessionsComp, "New Session");
+        Button newSessionButton = GUIFactory.INSTANCE.createButton(sessionsComp, "New Session");
         newSessionButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -59,8 +59,8 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
 
 
-        SWTFactory.createLabel(sessionsComp, "Select Session:");
-        sessionCombo = SWTFactory.createCombo(sessionsComp);
+        GUIFactory.INSTANCE.createLabel(sessionsComp, "Select Session:");
+        sessionCombo = GUIFactory.INSTANCE.createCombo(sessionsComp);
         sessionCombo.add(page.getCurrentSessionName());
         sessionCombo.select(0);
         sessionCombo.addSelectionListener(new SelectionAdapter() {
@@ -71,7 +71,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
 
        
-        Button byDateButton = SWTFactory.createButton(sessionsComp, "By Date");
+        Button byDateButton = GUIFactory.INSTANCE.createButton(sessionsComp, "By Date");
         byDateButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -79,7 +79,7 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
         
-        Button cleanButton = SWTFactory.createButton(sessionsComp, "Clean");
+        Button cleanButton = GUIFactory.INSTANCE.createButton(sessionsComp, "Clean");
         cleanButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -87,7 +87,7 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
 
-        Button saveButton = SWTFactory.createButton(sessionsComp, "Save");
+        Button saveButton = GUIFactory.INSTANCE.createButton(sessionsComp, "Save");
         saveButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -95,7 +95,7 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
 
-        Button copyAllButton = SWTFactory.createButton(sessionsComp, "Copy All");
+        Button copyAllButton = GUIFactory.INSTANCE.createButton(sessionsComp, "Copy All");
         copyAllButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -104,12 +104,12 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
 
         // AI Settings part (merged)
-        compositeLocal = SWTFactory.createComposite(group, SWT.BORDER, 3);
+        compositeLocal = GUIFactory.INSTANCE.createComposite(group, SWT.BORDER, 3);
         compositeLocal.setBackground(lightGreen);
         
-        SWTFactory.createLabel(compositeLocal, "AI Mode:"); 
-        aiModeCombo = SWTFactory.createCombo(compositeLocal, AiMode.values()); 
-        Button targetButton = SWTFactory.createButton(compositeLocal, "Target"); 
+        GUIFactory.INSTANCE.createLabel(compositeLocal, "AI Mode:");
+        aiModeCombo = GUIFactory.INSTANCE.createCombo(compositeLocal, AiMode.values());
+        Button targetButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Target");
         
         targetButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -132,16 +132,16 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
 
-        SWTFactory.createLabel(compositeLocal, "Model:");
+        GUIFactory.INSTANCE.createLabel(compositeLocal, "Model:");
         localModelCombo = selectModel(compositeLocal);
-//        SWTFactory.createLabel(compositeLocal);
+//        GUIFactory.INSTANCE.createLabel(compositeLocal);
 
-        compositeRemote = SWTFactory.createComposite(group, SWT.BORDER, 3);
+        compositeRemote = GUIFactory.INSTANCE.createComposite(group, SWT.BORDER, 3);
         
-        SWTFactory.createLabel(compositeRemote, "AI Remote:");
-        aiRemoteCombo = SWTFactory.createCombo(compositeRemote);
+        GUIFactory.INSTANCE.createLabel(compositeRemote, "AI Remote:");
+        aiRemoteCombo = GUIFactory.INSTANCE.createCombo(compositeRemote);
 
-        Button connectionButton = SWTFactory.createButton(compositeRemote, "Test Connection");
+        Button connectionButton = GUIFactory.INSTANCE.createButton(compositeRemote, "Test Connection");
         connectionButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) {
                 if (orchestrator != null) {
@@ -156,9 +156,9 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
 
-        SWTFactory.createLabel(compositeRemote, "Token:");
-        remoteTokenText = SWTFactory.createPasswordText(compositeRemote);
-        Button editTokenBtn = SWTFactory.createEditButton(compositeRemote, remoteTokenText);
+        GUIFactory.INSTANCE.createLabel(compositeRemote, "Token:");
+        remoteTokenText = GUIFactory.INSTANCE.createPasswordText(compositeRemote);
+        Button editTokenBtn = GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteTokenText);
         editTokenBtn.setText("\u2699"); // Gear icon
         editTokenBtn.setToolTipText("Detailed Configuration");
         editTokenBtn.addSelectionListener(new SelectionAdapter() {
@@ -168,9 +168,9 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
 
-        SWTFactory.createLabel(compositeRemote, "API URL:");
-        remoteUrlText = SWTFactory.createText(compositeRemote);
-        SWTFactory.createEditButton(compositeRemote, remoteUrlText);
+        GUIFactory.INSTANCE.createLabel(compositeRemote, "API URL:");
+        remoteUrlText = GUIFactory.INSTANCE.createText(compositeRemote);
+        GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteUrlText);
 
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -201,7 +201,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     private Combo selectModel(Composite parent) {
-        Combo combo = SWTFactory.createCombo(parent);
+        Combo combo = GUIFactory.INSTANCE.createCombo(parent);
         // selection listener
         combo.addListener(SWT.Selection, e -> {
             int index = combo.getSelectionIndex();
