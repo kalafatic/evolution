@@ -1,6 +1,6 @@
 package eu.kalafatic.evolution.controller.workflow;
 
-import eu.kalafatic.evolution.controller.orchestration.evolution.EventCategory;
+import eu.kalafatic.evolution.controller.trajectory.EventCategory;
 
 public enum RuntimeEventType {
     // 1. KERNEL (System Lifecycle)

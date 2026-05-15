@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.controller.orchestration.flows;
+package eu.kalafatic.evolution.controller.orchestration;
 
 import static org.junit.Assert.*;
 import java.io.File;

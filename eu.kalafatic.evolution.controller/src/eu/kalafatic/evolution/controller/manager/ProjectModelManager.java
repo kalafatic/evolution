@@ -29,7 +29,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
-import eu.kalafatic.evolution.controller.orchestration.evolution.EvolutionRegistry;
+import eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.controller.security.TokenSecurityService;

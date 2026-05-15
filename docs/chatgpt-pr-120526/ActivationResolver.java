@@ -1,12 +1,12 @@
-package eu.kalafatic.evolution.controller.orchestration.decision;
+package eu.kalafatic.evolution.controller.supervision;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
-import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
-import eu.kalafatic.evolution.controller.orchestration.scheduling.ScheduledExecutionPlan;
+import eu.kalafatic.evolution.controller.execution.ScheduledExecutionPlan;
 
 /**
  * Central deterministic decision authority for Darwin branch activation.

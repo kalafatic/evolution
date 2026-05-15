@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
 import org.json.JSONArray;
-import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;

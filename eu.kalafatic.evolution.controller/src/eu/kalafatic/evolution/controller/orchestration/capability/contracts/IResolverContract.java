@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.capability.contracts;
 
-import eu.kalafatic.evolution.controller.orchestration.decision.ActivationResolver;
-import eu.kalafatic.evolution.controller.orchestration.decision.DecisionSnapshot;
+import eu.kalafatic.evolution.controller.supervision.ActivationResolver;
+import eu.kalafatic.evolution.controller.supervision.DecisionSnapshot;
 
 /**
  * Contract for decision resolvers.

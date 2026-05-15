@@ -53,7 +53,10 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemorySe
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
-import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
+import eu.kalafatic.evolution.controller.trajectory.Trajectory;
+import eu.kalafatic.utils.semantic.EvolutionComponent;
+import eu.kalafatic.utils.semantic.EvolutionaryImpact;
+import eu.kalafatic.utils.semantic.Stability;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.workflow.StepModeController;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
@@ -74,6 +77,13 @@ import eu.kalafatic.evolution.model.orchestration.Task;
  * MUST request state transitions through the {@code transition(SystemState, TaskContext)} method.
  * This ensures a deterministic and traceable state machine.
  */
+@EvolutionComponent(
+    domain = "orchestration",
+    role = "state-authority",
+    purpose = "Single source of truth for kernel state transitions",
+    stability = Stability.STABLE,
+    evolutionaryImpact = EvolutionaryImpact.CRITICAL
+)
 public class IterationManager {
 
     private final TaskContext context;
@@ -138,8 +148,8 @@ public class IterationManager {
             CapabilityRegistry.getInstance().register(darwinEngine);
             CapabilityRegistry.getInstance().register(context.getSemanticWorkspace());
             CapabilityRegistry.getInstance().register(context.getOrchestrationState().getCognitiveTrace());
-            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.orchestration.scheduling.KernelScheduler());
-            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.orchestration.decision.ActivationResolver());
+            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.execution.KernelScheduler());
+            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.supervision.ActivationResolver());
         } catch (CapabilityException e) {
             context.log("[KERNEL] Capability registration error: " + e.getMessage());
         }
@@ -320,7 +330,7 @@ public class IterationManager {
 
         try {
             if (darwinEnabled && gitManager.isGitRepository()) {
-                return new eu.kalafatic.evolution.controller.orchestration.flows.DarwinFlow(aiService, this).runDarwin(context);
+                return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this).runDarwin(context);
             } else {
                 return runPEV();
             }
@@ -408,7 +418,7 @@ public class IterationManager {
         OrchestrationState state = context.getOrchestrationState();
 
         if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
-            return new eu.kalafatic.evolution.controller.orchestration.flows.MediatedExportFlow(aiService, this);
+            return new eu.kalafatic.evolution.controller.orchestration.MediatedExportFlow(aiService, this);
         }
 
         // Unified Darwin Flow for all implementation-related tasks.
@@ -422,7 +432,7 @@ public class IterationManager {
         );
 
         if (hasStateChangeIntent) {
-            return new eu.kalafatic.evolution.controller.orchestration.flows.DarwinFlow(aiService, this);
+            return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
         }
 
         // Simple chat path

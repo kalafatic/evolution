@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import eu.kalafatic.evolution.controller.orchestration.scheduling.BackpressureController;
-import eu.kalafatic.evolution.controller.orchestration.scheduling.ExecutionBudget;
+import eu.kalafatic.evolution.controller.execution.BackpressureController;
+import eu.kalafatic.evolution.controller.execution.ExecutionBudget;
 
 public class RuntimeEventBus {
     private static final RuntimeEventBus INSTANCE = new RuntimeEventBus();
@@ -47,7 +47,7 @@ public class RuntimeEventBus {
             }
         }
         // Evolutionary Signal Propagation: Automatically update continuous system signals
-        eu.kalafatic.evolution.controller.orchestration.evolution.EvolutionRegistry registry =
+        eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry registry =
             eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getEvolutionRegistry();
         if (registry != null) {
             registry.processEvent(event, "default-trajectory");

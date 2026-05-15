@@ -9,8 +9,8 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
-import eu.kalafatic.evolution.controller.orchestration.scheduling.KernelScheduler;
-import eu.kalafatic.evolution.controller.orchestration.decision.ActivationResolver;
+import eu.kalafatic.evolution.controller.execution.KernelScheduler;
+import eu.kalafatic.evolution.controller.supervision.ActivationResolver;
 
 /**
  * Factory for creating the Kernel's control plane with production dependencies.

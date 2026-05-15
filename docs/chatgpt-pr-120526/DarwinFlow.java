@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.controller.orchestration.flows;
+package eu.kalafatic.evolution.controller.orchestration;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,16 +16,16 @@ import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.controller.orchestration.intent.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
-import eu.kalafatic.evolution.controller.orchestration.decision.*;
-import eu.kalafatic.evolution.controller.orchestration.scheduling.*;
+import eu.kalafatic.evolution.controller.supervision.*;
+import eu.kalafatic.evolution.controller.execution.*;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationGate;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
-import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
-import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;

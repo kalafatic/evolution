@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.controller.orchestration.flows.*;
+import eu.kalafatic.evolution.controller.orchestration.*;
 
 /**
  * Routes execution based on detected or assigned PlatformMode.

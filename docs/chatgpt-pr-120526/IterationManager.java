@@ -47,7 +47,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemorySe
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
-import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
+import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.workflow.StepModeController;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
@@ -263,7 +263,7 @@ public class IterationManager {
 
         try {
             if (darwinEnabled && gitManager.isGitRepository()) {
-                return new eu.kalafatic.evolution.controller.orchestration.flows.DarwinFlow(aiService, this).runDarwin(context);
+                return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this).runDarwin(context);
             } else {
                 return runPEV();
             }
@@ -351,7 +351,7 @@ public class IterationManager {
         OrchestrationState state = context.getOrchestrationState();
 
         if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
-            return new eu.kalafatic.evolution.controller.orchestration.flows.MediatedExportFlow(aiService, this);
+            return new eu.kalafatic.evolution.controller.orchestration.MediatedExportFlow(aiService, this);
         }
 
         // Atomic optimization
@@ -366,7 +366,7 @@ public class IterationManager {
         }
 
         if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() > 0.80 && !atomicAnalysis.isRequiresPlanning()) {
-            return new eu.kalafatic.evolution.controller.orchestration.flows.AtomicFlow(aiService, this);
+            return new eu.kalafatic.evolution.controller.orchestration.AtomicFlow(aiService, this);
         }
 
         // Simple chat path
