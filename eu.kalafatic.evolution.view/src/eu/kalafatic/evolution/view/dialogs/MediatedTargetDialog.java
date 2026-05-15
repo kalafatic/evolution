@@ -90,7 +90,8 @@ public class MediatedTargetDialog extends Dialog {
         });
 
         GUIFactory.INSTANCE.createLabel(container, "Metadata:");
-        Button syncBtn = GUIFactory.INSTANCE.createButton(container, "Sync Metadata");
+        Button syncBtn = GUIFactory.INSTANCE.createButton(container, "Generate AI Metadata");
+        syncBtn.setToolTipText("Generate AI Metadata sidecar files for the target project");
         syncBtn.addListener(SWT.Selection, e -> {
             String path = pathText.getText();
             if (path != null && !path.isEmpty()) {
@@ -99,8 +100,8 @@ public class MediatedTargetDialog extends Dialog {
                     MetadataAgent generator = new MetadataAgent();
                     generator.generate(root);
                     MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-                    mb.setText("Metadata Sync");
-                    mb.setMessage("Metadata synchronization complete for: " + path);
+                    mb.setText("Metadata Generation");
+                    mb.setMessage("AI Metadata generation completed for: " + path);
                     mb.open();
                 }
             }

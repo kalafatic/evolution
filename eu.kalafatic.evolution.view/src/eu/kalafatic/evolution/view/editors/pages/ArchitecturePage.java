@@ -10,6 +10,8 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Display;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -17,6 +19,7 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignExporter;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
+import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignRenderer;
 import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -95,6 +98,53 @@ public class ArchitecturePage extends Composite {
                 handleSaveModel();
             }
         });
+
+        Group metaGroup = new Group(panel, SWT.NONE);
+        metaGroup.setText("Metadata");
+        metaGroup.setLayout(new GridLayout(1, false));
+        metaGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button generateMetaBtn = new Button(metaGroup, SWT.PUSH);
+        generateMetaBtn.setText("Generate AI Metadata");
+        generateMetaBtn.setToolTipText("Generate .ai.json sidecar files for this project");
+        generateMetaBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                handleGenerateMetadata();
+            }
+        });
+    }
+
+    private void handleGenerateMetadata() {
+        if (editor == null) return;
+        org.eclipse.ui.IEditorInput input = editor.getEditorInput();
+        if (input instanceof org.eclipse.ui.IFileEditorInput) {
+            org.eclipse.core.resources.IProject project = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject();
+            java.io.File root = project.getLocation().toFile();
+
+            org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Generating AI Metadata") {
+                @Override
+                protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                    try {
+                        MetadataAgent generator = new MetadataAgent();
+                        generator.generate(root);
+
+                        Display.getDefault().asyncExec(() -> {
+                            if (!getShell().isDisposed()) {
+                                MessageBox box = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                                box.setText("Metadata Generation");
+                                box.setMessage("AI Metadata generation completed for: " + project.getName());
+                                box.open();
+                            }
+                        });
+                        return org.eclipse.core.runtime.Status.OK_STATUS;
+                    } catch (Exception e) {
+                        return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Failed to generate metadata", e);
+                    }
+                }
+            };
+            job.schedule();
+        }
     }
 
     private void handleExport() {

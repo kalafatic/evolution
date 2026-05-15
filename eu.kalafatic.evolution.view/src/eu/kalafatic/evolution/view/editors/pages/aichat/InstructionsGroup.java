@@ -64,8 +64,8 @@ public class InstructionsGroup extends AEvoGroup {
         
         Composite composite = GUIFactory.INSTANCE.createComposite(group,2, SWT.BORDER);
         composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        
-        
+
+
         attachmentArea = GUIFactory.INSTANCE.createComposite(group, 1, SWT.BORDER);
 
         // Left side: Buttons
@@ -159,7 +159,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
         
-            
+
         maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(settingsComp, SWT.BORDER);
         maxIterationsSpinner.setMinimum(1);
         maxIterationsSpinner.setMaximum(100);

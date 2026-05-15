@@ -19,6 +19,10 @@
             name="Orchestrate"
             id="eu.kalafatic.evolution.controller.orchestrationCommand">
       </command>
+      <command
+            name="Generate AI Metadata"
+            id="eu.kalafatic.evolution.controller.generateMetadataCommand">
+      </command>
    </extension>
    <extension
          id="eu.kalafatic.evolution.controller.headless"
@@ -60,6 +64,10 @@
       <handler
             commandId="eu.kalafatic.evolution.controller.orchestrationCommand"
             class="eu.kalafatic.evolution.controller.handlers.OrchestrationCommandHandler">
+      </handler>
+      <handler
+            commandId="eu.kalafatic.evolution.controller.generateMetadataCommand"
+            class="eu.kalafatic.evolution.controller.handlers.GenerateMetadataHandler">
       </handler>
    </extension>
 </plugin>
