@@ -198,6 +198,7 @@ public class DynamicMapDialog extends TitleAreaDialog {
 				} else {
 					FileDialog dialog = new FileDialog(getShell(), SWT.OPEN);
 					dialog.setFileName(text.getText());
+					dialog.setFilterPath(text.getText());
 					String path = dialog.open();
 					if (path != null) {
 						text.setText(path);

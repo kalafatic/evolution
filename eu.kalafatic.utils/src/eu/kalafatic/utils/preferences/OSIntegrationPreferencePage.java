@@ -229,6 +229,7 @@ public class OSIntegrationPreferencePage extends APreferencePage {
 		browseBtn.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
+				fileDialog.setFilterPath(pathText.getText());
 				String open = fileDialog.open();
 
 				if (open != null) {
@@ -350,7 +351,7 @@ public class OSIntegrationPreferencePage extends APreferencePage {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
 				FileDialog fileDialog = new FileDialog(group.getShell());
-				fileDialog.setFilterPath(programDirPath);
+				fileDialog.setFilterPath(programPathText.getText());
 				String open = fileDialog.open();
 				programPathText.setText(open);
 
