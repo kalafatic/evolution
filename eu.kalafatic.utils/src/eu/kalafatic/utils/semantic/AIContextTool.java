@@ -70,6 +70,24 @@ public class AIContextTool {
         if (json.contains("\"stability\":")) {
             meta.setStability(extractValue(json, "stability"));
         }
+        if (json.contains("\"mediatedRelevanceScore\":")) {
+            meta.setMediatedRelevanceScore(extractDoubleValue(json, "mediatedRelevanceScore"));
+        }
+        if (json.contains("\"importanceScore\":")) {
+            meta.setImportanceScore(extractDoubleValue(json, "importanceScore"));
+        }
+        if (json.contains("\"summary\":")) {
+            meta.setSummary(extractValue(json, "summary"));
+        }
+        if (json.contains("\"evolutionaryNotes\":")) {
+            meta.setEvolutionaryNotes(extractValue(json, "evolutionaryNotes"));
+        }
+        if (json.contains("\"contextSelectionHints\":")) {
+            meta.setContextSelectionHints(extractListValue(json, "contextSelectionHints"));
+        }
+        if (json.contains("\"dependencyLinks\":")) {
+            meta.setDependencyLinks(extractListValue(json, "dependencyLinks"));
+        }
         return meta;
     }
 
@@ -84,12 +102,74 @@ public class AIContextTool {
         return "unknown";
     }
 
+    private double extractDoubleValue(String json, String key) {
+        try {
+            String val = extractRawValue(json, key);
+            if (val != null) return Double.parseDouble(val.trim());
+        } catch (Exception e) {}
+        return 0.0;
+    }
+
+    private List<String> extractListValue(String json, String key) {
+        List<String> list = new ArrayList<>();
+        try {
+            int start = json.indexOf("\"" + key + "\":") + key.length() + 3;
+            int listStart = json.indexOf("[", start);
+            int listEnd = json.indexOf("]", listStart);
+            if (listStart >= 0 && listEnd > listStart) {
+                String rawList = json.substring(listStart + 1, listEnd);
+                String[] items = rawList.split(",");
+                for (String item : items) {
+                    item = item.trim();
+                    if (item.startsWith("\"") && item.endsWith("\"")) {
+                        list.add(item.substring(1, item.length() - 1));
+                    } else if (!item.isEmpty()) {
+                        list.add(item);
+                    }
+                }
+            }
+        } catch (Exception e) {}
+        return list;
+    }
+
+    private String extractRawValue(String json, String key) {
+        try {
+            int start = json.indexOf("\"" + key + "\":") + key.length() + 3;
+            int endComma = json.indexOf(",", start);
+            int endBrace = json.indexOf("}", start);
+            int end = (endComma != -1 && endBrace != -1) ? Math.min(endComma, endBrace) : (endComma != -1 ? endComma : endBrace);
+            if (start > 0 && end > start) {
+                return json.substring(start, end).trim();
+            }
+        } catch (Exception e) {}
+        return null;
+    }
+
     private String serializeSimpleJson(EvoMetadata metadata) {
-        return "{\n" +
-               "  \"domain\": \"" + (metadata.getDomain() != null ? metadata.getDomain() : "") + "\",\n" +
-               "  \"purpose\": \"" + (metadata.getPurpose() != null ? metadata.getPurpose() : "") + "\",\n" +
-               "  \"role\": \"" + (metadata.getRole() != null ? metadata.getRole() : "") + "\",\n" +
-               "  \"stability\": \"" + (metadata.getStability() != null ? metadata.getStability() : "") + "\"\n" +
-               "}";
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n");
+        sb.append("  \"domain\": \"").append(metadata.getDomain() != null ? metadata.getDomain() : "").append("\",\n");
+        sb.append("  \"purpose\": \"").append(metadata.getPurpose() != null ? metadata.getPurpose() : "").append("\",\n");
+        sb.append("  \"role\": \"").append(metadata.getRole() != null ? metadata.getRole() : "").append("\",\n");
+        sb.append("  \"stability\": \"").append(metadata.getStability() != null ? metadata.getStability() : "").append("\",\n");
+        sb.append("  \"mediatedRelevanceScore\": ").append(metadata.getMediatedRelevanceScore()).append(",\n");
+        sb.append("  \"importanceScore\": ").append(metadata.getImportanceScore()).append(",\n");
+        sb.append("  \"summary\": \"").append(metadata.getSummary() != null ? metadata.getSummary().replace("\"", "\\\"") : "").append("\",\n");
+        sb.append("  \"evolutionaryNotes\": \"").append(metadata.getEvolutionaryNotes() != null ? metadata.getEvolutionaryNotes().replace("\"", "\\\"") : "").append("\",\n");
+        sb.append("  \"contextSelectionHints\": ").append(serializeList(metadata.getContextSelectionHints())).append(",\n");
+        sb.append("  \"dependencyLinks\": ").append(serializeList(metadata.getDependencyLinks())).append("\n");
+        sb.append("}");
+        return sb.toString();
+    }
+
+    private String serializeList(List<String> list) {
+        if (list == null || list.isEmpty()) return "[]";
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < list.size(); i++) {
+            sb.append("\"").append(list.get(i)).append("\"");
+            if (i < list.size() - 1) sb.append(", ");
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }

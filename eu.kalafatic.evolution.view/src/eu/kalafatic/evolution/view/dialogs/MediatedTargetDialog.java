@@ -6,6 +6,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
+import eu.kalafatic.evolution.controller.mediation.analysis.MetadataGenerator;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.utils.factories.GUIFactory;
@@ -87,6 +88,24 @@ public class MediatedTargetDialog extends Dialog {
             String path = dlg.open();
             if (path != null) outputText.setText(path);
         });
+
+        GUIFactory.INSTANCE.createLabel(container, "Metadata:");
+        Button syncBtn = GUIFactory.INSTANCE.createButton(container, "Sync Metadata");
+        syncBtn.addListener(SWT.Selection, e -> {
+            String path = pathText.getText();
+            if (path != null && !path.isEmpty()) {
+                File root = new File(path);
+                if (root.exists() && root.isDirectory()) {
+                    MetadataGenerator generator = new MetadataGenerator();
+                    generator.generate(root);
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                    mb.setText("Metadata Sync");
+                    mb.setMessage("Metadata synchronization complete for: " + path);
+                    mb.open();
+                }
+            }
+        });
+        new Label(container, SWT.NONE);
 
         return container;
     }
