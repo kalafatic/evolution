@@ -3624,6 +3624,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(chatSessionEClass, CHAT_SESSION__STEP_MODE);
 		createEAttribute(chatSessionEClass, CHAT_SESSION__TARGET_PATH);
 		createEAttribute(chatSessionEClass, CHAT_SESSION__TARGET_TYPE);
+		createEAttribute(chatSessionEClass, CHAT_SESSION__OUTPUT_PATH);
 
 		chatMessageEClass = createEClass(CHAT_MESSAGE);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__INDEX);

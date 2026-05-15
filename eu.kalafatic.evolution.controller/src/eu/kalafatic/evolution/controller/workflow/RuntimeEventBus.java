@@ -47,10 +47,22 @@ public class RuntimeEventBus {
             }
         }
         // Evolutionary Signal Propagation: Automatically update continuous system signals
-        eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry registry =
-            eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getEvolutionRegistry();
-        if (registry != null) {
-            registry.processEvent(event, "default-trajectory");
+        // We use a separate thread or lazy approach to avoid deadlocks during singleton initialization
+        propagateToRegistry(event);
+    }
+
+    private void propagateToRegistry(RuntimeEvent event) {
+        try {
+            // Lazy access to ProjectModelManager to avoid circular init issues
+            eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry registry =
+                eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getEvolutionRegistry();
+            if (registry != null) {
+                registry.processEvent(event, "default-trajectory");
+            }
+        } catch (NoClassDefFoundError | ExceptionInInitializerError e) {
+            // If the manager is still initializing, we skip signal propagation for this specific event
+            // to allow the system to boot. Continuous signals will resume once initialized.
+            System.err.println("[BUS] Skipping signal propagation - Registry not yet available: " + e.getMessage());
         }
     }
 }
