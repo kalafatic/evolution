@@ -1,10 +1,10 @@
-package eu.kalafatic.evolution.controller.orchestration.mediated.analysis;
+package eu.kalafatic.evolution.controller.mediation.analysis;
 
 import static org.junit.Assert.*;
 import java.util.List;
 import org.junit.Test;
-import eu.kalafatic.evolution.controller.orchestration.mediated.model.FileDescriptor;
-import eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetDescriptor;
+import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
+import eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor;
 
 public class ContextCuratorTest {
     @Test

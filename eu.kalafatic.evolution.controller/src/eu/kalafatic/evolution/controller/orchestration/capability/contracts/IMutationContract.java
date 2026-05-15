@@ -3,7 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.capability.contracts;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
-import eu.kalafatic.evolution.controller.orchestration.evolution.Trajectory;
+import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import java.util.List;
 
 /**

@@ -2,7 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration.capability.contracts;
 
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import java.io.File;
 import java.util.List;
 

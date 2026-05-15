@@ -3,8 +3,8 @@ package eu.kalafatic.evolution.controller.agents;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal;
-import eu.kalafatic.evolution.controller.orchestration.evolution.SignalSeverity;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.trajectory.SignalSeverity;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
@@ -91,7 +91,7 @@ public class ConstraintAgent extends BaseAiAgent {
             explanation
         );
 
-        eu.kalafatic.evolution.controller.orchestration.evolution.SignalBus.getInstance().publish(signal);
+        eu.kalafatic.evolution.controller.trajectory.SignalBus.getInstance().publish(signal);
 
         RuntimeEventBus.getInstance().publish(new RuntimeEvent(
             RuntimeEventType.EVALUATION_SIGNAL_CREATED,

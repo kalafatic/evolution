@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.controller.orchestration.mediated.analysis;
+package eu.kalafatic.evolution.controller.mediation.analysis;
 
 import static org.junit.Assert.*;
 import java.io.File;
@@ -7,9 +7,9 @@ import java.nio.file.Files;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import eu.kalafatic.evolution.controller.orchestration.mediated.model.FileDescriptor;
-import eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetDescriptor;
-import eu.kalafatic.evolution.controller.orchestration.mediated.scanner.TargetScanner;
+import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
+import eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor;
+import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
 
 public class SemanticExtractorTest {
     @Rule

@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import java.time.Instant;
 import java.io.File;
 
-import eu.kalafatic.evolution.controller.orchestration.decision.DecisionSnapshot;
+import eu.kalafatic.evolution.controller.supervision.DecisionSnapshot;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 
@@ -57,8 +57,8 @@ public class FinalResponseAssembler {
 
         // B. Mediated Context Injection (if applicable)
         Object mediatedTarget = state.getMetadata().get("mediatedTarget");
-        if (mediatedTarget instanceof eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetDescriptor) {
-            eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetDescriptor target = (eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetDescriptor) mediatedTarget;
+        if (mediatedTarget instanceof eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor) {
+            eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor target = (eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor) mediatedTarget;
             sb.append("\n\n---\n### 🧠 Mediated Target Intelligence\n");
             sb.append("**Target Path:** `").append(target.getRootPath()).append("`\n");
             sb.append("**Detected Technologies:** ").append(target.getDetectedTechnologies().stream().sorted().collect(Collectors.joining(", "))).append("\n");

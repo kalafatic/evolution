@@ -75,17 +75,17 @@ public class IntentService {
     }
 
     private void emitAmbiguitySignal(String request, double score, TaskContext context) {
-        eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal signal =
-            new eu.kalafatic.evolution.controller.orchestration.evolution.EvaluationSignal(
+        eu.kalafatic.evolution.controller.trajectory.EvaluationSignal signal =
+            new eu.kalafatic.evolution.controller.trajectory.EvaluationSignal(
                 "global",
                 "AmbiguityDetector",
                 1.0 - score, // Clarity score
                 0.8,
-                score > 0.7 ? eu.kalafatic.evolution.controller.orchestration.evolution.SignalSeverity.WARNING :
-                              eu.kalafatic.evolution.controller.orchestration.evolution.SignalSeverity.INFO,
+                score > 0.7 ? eu.kalafatic.evolution.controller.trajectory.SignalSeverity.WARNING :
+                              eu.kalafatic.evolution.controller.trajectory.SignalSeverity.INFO,
                 "Intent ambiguity detected. Score: " + score
             );
-        eu.kalafatic.evolution.controller.orchestration.evolution.SignalBus.getInstance().publish(signal);
+        eu.kalafatic.evolution.controller.trajectory.SignalBus.getInstance().publish(signal);
     }
 
     public static Set<TaskIntent> classify(String request) {

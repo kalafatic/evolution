@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.controller.orchestration.mediated.scanner;
+package eu.kalafatic.evolution.controller.mediation.scanner;
 
 import static org.junit.Assert.*;
 import java.io.File;
@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import eu.kalafatic.evolution.controller.orchestration.mediated.model.TargetDescriptor;
+import eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor;
 
 public class TargetScannerTest {
     @Rule
