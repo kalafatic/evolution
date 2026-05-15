@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
@@ -15,6 +17,7 @@ import eu.kalafatic.utils.semantic.EvoMetadata;
 
 /**
  * Extracts lightweight semantic information from files using heuristics and AI metadata.
+ * Implements Semantic Authority Hierarchy: Annotation > Sidecar > Package Context > Heuristic.
  */
 public class SemanticExtractor {
 
@@ -41,14 +44,17 @@ public class SemanticExtractor {
 
         try {
             List<String> lines = Files.readAllLines(actualFile.toPath());
-            analyzeContent(file, lines);
 
-            // AI Metadata Ingestion
-            EvoMetadata meta = contextTool.loadMetadata(actualFile);
-            if (meta != null) {
-                if (meta.getDomain() != null) file.getTags().add("domain:" + meta.getDomain());
-                if (meta.getPurpose() != null) file.getTags().add("purpose:" + meta.getPurpose());
-            }
+            // Collect metadata from all levels
+            Map<String, String> annotationMeta = extractAnnotationMetadataFromLines(lines);
+            EvoMetadata sidecarMeta = contextTool.loadMetadata(actualFile);
+            String packageDomain = inferDomainFromPath(file.getPath());
+            String markdownContext = loadPackageMarkdownContext(actualFile.getParentFile());
+
+            // Resolve with Authority Hierarchy
+            resolveMetadata(file.getTags(), annotationMeta, sidecarMeta, markdownContext, packageDomain);
+
+            analyzeContent(file, lines);
         } catch (IOException e) {
             // Log and skip
         }
@@ -73,29 +79,101 @@ public class SemanticExtractor {
             }
             node.setSummary(summary.toString().trim());
 
-            // AI Metadata Ingestion
-            EvoMetadata meta = contextTool.loadMetadata(actualFile);
-            if (meta != null) {
-                if (meta.getDomain() != null) node.getAttributes().put("domain", meta.getDomain());
-                if (meta.getPurpose() != null) node.getAttributes().put("purpose", meta.getPurpose());
-                if (meta.getRole() != null) node.getAttributes().put("role", meta.getRole());
-            }
+            // Resolution with Authority Hierarchy
+            Map<String, String> annotationMeta = extractAnnotationMetadataFromLines(lines);
+            EvoMetadata sidecarMeta = contextTool.loadMetadata(actualFile);
+            String packageDomain = inferDomainFromPath(node.getPath());
+            String markdownContext = loadPackageMarkdownContext(actualFile.getParentFile());
 
-            // Auto Domain Inference based on package
-            inferDomainFromPackage(node);
+            resolveMetadataForNode(node, annotationMeta, sidecarMeta, markdownContext, packageDomain);
 
         } catch (IOException e) {
             // Log and skip
         }
     }
 
-    private void inferDomainFromPackage(SemanticNode node) {
-        String path = node.getPath();
-        if (path.contains("/mediation/")) node.getAttributes().put("inferredDomain", "mediation");
-        else if (path.contains("/trajectory/")) node.getAttributes().put("inferredDomain", "trajectory");
-        else if (path.contains("/supervision/")) node.getAttributes().put("inferredDomain", "supervision");
-        else if (path.contains("/execution/")) node.getAttributes().put("inferredDomain", "execution");
-        else if (path.contains("/orchestration/")) node.getAttributes().put("inferredDomain", "orchestration");
+    private void resolveMetadata(List<String> tags, Map<String, String> ann, EvoMetadata side, String md, String pkg) {
+        String domain = ann.containsKey("domain") ? ann.get("domain") :
+                        (side != null && side.getDomain() != null ? side.getDomain() :
+                        (md != null ? md : pkg));
+
+        if (domain != null) tags.add("domain:" + domain);
+
+        // Conflict detection
+        if (ann.containsKey("domain") && side != null && side.getDomain() != null && !ann.get("domain").equals(side.getDomain())) {
+            tags.add("warning:metadata_conflict_domain");
+        }
+
+        if (side != null && side.isStale()) {
+            tags.add("warning:stale_metadata");
+        }
+    }
+
+    private void resolveMetadataForNode(SemanticNode node, Map<String, String> ann, EvoMetadata side, String md, String pkg) {
+        String domain = ann.getOrDefault("domain",
+                        (side != null && side.getDomain() != null) ? side.getDomain() :
+                        (md != null ? md : pkg));
+
+        String role = ann.getOrDefault("role", (side != null && side.getRole() != null) ? side.getRole() : "unknown");
+
+        if (domain != null) node.getAttributes().put("domain", domain);
+        if (role != null) node.getAttributes().put("role", role);
+
+        if (side != null && side.isStale()) {
+            node.getTags().add("warning:stale_metadata");
+        }
+    }
+
+    private String inferDomainFromPath(String path) {
+        if (path.contains("/mediation/")) return "mediation";
+        if (path.contains("/trajectory/")) return "trajectory";
+        if (path.contains("/supervision/")) return "supervision";
+        if (path.contains("/execution/")) return "execution";
+        if (path.contains("/orchestration/")) return "orchestration";
+        return null;
+    }
+
+    private String loadPackageMarkdownContext(File directory) {
+        File contextFile = new File(directory, "PACKAGE_CONTEXT.md");
+        if (contextFile.exists()) {
+            try {
+                List<String> lines = Files.readAllLines(contextFile.toPath());
+                for (String line : lines) {
+                    if (line.startsWith("## Domain: ") || line.startsWith("# Domain: ") || line.contains("Domain: ")) {
+                         return line.substring(line.indexOf("Domain:") + 7).trim().toLowerCase();
+                    }
+                }
+            } catch (IOException e) {}
+        }
+        return null;
+    }
+
+    private Map<String, String> extractAnnotationMetadataFromLines(List<String> lines) {
+        Map<String, String> meta = new HashMap<>();
+        boolean inAnnotation = false;
+        StringBuilder annotationBlock = new StringBuilder();
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.contains("@EvolutionComponent")) {
+                inAnnotation = true;
+            }
+
+            if (inAnnotation) {
+                annotationBlock.append(line);
+                if (trimmed.endsWith(")")) {
+                    inAnnotation = false;
+                    parseAnnotationBlock(annotationBlock.toString(), meta);
+                    break;
+                }
+            }
+        }
+        return meta;
+    }
+
+    private void parseAnnotationBlock(String block, Map<String, String> meta) {
+        if (block.contains("domain")) meta.put("domain", extractAnnotationValue(block, "domain"));
+        if (block.contains("role")) meta.put("role", extractAnnotationValue(block, "role"));
     }
 
     private void analyzeContent(FileDescriptor file, List<String> lines) {
@@ -103,7 +181,6 @@ public class SemanticExtractor {
             String trimmed = line.trim();
             if (trimmed.contains("@EvolutionComponent")) {
                 file.getTags().add("Evolution Component");
-                extractAnnotationMetadata(file.getTags(), trimmed);
             }
             if (trimmed.contains("@Component") || trimmed.contains("@Service") || trimmed.contains("@Controller")) {
                 file.getTags().add("Spring Component");
@@ -128,7 +205,6 @@ public class SemanticExtractor {
             String trimmed = line.trim();
             if (trimmed.contains("@EvolutionComponent")) {
                 node.getTags().add("Evolution Component");
-                extractAnnotationMetadataForNode(node, trimmed);
             }
             if (trimmed.contains("@Component") || trimmed.contains("@Service") || trimmed.contains("@Controller")) {
                 node.getTags().add("Spring Component");
@@ -165,30 +241,15 @@ public class SemanticExtractor {
         }
     }
 
-    private void extractAnnotationMetadata(List<String> tags, String line) {
-        if (line.contains("domain")) {
-            tags.add("domain:" + extractAnnotationValue(line, "domain"));
-        }
-        if (line.contains("role")) {
-            tags.add("role:" + extractAnnotationValue(line, "role"));
-        }
-    }
-
-    private void extractAnnotationMetadataForNode(SemanticNode node, String line) {
-        if (line.contains("domain")) {
-            node.getAttributes().put("annotatedDomain", extractAnnotationValue(line, "domain"));
-        }
-        if (line.contains("role")) {
-            node.getAttributes().put("annotatedRole", extractAnnotationValue(line, "role"));
-        }
-    }
-
-    private String extractAnnotationValue(String line, String key) {
+    private String extractAnnotationValue(String block, String key) {
         try {
-            int start = line.indexOf(key + " = \"") + key.length() + 4;
-            int end = line.indexOf("\"", start);
+            int start = block.indexOf(key + " = \"") + key.length() + 4;
+            if (start < key.length() + 4) { // Try without spaces
+                 start = block.indexOf(key + "=\"") + key.length() + 2;
+            }
+            int end = block.indexOf("\"", start);
             if (start > 0 && end > start) {
-                return line.substring(start, end);
+                return block.substring(start, end);
             }
         } catch (Exception e) {}
         return "unknown";

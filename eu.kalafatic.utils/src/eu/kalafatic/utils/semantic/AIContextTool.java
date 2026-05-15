@@ -8,6 +8,7 @@ import java.util.List;
 
 /**
  * Tool for attaching and retrieving AI metadata sidecars.
+ * Includes Semantic Freshness Validation.
  */
 public class AIContextTool {
 
@@ -18,8 +19,14 @@ public class AIContextTool {
         if (sidecar.exists()) {
             try {
                 String content = new String(Files.readAllBytes(sidecar.toPath()));
-                // Simple parsing for now (could use Jackson later if available in utils)
-                return parseSimpleJson(content, artifact.getPath());
+                EvoMetadata meta = parseSimpleJson(content, artifact.getPath());
+
+                // Freshness Validation
+                if (sidecar.lastModified() < artifact.lastModified()) {
+                    meta.setStale(true);
+                }
+
+                return meta;
             } catch (IOException e) {
                 // Log error
             }
@@ -37,6 +44,12 @@ public class AIContextTool {
         }
     }
 
+    public boolean isMetadataStale(File artifact) {
+        File sidecar = getSidecarFile(artifact);
+        if (!sidecar.exists()) return true;
+        return sidecar.lastModified() < artifact.lastModified();
+    }
+
     private File getSidecarFile(File artifact) {
         return new File(artifact.getParentFile(), artifact.getName() + METADATA_SUFFIX);
     }
@@ -51,24 +64,32 @@ public class AIContextTool {
         if (json.contains("\"purpose\":")) {
             meta.setPurpose(extractValue(json, "purpose"));
         }
+        if (json.contains("\"role\":")) {
+            meta.setRole(extractValue(json, "role"));
+        }
+        if (json.contains("\"stability\":")) {
+            meta.setStability(extractValue(json, "stability"));
+        }
         return meta;
     }
 
     private String extractValue(String json, String key) {
-        int start = json.indexOf("\"" + key + "\":") + key.length() + 3;
-        int end = json.indexOf("\"", start + 1);
-        if (start > 0 && end > start) {
-            return json.substring(start + 1, end);
-        }
+        try {
+            int start = json.indexOf("\"" + key + "\":") + key.length() + 3;
+            int end = json.indexOf("\"", start + 1);
+            if (start > 0 && end > start) {
+                return json.substring(start + 1, end);
+            }
+        } catch (Exception e) {}
         return "unknown";
     }
 
     private String serializeSimpleJson(EvoMetadata metadata) {
         return "{\n" +
-               "  \"domain\": \"" + metadata.getDomain() + "\",\n" +
-               "  \"purpose\": \"" + metadata.getPurpose() + "\",\n" +
-               "  \"role\": \"" + metadata.getRole() + "\",\n" +
-               "  \"stability\": \"" + metadata.getStability() + "\"\n" +
+               "  \"domain\": \"" + (metadata.getDomain() != null ? metadata.getDomain() : "") + "\",\n" +
+               "  \"purpose\": \"" + (metadata.getPurpose() != null ? metadata.getPurpose() : "") + "\",\n" +
+               "  \"role\": \"" + (metadata.getRole() != null ? metadata.getRole() : "") + "\",\n" +
+               "  \"stability\": \"" + (metadata.getStability() != null ? metadata.getStability() : "") + "\"\n" +
                "}";
     }
 }

@@ -18,6 +18,7 @@ public class EvoMetadata {
     private List<String> outputs = new ArrayList<>();
     private String stability = "EVOLVING";
     private String evolutionaryImpact = "MEDIUM";
+    private boolean stale = false;
     private Map<String, Object> customAttributes = new HashMap<>();
 
     public String getId() { return id; }
@@ -49,4 +50,7 @@ public class EvoMetadata {
 
     public Map<String, Object> getCustomAttributes() { return customAttributes; }
     public void setCustomAttributes(Map<String, Object> customAttributes) { this.customAttributes = customAttributes; }
+
+    public boolean isStale() { return stale; }
+    public void setStale(boolean stale) { this.stale = stale; }
 }
