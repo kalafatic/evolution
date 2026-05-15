@@ -236,6 +236,26 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	protected String targetType = TARGET_TYPE_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getOutputPath() <em>Output Path</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getOutputPath()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String OUTPUT_PATH_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getOutputPath() <em>Output Path</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getOutputPath()
+	 * @generated
+	 * @ordered
+	 */
+	protected String outputPath = OUTPUT_PATH_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -480,6 +500,29 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @generated
 	 */
 	@Override
+	public String getOutputPath() {
+		return outputPath;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setOutputPath(String newOutputPath) {
+		String oldOutputPath = outputPath;
+		outputPath = newOutputPath;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__OUTPUT_PATH, oldOutputPath, outputPath));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.CHAT_SESSION__MESSAGES:
@@ -516,6 +559,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return getTargetPath();
 			case OrchestrationPackage.CHAT_SESSION__TARGET_TYPE:
 				return getTargetType();
+			case OrchestrationPackage.CHAT_SESSION__OUTPUT_PATH:
+				return getOutputPath();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -560,6 +605,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__TARGET_TYPE:
 				setTargetType((String)newValue);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__OUTPUT_PATH:
+				setOutputPath((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -602,6 +650,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__TARGET_TYPE:
 				setTargetType(TARGET_TYPE_EDEFAULT);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__OUTPUT_PATH:
+				setOutputPath(OUTPUT_PATH_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -634,6 +685,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return TARGET_PATH_EDEFAULT == null ? targetPath != null : !TARGET_PATH_EDEFAULT.equals(targetPath);
 			case OrchestrationPackage.CHAT_SESSION__TARGET_TYPE:
 				return TARGET_TYPE_EDEFAULT == null ? targetType != null : !TARGET_TYPE_EDEFAULT.equals(targetType);
+			case OrchestrationPackage.CHAT_SESSION__OUTPUT_PATH:
+				return OUTPUT_PATH_EDEFAULT == null ? outputPath != null : !OUTPUT_PATH_EDEFAULT.equals(outputPath);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -666,6 +719,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		result.append(targetPath);
 		result.append(", targetType: ");
 		result.append(targetType);
+		result.append(", outputPath: ");
+		result.append(outputPath);
 		result.append(')');
 		return result.toString();
 	}
