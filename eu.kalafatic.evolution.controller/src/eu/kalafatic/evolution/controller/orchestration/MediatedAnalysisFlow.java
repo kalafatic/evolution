@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.*;
+import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
 import eu.kalafatic.evolution.controller.mediation.analysis.MediatedDarwinEngine;
-import eu.kalafatic.evolution.controller.mediation.analysis.MetadataGenerator;
 import eu.kalafatic.evolution.controller.mediation.analysis.PromptSynthesizer;
 import eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor;
 import eu.kalafatic.evolution.controller.mediation.analysis.StagingValidator;
@@ -65,12 +65,12 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
 
         // Pass 2: Semantic Indexing (Extractor)
         runPass(context, "Semantic Indexing", "Extracting structures and relationships...", () -> {
+            // Metadata Synchronization
+            MetadataAgent generator = new MetadataAgent();
+            generator.generate(root);
+
             SemanticExtractor extractor = new SemanticExtractor();
             extractor.extractToSnapshot(snapshot);
-
-            // Synchronize with metadata generation
-            MetadataGenerator generator = new MetadataGenerator();
-            generator.generate(root);
 
             context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
                 "mediated-indexing-" + System.currentTimeMillis(),
@@ -146,14 +146,14 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
                 String outputPath = null;
                 if (context.getOrchestrator().getAiChat() != null) {
                     ChatSession session = context.getOrchestrator().getAiChat().getSessions().stream()
-                            .filter(s -> s.getId().equals(sessionId))
+                            .filter(s -> s != null && s.getId() != null && s.getId().equals(sessionId))
                             .findFirst().orElse(null);
                     outputPath = session != null ? session.getOutputPath() : null;
                 }
 
                 MediatedExportManager exportManager = new MediatedExportManager();
                 exportPackage[0] = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt[0], selectedPaths, root, outputPath);
-                context.log("[MEDIATED] Export bundle ready: " + exportPackage[0].getName());
+                context.log("[MEDIATED] Export bundle ready: " + (exportPackage[0] != null ? exportPackage[0].getName() : "FAILED"));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to create export package", e);
             }
@@ -167,6 +167,8 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
             summaryBuilder.append("**Inferred Architecture:** ").append(snapshot.getMetadata().get("architectureInference")).append("\n\n");
             if (exportPackage[0] != null) {
                 summaryBuilder.append("**Export Package:** `").append(exportPackage[0].getName()).append("`\n");
+            } else {
+                summaryBuilder.append("**Export Package:** `FAILED`\n");
             }
             summaryBuilder.append("**Selected Files:** ").append(selectedPaths.size()).append(" (Hard limit: 16)\n\n");
 
@@ -184,16 +186,21 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
         context.getOrchestrationState().getMetadata().put("mediatedSnapshot", snapshot);
         context.getOrchestrationState().getMetadata().put("mediatedHypotheses", hypotheses);
         context.getOrchestrationState().getMetadata().put("mediatedValidation", vResult[0]);
-        context.getOrchestrationState().getMetadata().put("mediatedExportFile", exportPackage[0].getAbsolutePath());
+        if (exportPackage[0] != null) {
+            context.getOrchestrationState().getMetadata().put("mediatedExportFile", exportPackage[0].getAbsolutePath());
+        }
 
         // Update Results View (Event based)
-        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+        RuntimeEvent eventBusMsg = new RuntimeEvent(
             RuntimeEventType.EXPORT_READY,
             context.getSessionId(),
             "MediatedFlow",
             summaryBuilder.toString())
-            .withMetadata("target", snapshot.getRootPath())
-            .withMetadata("exportFile", exportPackage[0].getAbsolutePath()));
+            .withMetadata("target", snapshot.getRootPath());
+        if (exportPackage[0] != null) {
+            eventBusMsg.withMetadata("exportFile", exportPackage[0].getAbsolutePath());
+        }
+        RuntimeEventBus.getInstance().publish(eventBusMsg);
 
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);

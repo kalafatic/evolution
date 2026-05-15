@@ -3270,7 +3270,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
 	 * @generated
 	 */
-	int TASK_STATUS = 36;
+	int TASK_STATUS = 37;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.LogLevel <em>Log Level</em>}' enum.
@@ -3280,7 +3280,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLogLevel()
 	 * @generated
 	 */
-	int LOG_LEVEL = 37;
+	int LOG_LEVEL = 38;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}' enum.
@@ -3290,7 +3290,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFeedbackLevel()
 	 * @generated
 	 */
-	int FEEDBACK_LEVEL = 38;
+	int FEEDBACK_LEVEL = 39;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SessionType <em>Session Type</em>}' enum.
@@ -3300,7 +3300,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionType()
 	 * @generated
 	 */
-	int SESSION_TYPE = 39;
+	int SESSION_TYPE = 40;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
@@ -3310,7 +3310,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
 	 * @generated
 	 */
-	int COMMAND_STATUS = 40;
+	int COMMAND_STATUS = 41;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
@@ -3320,7 +3320,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
 	 * @generated
 	 */
-	int EXECUTION_MODE = 41;
+	int EXECUTION_MODE = 42;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
@@ -3330,7 +3330,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
 	 * @generated
 	 */
-	int NEURON_TYPE = 42;
+	int NEURON_TYPE = 43;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
@@ -3340,7 +3340,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
 	 * @generated
 	 */
-	int AI_MODE = 43;
+	int AI_MODE = 44;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
@@ -3350,7 +3350,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
 	 * @generated
 	 */
-	int SELF_DEV_STATUS = 44;
+	int SELF_DEV_STATUS = 45;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
@@ -3360,7 +3360,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
 	 * @generated
 	 */
-	int ITERATION_STATUS = 45;
+	int ITERATION_STATUS = 46;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
@@ -3370,7 +3370,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
 	 * @generated
 	 */
-	int SELF_DEV_DECISION = 46;
+	int SELF_DEV_DECISION = 47;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
@@ -3380,7 +3380,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
 	 * @generated
 	 */
-	int TEST_STATUS = 47;
+	int TEST_STATUS = 48;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
@@ -3390,7 +3390,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
 	 * @generated
 	 */
-	int REVIEW_DECISION = 48;
+	int REVIEW_DECISION = 49;
 
 
 	/**

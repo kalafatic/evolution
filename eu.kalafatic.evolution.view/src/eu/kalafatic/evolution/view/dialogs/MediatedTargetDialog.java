@@ -6,7 +6,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
-import eu.kalafatic.evolution.controller.mediation.analysis.MetadataGenerator;
+import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.utils.factories.GUIFactory;
@@ -89,21 +89,20 @@ public class MediatedTargetDialog extends Dialog {
             if (path != null) outputText.setText(path);
         });
 
-        // Metadata generation button
-        new Label(container, SWT.NONE);
-        Button generateMetaBtn = GUIFactory.INSTANCE.createButton(container, "Generate AI Metadata", SWT.PUSH);
-        generateMetaBtn.setToolTipText("Generate .ai.json sidecar files for the target project");
-        generateMetaBtn.addListener(SWT.Selection, e -> {
+        GUIFactory.INSTANCE.createLabel(container, "Metadata:");
+        Button syncBtn = GUIFactory.INSTANCE.createButton(container, "Generate AI Metadata");
+        syncBtn.setToolTipText("Generate AI Metadata sidecar files for the target project");
+        syncBtn.addListener(SWT.Selection, e -> {
             String path = pathText.getText();
             if (path != null && !path.isEmpty()) {
                 File root = new File(path);
                 if (root.exists() && root.isDirectory()) {
-                    MetadataGenerator generator = new MetadataGenerator();
+                    MetadataAgent generator = new MetadataAgent();
                     generator.generate(root);
-                    MessageBox box = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-                    box.setText("Metadata Generation");
-                    box.setMessage("AI Metadata generation completed for: " + path);
-                    box.open();
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                    mb.setText("Metadata Generation");
+                    mb.setMessage("AI Metadata generation completed for: " + path);
+                    mb.open();
                 }
             }
         });

@@ -62,7 +62,10 @@ public class InstructionsGroup extends AEvoGroup {
         requestGridData.heightHint = 66;
         requestText.setLayoutData(requestGridData);
         
-        Composite composite = GUIFactory.INSTANCE.createComposite(group,2);
+        Composite composite = GUIFactory.INSTANCE.createComposite(group,2, SWT.BORDER);
+        composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+
         attachmentArea = GUIFactory.INSTANCE.createComposite(group, 1, SWT.BORDER);
 
         // Left side: Buttons
@@ -92,16 +95,9 @@ public class InstructionsGroup extends AEvoGroup {
         });
 
         attachButton = GUIFactory.INSTANCE.createButton(btnComp, "\ud83d\udcce" + "Attach MD");
-       
-//        attachmentArea = new Composite(btnComp, SWT.BORDER);
-//        attachmentArea.setLayout(new GridLayout(1, false));
-//        GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-//		gd.widthHint = GUIFactory.LABEL_WIDTH;
-//		gd.heightHint = GUIFactory.BUTTON_HEIGHT;
-//        attachmentArea.setLayoutData(gd);
 
         // Right side: Checkboxes and Spinners
-        Composite settingsComp = GUIFactory.INSTANCE.createComposite(composite, 7, SWT.NO);
+        Composite settingsComp = GUIFactory.INSTANCE.createComposite(composite, 8);
 
         selfIterativeCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Self Development");
         selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");
@@ -163,9 +159,8 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
         
-        Composite iterComp = GUIFactory.INSTANCE.createComposite(settingsComp,2);
-        
-        maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(iterComp, SWT.BORDER);
+
+        maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(settingsComp, SWT.BORDER);
         maxIterationsSpinner.setMinimum(1);
         maxIterationsSpinner.setMaximum(100);
         maxIterationsSpinner.setIncrement(1);
@@ -175,7 +170,7 @@ public class InstructionsGroup extends AEvoGroup {
                 page.syncModelWithUI();
             }
         });
-        GUIFactory.INSTANCE.createLabel(iterComp, "Max Iterations",SWT.NONE,70);
+        GUIFactory.INSTANCE.createLabel(settingsComp, "Max Iterations",SWT.NONE,70);
 
         attachButton.setToolTipText("Add External Instructions (.md)");
         attachButton.addSelectionListener(new SelectionAdapter() {

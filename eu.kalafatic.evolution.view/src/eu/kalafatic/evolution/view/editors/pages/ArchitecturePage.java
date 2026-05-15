@@ -19,7 +19,7 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignExporter;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
-import eu.kalafatic.evolution.controller.mediation.analysis.MetadataGenerator;
+import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignRenderer;
 import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -122,13 +122,28 @@ public class ArchitecturePage extends Composite {
             org.eclipse.core.resources.IProject project = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject();
             java.io.File root = project.getLocation().toFile();
 
-            MetadataGenerator generator = new MetadataGenerator();
-            generator.generate(root);
+            org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Generating AI Metadata") {
+                @Override
+                protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                    try {
+                        MetadataAgent generator = new MetadataAgent();
+                        generator.generate(root);
 
-            MessageBox box = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-            box.setText("Metadata Generation");
-            box.setMessage("AI Metadata generation completed for: " + project.getName());
-            box.open();
+                        Display.getDefault().asyncExec(() -> {
+                            if (!getShell().isDisposed()) {
+                                MessageBox box = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                                box.setText("Metadata Generation");
+                                box.setMessage("AI Metadata generation completed for: " + project.getName());
+                                box.open();
+                            }
+                        });
+                        return org.eclipse.core.runtime.Status.OK_STATUS;
+                    } catch (Exception e) {
+                        return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Failed to generate metadata", e);
+                    }
+                }
+            };
+            job.schedule();
         }
     }
 

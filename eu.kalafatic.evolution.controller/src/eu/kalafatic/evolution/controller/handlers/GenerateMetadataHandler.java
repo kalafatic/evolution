@@ -10,7 +10,7 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
 
-import eu.kalafatic.evolution.controller.mediation.analysis.MetadataGenerator;
+import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
@@ -28,7 +28,7 @@ public class GenerateMetadataHandler extends AbstractOrchestratorHandler {
                     @Override
                     protected IStatus run(IProgressMonitor monitor) {
                         try {
-                            MetadataGenerator generator = new MetadataGenerator();
+                            MetadataAgent generator = new MetadataAgent();
                             generator.generate(project.getLocation().toFile());
 
                             Display.getDefault().asyncExec(() -> {

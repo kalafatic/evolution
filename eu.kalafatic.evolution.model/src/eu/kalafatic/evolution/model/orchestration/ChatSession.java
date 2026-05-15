@@ -23,9 +23,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getMaxIterations <em>Max Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isStepMode <em>Step Mode</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getTargetPath <em>Target Path</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getTargetType <em>Target Type</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getOutputPath <em>Output Path</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getOutputPath <em>Output Path</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession()
