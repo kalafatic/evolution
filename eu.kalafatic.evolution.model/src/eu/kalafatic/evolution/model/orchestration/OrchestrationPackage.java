@@ -2969,7 +2969,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_SESSION_FEATURE_COUNT = 11;
+	int CHAT_SESSION_FEATURE_COUNT = 12;
 
 	/**
 	 * The number of operations of the '<em>Chat Session</em>' class.

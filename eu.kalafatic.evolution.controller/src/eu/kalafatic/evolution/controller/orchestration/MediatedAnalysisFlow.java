@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
 import eu.kalafatic.evolution.controller.mediation.analysis.MediatedDarwinEngine;
+import eu.kalafatic.evolution.controller.mediation.analysis.MetadataGenerator;
 import eu.kalafatic.evolution.controller.mediation.analysis.PromptSynthesizer;
 import eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor;
 import eu.kalafatic.evolution.controller.mediation.analysis.StagingValidator;
@@ -66,6 +67,10 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
         runPass(context, "Semantic Indexing", "Extracting structures and relationships...", () -> {
             SemanticExtractor extractor = new SemanticExtractor();
             extractor.extractToSnapshot(snapshot);
+
+            // Synchronize with metadata generation
+            MetadataGenerator generator = new MetadataGenerator();
+            generator.generate(root);
 
             context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
                 "mediated-indexing-" + System.currentTimeMillis(),
@@ -138,10 +143,13 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
         runPass(context, "Export Packaging", "Creating ZIP bundle for external LLM...", () -> {
             try {
                 String sessionId = context.getSessionId();
-                ChatSession session = context.getOrchestrator().getAiChat().getSessions().stream()
-                        .filter(s -> s.getId().equals(sessionId))
-                        .findFirst().orElse(null);
-                String outputPath = session != null ? session.getOutputPath() : null;
+                String outputPath = null;
+                if (context.getOrchestrator().getAiChat() != null) {
+                    ChatSession session = context.getOrchestrator().getAiChat().getSessions().stream()
+                            .filter(s -> s.getId().equals(sessionId))
+                            .findFirst().orElse(null);
+                    outputPath = session != null ? session.getOutputPath() : null;
+                }
 
                 MediatedExportManager exportManager = new MediatedExportManager();
                 exportPackage[0] = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt[0], selectedPaths, root, outputPath);
@@ -157,7 +165,9 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
             summaryBuilder.append("### Mediated Context Export Complete\n\n");
             summaryBuilder.append("**Target Type:** ").append(snapshot.getTargetType()).append("\n");
             summaryBuilder.append("**Inferred Architecture:** ").append(snapshot.getMetadata().get("architectureInference")).append("\n\n");
-            summaryBuilder.append("**Export Package:** `").append(exportPackage[0].getName()).append("`\n");
+            if (exportPackage[0] != null) {
+                summaryBuilder.append("**Export Package:** `").append(exportPackage[0].getName()).append("`\n");
+            }
             summaryBuilder.append("**Selected Files:** ").append(selectedPaths.size()).append(" (Hard limit: 16)\n\n");
 
             summaryBuilder.append("**Safety Risk:** ").append(vResult[0].riskLevel).append("\n");

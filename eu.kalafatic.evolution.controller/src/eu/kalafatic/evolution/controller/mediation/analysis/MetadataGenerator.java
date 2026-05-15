@@ -45,14 +45,12 @@ public class MetadataGenerator {
             }
 
             // Sync from extraction results (Authority Hierarchy: Annotation > Sidecar > Heuristic)
-            // Here we want to UPGRADE sidecars based on current code state
             String domain = node.getAttributes().get("domain");
             String role = node.getAttributes().get("role");
 
             if (domain != null) metadata.setDomain(domain);
             if (role != null) metadata.setRole(role);
 
-            // Basic purpose from summary if not already set
             if ((metadata.getPurpose() == null || metadata.getPurpose().isEmpty() || metadata.getPurpose().equals("unknown"))
                 && node.getSummary() != null) {
                 metadata.setPurpose(node.getSummary());
