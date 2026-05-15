@@ -39,6 +39,8 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute darwinMode : EBoolean
     Attribute gitAutomation : EBoolean
     Attribute maxIterations : EInt
+    Attribute stepMode : EBoolean
+    Attribute bitState : ELong
 
   Class Agent
     Attribute id : EString
@@ -78,6 +80,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Reference serverSettings : ServerSettings
     Reference serverSessions : ServerSession<<0..*>>
     Reference monitoringHistory : MonitoringData<<0..*>>
+    Reference supervisorSettings : SupervisorSettings
 
   Class ServerSettings
     Attribute port : EInt
@@ -120,6 +123,9 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute username : EString
     Attribute localPath : EString
     Attribute testStatus : EString
+    Attribute branchName : EString
+    Attribute commitMsg : EString
+    Attribute password : EString
 
   Class Maven
     Attribute goals : EString<<0..*>>
@@ -261,6 +267,13 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute commitId : EString
     Reference files : FileChange<<0..*>>
 
+  Class SupervisorSettings
+    Attribute executablePath : EString
+    Attribute deployed : EBoolean
+    Attribute sourcePath : EString
+    Attribute commands : EString
+    Attribute settings : EString
+
   Class ReviewSession
     Attribute id : EString
     Reference changeSet : ChangeSet
@@ -276,6 +289,9 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute gitAutomation : EBoolean
     Attribute maxIterations : EInt
     Attribute stepMode : EBoolean
+    Attribute targetPath : EString
+    Attribute targetType : EString
+    Attribute outputPath : EString
 
   Class ChatMessage
     Attribute index : EInt
@@ -286,6 +302,10 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute isItalic : EBoolean
     Attribute agentType : EString
     Attribute timestamp : EString
+    Attribute priority : EInt
+    Attribute sequenceNumber : ELong
+    Attribute turnId : EString
+    Attribute isTerminal : EBoolean
 
   Class PromptInstructions
     Attribute autoApprove : EBoolean
