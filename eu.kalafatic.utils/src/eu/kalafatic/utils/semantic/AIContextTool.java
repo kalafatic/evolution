@@ -134,12 +134,29 @@ public class AIContextTool {
 
     private String extractRawValue(String json, String key) {
         try {
-            int start = json.indexOf("\"" + key + "\":") + key.length() + 3;
-            int endComma = json.indexOf(",", start);
-            int endBrace = json.indexOf("}", start);
-            int end = (endComma != -1 && endBrace != -1) ? Math.min(endComma, endBrace) : (endComma != -1 ? endComma : endBrace);
-            if (start > 0 && end > start) {
-                return json.substring(start, end).trim();
+            int keyIndex = json.indexOf("\"" + key + "\":");
+            if (keyIndex == -1) return null;
+
+            int start = keyIndex + key.length() + 3;
+            String remaining = json.substring(start).trim();
+
+            if (remaining.startsWith("\"")) {
+                // String value - find terminating quote not preceded by escape
+                int end = -1;
+                for (int i = 1; i < remaining.length(); i++) {
+                    if (remaining.charAt(i) == '\"' && remaining.charAt(i-1) != '\\') {
+                        end = i;
+                        break;
+                    }
+                }
+                if (end != -1) return remaining.substring(1, end);
+            } else {
+                // Numeric or Boolean value - find next comma or closing brace
+                int endComma = remaining.indexOf(",");
+                int endBrace = remaining.indexOf("}");
+                int end = (endComma != -1 && endBrace != -1) ? Math.min(endComma, endBrace) : (endComma != -1 ? endComma : endBrace);
+                if (end != -1) return remaining.substring(0, end).trim();
+                return remaining.trim();
             }
         } catch (Exception e) {}
         return null;

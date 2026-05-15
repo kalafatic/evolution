@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.*;
+import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
 import eu.kalafatic.evolution.controller.mediation.analysis.MediatedDarwinEngine;
-import eu.kalafatic.evolution.controller.mediation.analysis.MetadataGenerator;
 import eu.kalafatic.evolution.controller.mediation.analysis.PromptSynthesizer;
 import eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor;
 import eu.kalafatic.evolution.controller.mediation.analysis.StagingValidator;
@@ -66,7 +66,7 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
         // Pass 2: Semantic Indexing (Extractor)
         runPass(context, "Semantic Indexing", "Extracting structures and relationships...", () -> {
             // Metadata Synchronization
-            MetadataGenerator generator = new MetadataGenerator();
+            MetadataAgent generator = new MetadataAgent();
             generator.generate(root);
 
             SemanticExtractor extractor = new SemanticExtractor();

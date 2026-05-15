@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.controller.mediation.analysis;
+package eu.kalafatic.evolution.controller.agents;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +17,7 @@ import eu.kalafatic.utils.semantic.Stability;
  * Automates creation of .ai.json sidecars and project navigation maps.
  * Optimized for MEDIATED MODE and Semantic Nervous System architecture.
  */
-public class MetadataGenerator {
+public class MetadataAgent {
 
     private final AIContextTool contextTool = new AIContextTool();
     private final Map<File, EvoMetadata> processedMetadata = new HashMap<>();
@@ -43,7 +43,6 @@ public class MetadataGenerator {
             } else {
                 if (shouldProcess(file)) {
                     processFile(file, root);
-                    processedFiles.add(file);
                 }
             }
         }

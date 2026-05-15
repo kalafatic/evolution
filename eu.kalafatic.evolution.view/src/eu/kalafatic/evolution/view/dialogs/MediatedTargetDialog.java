@@ -6,7 +6,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
-import eu.kalafatic.evolution.controller.mediation.analysis.MetadataGenerator;
+import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.utils.factories.GUIFactory;
@@ -96,7 +96,7 @@ public class MediatedTargetDialog extends Dialog {
             if (path != null && !path.isEmpty()) {
                 File root = new File(path);
                 if (root.exists() && root.isDirectory()) {
-                    MetadataGenerator generator = new MetadataGenerator();
+                    MetadataAgent generator = new MetadataAgent();
                     generator.generate(root);
                     MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
                     mb.setText("Metadata Sync");

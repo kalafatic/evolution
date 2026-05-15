@@ -7,9 +7,9 @@ import java.nio.file.Files;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import eu.kalafatic.evolution.controller.mediation.analysis.MetadataGenerator;
+import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 
-public class MetadataGeneratorTest {
+public class MetadataAgentTest {
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -22,7 +22,7 @@ public class MetadataGeneratorTest {
         File javaFile = new File(src, "MyClass.java");
         Files.write(javaFile.toPath(), "package eu.kalafatic.evolution.orchestration;\npublic class MyClass {}\n".getBytes());
 
-        MetadataGenerator generator = new MetadataGenerator();
+        MetadataAgent generator = new MetadataAgent();
         generator.generate(root);
 
         // Check sidecar
