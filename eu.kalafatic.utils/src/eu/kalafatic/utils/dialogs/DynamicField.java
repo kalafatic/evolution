@@ -10,6 +10,8 @@
  ******************************************************************************/
 package eu.kalafatic.utils.dialogs;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -45,20 +47,32 @@ public class DynamicField {
 	}
 
 	/**
-	 * Basic constructor.
+	 * Flexible constructor for dynamic fields.
+	 *
+	 * @param label the field label
+	 * @param flags the bitmask flags
+	 * @param values optional values: values[0] is default value, values[1..n] are combo values
 	 */
-	public DynamicField(String label, Object value, int flags) {
+	public DynamicField(String label, int flags, Object... values) {
 		this.label = label;
-		this.value = value;
 		this.flags = flags;
-	}
 
-	/**
-	 * Constructor with combo values.
-	 */
-	public DynamicField(String label, Object value, int flags, List<String> comboValues) {
-		this(label, value, flags);
-		this.comboValues = comboValues;
+		if (values != null && values.length > 0) {
+			this.value = values[0];
+
+			if (values.length > 1) {
+				this.comboValues = new ArrayList<>();
+				for (int i = 1; i < values.length; i++) {
+					if (values[i] instanceof List) {
+						for (Object o : (List<?>) values[i]) {
+							this.comboValues.add(o.toString());
+						}
+					} else {
+						this.comboValues.add(values[i].toString());
+					}
+				}
+			}
+		}
 	}
 
 	/**
