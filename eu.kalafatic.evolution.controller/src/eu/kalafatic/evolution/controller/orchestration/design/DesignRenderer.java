@@ -14,8 +14,8 @@ public class DesignRenderer {
     public String render(DesignModel model) {
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html><html><head><style>");
-        html.append("body { font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; padding: 40px; margin: 0; }");
-        html.append(".canvas { position: relative; width: 1000px; height: 1000px; background: white; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin: auto; overflow: hidden; padding: 50px; }");
+        html.append("html, body { font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; padding: 0; margin: 0; width: 100%; height: 100%; overflow: hidden; }");
+        html.append(".canvas { position: relative; width: calc(100% - 40px); height: calc(100% - 120px); background: white; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin: 0 20px 20px 20px; overflow: auto; padding: 50px; box-sizing: border-box; }");
         html.append(".component { position: absolute; min-width: 180px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); z-index: 10; overflow: hidden; }");
         html.append(".comp-header { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px; text-align: center; }");
         html.append(".comp-name { font-weight: bold; color: #1e293b; }");

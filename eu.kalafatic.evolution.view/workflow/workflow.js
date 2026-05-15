@@ -2,8 +2,8 @@
     const svg = d3.select("#workflow-svg");
     const container = d3.select("#workflow-container");
 
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
 
     const gMain = svg.append("g");
     const gLinks = gMain.append("g").attr("class", "links");
@@ -46,6 +46,12 @@
         graphData = data;
         render();
     };
+
+    window.addEventListener('resize', () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        render();
+    });
 
     function render() {
         const nodes = graphData.nodes;
