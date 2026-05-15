@@ -391,7 +391,7 @@ public class FileUtils {
 			result = dialog.open();
 		} else {
 			DirectoryDialog dialog = new DirectoryDialog(shell);
-			dialog.setFilterPath(null);
+			dialog.setFilterPath(filterPath);
 			result = dialog.open();
 		}
 		if (result == null) {

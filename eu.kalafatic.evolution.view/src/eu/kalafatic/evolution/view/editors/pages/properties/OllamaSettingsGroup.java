@@ -66,7 +66,9 @@ public class OllamaSettingsGroup extends AEvoGroup {
         browseOllamaBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                String p = new org.eclipse.swt.widgets.DirectoryDialog(group.getShell(), SWT.OPEN).open();
+                org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(group.getShell(), SWT.OPEN);
+                dialog.setFilterPath(ollamaPathText.getText());
+                String p = dialog.open();
                 if (p != null) {
                     ollamaPathText.setText(p);
                     if (viewModel != null) viewModel.path.setValue(p);
