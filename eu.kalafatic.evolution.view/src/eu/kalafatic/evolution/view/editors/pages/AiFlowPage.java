@@ -144,8 +144,8 @@ public class AiFlowPage extends Composite {
 			@Override
 			public void controlResized(org.eclipse.swt.events.ControlEvent e) {
 				org.eclipse.swt.graphics.Rectangle r = vizScrolled.getClientArea();
-				if (r.width > browserWidth) browserWidth = r.width;
-				if (r.height > browserHeight) browserHeight = r.height;
+				browserWidth = r.width;
+				browserHeight = r.height;
 				updateScrolledContent();
 			}
 		});
@@ -294,8 +294,8 @@ public class AiFlowPage extends Composite {
 
 	private String getHtmlTemplate() {
 		return "<!DOCTYPE html><html><head><style>"
-				+ "body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; overflow: hidden; }"
-				+ "#canvas { width: 100%; height: 100%; }"
+				+ "html, body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; overflow: hidden; width: 100%; height: 100%; }"
+				+ "#canvas { width: 100%; height: 100%; display: block; }"
 				+ ".node { fill: #fff; stroke: #cbd5e1; stroke-width: 1px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }"
 				+ ".node:hover { stroke: #94a3b8; stroke-width: 2px; transform: translateY(-2px); }"
 				+ ".task.DONE { fill: #f0fdf4; stroke: #22c55e; }"
@@ -319,7 +319,7 @@ public class AiFlowPage extends Composite {
 				+ "@keyframes pulse { 0% { stroke-opacity: 1; stroke-width: 3px; } 50% { stroke-opacity: 0.4; stroke-width: 8px; } 100% { stroke-opacity: 1; stroke-width: 3px; } }"
 				+ ".loop-node.active { animation: pulse 2s infinite ease-in-out; }"
 				+ "</style></head><body>"
-				+ "<svg id='canvas' viewBox='0 0 1000 800'><defs>"
+				+ "<svg id='canvas' viewBox='0 0 1000 800' preserveAspectRatio='xMidYMid meet'><defs>"
 				+ "<marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker>"
 				+ "<marker id='loop-arrow' markerWidth='6' markerHeight='4' refX='6' refY='2' orient='auto'><polygon points='0 0, 6 2, 0 4' fill='#94a3b8'/></marker>"
 				+ "</defs>"
@@ -336,6 +336,9 @@ public class AiFlowPage extends Composite {
 				+ "  currentZoom = 1.0;"
 				+ "  viewport.setAttribute('transform', 'translate(280, 0)');"
 				+ "}"
+				+ "window.addEventListener('resize', function() {"
+				+ "  /* SVG with viewBox and 100% size resizes automatically */"
+				+ "});"
 				+ "function updateGraph(data) {"
 				+ "  viewport.innerHTML = '';" + "  if (!data) return;" + "  var nodes = {};" + "  var links = [];"
 				+ "  // Flow-like layout: sequential" + "  var x = 200, y = 80;" + "  if (data.tasks) {"
