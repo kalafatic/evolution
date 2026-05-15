@@ -97,6 +97,7 @@ public class BrowserPage extends Composite {
 
         // Initial tab
         createNewTab("https://ollama.com");
+        createNewTab("https://huggingface.co/");
         if (orchestrator.getOllama() != null) {
             createNewTab(orchestrator.getOllama().getUrl());
         }
