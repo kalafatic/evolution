@@ -38,7 +38,7 @@
         .sidebar-section h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; margin-bottom: 10px; }
 
         .control-group { display: flex; flex-direction: column; gap: 8px; }
-        .control-item { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
+        .control-item { display: grid; grid-template-columns: 80px 1fr; align-items: center; gap: 5px; }
 
         select, input[type="text"], input[type="number"] {
             width: 100%; padding: 6px; border-radius: 4px; border: 1px solid var(--border); background: white; color: var(--text-main); font-size: 13px;
@@ -119,10 +119,11 @@
                 <div class="control-item">
                     <label>Mode:</label>
                     <select id="mode-select" onchange="updateSettings()">
-                        <option value="Local">Local</option>
-                        <option value="Hybrid">Hybrid</option>
-                        <option value="Remote">Remote</option>
-                        <option value="Mediated">Mediated</option>
+                        <option value="LOCAL">Local</option>
+                        <option value="HYBRID">Hybrid</option>
+                        <option value="REMOTE">Remote</option>
+                        <option value="PROXY">Proxy</option>
+                        <option value="MEDIATED">Mediated</option>
                     </select>
                 </div>
                 <div class="control-item">
@@ -229,17 +230,24 @@
                 const response = await fetch('/server/orchestrator/settings');
                 const data = await response.json();
 
-                document.getElementById('mode-select').value = data.aiMode || 'Local';
-                document.getElementById('local-model-select').value = data.localModel || '';
-                document.getElementById('remote-model-select').value = data.remoteModel || 'GPT-4o';
+                const updateElement = (id, property, value) => {
+                    const el = document.getElementById(id);
+                    if (el && document.activeElement !== el) {
+                        el[property] = value;
+                    }
+                };
 
-                document.getElementById('iterative-check').checked = data.iterativeMode;
-                document.getElementById('self-iterative-check').checked = data.selfIterativeMode;
-                document.getElementById('darwin-check').checked = data.darwinMode;
-                document.getElementById('step-check').checked = data.stepMode;
-                document.getElementById('git-check').checked = data.gitAutomation;
-                document.getElementById('auto-approve-check').checked = data.autoApprove;
-                document.getElementById('max-iter-input').value = data.maxIterations || 5;
+                updateElement('mode-select', 'value', data.aiMode || 'LOCAL');
+                updateElement('local-model-select', 'value', data.localModel || '');
+                updateElement('remote-model-select', 'value', data.remoteModel || 'GPT-4o');
+
+                updateElement('iterative-check', 'checked', !!data.iterativeMode);
+                updateElement('self-iterative-check', 'checked', !!data.selfIterativeMode);
+                updateElement('darwin-check', 'checked', !!data.darwinMode);
+                updateElement('step-check', 'checked', !!data.stepMode);
+                updateElement('git-check', 'checked', !!data.gitAutomation);
+                updateElement('auto-approve-check', 'checked', !!data.autoApprove);
+                updateElement('max-iter-input', 'value', data.maxIterations || 5);
             } catch (err) {
                 console.error('Failed to fetch settings:', err);
             }
