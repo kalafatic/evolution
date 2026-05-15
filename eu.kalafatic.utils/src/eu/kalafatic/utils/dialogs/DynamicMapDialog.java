@@ -95,8 +95,8 @@ public class DynamicMapDialog extends TitleAreaDialog {
 		container.setLayout(new GridLayout(2, false));
 		container.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-		for (DynamicField field : fields.values()) {
-			createFieldEditor(container, field);
+		for (Map.Entry<String, DynamicField> entry : fields.entrySet()) {
+			createFieldEditor(container, entry.getKey(), entry.getValue());
 		}
 
 		scrolledComposite.setContent(container);
@@ -105,36 +105,38 @@ public class DynamicMapDialog extends TitleAreaDialog {
 		return area;
 	}
 
-	private void createFieldEditor(Composite parent, DynamicField field) {
+	private void createFieldEditor(Composite parent, String key, DynamicField field) {
 		Label label = new Label(parent, SWT.NONE);
-		label.setText(field.getLabel() + (field.isRequired() ? " *" : ""));
+		label.setText(field.getLabel() + (field.has(DynamicField.REQUIRED) ? " *" : ""));
 		if (field.getTooltip() != null) {
 			label.setToolTipText(field.getTooltip());
 		}
 
 		Control control = null;
-		switch (field.getType()) {
-		case TEXT:
+		if (field.has(DynamicField.TYPE_TEXT)) {
+			int style = SWT.BORDER | (field.has(DynamicField.MULTILINE) ? SWT.MULTI | SWT.V_SCROLL | SWT.WRAP : SWT.SINGLE);
+			if (field.has(DynamicField.PASSWORD)) {
+				style |= SWT.PASSWORD;
+			}
+
+			if (field.has(DynamicField.FILE) || field.has(DynamicField.DIRECTORY)) {
+				control = createBrowseField(parent, field);
+			} else {
+				Text text = createTextField(parent, field, style);
+				if (field.has(DynamicField.MULTILINE)) {
+					GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+					gd.heightHint = 60;
+					text.setLayoutData(gd);
+				}
+				control = text;
+			}
+		} else if (field.has(DynamicField.TYPE_NUMBER)) {
 			control = createTextField(parent, field, SWT.BORDER | SWT.SINGLE);
-			break;
-		case MULTILINE_TEXT:
-			control = createTextField(parent, field, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
-			GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-			gd.heightHint = 60;
-			control.setLayoutData(gd);
-			break;
-		case PASSWORD:
-			control = createTextField(parent, field, SWT.BORDER | SWT.SINGLE | SWT.PASSWORD);
-			break;
-		case NUMBER:
-			control = createTextField(parent, field, SWT.BORDER | SWT.SINGLE);
-			break;
-		case CHECKBOX:
+		} else if (field.has(DynamicField.TYPE_CHECKBOX)) {
 			Button check = new Button(parent, SWT.CHECK);
 			check.setSelection(field.getValue() instanceof Boolean ? (Boolean) field.getValue() : false);
 			control = check;
-			break;
-		case COMBO:
+		} else if (field.has(DynamicField.TYPE_COMBO)) {
 			Combo combo = new Combo(parent, SWT.READ_ONLY | SWT.DROP_DOWN);
 			if (field.getComboValues() != null) {
 				combo.setItems(field.getComboValues().toArray(new String[0]));
@@ -143,18 +145,13 @@ public class DynamicMapDialog extends TitleAreaDialog {
 				combo.setText(field.getValue().toString());
 			}
 			control = combo;
-			break;
-		case DIRECTORY:
-		case FILE:
-			control = createBrowseField(parent, field);
-			break;
 		}
 
 		if (control != null) {
 			if (field.getTooltip() != null) {
 				control.setToolTipText(field.getTooltip());
 			}
-			control.setEnabled(field.isEditable());
+			control.setEnabled(!field.has(DynamicField.READ_ONLY));
 
 			if (!(control instanceof Composite) && control.getLayoutData() == null) {
 				GridData gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -164,7 +161,7 @@ public class DynamicMapDialog extends TitleAreaDialog {
 				control.setLayoutData(gd);
 			}
 
-			controls.put(field.getKey(), control);
+			controls.put(key, control);
 		}
 	}
 
@@ -191,7 +188,7 @@ public class DynamicMapDialog extends TitleAreaDialog {
 		browse.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				if (field.getType() == DynamicFieldType.DIRECTORY) {
+				if (field.has(DynamicField.DIRECTORY)) {
 					DirectoryDialog dialog = new DirectoryDialog(getShell());
 					dialog.setFilterPath(text.getText());
 					String path = dialog.open();
@@ -221,8 +218,10 @@ public class DynamicMapDialog extends TitleAreaDialog {
 	}
 
 	private boolean validate() {
-		for (DynamicField field : fields.values()) {
-			Control control = controls.get(field.getKey());
+		for (Map.Entry<String, DynamicField> entry : fields.entrySet()) {
+			String key = entry.getKey();
+			DynamicField field = entry.getValue();
+			Control control = controls.get(key);
 			String val = "";
 
 			if (control instanceof Text) {
@@ -238,12 +237,12 @@ public class DynamicMapDialog extends TitleAreaDialog {
 				}
 			}
 
-			if (field.isRequired() && (val == null || val.trim().isEmpty())) {
+			if (field.has(DynamicField.REQUIRED) && (val == null || val.trim().isEmpty())) {
 				setErrorMessage("Field '" + field.getLabel() + "' is required.");
 				return false;
 			}
 
-			if (field.getType() == DynamicFieldType.NUMBER && !val.isEmpty()) {
+			if (field.has(DynamicField.TYPE_NUMBER) && !val.isEmpty()) {
 				try {
 					Integer.parseInt(val);
 				} catch (NumberFormatException e) {
@@ -257,8 +256,10 @@ public class DynamicMapDialog extends TitleAreaDialog {
 	}
 
 	private void saveValues() {
-		for (DynamicField field : fields.values()) {
-			Control control = controls.get(field.getKey());
+		for (Map.Entry<String, DynamicField> entry : fields.entrySet()) {
+			String key = entry.getKey();
+			DynamicField field = entry.getValue();
+			Control control = controls.get(key);
 			if (control instanceof Text) {
 				field.setValue(((Text) control).getText());
 			} else if (control instanceof Button) {

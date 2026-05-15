@@ -13,23 +13,29 @@ package eu.kalafatic.utils.dialogs;
 import java.util.List;
 
 /**
- * Metadata model for a dynamic field in DynamicMapDialog.
+ * Metadata model for a dynamic field in DynamicMapDialog using bitmask flags.
  *
  * @author Petr Kalafatic
  */
 public class DynamicField {
 
-	private String key;
+	public static final int TYPE_TEXT     = 1;
+	public static final int TYPE_COMBO    = 1 << 1;
+	public static final int TYPE_CHECKBOX = 1 << 2;
+	public static final int TYPE_NUMBER   = 1 << 3;
+
+	public static final int REQUIRED      = 1 << 10;
+	public static final int READ_ONLY     = 1 << 11;
+	public static final int MULTILINE     = 1 << 12;
+	public static final int PASSWORD      = 1 << 13;
+	public static final int FILE          = 1 << 14;
+	public static final int DIRECTORY     = 1 << 15;
+
 	private String label;
 	private Object value;
-	private DynamicFieldType type;
-
-	private List<String> comboValues;
-
-	private boolean required;
-	private boolean editable = true;
+	private int flags;
 	private String tooltip;
-
+	private List<String> comboValues;
 	private int width = 200;
 
 	/**
@@ -41,30 +47,30 @@ public class DynamicField {
 	/**
 	 * Basic constructor.
 	 */
-	public DynamicField(String key, String label, Object value, DynamicFieldType type) {
-		this.key = key;
+	public DynamicField(String label, Object value, int flags) {
 		this.label = label;
 		this.value = value;
-		this.type = type;
+		this.flags = flags;
 	}
 
 	/**
 	 * Constructor with combo values.
 	 */
-	public DynamicField(String key, String label, Object value, DynamicFieldType type, List<String> comboValues) {
-		this(key, label, value, type);
+	public DynamicField(String label, Object value, int flags, List<String> comboValues) {
+		this(label, value, flags);
 		this.comboValues = comboValues;
 	}
 
+	/**
+	 * Checks if a specific flag is set.
+	 * @param flag the flag to check
+	 * @return true if set
+	 */
+	public boolean has(int flag) {
+		return (flags & flag) != 0;
+	}
+
 	// Getters and Setters
-
-	public String getKey() {
-		return key;
-	}
-
-	public void setKey(String key) {
-		this.key = key;
-	}
 
 	public String getLabel() {
 		return label;
@@ -82,36 +88,12 @@ public class DynamicField {
 		this.value = value;
 	}
 
-	public DynamicFieldType getType() {
-		return type;
+	public int getFlags() {
+		return flags;
 	}
 
-	public void setType(DynamicFieldType type) {
-		this.type = type;
-	}
-
-	public List<String> getComboValues() {
-		return comboValues;
-	}
-
-	public void setComboValues(List<String> comboValues) {
-		this.comboValues = comboValues;
-	}
-
-	public boolean isRequired() {
-		return required;
-	}
-
-	public void setRequired(boolean required) {
-		this.required = required;
-	}
-
-	public boolean isEditable() {
-		return editable;
-	}
-
-	public void setEditable(boolean editable) {
-		this.editable = editable;
+	public void setFlags(int flags) {
+		this.flags = flags;
 	}
 
 	public String getTooltip() {
@@ -120,6 +102,14 @@ public class DynamicField {
 
 	public void setTooltip(String tooltip) {
 		this.tooltip = tooltip;
+	}
+
+	public List<String> getComboValues() {
+		return comboValues;
+	}
+
+	public void setComboValues(List<String> comboValues) {
+		this.comboValues = comboValues;
 	}
 
 	public int getWidth() {
