@@ -43,8 +43,26 @@ public class GitTool implements ITool {
             output.append(shell.execute("git push origin " + branch, gitWorkingDir, context));
         }
 
-        if (command.toLowerCase().startsWith("diff")) {
-            output.append(shell.execute("git diff " + command.substring(4).trim(), gitWorkingDir, context));
+        // Robust command handling for complex commit messages
+        List<String> fullCmd = new ArrayList<>();
+        fullCmd.add("git");
+
+        // Split by space but preserve quoted segments
+        if (command.contains("\"")) {
+            int firstQuote = command.indexOf("\"");
+            int lastQuote = command.lastIndexOf("\"");
+            String before = command.substring(0, firstQuote).trim();
+            String msg = command.substring(firstQuote + 1, lastQuote);
+            if (!before.isEmpty()) {
+                for (String p : before.split(" ")) {
+                    if (!p.isEmpty()) fullCmd.add(p);
+                }
+            }
+            fullCmd.add(msg);
+        } else {
+            for (String p : command.split(" ")) {
+                if (!p.isEmpty()) fullCmd.add(p);
+            }
         }
 
         if (command.toLowerCase().startsWith("status")) {

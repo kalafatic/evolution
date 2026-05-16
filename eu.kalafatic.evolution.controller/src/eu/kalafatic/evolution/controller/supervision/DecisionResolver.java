@@ -85,6 +85,7 @@ public class DecisionResolver {
         // APPLY THE DECISION (AUTHORITY)
         applyDecision(decision, variants, context);
 
+        // PERSISTENCE: Save the decision snapshot to metadata so DarwinFlow can react (e.g. exploration trigger)
         context.getOrchestrationState().getMetadata().put("lastDecisionSnapshot", decision);
 
         return decision;

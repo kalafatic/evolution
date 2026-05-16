@@ -50,16 +50,14 @@ public class GitManager {
         String fullMsg = message;
         if (context != null && context.getOrchestrationState() != null) {
             String iterId = context.getOrchestrationState().getCurrentIterationId();
-            fullMsg += "\n\n[EVO-META] Iteration: " + iterId;
+            fullMsg += " [EVO-META] Iteration: " + iterId;
         }
         gitTool.execute("add .", root, context);
         gitTool.execute("commit --allow-empty -m \"" + fullMsg + "\"", root, context);
     }
 
     public void rollback() throws Exception {
-        // Rollback just means cleaning up uncommitted changes in this context.
-        // If we want to revert the last commit, it should be an explicit revert or reset --hard HEAD~1
-        // But for DarwinFlow's general 'rollback on failure' before commit, reset --hard HEAD is safer.
+        // Correcting regression: reset --hard HEAD clears uncommitted dirty state without destroying history
         gitTool.execute("reset --hard HEAD", root, null);
     }
 
