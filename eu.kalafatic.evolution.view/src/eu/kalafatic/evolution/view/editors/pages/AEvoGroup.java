@@ -81,6 +81,16 @@ public abstract class AEvoGroup {
     }
 
     /**
+     * Returns all input controls (Text, Combo, etc.) in this group for listener attachment.
+     */
+    public Control[] getControls() {
+        Text[] texts = getTextFields();
+        Control[] controls = new Control[texts.length];
+        System.arraycopy(texts, 0, controls, 0, texts.length);
+        return controls;
+    }
+
+    /**
      * Returns the main composite of this group.
      */
     public Composite getGroup() {
@@ -88,12 +98,15 @@ public abstract class AEvoGroup {
     }
 
     /**
-     * Adds a modify listener to all text fields in this group.
+     * Adds a modify listener to all relevant input controls in this group.
      */
     public void addModifyListener(ModifyListener ml) {
-        for (Text t : getTextFields()) {
-            if (t != null && !t.isDisposed()) {
-                t.addModifyListener(ml);
+        for (Control c : getControls()) {
+            if (c == null || c.isDisposed()) continue;
+            if (c instanceof Text) {
+                ((Text) c).addModifyListener(ml);
+            } else if (c instanceof Combo) {
+                ((Combo) c).addModifyListener(ml);
             }
         }
     }

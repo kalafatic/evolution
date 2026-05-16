@@ -15,6 +15,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -25,8 +26,12 @@ import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 
 import org.eclipse.swt.widgets.DirectoryDialog;
 
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import java.util.List;
+
 public class GitSettingsPage extends AWizardPage {
-    private Text repoUrlText, branchText, usernameText, passwordText, localPathText;
+    private Text repoUrlText, branchText, usernameText, passwordText;
+    private Combo localPathText;
     private Button skipCheck;
     private ControlDecoration gitDecorator, infoDecorator;
     private Job validationJob;
@@ -46,7 +51,13 @@ public class GitSettingsPage extends AWizardPage {
             if (git.getBranch() != null) branchText.setText(git.getBranch());
             if (git.getUsername() != null) usernameText.setText(git.getUsername());
             if (git.getPassword() != null) passwordText.setText(git.getPassword());
-            if (git.getLocalPath() != null) localPathText.setText(git.getLocalPath());
+            if (git.getLocalPath() != null) {
+                String lp = git.getLocalPath();
+                if (localPathText.indexOf(lp) < 0) {
+                    localPathText.add(lp);
+                }
+                localPathText.setText(lp);
+            }
         }
     }
 
@@ -103,9 +114,31 @@ public class GitSettingsPage extends AWizardPage {
         pathComp.setLayout(new GridLayout(2, false));
         pathComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        localPathText = new Text(pathComp, SWT.BORDER);
+        localPathText = new Combo(pathComp, SWT.BORDER | SWT.DROP_DOWN);
         localPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        localPathText.setText("repo");
+
+        List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
+        for (String r : repos) {
+            localPathText.add(r);
+        }
+
+        // Default selection logic: evolution or evo
+        if (repos.isEmpty()) {
+            localPathText.setText("repo");
+        } else {
+            boolean found = false;
+            for (int i = 0; i < localPathText.getItemCount(); i++) {
+                String item = localPathText.getItem(i).toLowerCase();
+                if (item.contains("evolution") || item.contains("/evo")) {
+                    localPathText.select(i);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                localPathText.select(0);
+            }
+        }
 
         Button browseBtn = new Button(pathComp, SWT.PUSH);
         browseBtn.setText("Browse...");
