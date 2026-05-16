@@ -32,6 +32,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
+import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.trajectory.ResultSynthesizer;
@@ -40,7 +41,6 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
-import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;
@@ -154,16 +154,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             FailureMemory failureMemory = manager.getMemoryService().getFailureMemory();
 
             manager.transition(SystemState.MUTATING, context);
-
-            // Check for previous exploration trigger
-            DecisionSnapshot lastDecision = (DecisionSnapshot) state.getMetadata().get("lastDecisionSnapshot");
-            String mutationGoal = goal;
-            if (lastDecision != null && lastDecision.isExplorationTriggered()) {
-                context.log("[KERNEL] Policy Disagreement detected in last cycle. Shifting toward EXPLORATION.");
-                mutationGoal = "EXPLORATION: Resolve architectural ambiguity for " + goal;
-            }
-
-            List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(mutationGoal, snapshot, failureMemory, trajectory);
+            List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
 
             // DIAGNOSTICS: Record mutation in trace
             context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
@@ -283,6 +274,23 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             manager.getGitManager().forceCheckout(originalBranch);
             manager.getGitManager().merge(selectedVariant.getBranchName());
+
+            // ARCHITECTURAL CHANGE: Git-based Validation ("Reality Check")
+            GitTool validationGit = new GitTool();
+            String finalDiff = validationGit.execute("diff HEAD^ HEAD", context.getProjectRoot(), context);
+            context.log("[KERNEL] Reality Check: Winner variant applied. Actual physical change size: " + finalDiff.length() + " chars.");
+
+            if (finalDiff.isEmpty() && !selectedVariant.getActions().isEmpty()) {
+                context.log("[KERNEL] WARNING: Reality divergence detected. Selected variant expected changes but Git is empty.");
+                // Emit divergence signal to SignalBus
+                eu.kalafatic.evolution.controller.trajectory.SignalBus.getInstance().publish(
+                    new eu.kalafatic.evolution.controller.trajectory.EvaluationSignal(
+                        selectedVariant.getId(), "RealityCheck", 0.0, 1.0, eu.kalafatic.evolution.controller.trajectory.SignalSeverity.CRITICAL, "Physical outcome missing expected changes.")
+                );
+            } else {
+                context.log("[KERNEL] Reality check passed. Physical changes align with architectural hypothesis.");
+            }
+
             manager.transition(SystemState.VERIFYING, context);
             IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
             EvaluationResult result = evaluator.evaluate(context.getProjectRoot(), context, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
@@ -318,7 +326,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                     }
                 }
 
-                manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
+                manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase);
                 manager.transition(SystemState.DONE, context);
             } else {
                 manager.getGitManager().rollback();
@@ -399,24 +407,43 @@ public class DarwinFlow implements IOrchestrationFlow {
             variantContext.setAiService(aiService);
             List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
             IterationManager variantManager = KernelFactory.create(variantContext, aiService);
-            boolean success = variantManager.executeTasksWithRetries(tasks);
+
+            // ARCHITECTURAL CHANGE: Dynamic Re-Evaluation Loop
+            // Partial execution with observation after each task
+            final File finalTempDir = tempDir;
+            boolean success = variantManager.executeTasksWithRetries(tasks, () -> {
+                try {
+                    // Observe Git changes after each task
+                    GitTool gitTool = new GitTool();
+                    String diff = gitTool.execute("diff HEAD", finalTempDir, variantContext);
+                    context.log("[DARWIN] Observed Git changes for variant " + variant.getId() + ": " + diff.length() + " chars");
+
+                    // Update EMF with new evidence (semantic justification of the step)
+                    if (variantManager.getCurrentIterationModel() != null) {
+                        variantManager.getCurrentIterationModel().setJustification("Adaptive observation: Step completed with " + diff.length() + " chars changed.");
+                    }
+
+                    // Re-evaluate (In a full implementation, we might re-run DecisionResolver here)
+                    // For now, we update the variant's trajectory based on the observation
+                    context.getSemanticWorkspace().getTrajectoryMemory().recordLineagePattern("Variant " + variant.getId() + " step observation: " + (diff.isEmpty() ? "NO_CHANGE" : "PROGRESS"));
+                } catch (Exception e) {
+                    context.log("[DARWIN] Error during dynamic re-evaluation: " + e.getMessage());
+                }
+            });
+
             if (success) {
-                variantManager.getGitManager().commit("Variant " + variant.getId() + " execution", variantContext);
+                variantManager.getGitManager().commit("Variant " + variant.getId() + " execution");
             }
             variant.setSuccess(success);
 
             if (success) {
-                variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(), variantContext);
+                variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy());
             }
 
             // Context Authority: Use a variant-specific evaluator bound to the temporary worktree
             IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
             EvaluationResult result = evaluator.evaluate(tempDir, variantContext, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
             variant.setSuccess(result.isSuccess());
-
-            // ARCHITECTURAL ENHANCEMENT: Capture physical delta for counterfactual analysis
-            GitTool deltaTool = new GitTool();
-            variant.setMutationTrace(deltaTool.execute("diff HEAD^ HEAD", tempDir, variantContext));
 
             // The score is now produced via EvaluationSignal in Evaluator.emitSignal
             // For backward compatibility during this foundational step, we still set it on the variant,

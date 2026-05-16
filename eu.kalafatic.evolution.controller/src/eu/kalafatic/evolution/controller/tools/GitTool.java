@@ -1,90 +1,85 @@
 package eu.kalafatic.evolution.controller.tools;
 
 import java.io.File;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
-import eu.kalafatic.utils.semantic.EvolutionComponent;
-import eu.kalafatic.utils.semantic.EvolutionaryImpact;
-import eu.kalafatic.utils.semantic.Stability;
+import eu.kalafatic.evolution.model.orchestration.Git;
 
 /**
  * Tool for executing Git commands.
  */
-@EvolutionComponent(
-    domain = "tools",
-    role = "physical-truth-accessor",
-    purpose = "Executes Git commands and emits truth signals",
-    stability = Stability.STABLE,
-    evolutionaryImpact = EvolutionaryImpact.HIGH
-)
 public class GitTool implements ITool {
-
     @Override
-    public String execute(String command, File projectRoot, TaskContext context) throws Exception {
-        if (context != null) {
-            context.log("[GIT] Executing: git " + command);
-        }
-
-        ProcessBuilder pb = new ProcessBuilder();
-        pb.directory(projectRoot);
-
-        // Robust command handling for complex commit messages
-        List<String> fullCmd = new ArrayList<>();
-        fullCmd.add("git");
-        if (command.contains("\"")) {
-            // Primitive handling for quoted strings (commit messages)
-            int firstQuote = command.indexOf("\"");
-            int lastQuote = command.lastIndexOf("\"");
-            String before = command.substring(0, firstQuote).trim();
-            String msg = command.substring(firstQuote + 1, lastQuote);
-            for (String p : before.split(" ")) fullCmd.add(p);
-            fullCmd.add(msg);
-        } else {
-            for (String p : command.split(" ")) fullCmd.add(p);
-        }
-
-        pb.command(fullCmd);
-        Process process = pb.start();
-
-        String output = new String(process.getInputStream().readAllBytes());
-        String error = new String(process.getErrorStream().readAllBytes());
-        int exitCode = process.waitFor();
-
-        if (exitCode == 0) {
-            RuntimeEventBus.getInstance().publish(
-                new RuntimeEvent(RuntimeEventType.TOOL_EXECUTION_SUCCEEDED,
-                                 context != null ? context.getSessionId() : "system",
-                                 "GitTool", output));
-            return output;
-        } else {
-             throw new Exception("Git command failed: " + error);
-        }
+    public String getName() {
+        return "GitTool";
     }
 
     @Override
-    public String getName() {
-        return "git";
+    public String execute(String command, File workingDir, TaskContext context) throws Exception {
+        context.log("Tool [GitTool]: Running " + command);
+        File gitWorkingDir = workingDir;
+        Git gitSettings = context.getOrchestrator().getGit();
+        if (gitSettings != null && gitSettings.getLocalPath() != null && !gitSettings.getLocalPath().isEmpty()) {
+            File subDir = new File(workingDir, gitSettings.getLocalPath());
+            if (subDir.exists() && subDir.isDirectory()) {
+                gitWorkingDir = subDir;
+            }
+        }
+        String branch = (gitSettings != null && gitSettings.getBranch() != null && !gitSettings.getBranch().isEmpty()) ? gitSettings.getBranch() : "master";
+
+        ShellTool shell = new ShellTool();
+        StringBuilder output = new StringBuilder();
+
+        if (command.toLowerCase().contains("add") || command.toLowerCase().contains("commit")) {
+            context.log("Tool [GitTool]: Staging all changes and committing.");
+            output.append(shell.execute("git add .", gitWorkingDir, context)).append("\n");
+            output.append(shell.execute("git commit -m \"AI Evolution step: " + command + "\"", gitWorkingDir, context)).append("\n");
+        }
+
+        if (command.toLowerCase().contains("push")) {
+            context.log("Tool [GitTool]: Pushing to branch " + branch);
+            output.append(shell.execute("git push origin " + branch, gitWorkingDir, context));
+        }
+
+        if (command.toLowerCase().startsWith("diff")) {
+            output.append(shell.execute("git diff " + command.substring(4).trim(), gitWorkingDir, context));
+        }
+
+        if (command.toLowerCase().startsWith("status")) {
+            output.append(shell.execute("git status --porcelain", gitWorkingDir, context));
+        }
+
+        if (output.length() == 0) {
+            return "No git action mapped for: " + command;
+        }
+        return output.toString().trim();
     }
 
     /**
-     * Lists all local branches.
+     * Retrieves the list of local git branches.
+     * @param workingDir The git repository directory.
+     * @return List of branch names.
      */
-    public List<String> getBranches(File projectRoot) {
+    public List<String> getBranches(File workingDir) {
+        List<String> branches = new ArrayList<>();
         try {
-            String output = execute("branch", projectRoot, null);
-            List<String> branches = new ArrayList<>();
-            for (String line : output.split("\n")) {
-                if (line.trim().isEmpty()) continue;
-                // Remove the "*" current branch marker if present
-                branches.add(line.replace("*", "").trim());
+            ShellTool shell = new ShellTool();
+            String output = shell.execute("git branch", workingDir, null);
+            if (output != null && !output.isEmpty()) {
+                String[] lines = output.split("\\R");
+                for (String line : lines) {
+                    // Remove '*' prefix for current branch and trim
+                    String branch = line.replace("*", "").trim();
+                    if (!branch.isEmpty()) {
+                        branches.add(branch);
+                    }
+                }
             }
-            return branches;
         } catch (Exception e) {
-            return new ArrayList<>();
+            // Silently fail or log
         }
+        return branches;
     }
 }

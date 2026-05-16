@@ -365,13 +365,22 @@ public interface OrchestrationPackage extends EPackage {
 	int TASK__BIT_STATE = 32;
 
 	/**
+	 * The feature id for the '<em><b>Justification</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int TASK__JUSTIFICATION = 33;
+
+	/**
 	 * The number of structural features of the '<em>Task</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int TASK_FEATURE_COUNT = 33;
+	int TASK_FEATURE_COUNT = 34;
 
 	/**
 	 * The number of operations of the '<em>Task</em>' class.
@@ -2297,13 +2306,58 @@ public interface OrchestrationPackage extends EPackage {
 	int ITERATION__RATIONALE = 8;
 
 	/**
+	 * The feature id for the '<em><b>Justification</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__JUSTIFICATION = 9;
+
+	/**
+	 * The feature id for the '<em><b>Semantic Pressure</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__SEMANTIC_PRESSURE = 10;
+
+	/**
+	 * The feature id for the '<em><b>Survival Argument</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__SURVIVAL_ARGUMENT = 11;
+
+	/**
+	 * The feature id for the '<em><b>Tradeoffs</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__TRADEOFFS = 12;
+
+	/**
+	 * The feature id for the '<em><b>Failure Risks</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ITERATION__FAILURE_RISKS = 13;
+
+	/**
 	 * The number of structural features of the '<em>Iteration</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ITERATION_FEATURE_COUNT = 9;
+	int ITERATION_FEATURE_COUNT = 14;
 
 	/**
 	 * The number of operations of the '<em>Iteration</em>' class.
@@ -2443,13 +2497,22 @@ public interface OrchestrationPackage extends EPackage {
 	int EVALUATION_RESULT__USER_SATISFACTION = 5;
 
 	/**
+	 * The feature id for the '<em><b>Fitness History</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT__FITNESS_HISTORY = 6;
+
+	/**
 	 * The number of structural features of the '<em>Evaluation Result</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int EVALUATION_RESULT_FEATURE_COUNT = 6;
+	int EVALUATION_RESULT_FEATURE_COUNT = 7;
 
 	/**
 	 * The number of operations of the '<em>Evaluation Result</em>' class.
@@ -3765,6 +3828,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getTask_BitState();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Task#getJustification <em>Justification</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Justification</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Task#getJustification()
+	 * @see #getTask()
+	 * @generated
+	 */
+	EAttribute getTask_Justification();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Agent <em>Agent</em>}'.
@@ -5459,6 +5533,61 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getIteration_Rationale();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getJustification <em>Justification</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Justification</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getJustification()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_Justification();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getSemanticPressure <em>Semantic Pressure</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Semantic Pressure</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getSemanticPressure()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_SemanticPressure();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getSurvivalArgument <em>Survival Argument</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Survival Argument</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getSurvivalArgument()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_SurvivalArgument();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getTradeoffs <em>Tradeoffs</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Tradeoffs</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getTradeoffs()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_Tradeoffs();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getFailureRisks <em>Failure Risks</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Failure Risks</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Iteration#getFailureRisks()
+	 * @see #getIteration()
+	 * @generated
+	 */
+	EAttribute getIteration_FailureRisks();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Eclipse <em>Eclipse</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -5587,6 +5716,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getEvaluationResult_UserSatisfaction();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getFitnessHistory <em>Fitness History</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Fitness History</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.EvaluationResult#getFitnessHistory()
+	 * @see #getEvaluationResult()
+	 * @generated
+	 */
+	EAttribute getEvaluationResult_FitnessHistory();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Test <em>Test</em>}'.
@@ -6763,6 +6903,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute TASK__BIT_STATE = eINSTANCE.getTask_BitState();
+
+		/**
+		 * The meta object literal for the '<em><b>Justification</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute TASK__JUSTIFICATION = eINSTANCE.getTask_Justification();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.AgentImpl <em>Agent</em>}' class.
@@ -8061,6 +8209,46 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute ITERATION__RATIONALE = eINSTANCE.getIteration_Rationale();
 
 		/**
+		 * The meta object literal for the '<em><b>Justification</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__JUSTIFICATION = eINSTANCE.getIteration_Justification();
+
+		/**
+		 * The meta object literal for the '<em><b>Semantic Pressure</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__SEMANTIC_PRESSURE = eINSTANCE.getIteration_SemanticPressure();
+
+		/**
+		 * The meta object literal for the '<em><b>Survival Argument</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__SURVIVAL_ARGUMENT = eINSTANCE.getIteration_SurvivalArgument();
+
+		/**
+		 * The meta object literal for the '<em><b>Tradeoffs</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__TRADEOFFS = eINSTANCE.getIteration_Tradeoffs();
+
+		/**
+		 * The meta object literal for the '<em><b>Failure Risks</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ITERATION__FAILURE_RISKS = eINSTANCE.getIteration_FailureRisks();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.EclipseImpl <em>Eclipse</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -8159,6 +8347,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute EVALUATION_RESULT__USER_SATISFACTION = eINSTANCE.getEvaluationResult_UserSatisfaction();
+
+		/**
+		 * The meta object literal for the '<em><b>Fitness History</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute EVALUATION_RESULT__FITNESS_HISTORY = eINSTANCE.getEvaluationResult_FitnessHistory();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TestImpl <em>Test</em>}' class.

@@ -31,9 +31,6 @@ public class BranchVariant {
     private String failureRisks;
     private List<String> projectedSteps = new ArrayList<>();
 
-    private double shortTermFitness;
-    private double longTermStability;
-
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -74,8 +71,6 @@ public class BranchVariant {
     public String getLineageId() { return lineageId; }
     public void setLineageId(String lineageId) { this.lineageId = lineageId; }
 
-    public String getTrajectoryId() { return lineageId; }
-
     public String getRank() { return rank; }
     public void setRank(String rank) { this.rank = rank; }
 
@@ -99,12 +94,6 @@ public class BranchVariant {
 
     public List<String> getProjectedSteps() { return projectedSteps; }
     public void setProjectedSteps(List<String> projectedSteps) { this.projectedSteps = projectedSteps; }
-
-    public double getShortTermFitness() { return shortTermFitness; }
-    public void setShortTermFitness(double shortTermFitness) { this.shortTermFitness = shortTermFitness; }
-
-    public double getLongTermStability() { return longTermStability; }
-    public void setLongTermStability(double longTermStability) { this.longTermStability = longTermStability; }
 
     public static class Action {
         private String domain;
@@ -142,18 +131,9 @@ public class BranchVariant {
         private String description;
         private List<String> expectedEffects = new ArrayList<>();
 
-    private double shortTermFitness;
-    private double longTermStability;
-
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
         public List<String> getExpectedEffects() { return expectedEffects; }
         public void setExpectedEffects(List<String> expectedEffects) { this.expectedEffects = expectedEffects; }
-
-    public double getShortTermFitness() { return shortTermFitness; }
-    public void setShortTermFitness(double shortTermFitness) { this.shortTermFitness = shortTermFitness; }
-
-    public double getLongTermStability() { return longTermStability; }
-    public void setLongTermStability(double longTermStability) { this.longTermStability = longTermStability; }
     }
 }
