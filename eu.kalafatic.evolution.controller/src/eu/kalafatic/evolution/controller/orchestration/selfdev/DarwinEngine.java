@@ -158,18 +158,20 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                "    \"id\": \"string-id\",\n" +
                "    \"strategy_type\": \"<IMPLEMENTATION | ANALYTICAL | CURIOSITY | STABILIZATION | EXPLORATION>\",\n" +
                "    \"strategy\": \"<high-level intent>\",\n" +
-               "    \"survival_argument\": \"<why this trajectory should continue>\",\n" +
-               "    \"tradeoffs\": \"<explicit tradeoffs>\",\n" +
-               "    \"failure_risks\": \"<potential risks>\",\n" +
-               "    \"projected_steps\": [\"<future adaptive step 1>\", \"<future adaptive step 2>\"],\n" +
-               "    \"score\": 0.0-1.0, // Predicted probability of success/correctness\n" +
+               "    \"survival_argument\": \"<why this trajectory should continue - REQUIRED for survival>\",\n" +
+               "    \"tradeoffs\": \"<explicit technical tradeoffs>\",\n" +
+               "    \"failure_risks\": \"<potential risks and failure modes>\",\n" +
+               "    \"pros_cons\": \"<pros and cons analysis of this specific hypothesis>\",\n" +
+               "    \"semantic_justification\": \"<why this future should exist in the architecture>\",\n" +
+               "    \"projected_steps\": [\"<future adaptive step 1 (N+1)>\", \"<future adaptive step 2 (N+2)>\"],\n" +
+               "    \"score\": 0.0-1.0, // Predicted fitness score\n" +
                "    \"suffix\": \"<short string for branch name>\",\n" +
                "    \"actions\": [\n" +
                "      {\n" +
                "        \"domain\": \"file | test | build | structure\",\n" +
                "        \"operation\": \"<operation name, e.g. WRITE, DELETE, MKDIR, TEST, BUILD, ANALYZE>\",\n" +
                "        \"target\": \"<file/module/test path>\",\n" +
-               "        \"description\": \"<detailed instruction of what will be done in this specific step>\"\n" +
+               "        \"description\": \"<detailed instruction for the FIRST step only>\"\n" +
                "      }\n" +
                "    ],\n" +
                "    \"hypothesis\": {\n" +
@@ -405,6 +407,16 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             v.setSurvivalArgument(obj.optString("survival_argument", "none"));
             v.setTradeoffs(obj.optString("tradeoffs", "none"));
             v.setFailureRisks(obj.optString("failure_risks", "none"));
+
+            // Initialize Trajectory metadata
+            Trajectory t = new Trajectory(v.getId(), v.getStrategy());
+            t.setProsConsAnalysis(obj.optString("pros_cons", "none"));
+            t.setSemanticJustification(obj.optString("semantic_justification", "none"));
+            t.setFitnessScore(v.getScore());
+            v.setTrajectoryId(t.getTrajectoryId());
+            if (memoryService != null && memoryService.getTrajectoryMemory() != null) {
+                memoryService.getTrajectoryMemory().recordTrajectory(t);
+            }
 
             JSONArray stepsArr = obj.optJSONArray("projected_steps");
             if (stepsArr != null) {

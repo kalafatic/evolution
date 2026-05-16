@@ -47,25 +47,29 @@ public class ActivationResolver implements ICapability {
             return createNullDecision(iterationId);
         }
 
-        Map<String, Map<String, Double>> policyScores = new HashMap<>();
+        Map<String, Map<String, PolicyResult>> policyResults = new HashMap<>();
         Map<String, Double> aggregatedScores = new HashMap<>();
 
         // 1. Calculate individual policy scores
         for (BranchVariant variant : variants) {
-            Map<String, Double> scores = new HashMap<>();
+            Map<String, PolicyResult> results = new HashMap<>();
             double totalScore = 0.0;
+            double totalConfidence = 0.0;
             
             // Integrate Signal feedback into scoring
             double signalBoost = calculateSignalBoost(variant, signals);
             
             for (ResolverPolicy policy : policies) {
-                double score = policy.evaluate(variant);
-                scores.put(policy.getClass().getSimpleName(), score);
-                totalScore += score;
+                PolicyResult result = policy.evaluate(variant);
+                results.put(policy.getClass().getSimpleName(), result);
+                totalScore += result.getScore() * result.getConfidence();
+                totalConfidence += result.getConfidence();
             }
             
-            double finalScore = (totalScore / policies.size()) * 0.7 + (signalBoost * 0.3);
-            policyScores.put(variant.getId(), scores);
+            double baseScore = totalConfidence > 0 ? (totalScore / totalConfidence) : 0.5;
+            double finalScore = baseScore * 0.7 + (signalBoost * 0.3);
+
+            policyResults.put(variant.getId(), results);
             aggregatedScores.put(variant.getId(), finalScore);
         }
 
@@ -77,7 +81,7 @@ public class ActivationResolver implements ICapability {
 
         String winnerId = rankedIds.get(0);
         double confidence = calculateConfidence(aggregatedScores, winnerId);
-        double disagreement = calculateDisagreement(policyScores, winnerId);
+        double disagreement = calculateDisagreement(policyResults, winnerId);
 
         String reason = generateReason(winnerId, aggregatedScores.get(winnerId), disagreement, signals);
 
@@ -127,13 +131,20 @@ public class ActivationResolver implements ICapability {
         return Math.min(1.0, (winnerScore - runnerUpScore) / (1.0 - runnerUpScore + 0.1));
     }
 
-    private double calculateDisagreement(Map<String, Map<String, Double>> policyScores, String winnerId) {
-        Map<String, Double> winnerPolicyScores = policyScores.get(winnerId);
-        if (winnerPolicyScores == null || winnerPolicyScores.size() < 2) return 0.0;
+    private double calculateDisagreement(Map<String, Map<String, PolicyResult>> policyResults, String winnerId) {
+        Map<String, PolicyResult> winnerPolicyResults = policyResults.get(winnerId);
+        if (winnerPolicyResults == null || winnerPolicyResults.size() < 2) return 0.0;
+
+        List<Double> scores = winnerPolicyResults.values().stream()
+                .map(PolicyResult::getScore)
+                .collect(Collectors.toList());
+
+        double avg = scores.stream().mapToDouble(d -> d).average().orElse(0.0);
+        double sumSq = scores.stream().mapToDouble(d -> Math.pow(d - avg, 2)).sum();
+        double stdDev = Math.sqrt(sumSq / scores.size());
         
-        double min = winnerPolicyScores.values().stream().mapToDouble(d -> d).min().orElse(0.0);
-        double max = winnerPolicyScores.values().stream().mapToDouble(d -> d).max().orElse(1.0);
-        return max - min;
+        // Normalize disagreement: 0.5 stdDev ~ 1.0 disagreement
+        return Math.min(1.0, stdDev * 2.0);
     }
 
     private String generateReason(String winnerId, double score, double disagreement, List<EvaluationSignal> signals) {

@@ -300,6 +300,10 @@ public class IterationManager {
                 case FAILED: currentIterationModel.setStatus(IterationStatus.FAILED); break;
                 default: currentIterationModel.setStatus(IterationStatus.RUNNING); break;
             }
+            String existingJustification = currentIterationModel.getJustification() != null ? currentIterationModel.getJustification() : "";
+            if (!existingJustification.contains(to.toString())) {
+                currentIterationModel.setJustification(existingJustification + "\n[STATE_TRANSITION] Reached phase: " + to);
+            }
         }
 
         eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
@@ -358,6 +362,10 @@ public class IterationManager {
             EvaluationResult result = evaluator.evaluate();
             if (currentIterationModel != null) {
                 currentIterationModel.setEvaluationResult(result);
+                currentIterationModel.setRationale("PEV Execution Result: " + (result.isSuccess() ? "SUCCESS" : "FAILURE"));
+                if (result.getFitnessHistory() != null) {
+                    currentIterationModel.setJustification(currentIterationModel.getJustification() + "\nFitness: " + result.getFitnessHistory());
+                }
             }
             if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
                 if (currentIterationModel != null) {

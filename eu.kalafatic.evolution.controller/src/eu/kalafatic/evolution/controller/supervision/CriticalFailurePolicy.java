@@ -8,11 +8,11 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 public class CriticalFailurePolicy implements ResolverPolicy {
 
     @Override
-    public double evaluate(BranchVariant variant) {
+    public PolicyResult evaluate(BranchVariant variant) {
         if (!variant.isSuccess() || (variant.getErrorMessage() != null && !variant.getErrorMessage().isEmpty())) {
-            return 0.0;
+            return new PolicyResult(0.0, 1.0, "Critical failure or error message detected: " + variant.getErrorMessage());
         }
-        return 1.0;
+        return new PolicyResult(1.0, 1.0, "No critical failures detected.");
     }
 
     @Override

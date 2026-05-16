@@ -35,7 +35,17 @@ public class GitTool implements ITool {
         if (command.toLowerCase().contains("add") || command.toLowerCase().contains("commit")) {
             context.log("Tool [GitTool]: Staging all changes and committing.");
             output.append(shell.execute("git add .", gitWorkingDir, context)).append("\n");
-            output.append(shell.execute("git commit -m \"AI Evolution step: " + command + "\"", gitWorkingDir, context)).append("\n");
+
+            String metadata = "";
+            if (context != null) {
+                String iterationId = context.getOrchestrationState().getCurrentIterationId();
+                String taskId = context.getCurrentTaskName(); // Task name as proxy for ID if ID not easily reachable
+                metadata = String.format(" [Iteration: %s] [Task: %s]",
+                    iterationId != null ? iterationId : "unknown",
+                    taskId != null ? taskId : "none");
+            }
+
+            output.append(shell.execute("git commit -m \"AI Evolution step: " + command + metadata + "\"", gitWorkingDir, context)).append("\n");
         }
 
         if (command.toLowerCase().contains("push")) {

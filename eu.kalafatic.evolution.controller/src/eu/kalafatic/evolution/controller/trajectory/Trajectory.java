@@ -19,6 +19,11 @@ public class Trajectory {
     private double stabilityScore = 0.5;
     private double confidenceLevel = 0.5;
     private double divergenceScore = 0.0;
+
+    // Legacy fields for compatibility
+    public String testTrend = "STABLE";
+    public String buildTrend = "STABLE";
+    public String failureChange = "NONE";
     
     // Adaptive future forecasting
     private List<String> projectedSteps = new ArrayList<>();

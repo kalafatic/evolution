@@ -39,31 +39,46 @@ public class GitEmfReconciler {
                     .findFirst().orElse(null);
 
                 if (currentIt != null) {
-                    // Detect Divergence
-                    if (gitOutput.contains("CONFLICT") || gitOutput.contains("error:")) {
-                        emitDivergenceSignal(currentIt.getId(), DivergenceType.STRUCTURAL_DRIFT);
+                    // Detect Divergence Taxonomy
+                    if (gitOutput.contains("CONFLICT")) {
+                        emitDivergenceSignal(currentIt.getId(), DivergenceType.STRUCTURAL_DRIFT, "Git conflict detected during application.");
+                    } else if (gitOutput.contains("error:")) {
+                        emitDivergenceSignal(currentIt.getId(), DivergenceType.BEHAVIORAL_MISMATCH, "Git tool reported an error execution.");
+                    } else if (gitOutput.length() > 50000) {
+                        emitDivergenceSignal(currentIt.getId(), DivergenceType.COMPLEXITY_EXPLOSION, "Unexpectedly large physical change detected (" + gitOutput.length() + " chars).");
+                    } else if (gitOutput.trim().isEmpty()) {
+                        emitDivergenceSignal(currentIt.getId(), DivergenceType.SILENT_CHANGE, "Git tool succeeded but no physical changes were detected.");
                     }
 
-                    // Update rationale with physical truth
+                    // Update rationale with physical truth and reasoning context
                     String currentRationale = currentIt.getRationale() != null ? currentIt.getRationale() : "";
                     if (!currentRationale.contains("[RECONCILED]")) {
-                        currentIt.setRationale(currentRationale + "\n[RECONCILED] Physical Git state synchronized. Reality check passed.");
+                        String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Unknown Goal";
+                        currentIt.setRationale(currentRationale + "\n[RECONCILED] Physical Git state synchronized for goal: " + goal + ". Reality check passed.");
                     }
                 }
             }
         }
     }
 
-    private void emitDivergenceSignal(String iterationId, DivergenceType type) {
+    private void emitDivergenceSignal(String iterationId, DivergenceType type, String message) {
+        String variantId = (String) context.getMetadata().getOrDefault("variantId", "NONE");
         EvaluationSignal signal = new EvaluationSignal(
-            "NONE", // variantId
-            "GitReconciler", // evaluatorId
-            0.1, // score
-            1.0, // confidence
-            SignalSeverity.CRITICAL, // severity
-            type, // divergenceType
-            "Physical divergence detected via Git reconciliation: " + type
+            variantId,
+            "GitReconciler",
+            0.1, // Low score due to divergence
+            1.0, // High confidence in the physical signal
+            SignalSeverity.CRITICAL,
+            type,
+            "Physical divergence [" + type + "] detected: " + message
         );
         SignalBus.getInstance().publish(signal);
+    }
+
+    /**
+     * Public method to manually trigger a reconciliation check.
+     */
+    public void check(String output) {
+        reconcile(new RuntimeEvent(RuntimeEventType.TOOL_EXECUTION_SUCCEEDED, "manual", "GitTool", output));
     }
 }
