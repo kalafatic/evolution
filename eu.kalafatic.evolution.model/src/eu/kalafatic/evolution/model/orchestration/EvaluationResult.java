@@ -153,4 +153,26 @@ public interface EvaluationResult extends EObject {
 	 */
 	void setUserSatisfaction(int value);
 
+	/**
+	 * Returns the value of the '<em><b>Fitness History</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Fitness History</em>' attribute.
+	 * @see #setFitnessHistory(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getEvaluationResult_FitnessHistory()
+	 * @model
+	 * @generated
+	 */
+	String getFitnessHistory();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getFitnessHistory <em>Fitness History</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Fitness History</em>' attribute.
+	 * @see #getFitnessHistory()
+	 * @generated
+	 */
+	void setFitnessHistory(String value);
+
 } // EvaluationResult

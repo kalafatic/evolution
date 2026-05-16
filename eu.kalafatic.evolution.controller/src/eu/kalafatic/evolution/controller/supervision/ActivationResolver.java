@@ -7,10 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import java.util.Collections;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
-import eu.kalafatic.evolution.controller.trajectory.TrajectoryMemory;
+import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
 import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
@@ -38,6 +43,10 @@ public class ActivationResolver implements ICapability {
         this.policies.add(new TrajectoryStabilityPolicy(memory));
         this.policies.add(new CriticalFailurePolicy());
         this.policies.add(new HighestScorePolicy());
+    }
+
+    public ActivationResolver() {
+        this(null);
     }
 
     /**

@@ -22,7 +22,7 @@ public class KernelFactory {
     }
 
     public static IterationManager create(TaskContext context, AiService aiService) {
-        GitManager gitManager = new GitManager(context.getProjectRoot(), context);
+        GitManager gitManager = new GitManager(context.getProjectRoot());
         TaskPlanner taskPlanner = new TaskPlanner();
         TaskExecutor taskExecutor = new TaskExecutor(context, context.getOrchestrator());
         if (taskExecutor.getOrchestrator() != null) {
@@ -37,7 +37,7 @@ public class KernelFactory {
         // Register static capabilities
         try {
             CapabilityRegistry.getInstance().register(new KernelScheduler());
-            CapabilityRegistry.getInstance().register(new ActivationResolver());
+            CapabilityRegistry.getInstance().register(new ActivationResolver(memoryService.getTrajectoryMemory()));
         } catch (CapabilityException e) {
             context.log("[KERNEL] Factory capability registration error: " + e.getMessage());
         }

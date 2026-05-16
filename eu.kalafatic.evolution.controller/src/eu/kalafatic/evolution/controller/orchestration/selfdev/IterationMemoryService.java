@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
+
 
 public class IterationMemoryService {
     private File projectRoot;
@@ -19,6 +21,7 @@ public class IterationMemoryService {
     private final List<IterationRecord> records = new ArrayList<>();
     private final Map<String, List<IterationRecord>> errorIndex = new HashMap<>();
     private final FailureMemory failureMemory = new FailureMemory();
+    private final TrajectoryMemory trajectoryMemory = new TrajectoryMemory();
 
     public IterationMemoryService(File projectRoot) {
         this.projectRoot = findEffectiveRoot(projectRoot);
@@ -169,6 +172,10 @@ public class IterationMemoryService {
 
     public FailureMemory getFailureMemory() {
         return failureMemory;
+    }
+
+    public TrajectoryMemory getTrajectoryMemory() {
+        return trajectoryMemory;
     }
 
     public String getHistoryAnalysis() {

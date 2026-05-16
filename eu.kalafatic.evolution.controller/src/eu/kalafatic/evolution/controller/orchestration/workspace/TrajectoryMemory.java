@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 
 /**
  * Tracks long-running reasoning paths and stabilizes orchestration trajectories.
@@ -14,9 +15,16 @@ public class TrajectoryMemory {
     private final List<String> userPreferredStyles = new ArrayList<>();
     private final List<String> architectureEvolutionHistory = new ArrayList<>();
     private final List<String> branchLineagePatterns = new ArrayList<>();
+    private final List<String> survivalDeathLog = new ArrayList<>();
 
     private final Map<String, Integer> strategySuccessCount = new ConcurrentHashMap<>();
     private final Map<String, Integer> strategyFailureCount = new ConcurrentHashMap<>();
+    private final Map<String, Trajectory> trajectories = new ConcurrentHashMap<>();
+
+    public Trajectory getTrajectory(String id) {
+        if (id == null) return null;
+        return trajectories.get(id);
+    }
 
     public void recordSuccessfulStrategy(String strategy) {
         if (!successfulStrategies.contains(strategy)) {
@@ -44,6 +52,14 @@ public class TrajectoryMemory {
 
     public void recordLineagePattern(String pattern) {
         branchLineagePatterns.add(pattern);
+    }
+
+    public void recordSurvivalOrDeath(String variantId, String reason, boolean survived) {
+        survivalDeathLog.add("[" + System.currentTimeMillis() + "] Variant " + variantId + (survived ? " SURVIVED: " : " DIED: ") + reason);
+    }
+
+    public List<String> getSurvivalDeathLog() {
+        return survivalDeathLog;
     }
 
     public List<String> getSuccessfulStrategies() {

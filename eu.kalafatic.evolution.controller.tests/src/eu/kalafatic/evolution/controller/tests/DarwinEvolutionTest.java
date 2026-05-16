@@ -227,7 +227,7 @@ public class DarwinEvolutionTest {
     }
 
     private IterationManager createMockedManager(TaskContext context) {
-        GitManager gitManager = new GitManager(tempDir, context);
+        GitManager gitManager = new GitManager(tempDir);
         TaskPlanner taskPlanner = new TaskPlanner();
         TaskExecutor taskExecutor = new TaskExecutor(context, orchestrator);
         IterationMemoryService memoryService = new IterationMemoryService(tempDir);

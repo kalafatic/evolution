@@ -768,4 +768,26 @@ public interface Task extends EObject {
 	 */
 	void setBitState(long value);
 
+	/**
+	 * Returns the value of the '<em><b>Justification</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Justification</em>' attribute.
+	 * @see #setJustification(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_Justification()
+	 * @model
+	 * @generated
+	 */
+	String getJustification();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Task#getJustification <em>Justification</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Justification</em>' attribute.
+	 * @see #getJustification()
+	 * @generated
+	 */
+	void setJustification(String value);
+
 } // Task

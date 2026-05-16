@@ -1,28 +1,58 @@
 package eu.kalafatic.evolution.controller.supervision;
 
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 
 /**
- * Policy that evaluates variants based on their estimated complexity cost and stability.
+ * Policy that evaluates variants based on their estimated complexity cost.
  */
 public class ComplexityCostPolicy implements ResolverPolicy {
+    private final List<BranchVariant> variants;
+
+    public ComplexityCostPolicy(List<BranchVariant> variants) {
+        this.variants = variants;
+    }
 
     @Override
-    public double evaluate(BranchVariant variant) {
-        double score = 0.5;
-        int steps = variant.getProjectedSteps().size();
-        if (steps > 0) {
-            score -= (steps * 0.05);
-        }
-        if (variant.getTradeoffs() != null && !variant.getTradeoffs().isEmpty()) {
-            score += 0.1;
+    public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals, List<ActivationRecommendation> recommendations) {
+        Map<String, Double> scores = new HashMap<>();
+
+        for (ActivationRecommendation rec : recommendations) {
+            BranchVariant variant = variants.stream().filter(v -> v.getId().equals(rec.getBranchId())).findFirst().orElse(null);
+            double score = 0.5;
+            if (variant != null) {
+                int steps = variant.getProjectedSteps().size();
+                if (steps > 0) {
+                    score -= (steps * 0.05);
+                }
+                if (variant.getTradeoffs() != null && !variant.getTradeoffs().isEmpty()) {
+                    score += 0.1;
+                }
+            }
+            scores.put(rec.getBranchId(), Math.max(0.0, score));
         }
 
-        // Fitness Horizon Axes (side-effects for metadata tracking)
-        variant.setShortTermFitness(score);
-        variant.setLongTermStability(1.0 - (steps * 0.1));
+        String bestId = scores.entrySet().stream()
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey)
+            .orElse(null);
 
-        return Math.max(0.0, score);
+        return new DecisionSnapshot(
+            iterationId,
+            bestId,
+            scores.keySet().stream().sorted((a,b) -> scores.get(b).compareTo(scores.get(a))).collect(Collectors.toList()),
+            scores,
+            null,
+            "Lowest complexity cost",
+            getName(),
+            1.0,
+            "Evaluated complexity based on projected steps"
+        );
     }
 
     @Override

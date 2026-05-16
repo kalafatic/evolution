@@ -298,7 +298,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		if (modelName == null) modelName = "NOT SET";
 
 		setTextSafe(modeIndicatorLabel, mode.getName().toUpperCase() + " MODE ACTIVE - " + modelName.toUpperCase());
-		modeIndicatorLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
+		setForegroundSafe(modeIndicatorLabel, Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
 		setBackgroundSafe(modeIndicatorLabel, lightGreen);
 		switch (mode) {
 		case LOCAL: setBackgroundSafe(modeIndicatorLabel, colorLocal); break;

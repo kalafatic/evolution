@@ -222,4 +222,114 @@ public interface Iteration extends EObject {
 	 */
 	void setRationale(String value);
 
+	/**
+	 * Returns the value of the '<em><b>Justification</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Justification</em>' attribute.
+	 * @see #setJustification(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration_Justification()
+	 * @model
+	 * @generated
+	 */
+	String getJustification();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getJustification <em>Justification</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Justification</em>' attribute.
+	 * @see #getJustification()
+	 * @generated
+	 */
+	void setJustification(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Semantic Pressure</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Semantic Pressure</em>' attribute.
+	 * @see #setSemanticPressure(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration_SemanticPressure()
+	 * @model
+	 * @generated
+	 */
+	String getSemanticPressure();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getSemanticPressure <em>Semantic Pressure</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Semantic Pressure</em>' attribute.
+	 * @see #getSemanticPressure()
+	 * @generated
+	 */
+	void setSemanticPressure(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Survival Argument</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Survival Argument</em>' attribute.
+	 * @see #setSurvivalArgument(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration_SurvivalArgument()
+	 * @model
+	 * @generated
+	 */
+	String getSurvivalArgument();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getSurvivalArgument <em>Survival Argument</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Survival Argument</em>' attribute.
+	 * @see #getSurvivalArgument()
+	 * @generated
+	 */
+	void setSurvivalArgument(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Tradeoffs</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Tradeoffs</em>' attribute.
+	 * @see #setTradeoffs(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration_Tradeoffs()
+	 * @model
+	 * @generated
+	 */
+	String getTradeoffs();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getTradeoffs <em>Tradeoffs</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Tradeoffs</em>' attribute.
+	 * @see #getTradeoffs()
+	 * @generated
+	 */
+	void setTradeoffs(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Failure Risks</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Failure Risks</em>' attribute.
+	 * @see #setFailureRisks(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration_FailureRisks()
+	 * @model
+	 * @generated
+	 */
+	String getFailureRisks();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Iteration#getFailureRisks <em>Failure Risks</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Failure Risks</em>' attribute.
+	 * @see #getFailureRisks()
+	 * @generated
+	 */
+	void setFailureRisks(String value);
+
 } // Iteration

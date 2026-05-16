@@ -25,6 +25,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -512,7 +513,10 @@ public class EvolutionServer extends NanoHTTPD {
         }
 
         GitTool gitTool = new GitTool();
-        List<String> branches = gitTool.getBranches(root);
+        List<String> branches = Collections.emptyList();
+        try {
+            branches = gitTool.getBranches(root);
+        } catch (Exception e) {}
         JSONArray array = new JSONArray(branches);
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
