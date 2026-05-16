@@ -41,6 +41,7 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;

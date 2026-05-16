@@ -37,7 +37,7 @@ public class KernelFactory {
         // Register static capabilities
         try {
             CapabilityRegistry.getInstance().register(new KernelScheduler());
-            CapabilityRegistry.getInstance().register(new ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory()));
+            CapabilityRegistry.getInstance().register(new ActivationResolver(memoryService.getTrajectoryMemory()));
         } catch (CapabilityException e) {
             context.log("[KERNEL] Factory capability registration error: " + e.getMessage());
         }

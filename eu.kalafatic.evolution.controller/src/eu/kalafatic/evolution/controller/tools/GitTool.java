@@ -57,29 +57,21 @@ public class GitTool implements ITool {
         return output.toString().trim();
     }
 
-    /**
-     * Retrieves the list of local git branches.
-     * @param workingDir The git repository directory.
-     * @return List of branch names.
-     */
-    public List<String> getBranches(File workingDir) {
+    public List<String> getBranches(File root) throws Exception {
+        String output = execute("branch --format=%(refname:short)", root, null);
         List<String> branches = new ArrayList<>();
-        try {
-            ShellTool shell = new ShellTool();
-            String output = shell.execute("git branch", workingDir, null);
-            if (output != null && !output.isEmpty()) {
-                String[] lines = output.split("\\R");
-                for (String line : lines) {
-                    // Remove '*' prefix for current branch and trim
-                    String branch = line.replace("*", "").trim();
-                    if (!branch.isEmpty()) {
-                        branches.add(branch);
-                    }
+        if (output != null) {
+            for (String line : output.split("\n")) {
+                if (!line.trim().isEmpty()) {
+                    branches.add(line.trim());
                 }
             }
-        } catch (Exception e) {
-            // Silently fail or log
         }
         return branches;
+    }
+
+    @Override
+    public String getName() {
+        return "Git";
     }
 }
