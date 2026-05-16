@@ -21,6 +21,7 @@ public class BranchVariant {
     // Extended Darwin Branch Model fields
     private String branchId;
     private String lineageId;
+    private String trajectoryId;
     private String rank; // winner / runner-up / noise
     private ActivationState activationState = ActivationState.INACTIVE;
     private String semanticAnchor;
@@ -73,6 +74,9 @@ public class BranchVariant {
 
     public String getLineageId() { return lineageId; }
     public void setLineageId(String lineageId) { this.lineageId = lineageId; }
+
+    public String getTrajectoryId() { return trajectoryId; }
+    public void setTrajectoryId(String trajectoryId) { this.trajectoryId = trajectoryId; }
 
     public String getRank() { return rank; }
     public void setRank(String rank) { this.rank = rank; }
@@ -139,19 +143,16 @@ public class BranchVariant {
     public static class Hypothesis {
         private String description;
         private List<String> expectedEffects = new ArrayList<>();
-
-    private double shortTermFitness;
-    private double longTermStability;
+        private double shortTermFitness;
+        private double longTermStability;
 
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
         public List<String> getExpectedEffects() { return expectedEffects; }
         public void setExpectedEffects(List<String> expectedEffects) { this.expectedEffects = expectedEffects; }
-
-    public double getShortTermFitness() { return shortTermFitness; }
-    public void setShortTermFitness(double shortTermFitness) { this.shortTermFitness = shortTermFitness; }
-
-    public double getLongTermStability() { return longTermStability; }
-    public void setLongTermStability(double longTermStability) { this.longTermStability = longTermStability; }
+        public double getShortTermFitness() { return shortTermFitness; }
+        public void setShortTermFitness(double shortTermFitness) { this.shortTermFitness = shortTermFitness; }
+        public double getLongTermStability() { return longTermStability; }
+        public void setLongTermStability(double longTermStability) { this.longTermStability = longTermStability; }
     }
 }

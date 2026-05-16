@@ -35,16 +35,23 @@ public class GitTool implements ITool {
         // Robust command handling for complex commit messages
         List<String> fullCmd = new ArrayList<>();
         fullCmd.add("git");
+
+        // Split by space but preserve quoted segments
         if (command.contains("\"")) {
-            // Primitive handling for quoted strings (commit messages)
             int firstQuote = command.indexOf("\"");
             int lastQuote = command.lastIndexOf("\"");
             String before = command.substring(0, firstQuote).trim();
             String msg = command.substring(firstQuote + 1, lastQuote);
-            for (String p : before.split(" ")) fullCmd.add(p);
+            if (!before.isEmpty()) {
+                for (String p : before.split(" ")) {
+                    if (!p.isEmpty()) fullCmd.add(p);
+                }
+            }
             fullCmd.add(msg);
         } else {
-            for (String p : command.split(" ")) fullCmd.add(p);
+            for (String p : command.split(" ")) {
+                if (!p.isEmpty()) fullCmd.add(p);
+            }
         }
 
         pb.command(fullCmd);

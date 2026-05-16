@@ -47,15 +47,10 @@ import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
+import eu.kalafatic.evolution.controller.tools.GitTool;
 
 /**
  * Evolutionary Darwin loop orchestration flow.
- *
- * <p><b>ARCHITECTURAL INVARIANT: EXPLORATION ONLY</b></p>
- * DarwinFlow and the DarwinEngine are restricted to exploring the intent space.
- * They may generate hypotheses, create branch variants, and mutate proposals,
- * but they are STRICTLY PROHIBITED from ranking variants, selecting winners,
- * or activating branches. All decision authority is delegated to the DecisionResolver.
  */
 @EvolutionComponent(
     domain = "orchestration",
@@ -116,7 +111,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(state.getCurrentPhase())) {
             manager.transition(SystemState.ANALYZING, context);
             IntentExpansionResult expansion = manager.getIntentExpansionEngine().expand(goal, context);
-            state.setIntentAnalysis(null); // Clear old simple analysis
+            state.setIntentAnalysis(null);
             state.getMetadata().put("intentExpansion", expansion);
 
             ClarificationPlanner planner = manager.getClarificationPlanner();
@@ -130,7 +125,6 @@ public class DarwinFlow implements IOrchestrationFlow {
                     manager.recordRejection(goal, "User rejected clarification request.");
                     return manager.failedResult();
                 }
-                // Update goal with clarification and restart phase
                 goal = goal + " (Clarification: " + userResponse + ")";
                 context.getOrchestrator().getSelfDevSession().setInitialRequest(goal);
                 return runDarwin(context);
@@ -164,7 +158,7 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(mutationGoal, snapshot, failureMemory, trajectory);
 
-            // DIAGNOSTICS: Record mutation in trace
+            // Record mutation in trace
             context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
                 "darwin-mutation-" + System.currentTimeMillis(),
                 "MUTATION",
@@ -175,36 +169,13 @@ public class DarwinFlow implements IOrchestrationFlow {
                 "Generated " + rawVariants.size() + " variants."
             ));
 
-            // Kernel Scheduling Layer
+            // Scheduling
             ISchedulingContract scheduler = CapabilityRegistry.getInstance().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
             ScheduledExecutionPlan executionPlan = scheduler.schedule(rawVariants, context);
-            context.log("[KERNEL] Scheduler decision: " + executionPlan.getDecisionReason());
             List<BranchVariant> variants = executionPlan.getScheduledVariants();
             context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
-            eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().setBudget(executionPlan.getAppliedBudget());
-            if (scheduler instanceof KernelScheduler) {
-                ((KernelScheduler)scheduler).getBackpressure().resetCounters();
-            }
-
-            // Publish variants for the graph
-            JSONArray variantsJson = new JSONArray();
-            for (BranchVariant v : variants) {
-                JSONObject vObj = new JSONObject();
-                vObj.put("id", v.getId());
-                vObj.put("strategy", v.getStrategy());
-                variantsJson.put(vObj);
-            }
-            eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
-                new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
-                    eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MUTATION_REVIEW,
-                    context.getSessionId(), "Kernel", variantsJson)
-                    .withParent("evolution_loop"));
-
-            manager.checkStep("evolution_loop", "MUTATION", "Darwin variants generated. Review before approval.");
 
             BehaviorProfile profile = context.getBehaviorProfile();
-
-            // Decision Authority
             DecisionResolver decisionResolver = new DecisionResolver();
 
             // MEDIATED mode behavior
@@ -235,46 +206,26 @@ public class DarwinFlow implements IOrchestrationFlow {
                 return res;
             }
 
-            if (!context.isAutoApprove()) {
-                String input = context.requestInput("Darwin generated " + variants.size() + " variants. Review and approve to start evaluation.").get();
-                if (input != null && input.startsWith("EDIT PROPOSAL")) {
-                    manager.updateVariantFromInput(variants, input);
-                } else if ("Rejected".equalsIgnoreCase(input)) {
-                    manager.recordRejection(goal, "Darwin variants rejected by user.");
-                    EvaluationResult res = manager.failedResult();
-                    res.setDecision(SelfDevDecision.CONTINUE);
-                    manager.transition(SystemState.FAILED, context);
-                    return res;
-                }
-            }
-
             manager.transition(SystemState.PLAN_LOCKED, context);
             manager.getGitManager().forceCheckout(snapshotBranch);
             manager.transition(SystemState.EXECUTING, context);
 
-            // Filter already active branches (e.g. from previous steps)
+            // Filter already active branches
             List<BranchVariant> activeVariants = variants.stream()
                     .filter(v -> v.getActivationState() == BranchVariant.ActivationState.ACTIVE)
                     .collect(Collectors.toList());
             BranchVariant selectedVariant = null;
 
             if (!activeVariants.isEmpty()) {
-                context.log("[KERNEL] Authority: Proceeding with " + activeVariants.size() + " ACTIVE branches.");
                 selectedVariant = evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
             } else {
-                context.log("[KERNEL] Authority: No ACTIVE branches. Evaluating all proposals to determine best candidate for activation.");
                 selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
-
-                // Decision Authority: Resolve winner autonomously
                 if (!profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && selectedVariant != null) {
                     decisionResolver.resolveWinner(iterId, variants, context);
                 }
             }
 
-            manager.checkStep("evolution_loop", "BRANCH_COMPARISON", "Evaluation complete. Selected variant: " + (selectedVariant != null ? selectedVariant.getId() : "None"));
-
             if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE && selectedVariant.getScore() < 0.5)) {
-                context.log("[KERNEL] Activation Gate: Evolution halted. No ACTIVE or high-quality variant available (Score: " + (selectedVariant != null ? selectedVariant.getScore() : "N/A") + ")");
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.transition(SystemState.FAILED, context);
                 return manager.failedResult();
@@ -290,35 +241,14 @@ public class DarwinFlow implements IOrchestrationFlow {
                 String completedPhase = state.getCurrentPhase();
                 manager.advanceEvolutionPhase(state);
 
-                // CURIOSITY TRIGGER: If stable solution exists, enable curiosity
                 if (result.getTestPassRate() >= 1.0) {
-                    context.log("[KERNEL] Stable solution achieved. Enabling Curiosity Phase.");
                     state.setCuriosityEnabled(true);
                     state.getMetadata().put("artifact_stable", true);
                 }
 
-                if (!EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(completedPhase)) {
-                    result.setDecision(SelfDevDecision.CONTINUE);
-                } else if (state.isCuriosityEnabled()) {
-                    boolean proceedToCuriosity = context.isAutoApprove();
-                    if (!proceedToCuriosity) {
-                        String input = context.requestInput("Stable solution reached. Would you like to proceed with the Curiosity Phase to explore enhancements? (Yes/No)").get();
-                        proceedToCuriosity = "Yes".equalsIgnoreCase(input);
-                    }
-
-                    if (proceedToCuriosity) {
-                        context.log("[KERNEL] Final synthesis complete. Triggering Curiosity Phase.");
-                        result.setDecision(SelfDevDecision.CONTINUE);
-                        state.setCurrentPhase("PHASE_CURIOSITY_EXPLORATION");
-                        state.setCuriosityEnabled(false); // Reset to avoid loop
-                    } else {
-                        context.log("[KERNEL] User opted out of Curiosity Phase.");
-                        result.setDecision(SelfDevDecision.STOP);
-                    }
-                }
-
                 manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
                 manager.transition(SystemState.DONE, context);
+                result.setDecision(EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(completedPhase) ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
             } else {
                 manager.getGitManager().rollback();
                 manager.transition(SystemState.FAILED, context);
@@ -340,31 +270,17 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
 
         try {
-            ISchedulingContract scheduler = CapabilityRegistry.getInstance().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
             List<CompletableFuture<BranchVariant>> futures = variants.stream()
-                .map(variant -> CompletableFuture.supplyAsync(() -> {
-                    if (scheduler instanceof KernelScheduler) {
-                        ((KernelScheduler)scheduler).getBackpressure().incrementEvaluations();
-                    }
-                    try {
-                        return evaluateVariantParallel(variant, planner, context);
-                    } finally {
-                        if (scheduler instanceof KernelScheduler) {
-                            ((KernelScheduler)scheduler).getBackpressure().decrementEvaluations();
-                        }
-                    }
-                }, variantExecutor))
+                .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context), variantExecutor))
                 .collect(Collectors.toList());
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         } catch (Exception e) {
             context.log("[KERNEL] Variant evaluation error: " + e.getMessage());
         }
 
-        // Decision Authority: Use DecisionResolver to determine winner from signals in SignalBus
         DecisionResolver decisionResolver = new DecisionResolver();
         DecisionSnapshot decision = decisionResolver.resolveWinner(iteration.getId(), variants, context);
 
-        // Synthesis Layer: Merge insights from all branches
         ResultSynthesizer synthesizer = new ResultSynthesizer();
         synthesizer.synthesize(variants, context);
 
@@ -373,14 +289,6 @@ public class DarwinFlow implements IOrchestrationFlow {
             bestVariant = variants.stream()
                 .filter(v -> v.getId().equals(decision.getSelectedVariantId()))
                 .findFirst().orElse(null);
-        }
-
-        if (bestVariant != null) {
-            eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
-                new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
-                    eu.kalafatic.evolution.controller.workflow.RuntimeEventType.VARIANT_EVALUATED,
-                    context.getSessionId(), "Authority", bestVariant.getId())
-                    .withMetadata("score", decision.getAggregatedScores().getOrDefault(bestVariant.getId(), 0.0)));
         }
 
         return bestVariant;
@@ -400,34 +308,17 @@ public class DarwinFlow implements IOrchestrationFlow {
             IterationManager variantManager = KernelFactory.create(variantContext, aiService);
             boolean success = variantManager.executeTasksWithRetries(tasks);
             if (success) {
-                variantManager.getGitManager().commit("Variant " + variant.getId() + " execution", variantContext);
+                variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(), variantContext);
             }
             variant.setSuccess(success);
 
-            if (success) {
-                variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(), variantContext);
-            }
-
-            // Context Authority: Use a variant-specific evaluator bound to the temporary worktree
             IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
             EvaluationResult result = evaluator.evaluate(tempDir, variantContext, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
             variant.setSuccess(result.isSuccess());
 
-            // ARCHITECTURAL ENHANCEMENT: Capture physical delta for counterfactual analysis
             GitTool deltaTool = new GitTool();
             variant.setMutationTrace(deltaTool.execute("diff HEAD^ HEAD", tempDir, variantContext));
-
-            // The score is now produced via EvaluationSignal in Evaluator.emitSignal
-            // For backward compatibility during this foundational step, we still set it on the variant,
-            // but the source of truth for the logic is now mirrored in the signal.
             variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
-
-            // Record trajectory telemetry
-            if (result.isSuccess()) {
-                context.getSemanticWorkspace().getTrajectoryMemory().recordSuccessfulStrategy(variant.getStrategy());
-            } else {
-                context.getSemanticWorkspace().getTrajectoryMemory().recordFailureLoop(variant.getStrategy());
-            }
 
             return variant;
         } catch (Exception e) {

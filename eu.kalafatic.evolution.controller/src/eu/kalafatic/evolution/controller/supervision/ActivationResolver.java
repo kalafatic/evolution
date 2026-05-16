@@ -12,6 +12,10 @@ import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.trajectory.TrajectoryMemory;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 
 /**
  * ActivationResolver implements the "Survival of the Fittest" logic for Darwin branches.
@@ -162,7 +166,6 @@ public class ActivationResolver implements ICapability {
     }
 
     private double calculateStabilityTrend(String variantId) {
-        // Placeholder for stability trend analysis via TrajectoryMemory
         return 0.75;
     }
 
@@ -172,7 +175,29 @@ public class ActivationResolver implements ICapability {
     }
 
     @Override
-    public String getCapabilityId() {
-        return ID;
-    }
+    public String getCapabilityId() { return ID; }
+
+    @Override
+    public String getVersion() { return "1.1.0"; }
+
+    @Override
+    public CapabilityStatus getStatus() { return CapabilityStatus.ACTIVE; }
+
+    @Override
+    public void initialize(CapabilityContext context) throws CapabilityException {}
+
+    @Override
+    public void start() throws CapabilityException {}
+
+    @Override
+    public void stop() throws CapabilityException {}
+
+    @Override
+    public List<String> getSupportedContracts() { return List.of("eu.kalafatic.evolution.contracts.Resolver"); }
+
+    @Override
+    public List<String> getDependencies() { return List.of(); }
+
+    @Override
+    public CapabilityHealth getHealth() { return new CapabilityHealth(1.0, "Resolver engine operational", 0); }
 }
