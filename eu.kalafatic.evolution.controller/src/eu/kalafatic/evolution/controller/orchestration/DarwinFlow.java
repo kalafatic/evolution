@@ -19,6 +19,7 @@ import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IEva
 import eu.kalafatic.evolution.controller.orchestration.intent.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
+import eu.kalafatic.evolution.controller.supervision.ActivationResolver;
 import eu.kalafatic.evolution.controller.supervision.DecisionResolver;
 import eu.kalafatic.evolution.controller.supervision.DecisionSnapshot;
 import eu.kalafatic.evolution.controller.supervision.ResolverPolicy;
@@ -34,6 +35,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.trajectory.SignalBus;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.trajectory.ResultSynthesizer;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
@@ -191,6 +193,18 @@ public class DarwinFlow implements IOrchestrationFlow {
 
                 decisionResolver.resolveWinner(iterId, variants, context, manualId);
 
+                // Populate Iteration model with winning variant metadata
+                final String finalManualId = manualId;
+                BranchVariant manualWinner = variants.stream()
+                        .filter(v -> v.getId().equals(finalManualId))
+                        .findFirst().orElse(null);
+                if (manualWinner != null && currentIterationModel != null) {
+                    currentIterationModel.setSurvivalArgument(manualWinner.getSurvivalArgument());
+                    currentIterationModel.setTradeoffs(manualWinner.getTradeoffs());
+                    currentIterationModel.setFailureRisks(manualWinner.getFailureRisks());
+                    currentIterationModel.setJustification("Manual selection: " + manualWinner.getStrategy());
+                }
+
                 manager.advanceEvolutionPhase(state);
                 manager.transition(SystemState.DONE, context);
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -216,6 +230,14 @@ public class DarwinFlow implements IOrchestrationFlow {
                 if (!profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && selectedVariant != null) {
                     decisionResolver.resolveWinner(iterId, variants, context);
                 }
+            }
+
+            // Sync winner metadata to EMF Iteration model
+            if (selectedVariant != null && currentIterationModel != null) {
+                currentIterationModel.setSurvivalArgument(selectedVariant.getSurvivalArgument());
+                currentIterationModel.setTradeoffs(selectedVariant.getTradeoffs());
+                currentIterationModel.setFailureRisks(selectedVariant.getFailureRisks());
+                currentIterationModel.setJustification(selectedVariant.getStrategy());
             }
 
             if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE && selectedVariant.getScore() < 0.5)) {
@@ -318,27 +340,56 @@ public class DarwinFlow implements IOrchestrationFlow {
             IterationManager variantManager = KernelFactory.create(variantContext, aiService);
 
             // ARCHITECTURAL CHANGE: Dynamic Re-Evaluation Loop
-            // Partial execution with observation after each task
+            // Sequential task execution with reality checks and re-evaluation
             final File finalTempDir = tempDir;
-            boolean success = variantManager.executeTasksWithRetries(tasks, () -> {
+            final IterationManager finalVariantManager = variantManager;
+            boolean success = true;
+            for (Task task : tasks) {
+                boolean taskSuccess = finalVariantManager.executeTasksWithRetries(List.of(task));
+                if (!taskSuccess) {
+                    success = false;
+                    break;
+                }
+
                 try {
-                    // Observe Git changes after each task
+                    // 1. Observe Git changes after each task (Reality Check)
                     GitTool gitTool = new GitTool();
                     String diff = gitTool.execute("diff HEAD", finalTempDir, variantContext);
                     context.log("[DARWIN] Observed Git changes for variant " + variant.getId() + ": " + diff.length() + " chars");
 
-                    // Update EMF with new evidence (semantic justification of the step)
-                    if (variantManager.getCurrentIterationModel() != null) {
-                        variantManager.getCurrentIterationModel().setJustification("Adaptive observation: Step completed with " + diff.length() + " chars changed.");
+                    // 2. Trigger event-sourced mechanism for GitEmfReconciler
+                    eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+                        new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                            eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TOOL_EXECUTION_SUCCEEDED,
+                            "DarwinFlow", "GitTool", diff));
+
+                    // 3. Intermediate Re-Evaluation using ActivationResolver
+                    ActivationResolver resolver = new ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory());
+                    DecisionSnapshot intermediateDecision = resolver.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant), SignalBus.getInstance().getSignalsForVariant(variant.getId()));
+
+                    // 4. Update Trajectory metrics
+                    Trajectory t = context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(variant.getTrajectoryId());
+                    if (t != null) {
+                        double currentFitness = intermediateDecision.getAggregatedScores().getOrDefault(variant.getId(), 0.5);
+                        t.setFitnessScore(currentFitness);
+                        t.getFitnessHistory().add(currentFitness);
+                        t.setStabilityScore(intermediateDecision.getAvgLongTermStability());
+
+                        if (intermediateDecision.isExplorationTriggered()) {
+                            context.log("[DARWIN] High policy disagreement detected for variant " + variant.getId() + ". Weakening trajectory.");
+                            t.setPhase(Trajectory.Phase.COLLAPSE);
+                        }
                     }
 
-                    // Re-evaluate (In a full implementation, we might re-run DecisionResolver here)
-                    // For now, we update the variant's trajectory based on the observation
-                    context.getSemanticWorkspace().getTrajectoryMemory().recordLineagePattern("Variant " + variant.getId() + " step observation: " + (diff.isEmpty() ? "NO_CHANGE" : "PROGRESS"));
+                    // Update EMF with new evidence
+                    if (finalVariantManager.getCurrentIterationModel() != null) {
+                        finalVariantManager.getCurrentIterationModel().setJustification("Step [" + task.getName() + "] completed. Fitness: " + String.format("%.2f", t != null ? t.getFitnessScore() : 0.0));
+                    }
+
                 } catch (Exception e) {
                     context.log("[DARWIN] Error during dynamic re-evaluation: " + e.getMessage());
                 }
-            });
+            }
 
             if (success) {
                 variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(), variantContext);

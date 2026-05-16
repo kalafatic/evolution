@@ -9,9 +9,9 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 public class HighestScorePolicy implements ResolverPolicy {
 
     @Override
-    public double evaluate(BranchVariant variant) {
+    public PolicyResult evaluate(BranchVariant variant) {
         // The core score is already present on the variant from evaluateVariantParallel
-        return variant.getScore();
+        return new PolicyResult(variant.getScore(), 1.0, "Aggregated AI-predicted score: " + variant.getScore());
     }
 
     @Override

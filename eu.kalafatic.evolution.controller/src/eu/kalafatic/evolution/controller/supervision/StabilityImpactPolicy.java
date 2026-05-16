@@ -8,16 +8,19 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 public class StabilityImpactPolicy implements ResolverPolicy {
 
     @Override
-    public double evaluate(BranchVariant variant) {
+    public PolicyResult evaluate(BranchVariant variant) {
         double score = 0.5;
+        StringBuilder trace = new StringBuilder("Base stability score: 0.5. ");
         if (variant.getFailureRisks() != null) {
-            if (variant.getFailureRisks().contains("high")) {
+            if (variant.getFailureRisks().toLowerCase().contains("high")) {
                 score -= 0.3;
-            } else if (variant.getFailureRisks().contains("low")) {
+                trace.append("High failure risk detected (-0.3). ");
+            } else if (variant.getFailureRisks().toLowerCase().contains("low")) {
                 score += 0.2;
+                trace.append("Low failure risk detected (+0.2). ");
             }
         }
-        return Math.max(0.0, Math.min(1.0, score));
+        return new PolicyResult(score, 0.7, trace.toString().trim());
     }
 
     @Override

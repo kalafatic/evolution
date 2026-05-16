@@ -13,8 +13,9 @@ public class ManualSelectionPolicy implements ResolverPolicy {
     }
 
     @Override
-    public double evaluate(BranchVariant variant) {
-        return variant.getId().equals(manualSelectionId) ? 1.0 : 0.0;
+    public PolicyResult evaluate(BranchVariant variant) {
+        double score = variant.getId().equals(manualSelectionId) ? 1.0 : 0.0;
+        return new PolicyResult(score, 1.0, "Manual selection override for ID: " + manualSelectionId);
     }
 
     @Override

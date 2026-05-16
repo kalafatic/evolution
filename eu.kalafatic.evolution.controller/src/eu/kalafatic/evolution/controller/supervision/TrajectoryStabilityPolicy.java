@@ -14,10 +14,10 @@ public class TrajectoryStabilityPolicy implements ResolverPolicy {
     }
 
     @Override
-    public double evaluate(BranchVariant variant) {
-        if (memory == null) return 0.5;
+    public PolicyResult evaluate(BranchVariant variant) {
+        if (memory == null) return new PolicyResult(0.5, 0.5, "Trajectory memory not available.");
         double reliability = memory.getStrategyReliability(variant.getStrategy());
-        return reliability;
+        return new PolicyResult(reliability, 0.9, "Historical reliability score for strategy: " + variant.getStrategy());
     }
 
     @Override

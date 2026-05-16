@@ -17,8 +17,9 @@ public class ConfidenceThresholdPolicy implements ResolverPolicy {
     }
 
     @Override
-    public double evaluate(BranchVariant variant) {
-        return variant.getScore() >= threshold ? 1.0 : 0.0;
+    public PolicyResult evaluate(BranchVariant variant) {
+        double score = variant.getScore() >= threshold ? 1.0 : 0.0;
+        return new PolicyResult(score, 1.0, "Comparison against threshold: " + threshold);
     }
 
     @Override

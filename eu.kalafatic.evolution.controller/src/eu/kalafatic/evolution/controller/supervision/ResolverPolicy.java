@@ -8,9 +8,9 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 public interface ResolverPolicy {
 
     /**
-     * Evaluates a single variant and returns a fitness score [0..1].
+     * Evaluates a single variant and returns a structured PolicyResult.
      */
-    double evaluate(BranchVariant variant);
+    PolicyResult evaluate(BranchVariant variant);
 
     /**
      * @return the unique name of the policy
