@@ -143,6 +143,10 @@ public abstract class AEvoPage extends SharedScrolledComposite {
         scheduleRefresh();
     }
 
+    public Orchestrator getOrchestrator() {
+        return orchestrator;
+    }
+
     @Override
     public void dispose() {
         if (toolkit != null) {
