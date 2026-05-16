@@ -11,6 +11,7 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
 import eu.kalafatic.evolution.controller.agents.MetadataAgent;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.utils.dialogs.DynamicField;
@@ -45,7 +46,11 @@ public class MediatedTargetDialog extends DynamicMapDialog {
         if ((initialPath == null || initialPath.isEmpty()) && projectRoot != null) {
             initialPath = findGitRoot(projectRoot);
         }
-        fields.put(TARGET_PATH, new DynamicField("Target Path:", DynamicField.TYPE_TEXT | DynamicField.DIRECTORY, initialPath));
+
+        java.util.List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
+        String[] repoArray = repos.toArray(new String[0]);
+
+        fields.put(TARGET_PATH, new DynamicField("Target Path:", DynamicField.TYPE_COMBO | DynamicField.DIRECTORY, initialPath, (Object[])repoArray));
 
         String initialType = session != null ? session.getTargetType() : "Project";
         fields.put(TARGET_TYPE, new DynamicField("Target Type:", DynamicField.TYPE_COMBO, initialType, "Project", "Folder", "PDF", "HTML", "Markdown"));

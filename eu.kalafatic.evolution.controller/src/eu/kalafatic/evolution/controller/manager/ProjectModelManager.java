@@ -29,6 +29,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
+import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
@@ -548,5 +549,21 @@ public class ProjectModelManager {
      */
     public boolean isProxy(AIProvider provider) {
         return provider.getName() != null && provider.getName().toLowerCase().endsWith(":cloud");
+    }
+
+    /**
+     * Returns a list of available local Git repositories on the system.
+     * This uses a cached list to avoid UI blocking.
+     *
+     * @return List of absolute paths to discovered repositories.
+     */
+    public List<String> getAvailableLocalRepositories() {
+        List<java.io.File> repos = GitTool.getCachedLocalRepositories();
+        List<String> paths = new ArrayList<>();
+        for (java.io.File repo : repos) {
+            paths.add(repo.getAbsolutePath());
+        }
+        Collections.sort(paths);
+        return paths;
     }
 }

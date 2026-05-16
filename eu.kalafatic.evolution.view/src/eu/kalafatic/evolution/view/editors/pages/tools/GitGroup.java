@@ -9,7 +9,9 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -17,11 +19,14 @@ import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.utils.factories.GUIFactory;
 import java.io.File;
+import java.util.List;
 
 public class GitGroup extends AToolGroup {
-    private Text gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, gitLocalPathText;
+    private Text gitRepoText, gitBranchText, gitUsernameText, gitPasswordText;
+    private Combo gitLocalPathText;
     private Text branchNameText, commitMsgText;
 
     public GitGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
@@ -52,9 +57,33 @@ public class GitGroup extends AToolGroup {
         GUIFactory.INSTANCE.createEditButton(group, gitPasswordText);
 
         GUIFactory.INSTANCE.createLabel(group, "Local Path:");
-        gitLocalPathText = GUIFactory.INSTANCE.createText(group);
-        gitLocalPathText.setText(orchestrator.getGit() != null && orchestrator.getGit().getLocalPath() != null ? orchestrator.getGit().getLocalPath() : "");
-        GUIFactory.INSTANCE.createEditButton(group, gitLocalPathText);
+        gitLocalPathText = GUIFactory.INSTANCE.createCombo(group);
+        List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
+        for (String r : repos) {
+            gitLocalPathText.add(r);
+        }
+
+        String initialLocalPath = orchestrator.getGit() != null && orchestrator.getGit().getLocalPath() != null ? orchestrator.getGit().getLocalPath() : "";
+        if (!initialLocalPath.isEmpty()) {
+            if (gitLocalPathText.indexOf(initialLocalPath) < 0) {
+                gitLocalPathText.add(initialLocalPath);
+            }
+            gitLocalPathText.setText(initialLocalPath);
+        } else if (!repos.isEmpty()) {
+            boolean found = false;
+            for (int i = 0; i < gitLocalPathText.getItemCount(); i++) {
+                String item = gitLocalPathText.getItem(i).toLowerCase();
+                if (item.contains("evolution") || item.contains("/evo")) {
+                    gitLocalPathText.select(i);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                gitLocalPathText.select(0);
+            }
+        }
+        GUIFactory.INSTANCE.createLabel(group, "");
 
         GUIFactory.INSTANCE.createLabel(group, "Branch Name:");
         branchNameText = GUIFactory.INSTANCE.createText(group);
@@ -169,7 +198,7 @@ public class GitGroup extends AToolGroup {
             setTextSafe(gitBranchText, git.getBranch());
             setTextSafe(gitUsernameText, git.getUsername());
             setTextSafe(gitPasswordText, git.getPassword());
-            setTextSafe(gitLocalPathText, git.getLocalPath());
+            selectSafe(gitLocalPathText, git.getLocalPath());
             setTextSafe(branchNameText, git.getBranchName());
             setTextSafe(commitMsgText, git.getCommitMsg());
             updateGroupStatus();
@@ -205,6 +234,11 @@ public class GitGroup extends AToolGroup {
 
     @Override
     public Text[] getTextFields() {
-        return new Text[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, gitLocalPathText };
+        return new Text[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText };
+    }
+
+    @Override
+    public Control[] getControls() {
+        return new Control[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, gitLocalPathText };
     }
 }
