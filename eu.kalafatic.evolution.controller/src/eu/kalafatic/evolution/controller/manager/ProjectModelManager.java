@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.controller.manager;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -548,5 +549,42 @@ public class ProjectModelManager {
      */
     public boolean isProxy(AIProvider provider) {
         return provider.getName() != null && provider.getName().toLowerCase().endsWith(":cloud");
+    }
+
+    /**
+     * Discovers local Git repositories in standard locations.
+     * Searches in ~/projects by default.
+     *
+     * @return A list of absolute paths to local repositories.
+     */
+    public List<String> getAvailableLocalRepositories() {
+        List<String> paths = new ArrayList<>();
+        File projectsDir = new File(System.getProperty("user.home"), "projects");
+
+        eu.kalafatic.evolution.controller.tools.GitTool gitTool = (eu.kalafatic.evolution.controller.tools.GitTool) eu.kalafatic.evolution.controller.tools.ToolFactory.getTool(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.TOOL_GIT);
+        if (gitTool == null) {
+            gitTool = new eu.kalafatic.evolution.controller.tools.GitTool();
+        }
+
+        List<File> repos = gitTool.listLocalRepositories(projectsDir);
+
+        // Add also the current workspace root if possible, but standard discovery focuses on projectsDir
+
+        // Sort: evolution/evo should be first
+        repos.sort((f1, f2) -> {
+            String n1 = f1.getName().toLowerCase();
+            String n2 = f2.getName().toLowerCase();
+            boolean isEvo1 = n1.contains("evolution") || n1.equals("evo");
+            boolean isEvo2 = n2.contains("evolution") || n2.equals("evo");
+            if (isEvo1 && !isEvo2) return -1;
+            if (!isEvo1 && isEvo2) return 1;
+            return n1.compareTo(n2);
+        });
+
+        for (File r : repos) {
+            paths.add(r.getAbsolutePath());
+        }
+
+        return paths;
     }
 }

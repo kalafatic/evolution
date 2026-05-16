@@ -24,9 +24,13 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Combo;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import java.util.List;
 
 public class GitSettingsPage extends AWizardPage {
     private Text repoUrlText, branchText, usernameText, passwordText, localPathText;
+    private Combo localRepoCombo;
     private Button skipCheck;
     private ControlDecoration gitDecorator, infoDecorator;
     private Job validationJob;
@@ -98,6 +102,16 @@ public class GitSettingsPage extends AWizardPage {
         passwordText = new Text(container, SWT.BORDER | SWT.PASSWORD);
         passwordText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
+        new Label(container, SWT.NONE).setText("Local Repository:");
+        localRepoCombo = new Combo(container, SWT.READ_ONLY | SWT.BORDER);
+        localRepoCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
+        localRepoCombo.setItems(repos.toArray(new String[0]));
+        if (!repos.isEmpty()) {
+            localRepoCombo.select(0);
+        }
+
         new Label(container, SWT.NONE).setText("Local Path:");
         Composite pathComp = new Composite(container, SWT.NONE);
         pathComp.setLayout(new GridLayout(2, false));
@@ -105,7 +119,14 @@ public class GitSettingsPage extends AWizardPage {
 
         localPathText = new Text(pathComp, SWT.BORDER);
         localPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        localPathText.setText("repo");
+        localPathText.setText(localRepoCombo.getSelectionIndex() != -1 ? localRepoCombo.getItem(localRepoCombo.getSelectionIndex()) : "repo");
+
+        localRepoCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                localPathText.setText(localRepoCombo.getItem(localRepoCombo.getSelectionIndex()));
+            }
+        });
 
         Button browseBtn = new Button(pathComp, SWT.PUSH);
         browseBtn.setText("Browse...");

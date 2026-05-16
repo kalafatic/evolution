@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.view.dialogs;
 
 import java.io.File;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
@@ -12,6 +13,7 @@ import org.eclipse.swt.widgets.Shell;
 
 import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.utils.dialogs.DynamicField;
 import eu.kalafatic.utils.dialogs.DynamicMapDialog;
@@ -29,6 +31,10 @@ public class MediatedTargetDialog extends DynamicMapDialog {
     private static final String TARGET_TYPE = "targetType";
     private static final String OUTPUT_PATH = "outputPath";
 
+    public MediatedTargetDialog(Shell parentShell) {
+        this(parentShell, null, null, null);
+    }
+
     public MediatedTargetDialog(Shell parentShell, ChatSession session, File projectRoot, MultiPageEditor editor) {
         super(parentShell, createFields(session, projectRoot));
         this.session = session;
@@ -41,9 +47,17 @@ public class MediatedTargetDialog extends DynamicMapDialog {
     private static LinkedHashMap<String, DynamicField> createFields(ChatSession session, File projectRoot) {
         LinkedHashMap<String, DynamicField> fields = new LinkedHashMap<>();
 
+        List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
+        String initialRepo = !repos.isEmpty() ? repos.get(0) : "";
+
+        fields.put("localRepo", new DynamicField("Local Repo:", DynamicField.TYPE_COMBO, initialRepo, repos.toArray(new String[0])));
+
         String initialPath = session != null ? session.getTargetPath() : "";
         if ((initialPath == null || initialPath.isEmpty()) && projectRoot != null) {
             initialPath = findGitRoot(projectRoot);
+        }
+        if ((initialPath == null || initialPath.isEmpty()) && !initialRepo.isEmpty()) {
+            initialPath = initialRepo;
         }
         fields.put(TARGET_PATH, new DynamicField("Target Path:", DynamicField.TYPE_TEXT | DynamicField.DIRECTORY, initialPath));
 
@@ -62,6 +76,23 @@ public class MediatedTargetDialog extends DynamicMapDialog {
     @Override
     protected void createFieldEditor(Composite parent, String key, DynamicField field) {
         super.createFieldEditor(parent, key, field);
+
+        if ("localRepo".equals(key)) {
+            org.eclipse.swt.widgets.Control[] controls = parent.getChildren();
+            if (controls.length > 0 && controls[controls.length - 1] instanceof org.eclipse.swt.widgets.Combo) {
+                org.eclipse.swt.widgets.Combo combo = (org.eclipse.swt.widgets.Combo) controls[controls.length - 1];
+                combo.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                        String selected = combo.getItem(combo.getSelectionIndex());
+                        org.eclipse.swt.widgets.Text targetText = (org.eclipse.swt.widgets.Text) MediatedTargetDialog.this.getControl(TARGET_PATH);
+                        if (targetText != null) {
+                            targetText.setText(selected);
+                        }
+                    }
+                });
+            }
+        }
 
         // Add "Generate AI Metadata" button after the last field
         if (OUTPUT_PATH.equals(key)) {

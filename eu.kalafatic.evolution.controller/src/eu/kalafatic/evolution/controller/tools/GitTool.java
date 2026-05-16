@@ -82,4 +82,37 @@ public class GitTool implements ITool {
         }
         return branches;
     }
+
+    /**
+     * Lists all local repositories under the given search root.
+     * Scans for directories containing a .git folder.
+     */
+    public List<File> listLocalRepositories(File searchRoot) {
+        List<File> repos = new ArrayList<>();
+        if (searchRoot == null || !searchRoot.exists() || !searchRoot.isDirectory()) {
+            return repos;
+        }
+
+        File[] files = searchRoot.listFiles();
+        if (files == null) return repos;
+
+        for (File f : files) {
+            if (f.isDirectory()) {
+                if (new File(f, ".git").exists()) {
+                    repos.add(f);
+                } else {
+                    // One level deeper search
+                    File[] subFiles = f.listFiles();
+                    if (subFiles != null) {
+                        for (File subF : subFiles) {
+                            if (subF.isDirectory() && new File(subF, ".git").exists()) {
+                                repos.add(subF);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return repos;
+    }
 }

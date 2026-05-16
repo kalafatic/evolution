@@ -19,9 +19,13 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.utils.factories.GUIFactory;
 import java.io.File;
+import org.eclipse.swt.widgets.Combo;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import java.util.List;
 
 public class GitGroup extends AToolGroup {
     private Text gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, gitLocalPathText;
+    private Combo localRepoCombo;
     private Text branchNameText, commitMsgText;
 
     public GitGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
@@ -51,10 +55,32 @@ public class GitGroup extends AToolGroup {
         gitPasswordText.setText(orchestrator.getGit() != null && orchestrator.getGit().getPassword() != null ? orchestrator.getGit().getPassword() : "");
         GUIFactory.INSTANCE.createEditButton(group, gitPasswordText);
 
+        GUIFactory.INSTANCE.createLabel(group, "Local Repo:");
+        localRepoCombo = new Combo(group, SWT.READ_ONLY | SWT.BORDER);
+        localRepoCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
+        localRepoCombo.setItems(repos.toArray(new String[0]));
+        if (orchestrator.getGit() != null && orchestrator.getGit().getLocalPath() != null) {
+            String current = orchestrator.getGit().getLocalPath();
+            int idx = repos.indexOf(current);
+            if (idx != -1) localRepoCombo.select(idx);
+        }
+        GUIFactory.INSTANCE.createLabel(group, "");
+
         GUIFactory.INSTANCE.createLabel(group, "Local Path:");
         gitLocalPathText = GUIFactory.INSTANCE.createText(group);
         gitLocalPathText.setText(orchestrator.getGit() != null && orchestrator.getGit().getLocalPath() != null ? orchestrator.getGit().getLocalPath() : "");
         GUIFactory.INSTANCE.createEditButton(group, gitLocalPathText);
+
+        localRepoCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                String selected = localRepoCombo.getItem(localRepoCombo.getSelectionIndex());
+                gitLocalPathText.setText(selected);
+                updateModel();
+                editor.setDirty(true);
+            }
+        });
 
         GUIFactory.INSTANCE.createLabel(group, "Branch Name:");
         branchNameText = GUIFactory.INSTANCE.createText(group);

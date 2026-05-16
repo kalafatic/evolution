@@ -14,6 +14,10 @@ public class GitManager {
         this.root = root;
     }
 
+    public GitManager(File root, TaskContext context) {
+        this.root = root;
+    }
+
     public boolean isGitRepository() {
         return new File(root, ".git").exists();
     }
