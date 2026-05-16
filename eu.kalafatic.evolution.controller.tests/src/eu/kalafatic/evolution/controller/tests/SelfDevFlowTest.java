@@ -104,7 +104,7 @@ public class SelfDevFlowTest {
             }
         };
 
-        GitManager gitManager = new GitManager(tempDir, context);
+        GitManager gitManager = new GitManager(tempDir);
         TaskPlanner taskPlanner = new TaskPlanner();
         TaskExecutor taskExecutor = new TaskExecutor(context);
         IterationMemoryService memoryService = new IterationMemoryService(tempDir);

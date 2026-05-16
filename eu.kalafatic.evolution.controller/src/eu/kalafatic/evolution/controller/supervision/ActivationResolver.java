@@ -7,10 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import java.util.Collections;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
-import eu.kalafatic.evolution.controller.trajectory.TrajectoryMemory;
+import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
 import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 
 /**
@@ -34,6 +39,10 @@ public class ActivationResolver implements ICapability {
         this.policies.add(new TrajectoryStabilityPolicy(memory));
         this.policies.add(new CriticalFailurePolicy());
         this.policies.add(new HighestScorePolicy());
+    }
+
+    public ActivationResolver() {
+        this(null);
     }
 
     /**
@@ -174,5 +183,45 @@ public class ActivationResolver implements ICapability {
     @Override
     public String getCapabilityId() {
         return ID;
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public CapabilityStatus getStatus() {
+        return CapabilityStatus.INITIALIZED;
+    }
+
+    @Override
+    public void initialize(CapabilityContext context) throws CapabilityException {
+        // No-op
+    }
+
+    @Override
+    public void start() throws CapabilityException {
+        // No-op
+    }
+
+    @Override
+    public void stop() throws CapabilityException {
+        // No-op
+    }
+
+    @Override
+    public List<String> getSupportedContracts() {
+        return Collections.singletonList("eu.kalafatic.evolution.supervision.IResolverContract");
+    }
+
+    @Override
+    public List<String> getDependencies() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public CapabilityHealth getHealth() {
+        return new CapabilityHealth(1.0, "Healthy", 0);
     }
 }

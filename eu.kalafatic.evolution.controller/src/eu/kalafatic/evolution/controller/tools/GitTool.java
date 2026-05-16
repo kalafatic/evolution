@@ -65,8 +65,21 @@ public class GitTool implements ITool {
         }
     }
 
+    public List<String> getBranches(File root) throws Exception {
+        String output = execute("branch --format=%(refname:short)", root, null);
+        List<String> branches = new ArrayList<>();
+        if (output != null) {
+            for (String line : output.split("\n")) {
+                if (!line.trim().isEmpty()) {
+                    branches.add(line.trim());
+                }
+            }
+        }
+        return branches;
+    }
+
     @Override
-    public String getToolId() {
-        return "git";
+    public String getName() {
+        return "Git";
     }
 }

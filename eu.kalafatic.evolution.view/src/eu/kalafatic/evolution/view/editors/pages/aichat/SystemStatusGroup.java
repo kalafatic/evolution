@@ -49,9 +49,7 @@ public class SystemStatusGroup extends AEvoGroup {
     public void updateOllamaStatus(String text, org.eclipse.swt.graphics.Color color) {
         if (ollamaStatusLabel.isDisposed()) return;
         setTextSafe(ollamaStatusLabel, text);
-        if (color != null && !color.equals(ollamaStatusLabel.getForeground())) {
-            ollamaStatusLabel.setForeground(color);
-        }
+        setForegroundSafe(ollamaStatusLabel, color);
     }
 
     public void updateModelStatus(String text) {

@@ -94,7 +94,7 @@ public class KernelUnitTest {
         };
 
         IterationManager manager = new IterationManager(
-            context, failingService, new GitManager(tempDir, context),
+            context, failingService, new GitManager(tempDir),
             new TaskPlanner(), new TaskExecutor(context), new Evaluator(tempDir, context),
             new DarwinEngine(context, new IterationMemoryService(tempDir), new SystemStateSignalProvider(tempDir, context)),
             new IterationMemoryService(tempDir)
@@ -112,7 +112,7 @@ public class KernelUnitTest {
     }
 
     private IterationManager createManager() {
-        GitManager gitManager = new GitManager(tempDir, context);
+        GitManager gitManager = new GitManager(tempDir);
         TaskPlanner taskPlanner = new TaskPlanner();
         TaskExecutor taskExecutor = new TaskExecutor(context);
         Evaluator evaluator = new Evaluator(tempDir, context);

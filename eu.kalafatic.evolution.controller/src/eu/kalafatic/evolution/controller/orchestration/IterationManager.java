@@ -153,7 +153,7 @@ public class IterationManager {
             CapabilityRegistry.getInstance().register(context.getSemanticWorkspace());
             CapabilityRegistry.getInstance().register(context.getOrchestrationState().getCognitiveTrace());
             CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.execution.KernelScheduler());
-            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.supervision.ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory()));
+            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.supervision.ActivationResolver(memoryService.getTrajectoryMemory()));
         } catch (CapabilityException e) {
             context.log("[KERNEL] Capability registration error: " + e.getMessage());
         }

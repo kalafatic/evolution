@@ -42,7 +42,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 
     @Override
     protected void refreshUI() {
-        updateUI();
+        load();
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
@@ -166,7 +166,6 @@ public class ChatMgmtGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.syncModelWithUI();
-                refreshUI();
             }
         });
 
@@ -271,11 +270,6 @@ public class ChatMgmtGroup extends AEvoGroup {
         }
     }
 
-    @Override
-    public void scheduleRefresh() {
-        load();
-        super.scheduleRefresh();
-    }
 
     public int getAiModeIndex() {
         return aiModeCombo.getSelectionIndex();

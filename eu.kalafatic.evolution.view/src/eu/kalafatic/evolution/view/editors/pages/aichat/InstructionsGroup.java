@@ -300,18 +300,14 @@ public class InstructionsGroup extends AEvoGroup {
         if (requestText != null && !requestText.isDisposed()) {
             requestText.setFocus();
             setBackgroundSafe(requestText, bgColor);
-            if (fgColor != null && !fgColor.equals(requestText.getForeground())) {
-                requestText.setForeground(fgColor);
-            }
+            setForegroundSafe(requestText, fgColor);
         }
     }
 
     public void resetBackground() {
         if (requestText != null && !requestText.isDisposed()) {
             setBackgroundSafe(requestText, null);
-            if (requestText.getForeground() != null) {
-                requestText.setForeground(null);
-            }
+            setForegroundSafe(requestText, null);
         }
     }
     public boolean isIterative() { return iterativeCheck.getSelection(); }

@@ -60,7 +60,7 @@ public class GitEmfReconciler {
             "GitReconciler", // evaluatorId
             0.1, // score
             1.0, // confidence
-            SignalSeverity.HIGH, // severity
+            SignalSeverity.CRITICAL, // severity
             type, // divergenceType
             "Physical divergence detected via Git reconciliation: " + type
         );

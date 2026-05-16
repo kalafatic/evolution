@@ -62,9 +62,7 @@ public class FeedbackGroup extends AEvoGroup {
                 setSelectionSafe(levelButtons[i], FeedbackLevel.values()[i] == level);
             }
         }
-        if (autoEscalateCheck != null) {
-            setSelectionSafe(autoEscalateCheck, task.isAutoEscalate());
-        }
+        setSelectionSafe(autoEscalateCheck, task.isAutoEscalate());
 
         // Update (auto) status
         if (task.isAutoEscalate() && level.getValue() > FeedbackLevel.SIMPLE_VALUE) {

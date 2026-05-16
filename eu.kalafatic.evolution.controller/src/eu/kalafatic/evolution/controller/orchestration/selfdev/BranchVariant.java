@@ -34,6 +34,8 @@ public class BranchVariant {
     private double shortTermFitness;
     private double longTermStability;
 
+    private String trajectoryId;
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -103,6 +105,9 @@ public class BranchVariant {
 
     public double getLongTermStability() { return longTermStability; }
     public void setLongTermStability(double longTermStability) { this.longTermStability = longTermStability; }
+
+    public String getTrajectoryId() { return trajectoryId; }
+    public void setTrajectoryId(String trajectoryId) { this.trajectoryId = trajectoryId; }
 
     public static class Action {
         private String domain;
