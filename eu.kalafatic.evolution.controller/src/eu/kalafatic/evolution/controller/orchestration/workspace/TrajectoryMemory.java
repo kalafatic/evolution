@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 
 /**
  * Tracks long-running reasoning paths and stabilizes orchestration trajectories.
  */
 public class TrajectoryMemory {
+    private final Map<String, Trajectory> trajectories = new ConcurrentHashMap<>();
     private final List<String> successfulStrategies = new ArrayList<>();
     private final List<String> recurringFailureLoops = new ArrayList<>();
     private final List<String> userPreferredStyles = new ArrayList<>();
@@ -79,5 +81,16 @@ public class TrajectoryMemory {
 
     public Map<String, Integer> getStrategyFailureCount() {
         return strategyFailureCount;
+    }
+
+    public void recordTrajectory(Trajectory trajectory) {
+        if (trajectory != null && trajectory.getTrajectoryId() != null) {
+            trajectories.put(trajectory.getTrajectoryId(), trajectory);
+        }
+    }
+
+    public Trajectory getTrajectory(String trajectoryId) {
+        if (trajectoryId == null) return null;
+        return trajectories.get(trajectoryId);
     }
 }
