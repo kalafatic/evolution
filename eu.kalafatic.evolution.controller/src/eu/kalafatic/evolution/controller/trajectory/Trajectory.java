@@ -27,10 +27,6 @@ public class Trajectory {
     public String testTrend = "STABLE";
     public String failureChange = "NONE";
 
-    public String buildTrend = "STABLE";
-    public String testTrend = "STABLE";
-    public String failureChange = "NONE";
-
     public Trajectory() {
         this("default", "none");
     }

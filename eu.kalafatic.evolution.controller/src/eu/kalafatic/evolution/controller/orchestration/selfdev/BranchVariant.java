@@ -35,8 +35,6 @@ public class BranchVariant {
     private double shortTermFitness;
     private double longTermStability;
 
-    private String trajectoryId;
-
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -76,9 +74,6 @@ public class BranchVariant {
 
     public String getLineageId() { return lineageId; }
     public void setLineageId(String lineageId) { this.lineageId = lineageId; }
-
-    public String getTrajectoryId() { return trajectoryId; }
-    public void setTrajectoryId(String trajectoryId) { this.trajectoryId = trajectoryId; }
 
     public String getRank() { return rank; }
     public void setRank(String rank) { this.rank = rank; }
