@@ -107,6 +107,7 @@ public class IterationManager {
     private final eu.kalafatic.evolution.controller.agents.ValidatorAgent validator;
     private final eu.kalafatic.evolution.controller.agents.RepairAgent repairAgent;
     private final List<IAgent> availableAgents = new ArrayList<>();
+    private final eu.kalafatic.evolution.controller.trajectory.GitEmfReconciler gitReconciler;
 
     private Iteration currentIterationModel;
 
@@ -142,6 +143,9 @@ public class IterationManager {
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
 
+        // Initialize Git-EMF Reconciler
+        this.gitReconciler = new eu.kalafatic.evolution.controller.trajectory.GitEmfReconciler(context);
+
         // Register Capabilities
         try {
             CapabilityRegistry.getInstance().register(evaluator);
@@ -149,7 +153,7 @@ public class IterationManager {
             CapabilityRegistry.getInstance().register(context.getSemanticWorkspace());
             CapabilityRegistry.getInstance().register(context.getOrchestrationState().getCognitiveTrace());
             CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.execution.KernelScheduler());
-            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.supervision.ActivationResolver());
+            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.supervision.ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory()));
         } catch (CapabilityException e) {
             context.log("[KERNEL] Capability registration error: " + e.getMessage());
         }
@@ -361,7 +365,7 @@ public class IterationManager {
             }
             if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
                 if (currentIterationModel != null) {
-                    gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
+                    gitManager.commit("Self-Development Iteration " + currentIterationModel.getId(), context);
 
                     // PERSISTENCE: Record successful implementation decision
                     WorkspaceArtifact decisionArtifact = new WorkspaceArtifact("impl-decision-" + currentIterationModel.getId(), "implementation-decision");

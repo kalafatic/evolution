@@ -20,12 +20,16 @@ public final class DecisionSnapshot {
     private final String resolverPolicy;
     private final double resolverConfidence;
     private final String recommendationSummary;
+    private final double disagreementMetric;
+    private boolean explorationTriggered = false;
+    private double avgShortTermFitness;
+    private double avgLongTermStability;
     private final long timestamp;
 
     public DecisionSnapshot(String iterationId, String selectedVariantId, List<String> rankedVariants,
                             Map<String, Double> aggregatedScores, List<String> criticalFailures,
                             String activationReason, String resolverPolicy, double resolverConfidence,
-                            String recommendationSummary) {
+                            String recommendationSummary, double disagreementMetric) {
         this.iterationId = iterationId;
         this.selectedVariantId = selectedVariantId;
         this.rankedVariants = rankedVariants != null ? Collections.unmodifiableList(new ArrayList<>(rankedVariants)) : Collections.emptyList();
@@ -35,6 +39,7 @@ public final class DecisionSnapshot {
         this.resolverPolicy = resolverPolicy;
         this.resolverConfidence = resolverConfidence;
         this.recommendationSummary = recommendationSummary;
+        this.disagreementMetric = disagreementMetric;
         this.timestamp = System.currentTimeMillis();
     }
 
@@ -47,6 +52,13 @@ public final class DecisionSnapshot {
     public String getResolverPolicy() { return resolverPolicy; }
     public double getResolverConfidence() { return resolverConfidence; }
     public String getRecommendationSummary() { return recommendationSummary; }
+    public double getDisagreementMetric() { return disagreementMetric; }
+    public boolean isExplorationTriggered() { return explorationTriggered; }
+    public double getAvgShortTermFitness() { return avgShortTermFitness; }
+    public void setAvgShortTermFitness(double avgShortTermFitness) { this.avgShortTermFitness = avgShortTermFitness; }
+    public double getAvgLongTermStability() { return avgLongTermStability; }
+    public void setAvgLongTermStability(double avgLongTermStability) { this.avgLongTermStability = avgLongTermStability; }
+    public void setExplorationTriggered(boolean explorationTriggered) { this.explorationTriggered = explorationTriggered; }
     public long getTimestamp() { return timestamp; }
 
     @Override

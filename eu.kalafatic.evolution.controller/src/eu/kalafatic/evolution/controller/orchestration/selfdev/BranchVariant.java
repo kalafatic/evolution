@@ -26,6 +26,14 @@ public class BranchVariant {
     private String semanticAnchor;
     private String mutationTrace;
 
+    private String survivalArgument;
+    private String tradeoffs;
+    private String failureRisks;
+    private List<String> projectedSteps = new ArrayList<>();
+
+    private double shortTermFitness;
+    private double longTermStability;
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -78,6 +86,24 @@ public class BranchVariant {
     public String getMutationTrace() { return mutationTrace; }
     public void setMutationTrace(String mutationTrace) { this.mutationTrace = mutationTrace; }
 
+    public String getSurvivalArgument() { return survivalArgument; }
+    public void setSurvivalArgument(String survivalArgument) { this.survivalArgument = survivalArgument; }
+
+    public String getTradeoffs() { return tradeoffs; }
+    public void setTradeoffs(String tradeoffs) { this.tradeoffs = tradeoffs; }
+
+    public String getFailureRisks() { return failureRisks; }
+    public void setFailureRisks(String failureRisks) { this.failureRisks = failureRisks; }
+
+    public List<String> getProjectedSteps() { return projectedSteps; }
+    public void setProjectedSteps(List<String> projectedSteps) { this.projectedSteps = projectedSteps; }
+
+    public double getShortTermFitness() { return shortTermFitness; }
+    public void setShortTermFitness(double shortTermFitness) { this.shortTermFitness = shortTermFitness; }
+
+    public double getLongTermStability() { return longTermStability; }
+    public void setLongTermStability(double longTermStability) { this.longTermStability = longTermStability; }
+
     public static class Action {
         private String domain;
         private String operation;
@@ -114,9 +140,18 @@ public class BranchVariant {
         private String description;
         private List<String> expectedEffects = new ArrayList<>();
 
+    private double shortTermFitness;
+    private double longTermStability;
+
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
         public List<String> getExpectedEffects() { return expectedEffects; }
         public void setExpectedEffects(List<String> expectedEffects) { this.expectedEffects = expectedEffects; }
+
+    public double getShortTermFitness() { return shortTermFitness; }
+    public void setShortTermFitness(double shortTermFitness) { this.shortTermFitness = shortTermFitness; }
+
+    public double getLongTermStability() { return longTermStability; }
+    public void setLongTermStability(double longTermStability) { this.longTermStability = longTermStability; }
     }
 }

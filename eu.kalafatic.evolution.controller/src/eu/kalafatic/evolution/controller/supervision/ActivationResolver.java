@@ -1,175 +1,178 @@
 package eu.kalafatic.evolution.controller.supervision;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.trajectory.Trajectory;
+import eu.kalafatic.evolution.controller.trajectory.TrajectoryMemory;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
-import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
-import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
-import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
-import eu.kalafatic.evolution.controller.execution.ScheduledExecutionPlan;
 import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
-import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IResolverContract;
-import java.util.Collections;
 
 /**
- * Central deterministic decision authority for Darwin branch activation.
- * It consumes signals and recommendations to produce a DecisionSnapshot.
- *
- * IT MUST NOT:
- * - execute tasks
- * - mutate git state
- * - call LLMs
- * - generate variants
+ * ActivationResolver implements the "Survival of the Fittest" logic for Darwin branches.
+ * It evaluates candidate variants using multiple scoring policies and selects the winner.
  */
-public class ActivationResolver implements ICapability, IResolverContract {
+public class ActivationResolver implements ICapability {
 
-    private CapabilityStatus status = CapabilityStatus.STOPPED;
+    public static final String ID = "eu.kalafatic.evolution.supervision.resolver";
 
-    @Override
-    public String getCapabilityId() {
-        return "capability.resolver";
-    }
+    private final List<ResolverPolicy> policies;
+    private final TrajectoryMemory memory;
 
-    @Override
-    public String getVersion() {
-        return "1.0.0";
-    }
-
-    @Override
-    public CapabilityStatus getStatus() {
-        return status;
-    }
-
-    @Override
-    public void initialize(CapabilityContext context) throws CapabilityException {
-        status = CapabilityStatus.INITIALIZED;
-    }
-
-    @Override
-    public void start() throws CapabilityException {
-        status = CapabilityStatus.STARTED;
-    }
-
-    @Override
-    public void stop() throws CapabilityException {
-        status = CapabilityStatus.STOPPED;
-    }
-
-    @Override
-    public List<String> getSupportedContracts() {
-        return Collections.singletonList(IResolverContract.ID);
-    }
-
-    @Override
-    public List<String> getDependencies() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public CapabilityHealth getHealth() {
-        return new CapabilityHealth(1.0, "Healthy", 0);
-    }
-
-    @Override
-    public void resolve(DecisionSnapshot snapshot) {
-        // Implementation for IResolverContract if needed,
-        // but existing resolve methods are more specific.
-        // For now, this is a placeholder to satisfy the contract.
+    public ActivationResolver(TrajectoryMemory memory) {
+        this.memory = memory;
+        this.policies = new ArrayList<>();
+        // Hardened policy stack
+        this.policies.add(new SemanticCoherencePolicy());
+        this.policies.add(new ComplexityCostPolicy());
+        this.policies.add(new StabilityImpactPolicy());
+        this.policies.add(new TrajectoryStabilityPolicy(memory));
+        this.policies.add(new CriticalFailurePolicy());
+        this.policies.add(new HighestScorePolicy());
     }
 
     /**
-     * Resolves the activation decision using a list of policies.
-     * Policies are evaluated in order; the first one that produces a selected variant wins.
-     *
-     * @param iterationId current iteration ID
-     * @param signals all collected signals
-     * @param recommendations all recommendations from the ActivationGate
-     * @param policies ordered list of policies to evaluate
-     * @return the resulting DecisionSnapshot
+     * Resolves the winner among competing variants.
      */
-    public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals,
-                                    List<ActivationRecommendation> recommendations,
-                                    List<ResolverPolicy> policies) {
-        return resolve(iterationId, signals, recommendations, policies, null);
-    }
-
-    public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals,
-                                    List<ActivationRecommendation> recommendations,
-                                    List<ResolverPolicy> policies,
-                                    SemanticWorkspace workspace) {
-        return resolve(iterationId, signals, recommendations, policies, workspace, null);
-    }
-
-    public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals,
-                                    List<ActivationRecommendation> recommendations,
-                                    List<ResolverPolicy> policies,
-                                    SemanticWorkspace workspace,
-                                    ScheduledExecutionPlan executionPlan) {
-        return resolve(iterationId, signals, recommendations, policies, workspace, executionPlan, null);
-    }
-
-    public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals,
-                                    List<ActivationRecommendation> recommendations,
-                                    List<ResolverPolicy> policies,
-                                    SemanticWorkspace workspace,
-                                    ScheduledExecutionPlan executionPlan,
-                                    CognitiveTrace trace) {
-
-        DecisionSnapshot finalDecision = null;
-
-        // Filtering based on ScheduledExecutionPlan
-        if (executionPlan != null) {
-            signals = signals.stream()
-                .filter(s -> executionPlan.isApproved(s.getVariantId()))
-                .collect(Collectors.toList());
-
-            recommendations = recommendations.stream()
-                .filter(r -> executionPlan.isApproved(r.getBranchId()))
-                .collect(Collectors.toList());
+    public DecisionSnapshot resolve(String iterationId, List<BranchVariant> variants, List<EvaluationSignal> signals) {
+        if (variants == null || variants.isEmpty()) {
+            return createNullDecision(iterationId);
         }
 
-        // Reinforce workspace artifacts if they were used in selection (placeholder for logic)
-        if (workspace != null) {
-            // Future: Logic to reinforce artifacts based on signals
-        }
+        Map<String, Map<String, Double>> policyScores = new HashMap<>();
+        Map<String, Double> aggregatedScores = new HashMap<>();
 
-        for (ResolverPolicy policy : policies) {
-            DecisionSnapshot decision = policy.resolve(iterationId, signals, recommendations);
+        // 1. Calculate individual policy scores
+        for (BranchVariant variant : variants) {
+            Map<String, Double> scores = new HashMap<>();
+            double totalScore = 0.0;
 
-            // DIAGNOSTICS: Record resolver decision in trace
-            if (trace != null) {
-                trace.addNode(new CausalNode(
-                    "resolver-policy-" + policy.getClass().getSimpleName() + "-" + System.currentTimeMillis(),
-                    "RESOLVER_POLICY",
-                    "ActivationResolver",
-                    signals.stream().map(s -> s.getVariantId()).distinct().collect(Collectors.toList()),
-                    decision.getSelectedVariantId() != null ? List.of(decision.getSelectedVariantId()) : List.of(),
-                    decision.getResolverConfidence(),
-                    decision.getActivationReason()
-                ));
+            // Integrate Signal feedback into scoring
+            double signalBoost = calculateSignalBoost(variant, signals);
+
+            for (ResolverPolicy policy : policies) {
+                double score = policy.evaluate(variant);
+                scores.put(policy.getClass().getSimpleName(), score);
+                totalScore += score;
             }
 
-            if (decision.getSelectedVariantId() != null) {
-                return decision;
+            double finalScore = (totalScore / policies.size()) * 0.7 + (signalBoost * 0.3);
+            policyScores.put(variant.getId(), scores);
+            aggregatedScores.put(variant.getId(), finalScore);
+        }
+
+        // 2. Rank variants
+        List<String> rankedIds = variants.stream()
+                .map(BranchVariant::getId)
+                .sorted((id1, id2) -> Double.compare(aggregatedScores.get(id2), aggregatedScores.get(id1)))
+                .collect(Collectors.toList());
+
+        String winnerId = rankedIds.get(0);
+        double confidence = calculateConfidence(aggregatedScores, winnerId);
+        double disagreement = calculateDisagreement(policyScores, winnerId);
+
+        String reason = generateReason(winnerId, aggregatedScores.get(winnerId), disagreement, signals);
+
+        DecisionSnapshot snapshot = new DecisionSnapshot(
+                iterationId,
+                winnerId,
+                rankedIds,
+                aggregatedScores,
+                new ArrayList<>(), // Critical failures
+                reason,
+                "MultiPolicyWeightedResolver",
+                confidence,
+                "Survival based on Semantic, Complexity, Stability and Signal feedback",
+                disagreement
+        );
+
+        // Update trajectories with fitness history
+        updateTrajectoryMetrics(variants, aggregatedScores);
+
+        // Set re-evaluation flags
+        if (disagreement > 0.6) {
+            snapshot.setExplorationTriggered(true);
+        }
+
+        // Track stability over time
+        snapshot.setAvgLongTermStability(calculateStabilityTrend(winnerId));
+
+        return snapshot;
+    }
+
+    private double calculateSignalBoost(BranchVariant variant, List<EvaluationSignal> signals) {
+        if (signals == null || signals.isEmpty()) return 0.5;
+        return signals.stream()
+            .filter(s -> s.getVariantId().equals(variant.getId()))
+            .mapToDouble(EvaluationSignal::getScore)
+            .average()
+            .orElse(0.5);
+    }
+
+    private double calculateConfidence(Map<String, Double> aggregatedScores, String winnerId) {
+        if (aggregatedScores.size() < 2) return 1.0;
+        double winnerScore = aggregatedScores.get(winnerId);
+        double runnerUpScore = aggregatedScores.values().stream()
+                .filter(s -> s < winnerScore)
+                .max(Double::compare)
+                .orElse(0.0);
+        return Math.min(1.0, (winnerScore - runnerUpScore) / (1.0 - runnerUpScore + 0.1));
+    }
+
+    private double calculateDisagreement(Map<String, Map<String, Double>> policyScores, String winnerId) {
+        Map<String, Double> winnerPolicyScores = policyScores.get(winnerId);
+        if (winnerPolicyScores == null || winnerPolicyScores.size() < 2) return 0.0;
+
+        double min = winnerPolicyScores.values().stream().mapToDouble(d -> d).min().orElse(0.0);
+        double max = winnerPolicyScores.values().stream().mapToDouble(d -> d).max().orElse(1.0);
+        return max - min;
+    }
+
+    private String generateReason(String winnerId, double score, double disagreement, List<EvaluationSignal> signals) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Variant ").append(winnerId).append(" selected with fitness ").append(String.format("%.2f", score));
+        long variantSignals = signals.stream().filter(s -> s.getVariantId().equals(winnerId)).count();
+        sb.append(" based on ").append(variantSignals).append(" reality signals.");
+        if (disagreement > 0.4) {
+            sb.append(" Warning: High policy disagreement (").append(String.format("%.2f", disagreement)).append(")");
+        }
+        return sb.toString();
+    }
+
+    private void updateTrajectoryMetrics(List<BranchVariant> variants, Map<String, Double> aggregatedScores) {
+        if (memory == null) return;
+        for (BranchVariant variant : variants) {
+            Trajectory t = memory.getTrajectory(variant.getTrajectoryId());
+            if (t != null) {
+                double score = aggregatedScores.get(variant.getId());
+                t.setFitnessScore(score);
+                t.getFitnessHistory().add(score);
+
+                // Adaptive step forecasting: if fitness is high, extend projection
+                if (score > 0.8 && t.getProjectedSteps().size() < 3) {
+                    t.getProjectedSteps().add("REINFORCE: " + variant.getStrategy());
+                }
             }
-            // Keep the last decision if none select a variant
-            finalDecision = decision;
         }
+    }
 
-        // Default if no policies or no selection
-        if (finalDecision == null) {
-            finalDecision = new DecisionSnapshot(
-                iterationId, null, new ArrayList<>(), null, new ArrayList<>(),
-                "No variant selected by any policy.", "None", 0.0, "Empty policy list or no match."
-            );
-        }
+    private double calculateStabilityTrend(String variantId) {
+        // Placeholder for stability trend analysis via TrajectoryMemory
+        return 0.75;
+    }
 
-        return finalDecision;
+    private DecisionSnapshot createNullDecision(String iterationId) {
+        return new DecisionSnapshot(iterationId, "NONE", new ArrayList<>(), new HashMap<>(),
+                List.of("No variants available"), "Execution halted: No viable candidates", "NullResolver", 0.0, "N/A", 0.0);
+    }
+
+    @Override
+    public String getCapabilityId() {
+        return ID;
     }
 }
