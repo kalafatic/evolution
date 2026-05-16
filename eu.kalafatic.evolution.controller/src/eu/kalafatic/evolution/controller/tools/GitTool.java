@@ -87,9 +87,4 @@ public class GitTool implements ITool {
         }
         return branches;
     }
-
-    @Override
-    public String getName() {
-        return "Git";
-    }
 }

@@ -1,26 +1,20 @@
 package eu.kalafatic.evolution.controller.supervision;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import java.util.Collections;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
-import eu.kalafatic.evolution.controller.trajectory.Trajectory;
-import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
-import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
 import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 
 /**
  * ActivationResolver implements the "Survival of the Fittest" logic for Darwin branches.
@@ -45,10 +39,6 @@ public class ActivationResolver implements ICapability {
         this.policies.add(new HighestScorePolicy());
     }
 
-    public ActivationResolver() {
-        this(null);
-    }
-
     /**
      * Resolves the winner among competing variants.
      */
@@ -64,16 +54,16 @@ public class ActivationResolver implements ICapability {
         for (BranchVariant variant : variants) {
             Map<String, Double> scores = new HashMap<>();
             double totalScore = 0.0;
-
+            
             // Integrate Signal feedback into scoring
             double signalBoost = calculateSignalBoost(variant, signals);
-
+            
             for (ResolverPolicy policy : policies) {
                 double score = policy.evaluate(variant);
                 scores.put(policy.getClass().getSimpleName(), score);
                 totalScore += score;
             }
-
+            
             double finalScore = (totalScore / policies.size()) * 0.7 + (signalBoost * 0.3);
             policyScores.put(variant.getId(), scores);
             aggregatedScores.put(variant.getId(), finalScore);
@@ -111,7 +101,7 @@ public class ActivationResolver implements ICapability {
         if (disagreement > 0.6) {
             snapshot.setExplorationTriggered(true);
         }
-
+        
         // Track stability over time
         snapshot.setAvgLongTermStability(calculateStabilityTrend(winnerId));
 
@@ -140,7 +130,7 @@ public class ActivationResolver implements ICapability {
     private double calculateDisagreement(Map<String, Map<String, Double>> policyScores, String winnerId) {
         Map<String, Double> winnerPolicyScores = policyScores.get(winnerId);
         if (winnerPolicyScores == null || winnerPolicyScores.size() < 2) return 0.0;
-
+        
         double min = winnerPolicyScores.values().stream().mapToDouble(d -> d).min().orElse(0.0);
         double max = winnerPolicyScores.values().stream().mapToDouble(d -> d).max().orElse(1.0);
         return max - min;
@@ -165,7 +155,7 @@ public class ActivationResolver implements ICapability {
                 double score = aggregatedScores.get(variant.getId());
                 t.setFitnessScore(score);
                 t.getFitnessHistory().add(score);
-
+                
                 // Adaptive step forecasting: if fitness is high, extend projection
                 if (score > 0.8 && t.getProjectedSteps().size() < 3) {
                     t.getProjectedSteps().add("REINFORCE: " + variant.getStrategy());
@@ -173,13 +163,13 @@ public class ActivationResolver implements ICapability {
             }
         }
     }
-
+    
     private double calculateStabilityTrend(String variantId) {
-        return 0.75;
+        return 0.75; 
     }
 
     private DecisionSnapshot createNullDecision(String iterationId) {
-        return new DecisionSnapshot(iterationId, "NONE", new ArrayList<>(), new HashMap<>(),
+        return new DecisionSnapshot(iterationId, "NONE", new ArrayList<>(), new HashMap<>(), 
                 List.of("No variants available"), "Execution halted: No viable candidates", "NullResolver", 0.0, "N/A", 0.0);
     }
 
@@ -190,7 +180,7 @@ public class ActivationResolver implements ICapability {
     public String getVersion() { return "1.1.0"; }
 
     @Override
-    public CapabilityStatus getStatus() { return CapabilityStatus.ACTIVE; }
+    public CapabilityStatus getStatus() { return CapabilityStatus.INITIALIZED; }
 
     @Override
     public void initialize(CapabilityContext context) throws CapabilityException {}
