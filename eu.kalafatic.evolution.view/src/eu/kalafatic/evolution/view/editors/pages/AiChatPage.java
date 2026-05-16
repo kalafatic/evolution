@@ -943,6 +943,16 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	}
 
 	public File getProjectRoot() {
+		if (orchestrator != null && orchestrator.getAiMode() == AiMode.MEDIATED && currentSession != null) {
+			String targetPath = currentSession.getTargetPath();
+			if (targetPath != null && !targetPath.isEmpty()) {
+				File targetFile = new File(targetPath);
+				if (targetFile.exists() && targetFile.isDirectory()) {
+					return targetFile;
+				}
+			}
+		}
+
 		File projectRoot = null;
 		if (editor.getEditorInput() instanceof IFileEditorInput) {
 			projectRoot = ((IFileEditorInput) editor.getEditorInput()).getFile().getProject().getLocation().toFile();
