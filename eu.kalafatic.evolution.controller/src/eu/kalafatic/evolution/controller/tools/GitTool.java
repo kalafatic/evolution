@@ -66,7 +66,25 @@ public class GitTool implements ITool {
     }
 
     @Override
-    public String getToolId() {
+    public String getName() {
         return "git";
+    }
+
+    /**
+     * Lists all local branches.
+     */
+    public List<String> getBranches(File projectRoot) {
+        try {
+            String output = execute("branch", projectRoot, null);
+            List<String> branches = new ArrayList<>();
+            for (String line : output.split("\n")) {
+                if (line.trim().isEmpty()) continue;
+                // Remove the "*" current branch marker if present
+                branches.add(line.replace("*", "").trim());
+            }
+            return branches;
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
     }
 }

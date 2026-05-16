@@ -29,6 +29,11 @@ public class Trajectory {
     // Physical truth anchoring
     private String counterfactualDelta;
 
+    // Darwinian trends
+    public String testTrend = "STABLE";
+    public String buildTrend = "STABLE";
+    public String failureChange = "NONE";
+
     public Trajectory() {
         this("traj-" + System.currentTimeMillis(), "Autonomous Evolution");
     }

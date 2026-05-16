@@ -74,6 +74,8 @@ public class BranchVariant {
     public String getLineageId() { return lineageId; }
     public void setLineageId(String lineageId) { this.lineageId = lineageId; }
 
+    public String getTrajectoryId() { return lineageId; }
+
     public String getRank() { return rank; }
     public void setRank(String rank) { this.rank = rank; }
 

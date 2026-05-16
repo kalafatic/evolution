@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.controller.supervision;
 
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
-import eu.kalafatic.evolution.controller.trajectory.TrajectoryMemory;
+import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
 
 /**
  * Resolver policy that penalizes variants using strategies with historical high failure rates.
