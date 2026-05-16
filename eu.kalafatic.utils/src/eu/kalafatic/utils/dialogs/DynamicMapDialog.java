@@ -371,6 +371,16 @@ public class DynamicMapDialog extends TitleAreaDialog {
 		return field != null ? field.getValue() : null;
 	}
 
+	/**
+	 * Gets the control associated with a field key.
+	 *
+	 * @param key the field key
+	 * @return the control or null if not found
+	 */
+	public Control getControl(String key) {
+		return controls.get(key);
+	}
+
 	@Override
 	public void setTitle(String title) {
 		this.title = title;
