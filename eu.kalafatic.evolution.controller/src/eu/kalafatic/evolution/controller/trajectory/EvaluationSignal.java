@@ -14,22 +14,29 @@ public final class EvaluationSignal {
     private final double score;
     private final double confidence;
     private final SignalSeverity severity;
+    private final DivergenceType divergenceType;
     private final String explanation;
     private final long timestamp;
     private final Map<String, Object> metadata;
 
     public EvaluationSignal(String variantId, String evaluatorId, double score, double confidence,
                             SignalSeverity severity, String explanation) {
-        this(variantId, evaluatorId, score, confidence, severity, explanation, new HashMap<>());
+        this(variantId, evaluatorId, score, confidence, severity, DivergenceType.NONE, explanation, new HashMap<>());
     }
 
     public EvaluationSignal(String variantId, String evaluatorId, double score, double confidence,
-                            SignalSeverity severity, String explanation, Map<String, Object> metadata) {
+                            SignalSeverity severity, DivergenceType divergenceType, String explanation) {
+        this(variantId, evaluatorId, score, confidence, severity, divergenceType, explanation, new HashMap<>());
+    }
+
+    public EvaluationSignal(String variantId, String evaluatorId, double score, double confidence,
+                            SignalSeverity severity, DivergenceType divergenceType, String explanation, Map<String, Object> metadata) {
         this.variantId = variantId;
         this.evaluatorId = evaluatorId;
         this.score = score;
         this.confidence = confidence;
         this.severity = severity;
+        this.divergenceType = divergenceType;
         this.explanation = explanation;
         this.timestamp = System.currentTimeMillis();
         this.metadata = Collections.unmodifiableMap(new HashMap<>(metadata));
@@ -40,6 +47,7 @@ public final class EvaluationSignal {
     public double getScore() { return score; }
     public double getConfidence() { return confidence; }
     public SignalSeverity getSeverity() { return severity; }
+    public DivergenceType getDivergenceType() { return divergenceType; }
     public String getExplanation() { return explanation; }
     public long getTimestamp() { return timestamp; }
     public Map<String, Object> getMetadata() { return metadata; }

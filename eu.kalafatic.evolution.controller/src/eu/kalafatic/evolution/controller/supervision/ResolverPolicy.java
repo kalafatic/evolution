@@ -1,22 +1,16 @@
 package eu.kalafatic.evolution.controller.supervision;
 
-import java.util.List;
-import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 
 /**
  * Interface for deterministic decision policies used by the ActivationResolver.
  */
 public interface ResolverPolicy {
+
     /**
-     * Resolves an activation decision based on signals and recommendations.
-     *
-     * @param iterationId current iteration ID
-     * @param signals all collected signals for the variants
-     * @param recommendations all recommendations from the ActivationGate
-     * @return a DecisionSnapshot representing the deterministic decision
+     * Evaluates a single variant and returns a fitness score [0..1].
      */
-    DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals, List<ActivationRecommendation> recommendations);
+    double evaluate(BranchVariant variant);
 
     /**
      * @return the unique name of the policy

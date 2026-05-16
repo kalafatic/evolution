@@ -153,7 +153,16 @@ public class DarwinFlow implements IOrchestrationFlow {
             FailureMemory failureMemory = manager.getMemoryService().getFailureMemory();
 
             manager.transition(SystemState.MUTATING, context);
-            List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
+
+            // Check for previous exploration trigger
+            DecisionSnapshot lastDecision = (DecisionSnapshot) state.getMetadata().get("lastDecisionSnapshot");
+            String mutationGoal = goal;
+            if (lastDecision != null && lastDecision.isExplorationTriggered()) {
+                context.log("[KERNEL] Policy Disagreement detected in last cycle. Shifting toward EXPLORATION.");
+                mutationGoal = "EXPLORATION: Resolve architectural ambiguity for " + goal;
+            }
+
+            List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(mutationGoal, snapshot, failureMemory, trajectory);
 
             // DIAGNOSTICS: Record mutation in trace
             context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
@@ -308,7 +317,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                     }
                 }
 
-                manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase);
+                manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
                 manager.transition(SystemState.DONE, context);
             } else {
                 manager.getGitManager().rollback();
@@ -391,18 +400,22 @@ public class DarwinFlow implements IOrchestrationFlow {
             IterationManager variantManager = KernelFactory.create(variantContext, aiService);
             boolean success = variantManager.executeTasksWithRetries(tasks);
             if (success) {
-                variantManager.getGitManager().commit("Variant " + variant.getId() + " execution");
+                variantManager.getGitManager().commit("Variant " + variant.getId() + " execution", variantContext);
             }
             variant.setSuccess(success);
 
             if (success) {
-                variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy());
+                variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(), variantContext);
             }
 
             // Context Authority: Use a variant-specific evaluator bound to the temporary worktree
             IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
             EvaluationResult result = evaluator.evaluate(tempDir, variantContext, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
             variant.setSuccess(result.isSuccess());
+
+            // ARCHITECTURAL ENHANCEMENT: Capture physical delta for counterfactual analysis
+            GitTool deltaTool = new GitTool();
+            variant.setMutationTrace(deltaTool.execute("diff HEAD^ HEAD", tempDir, variantContext));
 
             // The score is now produced via EvaluationSignal in Evaluator.emitSignal
             // For backward compatibility during this foundational step, we still set it on the variant,

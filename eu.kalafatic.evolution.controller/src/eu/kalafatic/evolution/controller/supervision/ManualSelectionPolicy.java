@@ -1,33 +1,20 @@
 package eu.kalafatic.evolution.controller.supervision;
 
-import java.util.*;
-import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 
 /**
  * Policy that respects explicit user selection.
  */
 public class ManualSelectionPolicy implements ResolverPolicy {
-    private final String manualSelection;
+    private final String manualSelectionId;
 
-    public ManualSelectionPolicy(String manualSelection) {
-        this.manualSelection = manualSelection;
+    public ManualSelectionPolicy(String manualSelectionId) {
+        this.manualSelectionId = manualSelectionId;
     }
 
     @Override
-    public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals, List<ActivationRecommendation> recommendations) {
-        String reason = "User explicitly selected variant: " + manualSelection;
-        return new DecisionSnapshot(
-                iterationId,
-                manualSelection,
-                Collections.singletonList(manualSelection),
-                new HashMap<>(),
-                new ArrayList<>(),
-                reason,
-                getName(),
-                1.0,
-                "Manual Selection: " + manualSelection
-        );
+    public double evaluate(BranchVariant variant) {
+        return variant.getId().equals(manualSelectionId) ? 1.0 : 0.0;
     }
 
     @Override

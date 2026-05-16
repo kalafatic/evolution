@@ -18,12 +18,6 @@ import eu.kalafatic.utils.semantic.Stability;
 /**
  * Centralized decision authority for orchestration.
  * This component is the ONLY ONE allowed to activate variants and select winners.
- *
- * <p><b>ARCHITECTURAL INVARIANT: DECISION AUTHORITY</b></p>
- * DecisionResolver is the sole authority for variant activation and winner selection.
- * It consumes signals from the SignalBus and applies deterministic policies
- * (HighestScore, TrajectoryStability, etc.) to resolve the system's next state.
- * No other component is permitted to modify variant activation states.
  */
 @EvolutionComponent(
     domain = "supervision",
@@ -33,8 +27,6 @@ import eu.kalafatic.utils.semantic.Stability;
     evolutionaryImpact = EvolutionaryImpact.CRITICAL
 )
 public class DecisionResolver {
-
-    private final ActivationResolver activationResolver = new ActivationResolver();
 
     /**
      * Resolves the winner variant from the provided candidates and signals in the SignalBus.
@@ -49,32 +41,19 @@ public class DecisionResolver {
     public DecisionSnapshot resolveWinner(String iterationId, List<BranchVariant> variants, TaskContext context, String manualSelectionId) {
         List<EvaluationSignal> signals = SignalBus.getInstance().getAllSignals();
 
-        ActivationGate gate = new ActivationGate();
-        List<ActivationRecommendation> recommendations = gate.recommendActivations(variants);
+        // Authority over selection engine
+        ActivationResolver activationResolver = new ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory());
 
-        List<ResolverPolicy> policies = new ArrayList<>();
-
-        // 1. Respect manual selection if present
+        // If manual selection is provided, we bypass standard resolution for the winner
         if (manualSelectionId != null) {
-            policies.add(new ManualSelectionPolicy(manualSelectionId));
+            context.log("[AUTHORITY] Manual selection override: " + manualSelectionId);
+            return createManualDecision(iterationId, manualSelectionId, variants, signals);
         }
-
-        // 2. Trajectory stability
-        policies.add(new TrajectoryStabilityPolicy(context.getSemanticWorkspace()));
-
-        // 3. Highest score
-        policies.add(new HighestScorePolicy());
-
-        ScheduledExecutionPlan executionPlan = (ScheduledExecutionPlan) context.getOrchestrationState().getMetadata().get("executionPlan");
 
         DecisionSnapshot decision = activationResolver.resolve(
             iterationId,
-            signals,
-            recommendations,
-            policies,
-            context.getSemanticWorkspace(),
-            executionPlan,
-            context.getOrchestrationState().getCognitiveTrace()
+            variants,
+            signals
         );
 
         // APPLY THE DECISION (AUTHORITY)
@@ -83,6 +62,22 @@ public class DecisionResolver {
         context.getOrchestrationState().getMetadata().put("lastDecisionSnapshot", decision);
 
         return decision;
+    }
+
+    private DecisionSnapshot createManualDecision(String iterationId, String manualId, List<BranchVariant> variants, List<EvaluationSignal> signals) {
+        List<String> ranked = variants.stream().map(BranchVariant::getId).collect(Collectors.toList());
+        return new DecisionSnapshot(
+            iterationId,
+            manualId,
+            ranked,
+            new java.util.HashMap<>(),
+            new ArrayList<>(),
+            "Manual user selection override",
+            "ManualSelectionPolicy",
+            1.0,
+            "User explicitly selected variant " + manualId,
+            0.0
+        );
     }
 
     /**
