@@ -107,7 +107,6 @@ public class IterationManager {
     private final eu.kalafatic.evolution.controller.agents.ValidatorAgent validator;
     private final eu.kalafatic.evolution.controller.agents.RepairAgent repairAgent;
     private final List<IAgent> availableAgents = new ArrayList<>();
-    private final eu.kalafatic.evolution.controller.trajectory.GitEmfReconciler gitReconciler;
 
     private Iteration currentIterationModel;
 
@@ -142,9 +141,6 @@ public class IterationManager {
         this.evaluator = evaluator;
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
-
-        // Initialize Git-EMF Reconciler
-        this.gitReconciler = new eu.kalafatic.evolution.controller.trajectory.GitEmfReconciler(context);
 
         // Register Capabilities
         try {
@@ -365,7 +361,7 @@ public class IterationManager {
             }
             if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
                 if (currentIterationModel != null) {
-                    gitManager.commit("Self-Development Iteration " + currentIterationModel.getId(), context);
+                    gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
 
                     // PERSISTENCE: Record successful implementation decision
                     WorkspaceArtifact decisionArtifact = new WorkspaceArtifact("impl-decision-" + currentIterationModel.getId(), "implementation-decision");
@@ -555,6 +551,10 @@ public class IterationManager {
     }
 
     public boolean executeTasksWithRetries(List<Task> tasks) throws Exception {
+        return executeTasksWithRetries(tasks, null);
+    }
+
+    public boolean executeTasksWithRetries(List<Task> tasks, Runnable onStepComplete) throws Exception {
         OrchestrationState state = context.getOrchestrationState();
         for (Task task : tasks) {
             if (task.getStatus() == eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE) continue;
@@ -591,6 +591,9 @@ public class IterationManager {
                             context.getSessionId(), "Kernel", task.getId()));
 
                     success = true;
+                    if (onStepComplete != null) {
+                        onStepComplete.run();
+                    }
                     break;
                 } else if (retry < EvolutionConstants.MAX_TASK_RETRIES) {
                     state.addDiagnostic("[OrchestrationTrace] Task " + task.getName() + " failed attempt " + retry + ". Diagnosing...");

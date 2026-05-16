@@ -1,229 +1,156 @@
 package eu.kalafatic.evolution.view.editors.pages.taskstack;
 
-import org.eclipse.jface.dialogs.Dialog;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ListViewer;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Spinner;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.jface.dialogs.InputDialog;
-import org.eclipse.jface.window.Window;
 
 import eu.kalafatic.evolution.controller.orchestration.behavior.BitState;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
+import eu.kalafatic.utils.dialogs.DynamicField;
+import eu.kalafatic.utils.dialogs.DynamicMapDialog;
 import eu.kalafatic.utils.factories.GUIFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class TaskEditDialog extends Dialog {
+public class TaskEditDialog extends DynamicMapDialog {
     private Task task;
     private TaskStackPage page;
 
-    private Text nameText;
-    private Combo typeCombo;
-    private Combo modeCombo;
-    private Combo supervisionCombo;
-    private Combo reasoningCombo;
-    private Combo workflowCombo;
-    private Text promptText;
-    private Text goalText;
-    private Text descriptionText;
-    private Button approvalCheck;
-    private Button iterativeCheck;
-    private Button selfIterativeCheck;
-    private Button darwinCheck;
-    private Button autoGitCheck;
-    private Button stepModeCheck;
- 
     private ListViewer attachmentsViewer;
     private List<String> attachmentsList;
-	private Spinner maxIterationsSpinner;
+
+    private static final String NAME = "name";
+    private static final String TYPE = "type";
+    private static final String MODE = "mode";
+    private static final String SUPERVISION = "supervision";
+    private static final String REASONING = "reasoning";
+    private static final String WORKFLOW = "workflow";
+    private static final String PROMPT = "prompt";
+    private static final String GOAL = "goal";
+    private static final String DESCRIPTION = "description";
+    private static final String APPROVAL_REQUIRED = "approvalRequired";
+    private static final String ITERATIVE_MODE = "iterativeMode";
+    private static final String SELF_ITERATIVE_MODE = "selfIterativeMode";
+    private static final String DARWIN_MODE = "darwinMode";
+    private static final String GIT_AUTOMATION = "gitAutomation";
+    private static final String STEP_MODE = "stepMode";
+    private static final String MAX_ITERATIONS = "maxIterations";
+    private static final String ATTACHMENTS = "attachments";
 
     public TaskEditDialog(Shell parentShell, Task task, TaskStackPage page) {
-        super(parentShell);
+        super(parentShell, createFields(task));
         this.task = task;
         this.page = page;
         this.attachmentsList = new ArrayList<>(task.getAttachments());
+        setTitle("Edit Task: " + task.getName());
+        setContainerWidth(700);
     }
 
-    @Override
-    protected void configureShell(Shell newShell) {
-        super.configureShell(newShell);
-        newShell.setText("Edit Task: " + task.getName());
-    }
-
-    @Override
-    protected Control createDialogArea(Composite parent) {
-        Composite container = (Composite) super.createDialogArea(parent);
-        container.setLayout(new GridLayout(2, false));      
-        GridData gridData = new GridData();
-        gridData.widthHint = 700;
-        container.setLayoutData(gridData);
+    private static LinkedHashMap<String, DynamicField> createFields(Task task) {
+        LinkedHashMap<String, DynamicField> fields = new LinkedHashMap<>();
+        fields.put(NAME, new DynamicField("Name:", DynamicField.TYPE_TEXT, task.getName()));
+        fields.put(TYPE, new DynamicField("Type:", DynamicField.TYPE_COMBO, task.getType(), "chat", "coding", "llm", "file", "shell", "git", "maven", "approval"));
         
-        GUIFactory.INSTANCE.createLabel(container, "Name:");
-        nameText = createText(container, task.getName());
+        int mode = BitState.getMode(task.getBitState());
+        fields.put(MODE, new DynamicField("Mode:", DynamicField.TYPE_COMBO, BitState.MODES[mode >= 0 && mode < BitState.MODES.length ? mode : 0], (Object[]) BitState.MODES));
 
-        GUIFactory.INSTANCE.createLabel(container, "Type:");
-        typeCombo = new Combo(container, SWT.READ_ONLY);
-        typeCombo.setItems(new String[]{"chat", "coding", "llm", "file", "shell", "git", "maven", "approval"});
-        typeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        String type = task.getType();
-        if (type != null) {
-            typeCombo.setText(type);
+        int supervision = BitState.getSupervision(task.getBitState());
+        fields.put(SUPERVISION, new DynamicField("Supervision:", DynamicField.TYPE_COMBO, BitState.SUPERVISIONS[supervision >= 0 && supervision < BitState.SUPERVISIONS.length ? supervision : 0], (Object[]) BitState.SUPERVISIONS));
+
+        int reasoning = BitState.getReasoning(task.getBitState());
+        fields.put(REASONING, new DynamicField("Reasoning:", DynamicField.TYPE_COMBO, BitState.REASONINGS[reasoning >= 0 && reasoning < BitState.REASONINGS.length ? reasoning : 0], (Object[]) BitState.REASONINGS));
+
+        int workflow = BitState.getWorkflow(task.getBitState());
+        fields.put(WORKFLOW, new DynamicField("Workflow:", DynamicField.TYPE_COMBO, BitState.WORKFLOWS[workflow >= 0 && workflow < BitState.WORKFLOWS.length ? workflow : 0], (Object[]) BitState.WORKFLOWS));
+        
+        fields.put(PROMPT, new DynamicField("Prompt:", DynamicField.TYPE_TEXT | DynamicField.MULTILINE, task.getPrompt() != null ? task.getPrompt() : ""));
+        fields.put(GOAL, new DynamicField("Goal:", DynamicField.TYPE_TEXT, task.getGoal() != null ? task.getGoal() : ""));
+        fields.put(DESCRIPTION, new DynamicField("Description:", DynamicField.TYPE_TEXT, task.getDescription() != null ? task.getDescription() : ""));
+        
+        // Execution Controls - we'll handle them specially in createFieldEditor or just use checkboxes
+        fields.put(APPROVAL_REQUIRED, new DynamicField("Approval Required", DynamicField.TYPE_CHECKBOX, task.isApprovalRequired()));
+        fields.put(ITERATIVE_MODE, new DynamicField("Iterative Mode", DynamicField.TYPE_CHECKBOX, task.isIterativeMode()));
+        fields.put(SELF_ITERATIVE_MODE, new DynamicField("Self-Dev Mode", DynamicField.TYPE_CHECKBOX, task.isSelfIterativeMode()));
+        fields.put(DARWIN_MODE, new DynamicField("Darwin Mode", DynamicField.TYPE_CHECKBOX, task.isDarwinMode()));
+        fields.put(GIT_AUTOMATION, new DynamicField("Git Automation", DynamicField.TYPE_CHECKBOX, task.isGitAutomation()));
+        fields.put(STEP_MODE, new DynamicField("Step Mode", DynamicField.TYPE_CHECKBOX, task.isStepMode()));
+        
+        fields.put(MAX_ITERATIONS, new DynamicField("Max Iterations:", DynamicField.TYPE_SPINNER, task.getMaxIterations()));
+        
+        fields.put(ATTACHMENTS, new DynamicField("Attachments:", DynamicField.TYPE_TEXT, "")); // Dummy for position
+
+        return fields;
+    }
+
+    @Override
+    protected void createFieldEditor(Composite parent, String key, DynamicField field) {
+        if (ATTACHMENTS.equals(key)) {
+            GUIFactory.INSTANCE.createLabel(parent, "Attachments:");
+            Composite attachComp = GUIFactory.INSTANCE.createComposite(parent, 2, SWT.NONE);
+            attachComp.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+            attachmentsViewer = new ListViewer(attachComp, SWT.BORDER | SWT.V_SCROLL);
+            attachmentsViewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
+            attachmentsViewer.setContentProvider(ArrayContentProvider.getInstance());
+            attachmentsViewer.setInput(attachmentsList);
+
+            Composite btnComp = GUIFactory.INSTANCE.createComposite(attachComp);
+
+            Button addBtn = GUIFactory.INSTANCE.createButton(btnComp, "Add");
+            addBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override
+                public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                    InputDialog dlg = new InputDialog(getShell(), "Add Attachment", "Enter file path:", "", null);
+                    if (dlg.open() == Window.OK) {
+                        attachmentsList.add(dlg.getValue());
+                        attachmentsViewer.refresh();
+                    }
+                }
+            });
+
+            Button removeBtn = GUIFactory.INSTANCE.createButton(btnComp, "Remove");
+            removeBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override
+                public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                    int index = attachmentsViewer.getList().getSelectionIndex();
+                    if (index != -1) {
+                        attachmentsList.remove(index);
+                        attachmentsViewer.refresh();
+                    }
+                }
+            });
+
+            controls.put(ATTACHMENTS, attachComp);
+            return;
         }
 
-        GUIFactory.INSTANCE.createLabel(container, "Mode:");
-        modeCombo = new Combo(container, SWT.READ_ONLY);
-        modeCombo.setItems(BitState.MODES);
-        modeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        int mode = BitState.getMode(task.getBitState());
-        modeCombo.select(mode >= 0 && mode < BitState.MODES.length ? mode : 0);
-
-        GUIFactory.INSTANCE.createLabel(container, "Supervision:");
-        supervisionCombo = new Combo(container, SWT.READ_ONLY);
-        supervisionCombo.setItems(BitState.SUPERVISIONS);
-        supervisionCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        int supervision = BitState.getSupervision(task.getBitState());
-        supervisionCombo.select(supervision >= 0 && supervision < BitState.SUPERVISIONS.length ? supervision : 0);
-
-        GUIFactory.INSTANCE.createLabel(container, "Reasoning:");
-        reasoningCombo = new Combo(container, SWT.READ_ONLY);
-        reasoningCombo.setItems(BitState.REASONINGS);
-        reasoningCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        int reasoning = BitState.getReasoning(task.getBitState());
-        reasoningCombo.select(reasoning >= 0 && reasoning < BitState.REASONINGS.length ? reasoning : 0);
-
-        GUIFactory.INSTANCE.createLabel(container, "Workflow:");
-        workflowCombo = new Combo(container, SWT.READ_ONLY);
-        workflowCombo.setItems(BitState.WORKFLOWS);
-        workflowCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        int workflow = BitState.getWorkflow(task.getBitState());
-        workflowCombo.select(workflow >= 0 && workflow < BitState.WORKFLOWS.length ? workflow : 0);
-
-        GUIFactory.INSTANCE.createLabel(container, "Prompt:");
-        promptText = new Text(container, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
-        GridData gdPrompt = new GridData(GridData.FILL_BOTH);
-        gdPrompt.heightHint = 100;
-        promptText.setLayoutData(gdPrompt);
-        promptText.setText(task.getPrompt() != null ? task.getPrompt() : "");
-
-        GUIFactory.INSTANCE.createLabel(container, "Goal:");
-        goalText = createText(container, task.getGoal() != null ? task.getGoal() : "");
-
-        GUIFactory.INSTANCE.createLabel(container, "Description:");
-        descriptionText = createText(container, task.getDescription() != null ? task.getDescription() : "");
-
-        GUIFactory.INSTANCE.createLabel(container, "Execution Controls:");
-        Composite controlsComp = new Composite(container, SWT.NONE);
-        controlsComp.setLayout(new GridLayout(4, true));
-        controlsComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        approvalCheck = new Button(controlsComp, SWT.CHECK);
-        approvalCheck.setText("Approval Required");
-        approvalCheck.setSelection(task.isApprovalRequired());
-
-        iterativeCheck = new Button(controlsComp, SWT.CHECK);
-        iterativeCheck.setText("Iterative Mode");
-        iterativeCheck.setSelection(task.isIterativeMode());
-
-        selfIterativeCheck = new Button(controlsComp, SWT.CHECK);
-        selfIterativeCheck.setText("Self-Dev Mode");
-        selfIterativeCheck.setSelection(task.isSelfIterativeMode());
-
-        darwinCheck = new Button(controlsComp, SWT.CHECK);
-        darwinCheck.setText("Darwin Mode");
-        darwinCheck.setSelection(task.isDarwinMode());
-
-        autoGitCheck = new Button(controlsComp, SWT.CHECK);
-        autoGitCheck.setText("Git Automation");
-        autoGitCheck.setSelection(task.isGitAutomation());
-
-        stepModeCheck = new Button(controlsComp, SWT.CHECK);
-        stepModeCheck.setText("Step Mode");
-        stepModeCheck.setSelection(task.isStepMode());
-        
-        GUIFactory.INSTANCE.createLabel(controlsComp, "Max Iterations:");
-        
-        maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(controlsComp, SWT.BORDER);
-        maxIterationsSpinner.setMinimum(1);
-        maxIterationsSpinner.setMaximum(100);
-        maxIterationsSpinner.setIncrement(1);
-        maxIterationsSpinner.setSelection(task.getMaxIterations());
-        maxIterationsSpinner.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-            	task.setMaxIterations(maxIterationsSpinner.getSelection());
-            }
-        });
-        
-        
-       
-
-        GUIFactory.INSTANCE.createLabel(container, "Attachments:");
-        Composite attachComp = GUIFactory.INSTANCE.createComposite(container, 2, SWT.NONE);
-
-        attachmentsViewer = new ListViewer(attachComp, SWT.BORDER | SWT.V_SCROLL);
-        attachmentsViewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
-        attachmentsViewer.setContentProvider(ArrayContentProvider.getInstance());
-        attachmentsViewer.setInput(attachmentsList);
-
-        Composite btnComp = GUIFactory.INSTANCE.createComposite(attachComp);
-
-        Button addBtn = GUIFactory.INSTANCE.createButton(btnComp, "Add");
-        addBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-            @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                InputDialog dlg = new InputDialog(getShell(), "Add Attachment", "Enter file path:", "", null);
-                if (dlg.open() == Window.OK) {
-                    attachmentsList.add(dlg.getValue());
-                    attachmentsViewer.refresh();
-                }
-            }
-        });
-
-        Button removeBtn =GUIFactory.INSTANCE.createButton(btnComp, "Remove");
-        removeBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-            @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                int index = attachmentsViewer.getList().getSelectionIndex();
-                if (index != -1) {
-                    attachmentsList.remove(index);
-                    attachmentsViewer.refresh();
-                }
-            }
-        });
-
-        return container;
-    }
-
-    private Text createText(Composite parent, String initialValue) {
-        Text text = new Text(parent, SWT.BORDER);
-        text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        text.setText(initialValue);
-        return text;
+        super.createFieldEditor(parent, key, field);
     }
 
     @Override
     protected void okPressed() {
-        task.setName(nameText.getText());
-        task.setType(typeCombo.getText());
+        if (!validate()) return;
+        saveValues();
 
-        int selectedMode = modeCombo.getSelectionIndex();
-        int selectedSupervision = supervisionCombo.getSelectionIndex();
-        int selectedReasoning = reasoningCombo.getSelectionIndex();
-        int selectedWorkflow = workflowCombo.getSelectionIndex();
+        task.setName(getString(NAME));
+        task.setType(getString(TYPE));
+
+        // Find indices for BitState
+        int selectedMode = findIndex(BitState.MODES, getString(MODE));
+        int selectedSupervision = findIndex(BitState.SUPERVISIONS, getString(SUPERVISION));
+        int selectedReasoning = findIndex(BitState.REASONINGS, getString(REASONING));
+        int selectedWorkflow = findIndex(BitState.WORKFLOWS, getString(WORKFLOW));
 
         long currentBitState = task.getBitState();
         long newBitState = BitState.encode(
@@ -235,18 +162,19 @@ public class TaskEditDialog extends Dialog {
         );
         task.setBitState(newBitState);
 
-        task.setPrompt(promptText.getText());
-        task.setGoal(goalText.getText());
-        task.setDescription(descriptionText.getText());
-        task.setApprovalRequired(approvalCheck.getSelection());
-        task.setIterativeMode(iterativeCheck.getSelection());
-        task.setSelfIterativeMode(selfIterativeCheck.getSelection());
-        task.setDarwinMode(darwinCheck.getSelection());
-        task.setGitAutomation(autoGitCheck.getSelection());
-        task.setStepMode(stepModeCheck.getSelection());
-        try {
-            task.setMaxIterations(maxIterationsSpinner.getSelection());
-        } catch (NumberFormatException e) {}
+        task.setPrompt(getString(PROMPT));
+        task.setGoal(getString(GOAL));
+        task.setDescription(getString(DESCRIPTION));
+
+        task.setApprovalRequired(getBoolean(APPROVAL_REQUIRED));
+        task.setIterativeMode(getBoolean(ITERATIVE_MODE));
+        task.setSelfIterativeMode(getBoolean(SELF_ITERATIVE_MODE));
+        task.setDarwinMode(getBoolean(DARWIN_MODE));
+        task.setGitAutomation(getBoolean(GIT_AUTOMATION));
+        task.setStepMode(getBoolean(STEP_MODE));
+
+        task.setMaxIterations(getInteger(MAX_ITERATIONS));
+
         task.getAttachments().clear();
         task.getAttachments().addAll(attachmentsList);
 
@@ -254,8 +182,10 @@ public class TaskEditDialog extends Dialog {
         super.okPressed();
     }
 
-    @Override
-    protected boolean isResizable() {
-        return true;
+    private int findIndex(String[] array, String value) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i].equals(value)) return i;
+        }
+        return -1;
     }
 }

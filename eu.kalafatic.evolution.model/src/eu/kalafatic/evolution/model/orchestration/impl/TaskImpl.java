@@ -703,6 +703,26 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	protected long bitState = BIT_STATE_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getJustification() <em>Justification</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getJustification()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String JUSTIFICATION_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getJustification() <em>Justification</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getJustification()
+	 * @generated
+	 * @ordered
+	 */
+	protected String justification = JUSTIFICATION_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -723,6 +743,29 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		bitState = newBitState;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__BIT_STATE, oldBitState, bitState));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getJustification() {
+		return justification;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setJustification(String newJustification) {
+		String oldJustification = justification;
+		justification = newJustification;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__JUSTIFICATION, oldJustification, justification));
 	}
 
 	/**
@@ -1538,6 +1581,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return isStepMode();
 			case OrchestrationPackage.TASK__BIT_STATE:
 				return getBitState();
+			case OrchestrationPackage.TASK__JUSTIFICATION:
+				return getJustification();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1653,6 +1698,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__BIT_STATE:
 				setBitState((Long)newValue);
 				return;
+			case OrchestrationPackage.TASK__JUSTIFICATION:
+				setJustification((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1764,6 +1812,9 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 			case OrchestrationPackage.TASK__BIT_STATE:
 				setBitState(BIT_STATE_EDEFAULT);
 				return;
+			case OrchestrationPackage.TASK__JUSTIFICATION:
+				setJustification(JUSTIFICATION_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1842,6 +1893,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 				return stepMode != STEP_MODE_EDEFAULT;
 			case OrchestrationPackage.TASK__BIT_STATE:
 				return bitState != BIT_STATE_EDEFAULT;
+			case OrchestrationPackage.TASK__JUSTIFICATION:
+				return JUSTIFICATION_EDEFAULT == null ? justification != null : !JUSTIFICATION_EDEFAULT.equals(justification);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1918,6 +1971,8 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		result.append(stepMode);
 		result.append(", bitState: ");
 		result.append(bitState);
+		result.append(", justification: ");
+		result.append(justification);
 		result.append(')');
 		return result.toString();
 	}

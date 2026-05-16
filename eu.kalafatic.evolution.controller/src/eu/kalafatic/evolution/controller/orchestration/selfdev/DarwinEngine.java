@@ -158,6 +158,10 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                "    \"id\": \"string-id\",\n" +
                "    \"strategy_type\": \"<IMPLEMENTATION | ANALYTICAL | CURIOSITY | STABILIZATION | EXPLORATION>\",\n" +
                "    \"strategy\": \"<high-level intent>\",\n" +
+               "    \"survival_argument\": \"<why this trajectory should continue>\",\n" +
+               "    \"tradeoffs\": \"<explicit tradeoffs>\",\n" +
+               "    \"failure_risks\": \"<potential risks>\",\n" +
+               "    \"projected_steps\": [\"<future adaptive step 1>\", \"<future adaptive step 2>\"],\n" +
                "    \"score\": 0.0-1.0, // Predicted probability of success/correctness\n" +
                "    \"suffix\": \"<short string for branch name>\",\n" +
                "    \"actions\": [\n" +
@@ -398,6 +402,16 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             v.setScore(obj.optDouble("score", 0.0));
             String suffix = obj.optString("suffix", "variant-" + i);
             v.setBranchName("exp/" + sanitize(goal) + "/" + sanitize(suffix));
+            v.setSurvivalArgument(obj.optString("survival_argument", "none"));
+            v.setTradeoffs(obj.optString("tradeoffs", "none"));
+            v.setFailureRisks(obj.optString("failure_risks", "none"));
+
+            JSONArray stepsArr = obj.optJSONArray("projected_steps");
+            if (stepsArr != null) {
+                for (int j = 0; j < stepsArr.length(); j++) {
+                    v.getProjectedSteps().add(stepsArr.getString(j));
+                }
+            }
 
             // Parse Actions
             JSONArray actionsArr = obj.optJSONArray("actions");

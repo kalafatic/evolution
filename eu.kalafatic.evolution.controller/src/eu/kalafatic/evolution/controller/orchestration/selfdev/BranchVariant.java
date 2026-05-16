@@ -145,18 +145,9 @@ public class BranchVariant {
         private String description;
         private List<String> expectedEffects = new ArrayList<>();
 
-    private double shortTermFitness;
-    private double longTermStability;
-
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
         public List<String> getExpectedEffects() { return expectedEffects; }
         public void setExpectedEffects(List<String> expectedEffects) { this.expectedEffects = expectedEffects; }
-
-    public double getShortTermFitness() { return shortTermFitness; }
-    public void setShortTermFitness(double shortTermFitness) { this.shortTermFitness = shortTermFitness; }
-
-    public double getLongTermStability() { return longTermStability; }
-    public void setLongTermStability(double longTermStability) { this.longTermStability = longTermStability; }
     }
 }

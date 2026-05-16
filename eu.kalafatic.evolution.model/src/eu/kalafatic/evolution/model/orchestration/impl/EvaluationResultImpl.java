@@ -149,6 +149,26 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 	protected int userSatisfaction = USER_SATISFACTION_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getFitnessHistory() <em>Fitness History</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getFitnessHistory()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String FITNESS_HISTORY_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getFitnessHistory() <em>Fitness History</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getFitnessHistory()
+	 * @generated
+	 * @ordered
+	 */
+	protected String fitnessHistory = FITNESS_HISTORY_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -301,6 +321,29 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 	 * @generated
 	 */
 	@Override
+	public String getFitnessHistory() {
+		return fitnessHistory;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setFitnessHistory(String newFitnessHistory) {
+		String oldFitnessHistory = fitnessHistory;
+		fitnessHistory = newFitnessHistory;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.EVALUATION_RESULT__FITNESS_HISTORY, oldFitnessHistory, fitnessHistory));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.EVALUATION_RESULT__SUCCESS:
@@ -315,6 +358,8 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 				return getDecision();
 			case OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION:
 				return getUserSatisfaction();
+			case OrchestrationPackage.EVALUATION_RESULT__FITNESS_HISTORY:
+				return getFitnessHistory();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -347,6 +392,9 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 			case OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION:
 				setUserSatisfaction((Integer)newValue);
 				return;
+			case OrchestrationPackage.EVALUATION_RESULT__FITNESS_HISTORY:
+				setFitnessHistory((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -377,6 +425,9 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 			case OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION:
 				setUserSatisfaction(USER_SATISFACTION_EDEFAULT);
 				return;
+			case OrchestrationPackage.EVALUATION_RESULT__FITNESS_HISTORY:
+				setFitnessHistory(FITNESS_HISTORY_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -401,6 +452,8 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 				return decision != DECISION_EDEFAULT;
 			case OrchestrationPackage.EVALUATION_RESULT__USER_SATISFACTION:
 				return userSatisfaction != USER_SATISFACTION_EDEFAULT;
+			case OrchestrationPackage.EVALUATION_RESULT__FITNESS_HISTORY:
+				return FITNESS_HISTORY_EDEFAULT == null ? fitnessHistory != null : !FITNESS_HISTORY_EDEFAULT.equals(fitnessHistory);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -427,6 +480,8 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 		result.append(decision);
 		result.append(", userSatisfaction: ");
 		result.append(userSatisfaction);
+		result.append(", fitnessHistory: ");
+		result.append(fitnessHistory);
 		result.append(')');
 		return result.toString();
 	}

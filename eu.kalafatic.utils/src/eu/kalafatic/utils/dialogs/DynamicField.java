@@ -25,6 +25,7 @@ public class DynamicField {
 	public static final int TYPE_COMBO    = 1 << 1;
 	public static final int TYPE_CHECKBOX = 1 << 2;
 	public static final int TYPE_NUMBER   = 1 << 3;
+	public static final int TYPE_SPINNER  = 1 << 4;
 
 	public static final int REQUIRED      = 1 << 10;
 	public static final int READ_ONLY     = 1 << 11;

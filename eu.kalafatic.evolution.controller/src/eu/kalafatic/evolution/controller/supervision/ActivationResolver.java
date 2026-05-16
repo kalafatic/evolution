@@ -17,6 +17,10 @@ import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityExce
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
 import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
 
 /**
  * ActivationResolver implements the "Survival of the Fittest" logic for Darwin branches.
