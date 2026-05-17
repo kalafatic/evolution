@@ -1,0 +1,163 @@
+package eu.kalafatic.evolution.controller.supervision;
+
+import java.util.List;
+import eu.kalafatic.evolution.controller.orchestration.IterationManager;
+import eu.kalafatic.evolution.controller.orchestration.KernelFactory;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.utils.semantic.EvolutionComponent;
+import eu.kalafatic.utils.semantic.EvolutionaryImpact;
+import eu.kalafatic.utils.semantic.Stability;
+
+/**
+ * AuthorityController is the single authority for execution decisions.
+ * It manages the lifecycle of BranchVariants and produces AuthorityDecisions.
+ */
+@EvolutionComponent(
+    domain = "supervision",
+    role = "authority-controller",
+    purpose = "Central authority for branch lifecycle and execution decisions",
+    stability = Stability.STABLE,
+    evolutionaryImpact = EvolutionaryImpact.CRITICAL
+)
+public class AuthorityController {
+
+    private final DecisionResolver decisionResolver;
+
+    public AuthorityController() {
+        this.decisionResolver = new DecisionResolver();
+    }
+
+    public enum DecisionType {
+        ACTIVATE,
+        REJECT,
+        REQUEST_CLARIFICATION,
+        KEEP_AS_RUNNER_UP,
+        EXECUTE,
+        STOP
+    }
+
+    public static class AuthorityDecision {
+        private final DecisionType type;
+        private final String variantId;
+        private final String reason;
+
+        public AuthorityDecision(DecisionType type, String variantId, String reason) {
+            this.type = type;
+            this.variantId = variantId;
+            this.reason = reason;
+        }
+
+        public DecisionType getType() { return type; }
+        public String getVariantId() { return variantId; }
+        public String getReason() { return reason; }
+    }
+
+    /**
+     * Decisions on which variant to activate and move to the next stage.
+     */
+    public AuthorityDecision decide(String iterationId, List<BranchVariant> variants, TaskContext context, String manualSelectionId) {
+        DecisionSnapshot decision = decisionResolver.resolveWinner(iterationId, variants, context, manualSelectionId);
+
+        String winnerId = decision.getSelectedVariantId();
+        applyDecision(decision, variants, context);
+
+        AuthorityDecision authorityDecision;
+        if (winnerId != null && !winnerId.equals("NONE")) {
+            authorityDecision = new AuthorityDecision(DecisionType.ACTIVATE, winnerId, decision.getActivationReason());
+        } else {
+            authorityDecision = new AuthorityDecision(DecisionType.REJECT, null, decision.getActivationReason());
+        }
+
+        // AUDIT TRAIL
+        if (context != null) {
+            IterationManager manager = KernelFactory.create(context);
+            if (manager.getMemoryService() != null) {
+                AuditRecord audit = new AuditRecord(
+                    iterationId,
+                    winnerId,
+                    authorityDecision.getType().name(),
+                    "MULTIPLE_CANDIDATES",
+                    (winnerId != null ? "APPROVED" : "REJECTED"),
+                    "AuthorityController",
+                    decision.getActivationReason(),
+                    context.getSessionId()
+                );
+                manager.getMemoryService().appendAuditRecord(audit);
+            }
+        }
+
+        return authorityDecision;
+    }
+
+    private void applyDecision(DecisionSnapshot decision, List<BranchVariant> variants, TaskContext context) {
+        String winnerId = decision.getSelectedVariantId();
+
+        for (BranchVariant variant : variants) {
+            BranchVariant.ActivationState oldState = variant.getActivationState();
+            if (variant.getId().equals(winnerId)) {
+                variant.setActivationState(BranchVariant.ActivationState.ACTIVE);
+                variant.setRank("winner");
+                if (context != null) {
+                    context.log("[AUTHORITY] Activated winner variant: " + winnerId + " (" + variant.getStrategy() + ")");
+                    auditTransition(context, variant, oldState, BranchVariant.ActivationState.ACTIVE, "Selection winner");
+                }
+            } else if (decision.getRankedVariants().contains(variant.getId())) {
+                variant.setActivationState(BranchVariant.ActivationState.ARCHIVED);
+                variant.setRank("runner-up");
+                if (context != null) {
+                    auditTransition(context, variant, oldState, BranchVariant.ActivationState.ARCHIVED, "Runner-up archival");
+                }
+            } else {
+                variant.setActivationState(BranchVariant.ActivationState.ARCHIVED);
+                variant.setRank("noise");
+                if (context != null) {
+                    auditTransition(context, variant, oldState, BranchVariant.ActivationState.ARCHIVED, "Noise archival");
+                }
+            }
+        }
+    }
+
+    /**
+     * Updates the lifecycle state of variants.
+     */
+    public void updateLifecycle(List<BranchVariant> variants, String targetId, BranchVariant.ActivationState newState, TaskContext context) {
+        for (BranchVariant v : variants) {
+            if (v.getId().equals(targetId)) {
+                BranchVariant.ActivationState oldState = v.getActivationState();
+                v.setActivationState(newState);
+                if (context != null) {
+                    context.log("[AUTHORITY] Lifecycle transition: " + v.getId() + " -> " + newState);
+                    auditTransition(context, v, oldState, newState, "Flow-driven transition");
+                }
+            }
+        }
+    }
+
+    private void auditTransition(TaskContext context, BranchVariant variant, BranchVariant.ActivationState oldState, BranchVariant.ActivationState newState, String reason) {
+        IterationManager manager = KernelFactory.create(context);
+        if (manager.getMemoryService() != null) {
+            AuditRecord audit = new AuditRecord(
+                context.getOrchestrationState().getCurrentIterationId(),
+                variant.getId(),
+                "LIFECYCLE_TRANSITION",
+                oldState.name(),
+                newState.name(),
+                "AuthorityController",
+                reason,
+                context.getSessionId()
+            );
+            manager.getMemoryService().appendAuditRecord(audit);
+        }
+    }
+
+    /**
+     * Transitions all variants to a specific state.
+     */
+    public void transitionAll(List<BranchVariant> variants, BranchVariant.ActivationState newState) {
+        for (BranchVariant v : variants) {
+            v.setActivationState(newState);
+        }
+    }
+}

@@ -72,6 +72,14 @@ public class TaskPlanner extends BaseAiAgent {
             task.setPriority(1);
             tasks.add(task);
         }
+
+        // PROPAGATE EXPECTED OUTPUTS
+        if (variant.getExpectedOutputs() != null && !variant.getExpectedOutputs().isEmpty()) {
+            context.log("[PLANNER] Propagating expected outputs to tasks: " + variant.getExpectedOutputs());
+            // No-op for now as Task model doesn't have metadata yet,
+            // but DarwinFlow can still check selectedVariant directly.
+        }
+
         return tasks;
     }
 

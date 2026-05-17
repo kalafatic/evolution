@@ -339,6 +339,11 @@ public class IterationManager {
                 return runPEV();
             }
         } catch (Exception e) {
+            context.log("[KERNEL] Critical error in iteration: " + e.getMessage());
+            // For debugging test failures
+            if (System.getProperty("evolution.test.debug") != null) {
+                e.printStackTrace();
+            }
             EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
             result.setSuccess(false);
             result.setDecision(SelfDevDecision.ROLLBACK);
@@ -418,12 +423,14 @@ public class IterationManager {
         record.setStatus("REJECTED");
         record.setErrorMessage(message);
         record.setTimestamp(System.currentTimeMillis());
-        memoryService.saveRecord(record);
+        context.getKernelContext().getMemoryService().saveRecord(record);
     }
 
     public IOrchestrationFlow resolveFlow(ModeRouter router, AtomicIntentAnalysis atomicAnalysis) {
         BehaviorProfile profile = context.getBehaviorProfile();
         OrchestrationState state = context.getOrchestrationState();
+
+        context.log("[KERNEL] Resolving flow. Profile traits: " + profile.getTraits());
 
         if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
             return new eu.kalafatic.evolution.controller.orchestration.MediatedExportFlow(aiService, this);
@@ -439,7 +446,14 @@ public class IterationManager {
                 state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.OPTIMIZATION)
         );
 
+        // ATOMIC FLOW: Priority for simple, singular tasks
+        if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning()) {
+            context.log("[KERNEL] Atomic intent detected with high confidence (" + atomicAnalysis.getConfidence() + "). Routing to AtomicFlow.");
+            return new AtomicFlow(aiService, this);
+        }
+
         if (hasStateChangeIntent) {
+            context.log("[KERNEL] State-change intent detected. Routing to DarwinFlow.");
             return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
         }
 
@@ -454,6 +468,10 @@ public class IterationManager {
     public void replayIteration(CognitiveTrace trace) {
         ReplayEngine engine = new ReplayEngine();
         engine.replay(trace, this, context);
+    }
+
+    public IterationManager createVariantManager(TaskContext variantContext, AiService aiService) {
+        return KernelFactory.create(variantContext, aiService);
     }
 
     public void advanceEvolutionPhase(OrchestrationState state) {

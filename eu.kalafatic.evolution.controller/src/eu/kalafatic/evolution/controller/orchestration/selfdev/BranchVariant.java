@@ -4,7 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BranchVariant {
-    public enum ActivationState { ACTIVE, INACTIVE, ARCHIVED }
+    public enum ActivationState {
+        CREATED,
+        ANALYZING,
+        SCORING,
+        RECOMMENDED,
+        APPROVED,
+        ACTIVE,
+        EXECUTING,
+        VERIFIED,
+        REJECTED,
+        ARCHIVED
+    }
 
     private String id;
     private String branchName;
@@ -23,9 +34,14 @@ public class BranchVariant {
     private String lineageId;
     private String trajectoryId;
     private String rank; // winner / runner-up / noise
-    private ActivationState activationState = ActivationState.INACTIVE;
+    private ActivationState activationState = ActivationState.CREATED;
     private String semanticAnchor;
     private String mutationTrace;
+
+    private List<String> expectedOutputs = new ArrayList<>();
+
+    public List<String> getExpectedOutputs() { return expectedOutputs; }
+    public void setExpectedOutputs(List<String> expectedOutputs) { this.expectedOutputs = expectedOutputs; }
 
     private String survivalArgument;
     private String tradeoffs;

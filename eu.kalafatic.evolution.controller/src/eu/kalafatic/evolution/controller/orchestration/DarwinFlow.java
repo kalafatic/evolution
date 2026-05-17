@@ -20,6 +20,7 @@ import eu.kalafatic.evolution.controller.orchestration.intent.*;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.supervision.ActivationResolver;
+import eu.kalafatic.evolution.controller.supervision.AuthorityController;
 import eu.kalafatic.evolution.controller.supervision.DecisionResolver;
 import eu.kalafatic.evolution.controller.supervision.DecisionSnapshot;
 import eu.kalafatic.evolution.controller.supervision.ResolverPolicy;
@@ -30,6 +31,7 @@ import eu.kalafatic.evolution.controller.execution.*;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationGate;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
@@ -37,6 +39,7 @@ import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import eu.kalafatic.evolution.controller.trajectory.SignalBus;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
+import eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord;
 import eu.kalafatic.evolution.controller.trajectory.ResultSynthesizer;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
@@ -148,7 +151,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
             StateSnapshot snapshot = initialEval.snapshot;
             Trajectory trajectory = new Trajectory();
-            FailureMemory failureMemory = manager.getMemoryService().getFailureMemory();
+            FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
 
             manager.transition(SystemState.MUTATING, context);
             List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
@@ -171,7 +174,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
 
             BehaviorProfile profile = context.getBehaviorProfile();
-            DecisionResolver decisionResolver = new DecisionResolver();
+            AuthorityController authority = context.getKernelContext().getAuthority();
 
             // MEDIATED mode behavior
             if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
@@ -191,7 +194,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                     context.log("[KERNEL] User selected variant: " + manualId);
                 }
 
-                decisionResolver.resolveWinner(iterId, variants, context, manualId);
+                authority.decide(iterId, variants, context, manualId);
 
                 // Populate Iteration model with winning variant metadata
                 final String finalManualId = manualId;
@@ -228,7 +231,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             } else {
                 selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
                 if (!profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && selectedVariant != null) {
-                    decisionResolver.resolveWinner(iterId, variants, context);
+                    authority.decide(iterId, variants, context, null);
                 }
             }
 
@@ -254,8 +257,20 @@ public class DarwinFlow implements IOrchestrationFlow {
             String finalDiff = validationGit.execute("diff HEAD^ HEAD", context.getProjectRoot(), context);
             context.log("[KERNEL] Reality Check: Winner variant applied. Actual physical change size: " + finalDiff.length() + " chars.");
 
-            if (finalDiff.isEmpty() && !selectedVariant.getActions().isEmpty()) {
-                context.log("[KERNEL] WARNING: Reality divergence detected. Selected variant expected changes but Git is empty.");
+            boolean hasExpectedOutputs = !selectedVariant.getExpectedOutputs().isEmpty();
+            boolean outputFulfilled = true;
+            if (hasExpectedOutputs) {
+                for (String expected : selectedVariant.getExpectedOutputs()) {
+                    File f = new File(context.getProjectRoot(), expected);
+                    if (!f.exists()) {
+                        context.log("[KERNEL] Reality divergence: Expected output missing: " + expected);
+                        outputFulfilled = false;
+                    }
+                }
+            }
+
+            if ((finalDiff.isEmpty() && !selectedVariant.getActions().isEmpty()) || !outputFulfilled) {
+                context.log("[KERNEL] WARNING: Reality divergence detected. Physical outcome missing expected changes or files.");
                 // Emit divergence signal to SignalBus
                 eu.kalafatic.evolution.controller.trajectory.SignalBus.getInstance().publish(
                     new eu.kalafatic.evolution.controller.trajectory.EvaluationSignal(
@@ -272,6 +287,17 @@ public class DarwinFlow implements IOrchestrationFlow {
             if (result.isSuccess()) {
                 String completedPhase = state.getCurrentPhase();
                 manager.advanceEvolutionPhase(state);
+
+                // RECORD SUCCESSFUL EVOLUTION
+                IterationRecord record = new IterationRecord();
+                record.setIteration(state.getIterationCount());
+                record.setGoal(goal);
+                record.setStrategy(selectedVariant.getStrategy());
+                record.setBranchId(selectedVariant.getId());
+                record.setResult("SUCCESS");
+                record.setActivationState("ACTIVE");
+                record.setTimestamp(System.currentTimeMillis());
+                context.getKernelContext().getMemoryService().saveRecord(record);
 
                 if (result.getTestPassRate() >= 1.0) {
                     state.setCuriosityEnabled(true);
@@ -301,37 +327,60 @@ public class DarwinFlow implements IOrchestrationFlow {
             manager.getGitManager().forceCheckout(baseBranch);
         }
 
+        boolean parallelDisabled = "true".equalsIgnoreCase(System.getProperty("evolution.darwin.parallel.disabled"));
         try {
-            List<CompletableFuture<BranchVariant>> futures = variants.stream()
-                .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context), variantExecutor))
-                .collect(Collectors.toList());
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            if (parallelDisabled) {
+                context.log("[KERNEL] Darwin parallel execution disabled. Evaluating variants sequentially.");
+                for (BranchVariant variant : variants) {
+                    evaluateVariantParallel(variant, planner, context);
+                }
+            } else {
+                List<CompletableFuture<BranchVariant>> futures = variants.stream()
+                    .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context), variantExecutor))
+                    .collect(Collectors.toList());
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            }
         } catch (Exception e) {
             context.log("[KERNEL] Variant evaluation error: " + e.getMessage());
         }
 
-        DecisionResolver decisionResolver = new DecisionResolver();
-        DecisionSnapshot decision = decisionResolver.resolveWinner(iteration.getId(), variants, context);
+        AuthorityController authority = context.getKernelContext().getAuthority();
+        AuthorityController.AuthorityDecision decision = authority.decide(iteration.getId(), variants, context, null);
 
         ResultSynthesizer synthesizer = new ResultSynthesizer();
         synthesizer.synthesize(variants, context);
 
+        // RECORD TRAJECTORY ANALYSIS
+        for (BranchVariant v : variants) {
+            TrajectoryAnalysisRecord tar = new TrajectoryAnalysisRecord();
+            tar.setIterationId(iteration.getId());
+            tar.setBranchId(v.getId());
+            tar.setStrategy(v.getStrategy());
+            tar.setFitnessScore(v.getScore());
+            context.getKernelContext().getMemoryService().saveTrajectoryAnalysis(tar);
+        }
+
         BranchVariant bestVariant = null;
-        if (decision.getSelectedVariantId() != null) {
+        if (decision.getVariantId() != null) {
             bestVariant = variants.stream()
-                .filter(v -> v.getId().equals(decision.getSelectedVariantId()))
+                .filter(v -> v.getId().equals(decision.getVariantId()))
                 .findFirst().orElse(null);
         }
+
+        // Ensure all async writes are committed
+        context.getKernelContext().getMemoryService().flush();
 
         return bestVariant;
     }
 
     private BranchVariant evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context) {
         File tempDir = null;
+        AuthorityController authority = context.getKernelContext().getAuthority();
         try {
             tempDir = Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
             manager.getGitManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
             TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
+            variantContext.setKernelContext(context.getKernelContext());
             variantContext.getMetadata().put("variantId", variant.getId());
             variantContext.setPlatformMode(context.getPlatformMode());
             variantContext.setAutoApprove(true);
@@ -344,6 +393,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             final File finalTempDir = tempDir;
             final IterationManager finalVariantManager = variantManager;
             boolean success = true;
+            authority.updateLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.EXECUTING, context);
             for (Task task : tasks) {
                 boolean taskSuccess = finalVariantManager.executeTasksWithRetries(List.of(task));
                 if (!taskSuccess) {
@@ -393,12 +443,18 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             if (success) {
                 variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(), variantContext);
+                authority.updateLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.VERIFIED, context);
+            } else {
+                authority.updateLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.REJECTED, context);
             }
             variant.setSuccess(success);
 
             IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
             EvaluationResult result = evaluator.evaluate(tempDir, variantContext, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
             variant.setSuccess(result.isSuccess());
+            if (result.isSuccess()) {
+                authority.updateLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
+            }
 
             GitTool deltaTool = new GitTool();
             variant.setMutationTrace(deltaTool.execute("diff HEAD^ HEAD", tempDir, variantContext));

@@ -18,71 +18,54 @@ public class GitTool implements ITool {
 
     @Override
     public String execute(String command, File workingDir, TaskContext context) throws Exception {
-        context.log("Tool [GitTool]: Running " + command);
+        if (context != null) context.log("Tool [GitTool]: Running " + command);
         File gitWorkingDir = workingDir;
-        Git gitSettings = context.getOrchestrator().getGit();
-        if (gitSettings != null && gitSettings.getLocalPath() != null && !gitSettings.getLocalPath().isEmpty()) {
-            File subDir = new File(workingDir, gitSettings.getLocalPath());
-            if (subDir.exists() && subDir.isDirectory()) {
-                gitWorkingDir = subDir;
+        String branch = "master";
+
+        if (context != null && context.getOrchestrator() != null) {
+            Git gitSettings = context.getOrchestrator().getGit();
+            if (gitSettings != null) {
+                if (gitSettings.getLocalPath() != null && !gitSettings.getLocalPath().isEmpty()) {
+                    File subDir = new File(workingDir, gitSettings.getLocalPath());
+                    if (subDir.exists() && subDir.isDirectory()) {
+                        gitWorkingDir = subDir;
+                    }
+                }
+                if (gitSettings.getBranch() != null && !gitSettings.getBranch().isEmpty()) {
+                    branch = gitSettings.getBranch();
+                }
             }
         }
-        String branch = (gitSettings != null && gitSettings.getBranch() != null && !gitSettings.getBranch().isEmpty()) ? gitSettings.getBranch() : "master";
 
         ShellTool shell = new ShellTool();
-        StringBuilder output = new StringBuilder();
 
-        if (command.toLowerCase().contains("add") || command.toLowerCase().contains("commit")) {
-            context.log("Tool [GitTool]: Staging all changes and committing.");
-            output.append(shell.execute("git add .", gitWorkingDir, context)).append("\n");
+        // SPECIALIZED LOGIC: Commit metadata injection
+        if (command.startsWith("commit")) {
+            shell.execute("git add .", gitWorkingDir, context);
 
             String metadata = "";
-            if (context != null) {
+            if (context != null && context.getOrchestrationState() != null) {
                 String iterationId = context.getOrchestrationState().getCurrentIterationId();
-                String taskId = context.getCurrentTaskName(); // Task name as proxy for ID if ID not easily reachable
-                metadata = String.format(" [Iteration: %s] [Task: %s]",
+                String taskId = context.getCurrentTaskId();
+                metadata = String.format(" [EVO-META] [Iteration: %s] [Task: %s]",
                     iterationId != null ? iterationId : "unknown",
                     taskId != null ? taskId : "none");
             }
 
-            output.append(shell.execute("git commit -m \"AI Evolution step: " + command + metadata + "\"", gitWorkingDir, context)).append("\n");
+            String commitMsg = command.contains("-m") ? "" : " -m \"Darwin evolution step\"";
+            String fullCommand = "git " + command + commitMsg + metadata;
+            return shell.execute(fullCommand, gitWorkingDir, context);
         }
 
-        if (command.toLowerCase().contains("push")) {
-            context.log("Tool [GitTool]: Pushing to branch " + branch);
-            output.append(shell.execute("git push origin " + branch, gitWorkingDir, context));
+        // SPECIALIZED LOGIC: Push handling
+        if (command.startsWith("push")) {
+            String fullCommand = "git push origin " + branch;
+            return shell.execute(fullCommand, gitWorkingDir, context);
         }
 
-        // Robust command handling for complex commit messages
-        List<String> fullCmd = new ArrayList<>();
-        fullCmd.add("git");
-
-        // Split by space but preserve quoted segments
-        if (command.contains("\"")) {
-            int firstQuote = command.indexOf("\"");
-            int lastQuote = command.lastIndexOf("\"");
-            String before = command.substring(0, firstQuote).trim();
-            String msg = command.substring(firstQuote + 1, lastQuote);
-            if (!before.isEmpty()) {
-                for (String p : before.split(" ")) {
-                    if (!p.isEmpty()) fullCmd.add(p);
-                }
-            }
-            fullCmd.add(msg);
-        } else {
-            for (String p : command.split(" ")) {
-                if (!p.isEmpty()) fullCmd.add(p);
-            }
-        }
-
-        if (command.toLowerCase().startsWith("status")) {
-            output.append(shell.execute("git status --porcelain", gitWorkingDir, context));
-        }
-
-        if (output.length() == 0) {
-            return "No git action mapped for: " + command;
-        }
-        return output.toString().trim();
+        // Generic pass-through for other commands (init, checkout, branch, etc.)
+        String fullCommand = command.startsWith("git ") ? command : "git " + command;
+        return shell.execute(fullCommand, gitWorkingDir, context);
     }
 
     public List<String> getBranches(File root) throws Exception {
