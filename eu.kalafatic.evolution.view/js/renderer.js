@@ -189,13 +189,16 @@ window.ChatApp.Renderer = {
     },
 
     renderJson: function(data) {
+        if (!data) return "";
         const renderValue = (val, key) => {
             if (val === null || val === undefined) return "";
             if (Array.isArray(val)) {
                 if (val.length === 0) return "";
-                return `<ul>${val.map(v => `<li>${renderValue(v, key)}</li>`).join('')}</ul>`;
+                return `<ul style="margin: 4px 0; padding-left: 18px;">${val.map(v => `<li>${renderValue(v, key)}</li>`).join('')}</ul>`;
             }
-            if (typeof val === 'object') return Object.entries(val).map(([k, v]) => `<div><b>${k}:</b> ${renderValue(v, k)}</div>`).join('');
+            if (typeof val === 'object') {
+                return Object.entries(val).map(([k, v]) => `<div style="margin-bottom: 2px;"><b>${k}:</b> ${renderValue(v, k)}</div>`).join('');
+            }
 
             const str = String(val);
             if (['files', 'path', 'file', 'target'].includes(key) && (str.includes('.') || str.includes('/'))) {
@@ -252,11 +255,21 @@ window.ChatApp.Renderer = {
         const container = document.createElement('div');
         container.className = 'branch-container';
         try {
-            let text = m.text.trim();
+            let text = (m.text || '').trim();
             if (text.startsWith('```')) text = text.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
-            const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-            const data = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+
+            let data;
+            const jsonMatch = text.match(/[\{\[][\s\S]*[\}\]]/);
+            if (jsonMatch) {
+                data = JSON.parse(jsonMatch[0]);
+            } else {
+                data = JSON.parse(text);
+            }
+
             const variants = Array.isArray(data) ? data : (data.variants || data.proposals || []);
+            if (!Array.isArray(variants)) {
+                 throw new Error("Darwin message must contain an array of variants/proposals");
+            }
 
             const role = (m.agentType || '').toLowerCase();
             const isApproved = role.includes('approved');
