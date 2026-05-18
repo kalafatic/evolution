@@ -137,7 +137,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             if (epsObj instanceof Double) eps = (Double) epsObj;
         }
 
-        int variantCount = Math.max(1, selectedStrategies.size());
+        int variantCount = Math.max(2, selectedStrategies.size());
 
         StringBuilder countInstruction = new StringBuilder();
         countInstruction.append("Output MUST be a valid JSON array of EXACTLY ").append(variantCount).append(" object").append(variantCount > 1 ? "s" : "").append(".\n");

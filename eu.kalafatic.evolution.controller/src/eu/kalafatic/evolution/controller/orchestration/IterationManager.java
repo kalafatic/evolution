@@ -446,6 +446,12 @@ public class IterationManager {
                 state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.OPTIMIZATION)
         );
 
+        // Priority for Darwinian Reasoning if enabled and state changes are expected
+        if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE) && hasStateChangeIntent) {
+            context.log("[KERNEL] Darwin Reasoning enabled and state-change intent detected. Routing to DarwinFlow.");
+            return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
+        }
+
         // ATOMIC FLOW: Priority for simple, singular tasks
         if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning()) {
             context.log("[KERNEL] Atomic intent detected with high confidence (" + atomicAnalysis.getConfidence() + "). Routing to AtomicFlow.");
