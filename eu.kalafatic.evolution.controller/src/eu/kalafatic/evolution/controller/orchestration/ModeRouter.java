@@ -63,6 +63,11 @@ public class ModeRouter {
             return createHybridManualExportMode();
         }
 
+        // Self-dev intent keywords
+        if (lowerPrompt.contains("iterationmanager") || lowerPrompt.contains("darwinflow") || lowerPrompt.contains("kernel") || lowerPrompt.contains("self-dev")) {
+            return createSelfDevMode();
+        }
+
         // 2. Map from existing model flags
         if (orchestrator != null) {
             // MEDIATED + SELF_DEV Support: If mediated, we only default to Export if no Iterative/Darwin flags are set.

@@ -566,4 +566,20 @@ public class ProjectModelManager {
         Collections.sort(paths);
         return paths;
     }
+
+    /**
+     * Finds the evolution repository on the local system.
+     *
+     * @return The absolute path to the evolution repository, or null if not found.
+     */
+    public String findEvolutionRepository() {
+        List<java.io.File> repos = GitTool.getCachedLocalRepositories();
+        for (java.io.File repo : repos) {
+            String name = repo.getName().toLowerCase();
+            if (name.equals("evolution") || name.equals("evo")) {
+                return repo.getAbsolutePath();
+            }
+        }
+        return null;
+    }
 }
