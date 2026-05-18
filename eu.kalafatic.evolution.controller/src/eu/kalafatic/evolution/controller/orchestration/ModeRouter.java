@@ -63,12 +63,17 @@ public class ModeRouter {
             return createHybridManualExportMode();
         }
 
+        // 2. Obvious coding keywords detection - prioritized to bypass heavy mediated flows for simple tasks
+        if (lowerPrompt.matches(".*\\b(create|fix|add|run|test|generate|write|refactor|modify|delete|check|implement|build|improve|update|change)\\b.*")) {
+            return createAssistedCodingMode();
+        }
+
         // Self-dev intent keywords
         if (lowerPrompt.contains("iterationmanager") || lowerPrompt.contains("darwinflow") || lowerPrompt.contains("kernel") || lowerPrompt.contains("self-dev")) {
             return createSelfDevMode();
         }
 
-        // 2. Map from existing model flags
+        // 3. Map from existing model flags
         if (orchestrator != null) {
             // MEDIATED + SELF_DEV Support: If mediated, we only default to Export if no Iterative/Darwin flags are set.
             boolean isMediated = orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED;
@@ -98,11 +103,6 @@ public class ModeRouter {
                 }
                 return createHybridManualExportMode();
             }
-        }
-
-        // 3. Obvious coding keywords detection
-        if (lowerPrompt.matches(".*\\b(create|fix|add|run|test|generate|write|refactor|modify|delete|check|implement|build)\\b.*")) {
-            return createAssistedCodingMode();
         }
 
         return null; // Not fast-routable

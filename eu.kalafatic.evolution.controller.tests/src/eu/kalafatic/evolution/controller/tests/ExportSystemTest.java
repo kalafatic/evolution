@@ -35,8 +35,9 @@ public class ExportSystemTest {
     @Test
     public void testMediatedAiModeMapping() {
         orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED);
+        // Request with obvious coding keyword should bypass HYBRID_MANUAL_EXPORT and go to ASSISTED_CODING
         PlatformMode mode = router.route("Improve class IterationManager", orchestrator);
-        assertEquals(PlatformType.HYBRID_MANUAL_EXPORT, mode.getType());
+        assertEquals(PlatformType.ASSISTED_CODING, mode.getType());
     }
 
     @Test
