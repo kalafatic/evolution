@@ -48,6 +48,7 @@ public class TaskContext {
     private eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile behaviorProfile = null;
     private final SystemStateHolder stateHolder = new SystemStateHolder();
     private final OrchestrationState orchestrationState = new OrchestrationState();
+    private EvolutionKernelContext kernelContext;
     private final Map<String, Object> metadata = new ConcurrentHashMap<>();
     private final Object pauseLock = new Object();
     private AiService aiService = new AiService();
@@ -343,6 +344,18 @@ public class TaskContext {
             getBehaviorProfile();
         }
         return orchestrationState;
+    }
+
+    public EvolutionKernelContext getKernelContext() {
+        if (kernelContext == null) {
+            Log.log("[CONTEXT] Initializing new EvolutionKernelContext for session: " + sessionId);
+            kernelContext = new EvolutionKernelContext(projectRoot);
+        }
+        return kernelContext;
+    }
+
+    public void setKernelContext(EvolutionKernelContext kernelContext) {
+        this.kernelContext = kernelContext;
     }
 
     public SemanticWorkspace getSemanticWorkspace() {

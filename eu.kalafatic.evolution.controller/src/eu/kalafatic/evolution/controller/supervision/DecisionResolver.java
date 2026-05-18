@@ -56,9 +56,6 @@ public class DecisionResolver {
             signals
         );
 
-        // APPLY THE DECISION (AUTHORITY)
-        applyDecision(decision, variants, context);
-
         // PERSISTENCE: Save the decision snapshot to metadata so DarwinFlow can react (e.g. exploration trigger)
         context.getOrchestrationState().getMetadata().put("lastDecisionSnapshot", decision);
 
@@ -81,24 +78,4 @@ public class DecisionResolver {
         );
     }
 
-    /**
-     * Strictly applies the decision to the variants.
-     */
-    private void applyDecision(DecisionSnapshot decision, List<BranchVariant> variants, TaskContext context) {
-        String winnerId = decision.getSelectedVariantId();
-
-        for (BranchVariant variant : variants) {
-            if (variant.getId().equals(winnerId)) {
-                variant.setActivationState(BranchVariant.ActivationState.ACTIVE);
-                variant.setRank("winner");
-                context.log("[AUTHORITY] Activated winner variant: " + winnerId + " (" + variant.getStrategy() + ")");
-            } else if (decision.getRankedVariants().contains(variant.getId())) {
-                variant.setActivationState(BranchVariant.ActivationState.INACTIVE);
-                variant.setRank("runner-up");
-            } else {
-                variant.setActivationState(BranchVariant.ActivationState.ARCHIVED);
-                variant.setRank("noise");
-            }
-        }
-    }
 }

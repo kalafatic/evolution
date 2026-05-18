@@ -6,29 +6,37 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
+import eu.kalafatic.evolution.controller.supervision.AuditRecord;
+import eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord;
+import eu.kalafatic.utils.log.Log;
 
 
 public class IterationMemoryService {
     private File projectRoot;
     private final File memoryDir;
+    private final File auditFile;
     private final ObjectMapper mapper;
-    private final List<IterationRecord> records = new ArrayList<>();
+    private final List<IterationRecord> records = new CopyOnWriteArrayList<>();
+    private final List<TrajectoryAnalysisRecord> trajectoryAnalyses = new CopyOnWriteArrayList<>();
     private final Map<String, List<IterationRecord>> errorIndex = new HashMap<>();
     private final FailureMemory failureMemory = new FailureMemory();
     private final TrajectoryMemory trajectoryMemory = new TrajectoryMemory();
 
     public IterationMemoryService(File projectRoot) {
         this.projectRoot = findEffectiveRoot(projectRoot);
+        Log.log("[MEMORY] IterationMemoryService initialized with root: " + this.projectRoot.getAbsolutePath());
         this.memoryDir = new File(this.projectRoot, "orchestrator/memory");
         if (!memoryDir.exists()) {
             memoryDir.mkdirs();
         }
+        this.auditFile = new File(this.projectRoot, "orchestrator/audit_trail.jsonl");
         this.mapper = new ObjectMapper();
         this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
         loadRecords();
@@ -139,6 +147,7 @@ public class IterationMemoryService {
     }
 
     public void saveRecord(IterationRecord record) {
+        Log.log("[MEMORY] saveRecord: ID=" + record.getBranchId() + ", Result=" + record.getResult() + ", Strategy=" + record.getStrategy());
         records.add(record);
         indexRecord(record);
         String fileName = String.format("iteration_%d_%d.json", record.getIteration(), record.getTimestamp());
@@ -148,6 +157,64 @@ public class IterationMemoryService {
         } catch (IOException e) {
             System.err.println("Failed to save iteration record: " + e.getMessage());
         }
+    }
+
+    /**
+     * Persists a TrajectoryAnalysisRecord to the structured evolutionary memory.
+     */
+    public void saveTrajectoryAnalysis(TrajectoryAnalysisRecord record) {
+        Log.log("[MEMORY] saveTrajectoryAnalysis: Branch=" + record.getBranchId() + ", Fitness=" + record.getFitnessScore());
+        trajectoryAnalyses.add(record);
+        String fileName = String.format("trajectory_%s_%s_%d.json",
+            record.getIterationId(), record.getBranchId(), record.getTimestamp());
+        File file = new File(memoryDir, fileName);
+        try {
+            mapper.writeValue(file, record);
+        } catch (IOException e) {
+            System.err.println("Failed to save trajectory analysis record: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Appends an AuditRecord to the immutable audit trail.
+     */
+    public synchronized void appendAuditRecord(AuditRecord record) {
+        try {
+            String json = mapper.writeValueAsString(record);
+            java.nio.file.Files.writeString(auditFile.toPath(), json + "\n",
+                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            System.err.println("Failed to append audit record: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Ensures all pending records are flushed to disk.
+     */
+    public void flush() {
+        // Implementation for Jackson is generally direct-to-file in this class,
+        // but this provides a hook for future buffering or OS syncs.
+    }
+
+    /**
+     * Retrieves all trajectory analysis records.
+     */
+    public List<TrajectoryAnalysisRecord> getTrajectoryAnalyses() {
+        if (!trajectoryAnalyses.isEmpty()) {
+            return new ArrayList<>(trajectoryAnalyses);
+        }
+        List<TrajectoryAnalysisRecord> analyses = new ArrayList<>();
+        File[] files = memoryDir.listFiles((dir, name) -> name.startsWith("trajectory_") && name.endsWith(".json"));
+        if (files != null) {
+            for (File file : files) {
+                try {
+                    analyses.add(mapper.readValue(file, TrajectoryAnalysisRecord.class));
+                } catch (IOException e) {
+                    System.err.println("Failed to load trajectory analysis: " + file.getName());
+                }
+            }
+        }
+        return analyses;
     }
 
     public List<IterationRecord> findByError(String error) {

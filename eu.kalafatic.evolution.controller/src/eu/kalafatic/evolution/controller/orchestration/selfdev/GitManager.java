@@ -31,7 +31,14 @@ public class GitManager {
     }
 
     public void createBranch(String branchName) throws Exception {
-        gitTool.execute("checkout -b " + branchName, root, null);
+        try {
+            gitTool.execute("rev-parse --verify " + branchName, root, null);
+            // Branch exists, just checkout
+            gitTool.execute("checkout " + branchName, root, null);
+        } catch (Exception e) {
+            // Branch doesn't exist, create it
+            gitTool.execute("checkout -b " + branchName, root, null);
+        }
     }
 
     public void forceCheckout(String branchName) throws Exception {

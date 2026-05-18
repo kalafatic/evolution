@@ -164,6 +164,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                "    \"pros_cons\": \"<pros and cons analysis of this specific hypothesis>\",\n" +
                "    \"semantic_justification\": \"<why this future should exist in the architecture>\",\n" +
                "    \"projected_steps\": [\"<future adaptive step 1 (N+1)>\", \"<future adaptive step 2 (N+2)>\"],\n" +
+               "    \"expected_outputs\": [\"<file/artifact path 1>\", \"<file/artifact path 2>\"],\n" +
                "    \"score\": 0.0-1.0, // Predicted fitness score\n" +
                "    \"suffix\": \"<short string for branch name>\",\n" +
                "    \"actions\": [\n" +
@@ -396,7 +397,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             v.setId(obj.optString("id", "v" + i));
             v.setBranchId(v.getId());
             v.setLineageId(context.getSessionId());
-            v.setActivationState(BranchVariant.ActivationState.INACTIVE);
+            v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
             v.setStrategyType(obj.optString("strategy_type", "UNKNOWN"));
             v.setStrategy(obj.optString("strategy", "unknown"));
             v.setSemanticAnchor(v.getStrategy());
@@ -422,6 +423,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             if (stepsArr != null) {
                 for (int j = 0; j < stepsArr.length(); j++) {
                     v.getProjectedSteps().add(stepsArr.getString(j));
+                }
+            }
+
+            JSONArray outputsArr = obj.optJSONArray("expected_outputs");
+            if (outputsArr != null) {
+                for (int j = 0; j < outputsArr.length(); j++) {
+                    v.getExpectedOutputs().add(outputsArr.getString(j));
                 }
             }
 

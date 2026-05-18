@@ -137,14 +137,17 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
         // Parse Confidence
         JSONObject confObj = json.optJSONObject("confidence");
+        IntentConfidence c = new IntentConfidence();
         if (confObj != null) {
-            IntentConfidence c = new IntentConfidence();
-            c.setOverallConfidence(confObj.optDouble("overallConfidence", 0.0));
-            c.setStructuralConfidence(confObj.optDouble("structuralConfidence", 0.0));
-            c.setSemanticConfidence(confObj.optDouble("semanticConfidence", 0.0));
-            c.setRationale(confObj.optString("rationale"));
-            result.setConfidence(c);
+            c.setOverallConfidence(confObj.optDouble("overallConfidence", 0.5));
+            c.setStructuralConfidence(confObj.optDouble("structuralConfidence", 0.5));
+            c.setSemanticConfidence(confObj.optDouble("semanticConfidence", 0.5));
+            c.setRationale(confObj.optString("rationale", "Inferred from content"));
+        } else {
+            c.setOverallConfidence(0.5);
+            c.setRationale("No confidence data provided by AI");
         }
+        result.setConfidence(c);
 
         // PERSISTENCE: Save clarification conclusions to Semantic Workspace
         persistClarifications(result, context);

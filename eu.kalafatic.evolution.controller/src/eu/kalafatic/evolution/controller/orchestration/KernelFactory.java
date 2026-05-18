@@ -29,7 +29,10 @@ public class KernelFactory {
             taskExecutor.getOrchestrator().setAiService(aiService);
         }
         Evaluator evaluator = new Evaluator(context.getProjectRoot(), context);
-        IterationMemoryService memoryService = new IterationMemoryService(context.getProjectRoot());
+
+        EvolutionKernelContext kernelContext = context.getKernelContext();
+        IterationMemoryService memoryService = kernelContext.getMemoryService();
+
         SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(context.getProjectRoot(), context);
         DarwinEngine darwinEngine = new DarwinEngine(context, memoryService, stateProvider);
         darwinEngine.setAiService(aiService);
