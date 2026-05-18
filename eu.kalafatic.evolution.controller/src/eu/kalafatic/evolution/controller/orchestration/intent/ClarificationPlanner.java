@@ -25,6 +25,16 @@ public class ClarificationPlanner {
                 .anyMatch(d -> d.getAmbiguityScore() > 0.7 || d.isRequiresUserInput());
 
         if (highAmbiguity) {
+            // Refinement: If heuristic analysis is very confident it's a simple atomic task,
+            // be more lenient with LLM-discovered "ambiguities" to avoid clarification fatigue.
+            if (context != null && context.getOrchestrationState() != null) {
+                AtomicIntentAnalysis atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
+                if (atomic != null && atomic.isAtomic() && atomic.getConfidence() >= 0.8 && !atomic.isMultiStep()) {
+                    context.log("[KERNEL] High heuristic atomic confidence (" + atomic.getConfidence() + "). Proceeding despite potential ambiguities.");
+                    return Strategy.AUTO_INFER;
+                }
+            }
+
             // Check for clarification fatigue
             if (context != null && context.getSemanticWorkspace() != null) {
                 int priorClarifications = context.getSemanticWorkspace().findArtifactsByType("clarification-conclusion").size();
