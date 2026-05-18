@@ -42,6 +42,10 @@ public class GitManager {
         }
     }
 
+    public String getHeadCommit() throws Exception {
+        return gitTool.execute("rev-parse HEAD", root, null).trim();
+    }
+
     public void createBranch(String branchName) throws Exception {
         try {
             gitTool.execute("rev-parse --verify " + branchName, root, null);

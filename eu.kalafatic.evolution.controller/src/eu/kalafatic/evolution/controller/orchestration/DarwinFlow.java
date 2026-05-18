@@ -150,6 +150,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             manager.getGitManager().ensureInitialCommit();
         }
         String originalBranch = manager.getGitManager().getCurrentBranch();
+        String baseCommit = manager.getGitManager().getHeadCommit();
         String iterId = currentIterationModel != null ? currentIterationModel.getId() : "default";
         String snapshotBranch = "snapshot/" + iterId + "-" + System.currentTimeMillis();
 
@@ -184,10 +185,32 @@ public class DarwinFlow implements IOrchestrationFlow {
             BehaviorProfile profile = context.getBehaviorProfile();
             AuthorityController authority = context.getKernelContext().getAuthority();
 
-            // MEDIATED mode behavior
+            manager.transition(SystemState.PLAN_LOCKED, context);
+            manager.getGitManager().forceCheckout(snapshotBranch);
+            manager.transition(SystemState.EXECUTING, context);
+
+            // Filter already active branches
+            List<BranchVariant> activeVariants = variants.stream()
+                    .filter(v -> v.getActivationState() == BranchVariant.ActivationState.ACTIVE)
+                    .collect(Collectors.toList());
+            BranchVariant selectedVariant = null;
+
+            if (!activeVariants.isEmpty()) {
+                selectedVariant = evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan, baseCommit);
+            } else {
+                selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan, baseCommit);
+            }
+
+            // MEDIATED mode behavior: Stopping for user review AFTER evaluation
             if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
                 context.log("[KERNEL] Darwin in MEDIATED mode: Stopping for user review.");
-                String input = context.requestInput("Darwin generated " + variants.size() + " proposals. Review and select one to proceed (e.g. 'Select v0'), or reject to refine.").get();
+                StringBuilder sb = new StringBuilder("Darwin generated " + variants.size() + " evaluated proposals:\n");
+                for (BranchVariant v : variants) {
+                    sb.append(String.format("- [%s] %s (Score: %.2f)\n", v.getId(), v.getStrategy(), v.getScore()));
+                }
+                sb.append("\nReview and select one to proceed (e.g. 'Select v0'), or reject to refine.");
+
+                String input = context.requestInput(sb.toString()).get();
                 if ("Rejected".equalsIgnoreCase(input)) {
                     manager.recordRejection(goal, "Darwin " + state.getCurrentPhase() + " proposals rejected by user.");
                     EvaluationResult res = manager.failedResult();
@@ -204,43 +227,12 @@ public class DarwinFlow implements IOrchestrationFlow {
 
                 authority.decide(iterId, variants, context, manualId);
 
-                // Populate Iteration model with winning variant metadata
                 final String finalManualId = manualId;
-                BranchVariant manualWinner = variants.stream()
+                selectedVariant = variants.stream()
                         .filter(v -> v.getId().equals(finalManualId))
                         .findFirst().orElse(null);
-                if (manualWinner != null && currentIterationModel != null) {
-                    currentIterationModel.setSurvivalArgument(manualWinner.getSurvivalArgument());
-                    currentIterationModel.setTradeoffs(manualWinner.getTradeoffs());
-                    currentIterationModel.setFailureRisks(manualWinner.getFailureRisks());
-                    currentIterationModel.setJustification("Manual selection: " + manualWinner.getStrategy());
-                }
-
-                manager.advanceEvolutionPhase(state);
-                manager.transition(SystemState.DONE, context);
-                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                res.setSuccess(true);
-                res.setDecision(EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(state.getCurrentPhase()) ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
-                return res;
-            }
-
-            manager.transition(SystemState.PLAN_LOCKED, context);
-            manager.getGitManager().forceCheckout(snapshotBranch);
-            manager.transition(SystemState.EXECUTING, context);
-
-            // Filter already active branches
-            List<BranchVariant> activeVariants = variants.stream()
-                    .filter(v -> v.getActivationState() == BranchVariant.ActivationState.ACTIVE)
-                    .collect(Collectors.toList());
-            BranchVariant selectedVariant = null;
-
-            if (!activeVariants.isEmpty()) {
-                selectedVariant = evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
-            } else {
-                selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModel, context, executionPlan);
-                if (!profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && selectedVariant != null) {
-                    authority.decide(iterId, variants, context, null);
-                }
+            } else if (selectedVariant != null) {
+                authority.decide(iterId, variants, context, null);
             }
 
             // Sync winner metadata to EMF Iteration model
@@ -262,7 +254,7 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             // ARCHITECTURAL CHANGE: Git-based Validation ("Reality Check")
             GitTool validationGit = new GitTool();
-            String finalDiff = validationGit.execute("diff HEAD^ HEAD", context.getProjectRoot(), context);
+            String finalDiff = validationGit.execute("diff " + baseCommit + " HEAD", context.getProjectRoot(), context);
             context.log("[KERNEL] Reality Check: Winner variant applied. Actual physical change size: " + finalDiff.length() + " chars.");
 
             boolean hasExpectedOutputs = !selectedVariant.getExpectedOutputs().isEmpty();
@@ -328,7 +320,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
     }
 
-    public BranchVariant evaluateVariantsInternal(List<BranchVariant> variants, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, Iteration iteration, TaskContext context, ScheduledExecutionPlan executionPlan) throws Exception {
+    public BranchVariant evaluateVariantsInternal(List<BranchVariant> variants, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, Iteration iteration, TaskContext context, ScheduledExecutionPlan executionPlan, String baseCommit) throws Exception {
         String baseBranch = manager.getGitManager().getCurrentBranch();
         for (BranchVariant variant : variants) {
             manager.getGitManager().createBranch(variant.getBranchName());
@@ -340,11 +332,11 @@ public class DarwinFlow implements IOrchestrationFlow {
             if (parallelDisabled) {
                 context.log("[KERNEL] Darwin parallel execution disabled. Evaluating variants sequentially.");
                 for (BranchVariant variant : variants) {
-                    evaluateVariantParallel(variant, planner, context);
+                    evaluateVariantParallel(variant, planner, context, baseCommit);
                 }
             } else {
                 List<CompletableFuture<BranchVariant>> futures = variants.stream()
-                    .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context), variantExecutor))
+                    .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context, baseCommit), variantExecutor))
                     .collect(Collectors.toList());
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
             }
@@ -381,7 +373,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         return bestVariant;
     }
 
-    private BranchVariant evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context) {
+    private BranchVariant evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context, String baseCommit) {
         File tempDir = null;
         AuthorityController authority = context.getKernelContext().getAuthority();
         try {
@@ -465,7 +457,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
 
             GitTool deltaTool = new GitTool();
-            variant.setMutationTrace(deltaTool.execute("diff HEAD^ HEAD", tempDir, variantContext));
+            variant.setMutationTrace(deltaTool.execute("diff " + baseCommit + " HEAD", tempDir, variantContext));
             variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
 
             return variant;
