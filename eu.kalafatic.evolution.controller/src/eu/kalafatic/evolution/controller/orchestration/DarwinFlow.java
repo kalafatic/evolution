@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
@@ -116,32 +117,51 @@ public class DarwinFlow implements IOrchestrationFlow {
         context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
 
         if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(state.getCurrentPhase())) {
-            manager.transition(SystemState.ANALYZING, context);
-            IntentExpansionResult expansion = manager.getIntentExpansionEngine().expand(goal, context);
-            state.setIntentAnalysis(null);
-            state.getMetadata().put("intentExpansion", expansion);
+            while (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(state.getCurrentPhase())) {
+                manager.transition(SystemState.ANALYZING, context);
+                IntentExpansionResult expansion = manager.getIntentExpansionEngine().expand(goal, context);
+                state.setIntentAnalysis(null);
+                state.getMetadata().put("intentExpansion", expansion);
 
-            ClarificationPlanner planner = manager.getClarificationPlanner();
-            ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
-            context.log("[KERNEL] Intent Expansion Strategy: " + strategy);
+                ClarificationPlanner planner = manager.getClarificationPlanner();
+                ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
+                context.log("[KERNEL] Intent Expansion Strategy: " + strategy);
 
-            if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER) {
-                String clarificationRequest = planner.formatClarificationRequest(expansion);
-                context.log(clarificationRequest);
-                String userResponse = context.requestInput(clarificationRequest).get();
-                if ("Rejected".equalsIgnoreCase(userResponse)) {
-                    manager.recordRejection(goal, "User rejected clarification request.");
-                    return manager.failedResult();
-                }
+                if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER) {
+                    String clarificationRequest = planner.formatClarificationRequest(expansion);
+                    context.log(clarificationRequest);
+                    String userResponse = context.requestInput(clarificationRequest).get();
 
-                // Break recursion on approval
-                if (userResponse.equalsIgnoreCase("Approved") || userResponse.equalsIgnoreCase("Proceed") || userResponse.equalsIgnoreCase("Yes") || userResponse.equalsIgnoreCase("OK")) {
-                    context.log("[KERNEL] User approved intent expansion. Advancing phase.");
-                    manager.advanceEvolutionPhase(state);
+                    if ("Rejected".equalsIgnoreCase(userResponse)) {
+                        manager.recordRejection(goal, "User rejected clarification request.");
+                        return manager.failedResult();
+                    }
+
+                    // Break recursion on approval
+                    if (userResponse.equalsIgnoreCase("Approved") || userResponse.equalsIgnoreCase("Proceed") || userResponse.equalsIgnoreCase("Yes") || userResponse.equalsIgnoreCase("OK")) {
+                        context.log("[KERNEL] User approved intent expansion. Advancing phase.");
+                        manager.advanceEvolutionPhase(state);
+                    } else {
+                        // Persist user clarification to workspace to inform next expansion iteration
+                        String artifactId = "user-clarification-" + System.currentTimeMillis();
+                        WorkspaceArtifact artifact = new WorkspaceArtifact(artifactId, "clarification-conclusion");
+                        artifact.setContent("User clarified: " + userResponse);
+                        artifact.setConfidence(1.0);
+                        artifact.getSemanticTags().add("user-input");
+                        context.getSemanticWorkspace().addArtifact(artifact);
+
+                        // Update goal without infinite nesting
+                        if (goal.contains(" (Clarification:")) {
+                            goal = goal.substring(0, goal.indexOf(" (Clarification:")) + " (Clarification: " + userResponse + ")";
+                        } else {
+                            goal = goal + " (Clarification: " + userResponse + ")";
+                        }
+                        context.getOrchestrator().getSelfDevSession().setInitialRequest(goal);
+                        // Continue loop for re-expansion
+                    }
                 } else {
-                    goal = goal + " (Clarification: " + userResponse + ")";
-                    context.getOrchestrator().getSelfDevSession().setInitialRequest(goal);
-                    return runDarwin(context);
+                    // Strategy is no longer CLARIFY_USER, proceed to next phase
+                    manager.advanceEvolutionPhase(state);
                 }
             }
         }

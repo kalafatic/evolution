@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 
 /**
  * Generates clarification strategies based on intent expansion results.
@@ -35,12 +36,31 @@ public class ClarificationPlanner {
                 }
             }
 
-            // Check for clarification fatigue
+            // Check for clarification fatigue or repetition
             if (context != null && context.getSemanticWorkspace() != null) {
-                int priorClarifications = context.getSemanticWorkspace().findArtifactsByType("clarification-conclusion").size();
-                if (priorClarifications >= 3 && result.getHypotheses().size() > 1) {
-                    context.log("[KERNEL] Clarification fatigue detected (" + priorClarifications + "). Falling back to BRANCH_PARALLEL.");
+                List<WorkspaceArtifact> conclusions = context.getSemanticWorkspace().findArtifactsByType("clarification-conclusion");
+                int priorClarifications = conclusions.size();
+
+                // Detection of repeating questions by comparing result dimensions with prior conclusions
+                boolean repeating = false;
+                for (IntentDimension dim : result.getDimensions()) {
+                    if (dim.isRequiresUserInput()) {
+                        String dimName = dim.getName();
+                        long count = conclusions.stream().filter(a -> a.getContent() != null && a.getContent().contains(dimName)).count();
+                        if (count >= 2) {
+                            repeating = true;
+                            context.log("[KERNEL] Detected repeating ambiguity for: " + dimName + " (" + count + " times). Forced strategy change.");
+                            break;
+                        }
+                    }
+                }
+
+                if ((priorClarifications >= 3 || repeating) && result.getHypotheses().size() > 1) {
+                    context.log("[KERNEL] Clarification fatigue or repetition detected. Falling back to BRANCH_PARALLEL.");
                     return Strategy.BRANCH_PARALLEL;
+                } else if ((priorClarifications >= 5 || repeating)) {
+                    context.log("[KERNEL] Critical clarification fatigue. Falling back to AUTO_INFER.");
+                    return Strategy.AUTO_INFER;
                 }
             }
             return Strategy.CLARIFY_USER;
@@ -69,7 +89,7 @@ public class ClarificationPlanner {
         for (String q : questions) {
             sb.append("- ").append(q).append("\n");
         }
-        sb.append("\nCould you please clarify these points?");
+        sb.append("\nCould you please clarify these points? Or type 'Proceed' to continue with current assumptions.");
         return sb.toString();
     }
 }
