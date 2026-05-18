@@ -2,6 +2,7 @@ window.ChatApp = window.ChatApp || {};
 
 window.ChatApp.Renderer = {
     renderMessage: function(m) {
+        if (!m || !m.text) return document.createElement('div');
         const role = (m.agentType || '').toLowerCase();
         const roles = role.split(' ');
         const primaryRole = roles[0];
@@ -20,8 +21,8 @@ window.ChatApp.Renderer = {
         const content = document.createElement('div');
         content.className = 'message-content';
 
-        let isDarwin = role.includes('darwin') && (m.text.includes('{') || m.text.includes('['));
-        if (!isDarwin) {
+        let isDarwin = !isUser && role.includes('darwin') && (m.text.includes('{') || m.text.includes('['));
+        if (!isDarwin && !isUser) {
              try {
                 const data = JSON.parse(m.text);
                 if (data.variants || data.proposals || (Array.isArray(data) && data.length > 0 && data[0].strategy)) isDarwin = true;
@@ -103,6 +104,7 @@ window.ChatApp.Renderer = {
     },
 
     formatText: function(text, role) {
+        if (!text) return "";
         let clean = window.ChatApp.Utils.stripTechnicalMarkers(text);
 
         // Handle think blocks BEFORE escaping
