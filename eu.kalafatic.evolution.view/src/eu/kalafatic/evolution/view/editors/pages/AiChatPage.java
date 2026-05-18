@@ -1077,9 +1077,12 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	}
 
 	public void provideApproval(String sessionId, boolean approved) {
-		if (approved && sessionId.equals(getCurrentSessionName())) {
-			chatGroup.markLastWaitingAsApproved();
-			instructionsGroup.resetBackground();
+		if (sessionId.equals(getCurrentSessionName())) {
+			if (approved) {
+				chatGroup.markLastWaitingAsApproved();
+				instructionsGroup.resetBackground();
+			}
+			outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "You", approved ? "Approved" : "Rejected", "user", MessagePriority.NORMAL, false);
 		}
 		SessionState state = getSessionState(sessionId);
 		if (state.orchestrationSession != null) {
@@ -1245,6 +1248,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			if (assistAdapter != null) assistAdapter.closeProposalPopup();
 			instructionsGroup.resetBackground();
 			clearWaitingMessages();
+			outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "You", input, "user", MessagePriority.NORMAL, false);
 		}
 		SessionState state = getSessionState(sessionId);
 		if (state.orchestrationSession != null) {

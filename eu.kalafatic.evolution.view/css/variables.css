@@ -1,8 +1,8 @@
 :root {
     --bg-canvas: #f1f5f9;
-    --user-bg: #eff6ff;
-    --user-border: #bfdbfe;
-    --user-text: #1e40af;
+    --user-bg: #dcfce7; /* Light Green for user prompts to differentiate from default AI */
+    --user-border: #86efac;
+    --user-text: #14532d;
     --ai-bg: #ffffff;
     --ai-text: #1e293b;
     --border: #e2e8f0;

@@ -127,6 +127,7 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER) {
                 String clarificationRequest = planner.formatClarificationRequest(expansion);
+                context.log(clarificationRequest);
                 String userResponse = context.requestInput(clarificationRequest).get();
                 if ("Rejected".equalsIgnoreCase(userResponse)) {
                     manager.recordRejection(goal, "User rejected clarification request.");
