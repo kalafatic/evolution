@@ -57,6 +57,22 @@ public class GitManager {
         }
     }
 
+    public void createBranchFrom(String base, String newBranch) throws Exception {
+        // IMMUTABLE BRANCH PROVISIONING: NEVER mutate active checkout during provisioning.
+        // We use git branch <new_branch> <base> to create it without checkout.
+        try {
+            gitTool.execute("branch " + newBranch + " " + base, root, null);
+        } catch (Exception e) {
+            // If it fails (e.g. branch exists), we force it if required by architecture,
+            // but here we try to be safe.
+            if (e.getMessage().contains("already exists")) {
+                gitTool.execute("branch -f " + newBranch + " " + base, root, null);
+            } else {
+                throw e;
+            }
+        }
+    }
+
     public void forceCheckout(String branchName) throws Exception {
         gitTool.execute("checkout -f " + branchName, root, null);
     }

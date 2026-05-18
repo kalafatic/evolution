@@ -57,18 +57,31 @@ public class AuthorityController {
     /**
      * Decisions on which variant to activate and move to the next stage.
      */
-    public AuthorityDecision decide(String iterationId, List<BranchVariant> variants, TaskContext context, String manualSelectionId) {
+    public EvolutionDecision decide(String iterationId, List<BranchVariant> variants, TaskContext context, String manualSelectionId) {
         DecisionSnapshot decision = decisionResolver.resolveWinner(iterationId, variants, context, manualSelectionId);
 
         String winnerId = decision.getSelectedVariantId();
         applyDecision(decision, variants, context);
 
-        AuthorityDecision authorityDecision;
+        DecisionType type;
         if (winnerId != null && !winnerId.equals("NONE")) {
-            authorityDecision = new AuthorityDecision(DecisionType.ACTIVATE, winnerId, decision.getActivationReason());
+            type = DecisionType.ACTIVATE;
         } else {
-            authorityDecision = new AuthorityDecision(DecisionType.REJECT, null, decision.getActivationReason());
+            type = DecisionType.REJECT;
         }
+
+        List<String> rejectedIds = decision.getRankedVariants().stream()
+                .filter(id -> !id.equals(winnerId))
+                .collect(java.util.stream.Collectors.toList());
+
+        EvolutionDecision evolutionDecision = new EvolutionDecision(
+            type,
+            winnerId,
+            rejectedIds,
+            decision.getActivationReason(),
+            decision.getAggregatedScores(),
+            java.util.Collections.emptyMap() // Metadata can be expanded
+        );
 
         // AUDIT TRAIL
         if (context != null) {
@@ -77,7 +90,7 @@ public class AuthorityController {
                 AuditRecord audit = new AuditRecord(
                     iterationId,
                     winnerId,
-                    authorityDecision.getType().name(),
+                    evolutionDecision.getType().name(),
                     "MULTIPLE_CANDIDATES",
                     (winnerId != null ? "APPROVED" : "REJECTED"),
                     "AuthorityController",
@@ -88,7 +101,7 @@ public class AuthorityController {
             }
         }
 
-        return authorityDecision;
+        return evolutionDecision;
     }
 
     private void applyDecision(DecisionSnapshot decision, List<BranchVariant> variants, TaskContext context) {
