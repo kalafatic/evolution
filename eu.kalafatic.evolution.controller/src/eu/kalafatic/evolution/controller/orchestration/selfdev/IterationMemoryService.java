@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -39,12 +40,13 @@ public class IterationMemoryService {
         this.auditFile = new File(this.projectRoot, "orchestrator/audit_trail.jsonl");
         this.mapper = new ObjectMapper();
         this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        this.mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         loadRecords();
         loadFromIterationsDir();
     }
 
     private void loadRecords() {
-        File[] files = memoryDir.listFiles((dir, name) -> name.endsWith(".json"));
+        File[] files = memoryDir.listFiles((dir, name) -> name.startsWith("iteration_") && name.endsWith(".json"));
         if (files != null) {
             for (File file : files) {
                 try {

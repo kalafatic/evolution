@@ -20,6 +20,7 @@ public class IterationRecord {
     private String status;
 
     // Extended fields
+    private String iterationId;
     private String branchId;
     private String lineageId;
     private String rank;
@@ -69,6 +70,9 @@ public class IterationRecord {
 	public void setStatus(String status) {
 		this.status = status;
 	}
+
+    public String getIterationId() { return iterationId; }
+    public void setIterationId(String iterationId) { this.iterationId = iterationId; }
 
     public String getBranchId() { return branchId; }
     public void setBranchId(String branchId) { this.branchId = branchId; }
