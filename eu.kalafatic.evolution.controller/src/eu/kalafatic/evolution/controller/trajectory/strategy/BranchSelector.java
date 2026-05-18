@@ -8,7 +8,7 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 public class BranchSelector {
 
-    private static final double DEFAULT_BUDGET = 2.0;
+    private static final double DEFAULT_BUDGET = 3.0;
 
     public List<EvolutionBranch> select(TaskContext context) {
         List<EvolutionBranch> available = BranchRegistry.getAvailableStrategies();
@@ -33,6 +33,16 @@ public class BranchSelector {
                 selected.add(strategy);
                 currentCost += cost;
             }
+        }
+
+        // FORCE DIVERSITY: Ensure at least 2 branches for Darwin mode if applicable
+        if (selected.size() < 2 && applicable.size() >= 2) {
+             for (EvolutionBranch strategy : applicable) {
+                 if (!selected.contains(strategy)) {
+                     selected.add(strategy);
+                     if (selected.size() >= 2) break;
+                 }
+             }
         }
 
         context.log("[KERNEL] Selected " + selected.size() + " strategies (Budget: " + currentCost + "/" + budget + "): " +
