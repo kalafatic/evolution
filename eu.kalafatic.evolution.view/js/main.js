@@ -19,28 +19,42 @@ window.ChatApp = window.ChatApp || {};
             return;
         }
 
+        if (!Array.isArray(messages)) {
+            console.error('updateMessages: expected array, got', typeof messages);
+            return;
+        }
+
         // Ensure strictly monotonic order by sequence number before rendering
         messages.sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
 
         state.messages = messages;
         const wrapper = document.getElementById('messages-wrapper');
         if (!wrapper) return;
+
         wrapper.innerHTML = '';
         messages.forEach(m => {
-            const el = window.ChatApp.Renderer.renderMessage(m);
-            const text = (m.text || '').toLowerCase();
-            const sender = (m.sender || '').toLowerCase();
-            const query = state.searchQuery.toLowerCase();
-            if (query && !text.includes(query) && !sender.includes(query)) {
-                el.style.display = 'none';
-            } else if (state.searchQuery) {
-                let regex;
-                if (state.searchQuery.startsWith('/') && state.searchQuery.endsWith('/') && state.searchQuery.length > 2) {
-                    try { regex = new RegExp(state.searchQuery.substring(1, state.searchQuery.length - 1), 'gi'); } catch(e) {}
+            try {
+                const el = window.ChatApp.Renderer.renderMessage(m);
+                if (!el) return;
+
+                const text = (m.text || '').toLowerCase();
+                const sender = (m.sender || '').toLowerCase();
+                const query = state.searchQuery.toLowerCase();
+
+                if (query && !text.includes(query) && !sender.includes(query)) {
+                    el.style.display = 'none';
+                } else if (state.searchQuery) {
+                    let regex;
+                    if (state.searchQuery.startsWith('/') && state.searchQuery.endsWith('/') && state.searchQuery.length > 2) {
+                        try { regex = new RegExp(state.searchQuery.substring(1, state.searchQuery.length - 1), 'gi'); } catch(e) {}
+                    }
+                    window.ChatApp.Renderer.highlightMatches(el, regex || state.searchQuery.toLowerCase());
                 }
-                window.ChatApp.Renderer.highlightMatches(el, regex || state.searchQuery.toLowerCase());
+                wrapper.appendChild(el);
+            } catch (e) {
+                console.error('Error rendering message at index', m.index, e);
+                if (window.JavaLog) window.JavaLog('Error rendering message: ' + e.message);
             }
-            wrapper.appendChild(el);
         });
         window.ChatApp.UI.scrollToBottom();
     };
