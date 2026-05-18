@@ -167,11 +167,22 @@ public class IntentExpansionEngine extends BaseAiAgent {
     }
 
     private void persistClarifications(IntentExpansionResult result, TaskContext context) {
+        List<WorkspaceArtifact> existing = context.getSemanticWorkspace().findArtifactsByType("clarification-conclusion");
+
         for (IntentDimension dim : result.getDimensions()) {
             if (dim.getConfidence() > 0.7 && dim.getInferredValue() != null && !dim.getInferredValue().isEmpty()) {
+                String newContent = "Intent clarified: " + dim.getName() + " is resolved to: " + dim.getInferredValue();
+
+                boolean alreadyExists = existing.stream()
+                        .anyMatch(a -> a.getContent() != null && a.getContent().equalsIgnoreCase(newContent));
+
+                if (alreadyExists) {
+                    continue;
+                }
+
                 String artifactId = "clarification-" + dim.getDimensionId() + "-" + System.currentTimeMillis();
                 WorkspaceArtifact artifact = new WorkspaceArtifact(artifactId, "clarification-conclusion");
-                artifact.setContent("Intent clarified: " + dim.getName() + " is resolved to: " + dim.getInferredValue());
+                artifact.setContent(newContent);
                 artifact.setConfidence(dim.getConfidence());
                 artifact.getSemanticTags().add(dim.getName());
                 artifact.getSemanticTags().add("intent");

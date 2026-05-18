@@ -16,7 +16,7 @@ public class ClarificationPlanner {
         CLARIFY_USER     // High ambiguity, must ask user
     }
 
-    public Strategy determineStrategy(IntentExpansionResult result) {
+    public Strategy determineStrategy(IntentExpansionResult result, eu.kalafatic.evolution.controller.orchestration.TaskContext context) {
         if (result.getConfidence() != null && result.getConfidence().getOverallConfidence() < 0.4) {
             return Strategy.CLARIFY_USER;
         }
@@ -25,6 +25,14 @@ public class ClarificationPlanner {
                 .anyMatch(d -> d.getAmbiguityScore() > 0.7 || d.isRequiresUserInput());
 
         if (highAmbiguity) {
+            // Check for clarification fatigue
+            if (context != null && context.getSemanticWorkspace() != null) {
+                int priorClarifications = context.getSemanticWorkspace().findArtifactsByType("clarification-conclusion").size();
+                if (priorClarifications >= 3 && result.getHypotheses().size() > 1) {
+                    context.log("[KERNEL] Clarification fatigue detected (" + priorClarifications + "). Falling back to BRANCH_PARALLEL.");
+                    return Strategy.BRANCH_PARALLEL;
+                }
+            }
             return Strategy.CLARIFY_USER;
         }
 

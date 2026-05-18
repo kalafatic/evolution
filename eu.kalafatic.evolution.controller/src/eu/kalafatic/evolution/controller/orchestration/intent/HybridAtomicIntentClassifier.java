@@ -71,9 +71,10 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         for (String art : posArtifacts) {
             if (lower.contains(" " + art) || lower.contains(art + " ")) {
                 score += 0.1;
-                analysis.getSignals().add("artifact_terminology");
-                analysis.setArtifactType(art);
-                break;
+                analysis.getSignals().add("artifact_terminology:" + art);
+                if (analysis.getArtifactType() == null) {
+                    analysis.setArtifactType(art);
+                }
             }
         }
 
@@ -91,7 +92,8 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
                     break;
                 }
             }
-            if (!isVerb) {
+            boolean isArtifact = posArtifacts.stream().anyMatch(art -> art.equalsIgnoreCase(target));
+            if (!isVerb && !isArtifact) {
                 targetCount++;
                 analysis.getExtractedTargets().add(target);
             }
@@ -115,7 +117,8 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
                             continue;
                         }
 
-                        if (potentialTarget.length() > 1 && !posVerbs.contains(potentialTarget)) {
+                        boolean isPotentialArtifact = posArtifacts.stream().anyMatch(art2 -> art2.equalsIgnoreCase(potentialTarget));
+                        if (potentialTarget.length() > 1 && !posVerbs.contains(potentialTarget) && !isPotentialArtifact) {
                             analysis.getExtractedTargets().add(potentialTarget);
                             targetCount = 1;
                             analysis.getSignals().add("lowercase_artifact_target");
@@ -182,7 +185,7 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         // High confidence atomic tasks don't strictly require a named target in the prompt (e.g. "create a java class")
         boolean simpleCreation = analysis.getConfidence() >= 0.80 && !analysis.isMultiStep();
 
-        analysis.setRequiresPlanning((analysis.getConfidence() < 0.75 || !hasTarget) && !simpleCreation
+        analysis.setRequiresPlanning((analysis.getConfidence() < 0.75 || (!hasTarget && !simpleCreation))
                 || analysis.isMultiStep() || analysis.getSignals().contains("potential_conjunctions"));
 
         return analysis;
