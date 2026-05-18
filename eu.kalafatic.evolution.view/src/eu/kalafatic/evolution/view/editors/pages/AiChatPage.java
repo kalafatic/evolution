@@ -129,7 +129,12 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		if (isDisposed()) return;
 		Display.getDefault().asyncExec(() -> {
 			if (isDisposed()) return;
-			chatGroup.addMessageToSession(msg.getTurnId().split("_")[0], msg);
+			String turnId = msg.getTurnId();
+			if (turnId != null && turnId.contains("__")) {
+				chatGroup.addMessageToSession(turnId.split("__")[0], msg);
+			} else if (turnId != null) {
+				chatGroup.addMessageToSession(turnId.split("_")[0], msg);
+			}
 		});
 	};
 
@@ -538,7 +543,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		if (assistAdapter != null) assistAdapter.closeProposalPopup();
 
 		String sessionId = getCurrentSessionName();
-		currentTurnId = sessionId + "_" + System.currentTimeMillis();
+		currentTurnId = sessionId + "__" + System.currentTimeMillis();
 
 		outputController.submitMessage(sessionId, currentTurnId, "You", request, "user", MessagePriority.NORMAL, false);
 		outputController.submitMessage(sessionId, currentTurnId, "Evo", "Initializing orchestration...", "ai", MessagePriority.PROGRESS, false);
@@ -830,7 +835,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		}
 
 		String sessionId = getCurrentSessionName();
-		currentTurnId = sessionId + "_" + System.currentTimeMillis();
+		currentTurnId = sessionId + "__" + System.currentTimeMillis();
 
 		outputController.submitMessage(sessionId, currentTurnId, "User [" + modeLabel + "]", finalRequest, "user", MessagePriority.NORMAL, false);
 		String loopSuffix = (isSelfDev) ? " Supervisor loop" : " loop";

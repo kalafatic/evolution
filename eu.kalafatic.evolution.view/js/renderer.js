@@ -2,8 +2,12 @@ window.ChatApp = window.ChatApp || {};
 
 window.ChatApp.Renderer = {
     renderMessage: function(m) {
-        if (!m || !m.text) return document.createElement('div');
+        if (!m || (m.text === undefined || m.text === null)) return null;
         const role = (m.agentType || '').toLowerCase();
+
+        // Skip rendering non-user empty messages to avoid broken bubbles
+        if (m.text.trim() === "" && !role.includes('user')) return null;
+
         const roles = role.split(' ');
         const primaryRole = roles[0];
         const isUser = primaryRole === 'user' || (m.sender || '').toLowerCase().includes('you') || (m.sender || '').toLowerCase().includes('user');
