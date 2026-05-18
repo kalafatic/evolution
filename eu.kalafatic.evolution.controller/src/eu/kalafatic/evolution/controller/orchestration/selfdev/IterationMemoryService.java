@@ -24,15 +24,18 @@ public class IterationMemoryService {
     private final File memoryDir;
     private final File auditFile;
     private final ObjectMapper mapper;
-    private final List<IterationRecord> records = new CopyOnWriteArrayList<>();
-    private final List<TrajectoryAnalysisRecord> trajectoryAnalyses = new CopyOnWriteArrayList<>();
-    private final Map<String, List<IterationRecord>> errorIndex = new HashMap<>();
+    private List<IterationRecord> records = new CopyOnWriteArrayList<>();
+    private List<TrajectoryAnalysisRecord> trajectoryAnalyses = new CopyOnWriteArrayList<>();
+    private Map<String, List<IterationRecord>> errorIndex = new HashMap<>();
     private final FailureMemory failureMemory = new FailureMemory();
     private final TrajectoryMemory trajectoryMemory = new TrajectoryMemory();
 
+    private long lastMemoryDirModified = 0;
+    private long lastIterationsDirModified = 0;
+    private boolean initialLoadDone = false;
+
     public IterationMemoryService(File projectRoot) {
         this.projectRoot = findEffectiveRoot(projectRoot);
-        Log.log("[MEMORY] IterationMemoryService initialized with root: " + this.projectRoot.getAbsolutePath());
         this.memoryDir = new File(this.projectRoot, "orchestrator/memory");
         if (!memoryDir.exists()) {
             memoryDir.mkdirs();
@@ -41,18 +44,41 @@ public class IterationMemoryService {
         this.mapper = new ObjectMapper();
         this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
         this.mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        loadRecords();
-        loadFromIterationsDir();
+        refresh();
+        Log.log("[MEMORY] IterationMemoryService initialized with root: " + this.projectRoot.getAbsolutePath() + " (found " + records.size() + " records)");
     }
 
-    private void loadRecords() {
+    public synchronized boolean refresh() {
+        long currentMemoryMod = memoryDir.exists() ? memoryDir.lastModified() : 0;
+        File iterationsDir = new File(projectRoot, "iterations");
+        long currentIterationsMod = iterationsDir.exists() ? iterationsDir.lastModified() : 0;
+
+        if (currentMemoryMod > lastMemoryDirModified || currentIterationsMod > lastIterationsDirModified || !initialLoadDone) {
+            List<IterationRecord> newRecords = new CopyOnWriteArrayList<>();
+            Map<String, List<IterationRecord>> newErrorIndex = new HashMap<>();
+
+            loadRecordsTo(newRecords, newErrorIndex);
+            loadFromIterationsDirTo(newRecords, newErrorIndex);
+
+            this.records = newRecords;
+            this.errorIndex = newErrorIndex;
+
+            lastMemoryDirModified = currentMemoryMod;
+            lastIterationsDirModified = currentIterationsMod;
+            initialLoadDone = true;
+            return true;
+        }
+        return false;
+    }
+
+    private void loadRecordsTo(List<IterationRecord> targetRecords, Map<String, List<IterationRecord>> targetErrorIndex) {
         File[] files = memoryDir.listFiles((dir, name) -> name.startsWith("iteration_") && name.endsWith(".json"));
         if (files != null) {
             for (File file : files) {
                 try {
                     IterationRecord record = mapper.readValue(file, IterationRecord.class);
-                    records.add(record);
-                    indexRecord(record);
+                    targetRecords.add(record);
+                    indexRecordTo(record, targetErrorIndex);
                 } catch (IOException e) {
                     // Log error but continue
                     System.err.println("Failed to load iteration record: " + file.getName() + " - " + e.getMessage());
@@ -73,7 +99,7 @@ public class IterationMemoryService {
         return startDir;
     }
 
-    private void loadFromIterationsDir() {
+    private void loadFromIterationsDirTo(List<IterationRecord> targetRecords, Map<String, List<IterationRecord>> targetErrorIndex) {
         File iterationsDir = new File(projectRoot, "iterations");
         if (!iterationsDir.exists() || !iterationsDir.isDirectory()) {
             // Try one more time with a relative path if projectRoot failed us
@@ -108,10 +134,10 @@ public class IterationMemoryService {
                     }
 
                     // Check if already loaded from memoryDir to avoid duplicates
-                    boolean exists = records.stream().anyMatch(r -> r.getIteration() == record.getIteration() && record.getBranch().equals(r.getBranch()));
+                    boolean exists = targetRecords.stream().anyMatch(r -> r.getIteration() == record.getIteration() && record.getBranch().equals(r.getBranch()));
                     if (!exists) {
-                        records.add(record);
-                        indexRecord(record);
+                        targetRecords.add(record);
+                        indexRecordTo(record, targetErrorIndex);
                     }
                 } catch (Exception e) {
                     System.err.println("Failed to load plan.json from " + dir.getName() + ": " + e.getMessage());
@@ -120,10 +146,10 @@ public class IterationMemoryService {
         }
     }
 
-    private void indexRecord(IterationRecord record) {
+    private void indexRecordTo(IterationRecord record, Map<String, List<IterationRecord>> targetErrorIndex) {
         if (record.getErrorMessage() != null && !record.getErrorMessage().isEmpty()) {
             String normalizedError = normalizeError(record.getErrorMessage());
-            errorIndex.computeIfAbsent(normalizedError, k -> new ArrayList<>()).add(record);
+            targetErrorIndex.computeIfAbsent(normalizedError, k -> new ArrayList<>()).add(record);
             failureMemory.addFingerprint(normalizedError);
         }
     }
@@ -151,7 +177,7 @@ public class IterationMemoryService {
     public void saveRecord(IterationRecord record) {
         Log.log("[MEMORY] saveRecord: ID=" + record.getBranchId() + ", Result=" + record.getResult() + ", Strategy=" + record.getStrategy());
         records.add(record);
-        indexRecord(record);
+        indexRecordTo(record, errorIndex);
         String fileName = String.format("iteration_%d_%d.json", record.getIteration(), record.getTimestamp());
         File file = new File(memoryDir, fileName);
         try {
