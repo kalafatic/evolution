@@ -4,7 +4,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.*;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
 import eu.kalafatic.evolution.controller.mediation.analysis.MediatedDarwinEngine;
@@ -98,6 +100,12 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
                 1.0,
                 "Generated hypotheses based on structural analysis."
             ));
+
+            try {
+                manager.checkStep("mediated-darwin", "DARWIN_REASONING", "Review generated hypotheses.");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         });
 
         // Pass 4: Staging & Safety (Validator)
@@ -115,6 +123,12 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
                 1.0,
                 "Assessed safety risk: " + vResult[0].riskLevel
             ));
+
+            try {
+                manager.checkStep("mediated-safety", "SAFETY_VALIDATION", "Review safety assessment.");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         });
 
         // Pass 5: Context Selection & Prompt Synthesis
@@ -127,6 +141,20 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
             PromptSynthesizer synthesizer = new PromptSynthesizer();
             optimizedPrompt[0] = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths);
 
+            // Darwinian Refinement Loop
+            try {
+                for (int i = 0; i < 2; i++) {
+                    context.log("[MEDIATED] Darwinian Refinement Iteration " + (i + 1));
+                    JSONObject critique = manager.getAnalyticAgent().analyze("CRITIQUE THIS PROMPT BASED ON CONTEXT: " + optimizedPrompt[0], context);
+                    if (critique.optDouble("confidence", 0.0) > 0.9) break;
+
+                    optimizedPrompt[0] = manager.getAiService().sendRequest(context.getOrchestrator(),
+                        "Improve this prompt based on the following critique: " + critique.optString("refinedPrompt") + "\n\nOriginal Prompt:\n" + optimizedPrompt[0], context);
+                }
+            } catch (Exception e) {
+                context.log("[MEDIATED] Refinement skipped due to error: " + e.getMessage());
+            }
+
             context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
                 "mediated-selection-" + System.currentTimeMillis(),
                 "CONTEXT_SELECTION",
@@ -136,11 +164,27 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
                 1.0,
                 "Selected " + selectedPaths.size() + " files for export."
             ));
+
+            try {
+                manager.checkStep("mediated-context", "CONTEXT_BUILDER", "Review selected context and optimized prompt.");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         });
 
-        // Pass 6: Export Packaging
+        // Pass 6: Export Packaging (Final Step)
         final File[] exportPackage = new File[1];
         runPass(context, "Export Packaging", "Creating ZIP bundle for external LLM...", () -> {
+            // Final explicit approval for packaging in mediated mode
+            if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+                try {
+                    boolean approved = context.requestApproval("Final review: Ready to generate export package with " + selectedPaths.size() + " files?").get();
+                    if (!approved) throw new Exception("Export cancelled by user.");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
             try {
                 String sessionId = context.getSessionId();
                 String outputPath = null;

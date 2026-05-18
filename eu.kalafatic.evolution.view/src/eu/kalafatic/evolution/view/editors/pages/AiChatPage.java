@@ -510,6 +510,15 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		boolean isSimpleChat = (detectedMode != null && detectedMode.getType() == PlatformType.SIMPLE_CHAT);
 		boolean isMediated = (detectedMode != null && detectedMode.getType() == PlatformType.HYBRID_MANUAL_EXPORT) || (orchestrator != null && orchestrator.getAiMode() == AiMode.MEDIATED);
 
+		// AUTOMATIC TARGETING FOR SELF-DEV
+		if (isMediated && detectedMode != null && detectedMode.getType() == PlatformType.SELF_DEV_MODE) {
+			String evoRepo = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().findEvolutionRepository();
+			if (evoRepo != null && currentSession != null) {
+				currentSession.setTargetPath(evoRepo);
+				processLogEntry("Evo: Self-Development detected. Automatically targeted local evolution repository: " + evoRepo);
+			}
+		}
+
 		// Start Self-Dev Supervisor if (Self-Development OR Darwin mode is enabled) AND it's NOT a simple chat OR mediated.
 		// Darwin is now the unified basic flow for all implementation requests.
 		if (!isSimpleChat && !isMediated && orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&

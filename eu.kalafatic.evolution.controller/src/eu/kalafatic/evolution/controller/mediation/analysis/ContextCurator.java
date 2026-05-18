@@ -47,6 +47,22 @@ public class ContextCurator {
         Set<String> selectedIds = new HashSet<>();
         String lowerQuery = query.toLowerCase();
 
+        // 0. High-density semantic match (e.g. class names mentioned in query)
+        String[] keywords = lowerQuery.split("\\s+");
+        for (String word : keywords) {
+            if (word.length() < 3) continue;
+            List<SemanticNode> semanticMatches = snapshot.getNodes().values().stream()
+                .filter(node -> {
+                    String fileName = new java.io.File(node.getPath()).getName().toLowerCase();
+                    return fileName.contains(word) || node.getStructures().stream().anyMatch(s -> s.toLowerCase().contains(word));
+                })
+                .collect(Collectors.toList());
+            for (SemanticNode node : semanticMatches) {
+                if (selectedIds.size() >= maxFiles) break;
+                selectedIds.add(node.getId());
+            }
+        }
+
         // 1. Direct relevance (Query keywords in path or tags)
         List<SemanticNode> directNodes = snapshot.getNodes().values().stream()
             .filter(node -> node.getPath().toLowerCase().contains(lowerQuery) ||
