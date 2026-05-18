@@ -19,30 +19,47 @@ import eu.kalafatic.utils.semantic.Stability;
  */
 public class MetadataAgent {
 
+    public static final String ARCHITECTURE_CONTEXT = "ARCHITECTURE_CONTEXT.md";
+    public static final String SEMANTIC_OVERVIEW = "SEMANTIC_OVERVIEW.md";
+    public static final String TRAJECTORY_MAP = "TRAJECTORY_MAP.json";
+    public static final String PACKAGE_CONTEXT = "PACKAGE_CONTEXT.md";
+
     private final AIContextTool contextTool = new AIContextTool();
     private final Map<File, EvoMetadata> processedMetadata = new HashMap<>();
 
-    public void generate(File root) {
-        if (!root.exists() || !root.isDirectory()) return;
+    public MetadataResult generate(File root) {
+        if (!root.exists() || !root.isDirectory()) return null;
 
+        MetadataResult result = new MetadataResult(root);
         processedMetadata.clear();
-        scanAndEnrich(root, root);
+        scanAndEnrich(root, root, result);
 
-        generateNavigationMaps(root);
+        generateNavigationMaps(root, result);
+
+        StringBuilder summary = new StringBuilder();
+        summary.append("Metadata Generation Summary:\n");
+        summary.append("Total sidecars: ").append(processedMetadata.size()).append("\n");
+        summary.append("Breakdown by Role:\n");
+        result.getRoleStats().forEach((role, count) -> {
+            summary.append("- ").append(role).append(": ").append(count).append("\n");
+        });
+        result.setSummary(summary.toString());
+
+        return result;
     }
 
-    private void scanAndEnrich(File current, File root) {
+    private void scanAndEnrich(File current, File root, MetadataResult result) {
         File[] files = current.listFiles();
         if (files == null) return;
 
         for (File file : files) {
             if (file.isDirectory()) {
                 if (!file.getName().startsWith(".") && !file.getName().equals("target") && !file.getName().equals("bin")) {
-                    scanAndEnrich(file, root);
+                    scanAndEnrich(file, root, result);
                 }
             } else {
                 if (shouldProcess(file)) {
-                    processFile(file, root);
+                    processFile(file, root, result);
                 }
             }
         }
@@ -60,7 +77,7 @@ public class MetadataAgent {
                name.endsWith(".md") || name.endsWith(".txt");
     }
 
-    private void processFile(File file, File root) {
+    private void processFile(File file, File root, MetadataResult result) {
         EvoMetadata meta = contextTool.loadMetadata(file);
         if (meta == null) {
             meta = new EvoMetadata();
@@ -82,6 +99,9 @@ public class MetadataAgent {
         // 2f: Save Sidecar
         contextTool.saveMetadata(file, meta);
         processedMetadata.put(file, meta);
+
+        result.addGeneratedFile(new File(file.getParentFile(), file.getName() + AIContextTool.METADATA_SUFFIX));
+        result.incrementRoleStat(meta.getRole());
     }
 
     private void assignSemanticRole(File file, EvoMetadata meta) {
@@ -161,18 +181,18 @@ public class MetadataAgent {
         }
     }
 
-    private void generateNavigationMaps(File root) {
+    private void generateNavigationMaps(File root, MetadataResult result) {
         // 2e: PACKAGE_CONTEXT.md, ARCHITECTURE_CONTEXT.md, TRAJECTORY_MAP.json, SEMANTIC_OVERVIEW.md
-        generateArchitectureContext(root);
-        generateSemanticOverview(root);
-        generateTrajectoryMap(root);
+        result.addGeneratedFile(generateArchitectureContext(root));
+        result.addGeneratedFile(generateSemanticOverview(root));
+        result.addGeneratedFile(generateTrajectoryMap(root));
 
         // Per directory package context
-        generatePackageContexts(root);
+        generatePackageContexts(root, result);
     }
 
-    private void generateArchitectureContext(File root) {
-        File archFile = new File(root, "ARCHITECTURE_CONTEXT.md");
+    private File generateArchitectureContext(File root) {
+        File archFile = new File(root, ARCHITECTURE_CONTEXT);
         StringBuilder sb = new StringBuilder("# ARCHITECTURE CONTEXT\n\n");
         sb.append("This file provides an LLM navigation map for mediated reasoning.\n\n");
         sb.append("## Core Domains\n");
@@ -192,10 +212,11 @@ public class MetadataAgent {
         try {
             Files.write(archFile.toPath(), sb.toString().getBytes());
         } catch (IOException e) {}
+        return archFile;
     }
 
-    private void generateSemanticOverview(File root) {
-        File overviewFile = new File(root, "SEMANTIC_OVERVIEW.md");
+    private File generateSemanticOverview(File root) {
+        File overviewFile = new File(root, SEMANTIC_OVERVIEW);
         StringBuilder sb = new StringBuilder("# SEMANTIC OVERVIEW\n\n");
         sb.append("Summary of the system's semantic nervous system.\n\n");
 
@@ -212,10 +233,11 @@ public class MetadataAgent {
         try {
             Files.write(overviewFile.toPath(), sb.toString().getBytes());
         } catch (IOException e) {}
+        return overviewFile;
     }
 
-    private void generateTrajectoryMap(File root) {
-        File mapFile = new File(root, "TRAJECTORY_MAP.json");
+    private File generateTrajectoryMap(File root) {
+        File mapFile = new File(root, TRAJECTORY_MAP);
         StringBuilder sb = new StringBuilder("{\n  \"version\": \"1.0\",\n  \"components\": [\n");
 
         List<String> items = new ArrayList<>();
@@ -230,13 +252,14 @@ public class MetadataAgent {
         try {
             Files.write(mapFile.toPath(), sb.toString().getBytes());
         } catch (IOException e) {}
+        return mapFile;
     }
 
-    private void generatePackageContexts(File root) {
+    private void generatePackageContexts(File root, MetadataResult result) {
         Map<File, List<File>> byDir = processedMetadata.keySet().stream().collect(Collectors.groupingBy(File::getParentFile));
         for (Map.Entry<File, List<File>> entry : byDir.entrySet()) {
             File dir = entry.getKey();
-            File pkgFile = new File(dir, "PACKAGE_CONTEXT.md");
+            File pkgFile = new File(dir, PACKAGE_CONTEXT);
 
             StringBuilder sb = new StringBuilder("# PACKAGE CONTEXT\n\n");
             sb.append("## Directory: ").append(root.toURI().relativize(dir.toURI()).getPath()).append("\n\n");
@@ -254,6 +277,7 @@ public class MetadataAgent {
 
             try {
                 Files.write(pkgFile.toPath(), sb.toString().getBytes());
+                result.addGeneratedFile(pkgFile);
             } catch (IOException e) {}
         }
     }
