@@ -113,6 +113,12 @@
             id="eu.kalafatic.evolution.view.views.InternalBrowserView"
             name="Internal Browser">
       </view>
+      <view
+            class="eu.kalafatic.utils.views.ConsoleView"
+            icon="icons/evo_chat.svg"
+            id="eu.kalafatic.gemini.core.views.ConsoleView"
+            name="Log Console">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.navigator.navigatorContent">
