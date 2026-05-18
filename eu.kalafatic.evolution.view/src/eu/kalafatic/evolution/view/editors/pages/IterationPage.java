@@ -393,12 +393,15 @@ public class IterationPage extends AEvoPage {
                     return;
                 }
 
-                refreshData();
+                boolean memoryChanged = (memoryService != null) && memoryService.refresh();
 
                 Display.getDefault().asyncExec(() -> {
                     if (!isDisposed()) {
-                        updateUI();
-                        updateSessionStatus();
+                        if (memoryChanged) {
+                            refreshData();
+                            updateUI();
+                            updateSessionStatus();
+                        }
                     }
                 });
             }

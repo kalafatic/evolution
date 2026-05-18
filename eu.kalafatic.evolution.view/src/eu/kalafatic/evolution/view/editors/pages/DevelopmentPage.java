@@ -83,6 +83,7 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
     private int initRetries = 0;
     private static final int MAX_INIT_RETRIES = 5;
     private String lastJson = "";
+    private String lastSupervisorStatusStr = "";
 
     public DevelopmentPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -341,16 +342,25 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
                     return;
                 }
 
+                boolean memoryChanged = (memoryService != null) && memoryService.refresh();
                 JSONObject supervisorStatus = bootstrapController != null ? bootstrapController.getStatus() : null;
+                String statusStr = supervisorStatus != null ? supervisorStatus.toString() : "";
 
                 Display.getDefault().asyncExec(() -> {
                     if (!isDisposed()) {
-                        updateSelfDevStatus(supervisorStatus);
-                        updateSessionStatus();
-                        syncWorkflowSession();
-                        if (archViz != null) archViz.scheduleRefresh();
-                        if (workflowGroup != null) workflowGroup.scheduleRefresh();
-                        refreshBrowser();
+                        boolean statusChanged = !statusStr.equals(lastSupervisorStatusStr);
+                        if (statusChanged) {
+                            updateSelfDevStatus(supervisorStatus);
+                            lastSupervisorStatusStr = statusStr;
+                        }
+
+                        if (statusChanged || memoryChanged || (orchestrator != null && orchestrator.eResource() != null && orchestrator.eResource().isModified())) {
+                            updateSessionStatus();
+                            syncWorkflowSession();
+                            if (archViz != null) archViz.scheduleRefresh();
+                            if (workflowGroup != null) workflowGroup.scheduleRefresh();
+                            refreshBrowser();
+                        }
                     }
                 });
             }
@@ -479,9 +489,8 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         }
 
         try {
-            if (projectRoot != null && projectRoot.exists()) {
-                IterationMemoryService ms = new IterationMemoryService(projectRoot);
-                List<IterationRecord> records = ms.getRecords();
+            if (memoryService != null) {
+                List<IterationRecord> records = memoryService.getRecords();
                 JSONArray variantsArr = new JSONArray();
                 for (IterationRecord rec : records) {
                     JSONObject varObj = new JSONObject();
