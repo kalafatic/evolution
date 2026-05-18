@@ -163,9 +163,17 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         }
 
         if (lower.contains(" and ") || lower.contains(",") || lower.contains(";")) {
-            score -= 0.15;
-            analysis.getSignals().add("potential_conjunctions");
-            analysis.setMultiStep(true);
+            // Refinement: "and" followed by output-related verbs often just specifies a target file, not a new step
+            boolean simpleOutputConjunction = lower.contains(" and write") || lower.contains(" and save") || lower.contains(" and output");
+
+            if (simpleOutputConjunction) {
+                analysis.getSignals().add("simple_output_conjunction");
+                score -= 0.05; // Minimal penalty
+            } else {
+                score -= 0.15;
+                analysis.getSignals().add("potential_conjunctions");
+                analysis.setMultiStep(true);
+            }
         }
 
         // Bounded scope check (short length often implies atomic)
