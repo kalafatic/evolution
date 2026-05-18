@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.controller.orchestration.mediated.analysis;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
@@ -8,6 +9,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import eu.kalafatic.evolution.controller.agents.MetadataAgent;
+import eu.kalafatic.evolution.controller.agents.MetadataResult;
 
 public class MetadataAgentTest {
 
@@ -23,7 +25,10 @@ public class MetadataAgentTest {
         Files.write(javaFile.toPath(), "package eu.kalafatic.evolution.orchestration;\npublic class MyClass {}\n".getBytes());
 
         MetadataAgent generator = new MetadataAgent();
-        generator.generate(root);
+        MetadataResult result = generator.generate(root);
+
+        assertNotNull("Result should not be null", result);
+        assertTrue("Generated files should not be empty", !result.getGeneratedFiles().isEmpty());
 
         // Check sidecar
         File sidecar = new File(src, "MyClass.java.ai.json");
@@ -37,5 +42,8 @@ public class MetadataAgentTest {
         assertTrue("SEMANTIC_OVERVIEW.md should exist", new File(root, "SEMANTIC_OVERVIEW.md").exists());
         assertTrue("TRAJECTORY_MAP.json should exist", new File(root, "TRAJECTORY_MAP.json").exists());
         assertTrue("PACKAGE_CONTEXT.md should exist in src", new File(src, "PACKAGE_CONTEXT.md").exists());
+
+        // Verify result tracking
+        assertTrue("Result should contain ARCHITECTURE_CONTEXT.md", result.getGeneratedFiles().stream().anyMatch(f -> f.getName().equals(MetadataAgent.ARCHITECTURE_CONTEXT)));
     }
 }

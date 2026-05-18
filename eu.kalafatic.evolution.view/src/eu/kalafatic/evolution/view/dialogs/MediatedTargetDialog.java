@@ -79,11 +79,11 @@ public class MediatedTargetDialog extends DynamicMapDialog {
                     File root = new File(path);
                     if (root.exists() && root.isDirectory()) {
                         MetadataAgent generator = new MetadataAgent();
-                        generator.generate(root);
-                        MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-                        mb.setText("Metadata Generation");
-                        mb.setMessage("AI Metadata generation completed for: " + path);
-                        mb.open();
+                        eu.kalafatic.evolution.controller.agents.MetadataResult result = generator.generate(root);
+                        if (result != null) {
+                            MetadataResultDialog resDlg = new MetadataResultDialog(getShell(), result, projectRoot);
+                            resDlg.open();
+                        }
                     }
                 }
             });
