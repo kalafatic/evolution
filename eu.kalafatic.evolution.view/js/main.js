@@ -19,7 +19,7 @@ window.ChatApp = window.ChatApp || {};
             return;
         }
 
-        if (!Array.isArray(messages)) {
+        if (!messages || !Array.isArray(messages)) {
             console.error('updateMessages: expected array, got', typeof messages);
             return;
         }
