@@ -122,7 +122,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             state.getMetadata().put("intentExpansion", expansion);
 
             ClarificationPlanner planner = manager.getClarificationPlanner();
-            ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion);
+            ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
             context.log("[KERNEL] Intent Expansion Strategy: " + strategy);
 
             if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER) {
@@ -132,9 +132,16 @@ public class DarwinFlow implements IOrchestrationFlow {
                     manager.recordRejection(goal, "User rejected clarification request.");
                     return manager.failedResult();
                 }
-                goal = goal + " (Clarification: " + userResponse + ")";
-                context.getOrchestrator().getSelfDevSession().setInitialRequest(goal);
-                return runDarwin(context);
+
+                // Break recursion on approval
+                if (userResponse.equalsIgnoreCase("Approved") || userResponse.equalsIgnoreCase("Proceed") || userResponse.equalsIgnoreCase("Yes") || userResponse.equalsIgnoreCase("OK")) {
+                    context.log("[KERNEL] User approved intent expansion. Advancing phase.");
+                    manager.advanceEvolutionPhase(state);
+                } else {
+                    goal = goal + " (Clarification: " + userResponse + ")";
+                    context.getOrchestrator().getSelfDevSession().setInitialRequest(goal);
+                    return runDarwin(context);
+                }
             }
         }
 
