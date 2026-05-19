@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors.pages.aichat;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -70,6 +71,19 @@ public class ChatGroup extends AEvoGroup {
     @Override
     public void refreshUI() {
         refreshBrowser();
+    }
+
+    @Override
+    public void scheduleRefresh() {
+        // Debounce browser refreshes to handle high-frequency log updates
+        if (refreshPending.compareAndSet(false, true)) {
+            Display.getDefault().timerExec(100, () -> {
+                refreshPending.set(false);
+                if (group != null && !group.isDisposed()) {
+                    refreshUI();
+                }
+            });
+        }
     }
 
     // @evo:13:A reason=fill-chat-group
@@ -619,7 +633,7 @@ public class ChatGroup extends AEvoGroup {
 
             msg.setIndex(currentSession.getMessages().size());
             currentSession.getMessages().add(msg);
-            refreshBrowser();
+            scheduleRefresh();
         }
     }
 
@@ -640,7 +654,7 @@ public class ChatGroup extends AEvoGroup {
                     msg.setIndex(s.getMessages().size());
                     s.getMessages().add(msg);
                     if (s == currentSession) {
-                        refreshBrowser();
+                        scheduleRefresh();
                     }
                 });
         }
@@ -722,23 +736,31 @@ public class ChatGroup extends AEvoGroup {
         browser.execute("if(window.ChatApp && window.ChatApp.Panel) { window.ChatApp.Panel.selectFile('" + path + "'); }");
     }
 
+    private String lastJson = "";
+
     private void refreshBrowser() {
-	if (browser.isDisposed() || !isLoaded || !isJsReady) return;
+        if (browser.isDisposed() || !isLoaded || !isJsReady) return;
+
         refreshGitStatus();
         if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
             setFeedbackLevel(orchestrator.getTasks().get(0).getFeedbackLevel());
         }
+
         JSONArray array = new JSONArray();
         if (currentSession != null) {
+            // Optimization: Only send if content changed
             for (ChatMessage m : currentSession.getMessages()) {
                 JSONObject json = toJsonObject(m);
                 if (json != null) array.put(json);
             }
         }
+
         String json = array.toString();
-        // Pass the JSON object directly to the JS function as suggested
-        //browser.execute("if(window.updateMessages) { window.updateMessages(" + json + "); }");
-  
+        if (json.equals(lastJson)) {
+            return; // Skip redundant bridge calls
+        }
+        lastJson = json;
+
         browser.execute(
                 "if(window.updateMessages) {" +
                 "  window.updateMessages(" + json + ");" +
@@ -746,7 +768,6 @@ public class ChatGroup extends AEvoGroup {
                 "  console.log('updateMessages not ready');" +
                 "}"
             );
-    
     }
 
     private JSONObject toJsonObject(ChatMessage m) {
