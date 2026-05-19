@@ -41,7 +41,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
     protected String getFooterInstructions() {
         return "OUTPUT SCHEMA:\n" +
                "{\n" +
-               "  \"state\": \"CLEAR | EVOLVABLE | NEEDS_CLARIFICATION | BLOCKED | CONTRADICTORY\",\n" +
+               "  \"state\": \"CLEAR | EVOLVABLE | NEEDS_CLARIFICATION | BLOCKED | CONTRADICTORY\", // CRITICAL: CHOOSE EXACTLY ONE\n" +
                "  \"dominantIntent\": \"string (clear engineering objective)\",\n" +
                "  \"dominantConfidence\": float (0.0-1.0),\n" +
                "  \"ambiguityScore\": float (0.0-1.0, only for semantic ambiguity),\n" +
@@ -108,7 +108,9 @@ public class IntentExpansionEngine extends BaseAiAgent {
         result.setOriginalPrompt(prompt);
 
         // Parse Intent Resolution fields
-        result.setState(InterpretationState.valueOf(json.optString("state", "CLEAR")));
+        String stateStr = json.optString("state", "CLEAR");
+        result.setState(parseState(stateStr, context));
+
         result.setDominantIntent(json.optString("dominantIntent"));
         result.setDominantConfidence(json.optDouble("dominantConfidence", 0.5));
         result.setAmbiguityScore(json.optDouble("ambiguityScore", 0.0));
@@ -190,6 +192,25 @@ public class IntentExpansionEngine extends BaseAiAgent {
         ));
 
         return result;
+    }
+
+    public static InterpretationState parseState(String stateStr, TaskContext context) {
+        try {
+            return InterpretationState.valueOf(stateStr.trim());
+        } catch (IllegalArgumentException e) {
+            // Robust fallback for noisy LLM output (e.g., "CLEAR | NEEDS_CLARIFICATION")
+            InterpretationState resolved = InterpretationState.CLEAR;
+            for (InterpretationState s : InterpretationState.values()) {
+                if (stateStr.contains(s.name())) {
+                    resolved = s;
+                    break;
+                }
+            }
+            if (context != null) {
+                context.log("[INTENT EXPANSION] WARNING: Noisy state string '" + stateStr + "' resolved to " + resolved);
+            }
+            return resolved;
+        }
     }
 
     private void persistClarifications(IntentExpansionResult result, TaskContext context) {
