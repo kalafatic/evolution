@@ -99,7 +99,7 @@ public class FeedbackGroup extends AEvoGroup {
       
         // 2. Approval Box
         approvalBox = GUIFactory.INSTANCE.createComposite(group, 5);
-        GUIFactory.INSTANCE.createLabel(approvalBox, "Action Required:");
+        GUIFactory.INSTANCE.createLabel(approvalBox, "Decision Required:");
         
         Button approveButton = GUIFactory.INSTANCE.createButton(approvalBox, "Approve");
         approveButton.addSelectionListener(new SelectionAdapter() {
@@ -128,7 +128,7 @@ public class FeedbackGroup extends AEvoGroup {
 
         // 3. Input Box
         inputBox = GUIFactory.INSTANCE.createComposite(group, 3);
-        promptLabel = GUIFactory.INSTANCE.createLabel(inputBox, "Input Required:", SWT.WRAP);
+        promptLabel = GUIFactory.INSTANCE.createLabel(inputBox, "Clarification Required:", SWT.WRAP);
 
         inputText = GUIFactory.INSTANCE.createText(inputBox, "", SWT.BORDER);
 
@@ -208,11 +208,6 @@ public class FeedbackGroup extends AEvoGroup {
 
     public void showInput(String message) {
         if (inputBox == null || inputBox.isDisposed()) return;
-        if (message != null) {
-            message = message.replaceAll("(?s)<think>.*?</think>", "").trim();
-            if (message.length() > 100) message = message.substring(0, 97) + "...";
-            setTextSafe(promptLabel, message);
-        }
         updateVisibility(inputBox);
         inputText.setFocus();
         page.expandFeedbackSection();
