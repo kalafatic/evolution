@@ -5,9 +5,28 @@ import java.util.Map;
 
 public class FailureMemory {
     private Map<String, Integer> fingerprints = new HashMap<>();
+    private Map<String, Integer> strategyFailures = new HashMap<>();
+    private Map<String, Double> mutationEffectiveness = new HashMap<>();
 
     public void addFingerprint(String fingerprint) {
         fingerprints.put(fingerprint, fingerprints.getOrDefault(fingerprint, 0) + 1);
+    }
+
+    public void recordStrategyFailure(String strategy) {
+        strategyFailures.put(strategy, strategyFailures.getOrDefault(strategy, 0) + 1);
+    }
+
+    public int getStrategyFailureCount(String strategy) {
+        return strategyFailures.getOrDefault(strategy, 0);
+    }
+
+    public void updateMutationEffectiveness(String strategy, double score) {
+        double current = mutationEffectiveness.getOrDefault(strategy, 0.5);
+        mutationEffectiveness.put(strategy, (current * 0.7) + (score * 0.3));
+    }
+
+    public double getMutationEffectiveness(String strategy) {
+        return mutationEffectiveness.getOrDefault(strategy, 0.5);
     }
 
     public int getCount(String fingerprint) {

@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.trajectory.FitnessEvaluation;
 import eu.kalafatic.evolution.controller.trajectory.SignalSeverity;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
@@ -13,6 +14,7 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.tools.MavenTool;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -195,13 +197,22 @@ public class Evaluator implements ICapability, IEvaluationContract {
         SignalSeverity severity = result.isSuccess() ? SignalSeverity.INFO : (result.getTestPassRate() > 0 ? SignalSeverity.WARNING : SignalSeverity.CRITICAL);
         String explanation = result.isSuccess() ? "Build and tests passed." : "Build or tests failed. " + String.join(", ", result.getErrors());
 
+        FitnessEvaluation fitness = new FitnessEvaluation(variantId);
+        fitness.setDimension("test_success", result.getTestPassRate());
+        fitness.setDimension("compilation_success", snapshot.build.status == StateSnapshot.BuildStatus.SUCCESS ? 1.0 : 0.0);
+        fitness.setDimension("architecture_stability", 0.7); // Placeholder
+        fitness.setDimension("semantic_alignment", 0.8); // Placeholder
+
         EvaluationSignal signal = new EvaluationSignal(
             variantId,
             "MavenEvaluator",
             score,
             1.0, // Confidence for deterministic maven evaluation
             severity,
-            explanation
+            eu.kalafatic.evolution.controller.trajectory.DivergenceType.NONE,
+            explanation,
+            new HashMap<>(),
+            fitness
         );
 
         eu.kalafatic.evolution.controller.trajectory.SignalBus.getInstance().publish(signal);

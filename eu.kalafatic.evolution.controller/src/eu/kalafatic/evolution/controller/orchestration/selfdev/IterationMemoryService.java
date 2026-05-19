@@ -27,6 +27,7 @@ public class IterationMemoryService {
     private List<IterationRecord> records = new CopyOnWriteArrayList<>();
     private List<TrajectoryAnalysisRecord> trajectoryAnalyses = new CopyOnWriteArrayList<>();
     private Map<String, List<IterationRecord>> errorIndex = new HashMap<>();
+    private Map<String, Integer> architectureHotspots = new HashMap<>();
     private final FailureMemory failureMemory = new FailureMemory();
     private final TrajectoryMemory trajectoryMemory = new TrajectoryMemory();
 
@@ -151,6 +152,14 @@ public class IterationMemoryService {
             String normalizedError = normalizeError(record.getErrorMessage());
             targetErrorIndex.computeIfAbsent(normalizedError, k -> new ArrayList<>()).add(record);
             failureMemory.addFingerprint(normalizedError);
+            failureMemory.recordStrategyFailure(record.getStrategy());
+        }
+
+        // Hotspot tracking (P1)
+        if (record.getChangedFiles() != null) {
+            for (String file : record.getChangedFiles()) {
+                architectureHotspots.put(file, architectureHotspots.getOrDefault(file, 0) + 1);
+            }
         }
     }
 
@@ -267,6 +276,10 @@ public class IterationMemoryService {
 
     public FailureMemory getFailureMemory() {
         return failureMemory;
+    }
+
+    public Map<String, Integer> getArchitectureHotspots() {
+        return architectureHotspots;
     }
 
     public TrajectoryMemory getTrajectoryMemory() {

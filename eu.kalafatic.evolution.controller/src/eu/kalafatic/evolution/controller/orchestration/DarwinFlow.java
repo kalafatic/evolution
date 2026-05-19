@@ -46,6 +46,7 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer;
 import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
@@ -255,9 +256,13 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.getGitManager().merge(selectedVariant.getBranchName());
 
-                GitTool validationGit = new GitTool();
-                String finalDiff = validationGit.execute("diff " + baseCommit + " HEAD", context.getProjectRoot(), context);
-                context.log("[KERNEL] Reality Check: Winner variant applied. Actual physical change size: " + finalDiff.length() + " chars.");
+                WorkspaceDeltaAnalyzer analyzer = new WorkspaceDeltaAnalyzer(context.getProjectRoot(), context);
+                WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
+                context.log("[KERNEL] Reality Check: Winner variant applied. Analysis: " + reality.toString());
+
+                if (!reality.isSignificant()) {
+                    context.log("[KERNEL] Reality Check Warning: Winner variant resulted in NO physical changes.");
+                }
 
                 manager.transition(SystemState.VERIFYING, context);
                 IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
