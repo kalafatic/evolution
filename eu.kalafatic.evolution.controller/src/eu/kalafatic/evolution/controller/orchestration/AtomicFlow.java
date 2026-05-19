@@ -21,27 +21,7 @@ public class AtomicFlow implements IOrchestrationFlow {
 
     @Override
     public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
-        context.log("[KERNEL] Executing Atomic Flow.");
-        OrchestrationState state = context.getOrchestrationState();
-        AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
-
-        List<Task> tasks = manager.createAtomicFilePlan(request, atomicAnalysis, context);
-        state.getExecutionPlan().addAll(tasks);
-        context.getOrchestrator().getTasks().addAll(tasks);
-
-        manager.checkStep("evolution_loop", "ATOMIC_PLAN", "Review atomic execution plan.");
-
-        manager.transition(SystemState.PLAN_LOCKED, context);
-        boolean success = manager.executeTasksWithRetries(tasks);
-
-        manager.transition(SystemState.VERIFYING, context);
-        String summary = manager.getFinalResponseAgent().generateFinalResponse(request, tasks, context);
-
-        OrchestratorResponse response = new OrchestratorResponse();
-        response.setResultType(ResultType.CHAT);
-        response.setSummary(summary);
-
-        manager.transition(success ? SystemState.DONE : SystemState.FAILED, context);
-        return response;
+        context.log("[KERNEL] Executing Atomic Flow (Bridged to SingleVariantDarwinFlow).");
+        return new SingleVariantDarwinFlow(aiService, manager).execute(request, context);
     }
 }

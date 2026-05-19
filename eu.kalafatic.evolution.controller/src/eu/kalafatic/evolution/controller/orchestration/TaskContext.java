@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.UUID;
 
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -39,6 +40,7 @@ public class TaskContext {
     private String currentTaskId = "Unknown";
     private int currentIteration = 0;
     private String currentPhase = "INIT";
+    private final String deterministicExecutionId;
     private Instant startTime;
     private CompletableFuture<Boolean> approvalFuture;
     private CompletableFuture<String> inputFuture;
@@ -73,6 +75,7 @@ public class TaskContext {
         this.orchestrator = orchestrator;
         this.projectRoot = projectRoot;
         this.protocol = new SelfDevProtocol(projectRoot);
+        this.deterministicExecutionId = UUID.randomUUID().toString();
     }
 
     public List<String> getInstructionFiles() {
@@ -129,6 +132,10 @@ public class TaskContext {
 
     public String getSessionId() {
         return sessionId;
+    }
+
+    public String getDeterministicExecutionId() {
+        return deterministicExecutionId;
     }
 
     public void setSessionId(String sessionId) {

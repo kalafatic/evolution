@@ -61,7 +61,6 @@ public class AuthorityController {
         DecisionSnapshot decision = decisionResolver.resolveWinner(iterationId, variants, context, manualSelectionId);
 
         String winnerId = decision.getSelectedVariantId();
-        applyDecision(decision, variants, context);
 
         DecisionType type;
         if (winnerId != null && !winnerId.equals("NONE")) {
@@ -104,33 +103,6 @@ public class AuthorityController {
         return evolutionDecision;
     }
 
-    private void applyDecision(DecisionSnapshot decision, List<BranchVariant> variants, TaskContext context) {
-        String winnerId = decision.getSelectedVariantId();
-
-        for (BranchVariant variant : variants) {
-            BranchVariant.ActivationState oldState = variant.getActivationState();
-            if (variant.getId().equals(winnerId)) {
-                variant.setActivationState(BranchVariant.ActivationState.ACTIVE);
-                variant.setRank("winner");
-                if (context != null) {
-                    context.log("[AUTHORITY] Activated winner variant: " + winnerId + " (" + variant.getStrategy() + ")");
-                    auditTransition(context, variant, oldState, BranchVariant.ActivationState.ACTIVE, "Selection winner");
-                }
-            } else if (decision.getRankedVariants().contains(variant.getId())) {
-                variant.setActivationState(BranchVariant.ActivationState.ARCHIVED);
-                variant.setRank("runner-up");
-                if (context != null) {
-                    auditTransition(context, variant, oldState, BranchVariant.ActivationState.ARCHIVED, "Runner-up archival");
-                }
-            } else {
-                variant.setActivationState(BranchVariant.ActivationState.ARCHIVED);
-                variant.setRank("noise");
-                if (context != null) {
-                    auditTransition(context, variant, oldState, BranchVariant.ActivationState.ARCHIVED, "Noise archival");
-                }
-            }
-        }
-    }
 
     /**
      * Updates the lifecycle state of variants.

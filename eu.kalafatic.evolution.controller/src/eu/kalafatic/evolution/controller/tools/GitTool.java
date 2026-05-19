@@ -146,13 +146,13 @@ public class GitTool implements ITool {
             if (context != null && context.getOrchestrationState() != null) {
                 String iterationId = context.getOrchestrationState().getCurrentIterationId();
                 String taskId = context.getCurrentTaskId();
-                metadata = String.format(" [EVO-META] [Iteration: %s] [Task: %s]",
+                metadata = String.format("[EVO-META] [Iteration: %s] [Task: %s]",
                     iterationId != null ? iterationId : "unknown",
                     taskId != null ? taskId : "none");
             }
 
             String commitMsg = command.contains("-m") ? "" : " -m \"Darwin evolution step\"";
-            String fullCommand = "git " + command + commitMsg + metadata;
+            String fullCommand = "git " + command + commitMsg + (metadata.isEmpty() ? "" : " -m \"" + metadata + "\"");
             return shell.execute(fullCommand, gitWorkingDir, context);
         }
 

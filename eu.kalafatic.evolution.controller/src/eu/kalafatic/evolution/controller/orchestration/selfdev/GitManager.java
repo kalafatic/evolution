@@ -3,12 +3,15 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 public class GitManager {
     private final File root;
     private final GitTool gitTool = new GitTool();
+    private final Set<String> worktreeRegistry = ConcurrentHashMap.newKeySet();
 
     public GitManager(File root) {
         this.root = root;
@@ -86,13 +89,9 @@ public class GitManager {
     }
 
     public void commit(String message, TaskContext context) throws Exception {
-        String fullMsg = message;
-        if (context != null && context.getOrchestrationState() != null) {
-            String iterId = context.getOrchestrationState().getCurrentIterationId();
-            fullMsg += " [EVO-META] Iteration: " + iterId;
-        }
         gitTool.execute("add .", root, context);
-        gitTool.execute("commit --allow-empty -m \"" + fullMsg + "\"", root, context);
+        // Metadata is automatically injected by GitTool for 'commit' commands
+        gitTool.execute("commit --allow-empty -m \"" + message + "\"", root, context);
     }
 
     public void rollback() throws Exception {
@@ -102,9 +101,43 @@ public class GitManager {
 
     public void createWorktree(String branch, String path) throws Exception {
         gitTool.execute("worktree add " + path + " " + branch, root, null);
+        registerWorktree(path);
     }
 
     public void removeWorktree(String path) throws Exception {
         gitTool.execute("worktree remove " + path, root, null);
+        unregisterWorktree(path);
+    }
+
+    public void registerWorktree(String path) {
+        worktreeRegistry.add(path);
+    }
+
+    public void unregisterWorktree(String path) {
+        worktreeRegistry.remove(path);
+    }
+
+    public void cleanupWorktrees() {
+        for (String path : worktreeRegistry) {
+            try {
+                gitTool.execute("worktree remove " + path, root, null);
+                // Also attempt physical deletion of the directory if git didn't do it
+                File dir = new File(path);
+                if (dir.exists()) {
+                    deleteDirectory(dir);
+                }
+            } catch (Exception e) {
+                // Silently continue for other worktrees
+            }
+        }
+        worktreeRegistry.clear();
+    }
+
+    private void deleteDirectory(File directory) {
+        File[] allContents = directory.listFiles();
+        if (allContents != null) {
+            for (File file : allContents) deleteDirectory(file);
+        }
+        directory.delete();
     }
 }
