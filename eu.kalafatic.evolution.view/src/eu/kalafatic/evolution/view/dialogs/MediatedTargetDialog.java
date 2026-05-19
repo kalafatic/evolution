@@ -43,19 +43,38 @@ public class MediatedTargetDialog extends DynamicMapDialog {
     private static LinkedHashMap<String, DynamicField> createFields(ChatSession session, File projectRoot) {
         LinkedHashMap<String, DynamicField> fields = new LinkedHashMap<>();
 
+        boolean selfDev = session != null && session.isSelfIterativeMode();
         String initialPath = session != null ? session.getTargetPath() : "";
-        if (initialPath == null || initialPath.isEmpty()) {
-            if (session != null && session.isSelfIterativeMode()) {
+        java.util.List<String> comboItems = new java.util.ArrayList<>();
+
+        if (selfDev) {
+            if (initialPath == null || initialPath.isEmpty()) {
                 initialPath = ProjectModelManager.getInstance().findEvolutionRepository();
-            } else {
+            }
+            java.util.List<String> allRepos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
+            for (String repo : allRepos) {
+                File repoDir = new File(repo);
+                if (repoDir.getName().toLowerCase().startsWith("evo")) {
+                    comboItems.add(repo);
+                }
+            }
+        } else {
+            if (initialPath == null || initialPath.isEmpty()) {
                 initialPath = System.getProperty("user.home");
             }
+            File userHome = new File(System.getProperty("user.home"));
+            File[] files = userHome.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isDirectory() && !f.getName().startsWith(".")) {
+                        comboItems.add(f.getAbsolutePath());
+                    }
+                }
+            }
+            java.util.Collections.sort(comboItems);
         }
 
-        java.util.List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
-        String[] repoArray = repos.toArray(new String[0]);
-
-        fields.put(TARGET_PATH, new DynamicField("Target Path:", DynamicField.TYPE_COMBO | DynamicField.DIRECTORY, initialPath, (Object[])repoArray));
+        fields.put(TARGET_PATH, new DynamicField("Target Path:", DynamicField.TYPE_COMBO | DynamicField.DIRECTORY, initialPath, comboItems));
 
         String initialType = session != null ? session.getTargetType() : "Project";
         fields.put(TARGET_TYPE, new DynamicField("Target Type:", DynamicField.TYPE_COMBO, initialType, "Project", "Folder", "PDF", "HTML", "Markdown"));
