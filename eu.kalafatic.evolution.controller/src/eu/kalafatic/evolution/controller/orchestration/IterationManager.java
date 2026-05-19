@@ -317,9 +317,26 @@ public class IterationManager {
         }
     }
 
+    /**
+     * Internal transition for testing purposes.
+     * @deprecated Use {@link #transition(SystemState, TaskContext)} for production code.
+     */
+    @Deprecated
+    public static void forceTransition(SystemState to, TaskContext ctx) {
+        ctx.getStateHolder().applyTransition(new TransitionToken(), to);
+    }
+
     public void transition(SystemState to, TaskContext ctx) {
         SystemState current = ctx.getStateHolder().getState();
         if (current == to) return;
+
+        // INVARIANT 1: Orchestration Guard
+        if (current == SystemState.DONE || current == SystemState.FAILED) {
+            if (to != SystemState.INIT && to != SystemState.RECOVERING) {
+                ctx.log("[KERNEL] Illegal state transition attempt: " + current + " -> " + to + ". Terminal states can only transition to INIT or RECOVERING.");
+                return;
+            }
+        }
 
         TransitionToken token = new TransitionToken();
         ctx.getStateHolder().applyTransition(token, to);

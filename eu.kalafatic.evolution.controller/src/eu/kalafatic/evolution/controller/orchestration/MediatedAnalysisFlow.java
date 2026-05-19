@@ -39,6 +39,16 @@ public class MediatedAnalysisFlow implements IOrchestrationFlow {
 
     @Override
     public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
+        try {
+            return executeInternal(request, context);
+        } catch (Exception e) {
+            manager.getGitManager().rollback();
+            manager.transition(SystemState.FAILED, context);
+            throw e;
+        }
+    }
+
+    private OrchestratorResponse executeInternal(String request, TaskContext context) throws Exception {
         context.log("[MEDIATED] Starting Reformulated Mediated Context Export Flow.");
         manager.transition(SystemState.ANALYZING, context);
 

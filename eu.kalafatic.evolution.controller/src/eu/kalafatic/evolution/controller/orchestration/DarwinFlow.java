@@ -140,6 +140,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                     String userResponse = context.requestInput(clarificationRequest).get();
                     if ("Rejected".equalsIgnoreCase(userResponse)) {
                         manager.recordRejection(goal, "User rejected clarification request.");
+                        manager.transition(SystemState.FAILED, context);
                         return manager.failedResult();
                     }
 
@@ -205,13 +206,13 @@ public class DarwinFlow implements IOrchestrationFlow {
                         .filter(v -> v.getActivationState() == BranchVariant.ActivationState.ACTIVE)
                         .collect(Collectors.toList());
 
-                BranchVariant selectedVariant = null;
                 if (!activeVariants.isEmpty()) {
-                    selectedVariant = evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModelImpl, context, executionPlan, baseCommit);
+                    evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModelImpl, context, executionPlan, baseCommit);
                 } else {
-                    selectedVariant = evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModelImpl, context, executionPlan, baseCommit);
+                    evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModelImpl, context, executionPlan, baseCommit);
                 }
 
+                BranchVariant selectedVariant = null;
                 String manualId = null;
                 if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
                     context.log("[KERNEL] Darwin in MEDIATED mode: Stopping for user review.");
@@ -239,9 +240,10 @@ public class DarwinFlow implements IOrchestrationFlow {
                 // SINGLE AUTHORITY DECISION CALL
                 eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = manager.decide(iterId, variants, context, manualId);
 
-                if (decision.getSelectedVariantId() != null) {
+                String finalWinnerId = decision.getSelectedVariantId();
+                if (finalWinnerId != null) {
                     selectedVariant = variants.stream()
-                            .filter(v -> v.getId().equals(decision.getSelectedVariantId()))
+                            .filter(v -> v.getId().equals(finalWinnerId))
                             .findFirst().orElse(null);
                 }
 
@@ -254,6 +256,7 @@ public class DarwinFlow implements IOrchestrationFlow {
 
                 if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE && selectedVariant.getScore() < 0.5)) {
                     manager.getGitManager().forceCheckout(originalBranch);
+                    manager.getGitManager().rollback();
                     manager.transition(SystemState.FAILED, context);
                     return manager.failedResult();
                 }
@@ -305,7 +308,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         return lastResult;
     }
 
-    public BranchVariant evaluateVariantsInternal(List<BranchVariant> variants, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, Iteration iteration, TaskContext context, ScheduledExecutionPlan executionPlan, String baseCommit) throws Exception {
+    public void evaluateVariantsInternal(List<BranchVariant> variants, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, Iteration iteration, TaskContext context, ScheduledExecutionPlan executionPlan, String baseCommit) throws Exception {
         String baseBranch = manager.getGitManager().getCurrentBranch();
         for (BranchVariant variant : variants) {
             // IMMUTABLE BRANCH PROVISIONING
@@ -344,7 +347,6 @@ public class DarwinFlow implements IOrchestrationFlow {
         context.getKernelContext().getMemoryService().flush();
 
         // SELECTED VARIANT DETERMINATION IS NOW DEFERRED TO SINGLE AUTHORITY CALL IN runDarwin
-        return null;
     }
 
     private BranchVariant evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context, String baseCommit) {
