@@ -463,8 +463,10 @@ public class IterationManager {
 
         context.log("[KERNEL] Resolving flow. Profile traits: " + profile.getTraits());
 
-        if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
-            return new eu.kalafatic.evolution.controller.orchestration.MediatedExportFlow(aiService, this);
+        // ATOMIC FLOW: Priority for simple, singular tasks
+        if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning()) {
+            context.log("[KERNEL] Atomic intent detected with high confidence (" + atomicAnalysis.getConfidence() + "). Routing to AtomicFlow.");
+            return new AtomicFlow(aiService, this);
         }
 
         // Unified Darwin Flow for all implementation-related tasks.
@@ -477,16 +479,14 @@ public class IterationManager {
                 state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.OPTIMIZATION)
         );
 
+        if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY) && profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+            return router.resolveFlow(context.getPlatformMode(), aiService, this);
+        }
+
         // Priority for Darwinian Reasoning if enabled and state changes are expected
         if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE) && hasStateChangeIntent) {
             context.log("[KERNEL] Darwin Reasoning enabled and state-change intent detected. Routing to DarwinFlow.");
             return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
-        }
-
-        // ATOMIC FLOW: Priority for simple, singular tasks
-        if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning()) {
-            context.log("[KERNEL] Atomic intent detected with high confidence (" + atomicAnalysis.getConfidence() + "). Routing to AtomicFlow.");
-            return new AtomicFlow(aiService, this);
         }
 
         if (hasStateChangeIntent) {
