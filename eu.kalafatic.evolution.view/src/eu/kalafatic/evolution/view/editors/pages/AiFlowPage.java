@@ -20,6 +20,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -44,6 +46,21 @@ public class AiFlowPage extends Composite {
 	private int browserHeight = 530;
 	private String lastJson = "";
 
+	private IterationMemoryService memoryService;
+	private String currentProjectRoot;
+	private JSONArray cachedVariants = new JSONArray();
+	private long variantsVersion = 0;
+	private long renderedVariantsVersion = -1;
+	private final AtomicBoolean isRefreshing = new AtomicBoolean(false);
+	private final AtomicBoolean needsRefresh = new AtomicBoolean(false);
+	private volatile boolean graphDirty = true;
+
+	// Debug instrumentation
+	private long refreshCount = 0;
+	private long updateGraphCount = 0;
+	private long jsonRebuildCount = 0;
+	private long serviceCreationCount = 0;
+
 	private Adapter modelAdapter = new EContentAdapter() {
 		@Override
 		public void notifyChanged(Notification notification) {
@@ -54,7 +71,16 @@ public class AiFlowPage extends Composite {
 			int type = notification.getEventType();
 			if (type == Notification.SET || type == Notification.ADD || type == Notification.REMOVE
 					|| type == Notification.ADD_MANY || type == Notification.REMOVE_MANY) {
-				refreshBrowser();
+
+				// Granular filtering: avoid refresh on irrelevant notifications
+				Object notifier = notification.getNotifier();
+				if (notifier instanceof Orchestrator || notifier instanceof Agent ||
+					notifier instanceof Task || notifier instanceof SelfDevSession ||
+					notifier instanceof Iteration) {
+
+					graphDirty = true;
+					refreshBrowser();
+				}
 			}
 		}
 	};
@@ -70,7 +96,7 @@ public class AiFlowPage extends Composite {
 			public void run() {
 				browserWidth = (int)(browserWidth * 1.2);
 				browserHeight = (int)(browserHeight * 1.2);
-				updateScrolledContent();
+				updateScrolledContent(true);
 			}
 		});
 		toolbarManager.add(new Action("Zoom Out") {
@@ -78,7 +104,7 @@ public class AiFlowPage extends Composite {
 			public void run() {
 				browserWidth = (int)(browserWidth * 0.8);
 				browserHeight = (int)(browserHeight * 0.8);
-				updateScrolledContent();
+				updateScrolledContent(true);
 			}
 		});
 		toolbarManager.add(new Action("Reset Zoom") {
@@ -86,7 +112,7 @@ public class AiFlowPage extends Composite {
 			public void run() {
 				browserWidth = 660;
 				browserHeight = 530;
-				updateScrolledContent();
+				updateScrolledContent(true);
 			}
 		});
 		toolbarManager.createControl(this);
@@ -113,7 +139,7 @@ public class AiFlowPage extends Composite {
 					double factor = ((Number) arguments[0]).doubleValue();
 					browserWidth = (int) (browserWidth * factor);
 					browserHeight = (int) (browserHeight * factor);
-					updateScrolledContent();
+					updateScrolledContent(true);
 				}
 				return null;
 			}
@@ -146,24 +172,26 @@ public class AiFlowPage extends Composite {
 				org.eclipse.swt.graphics.Rectangle r = vizScrolled.getClientArea();
 				browserWidth = r.width;
 				browserHeight = r.height;
-				updateScrolledContent();
+				updateScrolledContent(true);
 			}
 		});
 
 		setOrchestrator(orchestrator);
 		browser.setText(getHtmlTemplate());
-		updateScrolledContent();
+		updateScrolledContent(true);
 	}
 
-	private void updateScrolledContent() {
+	private void updateScrolledContent(boolean forceLayout) {
 		if (vizScrolled == null || vizScrolled.isDisposed()) return;
 		if (browser != null && !browser.isDisposed()) {
 			GridData gd = (GridData) browser.getLayoutData();
 			gd.widthHint = browserWidth;
 			gd.heightHint = browserHeight;
 		}
-		browserContainer.layout(true, true);
-		vizScrolled.setMinSize(browserContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+		if (forceLayout) {
+			browserContainer.layout(true, true);
+			vizScrolled.setMinSize(browserContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+		}
 	}
 
 	public void setOrchestrator(Orchestrator orchestrator) {
@@ -174,43 +202,141 @@ public class AiFlowPage extends Composite {
 		if (this.orchestrator != null) {
 			this.orchestrator.eAdapters().add(modelAdapter);
 		}
+		updateMemoryService();
 		refreshBrowser();
 	}
 
-	private void refreshBrowser() {
-		Display.getDefault().asyncExec(() -> {
-			if (browser == null || browser.isDisposed()) return;
-
-			String json = getModelAsJson();
-			if (json.equals(lastJson)) return; // Always update lastJson even if not loaded yet
-
-			if (!isLoaded) {
-				lastJson = json;
-				// Only set text if not already loading to avoid "blinking"
-				if (browser.getUrl() == null || browser.getUrl().isEmpty() || browser.getUrl().equals("about:blank")) {
-					browser.setText(getHtmlTemplate());
-				}
-				return;
-			}
-
+	private void updateMemoryService() {
+		if (orchestrator == null) {
+			memoryService = null;
+			currentProjectRoot = null;
+			return;
+		}
+		String projectRoot = orchestrator.getFileConfig() != null ? orchestrator.getFileConfig().getLocalPath() : null;
+		if (projectRoot == null) {
+			memoryService = null;
+			currentProjectRoot = null;
+			return;
+		}
+		if (!projectRoot.equals(currentProjectRoot)) {
 			try {
-				// Check if updateGraph is actually available before calling it
-				Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
-				if (result instanceof Boolean && (Boolean) result) {
-					browser.execute("updateGraph(" + json + ");");
-					lastJson = json;
-				} else {
-					// If template is lost, set it again, but only if not already loading
-					if (browser.getUrl() == null || browser.getUrl().isEmpty() || browser.getUrl().equals("about:blank")) {
-						isLoaded = false;
-						lastJson = json;
-						browser.setText(getHtmlTemplate());
-					}
+				File rootFile = new File(projectRoot);
+				if (rootFile.exists()) {
+					memoryService = new IterationMemoryService(rootFile);
+					currentProjectRoot = projectRoot;
+					serviceCreationCount++;
+					variantsVersion++; // Force refresh on service change
 				}
 			} catch (Exception e) {
-				// Edge-based browser may throw exception if not fully initialized
+				memoryService = null;
+				currentProjectRoot = null;
 			}
-		});
+		}
+	}
+
+	private void refreshVariantsCache() {
+		updateMemoryService();
+		if (memoryService != null) {
+			if (memoryService.refresh()) {
+				List<IterationRecord> records = memoryService.getRecords();
+				JSONArray variantsArr = new JSONArray();
+				for (IterationRecord rec : records) {
+					JSONObject varObj = new JSONObject();
+					varObj.put("strategy", rec.getStrategy());
+					varObj.put("branch", rec.getBranch());
+					varObj.put("score", rec.getScore());
+					varObj.put("result", rec.getResult());
+					variantsArr.put(varObj);
+				}
+				cachedVariants = variantsArr;
+				variantsVersion++;
+			}
+		}
+	}
+
+	private void refreshBrowser() {
+		needsRefresh.set(true);
+		if (isRefreshing.compareAndSet(false, true)) {
+			new Thread(this::refreshCycle, "AiFlowPage-Refresh-Thread").start();
+		}
+	}
+
+	private void refreshCycle() {
+		try {
+			while (needsRefresh.getAndSet(false)) {
+				refreshCount++;
+				// 1. Perform IO in background thread
+				refreshVariantsCache();
+
+				// 2. Schedule UI update
+				CountDownLatch latch = new CountDownLatch(1);
+				Display.getDefault().asyncExec(() -> {
+					try {
+						performUiRefresh();
+					} finally {
+						latch.countDown();
+					}
+				});
+
+				// 3. Wait for UI update to complete before next cycle to avoid UI thread flooding
+				try {
+					latch.await();
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					break;
+				}
+			}
+		} finally {
+			isRefreshing.set(false);
+			// Check one last time if a refresh was requested while we were finishing
+			if (needsRefresh.get()) {
+				refreshBrowser();
+			}
+		}
+	}
+
+	private void performUiRefresh() {
+		if (browser == null || browser.isDisposed()) return;
+
+		boolean needsRebuild = graphDirty || variantsVersion > renderedVariantsVersion;
+		String json = lastJson;
+
+		if (needsRebuild) {
+			json = getModelAsJson();
+			jsonRebuildCount++;
+		}
+
+		if (json.equals(lastJson) && renderedVariantsVersion == variantsVersion) return;
+
+		if (!isLoaded) {
+			lastJson = json;
+			// Only set text if not already loading to avoid "blinking"
+			if (browser.getUrl() == null || browser.getUrl().isEmpty() || browser.getUrl().equals("about:blank")) {
+				browser.setText(getHtmlTemplate());
+			}
+			return;
+		}
+
+		try {
+			// Check if updateGraph is actually available before calling it
+			Object result = browser.evaluate("return typeof updateGraph !== 'undefined';");
+			if (result instanceof Boolean && (Boolean) result) {
+				browser.execute("updateGraph(" + json + ");");
+				updateGraphCount++;
+				lastJson = json;
+				renderedVariantsVersion = variantsVersion;
+				graphDirty = false;
+			} else {
+				// If template is lost, set it again, but only if not already loading
+				if (browser.getUrl() == null || browser.getUrl().isEmpty() || browser.getUrl().equals("about:blank")) {
+					isLoaded = false;
+					lastJson = json;
+					browser.setText(getHtmlTemplate());
+				}
+			}
+		} catch (Exception e) {
+			// Edge-based browser may throw exception if not fully initialized
+		}
 	}
 
 	private String getModelAsJson() {
@@ -253,23 +379,7 @@ public class AiFlowPage extends Composite {
 		}
 
 		// Darwin variants visualization data
-		try {
-			String projectRoot = orchestrator.getFileConfig() != null ? orchestrator.getFileConfig().getLocalPath() : null;
-			if (projectRoot != null && new File(projectRoot).exists()) {
-				IterationMemoryService memoryService = new IterationMemoryService(new File(projectRoot));
-				List<IterationRecord> records = memoryService.getRecords();
-				JSONArray variantsArr = new JSONArray();
-				for (IterationRecord rec : records) {
-					JSONObject varObj = new JSONObject();
-					varObj.put("strategy", rec.getStrategy());
-					varObj.put("branch", rec.getBranch());
-					varObj.put("score", rec.getScore());
-					varObj.put("result", rec.getResult());
-					variantsArr.put(varObj);
-				}
-				root.put("variants", variantsArr);
-			}
-		} catch (Exception e) {}
+		root.put("variants", cachedVariants);
 
 		return root.toString();
 	}
