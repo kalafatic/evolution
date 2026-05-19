@@ -171,6 +171,35 @@ public abstract class AEvoGroup {
         }
     }
 
+    protected void setEnabledSafe(Control control, boolean enabled) {
+        if (control == null || control.isDisposed()) return;
+        if (control.getEnabled() != enabled) {
+            control.setEnabled(enabled);
+        }
+    }
+
+    protected void setVisibleSafe(Control control, boolean visible) {
+        if (control == null || control.isDisposed()) return;
+        if (control.getVisible() != visible) {
+            control.setVisible(visible);
+        }
+    }
+
+    protected void setToolTipSafe(Control control, String toolTip) {
+        if (control == null || control.isDisposed()) return;
+        String safeToolTip = toolTip != null ? toolTip : "";
+        if (!safeToolTip.equals(control.getToolTipText())) {
+            control.setToolTipText(safeToolTip);
+        }
+    }
+
+    protected void setLayoutDataSafe(Control control, Object layoutData) {
+        if (control == null || control.isDisposed()) return;
+        if (layoutData != null && layoutData != control.getLayoutData()) {
+            control.setLayoutData(layoutData);
+        }
+    }
+
     protected void selectSafe(Combo combo, String value) {
         if (combo == null || combo.isDisposed()) return;
         String safeValue = value != null ? value : "";

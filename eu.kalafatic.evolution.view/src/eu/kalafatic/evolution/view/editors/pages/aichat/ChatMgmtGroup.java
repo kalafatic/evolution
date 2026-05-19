@@ -201,71 +201,78 @@ public class ChatMgmtGroup extends AEvoGroup {
         return combo;
     }
 
+    private boolean isUpdating = false;
+
     public void load(){
-        if (orchestrator != null) {
-            AiMode mode = orchestrator.getAiMode();
-            if (aiModeCombo.getSelectionIndex() != mode.getValue()) {
-                aiModeCombo.select(mode.getValue());
-            }
-
-            // 1. Populate AI Remote combo
-            String currentRemote = aiRemoteCombo.getText();
-            List<String> remoteModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.REMOTE);
-            String[] newRemoteItems = remoteModels.toArray(new String[0]);
-            if (!java.util.Arrays.equals(aiRemoteCombo.getItems(), newRemoteItems)) {
-                aiRemoteCombo.setItems(newRemoteItems);
-                if (!currentRemote.isEmpty()) {
-                    int idx = aiRemoteCombo.indexOf(currentRemote);
-                    if (idx >= 0) aiRemoteCombo.select(idx);
-                }
-            }
-
-            String remoteModel = orchestrator.getRemoteModel();
-            if (remoteModel == null || remoteModel.isEmpty()) {
-                remoteModel = "deepseek";
-            }
-            if (remoteModel != null) {
-                selectSafe(aiRemoteCombo, remoteModel);
-            }
-
-            eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved = eu.kalafatic.evolution.controller.security.TokenSecurityService
-                    .getInstance().resolve(orchestrator, aiRemoteCombo.getText());
-
-            setTextSafe(remoteTokenText, (resolved != null && resolved.token != null) ? resolved.token : "");
-            setTextSafe(remoteUrlText, (resolved != null && resolved.url != null) ? resolved.url : "");
-
-            // 2. Populate Model combo
-            if (localModelCombo != null) {
-                String currentLocal = localModelCombo.getText();
-
-                List<String> modelsToShow;
-                if (mode == AiMode.PROXY) {
-                    modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
-                } else if (mode == AiMode.MEDIATED) {
-                    modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.MEDIATED);
-                } else {
-                    modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.LOCAL,
-                            AiMode.HYBRID);
+        if (orchestrator != null && !isUpdating) {
+            isUpdating = true;
+            try {
+                AiMode mode = orchestrator.getAiMode();
+                if (aiModeCombo.getSelectionIndex() != mode.getValue()) {
+                    aiModeCombo.select(mode.getValue());
                 }
 
-                String[] newLocalItems = modelsToShow.toArray(new String[0]);
-                if (!java.util.Arrays.equals(localModelCombo.getItems(), newLocalItems)) {
-                    localModelCombo.setItems(newLocalItems);
-                    if (!currentLocal.isEmpty()) {
-                        int idx = localModelCombo.indexOf(currentLocal);
-                        if (idx >= 0) localModelCombo.select(idx);
+                // 1. Populate AI Remote combo
+                String currentRemote = aiRemoteCombo.getText();
+                List<String> remoteModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.REMOTE);
+                String[] newRemoteItems = remoteModels.toArray(new String[0]);
+                if (!java.util.Arrays.equals(aiRemoteCombo.getItems(), newRemoteItems)) {
+                    aiRemoteCombo.setItems(newRemoteItems);
+                    if (!currentRemote.isEmpty()) {
+                        int idx = aiRemoteCombo.indexOf(currentRemote);
+                        if (idx >= 0) aiRemoteCombo.select(idx);
                     }
                 }
 
-                String model = orchestrator.getLocalModel();
+                String remoteModel = orchestrator.getRemoteModel();
+                if (remoteModel == null || remoteModel.isEmpty()) {
+                    remoteModel = "deepseek";
+                }
+                if (remoteModel != null) {
+                    selectSafe(aiRemoteCombo, remoteModel);
+                }
 
-                if (model == null || model.isEmpty()) {
-                    if (orchestrator.getOllama() != null)
-                        model = orchestrator.getOllama().getModel();
+                eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved = eu.kalafatic.evolution.controller.security.TokenSecurityService
+                        .getInstance().resolve(orchestrator, aiRemoteCombo.getText());
+
+                setTextSafe(remoteTokenText, (resolved != null && resolved.token != null) ? resolved.token : "");
+                setTextSafe(remoteUrlText, (resolved != null && resolved.url != null) ? resolved.url : "");
+
+                // 2. Populate Model combo
+                if (localModelCombo != null) {
+                    String currentLocal = localModelCombo.getText();
+
+                    List<String> modelsToShow;
+                    if (mode == AiMode.PROXY) {
+                        modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
+                    } else if (mode == AiMode.MEDIATED) {
+                        modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.MEDIATED);
+                    } else {
+                        modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.LOCAL,
+                                AiMode.HYBRID);
+                    }
+
+                    String[] newLocalItems = modelsToShow.toArray(new String[0]);
+                    if (!java.util.Arrays.equals(localModelCombo.getItems(), newLocalItems)) {
+                        localModelCombo.setItems(newLocalItems);
+                        if (!currentLocal.isEmpty()) {
+                            int idx = localModelCombo.indexOf(currentLocal);
+                            if (idx >= 0) localModelCombo.select(idx);
+                        }
+                    }
+
+                    String model = orchestrator.getLocalModel();
+
+                    if (model == null || model.isEmpty()) {
+                        if (orchestrator.getOllama() != null)
+                            model = orchestrator.getOllama().getModel();
+                    }
+                    if (model != null) {
+                        selectSafe(localModelCombo, model);
+                    }
                 }
-                if (model != null) {
-                    selectSafe(localModelCombo, model);
-                }
+            } finally {
+                isUpdating = false;
             }
         }
     }
@@ -321,7 +328,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 orchestrator.getAiProviders().add(provider);
             }
             editor.setDirty(true);
-            refreshUI();
+            scheduleRefresh();
         }
     }
 

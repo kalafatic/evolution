@@ -250,7 +250,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 		if (lastStatusUpdate == 0) Display.getDefault().asyncExec(() -> checkEnvironment());
 		
-		content.getParent().layout(true, true);
+		content.getParent().layout(true);
 	}
 
 	private void checkEnvironment() {
@@ -292,7 +292,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 	public void updateScrolledContent() {
 		if (content == null || content.isDisposed()) return;
-		content.layout(true, true);
+		content.layout(true);
 		this.setMinSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 	}
 
@@ -309,16 +309,15 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 		setTextSafe(modeIndicatorLabel, mode.getName().toUpperCase() + " MODE ACTIVE - " + modelName.toUpperCase());
 		setForegroundSafe(modeIndicatorLabel, Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
-		setBackgroundSafe(modeIndicatorLabel, lightGreen);
+
+		Color targetBg = lightGreen;
 		switch (mode) {
-		case LOCAL: setBackgroundSafe(modeIndicatorLabel, colorLocal); break;
-		case HYBRID: setBackgroundSafe(modeIndicatorLabel, colorHybrid); break;
-		case REMOTE: setBackgroundSafe(modeIndicatorLabel, colorRemote); break;
-		case MEDIATED: setBackgroundSafe(modeIndicatorLabel, colorHybrid); break;
+			case LOCAL: targetBg = colorLocal; break;
+			case HYBRID: targetBg = colorHybrid; break;
+			case REMOTE: targetBg = colorRemote; break;
+			case MEDIATED: targetBg = colorHybrid; break;
 		}
-		if (chatMgmtGroup != null) {
-			updateScrolledContent();
-		}
+		setBackgroundSafe(modeIndicatorLabel, targetBg);
 	}
 
 	public void saveLastUsedSettings() {
@@ -584,7 +583,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			}
 			instructionsGroup.setOrchestrationRunning(false);
 			handleClarify();
-			feedbackGroup.showApproval(msg); updateScrolledContent();
+			feedbackGroup.showApproval(msg);
 		}));
 		context.addInputListener(msg -> Display.getDefault().asyncExec(() -> {
 			if (!sessionId.equals(getCurrentSessionName())) return;
@@ -595,7 +594,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			}
 			instructionsGroup.setOrchestrationRunning(false);
 			handleClarify();
-			feedbackGroup.showInput(msg); updateScrolledContent();
+			feedbackGroup.showInput(msg);
 		}));
 
 		taskRequest.getContext().put("taskContext", context);
@@ -629,7 +628,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
 						editor.setDirty(true);
-						feedbackGroup.showSatisfaction(true); updateScrolledContent();
+						feedbackGroup.showSatisfaction(true);
 					}
 				});
 			} catch (Exception e) {
@@ -747,7 +746,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 			// Pre-select model from last used settings
 			loadLastUsedSettings();
-			refreshUI();
+			scheduleRefresh();
 
 			orchestrator.getAiChat().getSessions().add(newSession);
 			currentSession = newSession;
@@ -870,7 +869,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 					}
 					instructionsGroup.setOrchestrationRunning(false);
 					handleClarify();
-					feedbackGroup.showApproval(message); updateScrolledContent();
+					feedbackGroup.showApproval(message);
 				}));
 				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
 					if (!sessionId.equals(getCurrentSessionName())) return;
@@ -881,7 +880,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 					}
 					instructionsGroup.setOrchestrationRunning(false);
 					handleClarify();
-					feedbackGroup.showInput(message); updateScrolledContent();
+					feedbackGroup.showInput(message);
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
 					String token = requestToken(provider);
@@ -911,7 +910,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
 						editor.setDirty(true);
-						feedbackGroup.showSatisfaction(true); updateScrolledContent();
+						feedbackGroup.showSatisfaction(true);
 						if (state.currentStackTask != null) {
 							state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
 							state.currentStackTask.setResultSummary("Self-Development session finished. Status: " + session.getStatus());
@@ -1107,12 +1106,18 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	protected void refreshUI() {
 		if (orchestrator != null && chatMgmtGroup != null && !isUpdating) {
 			isUpdating = true;
-			chatMgmtGroup.updateUI();
-			instructionsGroup.updateUI();
-			if (feedbackGroup != null) feedbackGroup.updateUI();
-			updateStatusInfo();
-			updateModeDisplay();
-			isUpdating = false;
+			try {
+				chatMgmtGroup.updateUI();
+				instructionsGroup.updateUI();
+				if (feedbackGroup != null) feedbackGroup.updateUI();
+				updateStatusInfo();
+				updateModeDisplay();
+
+				// Centralize layout at the end of refresh
+				updateScrolledContent();
+			} finally {
+				isUpdating = false;
+			}
 		}
 	}
 
@@ -1155,7 +1160,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			NeuronService.getInstance().train(orchestrator, comments, "coding", satisfaction);
 			editor.setDirty(true); feedbackGroup.showSatisfaction(false);
 			updateModeDisplay();
-			updateScrolledContent();
+			scheduleRefresh();
 			MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK); mb.setText("Thank You"); mb.setMessage("Your feedback has been recorded and will be used to improve the AI."); mb.open();
 		}
 	}
@@ -1182,7 +1187,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			if (sessionId.equals(getCurrentSessionName())) {
 				feedbackGroup.hideApproval();
 				updateModeDisplay();
-				updateScrolledContent();
+				scheduleRefresh();
 			}
 		}
 	}
@@ -1272,7 +1277,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			}
 			chatGroup.setFeedbackLevel(level);
 			editor.setDirty(true);
-			updateScrolledContent();
+			scheduleRefresh();
 		}
 	}
 
@@ -1348,7 +1353,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			if (sessionId.equals(getCurrentSessionName())) {
 				feedbackGroup.hideInput();
 				updateModeDisplay();
-				updateScrolledContent();
+				scheduleRefresh();
 			}
 		}
 	}
@@ -1360,7 +1365,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 					m.setAgentType("response");
 				}
 			});
-			chatGroup.refreshUI();
+			chatGroup.scheduleRefresh();
 		}
 	}
 

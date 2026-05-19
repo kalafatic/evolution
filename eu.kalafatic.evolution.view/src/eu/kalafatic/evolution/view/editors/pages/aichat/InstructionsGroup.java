@@ -224,34 +224,41 @@ public class InstructionsGroup extends AEvoGroup {
         });
     }
 
+    private boolean isUpdating = false;
+
     @Override
     protected void refreshUI() {
-        if (orchestrator != null) {
-            eu.kalafatic.evolution.model.orchestration.ChatSession thread = page.getCurrentSession();
-            if (thread != null) {
-                setSelectionSafe(iterativeCheck, thread.isIterativeMode());
-                setSelectionSafe(selfIterativeCheck, thread.isSelfIterativeMode());
-                setSelectionSafe(darwinCheck, thread.isDarwinMode());
-                setSelectionSafe(gitAutomationCheck, thread.isGitAutomation());
-                if (maxIterationsSpinner.getSelection() != thread.getMaxIterations()) {
-                    maxIterationsSpinner.setSelection(thread.getMaxIterations());
-                }
-                setSelectionSafe(stepModeCheck, thread.isStepMode());
-            } else {
-                setSelectionSafe(darwinCheck, orchestrator.isDarwinMode());
-                if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
-                    PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
-                    setSelectionSafe(iterativeCheck, promptInstructions.isIterativeMode());
-                    setSelectionSafe(selfIterativeCheck, promptInstructions.isSelfIterativeMode());
-                    setSelectionSafe(gitAutomationCheck, promptInstructions.isGitAutomation());
-                    if (maxIterationsSpinner.getSelection() != promptInstructions.getPreferredMaxIterations()) {
-                        maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
+        if (orchestrator != null && !isUpdating) {
+            isUpdating = true;
+            try {
+                eu.kalafatic.evolution.model.orchestration.ChatSession thread = page.getCurrentSession();
+                if (thread != null) {
+                    setSelectionSafe(iterativeCheck, thread.isIterativeMode());
+                    setSelectionSafe(selfIterativeCheck, thread.isSelfIterativeMode());
+                    setSelectionSafe(darwinCheck, thread.isDarwinMode());
+                    setSelectionSafe(gitAutomationCheck, thread.isGitAutomation());
+                    if (maxIterationsSpinner.getSelection() != thread.getMaxIterations()) {
+                        maxIterationsSpinner.setSelection(thread.getMaxIterations());
                     }
-                    setSelectionSafe(stepModeCheck, promptInstructions.isStepMode());
+                    setSelectionSafe(stepModeCheck, thread.isStepMode());
+                } else {
+                    setSelectionSafe(darwinCheck, orchestrator.isDarwinMode());
+                    if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
+                        PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
+                        setSelectionSafe(iterativeCheck, promptInstructions.isIterativeMode());
+                        setSelectionSafe(selfIterativeCheck, promptInstructions.isSelfIterativeMode());
+                        setSelectionSafe(gitAutomationCheck, promptInstructions.isGitAutomation());
+                        if (maxIterationsSpinner.getSelection() != promptInstructions.getPreferredMaxIterations()) {
+                            maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
+                        }
+                        setSelectionSafe(stepModeCheck, promptInstructions.isStepMode());
+                    }
                 }
-            }
-            if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
-                setSelectionSafe(autoApproveCheck, orchestrator.getAiChat().getPromptInstructions().isAutoApprove());
+                if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
+                    setSelectionSafe(autoApproveCheck, orchestrator.getAiChat().getPromptInstructions().isAutoApprove());
+                }
+            } finally {
+                isUpdating = false;
             }
         }
     }
@@ -341,11 +348,9 @@ public class InstructionsGroup extends AEvoGroup {
     }
 
     public void setOrchestrationRunning(boolean running) {
-        if (sendButton.getEnabled() != !running) {
-            sendButton.setEnabled(!running);
-        }
-        if (!pauseButton.getEnabled()) pauseButton.setEnabled(true);
-        if (!stopButton.getEnabled()) stopButton.setEnabled(true);
+        setEnabledSafe(sendButton, !running);
+        setEnabledSafe(pauseButton, true);
+        setEnabledSafe(stopButton, true);
         setTextSafe(pauseButton, "⏸️ Pause");
     }
 
@@ -380,6 +385,6 @@ public class InstructionsGroup extends AEvoGroup {
             });
         }
         attachmentArea.layout(true);
-        page.updateScrolledContent();
+        page.scheduleRefresh();
     }
 }

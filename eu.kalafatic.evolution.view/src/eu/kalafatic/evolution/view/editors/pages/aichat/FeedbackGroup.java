@@ -55,23 +55,27 @@ public class FeedbackGroup extends AEvoGroup {
     protected void refreshUI() {
         if (orchestrator == null || orchestrator.getTasks().isEmpty()) return;
         isUpdating = true;
-        eu.kalafatic.evolution.model.orchestration.Task task = orchestrator.getTasks().get(0);
-        FeedbackLevel level = task.getFeedbackLevel();
-        if (levelButtons != null) {
-            for (int i = 0; i < levelButtons.length; i++) {
-                setSelectionSafe(levelButtons[i], FeedbackLevel.values()[i] == level);
+        try {
+            eu.kalafatic.evolution.model.orchestration.Task task = orchestrator.getTasks().get(0);
+            FeedbackLevel level = task.getFeedbackLevel();
+            if (levelButtons != null) {
+                for (int i = 0; i < levelButtons.length; i++) {
+                    setSelectionSafe(levelButtons[i], FeedbackLevel.values()[i] == level);
+                }
             }
-        }
-        setSelectionSafe(autoEscalateCheck, task.isAutoEscalate());
+            setSelectionSafe(autoEscalateCheck, task.isAutoEscalate());
 
-        // Update (auto) status
-        if (task.isAutoEscalate() && level.getValue() > FeedbackLevel.SIMPLE_VALUE) {
-            setAutoStatus(level.getName() + " (auto)");
-        } else {
-            setAutoStatus("");
-        }
+            // Update (auto) status
+            if (task.isAutoEscalate() && level.getValue() > FeedbackLevel.SIMPLE_VALUE) {
+                setAutoStatus(level.getName() + " (auto)");
+            } else {
+                setAutoStatus("");
+            }
 
-        isUpdating = false;
+            updateVisibility(null);
+        } finally {
+            isUpdating = false;
+        }
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
@@ -187,7 +191,7 @@ public class FeedbackGroup extends AEvoGroup {
             updateVisibility(satisfactionBox);
             page.expandFeedbackSection();
         } else {
-            satisfactionBox.setVisible(false);
+            setVisibleSafe(satisfactionBox, false);
             setExclude(satisfactionBox, true);
             updateVisibility(null);
         }
@@ -201,7 +205,7 @@ public class FeedbackGroup extends AEvoGroup {
 
     public void hideApproval() {
         if (approvalBox == null || approvalBox.isDisposed()) return;
-        approvalBox.setVisible(false);
+        setVisibleSafe(approvalBox, false);
         setExclude(approvalBox, true);
         updateVisibility(null);
     }
@@ -215,7 +219,7 @@ public class FeedbackGroup extends AEvoGroup {
 
     public void hideInput() {
         if (inputBox == null || inputBox.isDisposed()) return;
-        inputBox.setVisible(false);
+        setVisibleSafe(inputBox, false);
         setExclude(inputBox, true);
         updateVisibility(null);
     }
@@ -248,40 +252,39 @@ public class FeedbackGroup extends AEvoGroup {
         if (visibleBox != null) {
             // Hide others
             if (satisfactionBox != null && satisfactionBox != visibleBox) {
-                satisfactionBox.setVisible(false);
+                setVisibleSafe(satisfactionBox, false);
                 setExclude(satisfactionBox, true);
             }
             if (approvalBox != null && approvalBox != visibleBox) {
-                approvalBox.setVisible(false);
+                setVisibleSafe(approvalBox, false);
                 setExclude(approvalBox, true);
             }
             if (inputBox != null && inputBox != visibleBox) {
-                inputBox.setVisible(false);
+                setVisibleSafe(inputBox, false);
                 setExclude(inputBox, true);
             }
 
             // Show this one
-            visibleBox.setVisible(true);
+            setVisibleSafe(visibleBox, true);
             setExclude(visibleBox, false);
         }
 
-        boolean anyVisible = (satisfactionBox != null && satisfactionBox.getVisible()) ||
-                             (approvalBox != null && approvalBox.getVisible()) ||
-                             (inputBox != null && inputBox.getVisible());
-
         // Group is always visible now as it contains Feedback Depth controls
-        group.setVisible(true);
+        setVisibleSafe(group, true);
         setExclude(group, false);
 
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();
-            section.setVisible(true);
+            setVisibleSafe(section, true);
             Object layoutData = section.getLayoutData();
             if (layoutData instanceof GridData) {
-                ((GridData) layoutData).exclude = false;
+                GridData gd = (GridData) layoutData;
+                if (gd.exclude) {
+                    gd.exclude = false;
+                    section.setLayoutData(gd);
+                }
             }
         }
-
         page.updateScrolledContent();
     }
 
