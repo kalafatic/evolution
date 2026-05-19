@@ -2,6 +2,8 @@ package eu.kalafatic.evolution.controller.orchestration;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.orchestration.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * Routes execution based on detected or assigned PlatformMode.
@@ -65,7 +67,8 @@ public class ModeRouter {
 
         // 2. Obvious coding keywords detection - prioritized to bypass heavy mediated flows for simple tasks
         // EXCEPT in MEDIATED mode where we still prefer export for general coding tasks unless analytical
-        if (lowerPrompt.matches(".*\\b(create|fix|add|run|test|generate|write|refactor|modify|delete|check|implement|build|improve|update|change)\\b.*")) {
+        Pattern codingPattern = Pattern.compile("\\b(create|fix|add|run|test|generate|write|refactor|modify|delete|check|implement|build|improve|update|change)\\b");
+        if (codingPattern.matcher(lowerPrompt).find()) {
             if (orchestrator != null && orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
                  // Fall through to model-based routing for MEDIATED mode
             } else {
