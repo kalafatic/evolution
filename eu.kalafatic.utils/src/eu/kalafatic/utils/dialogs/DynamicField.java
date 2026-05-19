@@ -68,6 +68,10 @@ public class DynamicField {
 						for (Object o : (List<?>) values[i]) {
 							this.comboValues.add(o.toString());
 						}
+					} else if (values[i] instanceof Object[]) {
+						for (Object o : (Object[]) values[i]) {
+							this.comboValues.add(o.toString());
+						}
 					} else {
 						this.comboValues.add(values[i].toString());
 					}

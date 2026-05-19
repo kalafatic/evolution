@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.LinkedHashMap;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -43,8 +44,12 @@ public class MediatedTargetDialog extends DynamicMapDialog {
         LinkedHashMap<String, DynamicField> fields = new LinkedHashMap<>();
 
         String initialPath = session != null ? session.getTargetPath() : "";
-        if ((initialPath == null || initialPath.isEmpty()) && projectRoot != null) {
-            initialPath = findGitRoot(projectRoot);
+        if (initialPath == null || initialPath.isEmpty()) {
+            if (session != null && session.isSelfIterativeMode()) {
+                initialPath = ProjectModelManager.getInstance().findEvolutionRepository();
+            } else {
+                initialPath = System.getProperty("user.home");
+            }
         }
 
         java.util.List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
@@ -72,6 +77,9 @@ public class MediatedTargetDialog extends DynamicMapDialog {
         if (OUTPUT_PATH.equals(key)) {
             GUIFactory.INSTANCE.createLabel(parent, "Metadata:");
             Button syncBtn = GUIFactory.INSTANCE.createButton(parent, "Generate AI Metadata");
+            GridData gd = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
+            gd.widthHint = GUIFactory.BUTTON_WIDTH * 2;
+            syncBtn.setLayoutData(gd);
             syncBtn.setToolTipText("Generate AI Metadata sidecar files for the target project");
             syncBtn.addListener(SWT.Selection, e -> {
                 String path = getString(TARGET_PATH);

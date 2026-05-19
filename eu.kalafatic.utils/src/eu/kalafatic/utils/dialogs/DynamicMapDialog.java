@@ -132,15 +132,14 @@ public class DynamicMapDialog extends TitleAreaDialog {
 		}
 
 		Control control = null;
-		if (field.has(DynamicField.TYPE_TEXT)) {
-			int style = SWT.BORDER | (field.has(DynamicField.MULTILINE) ? SWT.MULTI | SWT.V_SCROLL | SWT.WRAP : SWT.SINGLE);
-			if (field.has(DynamicField.PASSWORD)) {
-				style |= SWT.PASSWORD;
-			}
-
+		if (field.has(DynamicField.TYPE_TEXT) || field.has(DynamicField.TYPE_COMBO)) {
 			if (field.has(DynamicField.FILE) || field.has(DynamicField.DIRECTORY)) {
 				control = createBrowseField(parent, field);
-			} else {
+			} else if (field.has(DynamicField.TYPE_TEXT)) {
+				int style = SWT.BORDER | (field.has(DynamicField.MULTILINE) ? SWT.MULTI | SWT.V_SCROLL | SWT.WRAP : SWT.SINGLE);
+				if (field.has(DynamicField.PASSWORD)) {
+					style |= SWT.PASSWORD;
+				}
 				Text text = createTextField(parent, field, style);
 				if (field.has(DynamicField.MULTILINE)) {
 					GridData gd = new GridData(GridData.FILL_HORIZONTAL);
@@ -148,6 +147,15 @@ public class DynamicMapDialog extends TitleAreaDialog {
 					text.setLayoutData(gd);
 				}
 				control = text;
+			} else if (field.has(DynamicField.TYPE_COMBO)) {
+				Combo combo = new Combo(parent, SWT.READ_ONLY | SWT.DROP_DOWN);
+				if (field.getComboValues() != null) {
+					combo.setItems(field.getComboValues().toArray(new String[0]));
+				}
+				if (field.getValue() != null) {
+					combo.setText(field.getValue().toString());
+				}
+				control = combo;
 			}
 		} else if (field.has(DynamicField.TYPE_NUMBER)) {
 			control = createTextField(parent, field, SWT.BORDER | SWT.SINGLE);
@@ -167,15 +175,6 @@ public class DynamicMapDialog extends TitleAreaDialog {
 			Button check = new Button(parent, SWT.CHECK);
 			check.setSelection(field.getValue() instanceof Boolean ? (Boolean) field.getValue() : false);
 			control = check;
-		} else if (field.has(DynamicField.TYPE_COMBO)) {
-			Combo combo = new Combo(parent, SWT.READ_ONLY | SWT.DROP_DOWN);
-			if (field.getComboValues() != null) {
-				combo.setItems(field.getComboValues().toArray(new String[0]));
-			}
-			if (field.getValue() != null) {
-				combo.setText(field.getValue().toString());
-			}
-			control = combo;
 		}
 
 		if (control != null) {
@@ -210,29 +209,56 @@ public class DynamicMapDialog extends TitleAreaDialog {
 		comp.setLayout(gl);
 		comp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		final Text text = new Text(comp, SWT.BORDER | SWT.SINGLE);
-		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		text.setText(field.getValue() != null ? field.getValue().toString() : "");
+		final Control input;
+		if (field.has(DynamicField.TYPE_COMBO)) {
+			Combo combo = new Combo(comp, SWT.DROP_DOWN);
+			if (field.getComboValues() != null) {
+				combo.setItems(field.getComboValues().toArray(new String[0]));
+			}
+			combo.setText(field.getValue() != null ? field.getValue().toString() : "");
+			combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			input = combo;
+		} else {
+			Text text = new Text(comp, SWT.BORDER | SWT.SINGLE);
+			text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			text.setText(field.getValue() != null ? field.getValue().toString() : "");
+			input = text;
+		}
 
 		Button browse = new Button(comp, SWT.PUSH);
 		browse.setText("Browse...");
 		browse.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				String currentPath = "";
+				if (input instanceof Text) {
+					currentPath = ((Text) input).getText();
+				} else if (input instanceof Combo) {
+					currentPath = ((Combo) input).getText();
+				}
+
 				if (field.has(DynamicField.DIRECTORY)) {
 					DirectoryDialog dialog = new DirectoryDialog(getShell());
-					dialog.setFilterPath(text.getText());
+					dialog.setFilterPath(currentPath);
 					String path = dialog.open();
 					if (path != null) {
-						text.setText(path);
+						if (input instanceof Text) {
+							((Text) input).setText(path);
+						} else if (input instanceof Combo) {
+							((Combo) input).setText(path);
+						}
 					}
 				} else {
 					FileDialog dialog = new FileDialog(getShell(), SWT.OPEN);
-					dialog.setFileName(text.getText());
-					dialog.setFilterPath(text.getText());
+					dialog.setFileName(currentPath);
+					dialog.setFilterPath(currentPath);
 					String path = dialog.open();
 					if (path != null) {
-						text.setText(path);
+						if (input instanceof Text) {
+							((Text) input).setText(path);
+						} else if (input instanceof Combo) {
+							((Combo) input).setText(path);
+						}
 					}
 				}
 			}
@@ -266,6 +292,9 @@ public class DynamicMapDialog extends TitleAreaDialog {
 				for (Control child : ((Composite) control).getChildren()) {
 					if (child instanceof Text) {
 						val = ((Text) child).getText();
+						break;
+					} else if (child instanceof Combo) {
+						val = ((Combo) child).getText();
 						break;
 					}
 				}
@@ -306,6 +335,9 @@ public class DynamicMapDialog extends TitleAreaDialog {
 				for (Control child : ((Composite) control).getChildren()) {
 					if (child instanceof Text) {
 						field.setValue(((Text) child).getText());
+						break;
+					} else if (child instanceof Combo) {
+						field.setValue(((Combo) child).getText());
 						break;
 					}
 				}
