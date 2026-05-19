@@ -125,9 +125,14 @@ public class DarwinFlow implements IOrchestrationFlow {
                 state.setIntentAnalysis(null);
                 state.getMetadata().put("intentExpansion", expansion);
 
+                context.log("[KERNEL] Intent Interpretation: " + expansion.getState());
+                if (expansion.getDominantIntent() != null) {
+                    context.log("[KERNEL] Dominant Intent: " + expansion.getDominantIntent());
+                }
+
                 ClarificationPlanner planner = manager.getClarificationPlanner();
                 ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
-                context.log("[KERNEL] Intent Expansion Strategy: " + strategy);
+                context.log("[KERNEL] Clarification Strategy: " + strategy);
 
                 if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER) {
                     String clarificationRequest = planner.formatClarificationRequest(expansion);

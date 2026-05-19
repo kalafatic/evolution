@@ -285,15 +285,27 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         IntentExpansionResult expansion = (IntentExpansionResult) context.getMetadata().get("intentExpansion");
         if (expansion != null) {
-            state.append("\n--- STRUCTURED INTENT HYPOTHESES ---\n");
-            state.append("Original Intent was expanded into the following coherent hypotheses:\n");
+            state.append("\n--- STRUCTURED INTENT ANALYSIS ---\n");
+            state.append("Interpretation State: ").append(expansion.getState()).append("\n");
+            if (expansion.getDominantIntent() != null) {
+                state.append("Dominant Intent: ").append(expansion.getDominantIntent()).append("\n");
+            }
+
+            if (!expansion.getImplementationStrategies().isEmpty()) {
+                state.append("\nPROPOSED IMPLEMENTATION STRATEGIES (SPAWN BRANCHES FOR THESE):\n");
+                for (String strategy : expansion.getImplementationStrategies()) {
+                    state.append("- ").append(strategy).append("\n");
+                }
+            }
+
+            state.append("\nHYPOTHESES:\n");
             for (IntentHypothesis h : expansion.getHypotheses()) {
                 state.append("- Hypothesis [").append(h.getId()).append("]: ").append(h.getDescription()).append("\n");
                 for (IntentHypothesis.DimensionValue dv : h.getDimensionValues()) {
                     state.append("  * ").append(dv.getDimensionId()).append(": ").append(dv.getValue()).append("\n");
                 }
             }
-            state.append("\nYour variants MUST be derived from these structured hypotheses.\n");
+            state.append("\nYour variants MUST be derived from the dominant intent and these strategies/hypotheses.\n");
         }
 
         // Activation Gate: Only ACTIVE branches influence subsequent iterations
