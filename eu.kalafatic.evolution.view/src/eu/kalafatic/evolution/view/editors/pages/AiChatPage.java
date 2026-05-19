@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.FileWriter;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.bindings.keys.KeyStroke;
@@ -61,6 +64,8 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import eu.kalafatic.evolution.controller.manager.EnvironmentSuggestionService;
 import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.ModeRouter;
@@ -925,31 +930,100 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 					}
 				});
 			} finally {
+//				Display.getDefault().asyncExec(() -> {
+//					state.isRunning = false;
+//					if (sessionId.equals(getCurrentSessionName())) {
+//						instructionsGroup.setOrchestrationRunning(false);
+//							chatGroup.refreshGitStatus();
+//
+//							// Force workspace refresh to show new files in navigator
+//							try {
+//								ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
+//
+//								// Identify newly created files and highlight in navigator
+//								eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider git = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+//								List<String> changed = git.getChangedFiles(projectRoot, "HEAD");
+//								for (String path : changed) {
+//									if (path.startsWith("A ")) {
+//										String filePath = path.substring(2);
+//										IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new org.eclipse.core.runtime.Path(new File(projectRoot, filePath).getAbsolutePath()));
+//										if (iFile != null) {
+//											editor.refreshNavigator(iFile);
+//										}
+//									}
+//								}
+//							} catch (Exception e) {}
+//					}
+//					state.orchestrationSession = null;
+//				});
+				
 				Display.getDefault().asyncExec(() -> {
-					state.isRunning = false;
-					if (sessionId.equals(getCurrentSessionName())) {
-						instructionsGroup.setOrchestrationRunning(false);
-							chatGroup.refreshGitStatus();
+				    state.isRunning = false;
 
-							// Force workspace refresh to show new files in navigator
-							try {
-								ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
+				    if (!sessionId.equals(getCurrentSessionName())) {
+				        state.orchestrationSession = null;
+				        return;
+				    }
 
-								// Identify newly created files and highlight in navigator
-								eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider git = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
-								List<String> changed = git.getChangedFiles(projectRoot, "HEAD");
-								for (String path : changed) {
-									if (path.startsWith("A ")) {
-										String filePath = path.substring(2);
-										IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new org.eclipse.core.runtime.Path(new File(projectRoot, filePath).getAbsolutePath()));
-										if (iFile != null) {
-											editor.refreshNavigator(iFile);
-										}
+				    instructionsGroup.setOrchestrationRunning(false);
+				    chatGroup.refreshGitStatus();
+
+				    Job refreshJob = Job.create("Refresh changed resources", monitor -> {
+				        try {
+				            IWorkspace workspace = ResourcesPlugin.getWorkspace();
+
+				            workspace.run(pm -> {
+
+				                eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider git =
+				                        new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+
+				                List<IFile> addedFiles = new ArrayList<>();
+								try {
+									List<String> changed = git.getChangedFiles(projectRoot, "HEAD");
+
+									for (String path : changed) {
+
+									    if (!path.startsWith("A ")) {
+									        continue;
+									    }
+
+									    String relativePath = path.substring(2);
+
+									    File file = new File(projectRoot, relativePath);
+
+									    IFile iFile = ResourcesPlugin.getWorkspace()
+									            .getRoot()
+									            .getFileForLocation(
+									                    new Path(file.getAbsolutePath()));
+
+									    if (iFile != null && iFile.exists()) {
+
+									        iFile.refreshLocal(IResource.DEPTH_ZERO, pm);
+
+									        addedFiles.add(iFile);
+									    }
 									}
+								} catch (Exception e) {
+									e.printStackTrace();
 								}
-							} catch (Exception e) {}
-					}
-					state.orchestrationSession = null;
+
+				                Display.getDefault().asyncExec(() -> {
+				                    for (IFile file : addedFiles) {
+				                        editor.refreshNavigator(file);
+				                    }
+				                });
+
+				            }, monitor);
+
+				        } catch (Exception e) {
+				            e.printStackTrace();
+				        }
+				    });
+
+				    refreshJob.setSystem(true);
+				    refreshJob.schedule();
+
+				    state.orchestrationSession = null;
 				});
 			}
 		});

@@ -98,7 +98,7 @@ public class FeedbackGroup extends AEvoGroup {
         });
       
         // 2. Approval Box
-        approvalBox = GUIFactory.INSTANCE.createComposite(group, 4);
+        approvalBox = GUIFactory.INSTANCE.createComposite(group, 5);
         GUIFactory.INSTANCE.createLabel(approvalBox, "Action Required:");
         
         Button approveButton = GUIFactory.INSTANCE.createButton(approvalBox, "Approve");
