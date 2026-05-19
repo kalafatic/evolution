@@ -57,7 +57,8 @@ public class ActivationResolver implements ICapability {
             double totalConfidence = 0.0;
             
             // Integrate Signal feedback into scoring
-            double signalBoost = calculateSignalBoost(variant, signals);
+            Trajectory trajectory = memory != null ? memory.getTrajectory(variant.getTrajectoryId()) : null;
+            double signalBoost = calculateSignalBoost(variant, signals, trajectory);
             
             for (ResolverPolicy policy : policies) {
                 PolicyResult result = policy.evaluate(variant);
@@ -112,13 +113,34 @@ public class ActivationResolver implements ICapability {
         return snapshot;
     }
 
-    private double calculateSignalBoost(BranchVariant variant, List<EvaluationSignal> signals) {
+    private double calculateSignalBoost(BranchVariant variant, List<EvaluationSignal> signals, Trajectory trajectory) {
         if (signals == null || signals.isEmpty()) return 0.5;
-        return signals.stream()
-            .filter(s -> s.getVariantId().equals(variant.getId()))
-            .mapToDouble(EvaluationSignal::getScore)
-            .average()
-            .orElse(0.5);
+
+        double weightedSum = 0.0;
+        double totalWeight = 0.0;
+
+        for (EvaluationSignal s : signals) {
+            if (!s.getVariantId().equals(variant.getId())) continue;
+
+            double score = (s.getFitness() != null) ? s.getFitness().calculateNormalizedScore() : s.getScore();
+            double confidence = s.getConfidence();
+
+            // Trajectory-Aware Signal Weighting (P1)
+            double trajectoryWeight = 1.0;
+            if (trajectory != null) {
+                // Boost signals that align with trajectory convergence
+                if (trajectory.getPhase() == Trajectory.Phase.CONVERGENCE && score > 0.8) {
+                    trajectoryWeight = 1.5;
+                } else if (trajectory.getPhase() == Trajectory.Phase.COLLAPSE) {
+                    trajectoryWeight = 0.5;
+                }
+            }
+
+            weightedSum += score * confidence * trajectoryWeight;
+            totalWeight += confidence * trajectoryWeight;
+        }
+
+        return totalWeight > 0 ? weightedSum / totalWeight : 0.5;
     }
 
     private double calculateConfidence(Map<String, Double> aggregatedScores, String winnerId) {

@@ -414,6 +414,15 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             t.setProsConsAnalysis(obj.optString("pros_cons", "none"));
             t.setSemanticJustification(obj.optString("semantic_justification", "none"));
             t.setFitnessScore(v.getScore());
+
+            // Darwinian Lineage Tracking
+            if (trajectory != null) {
+                t.setParentTrajectoryId(trajectory.getTrajectoryId());
+                trajectory.addChildTrajectoryId(t.getTrajectoryId());
+                t.getMutationLineage().addAll(trajectory.getMutationLineage());
+            }
+            t.addMutationToLineage(v.getStrategy());
+
             v.setTrajectoryId(t.getTrajectoryId());
             if (memoryService != null && memoryService.getTrajectoryMemory() != null) {
                 memoryService.getTrajectoryMemory().recordTrajectory(t);

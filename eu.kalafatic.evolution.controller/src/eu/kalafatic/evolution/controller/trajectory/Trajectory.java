@@ -20,6 +20,13 @@ public class Trajectory {
     private double confidenceLevel = 0.5;
     private double divergenceScore = 0.0;
 
+    // Lineage tracking
+    private String parentTrajectoryId;
+    private List<String> childTrajectoryIds = new ArrayList<>();
+    private List<String> mutationLineage = new ArrayList<>();
+    private List<String> failureClusters = new ArrayList<>();
+    private double convergenceRate = 0.0;
+
     // Legacy fields for compatibility
     public String testTrend = "STABLE";
     public String buildTrend = "STABLE";
@@ -75,6 +82,21 @@ public class Trajectory {
     public void setCounterfactualDelta(String counterfactualDelta) { this.counterfactualDelta = counterfactualDelta; }
 
     public void setPhase(Phase phase) { this.phase = phase; }
+
+    public String getParentTrajectoryId() { return parentTrajectoryId; }
+    public void setParentTrajectoryId(String parentTrajectoryId) { this.parentTrajectoryId = parentTrajectoryId; }
+
+    public List<String> getChildTrajectoryIds() { return childTrajectoryIds; }
+    public void addChildTrajectoryId(String id) { this.childTrajectoryIds.add(id); }
+
+    public List<String> getMutationLineage() { return mutationLineage; }
+    public void addMutationToLineage(String mutation) { this.mutationLineage.add(mutation); }
+
+    public List<String> getFailureClusters() { return failureClusters; }
+    public void addFailureCluster(String cluster) { this.failureClusters.add(cluster); }
+
+    public double getConvergenceRate() { return convergenceRate; }
+    public void setConvergenceRate(double rate) { this.convergenceRate = rate; }
 
     public void recordSignal(String signalName, Object value) {
         signalHistory.add(new SignalRecord(signalName, value, System.currentTimeMillis()));

@@ -50,10 +50,22 @@ public class SignalBus {
 
     /**
      * Publishes a signal to the bus and archives it in history.
+     * Includes P1 Signal Quality: Scoped signals and Deduplication.
      */
     public void publish(EvaluationSignal signal) {
         String variantId = signal.getVariantId();
-        signalHistory.computeIfAbsent(variantId, k -> Collections.synchronizedList(new ArrayList<>())).add(signal);
+        List<EvaluationSignal> history = signalHistory.computeIfAbsent(variantId, k -> Collections.synchronizedList(new ArrayList<>()));
+
+        // Signal Deduplication (P1)
+        boolean duplicate = history.stream().anyMatch(s ->
+            s.getEvaluatorId().equals(signal.getEvaluatorId()) &&
+            s.getExplanation().equals(signal.getExplanation()) &&
+            Math.abs(s.getScore() - signal.getScore()) < 0.01
+        );
+
+        if (!duplicate) {
+            history.add(signal);
+        }
 
         // Also ensure it's on the main event bus if it wasn't already
         // (to avoid infinite recursion we check source if needed,
