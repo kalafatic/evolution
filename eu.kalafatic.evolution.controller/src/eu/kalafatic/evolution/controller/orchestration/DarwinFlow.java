@@ -47,7 +47,6 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer;
-import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;
@@ -55,7 +54,6 @@ import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
-import eu.kalafatic.evolution.controller.tools.GitTool;
 
 /**
  * Evolutionary Darwin loop orchestration flow.
