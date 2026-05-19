@@ -10,6 +10,6 @@ public final class TransitionToken {
     /**
      * Package-private constructor to enforce control plane authority.
      */
-    public TransitionToken() {
+    TransitionToken() {
     }
 }

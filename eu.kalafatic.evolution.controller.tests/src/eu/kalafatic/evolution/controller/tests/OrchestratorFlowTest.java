@@ -22,6 +22,7 @@ import eu.kalafatic.evolution.controller.orchestration.TransitionToken;
 import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
+import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 
 public class OrchestratorFlowTest {
 
@@ -51,7 +52,7 @@ public class OrchestratorFlowTest {
     public void testDirectExecutionFlow() throws Exception {
         EvolutionOrchestrator engine = new EvolutionOrchestrator();
         TaskContext context = new TaskContext(orchestrator, tempDir);
-        context.getStateHolder().applyTransition(new TransitionToken(), SystemState.EXECUTING);
+        IterationManager.forceTransition(SystemState.EXECUTING, context);
 
         // Inject mocks
         injectMocksIntoOrchestrator(engine, mockOllama);
@@ -72,7 +73,7 @@ public class OrchestratorFlowTest {
     public void testTaskExecutionFlow() throws Exception {
         EvolutionOrchestrator engine = new EvolutionOrchestrator();
         TaskContext context = new TaskContext(orchestrator, tempDir);
-        context.getStateHolder().applyTransition(new TransitionToken(), SystemState.EXECUTING);
+        IterationManager.forceTransition(SystemState.EXECUTING, context);
 
         // Define a task
         var task = OrchestrationFactory.eINSTANCE.createTask();

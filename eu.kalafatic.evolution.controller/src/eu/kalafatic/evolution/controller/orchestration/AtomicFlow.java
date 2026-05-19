@@ -22,6 +22,12 @@ public class AtomicFlow implements IOrchestrationFlow {
     @Override
     public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
         context.log("[KERNEL] Executing Atomic Flow (Bridged to SingleVariantDarwinFlow).");
-        return new SingleVariantDarwinFlow(aiService, manager).execute(request, context);
+        try {
+            return new SingleVariantDarwinFlow(aiService, manager).execute(request, context);
+        } catch (Exception e) {
+            manager.getGitManager().rollback();
+            manager.transition(SystemState.FAILED, context);
+            throw e;
+        }
     }
 }

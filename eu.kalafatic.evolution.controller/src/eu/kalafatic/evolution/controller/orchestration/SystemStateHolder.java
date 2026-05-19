@@ -19,12 +19,13 @@ public class SystemStateHolder {
 
     /**
      * Applies a state transition. Requires a valid {@link TransitionToken}.
+     * Restricted to package-level authority.
      *
      * @param token The token proving authority to transition.
      * @param newState The target state.
      * @throws NullPointerException if token or newState is null.
      */
-    public void applyTransition(TransitionToken token, SystemState newState) {
+    void applyTransition(TransitionToken token, SystemState newState) {
         Objects.requireNonNull(token, "TransitionToken is mandatory for state changes");
         Objects.requireNonNull(newState, "Target SystemState cannot be null");
         currentState = newState;
