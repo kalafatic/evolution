@@ -232,7 +232,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 }
 
                 // SINGLE AUTHORITY DECISION CALL
-                eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = authority.decide(iterId, variants, context, manualId);
+                eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = manager.decide(iterId, variants, context, manualId);
 
                 if (decision.getSelectedVariantId() != null) {
                     selectedVariant = variants.stream()
@@ -349,7 +349,7 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         try {
             tempDir = Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
-            manager.getGitManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
+            manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
             TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
             variantContext.setKernelContext(context.getKernelContext());
             variantContext.getMetadata().put("variantId", variant.getId());
@@ -362,7 +362,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             IterationManager variantManager = KernelFactory.create(variantContext, aiService);
 
             boolean success = true;
-            authority.updateLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.EXECUTING, context);
+            manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.EXECUTING, context);
             for (Task task : tasks) {
                 boolean taskSuccess = variantManager.executeTasksWithRetries(List.of(task));
                 if (!taskSuccess) {
@@ -396,9 +396,9 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             if (success) {
                 variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(), variantContext);
-                authority.updateLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.VERIFIED, context);
+                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.VERIFIED, context);
             } else {
-                authority.updateLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.REJECTED, context);
+                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.REJECTED, context);
             }
             variant.setSuccess(success);
 
@@ -406,7 +406,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             EvaluationResult result = evaluator.evaluate(tempDir, variantContext, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
             variant.setSuccess(result.isSuccess());
             if (result.isSuccess()) {
-                authority.updateLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
+                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
             }
 
             GitTool deltaTool = new GitTool();
@@ -420,7 +420,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         } finally {
             if (tempDir != null) {
                 try {
-                    manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
+                    manager.getBranchManager().removeWorktree(tempDir.getAbsolutePath());
                     deleteDirectory(tempDir);
                 } catch (Exception e) {}
             }

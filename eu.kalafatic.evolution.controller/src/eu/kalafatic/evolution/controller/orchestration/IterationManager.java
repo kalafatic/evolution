@@ -54,6 +54,8 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
+import eu.kalafatic.evolution.controller.kernel.*;
+import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;
@@ -94,6 +96,16 @@ public class IterationManager {
     private final Evaluator evaluator;
     private final DarwinEngine darwinEngine;
     private final IterationMemoryService memoryService;
+
+    // Kernel Components
+    private final PhaseEngine phaseEngine;
+    private final BranchManager branchManager;
+    private final MutationEngine mutationEngine;
+    private final FitnessEngine fitnessEngine;
+    private final RealityEngine realityEngine;
+    private final AuthorityEngine authorityEngine;
+    private final TrajectoryEngine trajectoryEngine;
+    private final GitEvolutionAdapter gitAdapter;
     private final ClarificationManager clarificationManager = new ClarificationManager();
     private final IntentService intentService;
     private final IntentExpansionEngine intentExpansionEngine;
@@ -117,6 +129,14 @@ public class IterationManager {
     public TaskExecutor getTaskExecutor() { return taskExecutor; }
     public Evaluator getEvaluator() { return evaluator; }
     public DarwinEngine getDarwinEngine() { return darwinEngine; }
+    public PhaseEngine getPhaseEngine() { return phaseEngine; }
+    public BranchManager getBranchManager() { return branchManager; }
+    public MutationEngine getMutationEngine() { return mutationEngine; }
+    public FitnessEngine getFitnessEngine() { return fitnessEngine; }
+    public RealityEngine getRealityEngine() { return realityEngine; }
+    public AuthorityEngine getAuthorityEngine() { return authorityEngine; }
+    public TrajectoryEngine getTrajectoryEngine() { return trajectoryEngine; }
+    public GitEvolutionAdapter getGitAdapter() { return gitAdapter; }
     public IntentExpansionEngine getIntentExpansionEngine() { return intentExpansionEngine; }
     public ClarificationPlanner getClarificationPlanner() { return clarificationPlanner; }
     public IterationMemoryService getMemoryService() { return memoryService; }
@@ -141,6 +161,16 @@ public class IterationManager {
         this.evaluator = evaluator;
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
+
+        // Initialize Kernel Components
+        this.phaseEngine = new DefaultPhaseEngine();
+        this.branchManager = new DefaultBranchManager(gitManager);
+        this.mutationEngine = new DefaultMutationEngine(darwinEngine);
+        this.fitnessEngine = new DefaultFitnessEngine(evaluator);
+        this.realityEngine = new DefaultRealityEngine(context.getProjectRoot(), context);
+        this.authorityEngine = new DefaultAuthorityEngine(context.getKernelContext().getAuthority());
+        this.trajectoryEngine = new DefaultTrajectoryEngine(memoryService);
+        this.gitAdapter = new DefaultGitEvolutionAdapter(gitManager);
 
         // Register Capabilities
         try {
@@ -309,9 +339,10 @@ public class IterationManager {
         eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
             new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                 eu.kalafatic.evolution.controller.workflow.RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
-                ctx.getSessionId(), "Kernel", to.toString()));
+                ctx.getSessionId(), "Kernel", to.toString())
+                .withMetadata("execId", ctx.getDeterministicExecutionId()));
 
-        String logMsg = String.format("[KERNEL] [%d] [%d] Transition: %s -> %s", System.currentTimeMillis(), Thread.currentThread().getId(), (current != null ? current : "NONE"), to);
+        String logMsg = String.format("[KERNEL] [%s] [%d] [%d] Transition: %s -> %s", ctx.getDeterministicExecutionId(), System.currentTimeMillis(), Thread.currentThread().getId(), (current != null ? current : "NONE"), to);
         ctx.log(logMsg);
         ctx.getOrchestrationState().addDiagnostic("[OrchestrationTrace] " + logMsg);
 
@@ -640,6 +671,33 @@ public class IterationManager {
             if (!success) return false;
         }
         return true;
+    }
+
+    public void updateVariantLifecycle(List<BranchVariant> variants, String targetId, BranchVariant.ActivationState newState, TaskContext context) {
+        authorityEngine.updateLifecycle(variants, targetId, newState, context);
+    }
+
+    public EvolutionDecision decide(String iterationId, List<BranchVariant> variants, TaskContext context, String manualSelectionId) {
+        EvolutionDecision decision = authorityEngine.decide(iterationId, variants, context, manualSelectionId);
+        applyDecision(decision, variants, context);
+        return decision;
+    }
+
+    private void applyDecision(EvolutionDecision decision, List<BranchVariant> variants, TaskContext context) {
+        String winnerId = decision.getSelectedVariantId();
+
+        for (BranchVariant variant : variants) {
+            if (variant.getId().equals(winnerId)) {
+                updateVariantLifecycle(variants, variant.getId(), BranchVariant.ActivationState.ACTIVE, context);
+                variant.setRank("winner");
+            } else if (decision.getRejectedVariantIds().contains(variant.getId())) {
+                updateVariantLifecycle(variants, variant.getId(), BranchVariant.ActivationState.ARCHIVED, context);
+                variant.setRank("runner-up");
+            } else {
+                updateVariantLifecycle(variants, variant.getId(), BranchVariant.ActivationState.ARCHIVED, context);
+                variant.setRank("noise");
+            }
+        }
     }
 
     public void updateVariantFromInput(List<BranchVariant> variants, String input) {
