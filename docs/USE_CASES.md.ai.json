@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "- [Simple File Creation](USE_CASE_SIMPLE_TASK.md) - Standard chat interactions. - [Iterative Refactoring](USE_CASE_ITERATIVE_REFACTOR.md)",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

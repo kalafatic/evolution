@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import java.io.BufferedReader;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

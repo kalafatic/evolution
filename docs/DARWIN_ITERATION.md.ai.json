@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "Traditional agents follow a linear path. The AI Evolution Platform uses **Darwinian Evolution** to explore the \"Intent Space\" through parallel branching. 1. **Mutation**: `DarwinEngine` generates multiple proposal branches (`BranchVariant`) for a given goal. 2. **Exploration**: Each branch is executed in an isolated worktree.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

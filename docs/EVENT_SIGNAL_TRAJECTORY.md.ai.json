@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The kernel is built on a `RuntimeEventBus` that categorizes all system activity into seven categories: - **KERNEL**: System lifecycle (Start, Stop, Mode changes). - **FLOW**: Orchestration control (Iteration start/stop).",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

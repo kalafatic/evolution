@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "Competitive evolutionary solving. The `DarwinEngine` generates multiple competing \"variants\" (experimental Git branches) for each goal, evaluates them against build/test metrics, and merges only the fittest solution. 1. Open the **AiChatPage**. 2. Activate Darwin Mode:",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "General Mediated Mode is an evolutionary intelligence mediation layer that deeply analyzes arbitrary targets to prepare high-quality contextual cognition for large-model interaction. - **Mediated AI:** The platform acts as a bridge between the target and the external LLM. - **Evolutionary Context:** Understanding of the target is evolved through multiple analysis passes.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

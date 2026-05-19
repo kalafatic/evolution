@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

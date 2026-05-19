@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The following entities represent the discovered fundamental building blocks of the cognitive runtime: | Primitive | Semantic Meaning | Lifecycle Role | Ownership | | :--- | :--- | :--- | :--- |",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

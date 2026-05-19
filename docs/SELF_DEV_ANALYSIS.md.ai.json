@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The self-development functionality allows the Evolution system to autonomously improve its own codebase. It operates in iterative cycles, leveraging either a straightforward task-based refinement or a Darwinian evolutionary approach with parallel variant evaluation. --- 1.  **Session Initiation:** `SelfDevSupervisor` coordinates the session lifecycle (start, stop, iteration loop).",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

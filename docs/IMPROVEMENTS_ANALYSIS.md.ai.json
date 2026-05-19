@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The Evolution platform is built on an EMF-based core with a multi-agent orchestration engine. It successfully integrates into the Eclipse RCP environment and provides several advanced features for AI-assisted development. - **Status**: The platform provides a clear distinction between simple chat and complex orchestration. - **Strength**: The Plan–Execute–Verify (PEV) loop in `EvolutionOrchestrator` ensures traceability and basic quality control.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

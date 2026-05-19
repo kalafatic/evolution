@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "utility",
+  "stability": "",
+  "mediatedRelevanceScore": 0.2,
+  "importanceScore": 0.2,
+  "summary": "package eu.kalafatic.utils.builders; import static eu.kalafatic.utils.constants.FCoreImageConstants.CS_IMG; import static eu.kalafatic.utils.constants.FCoreImageConstants.DE_IMG;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

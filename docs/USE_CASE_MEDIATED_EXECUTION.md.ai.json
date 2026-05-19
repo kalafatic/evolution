@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "A user wants to make a high-risk architectural change in `MEDIATED` mode. - **User Prompt**: \"Change the event bus from synchronous to asynchronous across the whole platform.\" - **IntentService**: Detects `ARCHITECTURE`, `REFACTORING`, and `ANALYSIS`.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

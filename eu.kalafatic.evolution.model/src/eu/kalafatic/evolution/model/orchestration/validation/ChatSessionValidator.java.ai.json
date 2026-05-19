@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import eu.kalafatic.evolution.model.orchestration.ChatMessage; import org.eclipse.emf.common.util.EList;",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "dependencyLinks": []
+}

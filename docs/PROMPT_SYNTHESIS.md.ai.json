@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "Prompt Synthesis transforms the evolved understanding of a target into a high-signal prompt optimized for frontier AI models. 1.  **Intent:** The original user request. 2.  **Architecture Inference:** High-level description of the system structure.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

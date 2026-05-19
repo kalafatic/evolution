@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The Semantic Workspace is a persistent reasoning environment for the orchestration kernel. It solves the problem of \"isolated prompt execution\" by providing a mechanism for iterations to share semantic knowledge, track long-running trajectories, and avoid redundant rediscovery of conclusions. The system treats the orchestration process as a \"reasoning operating system\" where conclusions are persisted artifacts rather than transient prompt outputs. 1.  **Semantic Continuity**: Reasoning fragments (conclusions, decisions, patterns) persist across iterations.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

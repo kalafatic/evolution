@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "utility",
+  "stability": "",
+  "mediatedRelevanceScore": 0.2,
+  "importanceScore": 0.2,
+  "summary": "package eu.kalafatic.utils.semantic; import java.util.ArrayList; import java.util.HashMap;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

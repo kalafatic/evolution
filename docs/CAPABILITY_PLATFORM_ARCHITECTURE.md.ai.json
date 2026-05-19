@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The AI Kernel has evolved into a modular Capability and Plugin Platform. This architecture decouples core orchestration logic from specific implementation details, allowing for safer experimentation and easier extension. The universal extension model. Every major subsystem is now a Capability. - `capabilityId`: Unique identifier.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

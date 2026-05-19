@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "ui",
+  "stability": "",
+  "mediatedRelevanceScore": 0.4,
+  "importanceScore": 0.4,
+  "summary": "package eu.kalafatic.utils.ui; import java.io.BufferedInputStream; import java.io.File;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

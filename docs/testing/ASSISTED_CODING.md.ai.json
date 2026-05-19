@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "Guided multi-step tasks where the user maintains control over the plan and execution. The system decomposes the request into atomic `Task` objects (file, maven, git, shell) and pauses for user review. 1. Open the **AiChatPage**. 2. Enable iterative development:",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

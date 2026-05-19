@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "ui",
+  "stability": "",
+  "mediatedRelevanceScore": 0.4,
+  "importanceScore": 0.4,
+  "summary": "package eu.kalafatic.evolution.view.views; import java.util.ArrayList; import java.util.List;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

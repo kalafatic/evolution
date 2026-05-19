@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "utility",
+  "stability": "",
+  "mediatedRelevanceScore": 0.2,
+  "importanceScore": 0.2,
+  "summary": "package eu.kalafatic.utils.interfaces; import org.eclipse.swt.widgets.Table; public interface ISWizard extends ISWizardSettings {",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

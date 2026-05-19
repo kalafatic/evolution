@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The Evo platform is a deterministic evolutionary kernel designed for **mediated evolutionary cognition**. To ensure cognitive consistency, semantic metadata is resolved using the following priority: 1. **Source code semantics** (Hardcoded logic/types)",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

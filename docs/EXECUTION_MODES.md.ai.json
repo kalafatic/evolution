@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "Platform modes define the environment and infrastructure where the AI operates. - **LOCAL**: Execution occurs entirely on the local machine using local LLMs (e.g., Ollama). - **PROXY**: Requests are routed through a proxy to remote services.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

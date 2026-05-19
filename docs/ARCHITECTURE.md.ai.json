@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The AI Evolution Platform is a deterministic, state-transition-based evolutionary kernel designed for autonomous and semi-autonomous software development. It leverages an orchestration-first approach where the kernel manages intelligence rather than being replaced by it. The platform is not a chatbot; it is a **Modular Capability Platform**. It treats AI models as pluggable \"coprocessors\" while maintaining absolute control over state and execution through a centralized kernel. The system operates under a strict hierarchy:",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

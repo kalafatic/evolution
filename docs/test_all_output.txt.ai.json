@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "[INFO] Scanning for projects... [INFO] Tycho Version:  4.0.5 (bc6c4158d7b008797d3e85c0dae0ccd9e50458e5) [INFO] Tycho Mode:     extension",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

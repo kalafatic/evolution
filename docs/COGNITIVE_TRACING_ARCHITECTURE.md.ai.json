@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The Cognitive Tracing architecture evolves the platform from simple event-emitting orchestration to a causally explainable reasoning infrastructure. It allows the kernel to explain *why* decisions were made, *why* failures occurred, and *why* specific paths were taken. Represents a complete causal chain of reasoning events for a single orchestration lifecycle. It tracks: - Intent expansion paths",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "trajectory",
+  "stability": "",
+  "mediatedRelevanceScore": 0.9,
+  "importanceScore": 0.9,
+  "summary": "",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context"],
+  "dependencyLinks": []
+}

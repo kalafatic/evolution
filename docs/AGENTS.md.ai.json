@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "You are assisting in the development of a deterministic evolutionary kernel. Architecture is STRICT and non-negotiable. For every change you make to this codebase, you MUST: 1.  **Read and follow [ARCHITECTURE_GUIDELINES.MD](ARCHITECTURE_GUIDELINES.MD)**.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

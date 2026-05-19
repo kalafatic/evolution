@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "You are operating in an Iterative Development Loop (OBSERVE -> ANALYZE -> PLAN -> TEST). 1. OBSERVE: Look at the current state, logs, and errors. 2. ANALYZE: Identify the root cause of any issues.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

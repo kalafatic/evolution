@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "utility",
+  "stability": "",
+  "mediatedRelevanceScore": 0.2,
+  "importanceScore": 0.2,
+  "summary": "package eu.kalafatic.utils.listeners; import org.eclipse.ui.IPerspectiveDescriptor; import org.eclipse.ui.IPerspectiveListener4;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

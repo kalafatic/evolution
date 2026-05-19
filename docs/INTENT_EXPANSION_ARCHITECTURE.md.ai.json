@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The Intent Expansion Engine is a critical addition to the Darwin Orchestration Kernel. It addresses the issue of \"implementation-first\" behavior for ambiguous prompts by introducing a structured exploration of the intent space before any implementation variants are generated. - **Role:** Analyzes the raw user prompt for ambiguity. - **Output:** `IntentExpansionResult` containing dimensions of ambiguity and coherent hypotheses.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

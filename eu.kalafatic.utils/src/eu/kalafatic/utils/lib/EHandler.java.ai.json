@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "utility",
+  "stability": "",
+  "mediatedRelevanceScore": 0.2,
+  "importanceScore": 0.2,
+  "summary": "package eu.kalafatic.utils.lib; public enum EHandler { RUN_RC(0,",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

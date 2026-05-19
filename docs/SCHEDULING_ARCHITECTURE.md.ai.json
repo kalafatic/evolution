@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "This document describes the deterministic Backpressure and Execution Scheduling Layer implemented in the AI Kernel. All Darwin execution is treated as **scheduled compute tasks under limited cognitive resources**. The system prioritizes stability and predictability over unbounded parallel exploration. The central execution governor. It decides which Darwin variants are allowed to proceed to evaluation based on the current system state and available budget.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

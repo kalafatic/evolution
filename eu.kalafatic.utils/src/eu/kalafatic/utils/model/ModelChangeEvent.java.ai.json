@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "domain",
+  "stability": "",
+  "mediatedRelevanceScore": 0.7,
+  "importanceScore": 0.7,
+  "summary": "package eu.kalafatic.utils.model; public class ModelChangeEvent { public enum Type {",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "ui",
+  "stability": "",
+  "mediatedRelevanceScore": 0.4,
+  "importanceScore": 0.4,
+  "summary": "package eu.kalafatic.evolution.view.views; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.provider.OrchestrationGraphContentProvider;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

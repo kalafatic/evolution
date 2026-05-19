@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "ui",
+  "stability": "",
+  "mediatedRelevanceScore": 0.4,
+  "importanceScore": 0.4,
+  "summary": "package eu.kalafatic.evolution.view.editors.listeners; import org.eclipse.core.resources.IResourceChangeEvent; import org.eclipse.core.resources.IResourceChangeListener;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

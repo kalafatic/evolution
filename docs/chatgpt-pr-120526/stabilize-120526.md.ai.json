@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "ok, next stabilization request is to ensure key use cases, modes according to my own goals. The main focus is on ITERATIVE/DARWIN + MEDIATED usage of limited local sources! Ensure following points are incorporated: 1.mode LOCAL-using local server like ollama+USES only locally managed models 2.mode PROXY-using remote server like ollama+USES their own models (:cloud)",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

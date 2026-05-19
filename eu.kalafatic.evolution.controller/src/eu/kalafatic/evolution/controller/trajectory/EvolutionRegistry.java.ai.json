@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "trajectory",
+  "stability": "",
+  "mediatedRelevanceScore": 0.9,
+  "importanceScore": 0.9,
+  "summary": "package eu.kalafatic.evolution.controller.trajectory; import java.util.Map; import java.util.concurrent.ConcurrentHashMap;",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "dependencyLinks": []
+}

@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "Building powerful AI systems—such as coding assistants or autonomous development platforms—does not require massive, multi-billion parameter models if the underlying system architecture is robust. By treating the Large Language Model (LLM) as a specialized execution component rather than a \"brain,\" and by shifting the burden of logic to a structured orchestration layer, developers can achieve complex, high-reliability results using small, resource-constrained local models. Small models struggle with abstract, multi-purpose prompts. The architecture must implement a specialized router to detect the operational mode (e.g., Chat, Coding, Darwin/Iterative, Self-Development) and dispatch the request to a domain-specific agent with a narrowed scope. Before any execution occurs, a specialized \"Intent Gate\" analyzes the request against a structured requirement schema.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

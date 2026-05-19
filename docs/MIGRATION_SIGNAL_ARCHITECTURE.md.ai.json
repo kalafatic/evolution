@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "This document outlines the refactored signal-based evaluation architecture introduced in the Darwin platform. It serves as a foundation for centralized deterministic decision-making. A standardized telemetry object used by all evaluators to report observations. - `variantId`: Unique identifier for the proposal branch.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

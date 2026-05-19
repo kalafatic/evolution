@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The AI kernel identifies a bottleneck in its own `SignalBus` and proposes an optimization. - **System Intent**: \"Optimize SignalBus performance by introducing a concurrent lock-free queue.\" - **IntentService**: Detects `OPTIMIZATION` and `SELF-DEVELOPMENT`.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

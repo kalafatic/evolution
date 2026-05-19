@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "Autonomous self-modification mode. The `SelfDevSupervisor` manages a multi-iteration loop (default 5 iterations) using the Darwinian engine. Unlike other modes, this mode allows the system to modify its own source code within predefined `allowedPaths`. 1. Open the **AiChatPage**. 2. Activate Self-Dev Mode:",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

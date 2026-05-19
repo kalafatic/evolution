@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "ui",
+  "stability": "",
+  "mediatedRelevanceScore": 0.4,
+  "importanceScore": 0.4,
+  "summary": "package eu.kalafatic.evolution.view.editors; import org.eclipse.core.commands.operations.IUndoContext; import org.eclipse.jface.action.*;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

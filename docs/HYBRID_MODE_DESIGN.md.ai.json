@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "Large Language Models (LLMs) running locally (e.g., via Ollama) are excellent for privacy and cost-efficiency. However, models that fit on consumer hardware (7B to 14B parameters) often struggle with: The Evolution Platform implements a **Hybrid Mode** that decouples \"Context Gathering\" from \"Deep Reasoning.\" 1.  The local model performs a deterministic scan of the project structure.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

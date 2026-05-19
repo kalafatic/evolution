@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "supervision",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "dependencyLinks": []
+}

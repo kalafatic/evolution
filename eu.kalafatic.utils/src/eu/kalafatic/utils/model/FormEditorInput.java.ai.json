@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "domain",
+  "stability": "",
+  "mediatedRelevanceScore": 0.7,
+  "importanceScore": 0.7,
+  "summary": "package eu.kalafatic.utils.model; import java.io.File; import java.util.List;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

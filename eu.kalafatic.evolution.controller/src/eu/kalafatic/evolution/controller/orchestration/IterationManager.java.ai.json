@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.io.File; import java.nio.file.Files;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "dependencyLinks": []
+}

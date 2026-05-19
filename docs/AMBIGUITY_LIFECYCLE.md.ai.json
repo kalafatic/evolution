@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "1.  **Received:** Raw user input is captured. 2.  **Expansion:** `IntentExpansionEngine` decomposes the input into `IntentDimensions`. 3.  **Analysis:** Each dimension is scored for ambiguity.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

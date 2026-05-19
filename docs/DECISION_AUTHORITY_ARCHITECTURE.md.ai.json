@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The Darwin orchestration system has been refactored to introduce a centralized deterministic decision authority layer called **ActivationResolver**. This layer ensures that all activation decisions (branch selection, winner determination, rank finalization) have a single, reproducible origin. ```text Evaluators (Telemetry)",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}
