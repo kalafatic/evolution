@@ -12,73 +12,35 @@ import eu.kalafatic.utils.log.Log;
 
 public class BestPracticesService {
 
-    private final Orchestrator orchestrator;
-    private final File projectRoot;
+    private static final Map<String, String> ROLE_DEFAULTS = new HashMap<>();
+    private static final Map<String, String> SPECIAL_DEFAULTS = new HashMap<>();
 
-    public BestPracticesService(Orchestrator orchestrator, File projectRoot) {
-        this.orchestrator = orchestrator;
-        this.projectRoot = projectRoot;
-        initializeDefaults();
-    }
-
-    public String getInstructionsPath() {
-        return new File(projectRoot, "orchestrator/best_practices").getAbsolutePath();
-    }
-
-    private void initializeDefaults() {
-        File baseDir = new File(getInstructionsPath());
-        if (!baseDir.exists()) {
-            baseDir.mkdirs();
-        }
-
-        Map<String, String> roleDefaults = new HashMap<>();
-        roleDefaults.put("architect", "### ARCHITECT Best Practices\n\n" +
+    static {
+        ROLE_DEFAULTS.put("architect", "### ARCHITECT Best Practices\n\n" +
                 "- Design for modularity and high cohesion.\n" +
                 "- Use EMF-based modeling for core domain entities.\n" +
                 "- Follow the 'Separation of Concerns' principle between UI and logic.\n" +
                 "- Prioritize maintainability and extensibility in all design decisions.");
 
-        roleDefaults.put("planner", "### PLANNER Best Practices\n\n" +
+        ROLE_DEFAULTS.put("planner", "### PLANNER Best Practices\n\n" +
                 "- Decompose user requests into atomic, actionable tasks.\n" +
                 "- Handle ambiguity by generating a clarification task (the 'Evo' way).\n" +
                 "- Assign specific agent roles (JavaDev, Tester, etc.) to tasks for better accuracy.\n" +
                 "- Use 'loopToTaskId' for iterative fix-test-improve cycles.");
 
-        roleDefaults.put("agent", "### AGENT Best Practices\n\n" +
+        ROLE_DEFAULTS.put("agent", "### AGENT Best Practices\n\n" +
                 "- Be concise and professional in all communications.\n" +
                 "- Prioritize using available tools over general reasoning for technical tasks.\n" +
                 "- Report errors clearly and suggest potential fixes or workarounds.\n" +
                 "- Always verify the outcome of tool execution.");
 
-        roleDefaults.put("tools", "### TOOLS Best Practices\n\n" +
+        ROLE_DEFAULTS.put("tools", "### TOOLS Best Practices\n\n" +
                 "- Ensure all file paths are normalized and relative to the project root.\n" +
                 "- Request explicit user approval for high-risk actions (e.g., DELETE, SHELL).\n" +
                 "- Log tool execution results, including partial successes or informative failures.\n" +
                 "- Clean up temporary resources or side effects after execution.");
 
-        for (Map.Entry<String, String> entry : roleDefaults.entrySet()) {
-            String role = entry.getKey();
-            File roleDir = new File(baseDir, role);
-            if (!roleDir.exists()) {
-                roleDir.mkdirs();
-            }
-            File guidelines = new File(roleDir, "guidelines.md");
-            if (!guidelines.exists()) {
-                try {
-                    Files.write(guidelines.toPath(), entry.getValue().getBytes(StandardCharsets.UTF_8));
-                } catch (IOException e) {
-                    Log.log("BestPractices: Could not initialize default guidelines for " + role + ": " + e.getMessage());
-                }
-            }
-        }
-
-        // Initialize Special Contexts
-        File specialDir = new File(baseDir, "special");
-        if (!specialDir.exists()) {
-            specialDir.mkdirs();
-        }
-
-        initializeSpecialFile(specialDir, "iterative_loop.md",
+        SPECIAL_DEFAULTS.put("iterative_loop.md",
             "### ITERATIVE LOOP CONTEXT\n\n" +
             "You are operating in an Iterative Development Loop (OBSERVE -> ANALYZE -> PLAN -> TEST).\n" +
             "1. OBSERVE: Look at the current state, logs, and errors.\n" +
@@ -86,7 +48,7 @@ public class BestPracticesService {
             "3. PLAN: Create a small, verifiable step to improve the situation.\n" +
             "4. TEST: Verify the change. If it fails, start the loop again with the new observation.");
 
-        initializeSpecialFile(specialDir, "self_development.md",
+        SPECIAL_DEFAULTS.put("self_development.md",
             "### SELF DEVELOPMENT CONTEXT\n\n" +
             "You are in Autonomous Self-Development mode.\n" +
             "Your goal is to suggest and implement improvements to your own codebase or project structure.\n" +
@@ -95,15 +57,16 @@ public class BestPracticesService {
             "3. Ensure each iteration moves the project toward a more 'evolved' and stable state.");
     }
 
-    private void initializeSpecialFile(File dir, String fileName, String content) {
-        File file = new File(dir, fileName);
-        if (!file.exists()) {
-            try {
-                Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8));
-            } catch (IOException e) {
-                Log.log("BestPractices: Could not initialize special context " + fileName + ": " + e.getMessage());
-            }
-        }
+    private final Orchestrator orchestrator;
+    private final File projectRoot;
+
+    public BestPracticesService(Orchestrator orchestrator, File projectRoot) {
+        this.orchestrator = orchestrator;
+        this.projectRoot = projectRoot;
+    }
+
+    public String getInstructionsPath() {
+        return new File(projectRoot, "orchestrator/best_practices").getAbsolutePath();
     }
 
     public String getPracticesForRole(String role) {
@@ -120,7 +83,7 @@ public class BestPracticesService {
         if (roleDir.exists() && roleDir.isDirectory()) {
             StringBuilder content = new StringBuilder();
             File[] mdFiles = roleDir.listFiles((dir, name) -> name.endsWith(".md"));
-            if (mdFiles != null) {
+            if (mdFiles != null && mdFiles.length > 0) {
                 for (File mdFile : mdFiles) {
                     try {
                         content.append(new String(Files.readAllBytes(mdFile.toPath()), StandardCharsets.UTF_8)).append("\n\n");
@@ -128,10 +91,10 @@ public class BestPracticesService {
                         Log.log("BestPractices: Error reading " + mdFile.getAbsolutePath() + ": " + e.getMessage());
                     }
                 }
+                return content.toString();
             }
-            return content.toString();
         }
-        return "";
+        return ROLE_DEFAULTS.getOrDefault(role, "");
     }
 
     public String getCombinedPractices() {
@@ -159,6 +122,6 @@ public class BestPracticesService {
                 Log.log("BestPractices: Error reading special context " + fileName + ": " + e.getMessage());
             }
         }
-        return "";
+        return SPECIAL_DEFAULTS.getOrDefault(fileName, "");
     }
 }

@@ -19,6 +19,7 @@ import eu.kalafatic.evolution.controller.agents.RepairAgent;
 import eu.kalafatic.evolution.controller.agents.ValidatorAgent;
 import eu.kalafatic.evolution.controller.tools.FileTool;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
+import eu.kalafatic.evolution.controller.orchestration.util.CodeExtractor;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.tools.ToolFactory;
 import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
@@ -153,7 +154,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
             String path = taskName.replaceFirst("(?i)^(Write|Create|Update|MKDIR|DELETE)\\s+", "").trim().split(" ")[0];
             // Sanitization: Remove leading slashes and drive letters, and normalize separators
             path = path.replaceFirst("^([a-zA-Z]:)?[/\\\\]+", "").replace('\\', '/');
-            return ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("WRITE " + path + "\n" + patch, context.getProjectRoot(), context);
+            String extractedCode = CodeExtractor.extractCode(patch);
+            return ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("WRITE " + path + "\n" + extractedCode, context.getProjectRoot(), context);
         } else if (EvolutionConstants.TASK_MAVEN.equalsIgnoreCase(taskType)) {
             return ToolFactory.getTool(EvolutionConstants.TOOL_MAVEN).execute(taskName, context.getProjectRoot(), context);
         } else if (EvolutionConstants.TASK_GIT.equalsIgnoreCase(taskType)) {

@@ -13,6 +13,7 @@ import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequireme
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
 import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector;
+import eu.kalafatic.evolution.controller.orchestration.util.CodeExtractor;
 import eu.kalafatic.evolution.controller.orchestration.util.DataScrubber;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.services.BestPracticesService;
@@ -145,16 +146,6 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
     protected String getFooterInstructions() { return null; }
 
     protected String extractContent(String response) {
-        if (response == null) return "";
-        String trimmed = response.trim();
-        if (trimmed.startsWith("```")) {
-            int firstBackticks = trimmed.indexOf("```");
-            int firstNewline = trimmed.indexOf("\n", firstBackticks);
-            int lastBackticks = trimmed.lastIndexOf("```");
-            if (firstNewline != -1 && lastBackticks > firstNewline) {
-                return trimmed.substring(firstNewline + 1, lastBackticks).trim();
-            }
-        }
-        return trimmed;
+        return CodeExtractor.extractCode(response);
     }
 }
