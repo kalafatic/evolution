@@ -211,8 +211,18 @@ window.ChatApp.Renderer = {
             return window.ChatApp.Utils.escapeHtml(str);
         };
 
-        const humanKeys = ['explanation', 'strategy', 'thought', 'objective', 'refinedPrompt', 'rootCause', 'plan', 'workDone', 'summary', 'description', 'hypothesis', 'expected_effects', 'expected_effect'];
-        const technicalKeys = ['id', 'suffix', 'score', 'risk', 'reversibility', 'confidence', 'intent', 'category', 'isAmbiguous', 'missingInformation', 'clarificationQuestion'];
+        const humanKeys = ['explanation', 'strategy', 'thought', 'objective', 'refinedPrompt', 'rootCause', 'plan', 'workDone', 'summary', 'description', 'hypothesis', 'expected_effects', 'expected_effect', 'clarificationQuestion'];
+        const technicalKeys = ['id', 'suffix', 'score', 'risk', 'reversibility', 'confidence', 'intent', 'category', 'isAmbiguous', 'missingInformation'];
+
+        // If data is a simple object with just one or two human keys, render it as plain text
+        if (typeof data === 'object' && !Array.isArray(data)) {
+            const keys = Object.keys(data);
+            const humanPresent = keys.filter(k => humanKeys.includes(k));
+            if (humanPresent.length === 1 && keys.length <= 3) {
+                 const key = humanPresent[0];
+                 if (typeof data[key] === 'string') return this.formatText(data[key]);
+            }
+        }
 
         let html = '<div style="display: flex; flex-direction: column; gap: 6px;">';
         if (Array.isArray(data)) {
@@ -230,15 +240,23 @@ window.ChatApp.Renderer = {
                          if (data[f].expected_effects) html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">EXPECTED EFFECTS</div>${renderValue(data[f].expected_effects)}</div>`;
                     } else if (f === 'expected_effect' && typeof data[f] === 'object') {
                          html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">EXPECTED EFFECT</div>${data[f].short_term || data[f].long_term || ''}</div>`;
+                    } else if (f === 'clarificationQuestion') {
+                         html += `<div style="font-size: 1.1em; color: var(--ai-text); border-left: 3px solid var(--primary); padding-left: 8px;">${renderValue(data[f], f)}</div>`;
                     } else {
-                        html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">${f.toUpperCase().replace('_', ' ')}</div>${renderValue(data[f], f)}</div>`;
+                        // Less technical header for common narrative fields
+                        const usePlainLabel = ['explanation', 'thought', 'summary', 'description'].includes(f);
+                        if (usePlainLabel) {
+                            html += `<div style="line-height: 1.4;">${renderValue(data[f], f)}</div>`;
+                        } else {
+                            html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">${f.toUpperCase().replace('_', ' ')}</div>${renderValue(data[f], f)}</div>`;
+                        }
                     }
                 }
             });
 
             // Then render non-technical, non-prioritized keys
             Object.entries(data).forEach(([k, v]) => {
-                if (!humanKeys.includes(k) && !technicalKeys.includes(k) && k !== 'actions' && k !== 'variants' && k !== 'proposals') {
+                if (!humanKeys.includes(k) && !technicalKeys.includes(k) && k !== 'actions' && k !== 'variants' && k !== 'proposals' && k !== 'type') {
                     html += `<div><b>${k}:</b> ${renderValue(v, k)}</div>`;
                 }
             });
