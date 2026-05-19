@@ -577,22 +577,22 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		}));
 		context.addApprovalListener(msg -> Display.getDefault().asyncExec(() -> {
 			if (!sessionId.equals(getCurrentSessionName())) return;
+			outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "Evo", msg, "ai waiting", MessagePriority.USER_ACTION_REQUIRED, false);
 			if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
 				setTextSafe(modeIndicatorLabel, "WAITING FOR USER APPROVAL...");
 				setBackgroundSafe(modeIndicatorLabel, colorWaiting);
 			}
-			chatGroup.markLastAiMessageAsWaiting();
 			instructionsGroup.setOrchestrationRunning(false);
 			handleClarify();
 			feedbackGroup.showApproval(msg); updateScrolledContent();
 		}));
 		context.addInputListener(msg -> Display.getDefault().asyncExec(() -> {
 			if (!sessionId.equals(getCurrentSessionName())) return;
+			outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "Evo", msg, "ai waiting", MessagePriority.USER_ACTION_REQUIRED, false);
 			if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
 				setTextSafe(modeIndicatorLabel, "WAITING FOR USER INPUT...");
 				setBackgroundSafe(modeIndicatorLabel, colorWaiting);
 			}
-			chatGroup.markLastAiMessageAsWaiting();
 			instructionsGroup.setOrchestrationRunning(false);
 			handleClarify();
 			feedbackGroup.showInput(msg); updateScrolledContent();
@@ -863,22 +863,22 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) processLogEntry(log, sessionId); }));
 				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
 					if (!sessionId.equals(getCurrentSessionName())) return;
+					outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "Evo", message, "ai waiting", MessagePriority.USER_ACTION_REQUIRED, false);
 					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
 						setTextSafe(modeIndicatorLabel, "WAITING FOR USER APPROVAL...");
 						setBackgroundSafe(modeIndicatorLabel, colorWaiting);
 					}
-					chatGroup.markLastAiMessageAsWaiting();
 					instructionsGroup.setOrchestrationRunning(false);
 					handleClarify();
 					feedbackGroup.showApproval(message); updateScrolledContent();
 				}));
 				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
 					if (!sessionId.equals(getCurrentSessionName())) return;
+					outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "Evo", message, "ai waiting", MessagePriority.USER_ACTION_REQUIRED, false);
 					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
 						setTextSafe(modeIndicatorLabel, "WAITING FOR USER INPUT...");
 						setBackgroundSafe(modeIndicatorLabel, colorWaiting);
 					}
-					chatGroup.markLastAiMessageAsWaiting();
 					instructionsGroup.setOrchestrationRunning(false);
 					handleClarify();
 					feedbackGroup.showInput(message); updateScrolledContent();
