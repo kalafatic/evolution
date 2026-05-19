@@ -22,7 +22,14 @@ public class IntentExpansionEngine extends BaseAiAgent {
     @Override
     protected String getAgentInstructions() {
         return "You are an Intent Expansion Engine. Your goal is to analyze user requests for ambiguity and explore the 'intent space' before implementation begins.\n" +
-               "Identify unresolved dimensions of intent (e.g., target environment, style, specific behavior) and generate coherent hypotheses for what the user might want.\n" +
+               "Identify unresolved dimensions of intent and generate coherent hypotheses for what the user might want.\n" +
+               "\n" +
+               "CRITICAL DISTINCTION:\n" +
+               "1. SEMANTIC AMBIGUITY: Missing critical information or contradictory constraints that prevent safe execution (e.g., unknown platform, unknown auth model).\n" +
+               "2. IMPLEMENTATION POLYMORPHISM: Multiple valid ways to implement a clear intent (e.g., choice of library, sync vs async, logger vs println).\n" +
+               "\n" +
+               "Implementation polymorphism MUST be captured as 'implementationStrategies', NOT as ambiguities requiring user clarification.\n" +
+               "\n" +
                "STRICT RULES:\n" +
                "1. Do NOT generate code.\n" +
                "2. Do NOT execute tasks.\n" +
@@ -34,6 +41,13 @@ public class IntentExpansionEngine extends BaseAiAgent {
     protected String getFooterInstructions() {
         return "OUTPUT SCHEMA:\n" +
                "{\n" +
+               "  \"state\": \"CLEAR | EVOLVABLE | NEEDS_CLARIFICATION | BLOCKED | CONTRADICTORY\",\n" +
+               "  \"dominantIntent\": \"string (clear engineering objective)\",\n" +
+               "  \"dominantConfidence\": float (0.0-1.0),\n" +
+               "  \"ambiguityScore\": float (0.0-1.0, only for semantic ambiguity),\n" +
+               "  \"executionRiskScore\": float (0.0-1.0),\n" +
+               "  \"evolutionOpportunityScore\": float (0.0-1.0),\n" +
+               "  \"implementationStrategies\": [\"string (valid alternative approach)\"],\n" +
                "  \"dimensions\": [\n" +
                "    {\n" +
                "      \"dimensionId\": \"string\",\n" +
@@ -92,6 +106,18 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
         IntentExpansionResult result = new IntentExpansionResult();
         result.setOriginalPrompt(prompt);
+
+        // Parse Intent Resolution fields
+        result.setState(InterpretationState.valueOf(json.optString("state", "CLEAR")));
+        result.setDominantIntent(json.optString("dominantIntent"));
+        result.setDominantConfidence(json.optDouble("dominantConfidence", 0.5));
+        result.setAmbiguityScore(json.optDouble("ambiguityScore", 0.0));
+        result.setExecutionRiskScore(json.optDouble("executionRiskScore", 0.0));
+        result.setEvolutionOpportunityScore(json.optDouble("evolutionOpportunityScore", 0.0));
+        result.setImplementationStrategies(JsonUtils.toStringList(json.optJSONArray("implementationStrategies")));
+
+        context.log("[INTENT EXPANSION] Interpretation State: " + result.getState());
+        context.log("[INTENT EXPANSION] Dominant Intent: " + result.getDominantIntent());
 
         // Parse Dimensions
         JSONArray dims = json.optJSONArray("dimensions");

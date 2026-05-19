@@ -17,35 +17,42 @@ public class ClarificationPlanner {
     }
 
     public Strategy determineStrategy(IntentExpansionResult result, eu.kalafatic.evolution.controller.orchestration.TaskContext context) {
-        if (result.getConfidence() != null && result.getConfidence().getOverallConfidence() < 0.4) {
-            return Strategy.CLARIFY_USER;
+        InterpretationState state = result.getState();
+        context.log("[KERNEL] Determining clarification strategy for InterpretationState: " + state);
+
+        // 1. CLEAR: one dominant interpretation -> proceed immediately
+        if (state == InterpretationState.CLEAR) {
+            return Strategy.AUTO_INFER;
         }
 
-        boolean highAmbiguity = result.getDimensions().stream()
-                .anyMatch(d -> d.getAmbiguityScore() > 0.7 || d.isRequiresUserInput());
+        // 2. EVOLVABLE: intent clear, multiple strategies -> spawn Darwin branches
+        if (state == InterpretationState.EVOLVABLE) {
+            return Strategy.BRANCH_PARALLEL;
+        }
 
-        if (highAmbiguity) {
+        // 3. RISK-BASED OVERRIDE: Clarify only when execution is blocked or high-risk
+        if (state == InterpretationState.NEEDS_CLARIFICATION || state == InterpretationState.BLOCKED || state == InterpretationState.CONTRADICTORY) {
+
             // Refinement: If heuristic analysis is very confident it's a simple atomic task,
             // be more lenient with LLM-discovered "ambiguities" to avoid clarification fatigue.
             if (context != null && context.getOrchestrationState() != null) {
                 AtomicIntentAnalysis atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
                 if (atomic != null && atomic.isAtomic() && atomic.getConfidence() >= 0.8 && !atomic.isMultiStep()) {
-                    context.log("[KERNEL] High heuristic atomic confidence (" + atomic.getConfidence() + "). Proceeding despite potential ambiguities.");
+                    context.log("[KERNEL] High heuristic atomic confidence (" + atomic.getConfidence() + "). Proceeding despite " + state + " state.");
                     return Strategy.AUTO_INFER;
                 }
             }
 
-            // Check for clarification fatigue
-            if (context != null && context.getSemanticWorkspace() != null) {
-                int priorClarifications = context.getSemanticWorkspace().findArtifactsByType("clarification-conclusion").size();
-                if (priorClarifications >= 3 && result.getHypotheses().size() > 1) {
-                    context.log("[KERNEL] Clarification fatigue detected (" + priorClarifications + "). Falling back to BRANCH_PARALLEL.");
-                    return Strategy.BRANCH_PARALLEL;
-                }
+            // Refinement: Clarify ONLY when execution risk is high or dominant confidence is low
+            if (result.getDominantConfidence() < 0.6 || result.getExecutionRiskScore() > 0.7) {
+                return Strategy.CLARIFY_USER;
+            } else {
+                context.log("[KERNEL] Ambiguity detected but risk is low and confidence is sufficient. Falling back to BRANCH_PARALLEL.");
+                return Strategy.BRANCH_PARALLEL;
             }
-            return Strategy.CLARIFY_USER;
         }
 
+        // Fallback for legacy compatibility or undefined states
         if (result.getHypotheses().size() > 1) {
             return Strategy.BRANCH_PARALLEL;
         }
