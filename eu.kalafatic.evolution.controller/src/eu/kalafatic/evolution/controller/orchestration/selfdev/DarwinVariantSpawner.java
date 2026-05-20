@@ -66,7 +66,8 @@ public class DarwinVariantSpawner {
                "- strategy_type is FIXED to: " + seed.getType() + "\n" +
                "- Do NOT generate markdown code blocks (```json ... ```).\n" +
                "- Do NOT include conversational text or explanations outside the JSON.\n" +
-               "- The variant MUST be semantically distinct from a simple implementation.\n\n" +
+               "- The variant MUST be semantically distinct but STRICTLY GROUNDED in the user goal.\n" +
+               "- Avoid generic architectural advice; focus on concrete engineering actions for this specific task.\n\n" +
                "FIXED STRATEGY TYPE:\n" +
                seed.getType() + "\n\n" +
                "STRATEGY INSTRUCTIONS:\n" +
