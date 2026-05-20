@@ -67,7 +67,7 @@ public class ModeRouter {
 
         // 2. Obvious coding keywords detection - prioritized to bypass heavy mediated flows for simple tasks
         // EXCEPT in MEDIATED mode where we still prefer export for general coding tasks unless analytical
-        Pattern codingPattern = Pattern.compile("\\b(create|fix|add|run|test|generate|write|refactor|modify|delete|check|implement|build|improve|update|change)\\b");
+        Pattern codingPattern = Pattern.compile("\\b(create|fix|add|run|test|generate|write|refactor|modify|delete|check|implement|build|improve|update|change|approve|select)\\b");
         if (codingPattern.matcher(lowerPrompt).find()) {
             if (orchestrator != null && orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
                  // Fall through to model-based routing for MEDIATED mode

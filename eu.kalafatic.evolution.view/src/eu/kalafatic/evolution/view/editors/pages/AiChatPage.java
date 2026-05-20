@@ -1465,6 +1465,17 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
             priority = MessagePriority.USER_ACTION_REQUIRED;
         }
 
+        java.util.regex.Pattern approvedPattern = java.util.regex.Pattern.compile("\\[APPROVED:([^\\]]+)\\]");
+        java.util.regex.Matcher approvedMatcher = approvedPattern.matcher(content);
+        if (approvedMatcher.find()) {
+            String variantId = approvedMatcher.group(1);
+            if (!agentType.contains("approved")) {
+                agentType += " approved:" + variantId;
+            }
+            content = content.replace(approvedMatcher.group(0), "").trim();
+            priority = MessagePriority.NORMAL;
+        }
+
         boolean needsApproval = content.toLowerCase().contains("waiting for user") ||
                 content.toLowerCase().contains("guidance?") ||
                 content.toLowerCase().contains("clarify") ||
