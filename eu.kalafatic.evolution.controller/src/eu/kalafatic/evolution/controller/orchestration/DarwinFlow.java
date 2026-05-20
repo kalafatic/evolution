@@ -168,10 +168,15 @@ public class DarwinFlow implements IOrchestrationFlow {
                 }
             }
             state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));
-            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-            res.setSuccess(true);
-            res.setDecision(SelfDevDecision.CONTINUE);
-            return res;
+
+            // If intent is clear, proceed immediately to next phase in same iteration
+            if (strategy != ClarificationPlanner.Strategy.AUTO_INFER) {
+                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                res.setSuccess(true);
+                res.setDecision(SelfDevDecision.CONTINUE);
+                return res;
+            }
+            context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
         }
 
         // Implementation phases
@@ -260,6 +265,11 @@ public class DarwinFlow implements IOrchestrationFlow {
 
                 if (input.startsWith("Select ")) {
                     manualId = input.substring(7).trim();
+                } else if (input.startsWith("Approve variant ")) {
+                    manualId = input.substring(16).trim();
+                }
+
+                if (manualId != null) {
                     context.log("[KERNEL] User selected variant: " + manualId);
                 }
             }

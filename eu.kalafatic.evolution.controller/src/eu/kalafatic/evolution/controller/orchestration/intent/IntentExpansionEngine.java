@@ -104,6 +104,8 @@ public class IntentExpansionEngine extends BaseAiAgent {
             throw new Exception("Failed to parse intent expansion JSON: " + response);
         }
 
+        context.log("[INTENT_EXPANSION] [DARWIN_BRANCHES] " + json.toString());
+
         IntentExpansionResult result = new IntentExpansionResult();
         result.setOriginalPrompt(prompt);
 
