@@ -324,6 +324,11 @@ public class DarwinFlow implements IOrchestrationFlow {
             WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
             context.log("[KERNEL] Reality Check: Winner variant applied. Analysis: " + reality.toString());
 
+            // Record physical changes for Final Response
+            reality.getChangedFileMap().forEach((path, type) -> {
+                context.getFileChangeTracker().recordChange(path, type);
+            });
+
             boolean isSynthesis = context.getOrchestrationState().getCurrentPhase() != null && context.getOrchestrationState().getCurrentPhase().contains("SYNTHESIS");
             if (!reality.isSignificant() && !isSynthesis) {
                 context.log("[KERNEL] Reality Check WARNING: Winner variant resulted in NO physical changes in phase " + context.getOrchestrationState().getCurrentPhase());
@@ -355,9 +360,25 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
                 manager.transition(SystemState.DONE, context);
 
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));
+                String nextPhase = EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase));
+                state.setCurrentPhase(nextPhase);
+
                 result.setDecision(isFinalPhase ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
                 result.setSuccess(true); // Treat phase as successful to allow progression
+
+                if (!isFinalPhase && !context.isAutoApprove()) {
+                    context.log("[KERNEL] Darwin Evolution: Phase " + completedPhase + " completed. Pausing for user confirmation before next phase: " + nextPhase);
+                    try {
+                        String userResponse = context.requestInput("Phase " + completedPhase + " completed successfully. Proceed to " + nextPhase + "? (Yes/No)").get();
+                        if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse)) {
+                             context.log("[KERNEL] User stopped evolution after phase " + completedPhase);
+                             result.setDecision(SelfDevDecision.STOP);
+                        }
+                    } catch (Exception e) {
+                        context.log("[KERNEL] Error during phase confirmation: " + e.getMessage());
+                    }
+                }
+
                 return result;
             } else {
                 manager.getGitManager().rollback();
