@@ -18,6 +18,7 @@ import org.eclipse.jface.fieldassist.IContentProposalProvider;
 import org.eclipse.jface.fieldassist.IControlContentAdapter;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
@@ -33,6 +34,7 @@ import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.layout.FillLayout;
 import eu.kalafatic.evolution.controller.manager.NeuronService;
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
@@ -206,8 +208,14 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 
 		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
 		chatMgmtGroup = new ChatMgmtGroup(toolkit, content, editor, orchestrator, this);
-		
-		chatGroup = new ChatGroup(toolkit, content, editor, orchestrator, chatFont, this);
+
+		// Main resizable area
+		SashForm mainSash = new SashForm(content, SWT.VERTICAL | SWT.SMOOTH);
+		GridData sashGd = new GridData(GridData.FILL_BOTH);
+		sashGd.heightHint = 800; // Give it a reasonable initial size
+		mainSash.setLayoutData(sashGd);
+
+		chatGroup = new ChatGroup(toolkit, mainSash, editor, orchestrator, chatFont, this);
 		chatGroup.setEditCallback((index, oldText) -> {
 			Display.getDefault().asyncExec(() -> {
 				InputDialog dlg = new InputDialog(getShell(), "Edit Message", "Modify the message content:", oldText, null);
@@ -217,9 +225,19 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				}
 			});
 		});
-		instructionsGroup = new InstructionsGroup(toolkit, chatGroup.getControl(), this, orchestrator, true);
 
-		feedbackGroup = new FeedbackGroup(toolkit, content, editor, orchestrator, this);
+		// Composite for the resizable instructions prompt
+		Composite promptContainer = toolkit.createComposite(mainSash);
+		promptContainer.setLayout(new FillLayout());
+
+		// Footer container for instruction buttons and feedback
+		Composite footerContainer = toolkit.createComposite(mainSash);
+		footerContainer.setLayout(new GridLayout(1, false));
+
+		instructionsGroup = new InstructionsGroup(toolkit, promptContainer, footerContainer, this, orchestrator);
+		feedbackGroup = new FeedbackGroup(toolkit, footerContainer, editor, orchestrator, this);
+
+		mainSash.setWeights(new int[] { 50, 20, 30 });
 
 		initializeSessions();
 

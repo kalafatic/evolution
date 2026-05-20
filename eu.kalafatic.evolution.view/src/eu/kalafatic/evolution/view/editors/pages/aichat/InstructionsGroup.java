@@ -46,6 +46,12 @@ public class InstructionsGroup extends AEvoGroup {
         createControl(toolkit, parent, nested);
     }
 
+    public InstructionsGroup(FormToolkit toolkit, Composite promptParent, Composite controlsParent, AiChatPage page, Orchestrator orchestrator) {
+        super(page.getEditor(), orchestrator);
+        this.page = page;
+        createSplitControl(toolkit, promptParent, controlsParent);
+    }
+
     private void createControl(FormToolkit toolkit, Composite parent, boolean nested) {
     	if (nested) {
             group = GUIFactory.INSTANCE.createComposite(parent);
@@ -68,8 +74,72 @@ public class InstructionsGroup extends AEvoGroup {
 
         attachmentArea = GUIFactory.INSTANCE.createComposite(group, 1, SWT.BORDER);
 
+        createButtonsAndSettings(toolkit, composite);
+
+        requestText.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                // Ctrl+Enter or just Enter
+                if (e.keyCode == SWT.CR || e.keyCode == SWT.KEYPAD_CR) {
+                    if ((e.stateMask & SWT.MODIFIER_MASK) == 0 || (e.stateMask & SWT.CTRL) != 0) {
+                        e.doit = false;
+                        updateModel();
+                        page.handleSend();
+                    }
+                }
+                // Ctrl+N: New Session
+                if (e.keyCode == 'n' && (e.stateMask & SWT.CTRL) != 0) {
+                    e.doit = false;
+                    page.createNewSession();
+                }
+                // Ctrl+L: Clean Chat
+                if (e.keyCode == 'l' && (e.stateMask & SWT.CTRL) != 0) {
+                    e.doit = false;
+                    page.cleanChat();
+                }
+            }
+        });
+    }
+
+    private void createSplitControl(FormToolkit toolkit, Composite promptParent, Composite controlsParent) {
+        group = promptParent; // For compatibility with inherited group field
+        requestText = new StyledText(promptParent, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        page.setupContextAssist(requestText);
+        requestText.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        Composite composite = GUIFactory.INSTANCE.createComposite(controlsParent, 2, SWT.BORDER);
+        composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        attachmentArea = GUIFactory.INSTANCE.createComposite(controlsParent, 1, SWT.BORDER);
+        attachmentArea.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        createButtonsAndSettings(toolkit, composite);
+
+        requestText.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.keyCode == SWT.CR || e.keyCode == SWT.KEYPAD_CR) {
+                    if ((e.stateMask & SWT.MODIFIER_MASK) == 0 || (e.stateMask & SWT.CTRL) != 0) {
+                        e.doit = false;
+                        updateModel();
+                        page.handleSend();
+                    }
+                }
+                if (e.keyCode == 'n' && (e.stateMask & SWT.CTRL) != 0) {
+                    e.doit = false;
+                    page.createNewSession();
+                }
+                if (e.keyCode == 'l' && (e.stateMask & SWT.CTRL) != 0) {
+                    e.doit = false;
+                    page.cleanChat();
+                }
+            }
+        });
+    }
+
+    private void createButtonsAndSettings(FormToolkit toolkit, Composite parent) {
         // Left side: Buttons
-        Composite btnComp = GUIFactory.INSTANCE.createComposite(composite,5);
+        Composite btnComp = GUIFactory.INSTANCE.createComposite(parent, 5);
 
         sendButton = GUIFactory.INSTANCE.createButton(btnComp, "▶️ Send");
         sendButton.setBackground(lightGreen);
@@ -97,7 +167,7 @@ public class InstructionsGroup extends AEvoGroup {
         attachButton = GUIFactory.INSTANCE.createButton(btnComp, "\ud83d\udcce" + "Attach MD");
 
         // Right side: Checkboxes and Spinners
-        Composite settingsComp = GUIFactory.INSTANCE.createComposite(composite, 8);
+        Composite settingsComp = GUIFactory.INSTANCE.createComposite(parent, 8);
 
         selfIterativeCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Self Development");
         selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");
@@ -183,7 +253,7 @@ public class InstructionsGroup extends AEvoGroup {
         attachButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(group.getShell(), SWT.OPEN | SWT.MULTI);
+                org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(parent.getShell(), SWT.OPEN | SWT.MULTI);
                 dialog.setFilterExtensions(new String[] { "*.md" });
                 dialog.setFilterNames(new String[] { "Markdown Files (*.md)" });
                 dialog.setFilterPath(page.getProjectRoot().getAbsolutePath());
@@ -203,30 +273,6 @@ public class InstructionsGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 updateModel();
                 page.handleSend();
-            }
-        });
-
-        requestText.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                // Ctrl+Enter or just Enter
-                if (e.keyCode == SWT.CR || e.keyCode == SWT.KEYPAD_CR) {
-                    if ((e.stateMask & SWT.MODIFIER_MASK) == 0 || (e.stateMask & SWT.CTRL) != 0) {
-                        e.doit = false;
-                        updateModel();
-                        page.handleSend();
-                    }
-                }
-                // Ctrl+N: New Session
-                if (e.keyCode == 'n' && (e.stateMask & SWT.CTRL) != 0) {
-                    e.doit = false;
-                    page.createNewSession();
-                }
-                // Ctrl+L: Clean Chat
-                if (e.keyCode == 'l' && (e.stateMask & SWT.CTRL) != 0) {
-                    e.doit = false;
-                    page.cleanChat();
-                }
             }
         });
     }
