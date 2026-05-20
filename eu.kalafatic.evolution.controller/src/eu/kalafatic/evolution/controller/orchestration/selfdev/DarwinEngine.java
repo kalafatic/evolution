@@ -141,6 +141,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         StringBuilder countInstruction = new StringBuilder();
         countInstruction.append("Output MUST be a valid JSON array of EXACTLY ").append(variantCount).append(" object").append(variantCount > 1 ? "s" : "").append(".\n");
+        countInstruction.append("CRITICAL: Each object must represent a DISTINCT engineering strategy with different technical trade-offs.\n");
 
         if (!selectedStrategies.isEmpty()) {
             countInstruction.append("Each object in the array MUST correspond to one of the following strategies in the specified order:\n");
@@ -148,6 +149,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 EvolutionBranch strategy = selectedStrategies.get(i);
                 countInstruction.append(i + 1).append(". ").append(strategy.getType().name()).append(": ").append(strategy.getInstructions()).append("\n");
             }
+        } else {
+            countInstruction.append("You MUST propose at least 2 different strategies (e.g., one conservative IMPLEMENTATION and one exploratory ANALYTICAL approach).\n");
         }
 
         return countInstruction.toString() + "\n" +
@@ -494,6 +497,34 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
 
             variants.add(v);
+        }
+
+        // ENFORCE DIVERSITY: If only one variant is returned, generate a synthetic alternative
+        if (variants.size() == 1) {
+            context.log("[DARWIN] Only one variant generated. Creating synthetic diversity fallback.");
+            BranchVariant v1 = variants.get(0);
+            BranchVariant v2 = new BranchVariant();
+            v2.setId("v-synthetic-diversity");
+            v2.setBranchId(v2.getId());
+            v2.setLineageId(context.getSessionId());
+            v2.setActivationState(BranchVariant.ActivationState.ARCHIVED);
+            v2.setStrategyType("ANALYTICAL");
+            v2.setStrategy("Meta-Analysis: " + v1.getStrategy());
+            v2.setMutationTrace("Synthetic diversity fallback.");
+            v2.setScore(0.5);
+            v2.setBranchName("exp/" + sanitize(goal) + "/diversity-fallback");
+            v2.setSurvivalArgument("Ensures Darwinian selection diversity when the LLM is overly convergent.");
+            v2.setTradeoffs("Higher safety, lower implementation velocity.");
+            v2.setFailureRisks("Low risk, analytical only.");
+
+            BranchVariant.Action a = new BranchVariant.Action();
+            a.setDomain("structure");
+            a.setOperation("ANALYZE");
+            a.setTarget(".");
+            a.setDescription("Perform a risk analysis of the primary proposed strategy: " + v1.getStrategy());
+            v2.getActions().add(a);
+
+            variants.add(v2);
         }
 
         // PERSISTENCE: Save successful historical mutation patterns

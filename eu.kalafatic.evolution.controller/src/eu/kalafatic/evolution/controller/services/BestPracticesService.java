@@ -74,12 +74,13 @@ public class BestPracticesService {
         role = role.toLowerCase();
 
         // Map common agent types to best practice roles
-        if (role.contains("planner")) role = "planner";
-        else if (role.contains("architect")) role = "architect";
-        else if (role.contains("tool")) role = "tools";
-        else role = "agent";
+        String roleKey = role;
+        if (role.contains("planner")) roleKey = "planner";
+        else if (role.contains("architect")) roleKey = "architect";
+        else if (role.contains("tool")) roleKey = "tools";
+        else roleKey = "agent";
 
-        File roleDir = new File(getInstructionsPath(), role);
+        File roleDir = new File(getInstructionsPath(), roleKey);
         if (roleDir.exists() && roleDir.isDirectory()) {
             StringBuilder content = new StringBuilder();
             File[] mdFiles = roleDir.listFiles((dir, name) -> name.endsWith(".md"));
@@ -94,7 +95,7 @@ public class BestPracticesService {
                 return content.toString();
             }
         }
-        return ROLE_DEFAULTS.getOrDefault(role, "");
+        return ROLE_DEFAULTS.getOrDefault(roleKey, "");
     }
 
     public String getCombinedPractices() {
@@ -114,12 +115,16 @@ public class BestPracticesService {
     }
 
     public String getSpecialContext(String fileName) {
-        File specialFile = new File(getInstructionsPath() + File.separator + "special", fileName);
-        if (specialFile.exists()) {
-            try {
-                return new String(Files.readAllBytes(specialFile.toPath()), StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                Log.log("BestPractices: Error reading special context " + fileName + ": " + e.getMessage());
+        // PREVENT DISK POLLUTION: Do not create directories if they don't exist
+        File instructionsDir = new File(projectRoot, "orchestrator/best_practices");
+        if (instructionsDir.exists()) {
+            File specialFile = new File(instructionsDir, "special" + File.separator + fileName);
+            if (specialFile.exists()) {
+                try {
+                    return new String(Files.readAllBytes(specialFile.toPath()), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    Log.log("BestPractices: Error reading special context " + fileName + ": " + e.getMessage());
+                }
             }
         }
         return SPECIAL_DEFAULTS.getOrDefault(fileName, "");
