@@ -246,8 +246,8 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             BranchVariant selectedVariant = null;
             String manualId = null;
-            if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
-                context.log("[KERNEL] Darwin in MEDIATED mode: Stopping for user review.");
+            if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) || !context.isAutoApprove()) {
+                context.log("[KERNEL] Darwin Evolution: Stopping for user review (Auto-Approve: " + context.isAutoApprove() + ")");
                 StringBuilder sb = new StringBuilder("Darwin generated " + variants.size() + " evaluated proposals:\n");
                 for (BranchVariant v : variants) {
                     sb.append(String.format("- [%s] %s (Score: %.2f)\n", v.getId(), v.getStrategy(), v.getScore()));
@@ -294,10 +294,12 @@ public class DarwinFlow implements IOrchestrationFlow {
                         vObj.put("score", v.getScore());
                         if (v.getId().equals(finalWinnerId)) {
                             vObj.put("approved", true);
+                        } else {
+                            vObj.put("approved", false);
                         }
                         updatedVariants.put(vObj);
                     }
-                    context.log("[DARWIN_BRANCHES] " + updatedVariants.toString());
+                    context.log("[APPROVED:" + finalWinnerId + "] [DARWIN_BRANCHES] " + updatedVariants.toString());
                 }
             }
 
