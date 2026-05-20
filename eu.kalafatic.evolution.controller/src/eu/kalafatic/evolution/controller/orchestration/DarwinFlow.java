@@ -295,8 +295,14 @@ public class DarwinFlow implements IOrchestrationFlow {
             WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
             context.log("[KERNEL] Reality Check: Winner variant applied. Analysis: " + reality.toString());
 
-            if (!reality.isSignificant()) {
-                context.log("[KERNEL] Reality Check Warning: Winner variant resulted in NO physical changes.");
+            boolean isSynthesis = context.getOrchestrationState().getCurrentPhase() != null && context.getOrchestrationState().getCurrentPhase().contains("SYNTHESIS");
+            if (!reality.isSignificant() && !isSynthesis) {
+                context.log("[KERNEL] Reality Check WARNING: Winner variant resulted in NO physical changes in phase " + context.getOrchestrationState().getCurrentPhase());
+                // In early implementation phases, we might want to allow this if it's purely structural/analytical,
+                // but we should signal to the next iteration that more pressure is needed.
+                context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", false);
+            } else {
+                context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", true);
             }
 
             manager.transition(SystemState.VERIFYING, context);
@@ -416,7 +422,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                     variantExecContext.recordEvent(event);
 
                     ActivationResolver resolver = new ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory());
-                    DecisionSnapshot intermediateDecision = resolver.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant), SignalBus.getInstance().getSignalsForVariant(variant.getId()));
+                    DecisionSnapshot intermediateDecision = resolver.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant), SignalBus.getInstance().getSignalsForVariant(variant.getId()), variantContext);
 
                     Trajectory t = context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(variant.getTrajectoryId());
                     if (t != null) {

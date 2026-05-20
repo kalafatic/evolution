@@ -53,7 +53,8 @@ public class DecisionResolver {
         DecisionSnapshot decision = activationResolver.resolve(
             iterationId,
             variants,
-            signals
+            signals,
+            context
         );
 
         // PERSISTENCE: Save the decision snapshot to metadata so DarwinFlow can react (e.g. exploration trigger)

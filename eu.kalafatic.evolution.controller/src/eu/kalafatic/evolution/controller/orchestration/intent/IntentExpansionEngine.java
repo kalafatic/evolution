@@ -41,7 +41,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
     protected String getFooterInstructions() {
         return "OUTPUT SCHEMA:\n" +
                "{\n" +
-               "  \"state\": \"CLEAR | EVOLVABLE | NEEDS_CLARIFICATION | BLOCKED | CONTRADICTORY\", // CRITICAL: CHOOSE EXACTLY ONE\n" +
+               "  \"state\": \"CLEAR\", // CRITICAL: Choose exactly ONE from [CLEAR, EVOLVABLE, NEEDS_CLARIFICATION, BLOCKED, CONTRADICTORY]. Do NOT echo the list.\n" +
                "  \"dominantIntent\": \"string (clear engineering objective)\",\n" +
                "  \"dominantConfidence\": float (0.0-1.0),\n" +
                "  \"ambiguityScore\": float (0.0-1.0, only for semantic ambiguity),\n" +
@@ -195,13 +195,24 @@ public class IntentExpansionEngine extends BaseAiAgent {
     }
 
     public static InterpretationState parseState(String stateStr, TaskContext context) {
+        if (stateStr == null) return InterpretationState.CLEAR;
+        String cleanState = stateStr.trim().toUpperCase();
+
+        // HARDENING: If the model echoes the whole enum list, it's probably actually CLEAR or EVOLVABLE
+        if (cleanState.contains("|") || (cleanState.contains("CLEAR") && cleanState.contains("CONTRADICTORY"))) {
+            if (context != null) {
+                context.log("[INTENT EXPANSION] Detected enum list echo in state: " + stateStr + ". Defaulting to CLEAR.");
+            }
+            return InterpretationState.CLEAR;
+        }
+
         try {
-            return InterpretationState.valueOf(stateStr.trim());
+            return InterpretationState.valueOf(cleanState);
         } catch (IllegalArgumentException e) {
-            // Robust fallback for noisy LLM output (e.g., "CLEAR | NEEDS_CLARIFICATION")
+            // Robust fallback for noisy LLM output (e.g., "State: CLEAR")
             InterpretationState resolved = InterpretationState.CLEAR;
             for (InterpretationState s : InterpretationState.values()) {
-                if (stateStr.contains(s.name())) {
+                if (cleanState.contains(s.name())) {
                     resolved = s;
                     break;
                 }
