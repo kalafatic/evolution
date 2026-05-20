@@ -77,7 +77,7 @@ public class GlobalActionsGroup extends AEvoGroup {
         gitAutomationCheck = toolkit.createButton(batchComp, "Auto-Git", SWT.CHECK);
         stepModeCheck = toolkit.createButton(batchComp, "Step Mode", SWT.CHECK);
 
-        Button applyBatchBtn = GUIFactory.INSTANCE.createButton(batchComp, "Apply to Selected", 2 * GUIFactory.BUTTON_WIDTH);
+        Button applyBatchBtn = GUIFactory.INSTANCE.createButton(batchComp, "Apply to Selected", SWT.PUSH, 2 * GUIFactory.BUTTON_WIDTH);
         applyBatchBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
