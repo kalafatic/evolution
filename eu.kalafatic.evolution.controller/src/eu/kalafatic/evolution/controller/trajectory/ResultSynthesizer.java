@@ -29,34 +29,59 @@ public class ResultSynthesizer {
 
         // 1. Compare branch outputs and extract highest-signal insights
         StringBuilder insights = new StringBuilder();
+        int activeCount = 0;
+        double maxScore = 0;
+        BranchVariant bestVariant = null;
+
         for (BranchVariant v : variants) {
             double score = v.getScore();
             result.strategyConfidence.put(v.getStrategyType(), score);
 
+            if (v.getActivationState() == BranchVariant.ActivationState.VERIFIED || v.getActivationState() == BranchVariant.ActivationState.SCORING) {
+                activeCount++;
+            }
+
+            if (score > maxScore) {
+                maxScore = score;
+                bestVariant = v;
+            }
+
             if (score > 0.6) {
-                insights.append("- Branch [").append(v.getStrategyType()).append("]: ")
-                        .append(v.getStrategy()).append(" (Score: ").append(String.format("%.2f", score)).append(")\n");
+                insights.append("- ").append(v.getStrategyType()).append(": ").append(v.getStrategy())
+                        .append(" (Fitness: ").append(String.format("%.2f", score)).append(")\n");
             }
 
             if (v.getExpectedEffect() != null && v.getExpectedEffect().getRisk() > 0.7) {
-                result.identifiedRisks.add("High risk in " + v.getStrategyType() + ": " + v.getStrategy());
+                result.identifiedRisks.add("High execution risk in " + v.getStrategyType() + " trajectory.");
             }
         }
-        result.mergedInsight = insights.toString();
+
+        StringBuilder merged = new StringBuilder();
+        merged.append("Analyzed ").append(variants.size()).append(" evolutionary branches. ");
+        if (bestVariant != null) {
+            merged.append("Dominant strategy: ").append(bestVariant.getStrategyType()).append(" (").append(String.format("%.0f%%", maxScore * 100)).append(" confidence).\n");
+        }
+        merged.append("\nDetailed Insights:\n").append(insights);
+
+        result.mergedInsight = merged.toString();
 
         // 2. Trajectory Update
         updateTrajectory(variants, context);
 
         // 3. Resolve recommended next step based on synthesized insights
         if (result.strategyConfidence.getOrDefault("STABILIZATION", 0.0) > 0.8) {
-            result.recommendedNextStep = "Prioritize system stabilization and cleanup.";
+            result.recommendedNextStep = "Prioritize system stabilization and idiomatic cleanup.";
+        } else if (result.strategyConfidence.getOrDefault("ANALYTICAL", 0.0) > 0.8 && activeCount < 2) {
+            result.recommendedNextStep = "Deepen architectural analysis before further mutation.";
         } else if (result.strategyConfidence.getOrDefault("CURIOSITY", 0.0) > 0.5) {
-            result.recommendedNextStep = "Explore post-solution enhancements (tests, docs).";
+            result.recommendedNextStep = "Explore non-obvious project dependencies or optimizations.";
         } else {
-            result.recommendedNextStep = "Continue with implementation refinement.";
+            result.recommendedNextStep = "Proceed with implementation refinement and verification.";
         }
 
-        context.log("[SYNTHESIS] Synthesis complete. Recommended next step: " + result.recommendedNextStep);
+        context.log("[SYNTHESIS] Synthesis complete. " + activeCount + " valid trajectories identified.");
+        context.getOrchestrationState().getMetadata().put("synthesisResult", result);
+
         return result;
     }
 

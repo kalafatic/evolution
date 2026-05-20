@@ -37,7 +37,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed analytical() {
         return new DarwinStrategySeed(
             DarwinStrategyType.ANALYTICAL,
-            "Focus on architecture impact, dependency analysis, integration risks, and regression detection. Propose changes that improve system understanding or safety.",
+            "Focus on architectural alignment and safety within the scope of the goal. Analyze how the proposed change impacts existing components and identify integration risks. Avoid generic architectural restructuring unless strictly necessary for the goal.",
             true
         );
     }
@@ -45,7 +45,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed stabilization() {
         return new DarwinStrategySeed(
             DarwinStrategyType.STABILIZATION,
-            "Focus on system stability, bug fixes, edge case handling, and hardening existing logic. Propose changes that make the current implementation more robust.",
+            "Focus on making the implementation robust. Handle edge cases, improve error reporting, and ensure the solution is idiomatic and stable. Stay grounded in the user's specific request.",
             false
         );
     }
@@ -53,7 +53,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed exploration() {
         return new DarwinStrategySeed(
             DarwinStrategyType.EXPLORATION,
-            "Focus on alternative architectural paths, performance optimizations, or hidden project dependencies. Propose an innovative or non-obvious solution.",
+            "Focus on alternative technical approaches to the same goal. Explore different libraries, patterns, or performance optimizations that remain strictly relevant to the user objective. Avoid 'hallucinating' unrelated project needs.",
             false
         );
     }
