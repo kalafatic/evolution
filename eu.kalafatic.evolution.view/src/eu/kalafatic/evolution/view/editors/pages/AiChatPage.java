@@ -546,9 +546,9 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			}
 		}
 
-		// Start Self-Dev Supervisor if (Self-Development OR Darwin mode is enabled) AND it's NOT a simple chat OR mediated.
+		// Start Self-Dev Supervisor if (Self-Development OR Darwin mode is enabled) AND it's NOT a simple chat.
 		// Darwin is now the unified basic flow for all implementation requests.
-		if (!isSimpleChat && !isMediated && orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
+		if (!isSimpleChat && orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
 		    (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode() || orchestrator.isDarwinMode())) {
 			startSelfDevAction(request);
 			return;
@@ -1242,13 +1242,21 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	public void handleOpenDiff(String path) {
 		if (path == null || path.isEmpty()) return;
 
+		if (path.startsWith("file://")) {
+			path = path.substring(7);
+			// On Windows, file:///C:/path/to/file -> /C:/path/to/file or C:/path/to/file
+			if (path.startsWith("/") && path.length() > 2 && path.charAt(2) == ':') {
+				path = path.substring(1);
+			}
+		}
+
 		// Strip status prefix if present (e.g. "M src/File.java" -> "src/File.java")
 		if (path.length() > 2 && (path.startsWith("M ") || path.startsWith("A ") || path.startsWith("D "))) {
 		    path = path.substring(2);
 		}
 
 		File projectRoot = getProjectRoot();
-		File file = new File(projectRoot, path);
+		File file = path.contains(":") ? new File(path) : new File(projectRoot, path);
 
 		// Ensure workspace is in sync before looking for the file
 		try {

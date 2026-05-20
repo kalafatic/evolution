@@ -163,6 +163,14 @@ window.ChatApp.Renderer = {
         html = html.replace(/\*([\s\S]*?)\*/g, '<i>$1</i>');
         html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 
+        // Markdown Links [text](url)
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+             if (url.startsWith('file://')) {
+                  return `<a onclick="window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
+             }
+             return `<a href="${url}" target="_blank">${text}</a>`;
+        });
+
         // Headers
         html = html.replace(/^\s*###### (.*$)/gim, '<h6>$1</h6>');
         html = html.replace(/^\s*##### (.*$)/gim, '<h5>$1</h5>');

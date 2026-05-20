@@ -2,7 +2,10 @@ package eu.kalafatic.evolution.controller.orchestration.workspace;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import eu.kalafatic.evolution.controller.orchestration.FileChangeTracker;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.tools.GitTool;
 
@@ -40,14 +43,24 @@ public class WorkspaceDeltaAnalyzer {
         return analysis;
     }
 
-    private List<String> parseChangedFiles(String status) {
-        List<String> files = new ArrayList<>();
+    private Map<String, FileChangeTracker.ChangeType> parseChangedFiles(String status) {
+        Map<String, FileChangeTracker.ChangeType> files = new HashMap<>();
         if (status == null || status.isEmpty()) return files;
 
         String[] lines = status.split("\n");
         for (String line : lines) {
             if (line.length() > 3) {
-                files.add(line.substring(3).trim());
+                String prefix = line.substring(0, 2).trim();
+                String path = line.substring(2).trim();
+
+                FileChangeTracker.ChangeType type = FileChangeTracker.ChangeType.EDITED;
+                if (prefix.equals("A") || prefix.equals("??")) {
+                    type = FileChangeTracker.ChangeType.NEW;
+                } else if (prefix.equals("D")) {
+                    type = FileChangeTracker.ChangeType.REMOVED;
+                }
+
+                files.put(path, type);
             }
         }
         return files;
@@ -75,7 +88,7 @@ public class WorkspaceDeltaAnalyzer {
 
     public static class DeltaAnalysis {
         private String rawDiff;
-        private List<String> changedFiles = new ArrayList<>();
+        private Map<String, FileChangeTracker.ChangeType> changedFiles = new HashMap<>();
         private int addedLines;
         private int removedLines;
         private List<String> signals = new ArrayList<>();
@@ -83,8 +96,9 @@ public class WorkspaceDeltaAnalyzer {
         public String getRawDiff() { return rawDiff; }
         public void setRawDiff(String rawDiff) { this.rawDiff = rawDiff; }
 
-        public List<String> getChangedFiles() { return changedFiles; }
-        public void setChangedFiles(List<String> changedFiles) { this.changedFiles = changedFiles; }
+        public List<String> getChangedFiles() { return new ArrayList<>(changedFiles.keySet()); }
+        public Map<String, FileChangeTracker.ChangeType> getChangedFileMap() { return changedFiles; }
+        public void setChangedFiles(Map<String, FileChangeTracker.ChangeType> changedFiles) { this.changedFiles = changedFiles; }
 
         public int getAddedLines() { return addedLines; }
         public void setAddedLines(int addedLines) { this.addedLines = addedLines; }
@@ -96,7 +110,7 @@ public class WorkspaceDeltaAnalyzer {
         public List<String> getSignals() { return signals; }
 
         public boolean isSignificant() {
-            return !changedFiles.isEmpty() && (addedLines + removedLines > 0);
+            return !changedFiles.isEmpty() || (addedLines + removedLines > 0);
         }
 
         @Override
