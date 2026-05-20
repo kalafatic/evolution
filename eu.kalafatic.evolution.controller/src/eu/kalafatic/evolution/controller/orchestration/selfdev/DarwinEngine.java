@@ -437,7 +437,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
         ranker.rank(uniqueVariants);
 
-        context.log("[DARWIN] [DARWIN_BRANCHES] " + uniqueVariants.toString());
+        context.log("[DARWIN_BRANCHES] " + uniqueVariants.toString());
 
         // 10. Map to Model
         List<BranchVariant> variants = new ArrayList<>();
