@@ -42,7 +42,7 @@ public class ActivationResolver implements ICapability {
     /**
      * Resolves the winner among competing variants.
      */
-    public DecisionSnapshot resolve(String iterationId, List<BranchVariant> variants, List<EvaluationSignal> signals) {
+    public DecisionSnapshot resolve(String iterationId, List<BranchVariant> variants, List<EvaluationSignal> signals, eu.kalafatic.evolution.controller.orchestration.TaskContext context) {
         if (variants == null || variants.isEmpty()) {
             return createNullDecision(iterationId);
         }
@@ -69,6 +69,14 @@ public class ActivationResolver implements ICapability {
             
             double baseScore = totalConfidence > 0 ? (totalScore / totalConfidence) : 0.5;
             double finalScore = baseScore * 0.7 + (signalBoost * 0.3);
+
+            // Progress Bias: Boost variants that actually have physical changes when in implementation phases
+            if (context != null && variant.getMutationTrace() != null && !variant.getMutationTrace().isEmpty() && !variant.getMutationTrace().contains("No physical changes")) {
+                String phase = context.getOrchestrationState().getCurrentPhase();
+                if (phase != null && (phase.contains("ARCHITECTURE") || phase.contains("IMPLEMENTATION") || phase.contains("SYNTHESIS"))) {
+                    finalScore += 0.05; // Small "Progress" boost
+                }
+            }
 
             policyResults.put(variant.getId(), results);
             aggregatedScores.put(variant.getId(), finalScore);

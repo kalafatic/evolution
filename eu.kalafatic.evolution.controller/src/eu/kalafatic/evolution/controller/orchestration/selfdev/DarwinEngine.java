@@ -149,8 +149,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 EvolutionBranch strategy = selectedStrategies.get(i);
                 countInstruction.append(i + 1).append(". ").append(strategy.getType().name()).append(": ").append(strategy.getInstructions()).append("\n");
             }
+            if (selectedStrategies.size() < 2) {
+                countInstruction.append("2. CURIOSITY: Explore an alternative architectural path or hidden project dependency that might impact the goal.\n");
+                variantCount = Math.max(variantCount, 2);
+            }
         } else {
-            countInstruction.append("You MUST propose at least 2 different strategies (e.g., one conservative IMPLEMENTATION and one exploratory ANALYTICAL approach).\n");
+            countInstruction.append("You MUST propose at least 2 DIFFERENT strategies (e.g., one conservative IMPLEMENTATION and one exploratory ANALYTICAL approach).\n");
+            countInstruction.append("STRICT RULE: Do NOT return the same strategy twice. If you only have one idea, create a 'CURIOSITY' variant to explore the codebase.\n");
         }
 
         return countInstruction.toString() + "\n" +
@@ -364,198 +369,177 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             context.log("[DARWIN] WARNING: Adaptive feedback analysis failed (non-critical). Continuing evolution loop. Error: " + e.getMessage());
         }
 
-        // 4. Dynamic Strategy Selection
-        BranchSelector selector = new BranchSelector();
-        List<EvolutionBranch> selectedStrategies = selector.select(context);
-
-        // 5. Build final prompt via PromptComposer with dynamic footer
+        // 4. Build final prompt via PromptComposer
         String composedPrompt = promptComposer.compose(policy, modules, state.toString());
-        String footer = getFooterInstructions(selectedStrategies);
-        String fullPrompt = buildPrompt(composedPrompt, context, null);
-
-        // Replace default footer with dynamic footer
-        String defaultFooter = getFooterInstructions();
-        if (defaultFooter != null && fullPrompt.contains(defaultFooter)) {
-            fullPrompt = fullPrompt.replace(defaultFooter, footer);
-        } else {
-            fullPrompt += "\nFINAL DIRECTIVE:\n" + footer;
-        }
+        String basePrompt = buildPrompt(composedPrompt, context, null);
 
         // MODULATION: Inject EPS context into the prompt
         Object epsObj = context.getOrchestrationState().getMetadata().get("eps");
         double eps = (epsObj instanceof Double) ? (Double) epsObj : 0.5;
-        fullPrompt += "\n[SYSTEM_DIRECTIVE] Evolution Pressure Scalar (EPS): " + String.format("%.2f", eps) + ".\n";
 
-        context.log("Evo-DarwinEngine-Thinking: " + fullPrompt);
-        String response = aiService.sendRequest(context.getOrchestrator(), fullPrompt, context);
-        context.log("Evo-DarwinEngine-Response: " + response);
+        // ADJUST PRESSURE: Increase EPS if last reality check was not significant
+        Boolean lastSignificant = (Boolean) context.getOrchestrationState().getMetadata().get("lastRealityCheckSignificant");
+        if (lastSignificant != null && !lastSignificant) {
+            eps = Math.min(1.0, eps + 0.2);
+            context.log("[DARWIN] Increasing Evolution Pressure (EPS) due to insignificant last reality check: " + String.format("%.2f", eps));
+            context.getOrchestrationState().getMetadata().put("eps", eps);
+        }
+        basePrompt += "\n[SYSTEM_DIRECTIVE] Evolution Pressure Scalar (EPS): " + String.format("%.2f", eps) + ".\n";
 
-        if (response == null || response.trim().isEmpty()) {
-            context.log("[DARWIN] ERROR: Received empty AI response for variants");
-            throw new Exception("Empty AI response for variants");
+        // ========================================
+        // NEW MULTI-CALL PIPELINE
+        // ========================================
+
+        // 5. Strategy Spawning (Phase 1)
+        DarwinVariantSpawner spawner = new DarwinVariantSpawner(aiService);
+        DarwinDiversityAnalyzer diversityAnalyzer = new DarwinDiversityAnalyzer();
+
+        // Round 1: Mandatory Seeds
+        List<DarwinStrategySeed> mandatorySeeds = new ArrayList<>();
+        mandatorySeeds.add(DarwinStrategySeed.implementation());
+        mandatorySeeds.add(DarwinStrategySeed.analytical());
+
+        context.log("[DARWIN] Executing Generation Round 1 (Mandatory Seeds)");
+        List<JSONObject> round1Variants = spawner.spawn(goal, mandatorySeeds, basePrompt, context);
+        List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(round1Variants, context);
+
+        // Round 2: Adaptive/Optional Seeds (Phase 8 - Iterative Evolution)
+        // Execute optional seeds if diversity is insufficient OR pressure is high
+        if (uniqueVariants.size() < 2 || eps > 0.7) {
+            context.log("[DARWIN] Executing Generation Round 2 (Optional Seeds)");
+            List<DarwinStrategySeed> optionalSeeds = new ArrayList<>();
+            optionalSeeds.add(DarwinStrategySeed.stabilization());
+            optionalSeeds.add(DarwinStrategySeed.exploration());
+
+            // Enrich prompt with Round 1 results for iterative evolution
+            String round2Prompt = basePrompt + "\n\nPREVIOUS CANDIDATE STRATEGIES (ROUND 1):\n";
+            for (JSONObject v : uniqueVariants) {
+                round2Prompt += "- " + v.optString("strategy") + "\n";
+            }
+            round2Prompt += "\nGenerate Round 2 variants that are DIFFERENT or complementary to the above.";
+
+            List<JSONObject> round2Variants = spawner.spawn(goal, optionalSeeds, round2Prompt, context);
+            uniqueVariants.addAll(round2Variants);
+            // Deduplicate entire set
+            uniqueVariants = diversityAnalyzer.analyze(uniqueVariants, context);
         }
 
-        JSONArray array = JsonUtils.extractJsonArrayFlexible(response);
-        if (array == null) {
-            context.log("[DARWIN] ERROR: Failed to extract variants from AI response. Check format.");
-            throw new Exception("Invalid AI response for variants: " + response);
+        // 8. Synthetic Recovery (Phase 6)
+        DarwinSyntheticVariantFactory syntheticFactory = new DarwinSyntheticVariantFactory();
+        if (uniqueVariants.isEmpty()) {
+            uniqueVariants.add(syntheticFactory.synthesizeImplementation(goal));
+        }
+        if (uniqueVariants.size() < 2) {
+            uniqueVariants.add(syntheticFactory.synthesizeAnalytical(uniqueVariants.get(0), goal));
         }
 
+        // 9. Fitness Ranking
+        DarwinFitnessRanker ranker = new DarwinFitnessRanker();
+        ranker.rank(uniqueVariants);
+
+        // 10. Map to Model
         List<BranchVariant> variants = new ArrayList<>();
-        for (int i = 0; i < array.length(); i++) {
-            JSONObject obj = array.optJSONObject(i);
-            if (obj == null) {
-                context.log("[DARWIN] WARNING: Variant at index " + i + " is not a JSON object. Skipping.");
-                continue;
-            }
-            BranchVariant v = new BranchVariant();
-            v.setId(obj.optString("id", "v" + i));
-            v.setBranchId(v.getId());
-            v.setLineageId(context.getSessionId());
-            v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
-            v.setStrategyType(obj.optString("strategy_type", "UNKNOWN"));
-            v.setStrategy(obj.optString("strategy", "unknown"));
-            v.setSemanticAnchor(v.getStrategy());
-            v.setMutationTrace("Generated in phase: " + currentPhase);
-            v.setScore(obj.optDouble("score", 0.0));
-            String suffix = obj.optString("suffix", "variant-" + i);
-            v.setBranchName("exp/" + sanitize(goal) + "/" + sanitize(suffix));
-            v.setSurvivalArgument(obj.optString("survival_argument", "none"));
-            v.setTradeoffs(obj.optString("tradeoffs", "none"));
-            v.setFailureRisks(obj.optString("failure_risks", "none"));
-
-            // Initialize Trajectory metadata
-            Trajectory t = new Trajectory(v.getId(), v.getStrategy());
-            t.setProsConsAnalysis(obj.optString("pros_cons", "none"));
-            t.setSemanticJustification(obj.optString("semantic_justification", "none"));
-            t.setFitnessScore(v.getScore());
-
-            // Darwinian Lineage Tracking
-            if (trajectory != null) {
-                t.setParentTrajectoryId(trajectory.getTrajectoryId());
-                trajectory.addChildTrajectoryId(t.getTrajectoryId());
-                t.getMutationLineage().addAll(trajectory.getMutationLineage());
-            }
-            t.addMutationToLineage(v.getStrategy());
-
-            v.setTrajectoryId(t.getTrajectoryId());
-            if (memoryService != null && memoryService.getTrajectoryMemory() != null) {
-                memoryService.getTrajectoryMemory().recordTrajectory(t);
-            }
-
-            JSONArray stepsArr = obj.optJSONArray("projected_steps");
-            if (stepsArr != null) {
-                for (int j = 0; j < stepsArr.length(); j++) {
-                    v.getProjectedSteps().add(stepsArr.getString(j));
-                }
-            }
-
-            JSONArray outputsArr = obj.optJSONArray("expected_outputs");
-            if (outputsArr != null) {
-                for (int j = 0; j < outputsArr.length(); j++) {
-                    v.getExpectedOutputs().add(outputsArr.getString(j));
-                }
-            }
-
-            // Parse Actions
-            JSONArray actionsArr = obj.optJSONArray("actions");
-            if (actionsArr != null) {
-                for (int j = 0; j < actionsArr.length(); j++) {
-                    JSONObject aObj = actionsArr.getJSONObject(j);
-                    BranchVariant.Action action = new BranchVariant.Action();
-                    action.setDomain(aObj.optString("domain"));
-                    action.setOperation(aObj.optString("operation"));
-                    action.setTarget(aObj.optString("target"));
-                    action.setDescription(aObj.optString("description"));
-                    v.getActions().add(action);
-                }
-            }
-
-            // Parse Hypothesis
-            JSONObject hypObj = obj.optJSONObject("hypothesis");
-            if (hypObj != null) {
-                BranchVariant.Hypothesis hyp = new BranchVariant.Hypothesis();
-                hyp.setDescription(hypObj.optString("description"));
-                JSONArray effectsArr = hypObj.optJSONArray("expected_effects");
-                if (effectsArr != null) {
-                    for (int j = 0; j < effectsArr.length(); j++) {
-                        hyp.getExpectedEffects().add(effectsArr.getString(j));
-                    }
-                }
-                v.setHypothesis(hyp);
-            }
-
-            // Parse Expected Effect
-            JSONObject effectObj = obj.optJSONObject("expected_effect");
-            if (effectObj != null) {
-                BranchVariant.ExpectedEffect effect = new BranchVariant.ExpectedEffect();
-                effect.setShortTerm(effectObj.optString("short_term"));
-                effect.setLongTerm(effectObj.optString("long_term"));
-                effect.setRisk(effectObj.optDouble("risk", 0.5));
-                effect.setReversibility(effectObj.optDouble("reversibility", 1.0));
-                v.setExpectedEffect(effect);
-            }
-
+        for (JSONObject obj : uniqueVariants) {
+            BranchVariant v = mapToBranchVariant(obj, goal, currentPhase, trajectory, context);
             variants.add(v);
-        }
-
-        // ENFORCE DIVERSITY: If 0 or 1 variants are returned, generate synthetic alternatives
-        if (variants.size() < 2) {
-            context.log("[DARWIN] Insufficient variants (" + variants.size() + "). Creating synthetic diversity fallback.");
-
-            if (variants.isEmpty()) {
-                BranchVariant v0 = new BranchVariant();
-                v0.setId("v-synthetic-impl");
-                v0.setBranchId(v0.getId());
-                v0.setLineageId(context.getSessionId());
-                v0.setActivationState(BranchVariant.ActivationState.ARCHIVED);
-                v0.setStrategyType("IMPLEMENTATION");
-                v0.setStrategy("Basic implementation of: " + goal);
-                v0.setMutationTrace("Synthetic implementation fallback.");
-                v0.setScore(0.6);
-                v0.setBranchName("exp/" + sanitize(goal) + "/impl-fallback");
-                v0.setSurvivalArgument("Failsafe implementation branch.");
-                v0.setTradeoffs("Basic, direct approach.");
-                v0.setFailureRisks("Minimum complexity.");
-
-                BranchVariant.Action a0 = new BranchVariant.Action();
-                a0.setDomain("file");
-                a0.setOperation("WRITE");
-                a0.setTarget("README_DIVERSITY.md");
-                a0.setDescription("Initialization of goal: " + goal);
-                v0.getActions().add(a0);
-                variants.add(v0);
-            }
-
-            BranchVariant v1 = variants.get(0);
-            BranchVariant v2 = new BranchVariant();
-            v2.setId("v-synthetic-diversity");
-            v2.setBranchId(v2.getId());
-            v2.setLineageId(context.getSessionId());
-            v2.setActivationState(BranchVariant.ActivationState.ARCHIVED);
-            v2.setStrategyType("ANALYTICAL");
-            v2.setStrategy("Meta-Analysis: " + v1.getStrategy());
-            v2.setMutationTrace("Synthetic diversity fallback.");
-            v2.setScore(0.5);
-            v2.setBranchName("exp/" + sanitize(goal) + "/diversity-fallback");
-            v2.setSurvivalArgument("Ensures Darwinian selection diversity when the LLM is overly convergent.");
-            v2.setTradeoffs("Higher safety, lower implementation velocity.");
-            v2.setFailureRisks("Low risk, analytical only.");
-
-            BranchVariant.Action a = new BranchVariant.Action();
-            a.setDomain("structure");
-            a.setOperation("ANALYZE");
-            a.setTarget(".");
-            a.setDescription("Perform a risk analysis of the primary proposed strategy: " + v1.getStrategy());
-            v2.getActions().add(a);
-
-            variants.add(v2);
         }
 
         // PERSISTENCE: Save successful historical mutation patterns
         persistSuccessfulPatterns(variants, context);
 
         return variants;
+    }
+
+    private BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory, TaskContext context) {
+        BranchVariant v = new BranchVariant();
+        v.setId(obj.optString("id", "v-" + System.currentTimeMillis()));
+        v.setBranchId(v.getId());
+        v.setLineageId(context.getSessionId());
+        v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
+        v.setStrategyType(obj.optString("strategy_type", "UNKNOWN"));
+        v.setStrategy(obj.optString("strategy", "unknown"));
+        v.setSemanticAnchor(v.getStrategy());
+        v.setMutationTrace("Generated in phase: " + currentPhase);
+        v.setScore(obj.optDouble("score", 0.0));
+        String suffix = obj.optString("suffix", "variant");
+        v.setBranchName("exp/" + sanitize(goal) + "/" + sanitize(suffix));
+        v.setSurvivalArgument(obj.optString("survival_argument", "none"));
+        v.setTradeoffs(obj.optString("tradeoffs", "none"));
+        v.setFailureRisks(obj.optString("failure_risks", "none"));
+
+        // Initialize Trajectory metadata
+        Trajectory t = new Trajectory(v.getId(), v.getStrategy());
+        t.setProsConsAnalysis(obj.optString("pros_cons", "none"));
+        t.setSemanticJustification(obj.optString("semantic_justification", "none"));
+        t.setFitnessScore(v.getScore());
+
+        // Darwinian Lineage Tracking
+        if (trajectory != null) {
+            t.setParentTrajectoryId(trajectory.getTrajectoryId());
+            trajectory.addChildTrajectoryId(t.getTrajectoryId());
+            t.getMutationLineage().addAll(trajectory.getMutationLineage());
+        }
+        t.addMutationToLineage(v.getStrategy());
+
+        v.setTrajectoryId(t.getTrajectoryId());
+        if (memoryService != null && memoryService.getTrajectoryMemory() != null) {
+            memoryService.getTrajectoryMemory().recordTrajectory(t);
+        }
+
+        JSONArray stepsArr = obj.optJSONArray("projected_steps");
+        if (stepsArr != null) {
+            for (int j = 0; j < stepsArr.length(); j++) {
+                v.getProjectedSteps().add(stepsArr.getString(j));
+            }
+        }
+
+        JSONArray outputsArr = obj.optJSONArray("expected_outputs");
+        if (outputsArr != null) {
+            for (int j = 0; j < outputsArr.length(); j++) {
+                v.getExpectedOutputs().add(outputsArr.getString(j));
+            }
+        }
+
+        // Parse Actions
+        JSONArray actionsArr = obj.optJSONArray("actions");
+        if (actionsArr != null) {
+            for (int i = 0; i < actionsArr.length(); i++) {
+                JSONObject aObj = actionsArr.getJSONObject(i);
+                BranchVariant.Action action = new BranchVariant.Action();
+                action.setDomain(aObj.optString("domain"));
+                action.setOperation(aObj.optString("operation"));
+                action.setTarget(aObj.optString("target"));
+                action.setDescription(aObj.optString("description"));
+                v.getActions().add(action);
+            }
+        }
+
+        // Parse Hypothesis
+        JSONObject hypObj = obj.optJSONObject("hypothesis");
+        if (hypObj != null) {
+            BranchVariant.Hypothesis hyp = new BranchVariant.Hypothesis();
+            hyp.setDescription(hypObj.optString("description"));
+            JSONArray effectsArr = hypObj.optJSONArray("expected_effects");
+            if (effectsArr != null) {
+                for (int j = 0; j < effectsArr.length(); j++) {
+                    hyp.getExpectedEffects().add(effectsArr.getString(j));
+                }
+            }
+            v.setHypothesis(hyp);
+        }
+
+        // Parse Expected Effect
+        JSONObject effectObj = obj.optJSONObject("expected_effect");
+        if (effectObj != null) {
+            BranchVariant.ExpectedEffect effect = new BranchVariant.ExpectedEffect();
+            effect.setShortTerm(effectObj.optString("short_term"));
+            effect.setLongTerm(effectObj.optString("long_term"));
+            effect.setRisk(effectObj.optDouble("risk", 0.5));
+            effect.setReversibility(effectObj.optDouble("reversibility", 1.0));
+            v.setExpectedEffect(effect);
+        }
+
+        return v;
     }
 
     private void persistSuccessfulPatterns(List<BranchVariant> variants, TaskContext context) {
