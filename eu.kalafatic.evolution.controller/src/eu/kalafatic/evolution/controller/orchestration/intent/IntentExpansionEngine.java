@@ -82,6 +82,23 @@ public class IntentExpansionEngine extends BaseAiAgent {
     public IntentExpansionResult expand(String prompt, TaskContext context) throws Exception {
         context.log("[INTENT EXPANSION] Analyzing intent space for: " + prompt);
 
+        // FAST BYPASS: Detect direct variant selection commands
+        String lower = prompt.toLowerCase().trim();
+        if (lower.startsWith("select v") || lower.startsWith("approve variant v")) {
+            context.log("[INTENT EXPANSION] Detected variant selection command. Bypassing LLM expansion.");
+            IntentExpansionResult result = new IntentExpansionResult();
+            result.setOriginalPrompt(prompt);
+            result.setState(InterpretationState.CLEAR);
+            result.setDominantIntent(prompt);
+            result.setDominantConfidence(1.0);
+
+            IntentConfidence c = new IntentConfidence();
+            c.setOverallConfidence(1.0);
+            c.setRationale("Direct variant selection command");
+            result.setConfidence(c);
+            return result;
+        }
+
         // PERSISTENCE: Check Semantic Workspace for prior resolutions
         List<WorkspaceArtifact> priorConclusions = context.getSemanticWorkspace().findArtifactsByType("clarification-conclusion");
         String priorContext = "";
