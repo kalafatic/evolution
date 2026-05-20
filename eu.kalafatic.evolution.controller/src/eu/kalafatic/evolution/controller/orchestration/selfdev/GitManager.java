@@ -95,8 +95,13 @@ public class GitManager {
     }
 
     public void rollback() throws Exception {
-        // Correcting regression: reset --hard HEAD clears uncommitted dirty state without destroying history
+        // Hardening: reset --hard HEAD clears uncommitted dirty state, clean -fd removes untracked pollution.
         gitTool.execute("reset --hard HEAD", root, null);
+        try {
+            gitTool.execute("clean -fd", root, null);
+        } catch (Exception e) {
+            // Silently ignore clean failures if git is in a weird state
+        }
     }
 
     public void createWorktree(String branch, String path) throws Exception {

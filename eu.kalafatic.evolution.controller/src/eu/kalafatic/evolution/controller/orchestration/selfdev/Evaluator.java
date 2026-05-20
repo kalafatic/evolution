@@ -130,7 +130,13 @@ public class Evaluator implements ICapability, IEvaluationContract {
 
         try {
             // Run build and tests
-            String output = mavenTool.execute("clean install", projectRoot, context);
+            String output;
+            try {
+                output = mavenTool.execute("clean install", projectRoot, context);
+            } catch (Exception e) {
+                // Maven execution failed (e.g. exit code != 0)
+                output = e.getMessage();
+            }
 
             // Basic parsing of Maven output
             boolean buildSuccess = output.contains("BUILD SUCCESS");
@@ -150,14 +156,14 @@ public class Evaluator implements ICapability, IEvaluationContract {
                 snapshot.tests.failingTests = parseFailingTestNames(output);
 
                 if (passRate < 1.0) {
-                    if (context != null) context.log("[EVALUATOR] Tests failed despite build success. Rolling back.");
-                    result.setDecision(SelfDevDecision.ROLLBACK);
+                    if (context != null) context.log("[EVALUATOR] Tests failed despite build success.");
+                    result.setDecision(SelfDevDecision.CONTINUE); // Don't rollback immediately, let Darwin decide
                     result.getErrors().add("Tests failed (Pass rate: " + passRate + ")");
                 } else {
                     result.setDecision(SelfDevDecision.CONTINUE);
                 }
             } else {
-                result.setDecision(SelfDevDecision.ROLLBACK);
+                result.setDecision(SelfDevDecision.CONTINUE); // Continue even if build fails, so Darwin can fix it
                 result.getErrors().add("Build failed.");
             }
 

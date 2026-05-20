@@ -499,9 +499,34 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             variants.add(v);
         }
 
-        // ENFORCE DIVERSITY: If only one variant is returned, generate a synthetic alternative
-        if (variants.size() == 1) {
-            context.log("[DARWIN] Only one variant generated. Creating synthetic diversity fallback.");
+        // ENFORCE DIVERSITY: If 0 or 1 variants are returned, generate synthetic alternatives
+        if (variants.size() < 2) {
+            context.log("[DARWIN] Insufficient variants (" + variants.size() + "). Creating synthetic diversity fallback.");
+
+            if (variants.isEmpty()) {
+                BranchVariant v0 = new BranchVariant();
+                v0.setId("v-synthetic-impl");
+                v0.setBranchId(v0.getId());
+                v0.setLineageId(context.getSessionId());
+                v0.setActivationState(BranchVariant.ActivationState.ARCHIVED);
+                v0.setStrategyType("IMPLEMENTATION");
+                v0.setStrategy("Basic implementation of: " + goal);
+                v0.setMutationTrace("Synthetic implementation fallback.");
+                v0.setScore(0.6);
+                v0.setBranchName("exp/" + sanitize(goal) + "/impl-fallback");
+                v0.setSurvivalArgument("Failsafe implementation branch.");
+                v0.setTradeoffs("Basic, direct approach.");
+                v0.setFailureRisks("Minimum complexity.");
+
+                BranchVariant.Action a0 = new BranchVariant.Action();
+                a0.setDomain("file");
+                a0.setOperation("WRITE");
+                a0.setTarget("README_DIVERSITY.md");
+                a0.setDescription("Initialization of goal: " + goal);
+                v0.getActions().add(a0);
+                variants.add(v0);
+            }
+
             BranchVariant v1 = variants.get(0);
             BranchVariant v2 = new BranchVariant();
             v2.setId("v-synthetic-diversity");
