@@ -288,9 +288,9 @@ window.ChatApp.Renderer = {
                 data = JSON.parse(text);
             }
 
-            const variants = Array.isArray(data) ? data : (data.variants || data.proposals || []);
+            const variants = Array.isArray(data) ? data : (data.variants || data.proposals || data.hypotheses || []);
             if (!Array.isArray(variants)) {
-                 throw new Error("Darwin message must contain an array of variants/proposals");
+                 throw new Error("Darwin message must contain an array of variants/proposals/hypotheses");
             }
 
             const role = (m.agentType || '').toLowerCase();
@@ -307,7 +307,8 @@ window.ChatApp.Renderer = {
 
                 // Simplified Darwin Header
                 let headerHtml = `<div class="branch-header">PROPOSAL ${index + 1}</div>`;
-                if (v.strategy) headerHtml += `<div class="branch-strategy">${v.strategy}</div>`;
+                let strategy = v.strategy || v.description;
+                if (strategy) headerHtml += `<div class="branch-strategy">${strategy}</div>`;
 
                 col.innerHTML = `
                     ${headerHtml}
