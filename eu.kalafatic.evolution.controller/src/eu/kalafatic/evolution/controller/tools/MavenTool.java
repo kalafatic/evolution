@@ -19,6 +19,13 @@ public class MavenTool implements ITool {
     @Override
     public String execute(String command, File workingDir, TaskContext context) throws Exception {
         context.log("Tool [MavenTool]: Executing " + command);
+
+        File pom = new File(workingDir, "pom.xml");
+        if (!pom.exists()) {
+            context.log("Tool [MavenTool]: No pom.xml found in " + workingDir.getAbsolutePath() + ". Skipping execution.");
+            return "SKIPPED: No pom.xml found. Build context initialized.";
+        }
+
         List<String> mavenArgs = new ArrayList<>();
 
         String os = System.getProperty("os.name").toLowerCase();
