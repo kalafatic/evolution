@@ -16,6 +16,7 @@ window.ChatApp.Renderer = {
         div.className = 'message ' + (isUser ? 'user' : 'ai') + ' ' + role;
         div.dataset.index = m.index;
         if (role.includes('approved')) div.classList.add('approved');
+        if (!role.includes('waiting') && (role.includes('darwin') || role.includes('branch'))) div.classList.add('sealed');
 
         const header = document.createElement('div');
         header.className = 'header';
@@ -25,11 +26,11 @@ window.ChatApp.Renderer = {
         const content = document.createElement('div');
         content.className = 'message-content';
 
-        let isDarwin = !isUser && role.includes('darwin') && (m.text.includes('{') || m.text.includes('['));
+        let isDarwin = !isUser && (role.includes('darwin') || role.includes('branch')) && (m.text.includes('{') || m.text.includes('['));
         if (!isDarwin && !isUser) {
              try {
                 const data = JSON.parse(m.text);
-                if (data.variants || data.proposals || (Array.isArray(data) && data.length > 0 && data[0].strategy)) isDarwin = true;
+                if (data.variants || data.proposals || (Array.isArray(data) && data.length > 0 && (data[0].strategy || data[0].id || data[0].description))) isDarwin = true;
              } catch(e) {}
         }
 

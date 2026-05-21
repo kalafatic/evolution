@@ -1473,7 +1473,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
         }
 
         if (content.contains("[DARWIN_BRANCHES]")) {
-            agentType = "darwin-branches";
+            agentType = "darwin-branches waiting";
             content = content.replace("[DARWIN_BRANCHES]", "").trim();
             priority = MessagePriority.USER_ACTION_REQUIRED;
         }
@@ -1483,6 +1483,8 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
         if (approvedMatcher.find()) {
             String variantId = approvedMatcher.group(1);
             if (!agentType.contains("approved")) {
+                agentType = agentType.replace("waiting", "").trim();
+                if (agentType.isEmpty()) agentType = "ai";
                 agentType += " approved:" + variantId;
             }
             content = content.replace(approvedMatcher.group(0), "").trim();

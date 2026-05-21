@@ -701,6 +701,18 @@ public class ChatGroup extends AEvoGroup {
                         for (ChatMessage existing : s.getMessages()) {
                             String oldAgentType = existing.getAgentType();
                             if (oldAgentType != null && oldAgentType.contains("waiting")) {
+                                // Darwin branches are special: they should only be sealed when they are specifically resolved,
+                                // or when a brand new set of darwin-branches arrive (indicating a new iteration).
+                                boolean isNewDarwin = newAgentType.contains("darwin") || newAgentType.contains("branch");
+                                boolean isOldDarwin = oldAgentType.contains("darwin") || oldAgentType.contains("branch");
+
+                                if (isOldDarwin && !isNewDarwin && !newAgentType.contains("final-response") && !newAgentType.contains("error")) {
+                                    // Keep Darwin branches interactive even if user messages or logs arrive.
+                                    // They only seal when a NEW set of darwin-branches (next iteration) arrives,
+                                    // or when the task reaches a terminal state (final-response/error).
+                                    continue;
+                                }
+
                                 existing.setAgentType(oldAgentType.replace("waiting", "response").trim());
                             }
                         }
