@@ -43,19 +43,26 @@ public class DarwinSyntheticVariantFactory {
         JSONObject impl = new JSONObject();
         impl.put("id", "v-synthetic-impl-" + System.currentTimeMillis());
         impl.put("strategy_type", DarwinStrategyType.IMPLEMENTATION.name());
-        impl.put("strategy", "Base implementation of: " + goal);
-        impl.put("survival_argument", "Provides a fallback direct implementation path.");
-        impl.put("tradeoffs", "Direct approach, minimal abstraction.");
-        impl.put("failure_risks", "Standard implementation risks.");
-        impl.put("suffix", "impl-fallback");
-        impl.put("score", 0.5);
+        impl.put("strategy", "Direct implementation: " + goal);
+        impl.put("survival_argument", "Provides a deterministic implementation path for simple/atomic tasks.");
+        impl.put("tradeoffs", "Prioritizes immediate results over complex architectural abstraction.");
+        impl.put("failure_risks", "Minimal risks for scoped implementation.");
+        impl.put("suffix", "impl-direct");
+        impl.put("score", 0.85);
+
+        // Heuristic Target Resolution
+        String target = "implementation.txt";
+        String lower = goal.toLowerCase();
+        if (lower.contains("java") || lower.contains("class")) target = "GeneratedClass.java";
+        else if (lower.contains("readme")) target = "README.md";
+        else if (lower.contains("script") || lower.contains("sh")) target = "script.sh";
 
         JSONArray actions = new JSONArray();
         JSONObject action = new JSONObject();
         action.put("domain", "file");
         action.put("operation", "WRITE");
-        action.put("target", "implementation_plan.md");
-        action.put("description", "Document the implementation plan for: " + goal);
+        action.put("target", target);
+        action.put("description", goal);
         actions.put(action);
         impl.put("actions", actions);
 

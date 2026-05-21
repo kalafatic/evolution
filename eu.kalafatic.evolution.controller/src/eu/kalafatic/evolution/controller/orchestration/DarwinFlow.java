@@ -161,6 +161,17 @@ public class DarwinFlow implements IOrchestrationFlow {
             ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
             context.log("[KERNEL] Clarification Strategy: " + strategy);
 
+            // FAST FORWARD: Skip discovery phases for simple/atomic goals
+            AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
+            if (atomicAnalysis != null && atomicAnalysis.getConfidence() > 0.8 && !atomicAnalysis.isMultiStep()) {
+                context.log("[KERNEL] Simple goal detected. Fast-forwarding to implementation planning.");
+                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.IMPLEMENTATION_PLAN));
+                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                res.setSuccess(true);
+                res.setDecision(SelfDevDecision.CONTINUE);
+                return res;
+            }
+
             if (strategy == ClarificationPlanner.Strategy.BRANCH_PARALLEL) {
                 context.log("[KERNEL] Ambiguity detected but evolvable. Spawning parallel implementation branches.");
                 state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));

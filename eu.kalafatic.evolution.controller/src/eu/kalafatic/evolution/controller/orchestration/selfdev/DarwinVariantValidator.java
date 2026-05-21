@@ -66,9 +66,21 @@ public class DarwinVariantValidator {
             return null;
         }
 
-        // 6. Validate minimum completeness
-        if (json.optString("strategy").length() < 10) {
+        // 6. Validate minimum completeness and PROHIBIT PLACEHOLDERS
+        String strategy = json.optString("strategy");
+        if (strategy.length() < 10) {
             if (context != null) context.log("[VALIDATOR] Error: Strategy description too short.");
+            return null;
+        }
+
+        if (strategy.toLowerCase().contains("high-level intent description") || strategy.contains("<") || strategy.contains(">")) {
+            if (context != null) context.log("[VALIDATOR] Error: Variant contains literal placeholder text in 'strategy'.");
+            return null;
+        }
+
+        String survival = json.optString("survival_argument");
+        if (survival.toLowerCase().contains("justification of why this trajectory is valuable") || survival.contains("<") || survival.contains(">")) {
+            if (context != null) context.log("[VALIDATOR] Error: Variant contains literal placeholder text in 'survival_argument'.");
             return null;
         }
 
