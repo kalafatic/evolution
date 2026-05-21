@@ -249,3 +249,8 @@
 .message.waiting .branch-column::after {
     display: none !important;
 }
+
+/* SEALED state for old iterations: hide interactive buttons */
+.message.sealed .branch-btn {
+    display: none !important;
+}
