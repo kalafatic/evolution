@@ -1282,6 +1282,10 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		handleExecuteProposal("Execute the simplest working solution.");
 	}
 
+	public void handleForceSolution() {
+		handleExecuteProposal("Force Solution");
+	}
+
 	public void handleEditDarwinVariant(int index, String variantId, String text) {
 		this.editingMessageIndex = index;
 		this.editingVariantId = variantId;

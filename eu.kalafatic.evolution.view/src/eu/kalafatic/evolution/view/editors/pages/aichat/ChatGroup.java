@@ -416,8 +416,15 @@ public class ChatGroup extends AEvoGroup {
                             handleApproveDarwinVariant(index, text);
                             page.handleExecuteProposal("Approve variant " + text);
                             break;
+                        case "rejectDarwinVariant":
+                            handleRejectDarwinVariant(index, text);
+                            page.handleExecuteProposal("Reject variant " + text);
+                            break;
                         case "editDarwinVariant":
                             handleEditDarwinVariant(index, text);
+                            break;
+                        case "forceSolution":
+                            page.handleForceSolution();
                             break;
                         case "create":
                             page.provideApproval(true);
@@ -505,6 +512,22 @@ public class ChatGroup extends AEvoGroup {
 
             if (!agentType.contains("approved")) {
                 msg.setAgentType(agentType + " approved");
+            }
+            refreshBrowser();
+        }
+    }
+
+    public void handleRejectDarwinVariant(int index, String variantId) {
+        if (currentSession != null && index >= 0 && index < currentSession.getMessages().size()) {
+            ChatMessage msg = currentSession.getMessages().get(index);
+            String agentType = msg.getAgentType();
+            if (agentType == null) agentType = "darwin";
+
+            agentType = agentType.replace("waiting", "").trim();
+            if (agentType.isEmpty()) agentType = "darwin";
+
+            if (!agentType.contains("rejected")) {
+                msg.setAgentType(agentType + " rejected:" + variantId);
             }
             refreshBrowser();
         }
