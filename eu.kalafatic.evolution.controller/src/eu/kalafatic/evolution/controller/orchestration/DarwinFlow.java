@@ -258,31 +258,32 @@ public class DarwinFlow implements IOrchestrationFlow {
             List<BranchVariant> variants = executionPlan.getScheduledVariants();
             context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
 
+            // METADATA PERSISTENCE: Record trajectory analysis for ALL proposals
+            for (BranchVariant v : variants) {
+                TrajectoryAnalysisRecord tar = new TrajectoryAnalysisRecord();
+                tar.setIterationId(iterId);
+                tar.setBranchId(v.getId());
+                tar.setStrategy(v.getStrategy());
+                tar.setFitnessScore(v.getScore());
+                context.getKernelContext().getMemoryService().saveTrajectoryAnalysis(tar);
+            }
+            context.getKernelContext().getMemoryService().flush();
+
             BehaviorProfile profile = context.getBehaviorProfile();
 
             manager.transition(SystemState.PLAN_LOCKED, context);
-            manager.getGitManager().forceCheckout(snapshotBranch);
-            manager.transition(SystemState.EXECUTING, context);
-
-            List<BranchVariant> activeVariants = variants.stream()
-                    .filter(v -> v.getActivationState() == BranchVariant.ActivationState.ACTIVE)
-                    .collect(Collectors.toList());
-
-            if (!activeVariants.isEmpty()) {
-                evaluateVariantsInternal(activeVariants, manager.getTaskPlanner(), currentIterationModelImpl, context, executionPlan, baseCommit);
-            } else {
-                evaluateVariantsInternal(variants, manager.getTaskPlanner(), currentIterationModelImpl, context, executionPlan, baseCommit);
-            }
 
             BranchVariant selectedVariant = null;
             String manualId = null;
             if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) || !context.isAutoApprove()) {
-                context.log("[KERNEL] Darwin Evolution: Stopping for user review (Auto-Approve: " + context.isAutoApprove() + ")");
-                StringBuilder sb = new StringBuilder("Darwin generated " + variants.size() + " evaluated proposals:\n");
+                manager.transition(SystemState.CLARIFYING, context);
+                context.log("[KERNEL] Darwin Evolution: Pausing for variant selection (Manual Mode).");
+
+                StringBuilder sb = new StringBuilder("Darwin generated " + variants.size() + " proposals for your review:\n");
                 for (BranchVariant v : variants) {
-                    sb.append(String.format("- [%s] %s (Score: %.2f)\n", v.getId(), v.getStrategy(), v.getScore()));
+                    sb.append(String.format("- [%s] %s (Predicted Score: %.2f)\n", v.getId(), v.getStrategy(), v.getScore()));
                 }
-                sb.append("\nReview and select one to proceed (e.g. 'Select v0'), or reject to refine.");
+                sb.append("\nSelect a variant to execute (e.g. 'Select v0'), or reject to refine.");
 
                 String input = context.requestInput(sb.toString()).get();
                 if ("Rejected".equalsIgnoreCase(input)) {
@@ -304,7 +305,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 }
             }
 
-            // SINGLE AUTHORITY DECISION CALL
+            // SINGLE AUTHORITY DECISION CALL - Selection happens BEFORE execution
             eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = manager.decide(iterId, variants, context, manualId);
 
             String finalWinnerId = decision.getSelectedVariantId();
@@ -322,25 +323,44 @@ public class DarwinFlow implements IOrchestrationFlow {
                         vObj.put("strategy", v.getStrategy());
                         vObj.put("strategy_type", v.getStrategyType());
                         vObj.put("score", v.getScore());
-                        if (v.getId().equals(finalWinnerId)) {
-                            vObj.put("approved", true);
-                        } else {
-                            vObj.put("approved", false);
-                        }
+                        vObj.put("approved", v.getId().equals(finalWinnerId));
                         updatedVariants.put(vObj);
                     }
                     context.log("[APPROVED:" + finalWinnerId + "] [DARWIN_BRANCHES] " + updatedVariants.toString());
                 }
             }
 
-            if (selectedVariant != null && currentIterationModelImpl != null) {
+            if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE && selectedVariant.getScore() < 0.3)) {
+                context.log("[KERNEL] Darwin Evolution: No viable winner selected or winner score too low.");
+                manager.getGitManager().forceCheckout(originalBranch);
+                manager.getGitManager().rollback();
+                manager.transition(SystemState.FAILED, context);
+                return manager.failedResult();
+            }
+
+            if (currentIterationModelImpl != null) {
                 currentIterationModelImpl.setSurvivalArgument(selectedVariant.getSurvivalArgument());
                 currentIterationModelImpl.setTradeoffs(selectedVariant.getTradeoffs());
                 currentIterationModelImpl.setFailureRisks(selectedVariant.getFailureRisks());
                 currentIterationModelImpl.setJustification(selectedVariant.getStrategy());
             }
 
-            if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE && selectedVariant.getScore() < 0.5)) {
+            // EXECUTION PHASE - Only for the winner
+            manager.getGitManager().forceCheckout(snapshotBranch);
+            manager.transition(SystemState.EXECUTING, context);
+
+            context.log("[KERNEL] Executing winner variant: " + selectedVariant.getId() + " (" + selectedVariant.getStrategy() + ")");
+            // Provision branch for winner
+            manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
+
+            evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit);
+
+            // SYNONIMOUS WITH evaluateVariantsInternal in old flow:
+            ResultSynthesizer synthesizer = new ResultSynthesizer();
+            synthesizer.synthesize(List.of(selectedVariant), context);
+
+            if (!selectedVariant.isSuccess()) {
+                context.log("[KERNEL] Winner variant execution failed.");
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.getGitManager().rollback();
                 manager.transition(SystemState.FAILED, context);
@@ -421,47 +441,6 @@ public class DarwinFlow implements IOrchestrationFlow {
             manager.transition(SystemState.FAILED, context);
             throw e;
         }
-    }
-
-    public void evaluateVariantsInternal(List<BranchVariant> variants, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, Iteration iteration, TaskContext context, ScheduledExecutionPlan executionPlan, String baseCommit) throws Exception {
-        String baseBranch = manager.getGitManager().getCurrentBranch();
-        for (BranchVariant variant : variants) {
-            // IMMUTABLE BRANCH PROVISIONING
-            manager.getGitManager().createBranchFrom(baseBranch, variant.getBranchName());
-        }
-
-        boolean parallelDisabled = "true".equalsIgnoreCase(System.getProperty("evolution.darwin.parallel.disabled"));
-        try {
-            if (parallelDisabled) {
-                context.log("[KERNEL] Darwin parallel execution disabled. Evaluating variants sequentially.");
-                for (BranchVariant variant : variants) {
-                    evaluateVariantParallel(variant, planner, context, baseCommit);
-                }
-            } else {
-                List<CompletableFuture<BranchVariant>> futures = variants.stream()
-                    .map(variant -> CompletableFuture.supplyAsync(() -> evaluateVariantParallel(variant, planner, context, baseCommit), variantExecutor))
-                    .collect(Collectors.toList());
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-            }
-        } catch (Exception e) {
-            context.log("[KERNEL] Variant evaluation error: " + e.getMessage());
-        }
-
-        ResultSynthesizer synthesizer = new ResultSynthesizer();
-        synthesizer.synthesize(variants, context);
-
-        for (BranchVariant v : variants) {
-            TrajectoryAnalysisRecord tar = new TrajectoryAnalysisRecord();
-            tar.setIterationId(iteration.getId());
-            tar.setBranchId(v.getId());
-            tar.setStrategy(v.getStrategy());
-            tar.setFitnessScore(v.getScore());
-            context.getKernelContext().getMemoryService().saveTrajectoryAnalysis(tar);
-        }
-
-        context.getKernelContext().getMemoryService().flush();
-
-        // SELECTED VARIANT DETERMINATION IS NOW DEFERRED TO SINGLE AUTHORITY CALL IN runDarwin
     }
 
     private BranchVariant evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context, String baseCommit) {

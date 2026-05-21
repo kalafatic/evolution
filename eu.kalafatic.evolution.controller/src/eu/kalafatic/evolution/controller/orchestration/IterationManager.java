@@ -500,14 +500,9 @@ public class IterationManager {
             return router.resolveFlow(context.getPlatformMode(), aiService, this);
         }
 
-        // Priority for Darwinian Reasoning if enabled and state changes are expected
-        if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE) && hasStateChangeIntent) {
-            context.log("[KERNEL] Darwin Reasoning enabled and state-change intent detected. Routing to DarwinFlow.");
-            return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
-        }
-
-        if (hasStateChangeIntent) {
-            context.log("[KERNEL] State-change intent detected. Routing to DarwinFlow.");
+        // Priority for Darwinian Reasoning if enabled or state changes are expected
+        if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE) || hasStateChangeIntent) {
+            context.log("[KERNEL] Darwin Reasoning enabled or state-change intent detected. Routing to DarwinFlow.");
             return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
         }
 
