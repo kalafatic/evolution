@@ -45,7 +45,7 @@ public class TaskContext {
     private CompletableFuture<Boolean> approvalFuture;
     private CompletableFuture<String> inputFuture;
     private volatile boolean paused = false;
-    private volatile boolean autoApprove = false;
+    private volatile Boolean localAutoApprove = null;
     private PlatformMode platformMode = null;
     private eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile behaviorProfile = null;
     private final SystemStateHolder stateHolder = new SystemStateHolder();
@@ -231,17 +231,17 @@ public class TaskContext {
     }
 
     public boolean isAutoApprove() {
+        if (localAutoApprove != null) {
+            return localAutoApprove;
+        }
         if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
             return orchestrator.getAiChat().getPromptInstructions().isAutoApprove();
         }
-        return autoApprove;
+        return false;
     }
 
     public void setAutoApprove(boolean autoApprove) {
-        this.autoApprove = autoApprove;
-        if (orchestrator != null && orchestrator.getAiChat() != null &&orchestrator.getAiChat().getPromptInstructions() != null) {
-        	orchestrator.getAiChat().getPromptInstructions().setAutoApprove(autoApprove);
-        }
+        this.localAutoApprove = autoApprove;
     }
 
     public void checkPause() {
