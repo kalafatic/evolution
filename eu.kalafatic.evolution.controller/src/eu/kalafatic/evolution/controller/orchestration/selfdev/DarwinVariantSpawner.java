@@ -74,37 +74,37 @@ public class DarwinVariantSpawner {
                seed.getInstructions() + "\n\n" +
                "CONTEXT AND GOAL:\n" +
                basePrompt + "\n\n" +
-               "REQUIRED SCHEMA:\n" +
+               "REQUIRED SCHEMA (CRITICAL: DO NOT echo placeholder text, provide REAL technical values):\n" +
                "{\n" +
                "  \"id\": \"v-" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"strategy_type\": \"" + seed.getType() + "\",\n" +
-               "  \"strategy\": \"high-level intent description\",\n" +
-               "  \"survival_argument\": \"detailed justification of why this trajectory is valuable\",\n" +
-               "  \"tradeoffs\": \"explicit technical tradeoffs\",\n" +
-               "  \"failure_risks\": \"potential risks and failure modes\",\n" +
-               "  \"pros_cons\": \"analysis of this specific hypothesis\",\n" +
-               "  \"semantic_justification\": \"why this should exist in the architecture\",\n" +
-               "  \"projected_steps\": [\"step 1\", \"step 2\"],\n" +
-               "  \"expected_outputs\": [\"artifact 1\"],\n" +
-               "  \"score\": 0.8,\n" +
+               "  \"strategy\": \"<precise engineering strategy for this task>\",\n" +
+               "  \"survival_argument\": \"<why this branch should survive based on technical merit>\",\n" +
+               "  \"tradeoffs\": \"<technical tradeoffs of this specific approach>\",\n" +
+               "  \"failure_risks\": \"<potential failure modes for this branch>\",\n" +
+               "  \"pros_cons\": \"<detailed pros/cons analysis>\",\n" +
+               "  \"semantic_justification\": \"<architectural justification>\",\n" +
+               "  \"projected_steps\": [\"<next logical step 1>\", \"<next logical step 2>\"],\n" +
+               "  \"expected_outputs\": [\"<expected file/artifact 1>\"],\n" +
+               "  \"score\": 0.0-1.0, // Numerical predicted fitness score\n" +
                "  \"suffix\": \"" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"actions\": [\n" +
                "    {\n" +
                "      \"domain\": \"file|test|build|structure\",\n" +
                "      \"operation\": \"WRITE|DELETE|MKDIR|TEST|BUILD|ANALYZE\",\n" +
-               "      \"target\": \"path/to/artifact\",\n" +
-               "      \"description\": \"instruction for this action\"\n" +
+               "      \"target\": \"<actual path or identifier>\",\n" +
+               "      \"description\": \"<specific technical instruction for this action>\"\n" +
                "    }\n" +
                "  ],\n" +
                "  \"hypothesis\": {\n" +
-               "    \"description\": \"causal explanation\",\n" +
-               "    \"expected_effects\": [\"outcome 1\"]\n" +
+               "    \"description\": \"<testable hypothesis for why this works>\",\n" +
+               "    \"expected_effects\": [\"<measurable effect 1>\"]\n" +
                "  },\n" +
                "  \"expected_effect\": {\n" +
-               "    \"short_term\": \"string\",\n" +
-               "    \"long_term\": \"string\",\n" +
-               "    \"risk\": 0.1,\n" +
-               "    \"reversibility\": 1.0\n" +
+               "    \"short_term\": \"<expected result after execution>\",\n" +
+               "    \"long_term\": \"<long-term architectural impact>\",\n" +
+               "    \"risk\": 0.0-1.0, // Risk score\n" +
+               "    \"reversibility\": 0.0-1.0 // Reversibility score\n" +
                "  }\n" +
                "}";
     }

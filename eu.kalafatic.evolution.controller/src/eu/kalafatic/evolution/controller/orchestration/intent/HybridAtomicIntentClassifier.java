@@ -185,15 +185,23 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
             analysis.getSignals().add("broad_scope");
         }
 
+        // High confidence atomic tasks don't strictly require a named target in the prompt (e.g. "create a java class")
+        boolean simpleCreation = (lower.contains("create") || lower.contains("add") || lower.contains("new"))
+                                 && (lower.contains("class") || lower.contains("file") || lower.contains("readme"));
+
+        if (simpleCreation && !analysis.isMultiStep()) {
+            score = Math.max(score, 0.85);
+            analysis.getSignals().add("simple_creation_shortcut");
+        }
+
         analysis.setConfidence(Math.max(0.0, Math.min(1.0, score)));
         analysis.setAtomic(analysis.getConfidence() > 0.6);
         analysis.setDeterministic(analysis.getConfidence() > 0.7);
 
         boolean hasTarget = analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty();
-        // High confidence atomic tasks don't strictly require a named target in the prompt (e.g. "create a java class")
-        boolean simpleCreation = analysis.getConfidence() >= 0.80 && !analysis.isMultiStep();
+        boolean isAtomicCreation = analysis.getConfidence() >= 0.80 && !analysis.isMultiStep();
 
-        analysis.setRequiresPlanning((analysis.getConfidence() < 0.75 || (!hasTarget && !simpleCreation))
+        analysis.setRequiresPlanning((analysis.getConfidence() < 0.75 || (!hasTarget && !isAtomicCreation))
                 || analysis.isMultiStep() || analysis.getSignals().contains("potential_conjunctions"));
 
         return analysis;
