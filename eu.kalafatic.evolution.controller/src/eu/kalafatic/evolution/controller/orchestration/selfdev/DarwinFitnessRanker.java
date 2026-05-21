@@ -47,9 +47,10 @@ public class DarwinFitnessRanker {
             if (specific) score += 0.05;
         }
 
-        // 3. Strategy Type weighting
+        // 3. Strategy Role weighting
         String type = variant.optString("strategy_type");
-        if ("IMPLEMENTATION".equals(type)) score += 0.05; // Prefer implementation if scores are equal
+        if (DarwinStrategyType.EXPLORATION.name().equals(type)) score += 0.05; // Prefer exploration for direct goals
+        if (DarwinStrategyType.STABILIZATION.name().equals(type)) score += 0.03; // Slight preference for stability
 
         return Math.min(1.0, score);
     }

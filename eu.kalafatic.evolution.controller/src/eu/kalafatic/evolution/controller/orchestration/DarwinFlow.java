@@ -341,6 +341,14 @@ public class DarwinFlow implements IOrchestrationFlow {
                         res.setDecision(SelfDevDecision.CONTINUE);
                         manager.transition(SystemState.FAILED, context);
                         return res;
+                    } else if (input.startsWith("Propose:") || input.trim().startsWith("{")) {
+                        context.log("[KERNEL] User injected a new solution proposal. Integrating as a first-class candidate.");
+                        BranchVariant userVariant = createUserVariant(input, goal, context);
+                        variants.add(userVariant);
+
+                        // Metadata for selection: Ensure user variant is visible in the next prompt
+                        context.log("[KERNEL] User variant " + userVariant.getId() + " added to the evolutionary pool.");
+                        // Continue loop to allow selection of this or other variants
                     } else {
                         // High priority guidance text input
                         context.log("[KERNEL] User provided guidance: " + input + ". Refining intent and regenerating variants.");
@@ -409,6 +417,15 @@ public class DarwinFlow implements IOrchestrationFlow {
             // SYNONIMOUS WITH evaluateVariantsInternal in old flow:
             ResultSynthesizer synthesizer = new ResultSynthesizer();
             synthesizer.synthesize(List.of(selectedVariant), context);
+
+            // HYBRID INSIGHT MERGING: Collect insights from non-winning analytical/stabilization branches
+            mergeHybridInsights(variants, selectedVariant, context);
+
+            // Convergence check
+            if (checkConvergence(variants, context)) {
+                context.log("[KERNEL] Convergence detected. Transitioning to final synthesis.");
+                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
+            }
 
             if (!selectedVariant.isSuccess()) {
                 context.log("[KERNEL] Winner variant execution failed.");
@@ -584,6 +601,102 @@ public class DarwinFlow implements IOrchestrationFlow {
                 } catch (Exception e) {}
             }
         }
+    }
+
+    private BranchVariant createUserVariant(String input, String goal, TaskContext context) {
+        BranchVariant v = new BranchVariant();
+        v.setId("v-user-" + System.currentTimeMillis());
+        v.setBranchId(v.getId());
+        v.setLineageId(context.getSessionId());
+        v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
+        v.setStrategyType("USER_PROPOSAL");
+
+        String strategyText = input.startsWith("Propose:") ? input.substring(8).trim() : input;
+
+        if (strategyText.trim().startsWith("{")) {
+            try {
+                JSONObject obj = new JSONObject(strategyText);
+                v.setStrategy(obj.optString("strategy", "User-defined strategy"));
+                v.setSurvivalArgument(obj.optString("survival_argument", "User injection"));
+                v.setTradeoffs(obj.optString("tradeoffs", "Explicit user directive"));
+            } catch (Exception e) {
+                v.setStrategy(strategyText);
+            }
+        } else {
+            v.setStrategy(strategyText);
+            v.setSurvivalArgument("Direct user proposal");
+            v.setTradeoffs("User-defined trajectory");
+        }
+
+        v.setScore(0.95); // User proposals are highly valued
+        v.setBranchName("exp/user/" + sanitize(v.getStrategy()));
+
+        // Record trajectory for tracking
+        Trajectory t = new Trajectory(v.getId(), v.getStrategy());
+        t.setFitnessScore(v.getScore());
+        v.setTrajectoryId(t.getTrajectoryId());
+
+        if (context.getKernelContext().getMemoryService().getTrajectoryMemory() != null) {
+            context.getKernelContext().getMemoryService().getTrajectoryMemory().recordTrajectory(t);
+        }
+
+        return v;
+    }
+
+    private void mergeHybridInsights(List<BranchVariant> variants, BranchVariant winner, TaskContext context) {
+        JSONArray analyticalInsights = new JSONArray();
+        JSONArray stabilizationInsights = new JSONArray();
+
+        for (BranchVariant v : variants) {
+            if (v.getId().equals(winner.getId())) continue;
+
+            JSONObject insight = new JSONObject();
+            insight.put("strategy", v.getStrategy());
+            insight.put("risks", v.getFailureRisks());
+            insight.put("tradeoffs", v.getTradeoffs());
+
+            if ("ANALYTICAL".equals(v.getStrategyType())) {
+                analyticalInsights.put(insight);
+            } else if ("STABILIZATION".equals(v.getStrategyType())) {
+                stabilizationInsights.put(insight);
+            }
+        }
+
+        if (analyticalInsights.length() > 0) {
+            context.getOrchestrationState().getMetadata().put("hybrid_analytical_insights", analyticalInsights);
+            context.log("[DARWIN] Merged " + analyticalInsights.length() + " analytical insights into context.");
+        }
+        if (stabilizationInsights.length() > 0) {
+            context.getOrchestrationState().getMetadata().put("hybrid_stabilization_insights", stabilizationInsights);
+            context.log("[DARWIN] Merged " + stabilizationInsights.length() + " stabilization insights into context.");
+        }
+    }
+
+    private boolean checkConvergence(List<BranchVariant> variants, TaskContext context) {
+        if (variants == null || variants.size() < 2) return false;
+
+        // 1. Fitness Stability: Check if top variants have stabilized at high scores
+        double maxScore = variants.stream().mapToDouble(BranchVariant::getScore).max().orElse(0.0);
+        double avgScore = variants.stream().mapToDouble(BranchVariant::getScore).average().orElse(0.0);
+
+        if (maxScore > 0.9 && (maxScore - avgScore) < 0.05) {
+            context.log("[DARWIN] Strong convergence: Top variants have high and stable fitness.");
+            return true;
+        }
+
+        // 2. Novelty Check: Check if generated variants are repetitive
+        // (This would ideally compare against historical trajectories in TrajectoryMemory)
+
+        return false;
+    }
+
+    private String sanitize(String s) {
+        if (s == null || s.isEmpty()) return "unnamed";
+        String sanitized = s.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-");
+        if (sanitized.startsWith("-")) sanitized = sanitized.substring(1);
+        if (sanitized.endsWith("-")) sanitized = sanitized.substring(0, sanitized.length() - 1);
+        if (sanitized.isEmpty()) return "unnamed";
+        return sanitized.substring(0, Math.min(sanitized.length(), 30));
     }
 
     private void deleteDirectory(File directory) {
