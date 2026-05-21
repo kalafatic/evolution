@@ -33,10 +33,14 @@ public class DarwinDiversityAnalyzer {
     private boolean isUnique(JSONObject candidate, List<JSONObject> existing) {
         String cStrategy = candidate.optString("strategy").toLowerCase();
         Set<String> cTargets = getActionTargets(candidate);
+        Set<String> cSteps = getProjectedSteps(candidate);
+        Set<String> cEffects = getExpectedEffects(candidate);
 
         for (JSONObject other : existing) {
             String oStrategy = other.optString("strategy").toLowerCase();
             Set<String> oTargets = getActionTargets(other);
+            Set<String> oSteps = getProjectedSteps(other);
+            Set<String> oEffects = getExpectedEffects(other);
 
             // Simple semantic check
             if (cStrategy.equals(oStrategy)) return false;
@@ -46,6 +50,15 @@ public class DarwinDiversityAnalyzer {
                 // If they have the exact same file targets, they might be duplicates
                 // especially if strategies are similar.
                 if (computeSimilarity(cStrategy, oStrategy) > 0.8) return false;
+            }
+
+            // Future Trajectory Overlap Check (Convergence vs Diversity)
+            double stepSimilarity = computeJaccard(cSteps, oSteps);
+            double effectSimilarity = computeJaccard(cEffects, oEffects);
+
+            if (stepSimilarity > 0.7 && effectSimilarity > 0.7) {
+                // They are proposing the same future, redundant.
+                return false;
             }
         }
         return true;
@@ -60,6 +73,40 @@ public class DarwinDiversityAnalyzer {
             }
         }
         return targets;
+    }
+
+    private Set<String> getProjectedSteps(JSONObject variant) {
+        Set<String> steps = new HashSet<>();
+        JSONArray arr = variant.optJSONArray("projected_steps");
+        if (arr != null) {
+            for (int i = 0; i < arr.length(); i++) steps.add(arr.getString(i).toLowerCase());
+        }
+        return steps;
+    }
+
+    private Set<String> getExpectedEffects(JSONObject variant) {
+        Set<String> effects = new HashSet<>();
+        JSONObject hyp = variant.optJSONObject("hypothesis");
+        if (hyp != null) {
+            JSONArray arr = hyp.optJSONArray("expected_effects");
+            if (arr != null) {
+                for (int i = 0; i < arr.length(); i++) effects.add(arr.getString(i).toLowerCase());
+            }
+        }
+        return effects;
+    }
+
+    private double computeJaccard(Set<String> s1, Set<String> s2) {
+        if (s1.isEmpty() && s2.isEmpty()) return 1.0;
+        if (s1.isEmpty() || s2.isEmpty()) return 0.0;
+
+        Set<String> intersection = new HashSet<>(s1);
+        intersection.retainAll(s2);
+
+        Set<String> union = new HashSet<>(s1);
+        union.addAll(s2);
+
+        return (double) intersection.size() / union.size();
     }
 
     private double computeSimilarity(String s1, String s2) {

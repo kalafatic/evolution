@@ -154,8 +154,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 variantCount = Math.max(variantCount, 2);
             }
         } else {
-            countInstruction.append("You MUST propose at least 2 DIFFERENT strategies (e.g., one conservative IMPLEMENTATION and one exploratory ANALYTICAL approach).\n");
-            countInstruction.append("STRICT RULE: Do NOT return the same strategy twice. If you only have one idea, create a 'CURIOSITY' variant to explore the codebase.\n");
+            countInstruction.append("You MUST propose at least 2 DIFFERENT strategies (e.g., one CONSERVATIVE_FUTURE and one INNOVATIVE_FUTURE).\n");
+            countInstruction.append("STRICT RULE: Do NOT return the same strategy twice. If you only have one idea, create an 'EXPLORATION' variant to explore the codebase.\n");
         }
 
         return countInstruction.toString() + "\n" +
@@ -164,7 +164,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                "[\n" +
                "  {\n" +
                "    \"id\": \"string-id\",\n" +
-               "    \"strategy_type\": \"<IMPLEMENTATION | ANALYTICAL | CURIOSITY | STABILIZATION | EXPLORATION>\",\n" +
+               "    \"strategy_type\": \"<CONSERVATIVE_FUTURE | INNOVATIVE_FUTURE | STRUCTURAL_FUTURE | STABILIZATION | EXPLORATION>\",\n" +
                "    \"strategy\": \"<high-level intent>\",\n" +
                "    \"survival_argument\": \"<why this trajectory should continue - REQUIRED for survival>\",\n" +
                "    \"tradeoffs\": \"<explicit technical tradeoffs>\",\n" +
@@ -394,22 +394,22 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         DarwinVariantSpawner spawner = new DarwinVariantSpawner(aiService);
         DarwinDiversityAnalyzer diversityAnalyzer = new DarwinDiversityAnalyzer();
 
-        // Round 1: Mandatory Seeds
+        // Round 1: Mandatory Hybrid Seeds (Exploration, Analytical, Stabilization)
         List<DarwinStrategySeed> mandatorySeeds = new ArrayList<>();
-        mandatorySeeds.add(DarwinStrategySeed.implementation());
+        mandatorySeeds.add(DarwinStrategySeed.exploration());
         mandatorySeeds.add(DarwinStrategySeed.analytical());
+        mandatorySeeds.add(DarwinStrategySeed.stabilization());
 
-        context.log("[DARWIN] Executing Generation Round 1 (Mandatory Seeds)");
+        context.log("[DARWIN] Executing Generation Round 1 (Hybrid Strategy Space)");
         List<JSONObject> round1Variants = spawner.spawn(goal, mandatorySeeds, basePrompt, context);
         List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(round1Variants, context);
 
         // Round 2: Adaptive/Optional Seeds (Phase 8 - Iterative Evolution)
         // Execute optional seeds if diversity is insufficient OR pressure is high
-        if (uniqueVariants.size() < 2 || eps > 0.7) {
-            context.log("[DARWIN] Executing Generation Round 2 (Optional Seeds)");
+        if (uniqueVariants.size() < 3 || eps > 0.7) {
+            context.log("[DARWIN] Executing Generation Round 2 (Adaptive Diversity)");
             List<DarwinStrategySeed> optionalSeeds = new ArrayList<>();
-            optionalSeeds.add(DarwinStrategySeed.stabilization());
-            optionalSeeds.add(DarwinStrategySeed.exploration());
+            optionalSeeds.add(DarwinStrategySeed.exploration()); // Spawn another exploration future
 
             // Enrich prompt with Round 1 results for iterative evolution
             String round2Prompt = basePrompt + "\n\nPREVIOUS CANDIDATE STRATEGIES (ROUND 1):\n";

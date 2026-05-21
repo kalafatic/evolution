@@ -27,10 +27,13 @@ public class DarwinVariantSpawner {
         List<JSONObject> variants = new ArrayList<>();
         Orchestrator orchestrator = context.getOrchestrator();
 
+        // Sequential Evolution: Collect summaries of already generated variants in this round
+        List<String> currentRoundStrategies = new ArrayList<>();
+
         for (DarwinStrategySeed seed : seeds) {
             context.log("[SPAWNER] Generating " + seed.getType() + " variant...");
 
-            String seedPrompt = buildSeedPrompt(seed, basePrompt);
+            String seedPrompt = buildSeedPrompt(seed, basePrompt, currentRoundStrategies);
             JSONObject validated = null;
 
             for (int retry = 0; retry < 2; retry++) {
@@ -48,6 +51,7 @@ public class DarwinVariantSpawner {
 
             if (validated != null) {
                 variants.add(validated);
+                currentRoundStrategies.add(validated.optString("strategy"));
                 context.log("[SPAWNER] Successfully generated " + seed.getType() + " variant.");
             } else if (seed.isMandatory()) {
                 context.log("[SPAWNER] FAILED to generate mandatory " + seed.getType() + " variant after retries.");
@@ -57,23 +61,36 @@ public class DarwinVariantSpawner {
         return variants;
     }
 
-    private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt) {
-        return "SYSTEM:\n" +
-               "You are generating ONE Darwin evolutionary branch variant.\n\n" +
-               "RULES:\n" +
-               "- Output EXACTLY ONE JSON object.\n" +
-               "- Do NOT generate an array.\n" +
-               "- strategy_type is FIXED to: " + seed.getType() + "\n" +
-               "- Do NOT generate markdown code blocks (```json ... ```).\n" +
-               "- Do NOT include conversational text or explanations outside the JSON.\n" +
-               "- The variant MUST be semantically distinct but STRICTLY GROUNDED in the user goal.\n" +
-               "- Avoid generic architectural advice; focus on concrete engineering actions for this specific task.\n\n" +
-               "FIXED STRATEGY TYPE:\n" +
-               seed.getType() + "\n\n" +
-               "STRATEGY INSTRUCTIONS:\n" +
-               seed.getInstructions() + "\n\n" +
-               "CONTEXT AND GOAL:\n" +
-               basePrompt + "\n\n" +
+    private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, List<String> currentRoundStrategies) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SYSTEM:\n")
+          .append("You are generating ONE Darwin evolutionary branch variant.\n\n")
+          .append("RULES:\n")
+          .append("- Output EXACTLY ONE JSON object.\n")
+          .append("- Do NOT generate an array.\n")
+          .append("- strategy_type is FIXED to: ").append(seed.getType()).append("\n")
+          .append("- Do NOT generate markdown code blocks (```json ... ```).\n")
+          .append("- Do NOT include conversational text or explanations outside the JSON.\n")
+          .append("- The variant MUST be semantically distinct but STRICTLY GROUNDED in the user goal.\n")
+          .append("- Avoid generic architectural advice; focus on concrete engineering actions for this specific task.\n\n");
+
+        if (!currentRoundStrategies.isEmpty()) {
+            sb.append("DIVERGENCE REQUIREMENT:\n")
+              .append("The following strategies have already been generated in this iteration. You MUST intentionally diverge from these architectural paths:\n");
+            for (String s : currentRoundStrategies) {
+                sb.append("- ").append(s).append("\n");
+            }
+            sb.append("\n");
+        }
+
+        sb.append("FIXED STRATEGY TYPE:\n")
+          .append(seed.getType()).append("\n\n")
+          .append("STRATEGY INSTRUCTIONS:\n")
+          .append(seed.getInstructions()).append("\n\n")
+          .append("CONTEXT AND GOAL:\n")
+          .append(basePrompt).append("\n\n");
+
+        return sb.toString() +
                "REQUIRED SCHEMA (CRITICAL: DO NOT echo placeholder text, provide REAL technical values):\n" +
                "{\n" +
                "  \"id\": \"v-" + seed.getType().name().toLowerCase() + "\",\n" +

@@ -1,11 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 /**
- * Supported Darwin strategy types for multi-call evolution.
+ * Supported Darwin strategy roles for hybrid evolutionary branching.
  */
 public enum DarwinStrategyType {
-    IMPLEMENTATION,
+    EXPLORATION,
     ANALYTICAL,
-    STABILIZATION,
-    EXPLORATION
+    STABILIZATION
 }

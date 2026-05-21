@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 /**
- * Seed for spawning a specific Darwin evolutionary branch.
+ * Seed for spawning a specific Darwin evolutionary branch role.
  */
 public class DarwinStrategySeed {
     private final DarwinStrategyType type;
@@ -26,10 +26,10 @@ public class DarwinStrategySeed {
         return mandatory;
     }
 
-    public static DarwinStrategySeed implementation() {
+    public static DarwinStrategySeed exploration() {
         return new DarwinStrategySeed(
-            DarwinStrategyType.IMPLEMENTATION,
-            "Focus on concrete execution, file changes, implementation completion, and functional behavior. Propose the most direct path to fulfilling the user goal.",
+            DarwinStrategyType.EXPLORATION,
+            "Focus on innovation and alternative architectural futures. Explore different solution hypotheses, design patterns, or performance-oriented models that fulfill the user goal. Priority: Innovation and tradeoff exploration.",
             true
         );
     }
@@ -37,7 +37,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed analytical() {
         return new DarwinStrategySeed(
             DarwinStrategyType.ANALYTICAL,
-            "Focus on architectural alignment and safety within the scope of the goal. Analyze how the proposed change impacts existing components and identify integration risks. Avoid generic architectural restructuring unless strictly necessary for the goal.",
+            "Focus on system understanding and impact analysis. Identify integration risks, dependency conflicts, and potential failure modes. Priority: Correctness reasoning and architectural insight.",
             true
         );
     }
@@ -45,16 +45,25 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed stabilization() {
         return new DarwinStrategySeed(
             DarwinStrategyType.STABILIZATION,
-            "Focus on making the implementation robust. Handle edge cases, improve error reporting, and ensure the solution is idiomatic and stable. Stay grounded in the user's specific request.",
-            false
+            "Focus on safe evolution paths and safe refactor strategies. Propose incremental improvements and structural cleanup that satisfy the goal while maintaining system reliability. Priority: Reliability and controlled change.",
+            true
         );
     }
 
-    public static DarwinStrategySeed exploration() {
-        return new DarwinStrategySeed(
-            DarwinStrategyType.EXPLORATION,
-            "Focus on alternative technical approaches to the same goal. Explore different libraries, patterns, or performance optimizations that remain strictly relevant to the user objective. Avoid 'hallucinating' unrelated project needs.",
-            false
-        );
+    // Compatibility bridge
+    public static DarwinStrategySeed implementation() {
+        return exploration();
+    }
+
+    public static DarwinStrategySeed conservativeFuture() {
+        return stabilization();
+    }
+
+    public static DarwinStrategySeed innovativeFuture() {
+        return exploration();
+    }
+
+    public static DarwinStrategySeed structuralFuture() {
+        return analytical();
     }
 }
