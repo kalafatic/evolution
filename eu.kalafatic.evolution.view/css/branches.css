@@ -121,14 +121,34 @@
     background: #f8fafc;
 }
 
-.branch-btn.approve {
+.branch-btn.keep {
     background: #16a34a;
     color: white;
     border: none;
 }
 
-.branch-btn.approve:hover {
+.branch-btn.keep:hover {
     background: #15803d;
+}
+
+.branch-btn.reject {
+    background: #dc2626;
+    color: white;
+    border: none;
+}
+
+.branch-btn.reject:hover {
+    background: #b91c1c;
+}
+
+.branch-btn.force {
+    background: #7c3aed;
+    color: white;
+    border: none;
+}
+
+.branch-btn.force:hover {
+    background: #6d28d9;
 }
 
 .branch-column.approved::after {

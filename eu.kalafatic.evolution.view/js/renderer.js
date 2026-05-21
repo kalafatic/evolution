@@ -158,6 +158,11 @@ window.ChatApp.Renderer = {
         // Proposal: print to console
         html = html.replace(/\bprint to console\b/gi, '<a class="link-go" onclick="window.ChatApp.Actions.callJava(\'executeProposal\', \'-1\', \'print to console\')">$&</a>');
 
+        // Phase Transition Yes/No links
+        html = html.replace(/\((Yes\/No)\)/gi, (match) => {
+            return `(<a class="link-go" onclick="window.ChatApp.Actions.callJava('executeProposal', '-1', 'Yes')">Yes</a>/<a class="link-go" onclick="window.ChatApp.Actions.callJava('executeProposal', '-1', 'No')">No</a>)`;
+        });
+
         // Basic Markdown
         html = html.replace(/\*\*([\s\S]*?)\*\*/g, '<b>$1</b>');
         html = html.replace(/\*([\s\S]*?)\*/g, '<i>$1</i>');
@@ -304,11 +309,13 @@ window.ChatApp.Renderer = {
             const role = (m.agentType || '').toLowerCase();
             const isApproved = role.includes('approved');
             const approvedId = isApproved && role.includes(':') ? role.split(':').pop().trim() : null;
+            const isRejected = role.includes('rejected');
+            const rejectedId = isRejected && role.includes(':') ? role.split(':').pop().trim() : null;
 
             variants.forEach((v, index) => {
                 const vId = String(v.id || index);
                 const isThisApproved = isApproved && (approvedId === null || approvedId === vId);
-                const isThisRejected = isApproved && approvedId !== null && approvedId !== vId;
+                const isThisRejected = (isApproved && approvedId !== null && approvedId !== vId) || (isRejected && rejectedId === vId);
 
                 const col = document.createElement('div');
                 col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '');
@@ -324,12 +331,27 @@ window.ChatApp.Renderer = {
                     <div class="branch-footer">
                         ${isThisApproved ? '<div style="color: #16a34a; font-weight: bold;">APPROVED</div>' :
                           isThisRejected ? '<div style="color: #dc2626; font-weight: bold;">REJECTED</div>' :
-                          `<button class="branch-btn approve" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${vId}')">Approve</button>
+                          `<button class="branch-btn keep" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${vId}')">Keep</button>
+                           <button class="branch-btn reject" onclick="window.ChatApp.Actions.callJava('rejectDarwinVariant', '${m.index}', '${vId}')">Reject</button>
                            <button class="branch-btn" onclick="window.ChatApp.Actions.callJava('editDarwinVariant', '${m.index}', '${vId}')">Edit</button>`}
                     </div>
                 `;
                 container.appendChild(col);
             });
+
+            // Add Force Solution button if it's a Darwin branches message and not yet approved
+            if (!isApproved) {
+                const forceDiv = document.createElement('div');
+                forceDiv.className = 'branch-column force-column';
+                forceDiv.style.justifyContent = 'center';
+                forceDiv.style.alignItems = 'center';
+                forceDiv.style.background = 'transparent';
+                forceDiv.style.border = '1px dashed var(--border)';
+                forceDiv.style.boxShadow = 'none';
+                forceDiv.innerHTML = `<button class="branch-btn force" style="width: 100%; height: 60px; font-size: 16px;" onclick="window.ChatApp.Actions.callJava('forceSolution', '${m.index}', '')">⚡ Force Solution</button>
+                                      <div style="font-size: 10px; color: #64748b; margin-top: 8px; text-align: center;">Bypass expansion & execute winner</div>`;
+                container.appendChild(forceDiv);
+            }
         } catch(e) { container.innerHTML = `<div class="bubble error">Failed to parse Darwin: ${e.message}</div>`; }
         return container;
     }

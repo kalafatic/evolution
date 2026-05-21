@@ -82,10 +82,10 @@ public class IntentExpansionEngine extends BaseAiAgent {
     public IntentExpansionResult expand(String prompt, TaskContext context) throws Exception {
         context.log("[INTENT EXPANSION] Analyzing intent space for: " + prompt);
 
-        // FAST BYPASS: Detect direct variant selection commands
+        // FAST BYPASS: Detect direct variant selection or force solution commands
         String lower = prompt.toLowerCase().trim();
-        if (lower.startsWith("select v") || lower.startsWith("approve variant v")) {
-            context.log("[INTENT EXPANSION] Detected variant selection command. Bypassing LLM expansion.");
+        if (lower.startsWith("select ") || lower.startsWith("approve variant ") || lower.equalsIgnoreCase("force solution")) {
+            context.log("[INTENT EXPANSION] Detected bypass command: " + lower + ". Bypassing LLM expansion.");
             IntentExpansionResult result = new IntentExpansionResult();
             result.setOriginalPrompt(prompt);
             result.setState(InterpretationState.CLEAR);
@@ -94,7 +94,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
             IntentConfidence c = new IntentConfidence();
             c.setOverallConfidence(1.0);
-            c.setRationale("Direct variant selection command");
+            c.setRationale("Bypass command triggered: " + lower);
             result.setConfidence(c);
             return result;
         }

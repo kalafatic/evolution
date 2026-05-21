@@ -131,7 +131,12 @@ public class DarwinFlow implements IOrchestrationFlow {
             if (!context.isAutoApprove()) {
                 context.log("[KERNEL] Darwin Evolution: Pausing for intent interpretation review.");
                 String userResponse = context.requestInput("Intent interpretation complete. State: " + expansion.getState() + ". Review and select a hypothesis to proceed, or reject to refine.").get();
-                if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse) || "Rejected".equalsIgnoreCase(userResponse)) {
+
+                if ("Force Solution".equalsIgnoreCase(userResponse)) {
+                    context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                    context.setAutoApprove(true);
+                    // Use dominant intent as is and proceed
+                } else if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse) || "Rejected".equalsIgnoreCase(userResponse)) {
                     manager.recordRejection(goal, "User rejected intent interpretation.");
                     manager.transition(SystemState.FAILED, context);
                     return manager.failedResult();
@@ -286,7 +291,11 @@ public class DarwinFlow implements IOrchestrationFlow {
                 sb.append("\nSelect a variant to execute (e.g. 'Select v0'), or reject to refine.");
 
                 String input = context.requestInput(sb.toString()).get();
-                if ("Rejected".equalsIgnoreCase(input)) {
+                if ("Force Solution".equalsIgnoreCase(input)) {
+                    context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                    context.setAutoApprove(true);
+                    // Single authority will choose the best variant automatically
+                } else if ("Rejected".equalsIgnoreCase(input)) {
                     manager.recordRejection(goal, "Darwin " + state.getCurrentPhase() + " proposals rejected by user.");
                     EvaluationResult res = manager.failedResult();
                     res.setDecision(SelfDevDecision.CONTINUE);
@@ -294,7 +303,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                     return res;
                 }
 
-                if (input.startsWith("Select ")) {
+                if (input != null && input.startsWith("Select ")) {
                     manualId = input.substring(7).trim();
                 } else if (input.startsWith("Approve variant ")) {
                     manualId = input.substring(16).trim();
@@ -302,6 +311,14 @@ public class DarwinFlow implements IOrchestrationFlow {
 
                 if (manualId != null) {
                     context.log("[KERNEL] User selected variant: " + manualId);
+                } else if (input != null && input.startsWith("Reject variant ")) {
+                    String rejectedId = input.substring(15).trim();
+                    context.log("[KERNEL] User rejected variant: " + rejectedId + ". Evolution stopped by user.");
+                    manager.recordRejection(goal, "Darwin variant " + rejectedId + " rejected by user ('no way').");
+                    EvaluationResult res = manager.failedResult();
+                    res.setDecision(SelfDevDecision.STOP);
+                    manager.transition(SystemState.FAILED, context);
+                    return res;
                 }
             }
 
@@ -420,7 +437,10 @@ public class DarwinFlow implements IOrchestrationFlow {
                     context.log("[KERNEL] Darwin Evolution: Phase " + completedPhase + " completed. Pausing for user confirmation before next phase: " + nextPhase);
                     try {
                         String userResponse = context.requestInput("Phase " + completedPhase + " completed successfully. Proceed to " + nextPhase + "? (Yes/No)").get();
-                        if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse)) {
+                        if ("Force Solution".equalsIgnoreCase(userResponse)) {
+                            context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                            context.setAutoApprove(true);
+                        } else if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse)) {
                              context.log("[KERNEL] User stopped evolution after phase " + completedPhase);
                              result.setDecision(SelfDevDecision.STOP);
                         }
