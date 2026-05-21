@@ -174,14 +174,24 @@ public class InstructionsGroup extends AEvoGroup {
         selfIterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (selfIterativeCheck.getSelection()) {
-                    iterativeCheck.setSelection(true);
-                    darwinCheck.setSelection(true);
-                    if (maxIterationsSpinner.getSelection() == 1) {
-                        maxIterationsSpinner.setSelection(4);
+                boolean sel = selfIterativeCheck.getSelection();
+                page.updateSessionSetting(s -> {
+                    s.setSelfIterativeMode(sel);
+                    if (sel) {
+                        s.setIterativeMode(true);
+                        s.setDarwinMode(true);
+                        if (s.getMaxIterations() <= 1) s.setMaxIterations(4);
                     }
-                }
-                page.syncModelWithUI();
+                });
+                page.updatePromptInstructions(pi -> {
+                    pi.setSelfIterativeMode(sel);
+                    if (sel) {
+                        pi.setIterativeMode(true);
+                        orchestrator.setDarwinMode(true);
+                        if (pi.getPreferredMaxIterations() <= 1) pi.setPreferredMaxIterations(4);
+                    }
+                });
+                page.saveLastUsedSettings();
             }
         });
 
@@ -191,10 +201,16 @@ public class InstructionsGroup extends AEvoGroup {
         darwinCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (darwinCheck.getSelection() && maxIterationsSpinner.getSelection() == 1) {
-                    maxIterationsSpinner.setSelection(4);
-                }
-                page.syncModelWithUI();
+                boolean sel = darwinCheck.getSelection();
+                page.updateModelSetting(orch -> orch.setDarwinMode(sel));
+                page.updateSessionSetting(s -> {
+                    s.setDarwinMode(sel);
+                    if (sel && s.getMaxIterations() <= 1) s.setMaxIterations(4);
+                });
+                page.updatePromptInstructions(pi -> {
+                    if (sel && pi.getPreferredMaxIterations() <= 1) pi.setPreferredMaxIterations(4);
+                });
+                page.saveLastUsedSettings();
             }
         });
 
@@ -203,7 +219,8 @@ public class InstructionsGroup extends AEvoGroup {
         autoApproveCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.syncModelWithUI();
+                page.updatePromptInstructions(pi -> pi.setAutoApprove(autoApproveCheck.getSelection()));
+                page.saveLastUsedSettings();
             }
         });
 
@@ -212,7 +229,10 @@ public class InstructionsGroup extends AEvoGroup {
         gitAutomationCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.syncModelWithUI();
+                boolean sel = gitAutomationCheck.getSelection();
+                page.updateSessionSetting(s -> s.setGitAutomation(sel));
+                page.updatePromptInstructions(pi -> pi.setGitAutomation(sel));
+                page.saveLastUsedSettings();
             }
         });
 
@@ -221,7 +241,10 @@ public class InstructionsGroup extends AEvoGroup {
         stepModeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.syncModelWithUI();
+                boolean sel = stepModeCheck.getSelection();
+                page.updateSessionSetting(s -> s.setStepMode(sel));
+                page.updatePromptInstructions(pi -> pi.setStepMode(sel));
+                page.saveLastUsedSettings();
             }
         });
 
@@ -231,7 +254,10 @@ public class InstructionsGroup extends AEvoGroup {
         iterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.syncModelWithUI();
+                boolean sel = iterativeCheck.getSelection();
+                page.updateSessionSetting(s -> s.setIterativeMode(sel));
+                page.updatePromptInstructions(pi -> pi.setIterativeMode(sel));
+                page.saveLastUsedSettings();
             }
         });
         
@@ -244,7 +270,10 @@ public class InstructionsGroup extends AEvoGroup {
         maxIterationsSpinner.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.syncModelWithUI();
+                int val = maxIterationsSpinner.getSelection();
+                page.updateSessionSetting(s -> s.setMaxIterations(val));
+                page.updatePromptInstructions(pi -> pi.setPreferredMaxIterations(val));
+                page.saveLastUsedSettings();
             }
         });
         GUIFactory.INSTANCE.createLabel(settingsComp, "Max Iterations",SWT.NONE,70);
@@ -271,7 +300,6 @@ public class InstructionsGroup extends AEvoGroup {
 
         sendButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) {
-                updateModel();
                 page.handleSend();
             }
         });
@@ -318,32 +346,7 @@ public class InstructionsGroup extends AEvoGroup {
 
     @Override
     public void updateModel() {
-        if (orchestrator != null) {
-            eu.kalafatic.evolution.model.orchestration.ChatSession thread = page.getCurrentSession();
-            if (thread != null) {
-                thread.setIterativeMode(iterativeCheck.getSelection());
-                thread.setSelfIterativeMode(selfIterativeCheck.getSelection());
-                thread.setDarwinMode(darwinCheck.getSelection());
-                thread.setGitAutomation(gitAutomationCheck.getSelection());
-                thread.setMaxIterations(maxIterationsSpinner.getSelection());
-                thread.setStepMode(stepModeCheck.getSelection());
-            }
-
-            orchestrator.setDarwinMode(darwinCheck.getSelection());
-            if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
-
-            PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
-            if (promptInstructions == null) {
-                promptInstructions = OrchestrationFactory.eINSTANCE.createPromptInstructions();
-                orchestrator.getAiChat().setPromptInstructions(promptInstructions);
-            }
-            promptInstructions.setIterativeMode(iterativeCheck.getSelection());
-            promptInstructions.setSelfIterativeMode(selfIterativeCheck.getSelection());
-            promptInstructions.setAutoApprove(autoApproveCheck.getSelection());
-            promptInstructions.setGitAutomation(gitAutomationCheck.getSelection());
-            promptInstructions.setPreferredMaxIterations(maxIterationsSpinner.getSelection());
-            promptInstructions.setStepMode(stepModeCheck.getSelection());
-        }
+        // Model is now updated directly in control listeners.
     }
 
     public String getRequest() { return requestText.getText().trim(); }

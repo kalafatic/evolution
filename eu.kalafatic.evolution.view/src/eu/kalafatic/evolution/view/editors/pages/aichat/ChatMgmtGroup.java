@@ -165,28 +165,63 @@ public class ChatMgmtGroup extends AEvoGroup {
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.syncModelWithUI();
+                page.updateModelSetting(orch -> {
+                    orch.setAiMode(AiMode.get(aiModeCombo.getSelectionIndex()));
+                });
+                page.saveLastUsedSettings();
+                page.updateModeDisplay();
             }
         });
 
         aiRemoteCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                String providerName = aiRemoteCombo.getText();
-                eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved = eu.kalafatic.evolution.controller.security.TokenSecurityService
-                        .getInstance().resolve(orchestrator, providerName);
-                if (resolved != null) {
-                    remoteUrlText.setText(resolved.url != null ? resolved.url : "");
-                    remoteTokenText.setText(resolved.token != null ? resolved.token : "");
-                    page.syncModelWithUI();
-                }
+                page.updateModelSetting(orch -> {
+                    String providerName = aiRemoteCombo.getText();
+                    orch.setRemoteModel(providerName);
+
+                    ProviderConfig config = AiProviders.PROVIDERS.get(providerName);
+                    if (config != null) {
+                        orch.setOpenAiModel(config.getDefaultModel());
+                    }
+
+                    eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved = eu.kalafatic.evolution.controller.security.TokenSecurityService
+                            .getInstance().resolve(orch, providerName);
+                    if (resolved != null) {
+                        if (orch.getAiChat() == null) {
+                            orch.setAiChat(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAiChat());
+                        }
+                        orch.getAiChat().setUrl(resolved.url != null ? resolved.url : "");
+                        eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
+                            .updateToken(orch, providerName, resolved.token != null ? resolved.token : "");
+                    }
+                });
+                page.saveLastUsedSettings();
+                page.updateModeDisplay();
             }
         });
 
-        load();
-
-        remoteTokenText.addModifyListener(e -> page.syncModelWithUI());
-        remoteUrlText.addModifyListener(e -> page.syncModelWithUI());
+        remoteTokenText.addModifyListener(e -> {
+            if (orchestrator != null && !isUpdating) {
+                page.updateModelSetting(orch -> {
+                    String providerName = aiRemoteCombo.getText();
+                    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
+                        .updateToken(orch, providerName, remoteTokenText.getText());
+                });
+                page.saveLastUsedSettings();
+            }
+        });
+        remoteUrlText.addModifyListener(e -> {
+            if (orchestrator != null && !isUpdating) {
+                page.updateModelSetting(orch -> {
+                    if (orch.getAiChat() == null) {
+                        orch.setAiChat(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAiChat());
+                    }
+                    orch.getAiChat().setUrl(remoteUrlText.getText());
+                });
+                page.saveLastUsedSettings();
+            }
+        });
     }
 
     private Combo selectModel(Composite parent) {
@@ -194,8 +229,18 @@ public class ChatMgmtGroup extends AEvoGroup {
         // selection listener
         combo.addListener(SWT.Selection, e -> {
             int index = combo.getSelectionIndex();
-            if (index >= 0) {
-                page.syncModelWithUI();
+            if (index >= 0 && orchestrator != null) {
+                page.updateModelSetting(orch -> {
+                    String model = combo.getText();
+                    orch.setLocalModel(model);
+                    orch.setHybridModel(model);
+                    if (orch.getOllama() != null) {
+                        orch.getOllama().setModel(model);
+                    }
+                });
+                page.saveLastUsedSettings();
+                page.updateModeDisplay();
+                page.updateStatusInfo();
             }
         });
         return combo;

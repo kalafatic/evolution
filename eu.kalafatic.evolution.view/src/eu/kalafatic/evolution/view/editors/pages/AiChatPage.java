@@ -386,65 +386,6 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		}
 	}
 
-	public void syncModelWithUI() {
-		if (orchestrator == null || isUpdating) return;
-		isUpdating = true;
-		orchestrator.setAiMode(AiMode.get(chatMgmtGroup.getAiModeIndex()));
-
-		String localModel = chatMgmtGroup.getLocalModel();
-		orchestrator.setLocalModel(localModel);
-		orchestrator.setHybridModel(localModel);
-		if (orchestrator.getOllama() != null) {
-			orchestrator.getOllama().setModel(localModel);
-		}
-
-		String remoteModel = chatMgmtGroup.getRemoteModel();
-		orchestrator.setRemoteModel(remoteModel);
-		ProviderConfig config = AiProviders.PROVIDERS.get(remoteModel);
-		if (config != null) orchestrator.setOpenAiModel(config.getDefaultModel());
-
-		eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
-		    .updateToken(orchestrator, remoteModel, chatMgmtGroup.getRemoteToken());
-		
-		if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());		
-    	
-    	PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
-    	
-    	if (promptInstructions == null) {
-    		promptInstructions = OrchestrationFactory.eINSTANCE.createPromptInstructions();
-    		orchestrator.getAiChat().setPromptInstructions(promptInstructions);
-    	}        	
-          
-        promptInstructions.setIterativeMode(instructionsGroup.isIterative());
-        promptInstructions.setSelfIterativeMode(instructionsGroup.isSelfIterative());
-        orchestrator.setDarwinMode(instructionsGroup.isDarwin());
-
-        if (currentSession != null) {
-            currentSession.setIterativeMode(instructionsGroup.isIterative());
-            currentSession.setSelfIterativeMode(instructionsGroup.isSelfIterative());
-            currentSession.setDarwinMode(instructionsGroup.isDarwin());
-            currentSession.setGitAutomation(instructionsGroup.isGitAutomationCheck());
-            currentSession.setMaxIterations(instructionsGroup.getMaxIterations());
-            currentSession.setStepMode(instructionsGroup.isStepMode());
-        }
-
-        boolean wasAutoApprove = promptInstructions.isAutoApprove();
-        boolean isAutoApprove = instructionsGroup.isAutoApprove();
-        promptInstructions.setAutoApprove(isAutoApprove);
-        promptInstructions.setPreferredMaxIterations(instructionsGroup.getMaxIterations());
-        promptInstructions.setGitAutomation(instructionsGroup.isGitAutomationCheck());
-        promptInstructions.setStepMode(instructionsGroup.isStepMode());
-		
-		if (!wasAutoApprove && isAutoApprove) {
-			resumeWaitingSessions();
-		}
-
-		orchestrator.getAiChat().setUrl(chatMgmtGroup.getRemoteUrl());
-		saveLastUsedSettings();
-		editor.setDirty(true);
-		updateModeDisplay();
-		isUpdating = false;
-	}
 
 	public void handleSend() {
 		instructionsGroup.resetBackground();
@@ -902,7 +843,11 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				}));
 				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
 					String token = requestToken(provider);
-					if (token != null) { chatMgmtGroup.setRemoteToken(token); syncModelWithUI(); future.complete(token); }
+					if (token != null) {
+						eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
+						.updateToken(orchestrator, provider, token);
+						future.complete(token);
+					}
 					else future.completeExceptionally(new Exception("Token request cancelled by user."));
 				}));
 				SelfDevSession session = OrchestrationFactory.eINSTANCE.createSelfDevSession();
@@ -1131,6 +1076,10 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				updateStatusInfo();
 				updateModeDisplay();
 
+				if (currentSession != null) {
+					chatGroup.setSession(currentSession);
+				}
+
 				// Centralize layout at the end of refresh
 				updateScrolledContent();
 			} finally {
@@ -1297,6 +1246,36 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	public void handleExecuteProposal(String request) {
 		instructionsGroup.setRequest(request);
 		handleSend();
+	}
+
+	public void updateModelSetting(java.util.function.Consumer<Orchestrator> update) {
+		if (orchestrator == null) return;
+		update.accept(orchestrator);
+		editor.setDirty(true);
+	}
+
+	public void updateSessionSetting(java.util.function.Consumer<ChatSession> update) {
+		if (currentSession == null) return;
+		update.accept(currentSession);
+		editor.setDirty(true);
+	}
+
+	public void updatePromptInstructions(java.util.function.Consumer<PromptInstructions> update) {
+		if (orchestrator == null) return;
+		if (orchestrator.getAiChat() == null) {
+			orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+		}
+		PromptInstructions pi = orchestrator.getAiChat().getPromptInstructions();
+		if (pi == null) {
+			pi = OrchestrationFactory.eINSTANCE.createPromptInstructions();
+			orchestrator.getAiChat().setPromptInstructions(pi);
+		}
+		boolean wasAutoApprove = pi.isAutoApprove();
+		update.accept(pi);
+		if (!wasAutoApprove && pi.isAutoApprove()) {
+			resumeWaitingSessions();
+		}
+		editor.setDirty(true);
 	}
 
 	public void handleFeedbackLevelChange(FeedbackLevel level) {
@@ -1671,8 +1650,6 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 					String newToken = requestToken(provider);
 					if (newToken != null) {
 					    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().updateToken(orchestrator, provider, newToken);
-					    chatMgmtGroup.setRemoteToken(newToken);
-					    syncModelWithUI();
 					    future.complete(newToken);
 					} else future.completeExceptionally(new Exception("Token request cancelled by user."));
 				}));
