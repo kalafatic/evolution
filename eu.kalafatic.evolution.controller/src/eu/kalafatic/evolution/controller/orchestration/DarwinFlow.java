@@ -128,6 +128,35 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.log("[KERNEL] Dominant Intent: " + expansion.getDominantIntent());
             }
 
+            if (!context.isAutoApprove()) {
+                context.log("[KERNEL] Darwin Evolution: Pausing for intent interpretation review.");
+                String userResponse = context.requestInput("Intent interpretation complete. State: " + expansion.getState() + ". Review and select a hypothesis to proceed, or reject to refine.").get();
+                if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse) || "Rejected".equalsIgnoreCase(userResponse)) {
+                    manager.recordRejection(goal, "User rejected intent interpretation.");
+                    manager.transition(SystemState.FAILED, context);
+                    return manager.failedResult();
+                }
+
+                String selectedHypothesisId = null;
+                if (userResponse.startsWith("Select ")) {
+                    selectedHypothesisId = userResponse.substring(7).trim();
+                } else if (userResponse.startsWith("Approve variant ")) {
+                    selectedHypothesisId = userResponse.substring(16).trim();
+                }
+
+                if (selectedHypothesisId != null) {
+                    context.log("[KERNEL] User selected hypothesis: " + selectedHypothesisId);
+                    String finalId = selectedHypothesisId;
+                    expansion.getHypotheses().stream()
+                        .filter(h -> h.getId().equals(finalId))
+                        .findFirst()
+                        .ifPresent(h -> {
+                            expansion.setDominantIntent(h.getDescription());
+                            expansion.setDominantConfidence(1.0);
+                        });
+                }
+            }
+
             ClarificationPlanner planner = manager.getClarificationPlanner();
             ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
             context.log("[KERNEL] Clarification Strategy: " + strategy);
@@ -170,7 +199,8 @@ public class DarwinFlow implements IOrchestrationFlow {
             state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));
 
             // If intent is clear, proceed immediately to next phase in same iteration
-            if (strategy != ClarificationPlanner.Strategy.AUTO_INFER) {
+            // UNLESS we are in manual mode, where we want the user to review intent first.
+            if (strategy != ClarificationPlanner.Strategy.AUTO_INFER || !context.isAutoApprove()) {
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
                 res.setDecision(SelfDevDecision.CONTINUE);
