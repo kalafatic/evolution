@@ -1391,8 +1391,9 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	private void clearWaitingMessages() {
 		if (currentSession != null) {
 			currentSession.getMessages().forEach(m -> {
-				if ("waiting".equals(m.getAgentType())) {
-					m.setAgentType("response");
+				String agentType = m.getAgentType();
+				if (agentType != null && agentType.contains("waiting")) {
+					m.setAgentType(agentType.replace("waiting", "response").trim());
 				}
 			});
 			chatGroup.scheduleRefresh();

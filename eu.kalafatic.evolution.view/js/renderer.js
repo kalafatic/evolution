@@ -40,7 +40,8 @@ window.ChatApp.Renderer = {
             // Move Force Solution button out of branch container to appear UNDER all branches
             const role = (m.agentType || '').toLowerCase();
             const isApproved = role.includes('approved');
-            if (!isApproved) {
+            const isWaiting = role.includes('waiting');
+            if (!isApproved && isWaiting) {
                 const forceDiv = document.createElement('div');
                 forceDiv.className = 'force-solution-container';
                 forceDiv.innerHTML = `<button class="branch-btn force" onclick="window.ChatApp.Actions.callJava('forceSolution', '${m.index}', '')">⚡ Force Solution</button>
@@ -323,6 +324,7 @@ window.ChatApp.Renderer = {
             const approvedId = isApproved && role.includes(':') ? role.split(':').pop().trim() : null;
             const isRejected = role.includes('rejected');
             const rejectedId = isRejected && role.includes(':') ? role.split(':').pop().trim() : null;
+            const isWaiting = role.includes('waiting');
 
             variants.forEach((v, index) => {
                 const vId = String(v.id || index);
@@ -338,17 +340,25 @@ window.ChatApp.Renderer = {
                 let strategy = v.strategy || v.description;
                 if (strategy) headerHtml += `<div class="branch-strategy">${strategy}</div>`;
 
+                let footerContent = "";
+                if (isThisApproved) {
+                    footerContent = '<div style="color: #16a34a; font-weight: bold;">APPROVED</div>';
+                } else if (isThisRejected) {
+                    footerContent = '<div style="color: #dc2626; font-weight: bold;">REJECTED</div>';
+                } else if (isThisKept && !isWaiting) {
+                    footerContent = '<div style="color: #166534; font-weight: bold;">KEPT</div>';
+                } else if (isWaiting) {
+                    footerContent = `
+                        <button class="branch-btn select" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${vId}')">Select</button>
+                        <button class="branch-btn keep" onclick="window.ChatApp.Actions.callJava('keepDarwinVariant', '${m.index}', '${vId}')">Keep</button>
+                        <button class="branch-btn reject" onclick="window.ChatApp.Actions.callJava('rejectDarwinVariant', '${m.index}', '${vId}')">Reject</button>
+                        <button class="branch-btn" onclick="window.ChatApp.Actions.callJava('editDarwinVariant', '${m.index}', '${vId}')">Edit</button>`;
+                }
+
                 col.innerHTML = `
                     ${headerHtml}
                     <div class="branch-body" style="font-size: 11px;">${this.renderJson(v)}</div>
-                    <div class="branch-footer">
-                        ${isThisApproved ? '<div style="color: #16a34a; font-weight: bold;">APPROVED</div>' :
-                          isThisRejected ? '<div style="color: #dc2626; font-weight: bold;">REJECTED</div>' :
-                          `<button class="branch-btn select" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${vId}')">Select</button>
-                           <button class="branch-btn keep" onclick="window.ChatApp.Actions.callJava('keepDarwinVariant', '${m.index}', '${vId}')">Keep</button>
-                           <button class="branch-btn reject" onclick="window.ChatApp.Actions.callJava('rejectDarwinVariant', '${m.index}', '${vId}')">Reject</button>
-                           <button class="branch-btn" onclick="window.ChatApp.Actions.callJava('editDarwinVariant', '${m.index}', '${vId}')">Edit</button>`}
-                    </div>
+                    <div class="branch-footer">${footerContent}</div>
                 `;
                 container.appendChild(col);
             });

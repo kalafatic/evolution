@@ -694,11 +694,14 @@ public class ChatGroup extends AEvoGroup {
                 .filter(s -> sessionId.equals(s.getId()))
                 .findFirst()
                 .ifPresent(s -> {
-                    // Downgrade previous waiting messages
-                    if (msg.getAgentType() != null && msg.getAgentType().contains("waiting")) {
+                    // Downgrade previous waiting messages when a new message arrives
+                    // especially if the new one is also waiting or from the user (completing a turn)
+                    String newAgentType = msg.getAgentType();
+                    if (newAgentType != null && (newAgentType.contains("waiting") || newAgentType.contains("user"))) {
                         for (ChatMessage existing : s.getMessages()) {
-                            if (existing.getAgentType() != null && existing.getAgentType().contains("waiting")) {
-                                existing.setAgentType("response");
+                            String oldAgentType = existing.getAgentType();
+                            if (oldAgentType != null && oldAgentType.contains("waiting")) {
+                                existing.setAgentType(oldAgentType.replace("waiting", "response").trim());
                             }
                         }
                     }

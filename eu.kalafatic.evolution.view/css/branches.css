@@ -211,6 +211,23 @@
     position: relative;
 }
 
+.branch-column.kept::after {
+    content: 'KEPT';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg);
+    font-size: 40px;
+    font-weight: 900;
+    color: rgba(22, 101, 52, 0.15);
+    border: 5px solid rgba(22, 101, 52, 0.15);
+    padding: 4px 16px;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 5;
+    user-select: none;
+}
+
 .branch-column.rejected::after {
     content: 'REJECTED';
     position: absolute;
@@ -226,4 +243,9 @@
     pointer-events: none;
     z-index: 5;
     user-select: none;
+}
+
+/* Hide diagonal stamps while the message is still interactive (waiting) */
+.message.waiting .branch-column::after {
+    display: none !important;
 }
