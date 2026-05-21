@@ -128,7 +128,11 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.log("[KERNEL] Dominant Intent: " + expansion.getDominantIntent());
             }
 
-            if (!context.isAutoApprove()) {
+            boolean isStepMode = context.getOrchestrator().getAiChat() != null &&
+                               context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
+                               context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
+
+            if (!context.isAutoApprove() && isStepMode) {
                 context.log("[KERNEL] Darwin Evolution: Pausing for intent interpretation review.");
                 String userResponse = context.requestInput("Intent interpretation complete. State: " + expansion.getState() + ". Review and select a hypothesis to proceed, or reject to refine.").get();
 
@@ -292,44 +296,63 @@ public class DarwinFlow implements IOrchestrationFlow {
             BranchVariant selectedVariant = null;
             String manualId = null;
             if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) || !context.isAutoApprove()) {
-                manager.transition(SystemState.CLARIFYING, context);
-                context.log("[KERNEL] Darwin Evolution: Pausing for variant selection (Manual Mode).");
+                while (true) {
+                    manager.transition(SystemState.CLARIFYING, context);
+                    context.log("[KERNEL] Darwin Evolution: Pausing for variant selection (Manual Mode).");
 
-                StringBuilder sb = new StringBuilder("Darwin generated " + variants.size() + " proposals for your review:\n");
-                for (BranchVariant v : variants) {
-                    sb.append(String.format("- [%s] %s (Predicted Score: %.2f)\n", v.getId(), v.getStrategy(), v.getScore()));
-                }
-                sb.append("\nSelect a variant to execute (e.g. 'Select v0'), or reject to refine.");
+                    StringBuilder sb = new StringBuilder("Darwin generated " + variants.size() + " proposals for your review:\n");
+                    for (BranchVariant v : variants) {
+                        String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? " [KEPT]" : "";
+                        sb.append(String.format("- [%s] %s (Predicted Score: %.2f)%s\n", v.getId(), v.getStrategy(), v.getScore(), status));
+                    }
+                    sb.append("\nSelect a variant to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
 
-                String input = context.requestInput(sb.toString()).get();
-                if ("Force Solution".equalsIgnoreCase(input)) {
-                    context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
-                    context.setAutoApprove(true);
-                    // Single authority will choose the best variant automatically
-                } else if ("Rejected".equalsIgnoreCase(input)) {
-                    manager.recordRejection(goal, "Darwin " + state.getCurrentPhase() + " proposals rejected by user.");
-                    EvaluationResult res = manager.failedResult();
-                    res.setDecision(SelfDevDecision.CONTINUE);
-                    manager.transition(SystemState.FAILED, context);
-                    return res;
-                }
+                    String input = context.requestInput(sb.toString()).get();
+                    if ("Force Solution".equalsIgnoreCase(input)) {
+                        context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                        context.setAutoApprove(true);
+                        break; // Exit loop, authority will decide
+                    }
 
-                if (input != null && input.startsWith("Select ")) {
-                    manualId = input.substring(7).trim();
-                } else if (input.startsWith("Approve variant ")) {
-                    manualId = input.substring(16).trim();
-                }
+                    if (input == null || input.trim().isEmpty()) continue;
 
-                if (manualId != null) {
-                    context.log("[KERNEL] User selected variant: " + manualId);
-                } else if (input != null && input.startsWith("Reject variant ")) {
-                    String rejectedId = input.substring(15).trim();
-                    context.log("[KERNEL] User rejected variant: " + rejectedId + ". Evolution stopped by user.");
-                    manager.recordRejection(goal, "Darwin variant " + rejectedId + " rejected by user ('no way').");
-                    EvaluationResult res = manager.failedResult();
-                    res.setDecision(SelfDevDecision.STOP);
-                    manager.transition(SystemState.FAILED, context);
-                    return res;
+                    if (input.startsWith("Select ") || input.startsWith("Approve variant ")) {
+                        manualId = input.startsWith("Select ") ? input.substring(7).trim() : input.substring(16).trim();
+                        context.log("[KERNEL] User selected variant: " + manualId);
+                        break;
+                    } else if (input.startsWith("Keep variant ")) {
+                        String keepId = input.substring(13).trim();
+                        variants.stream().filter(v -> v.getId().equals(keepId)).findFirst().ifPresent(v -> {
+                            v.setActivationState(BranchVariant.ActivationState.KEPT);
+                            context.log("[KERNEL] Variant " + keepId + " marked as KEPT for final evaluation.");
+                        });
+                        // Continue loop
+                    } else if (input.startsWith("Reject variant ")) {
+                        String rejectedId = input.substring(15).trim();
+                        context.log("[KERNEL] User rejected variant: " + rejectedId + ". Evolution stopped by user.");
+                        manager.recordRejection(goal, "Darwin variant " + rejectedId + " rejected by user ('no way').");
+                        EvaluationResult res = manager.failedResult();
+                        res.setDecision(SelfDevDecision.STOP);
+                        manager.transition(SystemState.FAILED, context);
+                        return res;
+                    } else if ("Rejected".equalsIgnoreCase(input)) {
+                        manager.recordRejection(goal, "Darwin " + state.getCurrentPhase() + " proposals rejected by user.");
+                        EvaluationResult res = manager.failedResult();
+                        res.setDecision(SelfDevDecision.CONTINUE);
+                        manager.transition(SystemState.FAILED, context);
+                        return res;
+                    } else {
+                        // High priority guidance text input
+                        context.log("[KERNEL] User provided guidance: " + input + ". Refining intent and regenerating variants.");
+                        goal = goal + " (Guidance: " + input + ")";
+                        if (context.getOrchestrator().getSelfDevSession() != null) {
+                             context.getOrchestrator().getSelfDevSession().setInitialRequest(goal);
+                        }
+                        EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                        res.setSuccess(true);
+                        res.setDecision(SelfDevDecision.CONTINUE);
+                        return res; // Triggers loop back in Supervisor
+                    }
                 }
             }
 
@@ -444,7 +467,11 @@ public class DarwinFlow implements IOrchestrationFlow {
                 result.setDecision(isFinalPhase ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
                 result.setSuccess(true); // Treat phase as successful to allow progression
 
-                if (!isFinalPhase && !context.isAutoApprove()) {
+                boolean isStepModeConfirmation = context.getOrchestrator().getAiChat() != null &&
+                                               context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
+                                               context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
+
+                if (!isFinalPhase && !context.isAutoApprove() && isStepModeConfirmation) {
                     context.log("[KERNEL] Darwin Evolution: Phase " + completedPhase + " completed. Pausing for user confirmation before next phase: " + nextPhase);
                     try {
                         String userResponse = context.requestInput("Phase " + completedPhase + " completed successfully. Proceed to " + nextPhase + "? (Yes/No)").get();

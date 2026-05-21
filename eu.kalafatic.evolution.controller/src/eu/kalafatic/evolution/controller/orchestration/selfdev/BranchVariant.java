@@ -9,6 +9,7 @@ public class BranchVariant {
         ANALYZING,
         SCORING,
         RECOMMENDED,
+        KEPT,
         APPROVED,
         ACTIVE,
         EXECUTING,
