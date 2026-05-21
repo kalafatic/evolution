@@ -34,7 +34,19 @@ window.ChatApp.Renderer = {
         }
 
         if (isDarwin) {
+            content.style.flexDirection = 'column';
             content.appendChild(this.renderDarwin(m));
+
+            // Move Force Solution button out of branch container to appear UNDER all branches
+            const role = (m.agentType || '').toLowerCase();
+            const isApproved = role.includes('approved');
+            if (!isApproved) {
+                const forceDiv = document.createElement('div');
+                forceDiv.className = 'force-solution-container';
+                forceDiv.innerHTML = `<button class="branch-btn force" onclick="window.ChatApp.Actions.callJava('forceSolution', '${m.index}', '')">⚡ Force Solution</button>
+                                      <div class="force-hint">Bypass expansion & execute winner</div>`;
+                content.appendChild(forceDiv);
+            }
         } else {
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
@@ -316,12 +328,13 @@ window.ChatApp.Renderer = {
                 const vId = String(v.id || index);
                 const isThisApproved = isApproved && (approvedId === null || approvedId === vId);
                 const isThisRejected = (isApproved && approvedId !== null && approvedId !== vId) || (isRejected && rejectedId === vId);
+                const isThisKept = v.approved === true || v.status === 'KEPT' || (v.id && m.text.includes(v.id + '"') && m.text.includes('"status":"KEPT"'));
 
                 const col = document.createElement('div');
-                col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '');
+                col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '') + (isThisKept ? ' kept' : '');
 
                 // Simplified Darwin Header
-                let headerHtml = `<div class="branch-header">PROPOSAL ${index + 1}</div>`;
+                let headerHtml = `<div class="branch-header">PROPOSAL ${index + 1}${isThisKept ? ' [KEPT]' : ''}</div>`;
                 let strategy = v.strategy || v.description;
                 if (strategy) headerHtml += `<div class="branch-strategy">${strategy}</div>`;
 
@@ -331,7 +344,8 @@ window.ChatApp.Renderer = {
                     <div class="branch-footer">
                         ${isThisApproved ? '<div style="color: #16a34a; font-weight: bold;">APPROVED</div>' :
                           isThisRejected ? '<div style="color: #dc2626; font-weight: bold;">REJECTED</div>' :
-                          `<button class="branch-btn keep" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${vId}')">Keep</button>
+                          `<button class="branch-btn select" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${vId}')">Select</button>
+                           <button class="branch-btn keep" onclick="window.ChatApp.Actions.callJava('keepDarwinVariant', '${m.index}', '${vId}')">Keep</button>
                            <button class="branch-btn reject" onclick="window.ChatApp.Actions.callJava('rejectDarwinVariant', '${m.index}', '${vId}')">Reject</button>
                            <button class="branch-btn" onclick="window.ChatApp.Actions.callJava('editDarwinVariant', '${m.index}', '${vId}')">Edit</button>`}
                     </div>
@@ -339,19 +353,6 @@ window.ChatApp.Renderer = {
                 container.appendChild(col);
             });
 
-            // Add Force Solution button if it's a Darwin branches message and not yet approved
-            if (!isApproved) {
-                const forceDiv = document.createElement('div');
-                forceDiv.className = 'branch-column force-column';
-                forceDiv.style.justifyContent = 'center';
-                forceDiv.style.alignItems = 'center';
-                forceDiv.style.background = 'transparent';
-                forceDiv.style.border = '1px dashed var(--border)';
-                forceDiv.style.boxShadow = 'none';
-                forceDiv.innerHTML = `<button class="branch-btn force" style="width: 100%; height: 60px; font-size: 16px;" onclick="window.ChatApp.Actions.callJava('forceSolution', '${m.index}', '')">⚡ Force Solution</button>
-                                      <div style="font-size: 10px; color: #64748b; margin-top: 8px; text-align: center;">Bypass expansion & execute winner</div>`;
-                container.appendChild(forceDiv);
-            }
         } catch(e) { container.innerHTML = `<div class="bubble error">Failed to parse Darwin: ${e.message}</div>`; }
         return container;
     }

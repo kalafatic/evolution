@@ -45,6 +45,12 @@
     color: #1e40af !important;
 }
 
+.branch-column.kept {
+    background: #f0fdf4 !important;
+    border-color: #22c55e !important;
+    color: #166534 !important;
+}
+
 .branch-header {
     font-family: serif;
     font-weight: 900;
@@ -142,13 +148,42 @@
 }
 
 .branch-btn.force {
-    background: #7c3aed;
+    background: #60a5fa; /* Light Blue */
+    color: white;
+    border: none;
+    height: 40px;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.branch-btn.force:hover {
+    background: #3b82f6;
+}
+
+.branch-btn.select {
+    background: #3b82f6;
     color: white;
     border: none;
 }
 
-.branch-btn.force:hover {
-    background: #6d28d9;
+.branch-btn.select:hover {
+    background: #2563eb;
+}
+
+.force-solution-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 12px;
+    padding: 8px;
+    border-top: 1px dashed var(--border);
+}
+
+.force-hint {
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 4px;
 }
 
 .branch-column.approved::after {

@@ -14,6 +14,10 @@ public class StepModeController {
     public static StepModeController getInstance() { return instance; }
 
     public WorkflowStatus waitForStep(String sessionId, WorkflowStep step, TaskContext context) {
+        if (context.isAutoApprove()) {
+            return WorkflowStatus.COMPLETED;
+        }
+
         if (context.getOrchestrator().getAiChat() != null &&
             context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
             !context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode()) {

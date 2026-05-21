@@ -420,6 +420,10 @@ public class ChatGroup extends AEvoGroup {
                             handleRejectDarwinVariant(index, text);
                             page.handleExecuteProposal("Reject variant " + text);
                             break;
+                        case "keepDarwinVariant":
+                            handleKeepDarwinVariant(index, text);
+                            page.handleExecuteProposal("Keep variant " + text);
+                            break;
                         case "editDarwinVariant":
                             handleEditDarwinVariant(index, text);
                             break;
@@ -514,6 +518,30 @@ public class ChatGroup extends AEvoGroup {
                 msg.setAgentType(agentType + " approved");
             }
             refreshBrowser();
+        }
+    }
+
+    public void handleKeepDarwinVariant(int index, String variantId) {
+        if (currentSession != null && index >= 0 && index < currentSession.getMessages().size()) {
+            ChatMessage msg = currentSession.getMessages().get(index);
+            String text = msg.getText();
+            try {
+                JSONObject json;
+                if (text.startsWith("[")) json = new JSONObject("{ \"variants\": " + text + " }");
+                else json = new JSONObject(text);
+
+                JSONArray variants = json.optJSONArray("variants");
+                if (variants != null) {
+                    for (int i = 0; i < variants.length(); i++) {
+                        JSONObject v = variants.getJSONObject(i);
+                        if (variantId.equals(v.optString("id"))) {
+                            v.put("status", "KEPT");
+                        }
+                    }
+                    msg.setText(json.toString());
+                    refreshBrowser();
+                }
+            } catch (Exception e) {}
         }
     }
 

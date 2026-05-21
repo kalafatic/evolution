@@ -70,6 +70,11 @@ public class ActivationResolver implements ICapability {
             double baseScore = totalConfidence > 0 ? (totalScore / totalConfidence) : 0.5;
             double finalScore = baseScore * 0.7 + (signalBoost * 0.3);
 
+            // Manual "KEEP" boost: significantly increase score of kept variants
+            if (variant.getActivationState() == BranchVariant.ActivationState.KEPT) {
+                finalScore = Math.max(finalScore, 0.9) + 0.05;
+            }
+
             // Progress Bias: Boost variants that actually have physical changes when in implementation phases
             if (context != null && variant.getMutationTrace() != null && !variant.getMutationTrace().isEmpty() && !variant.getMutationTrace().contains("No physical changes")) {
                 String phase = context.getOrchestrationState().getCurrentPhase();
