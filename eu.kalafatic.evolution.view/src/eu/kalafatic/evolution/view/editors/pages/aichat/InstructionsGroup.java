@@ -178,7 +178,7 @@ public class InstructionsGroup extends AEvoGroup {
                     iterativeCheck.setSelection(true);
                     darwinCheck.setSelection(true);
                     if (maxIterationsSpinner.getSelection() == 1) {
-                        maxIterationsSpinner.setSelection(5);
+                        maxIterationsSpinner.setSelection(4);
                     }
                 }
                 page.syncModelWithUI();
@@ -192,7 +192,7 @@ public class InstructionsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (darwinCheck.getSelection() && maxIterationsSpinner.getSelection() == 1) {
-                    maxIterationsSpinner.setSelection(5);
+                    maxIterationsSpinner.setSelection(4);
                 }
                 page.syncModelWithUI();
             }
@@ -239,7 +239,7 @@ public class InstructionsGroup extends AEvoGroup {
         maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(settingsComp, SWT.BORDER);
         maxIterationsSpinner.setMinimum(1);
         maxIterationsSpinner.setMaximum(100);
-        maxIterationsSpinner.setSelection(5);
+        maxIterationsSpinner.setSelection(4);
         maxIterationsSpinner.setIncrement(1);
         maxIterationsSpinner.addSelectionListener(new SelectionAdapter() {
             @Override
