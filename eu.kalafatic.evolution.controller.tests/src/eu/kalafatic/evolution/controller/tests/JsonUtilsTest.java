@@ -53,4 +53,28 @@ public class JsonUtilsTest {
         assertNotNull(result);
         assertTrue(result.has("a"));
     }
+
+    @Test
+    public void testRepairTruncatedJson() {
+        String truncated = "{\n" +
+                "  \"state\": \"CLEAR\",\n" +
+                "  \"dimensions\": [\n" +
+                "    {\n" +
+                "      \"id\": \"1\",\n" +
+                "      \"value\": \"v1\"";
+        JSONObject result = JsonUtils.extractJsonObject(truncated);
+        assertNotNull(result);
+        assertEquals("CLEAR", result.getString("state"));
+        JSONArray dims = result.getJSONArray("dimensions");
+        assertEquals(1, dims.length());
+        assertEquals("v1", dims.getJSONObject(0).getString("value"));
+    }
+
+    @Test
+    public void testRepairTruncatedString() {
+        String truncated = "{\"key\": \"truncated value";
+        JSONObject result = JsonUtils.extractJsonObject(truncated);
+        assertNotNull(result);
+        assertEquals("truncated value", result.getString("key"));
+    }
 }

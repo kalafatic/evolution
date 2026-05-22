@@ -84,6 +84,7 @@ public class LlmRouter {
                     String mediationInstruction = "### HUMAN MEDIATION REQUIRED ###\n" +
                             "Please process the following context-aware prompt in your preferred high-reasoning external LLM (e.g. GPT-4o, Claude 3.5, O1) " +
                             "and paste the response below to continue the evolution.\n\n" +
+                            "Alternatively, you may reply with **'Approved'**, **'Yes'**, or **'Proceed'** to use the locally prepared context as the final result.\n\n" +
                             "--- START PREPARED PROMPT ---\n" +
                             augmentedPrompt + "\n" +
                             "--- END PREPARED PROMPT ---";
@@ -92,6 +93,17 @@ public class LlmRouter {
                     if (response == null || response.isEmpty() || "Rejected".equalsIgnoreCase(response)) {
                         throw new Exception("Mediation rejected or empty. Stopping flow.");
                     }
+
+                    // NEW: Fast-approval logic for MEDIATED mode
+                    String trimmedResponse = response.trim();
+                    if (trimmedResponse.equalsIgnoreCase("Approved") ||
+                        trimmedResponse.equalsIgnoreCase("Yes") ||
+                        trimmedResponse.equalsIgnoreCase("Proceed") ||
+                        trimmedResponse.equalsIgnoreCase("OK")) {
+                        context.log("LlmRouter-Mediated: User approved locally prepared prompt as result.");
+                        return augmentedPrompt;
+                    }
+
                     return response;
                 }
                 return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
@@ -191,16 +203,22 @@ public class LlmRouter {
                     String hybridModel = orchestrator.getHybridModel();
                     if (hybridModel != null && !hybridModel.isEmpty()) {
                         context.log("LlmRouter-Hybrid: Refining context with local model: " + hybridModel);
-                        String refinementPrompt = "You are a context refiner. Review the following technical context and the original goal. " +
-                                "Enhance the context with any additional insights or specific details from your local knowledge that might help the reasoning model.\n\n" +
+                        String refinementPrompt = "You are a context refiner and prompt optimizer. Review the following technical context and the original goal. " +
+                                "Enhance the context and optimize the request for a high-reasoning model.\n\n" +
                                 deterministicPrompt + "\n\n" +
                                 "Original Request: " + prompt;
 
                         if (orchestrator.getOllama() == null) {
                             orchestrator.setOllama(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOllama());
                         }
+
+                        String originalModel = orchestrator.getOllama().getModel();
                         orchestrator.getOllama().setModel(hybridModel);
-                        return ollamaProvider.sendRequest(orchestrator, refinementPrompt, temperature, proxyUrl, context);
+                        try {
+                            return ollamaProvider.sendRequest(orchestrator, refinementPrompt, temperature, proxyUrl, context);
+                        } finally {
+                            orchestrator.getOllama().setModel(originalModel);
+                        }
                     }
 
                     return deterministicPrompt;
@@ -214,23 +232,63 @@ public class LlmRouter {
             if (orchestrator.getOllama() == null) {
                 orchestrator.setOllama(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOllama());
             }
-            orchestrator.getOllama().setModel(hybridModel);
         } else if (orchestrator.getOllama() != null) {
             hybridModel = orchestrator.getOllama().getModel();
         }
 
         if (context != null) context.log("LlmRouter-Hybrid: Using local model for context building: " + (hybridModel != null && !hybridModel.isEmpty() ? hybridModel : "default"));
 
-        String contextPrompt = "You are a context builder. Analyze the user request and provide a detailed summary of the technical context needed to fulfill it. " +
+        String contextPrompt = "You are a context builder and prompt optimizer. Analyze the user request and provide a detailed summary of the technical context needed to fulfill it. " +
+                "Optimize the context and request for a high-reasoning model.\n\n" +
                 "Include relevant file paths, system state, and architectural constraints found in the shared memory. " +
                 "Provide a structured 'CONTEXT' block followed by the original 'REQUEST'.\n\n" +
                 "Original Request: " + prompt;
+
+        if (hybridModel != null && !hybridModel.isEmpty()) {
+            String originalModel = orchestrator.getOllama().getModel();
+            orchestrator.getOllama().setModel(hybridModel);
+            try {
+                return ollamaProvider.sendRequest(orchestrator, contextPrompt, temperature, proxyUrl, context);
+            } finally {
+                orchestrator.getOllama().setModel(originalModel);
+            }
+        }
 
         return ollamaProvider.sendRequest(orchestrator, contextPrompt, temperature, proxyUrl, context);
     }
 
     private String verifyResponseLocally(Orchestrator orchestrator, String remoteResponse, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        // In this implementation, we just pass through or do a quick safety check
+        // Implementation for 3-step Hybrid mode (Simplify/Verify)
+        String hybridModel = orchestrator.getHybridModel();
+        if (hybridModel == null || hybridModel.isEmpty()) {
+            if (orchestrator.getOllama() != null) {
+                hybridModel = orchestrator.getOllama().getModel();
+            }
+        }
+
+        if (hybridModel != null && !hybridModel.isEmpty() && !"deepseek".equalsIgnoreCase(hybridModel)) {
+            if (context != null) context.log("LlmRouter-Hybrid: Step 3 - Simplifying response with local model: " + hybridModel);
+
+            String verificationPrompt = "You are a response simplifier and verifier. " +
+                    "Analyze the following output from a large reasoning model. " +
+                    "Clean up any conversational noise, ensure it follows the required format, and output ONLY the final technical result.\n\n" +
+                    "Please simplify the following response:\n\n" +
+                    "Large Model Output: " + remoteResponse;
+
+            if (orchestrator.getOllama() == null) {
+                orchestrator.setOllama(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createOllama());
+            }
+
+            // Temporarily set model for this call
+            String originalModel = orchestrator.getOllama().getModel();
+            orchestrator.getOllama().setModel(hybridModel);
+            try {
+                return ollamaProvider.sendRequest(orchestrator, verificationPrompt, temperature, proxyUrl, context);
+            } finally {
+                orchestrator.getOllama().setModel(originalModel);
+            }
+        }
+
         return remoteResponse;
     }
 

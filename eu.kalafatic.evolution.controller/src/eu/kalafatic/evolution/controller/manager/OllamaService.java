@@ -35,7 +35,7 @@ public class OllamaService {
 
     // Advanced options
     private float temperature = 0.7f;
-    private int numPredict = 1024;
+    private int numPredict = 4096;
     private float topP = 0.9f;
     private int topK = 40;
     private float repeatPenalty = 1.1f;

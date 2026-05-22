@@ -69,8 +69,82 @@ public class JsonUtils {
             }
         }
 
+        // Final fallback: try to repair truncated JSON if braces were present but failed to parse
+        if (firstStart != -1 && (lastEnd == -1 || lastEnd < firstStart)) {
+            String candidate = text.substring(firstStart);
+            String repaired = repairTruncatedJson(candidate);
+            try {
+                return new JSONObject(repaired);
+            } catch (JSONException e) {
+                // repair failed
+            }
+        }
+
         // Final fallback: try to parse key-value pairs if standard JSON extraction failed or no braces found
         return attemptKeyValueParsing(text);
+    }
+
+    /**
+     * Attempts to repair a truncated JSON string by adding missing closing braces and brackets.
+     */
+    private static String repairTruncatedJson(String json) {
+        if (json == null) return null;
+
+        List<Character> stack = new ArrayList<>();
+        boolean inString = false;
+        boolean escaped = false;
+
+        for (int i = 0; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            if (c == '\\') {
+                escaped = true;
+                continue;
+            }
+            if (c == '"') {
+                inString = !inString;
+                continue;
+            }
+            if (!inString) {
+                if (c == '{') stack.add('{');
+                else if (c == '[') stack.add('[');
+                else if (c == '}') {
+                    if (!stack.isEmpty() && stack.get(stack.size() - 1) == '{') stack.remove(stack.size() - 1);
+                } else if (c == ']') {
+                    if (!stack.isEmpty() && stack.get(stack.size() - 1) == '[') stack.remove(stack.size() - 1);
+                }
+            }
+        }
+
+        StringBuilder sb = new StringBuilder(json.trim());
+
+        if (inString) {
+            sb.append('"');
+        }
+
+        // Remove trailing comma if present (common in truncated JSON)
+        int lastIdx = sb.length() - 1;
+        while (lastIdx >= 0) {
+            char c = sb.charAt(lastIdx);
+            if (Character.isWhitespace(c) || c == ',') {
+                sb.deleteCharAt(lastIdx);
+                lastIdx = sb.length() - 1;
+            } else {
+                break;
+            }
+        }
+
+        // Close objects and arrays in reverse order of their opening
+        for (int i = stack.size() - 1; i >= 0; i--) {
+            char open = stack.get(i);
+            if (open == '{') sb.append('}');
+            else if (open == '[') sb.append(']');
+        }
+
+        return sb.toString();
     }
 
     /**
