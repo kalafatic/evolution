@@ -28,6 +28,7 @@ import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
@@ -408,12 +409,30 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         DarwinDiversityAnalyzer diversityAnalyzer = new DarwinDiversityAnalyzer();
 
         List<DarwinStrategySeed> mutationSeeds = new ArrayList<>();
-        mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
-        mutationSeeds.add(DarwinStrategySeed.divergenceA());
-        mutationSeeds.add(DarwinStrategySeed.divergenceB());
-        mutationSeeds.add(DarwinStrategySeed.synthesisHybrid());
 
-        context.log("[DARWIN] Executing Sequential Mutation Chain...");
+        // ADAPTIVE BRANCH SCALING: Modulate variety based on EPS and Intent
+        boolean hasStateChangeIntent = context.getOrchestrationState().getTaskIntents() != null && (
+                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.IMPLEMENTATION) ||
+                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.REFACTORING) ||
+                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.DEBUGGING)
+        );
+
+        if (eps < 0.3 && !hasStateChangeIntent) {
+            context.log("[DARWIN] Low evolutionary pressure and no state-change intent. Single-seed mode (KEEPER).");
+            mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
+        } else if (eps < 0.6 || !hasStateChangeIntent) {
+            context.log("[DARWIN] Moderate evolutionary pressure. Dual-seed mode (KEEPER + DIVERGENCE_A).");
+            mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
+            mutationSeeds.add(DarwinStrategySeed.divergenceA());
+        } else {
+            context.log("[DARWIN] High evolutionary pressure. Full-seed mode (Full Chain).");
+            mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
+            mutationSeeds.add(DarwinStrategySeed.divergenceA());
+            mutationSeeds.add(DarwinStrategySeed.divergenceB());
+            mutationSeeds.add(DarwinStrategySeed.synthesisHybrid());
+        }
+
+        context.log("[DARWIN] Executing Sequential Mutation Chain with " + mutationSeeds.size() + " seeds.");
         List<JSONObject> mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, context);
         List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, context);
 

@@ -13,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.*;
+import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISchedulingContract;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IEvaluationContract;
@@ -295,7 +296,11 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             BranchVariant selectedVariant = null;
             String manualId = null;
-            if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) || !context.isAutoApprove()) {
+
+            // BYPASS SELECTION: Skip pause for single-variant non-state-changing turns
+            boolean skipSelectionPause = variants.size() == 1 && !hasStateChangeIntent(context);
+
+            if ((profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) || !context.isAutoApprove()) && !skipSelectionPause) {
                 while (true) {
                     manager.transition(SystemState.CLARIFYING, context);
                     context.log("[KERNEL] Darwin Evolution: Pausing for variant selection (Manual Mode).");
@@ -688,6 +693,14 @@ public class DarwinFlow implements IOrchestrationFlow {
         // (This would ideally compare against historical trajectories in TrajectoryMemory)
 
         return false;
+    }
+
+    private boolean hasStateChangeIntent(TaskContext context) {
+        return context.getOrchestrationState().getTaskIntents() != null && (
+                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.IMPLEMENTATION) ||
+                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.REFACTORING) ||
+                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.DEBUGGING)
+        );
     }
 
     private String sanitize(String s) {
