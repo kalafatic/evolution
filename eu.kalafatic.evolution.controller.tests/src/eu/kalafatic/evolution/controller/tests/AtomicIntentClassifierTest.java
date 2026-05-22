@@ -18,6 +18,20 @@ public class AtomicIntentClassifierTest {
     }
 
     @Test
+    public void testDefaultTargetAssignment() {
+        AtomicIntentAnalysis analysis = HybridAtomicIntentClassifier.heuristicAnalyze("create java class");
+        assertTrue(analysis.isAtomic());
+        assertEquals("NewClass", analysis.getTargetArtifact());
+        assertTrue(analysis.getSignals().contains("default_target_assigned"));
+
+        analysis = HybridAtomicIntentClassifier.heuristicAnalyze("create readme");
+        assertEquals("README.md", analysis.getTargetArtifact());
+
+        analysis = HybridAtomicIntentClassifier.heuristicAnalyze("create file");
+        assertEquals("GeneratedArtifact", analysis.getTargetArtifact());
+    }
+
+    @Test
     public void testHeuristicNonAtomicExamples() {
         assertNotAtomic("redesign authentication architecture");
         assertNotAtomic("optimize persistence layer");

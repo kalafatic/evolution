@@ -154,6 +154,11 @@ public class EvolutionOrchestrator implements IOrchestrator {
             String path = taskName.replaceFirst("(?i)^(Write|Create|Update|MKDIR|DELETE)\\s+", "").trim().split(" ")[0];
             // Sanitization: Remove leading slashes and drive letters, and normalize separators
             path = path.replaceFirst("^([a-zA-Z]:)?[/\\\\]+", "").replace('\\', '/');
+
+            if (path == null || path.isEmpty() || "null".equals(path)) {
+                throw new Exception("Kernel Violation: Attempted to write to a null or empty path: " + taskName);
+            }
+
             String extractedCode = CodeExtractor.extractCode(patch);
             return ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("WRITE " + path + "\n" + extractedCode, context.getProjectRoot(), context);
         } else if (EvolutionConstants.TASK_MAVEN.equalsIgnoreCase(taskType)) {
