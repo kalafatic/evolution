@@ -38,6 +38,10 @@ public class TaskPlanner extends BaseAiAgent {
             String op = action.getOperation().toUpperCase();
             String target = action.getTarget();
 
+            if (target == null || target.isEmpty() || "null".equals(target)) {
+                target = "GeneratedArtifact";
+            }
+
             // Smart extension appending for known artifact types
             if (target != null && !target.contains(".") && !target.isEmpty()) {
                 String domain = action.getDomain() != null ? action.getDomain().toLowerCase() : "";

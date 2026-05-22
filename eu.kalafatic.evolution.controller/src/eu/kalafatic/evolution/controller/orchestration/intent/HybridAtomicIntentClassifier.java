@@ -192,6 +192,14 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         if (simpleCreation && !analysis.isMultiStep()) {
             score = Math.max(score, 0.85);
             analysis.getSignals().add("simple_creation_shortcut");
+
+            if (analysis.getTargetArtifact() == null || analysis.getTargetArtifact().isEmpty()) {
+                String defaultName = "GeneratedArtifact";
+                if (lower.contains("class")) defaultName = "NewClass";
+                else if (lower.contains("readme")) defaultName = "README.md";
+                analysis.setTargetArtifact(defaultName);
+                analysis.getSignals().add("default_target_assigned");
+            }
         }
 
         analysis.setConfidence(Math.max(0.0, Math.min(1.0, score)));
