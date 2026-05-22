@@ -47,10 +47,10 @@ public class DarwinFitnessRanker {
             if (specific) score += 0.05;
         }
 
-        // 3. Strategy Role weighting
+        // 3. Strategy Role weighting (History-Aware)
         String type = variant.optString("strategy_type");
-        if (DarwinStrategyType.EXPLORATION.name().equals(type)) score += 0.05; // Prefer exploration for direct goals
-        if (DarwinStrategyType.STABILIZATION.name().equals(type)) score += 0.03; // Slight preference for stability
+        if (DarwinStrategyType.KEEPER_EVOLUTION.name().equals(type)) score += 0.05; // Prefer evolving the winner
+        if (DarwinStrategyType.SYNTHESIS_HYBRID.name().equals(type)) score += 0.03; // Slight preference for synthesis
 
         return Math.min(1.0, score);
     }

@@ -32,6 +32,7 @@ import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionRes
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
+import eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord;
 import eu.kalafatic.evolution.controller.trajectory.strategy.BranchSelector;
 import eu.kalafatic.evolution.controller.trajectory.strategy.EvolutionBranch;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.DiversityPressureController;
@@ -317,9 +318,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         // Activation Gate: Only ACTIVE branches influence subsequent iterations
-        ActivationGate gate = new ActivationGate();
-        List<IterationRecord> activeRecords = memoryService.getRecords().stream()
-                .filter(r -> "ACTIVE".equals(r.getStatus()))
+        List<IterationRecord> records = memoryService.getRecords();
+        List<IterationRecord> activeRecords = records.stream()
+                .filter(r -> "ACTIVE".equals(r.getActivationState()))
                 .collect(Collectors.toList());
 
         String history;
@@ -336,10 +337,22 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         state.append("\n--- LEARNING FROM HISTORY (ACTIVATED LINEAGE ONLY) ---\n");
         state.append(history).append("\n");
 
+        // SEQUENTIAL MUTATION CHAIN: Retrieve all previous branches in this iteration history
+        List<TrajectoryAnalysisRecord> currentIterationBranches = memoryService.getTrajectoryAnalyses().stream()
+                .filter(t -> String.valueOf(context.getCurrentIteration()).equals(t.getIterationId()))
+                .collect(Collectors.toList());
+
+        if (!currentIterationBranches.isEmpty()) {
+            state.append("\n--- EVOLUTION MEMORY (CURRENT ITERATION PROPOSALS) ---\n");
+            for (TrajectoryAnalysisRecord t : currentIterationBranches) {
+                state.append("- Previously proposed in this iteration: ").append(t.getStrategy()).append("\n");
+            }
+        }
+
         // Adaptive Feedback Learning: Extract guidance from rejected patterns
         try {
-            context.log("[DARWIN] Running adaptive feedback analysis on " + memoryService.getRecords().size() + " records.");
-            JSONObject adaptiveAnalysis = rejectionAnalyzer.analyze(memoryService.getRecords(), context);
+            context.log("[DARWIN] Running adaptive feedback analysis on " + records.size() + " records.");
+            JSONObject adaptiveAnalysis = rejectionAnalyzer.analyze(records, context);
             if (adaptiveAnalysis != null) {
                 penaltyModel.updateFromAnalysis(adaptiveAnalysis);
                 state.append("\n--- ADAPTIVE EVOLUTIONARY GUIDANCE ---\n");
@@ -387,42 +400,22 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         basePrompt += "\n[SYSTEM_DIRECTIVE] Evolution Pressure Scalar (EPS): " + String.format("%.2f", eps) + ".\n";
 
         // ========================================
-        // NEW MULTI-CALL PIPELINE
+        // SEQUENTIAL MUTATION PIPELINE (REFRACTOR)
         // ========================================
 
-        // 5. Strategy Spawning (Phase 1)
+        // 5. Strategy Spawning (Sequential Mutation Chain)
         DarwinVariantSpawner spawner = new DarwinVariantSpawner(aiService);
         DarwinDiversityAnalyzer diversityAnalyzer = new DarwinDiversityAnalyzer();
 
-        // Round 1: Mandatory Hybrid Seeds (Exploration, Analytical, Stabilization)
-        List<DarwinStrategySeed> mandatorySeeds = new ArrayList<>();
-        mandatorySeeds.add(DarwinStrategySeed.exploration());
-        mandatorySeeds.add(DarwinStrategySeed.analytical());
-        mandatorySeeds.add(DarwinStrategySeed.stabilization());
+        List<DarwinStrategySeed> mutationSeeds = new ArrayList<>();
+        mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
+        mutationSeeds.add(DarwinStrategySeed.divergenceA());
+        mutationSeeds.add(DarwinStrategySeed.divergenceB());
+        mutationSeeds.add(DarwinStrategySeed.synthesisHybrid());
 
-        context.log("[DARWIN] Executing Generation Round 1 (Hybrid Strategy Space)");
-        List<JSONObject> round1Variants = spawner.spawn(goal, mandatorySeeds, basePrompt, context);
-        List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(round1Variants, context);
-
-        // Round 2: Adaptive/Optional Seeds (Phase 8 - Iterative Evolution)
-        // Execute optional seeds if diversity is insufficient OR pressure is high
-        if (uniqueVariants.size() < 3 || eps > 0.7) {
-            context.log("[DARWIN] Executing Generation Round 2 (Adaptive Diversity)");
-            List<DarwinStrategySeed> optionalSeeds = new ArrayList<>();
-            optionalSeeds.add(DarwinStrategySeed.exploration()); // Spawn another exploration future
-
-            // Enrich prompt with Round 1 results for iterative evolution
-            String round2Prompt = basePrompt + "\n\nPREVIOUS CANDIDATE STRATEGIES (ROUND 1):\n";
-            for (JSONObject v : uniqueVariants) {
-                round2Prompt += "- " + v.optString("strategy") + "\n";
-            }
-            round2Prompt += "\nGenerate Round 2 variants that are DIFFERENT or complementary to the above.";
-
-            List<JSONObject> round2Variants = spawner.spawn(goal, optionalSeeds, round2Prompt, context);
-            uniqueVariants.addAll(round2Variants);
-            // Deduplicate entire set
-            uniqueVariants = diversityAnalyzer.analyze(uniqueVariants, context);
-        }
+        context.log("[DARWIN] Executing Sequential Mutation Chain...");
+        List<JSONObject> mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, context);
+        List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, context);
 
         // 8. Synthetic Recovery (Phase 6)
         DarwinSyntheticVariantFactory syntheticFactory = new DarwinSyntheticVariantFactory();
