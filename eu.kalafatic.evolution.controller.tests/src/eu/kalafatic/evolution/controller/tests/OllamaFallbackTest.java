@@ -31,7 +31,7 @@ public class OllamaFallbackTest {
         server = HttpServer.create(new InetSocketAddress(0), 0);
         port = server.getAddress().getPort();
 
-        server.createContext("/api/generate", new HttpHandler() {
+        server.createContext("/api/chat", new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
                 int count = generateCallCount.incrementAndGet();
@@ -44,7 +44,12 @@ public class OllamaFallbackTest {
                     }
                 } else {
                     // Return success
-                    String response = "{\"response\":\"Fallback success\"}";
+                    JSONObject resp = new JSONObject();
+                    JSONObject msg = new JSONObject();
+                    msg.put("role", "assistant");
+                    msg.put("content", "Fallback success");
+                    resp.put("message", msg);
+                    String response = resp.toString();
                     exchange.sendResponseHeaders(200, response.length());
                     try (OutputStream os = exchange.getResponseBody()) {
                         os.write(response.getBytes());
