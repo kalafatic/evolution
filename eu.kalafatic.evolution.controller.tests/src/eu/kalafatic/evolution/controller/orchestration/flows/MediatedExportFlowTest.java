@@ -9,7 +9,7 @@ import eu.kalafatic.evolution.controller.orchestration.*;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
-public class MediatedAnalysisFlowTest {
+public class MediatedExportFlowTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
@@ -20,7 +20,7 @@ public class MediatedAnalysisFlowTest {
         Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
         TaskContext context = new TaskContext(orchestrator, folder.getRoot());
 
-        MediatedAnalysisFlow flow = new MediatedAnalysisFlow(null, KernelFactory.create(context, null));
+        MediatedExportFlow flow = new MediatedExportFlow(null, KernelFactory.create(context, null));
         OrchestratorResponse response = flow.execute("Analyze this project", context);
 
         assertNotNull(response);

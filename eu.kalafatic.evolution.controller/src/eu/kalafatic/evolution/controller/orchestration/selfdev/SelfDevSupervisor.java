@@ -95,11 +95,14 @@ public class SelfDevSupervisor {
                     break;
                 }
 
+                context.log("[SUPERVISOR] Iteration " + i + " logic complete. Preparing for potential restart.");
                 restartManager.persistAndPrepareForRestart();
 
                 if (profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
                     context.log("[SUPERVISOR] Delegating build and restart to external Supervisor...");
                     try {
+                        // RESTART CONTINUITY: Final persistence check
+                        restartManager.persistAndPrepareForRestart();
                         bootstrapController.startBootstrap();
                         Thread.sleep(2000);
                         session.setStatus(SelfDevStatus.COMPLETED);

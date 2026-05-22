@@ -1,18 +1,35 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import java.io.File;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.*;
-import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
-import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
-import eu.kalafatic.evolution.controller.orchestration.export.*;
-import eu.kalafatic.evolution.controller.workflow.*;
-import eu.kalafatic.evolution.model.orchestration.AiMode;
+import eu.kalafatic.evolution.controller.agents.MetadataAgent;
+import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
+import eu.kalafatic.evolution.controller.mediation.analysis.MediatedDarwinEngine;
+import eu.kalafatic.evolution.controller.mediation.analysis.PromptSynthesizer;
+import eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor;
+import eu.kalafatic.evolution.controller.mediation.analysis.StagingValidator;
+import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
+import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
+import eu.kalafatic.evolution.controller.workflow.MediatedExportManager;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 
+/**
+ * Unified Mediated Export Flow.
+ * Coordinates: Project Mapping -> Semantic Indexing -> Darwin Reasoning -> Safety Validation -> Context Selection -> Prompt Synthesis -> Export Packaging.
+ *
+ * Replaces and consolidates both the old MediatedExportFlow and MediatedAnalysisFlow.
+ */
 public class MediatedExportFlow implements IOrchestrationFlow {
     private final AiService aiService;
     private final IterationManager manager;
@@ -24,156 +41,254 @@ public class MediatedExportFlow implements IOrchestrationFlow {
 
     @Override
     public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
-        context.log("[KERNEL] Executing Mediated Export Flow.");
+        context.log("[KERNEL] Executing Unified Mediated Export Flow.");
         context.getOrchestrator().getTasks().clear();
 
-        BehaviorProfile profile = context.getBehaviorProfile();
-        OrchestrationState state = context.getOrchestrationState();
-
-        // Mediation suppression for internal preparation steps
-        AiMode originalMode = context.getOrchestrator().getAiMode();
-        boolean mediated = profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED);
-        if (mediated) {
-            context.log("[KERNEL] Temporarily suppressing MEDIATED mode for internal prep.");
-            context.getOrchestrator().setAiMode(AiMode.LOCAL);
-        }
-
         try {
-            manager.transition(SystemState.ANALYZING, context);
             return executeInternal(request, context);
-        } finally {
-            if (mediated) {
-                context.getOrchestrator().setAiMode(originalMode);
-            }
+        } catch (Exception e) {
+            manager.getGitManager().rollback();
+            manager.transition(SystemState.FAILED, context);
+            throw e;
         }
     }
 
     private OrchestratorResponse executeInternal(String request, TaskContext context) throws Exception {
-        context.log("[EXPORT] Starting repository-aware iterative export preparation.");
+        context.log("[MEDIATED] Starting Robust Mediated Context Export Flow.");
+        manager.transition(SystemState.ANALYZING, context);
 
-        JSONObject analysis = null;
-        while (true) {
-            // 1. Analysis Task
-            Task analysisTask = createVirtualTask("Analysis", "Analyze user request and select files.");
-            context.getOrchestrator().getTasks().add(analysisTask);
-            analysisTask.setStatus(TaskStatus.RUNNING);
-            notifyTask(context, analysisTask, RuntimeEventType.TASK_STARTED);
+        File root = context.getProjectRoot();
+        TargetSnapshot.TargetType type = root.getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
 
-            SelfDevRequestAnalyzer analyzer = new SelfDevRequestAnalyzer();
-            analysis = analyzer.analyze(request, context);
-            manager.transition(SystemState.EXPORTING, context);
+        final TargetSnapshot[] snapshot_ref = new TargetSnapshot[1];
 
-            if (checkStep(context, "mediated_flow", "ANALYSIS", "Verify export analysis and file selection.") == WorkflowStatus.RETRY) {
-                context.getOrchestrator().getTasks().remove(analysisTask);
-                continue;
+        // Pass 1: Project Map Generation (Scanner)
+        runPass(context, "Project Map Generation", "Building lightweight semantic map...", () -> {
+            TargetScanner scanner = new TargetScanner();
+            snapshot_ref[0] = scanner.scanToSnapshot(root, type);
+
+            context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
+                "mediated-map-gen-" + System.currentTimeMillis(),
+                "PROJECT_MAP_GENERATION",
+                "TargetScanner",
+                List.of(root.getAbsolutePath()),
+                List.of("nodes=" + snapshot_ref[0].getNodes().size()),
+                1.0,
+                "Built initial project map snapshot."
+            ));
+        });
+
+        TargetSnapshot snapshot = snapshot_ref[0];
+
+        // Pass 2: Semantic Indexing (Extractor)
+        runPass(context, "Semantic Indexing", "Extracting structures and relationships...", () -> {
+            // Metadata Synchronization
+            MetadataAgent generator = new MetadataAgent();
+            generator.generate(root);
+
+            SemanticExtractor extractor = new SemanticExtractor();
+            extractor.extractToSnapshot(snapshot);
+
+            context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
+                "mediated-indexing-" + System.currentTimeMillis(),
+                "SEMANTIC_INDEXING",
+                "SemanticExtractor",
+                (List<String>)snapshot.getMetadata().get("detectedTechnologies"),
+                List.of("architecture=" + snapshot.getMetadata().get("architectureInference")),
+                1.0,
+                "Populated snapshot with semantic metadata and graph edges."
+            ));
+        });
+
+        // Pass 3: Mediated Darwin Reasoning (Metadata-only)
+        final List<MediatedDarwinEngine.Hypothesis> hypotheses = new ArrayList<>();
+        runPass(context, "Mediated Darwin Engine", "Running evolutionary reasoning on snapshot...", () -> {
+            MediatedDarwinEngine engine = new MediatedDarwinEngine();
+            hypotheses.addAll(engine.runDarwinLoop(snapshot, request));
+
+            context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
+                "mediated-darwin-" + System.currentTimeMillis(),
+                "DARWIN_REASONING",
+                "MediatedDarwinEngine",
+                List.of(request),
+                hypotheses.stream().map(h -> h.description).collect(Collectors.toList()),
+                1.0,
+                "Generated hypotheses based on structural analysis."
+            ));
+
+            try {
+                manager.checkStep("mediated-darwin", "DARWIN_REASONING", "Review generated hypotheses.");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-            analysisTask.setStatus(TaskStatus.DONE);
-            notifyTask(context, analysisTask, RuntimeEventType.TASK_COMPLETED);
-            break;
-        }
-        String architectureSummary = null;
-        Map<String, String> contextFiles = null;
-        while (true) {
-            // 2. Context Selection Task
-            Task contextTask = createVirtualTask("Context", "Summarize architecture and select context files.");
-            context.getOrchestrator().getTasks().add(contextTask);
-            contextTask.setStatus(TaskStatus.RUNNING);
-            notifyTask(context, contextTask, RuntimeEventType.TASK_STARTED);
+        });
 
-            ArchitectureSummarizer summarizer = new ArchitectureSummarizer();
-            architectureSummary = summarizer.summarize(context, aiService);
+        // Pass 4: Staging & Safety (Validator)
+        final StagingValidator.ValidationResult[] vResult = new StagingValidator.ValidationResult[1];
+        runPass(context, "Staging & Safety", "Assessing risks and safety boundaries...", () -> {
+            StagingValidator validator = new StagingValidator();
+            vResult[0] = validator.validate(snapshot, hypotheses);
 
-            context.log("[EXPORT] Selecting high-density repository context.");
-            ContextSelectionEngine contextEngine = new ContextSelectionEngine();
-            contextFiles = contextEngine.selectContext(request, analysis, context);
+            context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
+                "mediated-safety-" + System.currentTimeMillis(),
+                "SAFETY_VALIDATION",
+                "StagingValidator",
+                hypotheses.stream().map(h -> h.description).collect(Collectors.toList()),
+                List.of("risk=" + vResult[0].riskLevel),
+                1.0,
+                "Assessed safety risk: " + vResult[0].riskLevel
+            ));
 
-            if (checkStep(context, "mediated_flow", "CONTEXT_SELECTION", "Review selected context files.") == WorkflowStatus.RETRY) {
-                context.getOrchestrator().getTasks().remove(contextTask);
-                continue;
+            try {
+                manager.checkStep("mediated-safety", "SAFETY_VALIDATION", "Review safety assessment.");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-            contextTask.setStatus(TaskStatus.DONE);
-            notifyTask(context, contextTask, RuntimeEventType.TASK_COMPLETED);
-            break;
-        }
+        });
 
-        String optimizedPrompt = null;
-        while (true) {
-            // 3. Prompt Optimization Task
-            Task optTask = createVirtualTask("Optimization", "Optimize the final prompt for LLM consumption.");
-            context.getOrchestrator().getTasks().add(optTask);
-            optTask.setStatus(TaskStatus.RUNNING);
-            notifyTask(context, optTask, RuntimeEventType.TASK_STARTED);
+        // Pass 5: Context Selection & Prompt Synthesis
+        final List<String> selectedPaths = new ArrayList<>();
+        final String[] optimizedPrompt = new String[1];
+        runPass(context, "Context Builder", "Selecting optimal context and synthesizing prompt...", () -> {
+            ContextCurator curator = new ContextCurator();
+            selectedPaths.addAll(curator.selectContext(snapshot, request, 16));
 
-            PromptOptimizer optimizer = new PromptOptimizer();
-            optimizedPrompt = optimizer.optimize(request, architectureSummary, context, aiService);
+            PromptSynthesizer synthesizer = new PromptSynthesizer();
+            optimizedPrompt[0] = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths);
 
-            if (checkStep(context, "mediated_flow", "PROMPT_GENERATION", "Review optimized prompt before export.") == WorkflowStatus.RETRY) {
-                context.getOrchestrator().getTasks().remove(optTask);
-                continue;
+            // Darwinian Refinement Loop
+            try {
+                for (int i = 0; i < 2; i++) {
+                    context.log("[MEDIATED] Darwinian Refinement Iteration " + (i + 1));
+                    JSONObject critique = manager.getAnalyticAgent().analyze("CRITIQUE THIS PROMPT BASED ON CONTEXT: " + optimizedPrompt[0], context);
+                    if (critique.optDouble("confidence", 0.0) > 0.9) break;
+
+                    optimizedPrompt[0] = manager.getAiService().sendRequest(context.getOrchestrator(),
+                        "Improve this prompt based on the following critique: " + critique.optString("refinedPrompt") + "\n\nOriginal Prompt:\n" + optimizedPrompt[0], context);
+                }
+            } catch (Exception e) {
+                context.log("[MEDIATED] Refinement skipped due to error: " + e.getMessage());
             }
-            optTask.setStatus(TaskStatus.DONE);
-            notifyTask(context, optTask, RuntimeEventType.TASK_COMPLETED);
-            break;
-        }
 
-        File zipFile = null;
-        while (true) {
-            // 4. Export Task
-            Task exportTask = createVirtualTask("Export", "Build and save the ZIP export package.");
-            context.getOrchestrator().getTasks().add(exportTask);
-            exportTask.setStatus(TaskStatus.RUNNING);
-            notifyTask(context, exportTask, RuntimeEventType.TASK_STARTED);
+            context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
+                "mediated-selection-" + System.currentTimeMillis(),
+                "CONTEXT_SELECTION",
+                "ContextCurator",
+                List.of(request),
+                selectedPaths,
+                1.0,
+                "Selected " + selectedPaths.size() + " files for export."
+            ));
 
-            ExportPackageBuilder builder = new ExportPackageBuilder();
-            zipFile = builder.build(request, analysis, optimizedPrompt, architectureSummary, contextFiles, context);
-
-            if (checkStep(context, "zip_export", "EXPORT_READY", "Export package generated at: " + zipFile.getName()) == WorkflowStatus.RETRY) {
-                context.getOrchestrator().getTasks().remove(exportTask);
-                continue;
+            try {
+                manager.checkStep("mediated-context", "CONTEXT_BUILDER", "Review selected context and optimized prompt.");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-            exportTask.setStatus(TaskStatus.DONE);
-            notifyTask(context, exportTask, RuntimeEventType.TASK_COMPLETED);
-            break;
+        });
+
+        // Pass 6: Export Packaging (Final Step)
+        final File[] exportPackage = new File[1];
+        runPass(context, "Export Packaging", "Creating ZIP bundle for external LLM...", () -> {
+            // Final explicit approval for packaging in mediated mode
+            if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+                try {
+                    boolean approved = context.requestApproval("Final review: Ready to generate export package with " + selectedPaths.size() + " files?").get();
+                    if (!approved) throw new Exception("Export cancelled by user.");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            try {
+                String sessionId = context.getSessionId();
+                String outputPath = null;
+                if (context.getOrchestrator().getAiChat() != null) {
+                    ChatSession session = context.getOrchestrator().getAiChat().getSessions().stream()
+                            .filter(s -> s != null && s.getId() != null && s.getId().equals(sessionId))
+                            .findFirst().orElse(null);
+                    outputPath = session != null ? session.getOutputPath() : null;
+                }
+
+                MediatedExportManager exportManager = new MediatedExportManager();
+                exportPackage[0] = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt[0], selectedPaths, root, outputPath);
+                context.log("[MEDIATED] Export bundle ready: " + (exportPackage[0] != null ? exportPackage[0].getName() : "FAILED"));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create export package", e);
+            }
+        });
+
+        // Pass 7: Final Synthesis
+        StringBuilder summaryBuilder = new StringBuilder();
+        runPass(context, "Final Synthesis", "Preparing final results summary...", () -> {
+            summaryBuilder.append("### Mediated Context Export Complete\n\n");
+            summaryBuilder.append("**Target Type:** ").append(snapshot.getTargetType()).append("\n");
+            summaryBuilder.append("**Inferred Architecture:** ").append(snapshot.getMetadata().get("architectureInference")).append("\n\n");
+            if (exportPackage[0] != null) {
+                summaryBuilder.append("**Export Package:** `").append(exportPackage[0].getName()).append("`\n");
+            } else {
+                summaryBuilder.append("**Export Package:** `FAILED`\n");
+            }
+            summaryBuilder.append("**Selected Files:** ").append(selectedPaths.size()).append(" (Hard limit: 16)\n\n");
+
+            summaryBuilder.append("**Safety Risk:** ").append(vResult[0].riskLevel).append("\n");
+            for (String warning : vResult[0].warnings) {
+                summaryBuilder.append("- ⚠️ ").append(warning).append("\n");
+            }
+
+            summaryBuilder.append("\n**Proposed Improvements (Darwin Reasoning):**\n");
+            for (MediatedDarwinEngine.Hypothesis h : hypotheses) {
+                summaryBuilder.append("- ").append(h.description).append(" [").append(h.riskLevel).append("]\n");
+            }
+        });
+
+        context.getOrchestrationState().getMetadata().put("mediatedSnapshot", snapshot);
+        context.getOrchestrationState().getMetadata().put("mediatedHypotheses", hypotheses);
+        context.getOrchestrationState().getMetadata().put("mediatedValidation", vResult[0]);
+        if (exportPackage[0] != null) {
+            context.getOrchestrationState().getMetadata().put("mediatedExportFile", exportPackage[0].getAbsolutePath());
         }
+
+        // Update Results View (Event based)
+        RuntimeEvent eventBusMsg = new RuntimeEvent(
+            RuntimeEventType.EXPORT_READY,
+            context.getSessionId(),
+            "MediatedFlow",
+            summaryBuilder.toString())
+            .withMetadata("target", snapshot.getRootPath());
+        if (exportPackage[0] != null) {
+            eventBusMsg.withMetadata("exportFile", exportPackage[0].getAbsolutePath());
+        }
+        RuntimeEventBus.getInstance().publish(eventBusMsg);
 
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
-        String summary = "### Export Complete\n\nLocation: `" + zipFile.getAbsolutePath() + "`";
-        response.setSummary(summary);
-        response.setContent(summary);
+        response.setSummary(summaryBuilder.toString());
+
         manager.transition(SystemState.DONE, context);
-        context.log("[EXPORT] Mediated export package ready for repository: " + context.getProjectRoot().getName());
         return response;
     }
 
-    private Task createVirtualTask(String name, String description) {
-        Task t = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createTask();
-        t.setId("mediated-" + name.toLowerCase() + "-" + System.currentTimeMillis());
-        t.setName(name);
-        t.setDescription(description);
-        t.setType("mediated");
-        return t;
-    }
+    private void runPass(TaskContext context, String name, String desc, Runnable action) {
+        Task task = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createTask();
+        task.setId("mediated-pass-" + System.currentTimeMillis() + "-" + name.hashCode());
+        task.setName(name);
+        task.setDescription(desc);
+        task.setStatus(TaskStatus.RUNNING);
+        context.getOrchestrator().getTasks().add(task);
+        context.log("[PASS_START] " + name);
 
-    private void notifyTask(TaskContext context, Task task, RuntimeEventType type) {
-        RuntimeEventBus.getInstance().publish(
-            new RuntimeEvent(type, context.getSessionId(), "MediatedExportFlow", task.getId())
-        );
-    }
+        RuntimeEventBus.getInstance().publish(new RuntimeEvent(RuntimeEventType.TASK_STARTED, context.getSessionId(), "MediatedFlow", task.getId()));
 
-    private WorkflowStatus checkStep(TaskContext context, String entityId, String type, String description) throws Exception {
-        if (context.getOrchestrator().getAiChat() != null &&
-            context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
-            context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode()) {
-
-            WorkflowStep step = new WorkflowStep("step-" + System.currentTimeMillis(), entityId, type);
-            step.setDescription(description);
-            WorkflowStatus result = StepModeController.getInstance().waitForStep(context.getSessionId(), step, context);
-            if (result == WorkflowStatus.FAILED) {
-                throw new Exception("Step failed or rejected by user: " + description);
-            }
-            return result;
+        try {
+            action.run();
+            task.setStatus(TaskStatus.DONE);
+            context.log("[PASS_DONE] " + name);
+            RuntimeEventBus.getInstance().publish(new RuntimeEvent(RuntimeEventType.TASK_COMPLETED, context.getSessionId(), "MediatedFlow", task.getId()));
+        } catch (Exception e) {
+            task.setStatus(TaskStatus.FAILED);
+            context.log("[ERROR] Pass " + name + " failed: " + e.getMessage());
+            e.printStackTrace();
         }
-        return WorkflowStatus.COMPLETED;
     }
 }

@@ -25,6 +25,8 @@ import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentClassifier;
 import eu.kalafatic.evolution.controller.orchestration.intent.HybridAtomicIntentClassifier;
+import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
+import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
@@ -161,6 +163,16 @@ public class IterationManager {
         this.evaluator = evaluator;
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
+
+        // RESTART CONTINUITY: Sync state from model if resuming
+        if (context.getOrchestrator() != null && context.getOrchestrator().getSelfDevSession() != null) {
+            SelfDevSession session = context.getOrchestrator().getSelfDevSession();
+            if (session.getStatus() == SelfDevStatus.RUNNING && !session.getIterations().isEmpty()) {
+                Iteration lastIter = session.getIterations().get(session.getIterations().size() - 1);
+                this.currentIterationModel = lastIter;
+                context.log("[KERNEL] Resuming from existing session: " + session.getId() + ", Iteration: " + lastIter.getId());
+            }
+        }
 
         // Initialize Kernel Components
         this.phaseEngine = new DefaultPhaseEngine();

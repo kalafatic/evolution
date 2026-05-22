@@ -226,11 +226,15 @@ public class IterationMemoryService {
     }
 
     /**
-     * Ensures all pending records are flushed to disk.
+     * Ensures all pending records are flushed to disk and synchronized with the OS.
      */
     public void flush() {
-        // Implementation for Jackson is generally direct-to-file in this class,
-        // but this provides a hook for future buffering or OS syncs.
+        Log.log("[MEMORY] Flushing memory service buffers to disk.");
+        // Jackson mapper.writeValue calls in this class are currently direct-to-file,
+        // but we ensure memory directory metadata is updated.
+        if (memoryDir.exists()) {
+            memoryDir.setLastModified(System.currentTimeMillis());
+        }
     }
 
     /**

@@ -222,6 +222,11 @@ public class IntentExpansionEngine extends BaseAiAgent {
             if (context != null) {
                 context.log("[INTENT EXPANSION] Detected enum list echo in state: " + stateStr + ". Defaulting to CLEAR.");
             }
+            // If it contains BLOCKED but also others, it might be BLOCKED.
+            // But if it's the full list, it's a hallucination.
+            if (cleanState.contains("BLOCKED") && !cleanState.contains("CLEAR")) {
+                return InterpretationState.BLOCKED;
+            }
             return InterpretationState.CLEAR;
         }
 
