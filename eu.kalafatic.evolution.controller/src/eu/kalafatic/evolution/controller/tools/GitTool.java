@@ -140,7 +140,7 @@ public class GitTool implements ITool {
 
         // SPECIALIZED LOGIC: Commit metadata injection
         if (command.startsWith("commit")) {
-            shell.execute("git add .", gitWorkingDir, context);
+            executeWithRetry(shell, "git add .", gitWorkingDir, context);
 
             String metadata = "";
             if (context != null && context.getOrchestrationState() != null) {
@@ -153,18 +153,41 @@ public class GitTool implements ITool {
 
             String commitMsg = command.contains("-m") ? "" : " -m \"Darwin evolution step\"";
             String fullCommand = "git " + command + commitMsg + (metadata.isEmpty() ? "" : " -m \"" + metadata + "\"");
-            return shell.execute(fullCommand, gitWorkingDir, context);
+            return executeWithRetry(shell, fullCommand, gitWorkingDir, context);
         }
 
         // SPECIALIZED LOGIC: Push handling
         if (command.startsWith("push")) {
             String fullCommand = "git push origin " + branch;
-            return shell.execute(fullCommand, gitWorkingDir, context);
+            return executeWithRetry(shell, fullCommand, gitWorkingDir, context);
         }
 
         // Generic pass-through for other commands (init, checkout, branch, etc.)
         String fullCommand = command.startsWith("git ") ? command : "git " + command;
-        return shell.execute(fullCommand, gitWorkingDir, context);
+        return executeWithRetry(shell, fullCommand, gitWorkingDir, context);
+    }
+
+    private String executeWithRetry(ShellTool shell, String command, File workingDir, TaskContext context) throws Exception {
+        try {
+            return shell.execute(command, workingDir, context);
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("index.lock")) {
+                if (context != null) context.log("Git lock detected. Attempting to clear stale index.lock.");
+                // Try to find .git/index.lock in workingDir or its parents
+                File current = workingDir;
+                while (current != null) {
+                    File gitLock = new File(current, ".git/index.lock");
+                    if (gitLock.exists()) {
+                        if (gitLock.delete()) {
+                            if (context != null) context.log("Stale index.lock removed from " + current.getAbsolutePath() + ". Retrying command.");
+                            return shell.execute(command, workingDir, context);
+                        }
+                    }
+                    current = current.getParentFile();
+                }
+            }
+            throw e;
+        }
     }
 
     public List<String> getBranches(File root) throws Exception {

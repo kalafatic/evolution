@@ -21,7 +21,15 @@ public class GitManager {
         return new File(root, ".git").exists();
     }
 
+    public void cleanupLocks() {
+        File gitLock = new File(root, ".git/index.lock");
+        if (gitLock.exists()) {
+            gitLock.delete();
+        }
+    }
+
     public void ensureInitialCommit() throws Exception {
+        cleanupLocks();
         if (!isGitRepository()) {
             gitTool.execute("init", root, null);
         }
@@ -95,6 +103,7 @@ public class GitManager {
     }
 
     public void rollback() throws Exception {
+        cleanupLocks();
         // Hardening: reset --hard HEAD clears uncommitted dirty state, clean -fd removes untracked pollution.
         gitTool.execute("reset --hard HEAD", root, null);
         try {
