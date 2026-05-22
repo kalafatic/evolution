@@ -341,6 +341,13 @@ public class IterationManager {
         TransitionToken token = new TransitionToken();
         ctx.getStateHolder().applyTransition(token, to);
 
+        // KERNEL RECOVERY: Ensure Git locks are cleared when initializing or recovering
+        if (to == SystemState.INIT || to == SystemState.RECOVERING) {
+            if (gitManager != null) {
+                gitManager.cleanupLocks();
+            }
+        }
+
         if (currentIterationModel != null) {
             switch (to) {
                 case DONE: currentIterationModel.setStatus(IterationStatus.DONE); break;
