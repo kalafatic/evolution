@@ -91,10 +91,24 @@ public class DarwinFlow implements IOrchestrationFlow {
             "Executing dynamic branch strategy system."
         ));
 
-        runDarwin(context);
+        EvaluationResult result;
+        int safetyCounter = 0;
+        do {
+            result = runDarwin(context);
+            safetyCounter++;
+        } while (result.getDecision() == SelfDevDecision.CONTINUE && safetyCounter < 10 && !context.isPaused());
+
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
-        response.setSummary("Darwin evolution phase completed: " + context.getOrchestrationState().getCurrentPhase());
+
+        String summary;
+        if (state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")) {
+            summary = manager.getFinalResponseAgent().generateFinalResponse(request, Collections.emptyList(), context);
+        } else {
+            summary = "Darwin evolution completed at phase: " + state.getCurrentPhase();
+        }
+
+        response.setSummary(summary);
         return response;
     }
 
@@ -134,36 +148,44 @@ public class DarwinFlow implements IOrchestrationFlow {
                                context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
 
             if (!context.isAutoApprove() && isStepMode) {
-                context.log("[KERNEL] Darwin Evolution: Pausing for intent interpretation review.");
-                String userResponse = context.requestInput("Intent interpretation complete. State: " + expansion.getState() + ". Review and select a hypothesis to proceed, or reject to refine.").get();
+                while (true) {
+                    context.log("[KERNEL] Darwin Evolution: Pausing for intent interpretation review.");
+                    manager.transition(SystemState.CLARIFYING, context);
+                    String userResponse = context.requestInput("Intent interpretation complete. State: " + expansion.getState() + ". Review and select a hypothesis to proceed, or reject to refine.").get();
 
-                if ("Force Solution".equalsIgnoreCase(userResponse)) {
-                    context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
-                    context.setAutoApprove(true);
-                    // Use dominant intent as is and proceed
-                } else if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse) || "Rejected".equalsIgnoreCase(userResponse)) {
-                    manager.recordRejection(goal, "User rejected intent interpretation.");
-                    manager.transition(SystemState.FAILED, context);
-                    return manager.failedResult();
-                }
+                    if ("Force Solution".equalsIgnoreCase(userResponse)) {
+                        context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                        context.setAutoApprove(true);
+                        break;
+                    } else if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse) || "Rejected".equalsIgnoreCase(userResponse)) {
+                        manager.recordRejection(goal, "User rejected intent interpretation.");
+                        manager.transition(SystemState.FAILED, context);
+                        return manager.failedResult();
+                    }
 
-                String selectedHypothesisId = null;
-                if (userResponse.startsWith("Select ")) {
-                    selectedHypothesisId = userResponse.substring(7).trim();
-                } else if (userResponse.startsWith("Approve variant ")) {
-                    selectedHypothesisId = userResponse.substring(16).trim();
-                }
+                    String selectedHypothesisId = null;
+                    if (userResponse.startsWith("Select ")) {
+                        selectedHypothesisId = userResponse.substring(7).trim();
+                    } else if (userResponse.startsWith("Approve variant ")) {
+                        selectedHypothesisId = userResponse.substring(16).trim();
+                    }
 
-                if (selectedHypothesisId != null) {
-                    context.log("[KERNEL] User selected hypothesis: " + selectedHypothesisId);
-                    String finalId = selectedHypothesisId;
-                    expansion.getHypotheses().stream()
-                        .filter(h -> h.getId().equals(finalId))
-                        .findFirst()
-                        .ifPresent(h -> {
-                            expansion.setDominantIntent(h.getDescription());
-                            expansion.setDominantConfidence(1.0);
-                        });
+                    if (selectedHypothesisId != null) {
+                        context.log("[KERNEL] User selected hypothesis: " + selectedHypothesisId);
+                        String finalId = selectedHypothesisId;
+                        boolean found = expansion.getHypotheses().stream()
+                            .filter(h -> h.getId().equals(finalId))
+                            .findFirst()
+                            .map(h -> {
+                                expansion.setDominantIntent(h.getDescription());
+                                expansion.setDominantConfidence(1.0);
+                                return true;
+                            }).orElse(false);
+                        if (found) break;
+                        context.log("[KERNEL] Warning: Selected hypothesis ID not found: " + finalId);
+                    } else if (userResponse.equalsIgnoreCase("Yes") || userResponse.equalsIgnoreCase("Approved") || userResponse.equalsIgnoreCase("Proceed")) {
+                        break;
+                    }
                 }
             }
 
@@ -176,6 +198,14 @@ public class DarwinFlow implements IOrchestrationFlow {
             if (atomicAnalysis != null && atomicAnalysis.getConfidence() > 0.8 && !atomicAnalysis.isMultiStep()) {
                 context.log("[KERNEL] Simple goal detected. Fast-forwarding to implementation planning.");
                 state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.IMPLEMENTATION_PLAN));
+
+                // IF ATOMIC, we might want to go straight to execution or finish immediately if handled syntheticly
+                if (atomicAnalysis.isAtomic()) {
+                    // Fast-forward to execution by returning STOP if we want to end current turn
+                    // or CONTINUE if we want to loop into implementation logic.
+                    // To stabilize turn loop, we use CONTINUE.
+                }
+
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
                 res.setDecision(SelfDevDecision.CONTINUE);
@@ -313,25 +343,31 @@ public class DarwinFlow implements IOrchestrationFlow {
                     sb.append("\nSelect a variant to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
 
                     String input = context.requestInput(sb.toString()).get();
+                    if (input == null || input.trim().isEmpty()) continue;
+
                     if ("Force Solution".equalsIgnoreCase(input)) {
                         context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
                         context.setAutoApprove(true);
-                        break; // Exit loop, authority will decide
+                        break;
                     }
-
-                    if (input == null || input.trim().isEmpty()) continue;
 
                     if (input.startsWith("Select ") || input.startsWith("Approve variant ")) {
                         manualId = input.startsWith("Select ") ? input.substring(7).trim() : input.substring(16).trim();
-                        context.log("[KERNEL] User selected variant: " + manualId);
-                        break;
+                        String finalManualId = manualId;
+                        boolean found = variants.stream().anyMatch(v -> v.getId().equals(finalManualId));
+                        if (found) {
+                            context.log("[KERNEL] User selected variant: " + manualId);
+                            break;
+                        } else {
+                            context.log("[KERNEL] Warning: Selected variant ID not found: " + manualId);
+                            manualId = null;
+                        }
                     } else if (input.startsWith("Keep variant ")) {
                         String keepId = input.substring(13).trim();
                         variants.stream().filter(v -> v.getId().equals(keepId)).findFirst().ifPresent(v -> {
                             v.setActivationState(BranchVariant.ActivationState.KEPT);
                             context.log("[KERNEL] Variant " + keepId + " marked as KEPT for final evaluation.");
                         });
-                        // Continue loop
                     } else if (input.startsWith("Reject variant ")) {
                         String rejectedId = input.substring(15).trim();
                         context.log("[KERNEL] User rejected variant: " + rejectedId + ". Evolution stopped by user.");
@@ -340,7 +376,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                         res.setDecision(SelfDevDecision.STOP);
                         manager.transition(SystemState.FAILED, context);
                         return res;
-                    } else if ("Rejected".equalsIgnoreCase(input)) {
+                    } else if ("Rejected".equalsIgnoreCase(input) || "Reject".equalsIgnoreCase(input) || "No".equalsIgnoreCase(input)) {
                         manager.recordRejection(goal, "Darwin " + state.getCurrentPhase() + " proposals rejected by user.");
                         EvaluationResult res = manager.failedResult();
                         res.setDecision(SelfDevDecision.CONTINUE);
@@ -350,10 +386,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                         context.log("[KERNEL] User injected a new solution proposal. Integrating as a first-class candidate.");
                         BranchVariant userVariant = createUserVariant(input, goal, context);
                         variants.add(userVariant);
-
-                        // Metadata for selection: Ensure user variant is visible in the next prompt
                         context.log("[KERNEL] User variant " + userVariant.getId() + " added to the evolutionary pool.");
-                        // Continue loop to allow selection of this or other variants
                     } else {
                         // High priority guidance text input
                         context.log("[KERNEL] User provided guidance: " + input + ". Refining intent and regenerating variants.");
@@ -364,7 +397,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                         EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                         res.setSuccess(true);
                         res.setDecision(SelfDevDecision.CONTINUE);
-                        return res; // Triggers loop back in Supervisor
+                        return res;
                     }
                 }
             }
@@ -684,13 +717,28 @@ public class DarwinFlow implements IOrchestrationFlow {
         double maxScore = variants.stream().mapToDouble(BranchVariant::getScore).max().orElse(0.0);
         double avgScore = variants.stream().mapToDouble(BranchVariant::getScore).average().orElse(0.0);
 
-        if (maxScore > 0.9 && (maxScore - avgScore) < 0.05) {
+        if (maxScore > 0.92 && (maxScore - avgScore) < 0.03) {
             context.log("[DARWIN] Strong convergence: Top variants have high and stable fitness.");
             return true;
         }
 
-        // 2. Novelty Check: Check if generated variants are repetitive
-        // (This would ideally compare against historical trajectories in TrajectoryMemory)
+        // 2. Reality Check Convergence: Check magnitude of recent workspace changes
+        try {
+            String baseCommit = manager.getGitManager().getHeadCommit();
+            WorkspaceDeltaAnalyzer analyzer = new WorkspaceDeltaAnalyzer(context.getProjectRoot(), context);
+        WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
+
+            // If we are in a late phase and changes are very small/refined, it may signal convergence
+            String phase = context.getOrchestrationState().getCurrentPhase();
+            if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(phase) || EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(phase)) {
+                if (reality.isSignificant() && (reality.getAddedLines() + reality.getRemovedLines()) < 5 && reality.getChangedFiles().size() <= 1) {
+                    context.log("[DARWIN] Convergence detected: Minimal delta in late evolution phase.");
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            context.log("[DARWIN] Convergence check failed: " + e.getMessage());
+        }
 
         return false;
     }

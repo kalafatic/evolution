@@ -29,6 +29,7 @@ import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
+import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
@@ -202,7 +203,32 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     public List<BranchVariant> generateVariants(String goal, StateSnapshot snapshot, FailureMemory failureMemory, Trajectory trajectory) throws Exception {
         context.log("[DARWIN] Generating variants for goal: " + goal);
 
-        // 1. Read BitState from context
+        // 1. Check for ATOMIC INTENT first - Simplified path for high-confidence simple tasks
+        AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
+        if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning()) {
+            context.log("[DARWIN] High-confidence atomic intent detected. Generating single synthetic variant.");
+            BranchVariant v = new BranchVariant();
+            v.setId("v-atomic-" + System.currentTimeMillis());
+            v.setBranchId(v.getId());
+            v.setLineageId(context.getSessionId());
+            v.setStrategy("Atomic Execution: " + goal);
+            v.setStrategyType("ATOMIC");
+            v.setActivationState(BranchVariant.ActivationState.ACTIVE);
+            v.setScore(0.95);
+            v.setBranchName("exp/atomic/" + sanitize(goal));
+            v.setSurvivalArgument("Direct execution of high-confidence atomic task.");
+
+            BranchVariant.Action action = new BranchVariant.Action();
+            action.setDomain(atomicAnalysis.getArtifactType() != null ? atomicAnalysis.getArtifactType() : "file");
+            action.setOperation("WRITE");
+            action.setTarget(atomicAnalysis.getTargetArtifact());
+            action.setDescription(goal);
+            v.getActions().add(action);
+
+            return Collections.singletonList(v);
+        }
+
+        // 2. Read BitState from context
         long bitState = context.getOrchestrationState().getBitState();
 
         // 2. Pass BitState → PolicyResolver
@@ -417,10 +443,18 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 context.getOrchestrationState().getTaskIntents().contains(TaskIntent.DEBUGGING)
         );
 
-        if (eps < 0.3 && !hasStateChangeIntent) {
+        if (hasStateChangeIntent) {
+            context.log("[DARWIN] State-change intent detected. Enforcing at least dual-seed mode (KEEPER + DIVERGENCE_A) for diversity.");
+            mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
+            mutationSeeds.add(DarwinStrategySeed.divergenceA());
+            if (eps >= 0.6) {
+                mutationSeeds.add(DarwinStrategySeed.divergenceB());
+                mutationSeeds.add(DarwinStrategySeed.synthesisHybrid());
+            }
+        } else if (eps < 0.3) {
             context.log("[DARWIN] Low evolutionary pressure and no state-change intent. Single-seed mode (KEEPER).");
             mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
-        } else if (eps < 0.6 || !hasStateChangeIntent) {
+        } else if (eps < 0.6) {
             context.log("[DARWIN] Moderate evolutionary pressure. Dual-seed mode (KEEPER + DIVERGENCE_A).");
             mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
             mutationSeeds.add(DarwinStrategySeed.divergenceA());

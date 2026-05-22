@@ -23,7 +23,7 @@ public class ModeRouter {
             case SELF_DEV_MODE:
                 return new DarwinFlow(aiService, manager);
             case HYBRID_MANUAL_EXPORT:
-                return new MediatedAnalysisFlow(aiService, manager);
+                return new MediatedExportFlow(aiService, manager);
             case ASSISTED_CODING:
                 return new DarwinFlow(aiService, manager);
             case SIMPLE_CHAT:

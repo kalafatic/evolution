@@ -17,10 +17,10 @@ public class DarwinSyntheticVariantFactory {
 
         analytical.put("id", "v-synthetic-synthesis-" + System.currentTimeMillis());
         analytical.put("strategy_type", DarwinStrategyType.SYNTHESIS_HYBRID.name());
-        analytical.put("strategy", "Synthesis assessment of: " + reference.optString("strategy"));
-        analytical.put("survival_argument", "Ensures structural safety by assessing risks and tradeoffs of the proposed trajectory.");
-        analytical.put("tradeoffs", "Prioritizes safety and risk detection over immediate code changes.");
-        analytical.put("failure_risks", "Low risk as it primarily performs analysis.");
+        analytical.put("strategy", "Analytical validation and risk synthesis for: " + goal);
+        analytical.put("survival_argument", "Provides a defensive architectural anchor by evaluating the semantic and technical risks of the primary implementation trajectory.");
+        analytical.put("tradeoffs", "Prioritizes long-term architectural stability and regression safety over immediate feature velocity.");
+        analytical.put("failure_risks", "May delay implementation if severe architectural risks are identified during analysis.");
         analytical.put("suffix", "synthesis-fallback");
         analytical.put("score", 0.4);
 
