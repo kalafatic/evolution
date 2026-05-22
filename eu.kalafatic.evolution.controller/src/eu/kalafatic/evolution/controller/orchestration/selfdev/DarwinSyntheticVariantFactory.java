@@ -10,18 +10,18 @@ import java.util.List;
 public class DarwinSyntheticVariantFactory {
 
     /**
-     * Programmatically synthesizes a missing ANALYTICAL variant.
+     * Programmatically synthesizes a missing SYNTHESIS_HYBRID variant.
      */
     public JSONObject synthesizeAnalytical(JSONObject reference, String goal) {
         JSONObject analytical = new JSONObject(reference.toString());
 
-        analytical.put("id", "v-synthetic-analytical-" + System.currentTimeMillis());
-        analytical.put("strategy_type", DarwinStrategyType.ANALYTICAL.name());
-        analytical.put("strategy", "Analytical assessment of: " + reference.optString("strategy"));
-        analytical.put("survival_argument", "Ensures structural safety by assessing risks of the proposed trajectory.");
+        analytical.put("id", "v-synthetic-synthesis-" + System.currentTimeMillis());
+        analytical.put("strategy_type", DarwinStrategyType.SYNTHESIS_HYBRID.name());
+        analytical.put("strategy", "Synthesis assessment of: " + reference.optString("strategy"));
+        analytical.put("survival_argument", "Ensures structural safety by assessing risks and tradeoffs of the proposed trajectory.");
         analytical.put("tradeoffs", "Prioritizes safety and risk detection over immediate code changes.");
         analytical.put("failure_risks", "Low risk as it primarily performs analysis.");
-        analytical.put("suffix", "analytical-fallback");
+        analytical.put("suffix", "synthesis-fallback");
         analytical.put("score", 0.4);
 
         JSONArray actions = new JSONArray();
@@ -29,7 +29,7 @@ public class DarwinSyntheticVariantFactory {
         action.put("domain", "structure");
         action.put("operation", "ANALYZE");
         action.put("target", ".");
-        action.put("description", "Perform a structural risk analysis for the goal: " + goal);
+        action.put("description", "Perform a structural risk and tradeoff analysis for the goal: " + goal);
         actions.put(action);
         analytical.put("actions", actions);
 
@@ -37,17 +37,17 @@ public class DarwinSyntheticVariantFactory {
     }
 
     /**
-     * Synthesizes a basic EXPLORATION variant if none exist.
+     * Synthesizes a basic KEEPER_EVOLUTION variant if none exist.
      */
     public JSONObject synthesizeImplementation(String goal) {
         JSONObject impl = new JSONObject();
-        impl.put("id", "v-synthetic-exploration-" + System.currentTimeMillis());
-        impl.put("strategy_type", DarwinStrategyType.EXPLORATION.name());
-        impl.put("strategy", "Direct implementation exploration: " + goal);
+        impl.put("id", "v-synthetic-evolution-" + System.currentTimeMillis());
+        impl.put("strategy_type", DarwinStrategyType.KEEPER_EVOLUTION.name());
+        impl.put("strategy", "Direct evolution: " + goal);
         impl.put("survival_argument", "Provides a deterministic implementation path for simple/atomic tasks.");
         impl.put("tradeoffs", "Prioritizes immediate results over complex architectural abstraction.");
         impl.put("failure_risks", "Minimal risks for scoped implementation.");
-        impl.put("suffix", "exploration-direct");
+        impl.put("suffix", "evolution-direct");
         impl.put("score", 0.85);
 
         // Heuristic Target Resolution

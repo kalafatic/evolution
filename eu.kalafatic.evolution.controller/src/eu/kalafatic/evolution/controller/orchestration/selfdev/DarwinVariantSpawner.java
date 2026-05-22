@@ -75,8 +75,8 @@ public class DarwinVariantSpawner {
           .append("- Avoid generic architectural advice; focus on concrete engineering actions for this specific task.\n\n");
 
         if (!currentRoundStrategies.isEmpty()) {
-            sb.append("DIVERGENCE REQUIREMENT:\n")
-              .append("The following strategies have already been generated in this iteration. You MUST intentionally diverge from these architectural paths:\n");
+            sb.append("SEQUENTIAL MUTATION DIVERGENCE:\n")
+              .append("The following strategies have already been generated in this mutation chain. You MUST intentionally diverge from these architectural paths to ensure variety:\n");
             for (String s : currentRoundStrategies) {
                 sb.append("- ").append(s).append("\n");
             }

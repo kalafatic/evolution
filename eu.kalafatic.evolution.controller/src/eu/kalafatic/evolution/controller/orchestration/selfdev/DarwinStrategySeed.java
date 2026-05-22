@@ -26,44 +26,64 @@ public class DarwinStrategySeed {
         return mandatory;
     }
 
-    public static DarwinStrategySeed exploration() {
+    public static DarwinStrategySeed keeperEvolution() {
         return new DarwinStrategySeed(
-            DarwinStrategyType.EXPLORATION,
-            "Focus on innovation and alternative architectural futures. Explore different solution hypotheses, design patterns, or performance-oriented models that fulfill the user goal. Priority: Innovation and tradeoff exploration.",
+            DarwinStrategyType.KEEPER_EVOLUTION,
+            "Take the previous selected branch (if exists) and produce the BEST continuation or improvement. Focus on direct solution evolution and refinement of the current trajectory.",
             true
         );
+    }
+
+    public static DarwinStrategySeed divergenceA() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.DIVERGENCE_A,
+            "Explicitly FORBID repeating the architecture, execution model, or core approach of previous branches. Generate a DIFFERENT, structurally distinct solution direction.",
+            true
+        );
+    }
+
+    public static DarwinStrategySeed divergenceB() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.DIVERGENCE_B,
+            "Ensure divergence from all previous branches. Choose an alternative architecture, a major refactor direction, or a risk/stability-focused redesign that has not been explored yet.",
+            true
+        );
+    }
+
+    public static DarwinStrategySeed synthesisHybrid() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.SYNTHESIS_HYBRID,
+            "Perform a synthesis of all previous branches. Compare tradeoffs, identify risks, and propose a hybrid or optimized trajectory. MUST NOT duplicate prior branches.",
+            true
+        );
+    }
+
+    // Compatibility bridge - mapping old roles to new mutation steps
+    public static DarwinStrategySeed exploration() {
+        return keeperEvolution();
     }
 
     public static DarwinStrategySeed analytical() {
-        return new DarwinStrategySeed(
-            DarwinStrategyType.ANALYTICAL,
-            "Focus on system understanding and impact analysis. Identify integration risks, dependency conflicts, and potential failure modes. Priority: Correctness reasoning and architectural insight.",
-            true
-        );
+        return synthesisHybrid();
     }
 
     public static DarwinStrategySeed stabilization() {
-        return new DarwinStrategySeed(
-            DarwinStrategyType.STABILIZATION,
-            "Focus on safe evolution paths and safe refactor strategies. Propose incremental improvements and structural cleanup that satisfy the goal while maintaining system reliability. Priority: Reliability and controlled change.",
-            true
-        );
+        return divergenceA();
     }
 
-    // Compatibility bridge
     public static DarwinStrategySeed implementation() {
-        return exploration();
+        return keeperEvolution();
     }
 
     public static DarwinStrategySeed conservativeFuture() {
-        return stabilization();
+        return divergenceB();
     }
 
     public static DarwinStrategySeed innovativeFuture() {
-        return exploration();
+        return divergenceA();
     }
 
     public static DarwinStrategySeed structuralFuture() {
-        return analytical();
+        return synthesisHybrid();
     }
 }
