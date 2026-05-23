@@ -1467,6 +1467,14 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
                 agentType += " approved:" + variantId;
             }
             content = content.replace(approvedMatcher.group(0), "").trim();
+
+            // If this was a darwin-branches message that is now approved,
+            // we strip the JSON to keep the history clean, as the UI already rendered the selection.
+            if (agentType.contains("darwin-branches")) {
+                 content = content.replaceAll("\\[[\\s\\S]*\\]", "").trim();
+                 if (content.isEmpty()) content = "Variant " + variantId + " approved.";
+            }
+
             priority = MessagePriority.NORMAL;
         }
 

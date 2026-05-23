@@ -143,7 +143,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             // FAST FORWARD: Skip discovery phases for simple/atomic goals BEFORE expansion
             AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
             if (atomicAnalysis != null && atomicAnalysis.getConfidence() > 0.8 && !atomicAnalysis.isMultiStep()) {
-                context.log("[KERNEL] Simple goal detected. Fast-forwarding to implementation planning.");
+                context.log("[KERNEL] Atomic intent detected with high confidence. Fast-forwarding to implementation planning to accelerate evolution.");
                 state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.IMPLEMENTATION_PLAN));
 
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -413,17 +413,7 @@ public class DarwinFlow implements IOrchestrationFlow {
 
                 // STAMP APPROVED FOR UI
                 if (selectedVariant != null) {
-                    JSONArray updatedVariants = new JSONArray();
-                    for (BranchVariant v : variants) {
-                        JSONObject vObj = new JSONObject();
-                        vObj.put("id", v.getId());
-                        vObj.put("strategy", v.getStrategy());
-                        vObj.put("strategy_type", v.getStrategyType());
-                        vObj.put("score", v.getScore());
-                        vObj.put("approved", v.getId().equals(finalWinnerId));
-                        updatedVariants.put(vObj);
-                    }
-                    context.log("[APPROVED:" + finalWinnerId + "] [DARWIN_BRANCHES] " + updatedVariants.toString());
+                    context.log("[APPROVED:" + finalWinnerId + "] [KERNEL] Winner variant selected: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
                 }
             }
 
