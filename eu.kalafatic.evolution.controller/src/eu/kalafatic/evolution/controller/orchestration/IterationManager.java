@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,6 +31,8 @@ import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
@@ -43,10 +46,15 @@ import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionEngine;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IEvaluationContract;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISchedulingContract;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
@@ -60,6 +68,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.kernel.*;
 import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
+import eu.kalafatic.evolution.controller.execution.ScheduledExecutionPlan;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;
@@ -166,7 +175,8 @@ public class IterationManager {
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
 
-        // RESTART CONTINUITY: Sync state from model if resuming
+        // RESTART CONTINUITY: Sync state from model or memory checkpoint if resuming
+        boolean resumed = false;
         if (context.getOrchestrator() != null && context.getOrchestrator().getSelfDevSession() != null) {
             SelfDevSession session = context.getOrchestrator().getSelfDevSession();
             if (session.getStatus() == SelfDevStatus.RUNNING && !session.getIterations().isEmpty()) {
@@ -177,6 +187,16 @@ public class IterationManager {
                 if (lastIter.getPhase() != null) {
                     context.getOrchestrationState().setCurrentPhase(lastIter.getPhase());
                 }
+                resumed = true;
+            }
+        }
+
+        if (!resumed) {
+            Map<String, String> checkpoint = memoryService.loadCheckpoint(context.getSessionId());
+            if (checkpoint != null) {
+                context.log("[KERNEL] Found memory checkpoint for session: " + context.getSessionId());
+                context.getOrchestrationState().setCurrentPhase(checkpoint.get("phase"));
+                context.getOrchestrationState().setRawInput(checkpoint.get("goal"));
             }
         }
 
@@ -306,8 +326,19 @@ public class IterationManager {
 
             // Flow Resolution & Execution
             IOrchestrationFlow flow = resolveFlow(router, atomicAnalysis);
-            transition(SystemState.EXECUTING, context);
-            OrchestratorResponse result = flow.execute(request, context);
+            OrchestratorResponse result;
+            if (flow instanceof DarwinFlow) {
+                result = executeDarwin(request, context);
+            } else {
+                transition(SystemState.EXECUTING, context);
+                result = flow.execute(request, context);
+            }
+
+            if (result != null && result.getResultType() == ResultType.ERROR) {
+                transition(SystemState.FAILED, context);
+            } else {
+                transition(SystemState.DONE, context);
+            }
 
             // Post-execution Git Automation
             if (result != null && result.getResultType() != ResultType.ERROR) {
@@ -323,8 +354,6 @@ public class IterationManager {
                     }
                 }
             }
-
-            transition(SystemState.DONE, context);
 
             // Centralized Final Response Assembly
             FinalResponseAssembler assembler = new FinalResponseAssembler();
@@ -431,6 +460,47 @@ public class IterationManager {
         ));
     }
 
+    public OrchestratorResponse executeDarwin(String request, TaskContext context) throws Exception {
+        context.log("[KERNEL] Strategy-Driven Evolution: Starting Full Darwin Evolution.");
+
+        OrchestrationState state = context.getOrchestrationState();
+        state.getCognitiveTrace().addNode(new CausalNode(
+            "darwin-start-" + System.currentTimeMillis(),
+            "STRATEGY_SELECTION",
+            "IterationManager",
+            List.of(),
+            List.of("DarwinFlow"),
+            1.0,
+            "Executing dynamic branch strategy system via DarwinFlow engine."
+        ));
+
+        EvaluationResult result;
+        int safetyCounter = 0;
+        DarwinFlow darwinFlow = new DarwinFlow(aiService, this);
+
+        do {
+            result = runDarwinIteration(context, darwinFlow);
+            safetyCounter++;
+        } while (result.getDecision() == SelfDevDecision.CONTINUE && safetyCounter < 10 && !context.isPaused());
+
+        OrchestratorResponse response = new OrchestratorResponse();
+        response.setResultType(ResultType.CHAT);
+
+        String summary;
+        if (state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")) {
+            if (context.getMetadata().containsKey("testMode")) {
+                summary = "Darwin evolution completed (Test Mode).";
+            } else {
+                summary = getFinalResponseAgent().generateFinalResponse(request, List.of(), context);
+            }
+        } else {
+            summary = "Darwin evolution completed at phase: " + state.getCurrentPhase();
+        }
+
+        response.setSummary(summary);
+        return response;
+    }
+
     public EvaluationResult runIteration(Iteration iteration) {
         this.currentIterationModel = iteration;
         BehaviorProfile profile = context.getBehaviorProfile();
@@ -438,7 +508,7 @@ public class IterationManager {
 
         try {
             if (darwinEnabled && gitManager.isGitRepository()) {
-                return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this).runDarwin(context);
+                return runDarwinIteration(context, new DarwinFlow(aiService, this));
             } else {
                 return runPEV();
             }
@@ -538,6 +608,324 @@ public class IterationManager {
         tar.setFitnessScore(score);
         memoryService.saveTrajectoryAnalysis(tar);
         memoryService.flush();
+    }
+
+    public EvaluationResult runDarwinIteration(TaskContext context, DarwinFlow darwinFlow) throws Exception {
+        SystemState currentState = context.getStateHolder().getState();
+        if (currentState == SystemState.DONE || currentState == SystemState.FAILED) {
+            transition(SystemState.INIT, context);
+        }
+
+        OrchestrationState state = context.getOrchestrationState();
+        String goal = state.getRawInput();
+        if (goal == null || goal.isEmpty()) {
+            goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
+        }
+
+        EvolutionPhaseMachine phaseMachine = new EvolutionPhaseMachine();
+        EvolutionPhase phase = state.getCurrentPhase() != null ? EvolutionPhase.fromString(state.getCurrentPhase()) : phaseMachine.getInitialPhase();
+
+        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phase));
+        if (currentIterationModel != null) {
+            currentIterationModel.setPhase(state.getCurrentPhase());
+        }
+
+        context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
+
+        // 1. PHASE AUTHORITY: IterationManager decides if we skip INTENT_EXPANSION
+        if (phase == EvolutionPhase.INTENT_EXPANSION) {
+            AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
+            if (atomicAnalysis != null && atomicAnalysis.getConfidence() > 0.8 && !atomicAnalysis.isMultiStep()) {
+                context.log("[KERNEL] Simple goal detected. Fast-forwarding to implementation planning.");
+                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.IMPLEMENTATION_PLAN));
+
+                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                res.setSuccess(true);
+                res.setDecision(SelfDevDecision.CONTINUE);
+                return res;
+            }
+
+            transition(SystemState.ANALYZING, context);
+            IntentExpansionResult expansion = getIntentExpansionEngine().expand(goal, context);
+            state.setIntentAnalysis(null);
+            state.getMetadata().put("intentExpansion", expansion);
+
+            context.log("[KERNEL] Intent Interpretation: " + expansion.getState());
+
+            // INTENT REVIEW LOOP (Ownership restored to IterationManager)
+            if (!handleIntentReview(context, expansion, goal)) {
+                return failedResult();
+            }
+
+            ClarificationPlanner planner = getClarificationPlanner();
+            ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
+            context.log("[KERNEL] Clarification Strategy: " + strategy);
+
+            if (strategy == ClarificationPlanner.Strategy.BRANCH_PARALLEL) {
+                context.log("[KERNEL] Ambiguity detected but evolvable. Spawning parallel implementation branches.");
+                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));
+                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                res.setSuccess(true);
+                res.setDecision(SelfDevDecision.CONTINUE);
+                return res;
+            }
+
+            if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER) {
+                if (!handleClarification(context, planner, expansion, goal)) {
+                    return failedResult();
+                }
+                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                res.setSuccess(true);
+                res.setDecision(SelfDevDecision.CONTINUE);
+                return res;
+            }
+
+            state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));
+
+            if (strategy != ClarificationPlanner.Strategy.AUTO_INFER || !context.isAutoApprove()) {
+                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                res.setSuccess(true);
+                res.setDecision(SelfDevDecision.CONTINUE);
+                return res;
+            }
+            context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
+        }
+
+        // 2. EXECUTION DELEGATION: Call DarwinFlow for the mutation and evaluation logic
+        EvaluationResult result = darwinFlow.runDarwinIteration(context);
+
+        // 3. PHASE PROGRESSION AUTHORITY: IterationManager decides the next phase
+        if (result.isSuccess()) {
+            EvolutionPhase currentPhaseEnum = EvolutionPhase.fromString(state.getCurrentPhase());
+            if (!phaseMachine.isTerminal(currentPhaseEnum)) {
+                EvolutionPhase nextPhase = phaseMachine.next(currentPhaseEnum);
+                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
+                result.setDecision(phaseMachine.isTerminal(nextPhase) ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
+            }
+
+            // CHECKPOINTING: Persist state for restart continuity
+            memoryService.saveCheckpoint(context.getSessionId(), (currentIterationModel != null ? currentIterationModel.getId() : "default"), state.getCurrentPhase(), goal);
+
+            // PHASE CONFIRMATION LOOP
+            if (!handlePhaseConfirmation(context, state)) {
+                result.setDecision(SelfDevDecision.STOP);
+            }
+
+            transition(SystemState.DONE, context);
+        } else {
+            transition(SystemState.FAILED, context);
+        }
+
+        return result;
+    }
+
+    private boolean handleIntentReview(TaskContext context, IntentExpansionResult expansion, String goal) throws Exception {
+        boolean isStepMode = context.getOrchestrator().getAiChat() != null &&
+                           context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
+                           context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
+
+        if (!context.isAutoApprove() && isStepMode) {
+            while (true) {
+                context.log("[KERNEL] Darwin Evolution: Pausing for intent interpretation review.");
+                transition(SystemState.CLARIFYING, context);
+                String userResponse = context.requestInput("Intent interpretation complete. State: " + expansion.getState() + ". Review and select a hypothesis to proceed, or reject to refine.").get();
+
+                if ("Force Solution".equalsIgnoreCase(userResponse)) {
+                    context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                    context.setAutoApprove(true);
+                    return true;
+                } else if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse) || "Rejected".equalsIgnoreCase(userResponse)) {
+                    recordRejection(goal, "User rejected intent interpretation.");
+                    transition(SystemState.FAILED, context);
+                    return false;
+                }
+
+                String selectedHypothesisId = null;
+                if (userResponse.startsWith("Select ")) {
+                    selectedHypothesisId = userResponse.substring(7).trim();
+                } else if (userResponse.startsWith("Approve variant ")) {
+                    selectedHypothesisId = userResponse.substring(16).trim();
+                }
+
+                if (selectedHypothesisId != null) {
+                    context.log("[KERNEL] User selected hypothesis: " + selectedHypothesisId);
+                    String finalId = selectedHypothesisId;
+                    boolean found = expansion.getHypotheses().stream()
+                        .filter(h -> h.getId().equals(finalId))
+                        .findFirst()
+                        .map(h -> {
+                            expansion.setDominantIntent(h.getDescription());
+                            expansion.setDominantConfidence(1.0);
+                            return true;
+                        }).orElse(false);
+                    if (found) return true;
+                    context.log("[KERNEL] Warning: Selected hypothesis ID not found: " + finalId);
+                } else if (userResponse.equalsIgnoreCase("Yes") || userResponse.equalsIgnoreCase("Approved") || userResponse.equalsIgnoreCase("Proceed")) {
+                    return true;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean handleClarification(TaskContext context, ClarificationPlanner planner, IntentExpansionResult expansion, String goal) throws Exception {
+        String clarificationRequest = planner.formatClarificationRequest(expansion);
+        context.log(clarificationRequest);
+        String userResponse = context.requestInput(clarificationRequest).get();
+        if ("Rejected".equalsIgnoreCase(userResponse)) {
+            recordRejection(goal, "User rejected clarification request.");
+            transition(SystemState.FAILED, context);
+            return false;
+        }
+
+        if (userResponse.equalsIgnoreCase("Approved") || userResponse.equalsIgnoreCase("Proceed") || userResponse.equalsIgnoreCase("Yes") || userResponse.equalsIgnoreCase("OK")) {
+            context.log("[KERNEL] User approved intent expansion.");
+            return true;
+        } else {
+            String newGoal = goal + " (Clarification: " + userResponse + ")";
+            context.getOrchestrationState().setRawInput(newGoal);
+            if (context.getOrchestrator().getSelfDevSession() != null) {
+                 context.getOrchestrator().getSelfDevSession().setInitialRequest(newGoal);
+            }
+            return true;
+        }
+    }
+
+    private boolean handlePhaseConfirmation(TaskContext context, OrchestrationState state) {
+        boolean isStepModeConfirmation = context.getOrchestrator().getAiChat() != null &&
+                                       context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
+                                       context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
+
+        String nextPhase = state.getCurrentPhase();
+
+        if (!context.isAutoApprove() && isStepModeConfirmation) {
+            context.log("[KERNEL] Darwin Evolution: Phase completed. Pausing for user confirmation before next phase: " + nextPhase);
+            try {
+                String userResponse = context.requestInput("Phase completed successfully. Proceed to " + nextPhase + "? (Yes/No)").get();
+                if ("Force Solution".equalsIgnoreCase(userResponse)) {
+                    context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                    context.setAutoApprove(true);
+                    return true;
+                } else if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse)) {
+                    context.log("[KERNEL] User stopped evolution.");
+                    return false;
+                }
+            } catch (Exception e) {
+                context.log("[KERNEL] Error during phase confirmation: " + e.getMessage());
+            }
+        }
+        return true;
+    }
+
+    public String handleVariantSelection(TaskContext context, List<BranchVariant> variants, String goal) throws Exception {
+        while (true) {
+            transition(SystemState.CLARIFYING, context);
+            context.log("[KERNEL] Darwin Evolution: Pausing for variant selection (Manual Mode).");
+
+            StringBuilder sb = new StringBuilder("Darwin generated " + variants.size() + " proposals for your review:\n");
+            for (BranchVariant v : variants) {
+                String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? " [KEPT]" : "";
+                sb.append(String.format("- [%s] %s (Predicted Score: %.2f)%s\n", v.getId(), v.getStrategy(), v.getScore(), status));
+            }
+            sb.append("\nSelect a variant to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
+
+            String input = context.requestInput(sb.toString()).get();
+            if (input == null || input.trim().isEmpty()) continue;
+
+            if ("Force Solution".equalsIgnoreCase(input)) {
+                context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                context.setAutoApprove(true);
+                return null; // Signals auto-activation
+            }
+
+            if (input.startsWith("Select ") || input.startsWith("Approve variant ")) {
+                String manualId = input.startsWith("Select ") ? input.substring(7).trim() : input.substring(16).trim();
+                boolean found = variants.stream().anyMatch(v -> v.getId().equals(manualId));
+                if (found) {
+                    context.log("[KERNEL] User selected variant: " + manualId);
+                    return manualId;
+                } else {
+                    context.log("[KERNEL] Warning: Selected variant ID not found: " + manualId);
+                }
+            } else if (input.startsWith("Keep variant ")) {
+                String keepId = input.substring(13).trim();
+                variants.stream().filter(v -> v.getId().equals(keepId)).findFirst().ifPresent(v -> {
+                    v.setActivationState(BranchVariant.ActivationState.KEPT);
+                    context.log("[KERNEL] Variant " + keepId + " marked as KEPT for final evaluation.");
+                });
+            } else if (input.startsWith("Reject variant ")) {
+                String rejectedId = input.substring(15).trim();
+                context.log("[KERNEL] User rejected variant: " + rejectedId + ". Evolution stopped by user.");
+                recordRejection(goal, "Darwin variant " + rejectedId + " rejected by user ('no way').");
+                return "STOP";
+            } else if ("Rejected".equalsIgnoreCase(input) || "Reject".equalsIgnoreCase(input) || "No".equalsIgnoreCase(input)) {
+                recordRejection(goal, "Darwin proposals rejected by user.");
+                return "FAILED";
+            } else if (input.startsWith("Propose:") || input.trim().startsWith("{")) {
+                context.log("[KERNEL] User injected a new solution proposal. Integrating as a first-class candidate.");
+                BranchVariant userVariant = createUserVariant(input, goal, context);
+                variants.add(userVariant);
+                context.log("[KERNEL] User variant " + userVariant.getId() + " added to the evolutionary pool.");
+            } else {
+                // High priority guidance text input
+                context.log("[KERNEL] User provided guidance: " + input + ". Refining intent and regenerating variants.");
+                String newGoal = goal + " (Guidance: " + input + ")";
+                context.getOrchestrationState().setRawInput(newGoal);
+                if (context.getOrchestrator().getSelfDevSession() != null) {
+                     context.getOrchestrator().getSelfDevSession().setInitialRequest(newGoal);
+                }
+                return "REGENERATE";
+            }
+        }
+    }
+
+    private BranchVariant createUserVariant(String input, String goal, TaskContext context) {
+        BranchVariant v = new BranchVariant();
+        v.setId("v-user-" + System.currentTimeMillis());
+        v.setBranchId(v.getId());
+        v.setLineageId(context.getSessionId());
+        v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
+        v.setStrategyType("USER_PROPOSAL");
+
+        String strategyText = input.startsWith("Propose:") ? input.substring(8).trim() : input;
+
+        if (strategyText.trim().startsWith("{")) {
+            try {
+                JSONObject obj = new JSONObject(strategyText);
+                v.setStrategy(obj.optString("strategy", "User-defined strategy"));
+                v.setSurvivalArgument(obj.optString("survival_argument", "User injection"));
+                v.setTradeoffs(obj.optString("tradeoffs", "Explicit user directive"));
+            } catch (Exception e) {
+                v.setStrategy(strategyText);
+            }
+        } else {
+            v.setStrategy(strategyText);
+            v.setSurvivalArgument("Direct user proposal");
+            v.setTradeoffs("User-defined trajectory");
+        }
+
+        v.setScore(0.95); // User proposals are highly valued
+        v.setBranchName("exp/user/" + sanitizeForBranch(v.getStrategy()));
+
+        // Record trajectory for tracking
+        Trajectory t = new Trajectory(v.getId(), v.getStrategy());
+        t.setFitnessScore(v.getScore());
+        v.setTrajectoryId(t.getTrajectoryId());
+
+        if (context.getKernelContext().getMemoryService().getTrajectoryMemory() != null) {
+            context.getKernelContext().getMemoryService().getTrajectoryMemory().recordTrajectory(t);
+        }
+
+        return v;
+    }
+
+    private String sanitizeForBranch(String s) {
+        if (s == null || s.isEmpty()) return "unnamed";
+        String sanitized = s.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-");
+        if (sanitized.startsWith("-")) sanitized = sanitized.substring(1);
+        if (sanitized.endsWith("-")) sanitized = sanitized.substring(0, sanitized.length() - 1);
+        if (sanitized.isEmpty()) return "unnamed";
+        return sanitized.substring(0, Math.min(sanitized.length(), 30));
     }
 
     private IterationRecord createBaseRecord(String goal) {

@@ -39,7 +39,6 @@ public class IterativeFlow implements IOrchestrationFlow {
             OrchestratorResponse response = new OrchestratorResponse();
             response.setResultType(ResultType.CHAT);
             response.setSummary(policyResponse);
-            manager.transition(SystemState.DONE, context);
             return response;
         }
 
@@ -48,7 +47,6 @@ public class IterativeFlow implements IOrchestrationFlow {
 
         // Clarification loop
         if (clarificationManager.shouldClarify(deepAnalysis) && !context.getOrchestrator().isDarwinMode() && !context.isAutoApprove()) {
-            manager.transition(SystemState.CLARIFYING, context);
             String question = clarificationManager.generateClarificationQuestion(deepAnalysis, context);
             clarificationManager.updateState(convState, deepAnalysis, question);
             context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), convState));
@@ -62,7 +60,6 @@ public class IterativeFlow implements IOrchestrationFlow {
                 OrchestratorResponse response = new OrchestratorResponse();
                 response.setResultType(ResultType.CHAT);
                 response.setSummary("Generation stopped: Clarification required.");
-                manager.transition(SystemState.FAILED, context);
                 return response;
             }
         }
@@ -78,18 +75,15 @@ public class IterativeFlow implements IOrchestrationFlow {
         manager.checkStep("evolution_loop", "PLANNING", "Plan generated. Review tasks before execution.");
 
         // EXECUTING stage
-        manager.transition(SystemState.PLAN_LOCKED, context);
         boolean success = manager.executeTasksWithRetries(tasks);
 
         // VERIFYING stage
-        manager.transition(SystemState.VERIFYING, context);
         String summary = manager.getFinalResponseAgent().generateFinalResponse(request, tasks, context);
 
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
         response.setSummary(summary);
 
-        manager.transition(success ? SystemState.DONE : SystemState.FAILED, context);
         return response;
     }
 

@@ -64,7 +64,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
         try {
             SystemState kernelState = context.getStateHolder().getState();
-            if (kernelState != SystemState.EXECUTING && kernelState != SystemState.INIT) {
+            if (kernelState != SystemState.EXECUTING && kernelState != SystemState.INIT && kernelState != SystemState.ANALYZING) {
                  throw new IllegalStateException("Kernel violation: Orchestrator handle() must be gated by the Control Plane. State: " + kernelState);
             }
 
@@ -93,9 +93,12 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
                 lastResult = executeTaskInternal(task, context);
                 task.setStatus(TaskStatus.DONE);
+                task.setResultSummary("Task completed.");
             }
 
             response.setSummary(lastResult);
+            FinalResponseAssembler assembler = new FinalResponseAssembler();
+            response.setFinalResponse(assembler.assemble(context, lastResult, true, context.getStartTime()));
             return response;
 
         } catch (Exception e) {
@@ -115,7 +118,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
     @Override
     public String executeTask(Task task, TaskContext context) throws Exception {
         SystemState kernelState = context.getStateHolder().getState();
-        if (kernelState != SystemState.EXECUTING && kernelState != SystemState.INIT) {
+        if (kernelState != SystemState.EXECUTING && kernelState != SystemState.INIT && kernelState != SystemState.ANALYZING) {
              throw new IllegalStateException("Kernel violation: Orchestrator executeTask() must be gated by the Control Plane. State: " + kernelState);
         }
         return executeTaskInternal(task, context);
