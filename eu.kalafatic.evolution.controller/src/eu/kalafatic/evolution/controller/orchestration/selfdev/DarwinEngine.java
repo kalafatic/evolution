@@ -232,29 +232,23 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         String currentPhase = context.getOrchestrationState().getCurrentPhase();
         if (currentPhase != null) {
-            state.append("\n--- CURRENT EVOLUTION PHASE: ").append(currentPhase).append(" ---\n");
+            state.append("\n--- EVOLUTIONARY STRATEGY HINT: ").append(currentPhase).append(" ---\n");
             if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(currentPhase)) {
-                state.append("PHASE: USER INTENT RECONSTRUCTION\n");
-                state.append("GOAL: Analyze explicit/implied intent, hidden expectations, and missing constraints. Reformulate the user request into a precise engineering objective.\n");
+                state.append("STRATEGY: USER INTENT RECONSTRUCTION\n");
+                state.append("Focus on analyzing explicit/implied intent, hidden expectations, and missing constraints. Reformulate the user request into a precise engineering objective.\n");
                 state.append("STRICT RULE: Reformulations MUST stay grounded in the user's primary objective. Do NOT propose unrelated boilerplate or structural changes.\n");
-                state.append("INSTRUCTIONS: In this phase, the 'strategy' field should contain your reformulated objective. The 'actions' array MUST be empty.\n");
-                state.append("OUTPUT: 2-3 distinct interpretations of the core engineering goal.\n");
             } else if (EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS.equals(currentPhase)) {
-                state.append("PHASE: ARCHITECTURE DISCOVERY & DESIGN\n");
-                state.append("GOAL: Analyze repository structure intelligently. Identify orchestrators, controllers, and architecture-defining files.\n");
-                state.append("OUTPUT: 2-3 competing architectural designs. Prioritize modularity and structure over implementation.\n");
+                state.append("STRATEGY: ARCHITECTURE DISCOVERY & DESIGN\n");
+                state.append("Focus on analyzing repository structure intelligently. Identify orchestrators, controllers, and architecture-defining files. Propose competing architectural designs.\n");
             } else if (EvolutionConstants.PHASE_SELECTION_REFINEMENT.equals(currentPhase)) {
-                state.append("PHASE: CONTEXT CURATION & SELECTION\n");
-                state.append("GOAL: Construct a STRICT CONTEXT MANIFEST. Categorize files into CORE, ARCHITECTURE, and DOCS context.\n");
-                state.append("OUTPUT: A refined selection of high-signal files. Explicitly exclude noise (binaries, generated code).\n");
+                state.append("STRATEGY: CONTEXT CURATION & SELECTION\n");
+                state.append("Focus on constructing a STRICT CONTEXT MANIFEST. Categorize files into CORE, ARCHITECTURE, and DOCS context.\n");
             } else if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(currentPhase)) {
-                state.append("PHASE: PROMPT EVOLUTION & PLANNING\n");
-                state.append("GOAL: Construct the FINAL EXECUTION PROMPT. Brief an external LLM as a senior architect briefing an elite engineer.\n");
-                state.append("OUTPUT: Detailed step-by-step implementation plan and optimized execution prompt.\n");
+                state.append("STRATEGY: PROMPT EVOLUTION & PLANNING\n");
+                state.append("Focus on constructing the FINAL EXECUTION PROMPT. Brief an external LLM as a senior architect briefing an elite engineer.\n");
             } else if (EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(currentPhase)) {
-                state.append("PHASE: IMPLEMENTATION GUIDANCE & PACKAGING\n");
-                state.append("GOAL: Provide architectural constraints, integration cautions, and validation expectations.\n");
-                state.append("OUTPUT: Final implementation-ready task package and ZIP content summary. DO NOT generate code unless explicitly requested.\n");
+                state.append("STRATEGY: IMPLEMENTATION GUIDANCE & PACKAGING\n");
+                state.append("Focus on providing architectural constraints, integration cautions, and validation expectations.\n");
             }
         }
 
@@ -325,9 +319,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // Activation Gate: Only ACTIVE branches influence subsequent iterations
         List<IterationRecord> records = memoryService.getRecords();
-        List<IterationRecord> activeRecords = records.stream()
-                .filter(r -> "ACTIVE".equals(r.getActivationState()))
-                .collect(Collectors.toList());
+        List<IterationRecord> activeRecords = memoryService.getActiveLineage();
 
         String history;
         if (activeRecords.isEmpty()) {

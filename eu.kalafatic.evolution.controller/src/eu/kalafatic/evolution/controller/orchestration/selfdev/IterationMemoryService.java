@@ -238,6 +238,48 @@ public class IterationMemoryService {
     }
 
     /**
+     * Retrieves active lineage iteration records (winners of previous iterations).
+     */
+    public List<IterationRecord> getActiveLineage() {
+        return records.stream()
+                .filter(r -> "ACTIVE".equals(r.getActivationState()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Saves a checkpoint of the current evolutionary state for restart recovery.
+     */
+    public void saveCheckpoint(String sessionId, String iterationId, String phase, String goal) {
+        File checkpointFile = new File(memoryDir, "checkpoint_" + sessionId + ".json");
+        Map<String, String> checkpoint = new HashMap<>();
+        checkpoint.put("sessionId", sessionId);
+        checkpoint.put("iterationId", iterationId);
+        checkpoint.put("phase", phase);
+        checkpoint.put("goal", goal);
+        checkpoint.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        try {
+            mapper.writeValue(checkpointFile, checkpoint);
+            Log.log("[MEMORY] Checkpoint saved: Iteration=" + iterationId + ", Phase=" + phase);
+        } catch (IOException e) {
+            System.err.println("Failed to save checkpoint: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Loads the last saved checkpoint for a session.
+     */
+    public Map<String, String> loadCheckpoint(String sessionId) {
+        File checkpointFile = new File(memoryDir, "checkpoint_" + sessionId + ".json");
+        if (!checkpointFile.exists()) return null;
+        try {
+            return mapper.readValue(checkpointFile, Map.class);
+        } catch (IOException e) {
+            System.err.println("Failed to load checkpoint: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Retrieves all trajectory analysis records.
      */
     public List<TrajectoryAnalysisRecord> getTrajectoryAnalyses() {

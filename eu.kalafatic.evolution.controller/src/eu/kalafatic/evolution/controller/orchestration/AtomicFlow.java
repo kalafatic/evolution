@@ -26,7 +26,6 @@ public class AtomicFlow implements IOrchestrationFlow {
             return new DarwinFlow(aiService, manager).execute(request, context);
         } catch (Exception e) {
             manager.getGitManager().rollback();
-            manager.transition(SystemState.FAILED, context);
             throw e;
         }
     }

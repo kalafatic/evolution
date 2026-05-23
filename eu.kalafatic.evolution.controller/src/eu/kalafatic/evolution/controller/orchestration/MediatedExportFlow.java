@@ -48,14 +48,12 @@ public class MediatedExportFlow implements IOrchestrationFlow {
             return executeInternal(request, context);
         } catch (Exception e) {
             manager.getGitManager().rollback();
-            manager.transition(SystemState.FAILED, context);
             throw e;
         }
     }
 
     private OrchestratorResponse executeInternal(String request, TaskContext context) throws Exception {
         context.log("[MEDIATED] Starting Robust Mediated Context Export Flow.");
-        manager.transition(SystemState.ANALYZING, context);
 
         File root = context.getProjectRoot();
         TargetSnapshot.TargetType type = root.getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
@@ -265,7 +263,6 @@ public class MediatedExportFlow implements IOrchestrationFlow {
         response.setResultType(ResultType.CHAT);
         response.setSummary(summaryBuilder.toString());
 
-        manager.transition(SystemState.DONE, context);
         return response;
     }
 

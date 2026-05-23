@@ -63,7 +63,7 @@ public class FinalResponse {
             sb.append(executionSummary).append("\n\n");
         }
 
-        if (summary != null && !summary.isEmpty()) {
+        if (summary != null && !summary.isEmpty() && !summary.equals("{}")) {
             sb.append("**Summary**\n").append(summary).append("\n\n");
         }
 

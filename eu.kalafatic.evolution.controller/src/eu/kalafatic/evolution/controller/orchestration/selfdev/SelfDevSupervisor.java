@@ -77,6 +77,9 @@ public class SelfDevSupervisor {
 
                 // Authority Hierarchy: Supervisor delegates ALL progress authority to the Kernel (IterationManager).
                 IterationManager kernel = createIterationManager(iteration, context.getAiService());
+
+                // KERNEL AUTHORITY: IterationManager is the sole authority for state transitions.
+                // It will manage the 'running' iteration and decide when to stop.
                 EvaluationResult result = kernel.runIteration(iteration);
 
                 if (!result.isSuccess() || result.getDecision() == SelfDevDecision.ROLLBACK) {

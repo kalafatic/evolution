@@ -78,186 +78,15 @@ public class DarwinFlow implements IOrchestrationFlow {
 
     @Override
     public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
-        OrchestrationState state = context.getOrchestrationState();
-
-        context.log("[KERNEL] Strategy-Driven Evolution: Starting Full Darwin Evolution.");
-        state.getCognitiveTrace().addNode(new CausalNode(
-            "darwin-start-" + System.currentTimeMillis(),
-            "STRATEGY_SELECTION",
-            "DarwinFlow",
-            Collections.emptyList(),
-            List.of("DarwinFlow"),
-            1.0,
-            "Executing dynamic branch strategy system."
-        ));
-
-        EvaluationResult result;
-        int safetyCounter = 0;
-        do {
-            result = runDarwin(context);
-            safetyCounter++;
-        } while (result.getDecision() == SelfDevDecision.CONTINUE && safetyCounter < 10 && !context.isPaused());
-
-        OrchestratorResponse response = new OrchestratorResponse();
-        response.setResultType(ResultType.CHAT);
-
-        String summary;
-        if (state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")) {
-            if (context.getMetadata().containsKey("testMode")) {
-                summary = "Darwin evolution completed (Test Mode).";
-            } else {
-                summary = manager.getFinalResponseAgent().generateFinalResponse(request, Collections.emptyList(), context);
-            }
-        } else {
-            summary = "Darwin evolution completed at phase: " + state.getCurrentPhase();
-        }
-
-        response.setSummary(summary);
-        return response;
+        // DarwinFlow is now an execution engine. Orchestration is owned by IterationManager.
+        return manager.executeDarwin(request, context);
     }
 
-    public EvaluationResult runDarwin(TaskContext context) throws Exception {
-        SystemState currentState = context.getStateHolder().getState();
-        if (currentState == SystemState.DONE || currentState == SystemState.FAILED) {
-            manager.transition(SystemState.INIT, context);
-        }
-
+    public EvaluationResult runDarwinIteration(TaskContext context) throws Exception {
         OrchestrationState state = context.getOrchestrationState();
         String goal = state.getRawInput();
         if (goal == null || goal.isEmpty()) {
             goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
-        }
-
-        EvolutionPhaseMachine phaseMachine = new EvolutionPhaseMachine();
-        EvolutionPhase phase = state.getCurrentPhase() != null ? EvolutionPhase.fromString(state.getCurrentPhase()) : phaseMachine.getInitialPhase();
-
-        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phase));
-        Iteration currentIterationModel = manager.getCurrentIterationModel();
-        if (currentIterationModel != null) {
-            currentIterationModel.setPhase(state.getCurrentPhase());
-        }
-
-        context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
-
-        if (phase == EvolutionPhase.INTENT_EXPANSION) {
-            // FAST FORWARD: Skip discovery phases for simple/atomic goals BEFORE expansion
-            AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
-            if (atomicAnalysis != null && atomicAnalysis.getConfidence() > 0.8 && !atomicAnalysis.isMultiStep()) {
-                context.log("[KERNEL] Atomic intent detected with high confidence. Fast-forwarding to implementation planning to accelerate evolution.");
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.IMPLEMENTATION_PLAN));
-
-                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                res.setSuccess(true);
-                res.setDecision(SelfDevDecision.CONTINUE);
-                return res;
-            }
-
-            manager.transition(SystemState.ANALYZING, context);
-            IntentExpansionResult expansion = manager.getIntentExpansionEngine().expand(goal, context);
-            state.setIntentAnalysis(null);
-            state.getMetadata().put("intentExpansion", expansion);
-
-            context.log("[KERNEL] Intent Interpretation: " + expansion.getState());
-            if (expansion.getDominantIntent() != null) {
-                context.log("[KERNEL] Dominant Intent: " + expansion.getDominantIntent());
-            }
-
-            boolean isStepMode = context.getOrchestrator().getAiChat() != null &&
-                               context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
-                               context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
-
-            if (!context.isAutoApprove() && isStepMode) {
-                while (true) {
-                    context.log("[KERNEL] Darwin Evolution: Pausing for intent interpretation review.");
-                    manager.transition(SystemState.CLARIFYING, context);
-                    String userResponse = context.requestInput("Intent interpretation complete. State: " + expansion.getState() + ". Review and select a hypothesis to proceed, or reject to refine.").get();
-
-                    if ("Force Solution".equalsIgnoreCase(userResponse)) {
-                        context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
-                        context.setAutoApprove(true);
-                        break;
-                    } else if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse) || "Rejected".equalsIgnoreCase(userResponse)) {
-                        manager.recordRejection(goal, "User rejected intent interpretation.");
-                        manager.transition(SystemState.FAILED, context);
-                        return manager.failedResult();
-                    }
-
-                    String selectedHypothesisId = null;
-                    if (userResponse.startsWith("Select ")) {
-                        selectedHypothesisId = userResponse.substring(7).trim();
-                    } else if (userResponse.startsWith("Approve variant ")) {
-                        selectedHypothesisId = userResponse.substring(16).trim();
-                    }
-
-                    if (selectedHypothesisId != null) {
-                        context.log("[KERNEL] User selected hypothesis: " + selectedHypothesisId);
-                        String finalId = selectedHypothesisId;
-                        boolean found = expansion.getHypotheses().stream()
-                            .filter(h -> h.getId().equals(finalId))
-                            .findFirst()
-                            .map(h -> {
-                                expansion.setDominantIntent(h.getDescription());
-                                expansion.setDominantConfidence(1.0);
-                                return true;
-                            }).orElse(false);
-                        if (found) break;
-                        context.log("[KERNEL] Warning: Selected hypothesis ID not found: " + finalId);
-                    } else if (userResponse.equalsIgnoreCase("Yes") || userResponse.equalsIgnoreCase("Approved") || userResponse.equalsIgnoreCase("Proceed")) {
-                        break;
-                    }
-                }
-            }
-
-            ClarificationPlanner planner = manager.getClarificationPlanner();
-            ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
-            context.log("[KERNEL] Clarification Strategy: " + strategy);
-
-            if (strategy == ClarificationPlanner.Strategy.BRANCH_PARALLEL) {
-                context.log("[KERNEL] Ambiguity detected but evolvable. Spawning parallel implementation branches.");
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));
-                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                res.setSuccess(true);
-                res.setDecision(SelfDevDecision.CONTINUE);
-                return res;
-            }
-
-            if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER) {
-                String clarificationRequest = planner.formatClarificationRequest(expansion);
-                context.log(clarificationRequest);
-                String userResponse = context.requestInput(clarificationRequest).get();
-                if ("Rejected".equalsIgnoreCase(userResponse)) {
-                    manager.recordRejection(goal, "User rejected clarification request.");
-                    manager.transition(SystemState.FAILED, context);
-                    return manager.failedResult();
-                }
-
-                if (userResponse.equalsIgnoreCase("Approved") || userResponse.equalsIgnoreCase("Proceed") || userResponse.equalsIgnoreCase("Yes") || userResponse.equalsIgnoreCase("OK")) {
-                    context.log("[KERNEL] User approved intent expansion. Advancing phase.");
-                    state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));
-                    EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                    res.setSuccess(true);
-                    res.setDecision(SelfDevDecision.CONTINUE);
-                    return res;
-                } else {
-                    goal = goal + " (Clarification: " + userResponse + ")";
-                    context.getOrchestrator().getSelfDevSession().setInitialRequest(goal);
-                    EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                    res.setSuccess(true);
-                    res.setDecision(SelfDevDecision.CONTINUE);
-                    return res;
-                }
-            }
-            state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));
-
-            // If intent is clear, proceed immediately to next phase in same iteration
-            // UNLESS we are in manual mode, where we want the user to review intent first.
-            if (strategy != ClarificationPlanner.Strategy.AUTO_INFER || !context.isAutoApprove()) {
-                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                res.setSuccess(true);
-                res.setDecision(SelfDevDecision.CONTINUE);
-                return res;
-            }
-            context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
         }
 
         // Implementation phases
@@ -272,25 +101,21 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         try {
             manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
-            manager.transition(SystemState.ANALYZING, context);
             Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
             StateSnapshot snapshot = initialEval.snapshot;
             Trajectory trajectory = new Trajectory();
             FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
 
-            manager.transition(SystemState.MUTATING, context);
             List<BranchVariant> rawVariants;
             try {
                 rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
             } catch (Exception e) {
                 context.log("[DARWIN] FATAL ERROR: Mutation engine failed: " + e.getMessage());
-                manager.transition(SystemState.FAILED, context);
                 return manager.failedResult();
             }
 
             if (rawVariants.isEmpty()) {
                 context.log("[DARWIN] ERROR: No variants generated for goal. Evolution blocked.");
-                manager.transition(SystemState.FAILED, context);
                 return manager.failedResult();
             }
 
@@ -320,85 +145,23 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
             context.getKernelContext().getMemoryService().flush();
 
-            BehaviorProfile profile = context.getBehaviorProfile();
-
-            manager.transition(SystemState.PLAN_LOCKED, context);
-
             BranchVariant selectedVariant = null;
             String manualId = null;
 
             // BYPASS SELECTION: Skip pause for single-variant non-state-changing turns
             boolean skipSelectionPause = variants.size() == 1 && !hasStateChangeIntent(context);
 
-            if ((profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) || !context.isAutoApprove()) && !skipSelectionPause) {
-                while (true) {
-                    manager.transition(SystemState.CLARIFYING, context);
-                    context.log("[KERNEL] Darwin Evolution: Pausing for variant selection (Manual Mode).");
-
-                    StringBuilder sb = new StringBuilder("Darwin generated " + variants.size() + " proposals for your review:\n");
-                    for (BranchVariant v : variants) {
-                        String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? " [KEPT]" : "";
-                        sb.append(String.format("- [%s] %s (Predicted Score: %.2f)%s\n", v.getId(), v.getStrategy(), v.getScore(), status));
-                    }
-                    sb.append("\nSelect a variant to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
-
-                    String input = context.requestInput(sb.toString()).get();
-                    if (input == null || input.trim().isEmpty()) continue;
-
-                    if ("Force Solution".equalsIgnoreCase(input)) {
-                        context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
-                        context.setAutoApprove(true);
-                        break;
-                    }
-
-                    if (input.startsWith("Select ") || input.startsWith("Approve variant ")) {
-                        manualId = input.startsWith("Select ") ? input.substring(7).trim() : input.substring(16).trim();
-                        String finalManualId = manualId;
-                        boolean found = variants.stream().anyMatch(v -> v.getId().equals(finalManualId));
-                        if (found) {
-                            context.log("[KERNEL] User selected variant: " + manualId);
-                            break;
-                        } else {
-                            context.log("[KERNEL] Warning: Selected variant ID not found: " + manualId);
-                            manualId = null;
-                        }
-                    } else if (input.startsWith("Keep variant ")) {
-                        String keepId = input.substring(13).trim();
-                        variants.stream().filter(v -> v.getId().equals(keepId)).findFirst().ifPresent(v -> {
-                            v.setActivationState(BranchVariant.ActivationState.KEPT);
-                            context.log("[KERNEL] Variant " + keepId + " marked as KEPT for final evaluation.");
-                        });
-                    } else if (input.startsWith("Reject variant ")) {
-                        String rejectedId = input.substring(15).trim();
-                        context.log("[KERNEL] User rejected variant: " + rejectedId + ". Evolution stopped by user.");
-                        manager.recordRejection(goal, "Darwin variant " + rejectedId + " rejected by user ('no way').");
-                        EvaluationResult res = manager.failedResult();
-                        res.setDecision(SelfDevDecision.STOP);
-                        manager.transition(SystemState.FAILED, context);
-                        return res;
-                    } else if ("Rejected".equalsIgnoreCase(input) || "Reject".equalsIgnoreCase(input) || "No".equalsIgnoreCase(input)) {
-                        manager.recordRejection(goal, "Darwin " + state.getCurrentPhase() + " proposals rejected by user.");
-                        EvaluationResult res = manager.failedResult();
-                        res.setDecision(SelfDevDecision.CONTINUE);
-                        manager.transition(SystemState.FAILED, context);
-                        return res;
-                    } else if (input.startsWith("Propose:") || input.trim().startsWith("{")) {
-                        context.log("[KERNEL] User injected a new solution proposal. Integrating as a first-class candidate.");
-                        BranchVariant userVariant = createUserVariant(input, goal, context);
-                        variants.add(userVariant);
-                        context.log("[KERNEL] User variant " + userVariant.getId() + " added to the evolutionary pool.");
-                    } else {
-                        // High priority guidance text input
-                        context.log("[KERNEL] User provided guidance: " + input + ". Refining intent and regenerating variants.");
-                        goal = goal + " (Guidance: " + input + ")";
-                        if (context.getOrchestrator().getSelfDevSession() != null) {
-                             context.getOrchestrator().getSelfDevSession().setInitialRequest(goal);
-                        }
-                        EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                        res.setSuccess(true);
-                        res.setDecision(SelfDevDecision.CONTINUE);
-                        return res;
-                    }
+            if (!context.isAutoApprove() && !skipSelectionPause) {
+                manualId = manager.handleVariantSelection(context, variants, goal);
+                if ("REGENERATE".equals(manualId)) {
+                    // User provided guidance, restart mutation
+                    return runDarwinIteration(context);
+                }
+                if (manualId == null && !context.isAutoApprove()) {
+                    // Manual selection failed or was rejected
+                    EvaluationResult res = manager.failedResult();
+                    res.setDecision(SelfDevDecision.STOP);
+                    return res;
                 }
             }
 
@@ -421,7 +184,6 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.log("[KERNEL] Darwin Evolution: No viable winner selected or winner score too low.");
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.getGitManager().rollback();
-                manager.transition(SystemState.FAILED, context);
                 return manager.failedResult();
             }
 
@@ -434,7 +196,6 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             // EXECUTION PHASE - Only for the winner
             manager.getGitManager().forceCheckout(snapshotBranch);
-            manager.transition(SystemState.EXECUTING, context);
 
             context.log("[KERNEL] Executing winner variant: " + selectedVariant.getId() + " (" + selectedVariant.getStrategy() + ")");
             // Provision branch for winner
@@ -459,7 +220,6 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.log("[KERNEL] Winner variant execution failed.");
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.getGitManager().rollback();
-                manager.transition(SystemState.FAILED, context);
                 return manager.failedResult();
             }
 
@@ -478,14 +238,11 @@ public class DarwinFlow implements IOrchestrationFlow {
             boolean isSynthesis = context.getOrchestrationState().getCurrentPhase() != null && context.getOrchestrationState().getCurrentPhase().contains("SYNTHESIS");
             if (!reality.isSignificant() && !isSynthesis) {
                 context.log("[KERNEL] Reality Check WARNING: Winner variant resulted in NO physical changes in phase " + context.getOrchestrationState().getCurrentPhase());
-                // In early implementation phases, we might want to allow this if it's purely structural/analytical,
-                // but we should signal to the next iteration that more pressure is needed.
                 context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", false);
             } else {
                 context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", true);
             }
 
-            manager.transition(SystemState.VERIFYING, context);
             IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
             EvaluationResult result = evaluator.evaluate(context.getProjectRoot(), context, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
 
@@ -504,44 +261,18 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.getKernelContext().getMemoryService().saveRecord(record);
 
                 manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
-                manager.transition(SystemState.DONE, context);
-
-                String nextPhase = EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase));
-                state.setCurrentPhase(nextPhase);
 
                 result.setDecision(isFinalPhase ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
                 result.setSuccess(true); // Treat phase as successful to allow progression
 
-                boolean isStepModeConfirmation = context.getOrchestrator().getAiChat() != null &&
-                                               context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
-                                               context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
-
-                if (!isFinalPhase && !context.isAutoApprove() && isStepModeConfirmation) {
-                    context.log("[KERNEL] Darwin Evolution: Phase " + completedPhase + " completed. Pausing for user confirmation before next phase: " + nextPhase);
-                    try {
-                        String userResponse = context.requestInput("Phase " + completedPhase + " completed successfully. Proceed to " + nextPhase + "? (Yes/No)").get();
-                        if ("Force Solution".equalsIgnoreCase(userResponse)) {
-                            context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
-                            context.setAutoApprove(true);
-                        } else if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse)) {
-                             context.log("[KERNEL] User stopped evolution after phase " + completedPhase);
-                             result.setDecision(SelfDevDecision.STOP);
-                        }
-                    } catch (Exception e) {
-                        context.log("[KERNEL] Error during phase confirmation: " + e.getMessage());
-                    }
-                }
-
                 return result;
             } else {
                 manager.getGitManager().rollback();
-                manager.transition(SystemState.FAILED, context);
                 return result;
             }
         } catch (Exception e) {
             manager.getGitManager().forceCheckout(originalBranch);
             manager.getGitManager().rollback();
-            manager.transition(SystemState.FAILED, context);
             throw e;
         }
     }

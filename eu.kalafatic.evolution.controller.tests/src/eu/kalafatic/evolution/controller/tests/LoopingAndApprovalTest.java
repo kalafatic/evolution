@@ -55,7 +55,7 @@ public class LoopingAndApprovalTest {
         // but it's hard because it calls planner.plan().
 
         // Instead, let's verify the TaskContext and model changes we made.
-        assertEquals(TaskStatus.PENDING, approvalTask.getStatus());
+        assertEquals(TaskStatus.READY, approvalTask.getStatus());
         assertTrue(approvalTask.isApprovalRequired()); // defaults to true in Ecore
         approvalTask.setApprovalRequired(false);
         assertFalse(approvalTask.isApprovalRequired());
