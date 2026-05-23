@@ -77,6 +77,14 @@ public class ScenarioTest {
             public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
                 return mockLlm.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
             }
+            @Override
+            public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context, String forcedModel) throws Exception {
+                return mockLlm.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            }
+            @Override
+            public String sendRequest(Orchestrator orchestrator, String prompt, TaskContext context) throws Exception {
+                return mockLlm.sendRequest(orchestrator, prompt, 0.7f, null, context);
+            }
         };
     }
 
@@ -89,23 +97,43 @@ public class ScenarioTest {
 
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);
+        context.getMetadata().put("testMode", true);
 
         String javaCode = "public class Example { public static void main(String[] args) { System.out.println(\"Hello\"); } }";
-        String evalResponse = "{\"success\": true, \"comment\": \"Looks good\"}";
+        String evalResponse = "{\"success\": true, \"comment\": \"Looks good\", \"feedback\": \"Looks good\"}";
+        String intentExpansion = "{\"state\": \"CLEAR\", \"dominantIntent\": \"create java class Example\", \"hypotheses\": [{\"id\": \"h1\", \"description\": \"Create Example.java\", \"dimensionValues\": []}], \"confidence\": {\"overallConfidence\": 1.0, \"rationale\": \"clear\"}}";
+        String variantResponse1 = "{\"id\": \"v-keeper_evolution\", \"strategy_type\": \"KEEPER_EVOLUTION\", \"strategy\": \"Create Example class\", \"survival_argument\": \"Atomic creation\", \"actions\": [{\"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"Example.java\", \"description\": \"Write Example.java\"}]}";
+
+        mockLlm.addResponseMapping("Provide a concise summary of the project structure", "Tycho project.");
+        mockLlm.addResponseMapping("Analyze the following user request and expand the intent space", intentExpansion);
+        mockLlm.addResponseMapping("FIXED STRATEGY TYPE:\nKEEPER_EVOLUTION", variantResponse1);
+        mockLlm.addResponseMapping("You are a Final Response Agent", "Final summary.");
 
         mockLlm.setResponseSequence(new String[] {
-            "{\"intent\":\"new\", \"confidence\":1.0}", // HybridAtomicIntentClassifier -> intent
-            "{\"intent\":\"new\", \"confidence\":0.9, \"isAtomic\":true, \"targetArtifact\":\"Example.java\", \"artifactType\":\"java\"}", // HybridAtomicIntentClassifier -> atomic
             javaCode,     // JavaDev (Execution)
             evalResponse, // Validator -> Reviewer (Execution)
-            "Done"        // FinalResponseAgent (skipped but might be called if flow finishes differently)
+            evalResponse, // Validator -> ConstraintAgent (Execution)
+            evalResponse, // Evaluator.evaluate (Verification) - Reviewer
+            evalResponse, // Evaluator.evaluate (Verification) - Constraint
+            "Done"        // FinalResponseAgent
         });
 
         // Add mapping for Analytic diagnosis to return code instead of JSON to avoid the failure
         mockLlm.addResponseMapping("Role: Analytic", javaCode);
 
+        // Inject mock into all agents globally for this test
+        eu.kalafatic.evolution.controller.agents.AgentFactory.getAllAgents().forEach(a -> {
+            if (a instanceof eu.kalafatic.evolution.controller.agents.BaseAiAgent) {
+                ((eu.kalafatic.evolution.controller.agents.BaseAiAgent)a).setAiService(aiService);
+            }
+        });
+
         IterationManager manager = createManager(context);
         context.setAiService(aiService);
+
+        // Final response mapping
+        mockLlm.addResponseMapping("Role: FinalResponse", "Final result summary.");
+        mockLlm.addResponseMapping("Final Response Agent", "Final result summary.");
 
         TaskRequest request = new TaskRequest("create java class Example", tempDir);
         String result = manager.handle(request).getSummary();

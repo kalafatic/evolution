@@ -35,7 +35,7 @@ public class AiService {
         if (forcedModel != null) {
             orchestrator.setLocalModel(forcedModel);
         }
-        return LlmRouter.getInstance().sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        return llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
     // Refactored to delegate to ProjectModelManager for unified model loading logic.

@@ -14,8 +14,18 @@ public class DarwinFitnessRanker {
      * Ranks variants by fitness score.
      */
     public void rank(List<JSONObject> variants) {
+        rank(variants, false);
+    }
+
+    /**
+     * Ranks variants by fitness score with optional atomic priority.
+     */
+    public void rank(List<JSONObject> variants, boolean isAtomicRound) {
         for (JSONObject v : variants) {
             double score = calculateFitness(v);
+            if (isAtomicRound && DarwinStrategyType.KEEPER_EVOLUTION.name().equals(v.optString("strategy_type"))) {
+                score = Math.max(score, 0.95);
+            }
             v.put("score", score);
         }
 

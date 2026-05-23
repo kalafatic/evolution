@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.List;
+import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 
 /**
  * Factory for synthesizing Darwin variants when LLM generation fails to provide sufficient diversity.
@@ -40,8 +41,15 @@ public class DarwinSyntheticVariantFactory {
      * Synthesizes a basic KEEPER_EVOLUTION variant if none exist.
      */
     public JSONObject synthesizeImplementation(String goal) {
+        return synthesizeImplementation(goal, null);
+    }
+
+    /**
+     * Synthesizes a basic KEEPER_EVOLUTION variant if none exist, informed by atomic analysis.
+     */
+    public JSONObject synthesizeImplementation(String goal, AtomicIntentAnalysis analysis) {
         JSONObject impl = new JSONObject();
-        impl.put("id", "v-synthetic-evolution-" + System.currentTimeMillis());
+        impl.put("id", "v-atomic-" + System.currentTimeMillis());
         impl.put("strategy_type", DarwinStrategyType.KEEPER_EVOLUTION.name());
         impl.put("strategy", "Direct evolution: " + goal);
         impl.put("survival_argument", "Provides a deterministic implementation path for simple/atomic tasks.");
