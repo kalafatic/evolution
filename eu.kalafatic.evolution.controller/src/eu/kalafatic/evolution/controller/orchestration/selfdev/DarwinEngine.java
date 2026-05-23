@@ -204,29 +204,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         context.log("[DARWIN] Generating variants for goal: " + goal);
 
         // 1. Check for ATOMIC INTENT first - Simplified path for high-confidence simple tasks
+        // We still create variants but we ensure diversity if EPS is high enough
         AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
-        if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning()) {
-            context.log("[DARWIN] High-confidence atomic intent detected. Generating single synthetic variant.");
-            BranchVariant v = new BranchVariant();
-            v.setId("v-atomic-" + System.currentTimeMillis());
-            v.setBranchId(v.getId());
-            v.setLineageId(context.getSessionId());
-            v.setStrategy("Atomic Execution: " + goal);
-            v.setStrategyType("ATOMIC");
-            v.setActivationState(BranchVariant.ActivationState.ACTIVE);
-            v.setScore(0.95);
-            v.setBranchName("exp/atomic/" + sanitize(goal));
-            v.setSurvivalArgument("Direct execution of high-confidence atomic task.");
-
-            BranchVariant.Action action = new BranchVariant.Action();
-            action.setDomain(atomicAnalysis.getArtifactType() != null ? atomicAnalysis.getArtifactType() : "file");
-            action.setOperation("WRITE");
-            action.setTarget(atomicAnalysis.getTargetArtifact());
-            action.setDescription(goal);
-            v.getActions().add(action);
-
-            return Collections.singletonList(v);
-        }
 
         // 2. Read BitState from context
         long bitState = context.getOrchestrationState().getBitState();
@@ -443,7 +422,18 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 context.getOrchestrationState().getTaskIntents().contains(TaskIntent.DEBUGGING)
         );
 
-        if (hasStateChangeIntent) {
+        boolean isHighConfidenceAtomic = atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning();
+
+        if (isHighConfidenceAtomic) {
+             context.log("[DARWIN] High-confidence atomic intent detected. Using ATOMIC seed.");
+             mutationSeeds.add(new DarwinStrategySeed(DarwinStrategyType.KEEPER_EVOLUTION, "Atomic Execution: " + goal, true));
+             // For high-confidence atomic, we don't necessarily need diversity unless EPS is very high
+             if (eps >= 0.8) {
+                 mutationSeeds.add(DarwinStrategySeed.divergenceA());
+             }
+             // ATOMIC tasks MUST have higher priority than synthetic analytical branches to avoid being outranked in ranking phase
+             context.getOrchestrationState().getMetadata().put("is_atomic_round", true);
+        } else if (hasStateChangeIntent) {
             context.log("[DARWIN] State-change intent detected. Enforcing at least dual-seed mode (KEEPER + DIVERGENCE_A) for diversity.");
             mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
             mutationSeeds.add(DarwinStrategySeed.divergenceA());
@@ -473,7 +463,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         // 8. Synthetic Recovery (Phase 6)
         DarwinSyntheticVariantFactory syntheticFactory = new DarwinSyntheticVariantFactory();
         if (uniqueVariants.isEmpty()) {
-            uniqueVariants.add(syntheticFactory.synthesizeImplementation(goal));
+            uniqueVariants.add(syntheticFactory.synthesizeImplementation(goal, atomicAnalysis));
         }
         if (uniqueVariants.size() < 2) {
             uniqueVariants.add(syntheticFactory.synthesizeAnalytical(uniqueVariants.get(0), goal));
@@ -481,7 +471,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // 9. Fitness Ranking
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
-        ranker.rank(uniqueVariants);
+        Object isAtomicRound = context.getOrchestrationState().getMetadata().get("is_atomic_round");
+        ranker.rank(uniqueVariants, isAtomicRound instanceof Boolean && (Boolean)isAtomicRound);
 
         context.log("[DARWIN_BRANCHES] " + uniqueVariants.toString());
 

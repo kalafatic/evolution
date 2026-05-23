@@ -26,6 +26,8 @@ import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalys
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentClassifier;
 import eu.kalafatic.evolution.controller.orchestration.intent.HybridAtomicIntentClassifier;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
+import eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
@@ -171,6 +173,10 @@ public class IterationManager {
                 Iteration lastIter = session.getIterations().get(session.getIterations().size() - 1);
                 this.currentIterationModel = lastIter;
                 context.log("[KERNEL] Resuming from existing session: " + session.getId() + ", Iteration: " + lastIter.getId());
+
+                if (lastIter.getPhase() != null) {
+                    context.getOrchestrationState().setCurrentPhase(lastIter.getPhase());
+                }
             }
         }
 
@@ -263,6 +269,21 @@ public class IterationManager {
             transition(SystemState.ANALYZING, context);
             if (gitManager.isGitRepository()) {
                 gitManager.ensureInitialCommit();
+
+                PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?
+                        context.getOrchestrator().getAiChat().getPromptInstructions() : null;
+
+                if (instructions != null && instructions.isGitAutomation()) {
+                    String branchName = "evo-" + context.getSessionId().substring(0, Math.min(context.getSessionId().length(), 8));
+                    context.log("[KERNEL] Git Automation enabled. Creating/Switching to branch: " + branchName);
+                    try {
+                        if (!gitManager.getCurrentBranch().equals(branchName)) {
+                            gitManager.createBranch(branchName);
+                        }
+                    } catch (Exception e) {
+                        context.log("[KERNEL] Git Warning: Could not create branch " + branchName + ": " + e.getMessage());
+                    }
+                }
             }
 
             // Mode Routing
@@ -287,6 +308,22 @@ public class IterationManager {
             IOrchestrationFlow flow = resolveFlow(router, atomicAnalysis);
             transition(SystemState.EXECUTING, context);
             OrchestratorResponse result = flow.execute(request, context);
+
+            // Post-execution Git Automation
+            if (result != null && result.getResultType() != ResultType.ERROR) {
+                PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?
+                        context.getOrchestrator().getAiChat().getPromptInstructions() : null;
+
+                if (instructions != null && instructions.isGitAutomation() && gitManager.isGitRepository()) {
+                    context.log("[KERNEL] Git Automation: Committing changes.");
+                    try {
+                        gitManager.commit("Evolution Task: " + request.substring(0, Math.min(request.length(), 50)), context);
+                    } catch (Exception e) {
+                        context.log("[KERNEL] Git Warning: Could not commit changes: " + e.getMessage());
+                    }
+                }
+            }
+
             transition(SystemState.DONE, context);
 
             // Centralized Final Response Assembly
@@ -476,21 +513,47 @@ public class IterationManager {
     }
 
     public void recordRejection(String goal, String message) {
+        IterationRecord record = createBaseRecord(goal);
+        record.setStrategy("Darwin Variant Selection");
+        record.setResult("FAIL");
+        record.setStatus("REJECTED");
+        record.setErrorMessage(message);
+        memoryService.saveRecord(record);
+    }
+
+    public void recordIterationResult(String goal, String strategy, String branchId, boolean success) {
+        IterationRecord record = createBaseRecord(goal);
+        record.setStrategy(strategy);
+        record.setBranchId(branchId);
+        record.setResult(success ? "SUCCESS" : "FAILURE");
+        record.setStatus("COMPLETED");
+        memoryService.saveRecord(record);
+    }
+
+    public void recordTrajectoryAnalysis(String iterId, String branchId, String strategy, double score) {
+        TrajectoryAnalysisRecord tar = new TrajectoryAnalysisRecord();
+        tar.setIterationId(iterId);
+        tar.setBranchId(branchId);
+        tar.setStrategy(strategy);
+        tar.setFitnessScore(score);
+        memoryService.saveTrajectoryAnalysis(tar);
+        memoryService.flush();
+    }
+
+    private IterationRecord createBaseRecord(String goal) {
         IterationRecord record = new IterationRecord();
         int iterNum = 0;
         try {
             if (currentIterationModel != null) {
                 iterNum = Integer.parseInt(currentIterationModel.getId().replace("iteration-", ""));
+            } else if (context.getOrchestrationState() != null) {
+                iterNum = context.getOrchestrationState().getIterationCount();
             }
         } catch (Exception e) {}
         record.setIteration(iterNum);
         record.setGoal(goal);
-        record.setStrategy("Darwin Variant Selection");
-        record.setResult("FAIL");
-        record.setStatus("REJECTED");
-        record.setErrorMessage(message);
         record.setTimestamp(System.currentTimeMillis());
-        context.getKernelContext().getMemoryService().saveRecord(record);
+        return record;
     }
 
     public IOrchestrationFlow resolveFlow(ModeRouter router, AtomicIntentAnalysis atomicAnalysis) {
@@ -499,14 +562,7 @@ public class IterationManager {
 
         context.log("[KERNEL] Resolving flow. Profile traits: " + profile.getTraits());
 
-        // ATOMIC FLOW: Priority for simple, singular tasks.
-        // Even for state changes, high-confidence atomic tasks bypass the multi-phase Darwin engine.
-        if (atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning()) {
-            context.log("[KERNEL] Atomic intent detected with high confidence (" + atomicAnalysis.getConfidence() + "). Routing to AtomicFlow.");
-            return new AtomicFlow(aiService, this);
-        }
-
-        // Unified Darwin Flow for all implementation-related tasks that are NOT atomic.
+        // Unified Darwin Flow for all tasks that are NOT simple chat.
         boolean hasStateChangeIntent = state.getTaskIntents() != null && (
                 state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.IMPLEMENTATION) ||
                 state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.REFACTORING) ||
@@ -519,7 +575,7 @@ public class IterationManager {
             return router.resolveFlow(context.getPlatformMode(), aiService, this);
         }
 
-        // Priority for Darwinian Reasoning if enabled or non-atomic state changes are expected
+        // Priority for Darwinian Reasoning if enabled or state changes are expected
         if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE) || hasStateChangeIntent) {
             context.log("[KERNEL] Darwin Reasoning enabled or state-change intent detected. Routing to DarwinFlow.");
             return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
