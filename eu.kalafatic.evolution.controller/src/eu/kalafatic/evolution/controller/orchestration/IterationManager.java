@@ -481,6 +481,11 @@ public class IterationManager {
         do {
             result = runDarwinIteration(context, darwinFlow);
             safetyCounter++;
+
+            // CHECKPOINTING: Persist state for restart recovery
+            String goal = state.getRawInput() != null ? state.getRawInput() : request;
+            memoryService.saveCheckpoint(context.getSessionId(), (currentIterationModel != null ? currentIterationModel.getId() : "default"), state.getCurrentPhase(), goal);
+
         } while (result.getDecision() == SelfDevDecision.CONTINUE && safetyCounter < 10 && !context.isPaused());
 
         OrchestratorResponse response = new OrchestratorResponse();
@@ -691,20 +696,55 @@ public class IterationManager {
             context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
         }
 
-        // 2. EXECUTION DELEGATION: Call DarwinFlow for the mutation and evaluation logic
-        EvaluationResult result = darwinFlow.runDarwinIteration(context);
+        // 2. EVOLUTIONARY EXECUTION (Delegated to DarwinFlow Engine)
+        // Refactored to keep selection and phase control in IterationManager.
+        List<BranchVariant> variants = darwinFlow.generateProposals(context, goal);
 
-        // 3. PHASE PROGRESSION AUTHORITY: IterationManager decides the next phase
+        if (variants.isEmpty()) {
+            context.log("[KERNEL] ERROR: No variants generated for goal. Evolution blocked.");
+            return failedResult();
+        }
+
+        // 3. SELECTION AUTHORITY: Handle variant selection (Manual/Auto/Step)
+        String manualId = null;
+        boolean skipSelectionPause = variants.size() == 1 && !hasStateChangeIntent(context);
+
+        if (!context.isAutoApprove() && !skipSelectionPause) {
+            manualId = handleVariantSelection(context, variants, goal);
+            if ("REGENERATE".equals(manualId)) {
+                // User provided guidance, restart mutation in the current phase
+                return runDarwinIteration(context, darwinFlow);
+            }
+            if (manualId == null || "STOP".equals(manualId) || "FAILED".equals(manualId)) {
+                EvaluationResult res = failedResult();
+                res.setDecision(SelfDevDecision.STOP);
+                return res;
+            }
+        }
+
+        // 4. DECISION AUTHORITY: AuthorityController resolve winner
+        String iterId = currentIterationModel != null ? currentIterationModel.getId() : "default";
+        eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = decide(iterId, variants, context, manualId);
+
+        // 5. EXECUTION ENGINE: Execute winner variant and evaluate
+        EvaluationResult result = darwinFlow.executeWinner(context, decision, variants, goal);
+
+        // 6. PHASE PROGRESSION AUTHORITY: IterationManager decides the next phase
         if (result.isSuccess()) {
             EvolutionPhase currentPhaseEnum = EvolutionPhase.fromString(state.getCurrentPhase());
+
+            // CONVERGENCE ANALYSIS: DarwinFlow analyzes if we should finish early
+            if (darwinFlow.checkConvergence(variants, context)) {
+                context.log("[KERNEL] Convergence detected. Transitioning to final synthesis.");
+                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
+                currentPhaseEnum = EvolutionPhase.FINAL_SYNTHESIS;
+            }
+
             if (!phaseMachine.isTerminal(currentPhaseEnum)) {
                 EvolutionPhase nextPhase = phaseMachine.next(currentPhaseEnum);
                 state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
                 result.setDecision(phaseMachine.isTerminal(nextPhase) ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
             }
-
-            // CHECKPOINTING: Persist state for restart continuity
-            memoryService.saveCheckpoint(context.getSessionId(), (currentIterationModel != null ? currentIterationModel.getId() : "default"), state.getCurrentPhase(), goal);
 
             // PHASE CONFIRMATION LOOP
             if (!handlePhaseConfirmation(context, state)) {
@@ -717,6 +757,17 @@ public class IterationManager {
         }
 
         return result;
+    }
+
+    private boolean hasStateChangeIntent(TaskContext context) {
+        OrchestrationState state = context.getOrchestrationState();
+        return state.getTaskIntents() != null && (
+                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.IMPLEMENTATION) ||
+                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.REFACTORING) ||
+                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.DEBUGGING) ||
+                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.TESTING) ||
+                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.OPTIMIZATION)
+        );
     }
 
     private boolean handleIntentReview(TaskContext context, IntentExpansionResult expansion, String goal) throws Exception {
