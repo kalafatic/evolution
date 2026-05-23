@@ -176,17 +176,7 @@ public class DarwinFlow implements IOrchestrationFlow {
 
                 // STAMP APPROVED FOR UI
                 if (selectedVariant != null) {
-                    JSONArray updatedVariants = new JSONArray();
-                    for (BranchVariant v : variants) {
-                        JSONObject vObj = new JSONObject();
-                        vObj.put("id", v.getId());
-                        vObj.put("strategy", v.getStrategy());
-                        vObj.put("strategy_type", v.getStrategyType());
-                        vObj.put("score", v.getScore());
-                        vObj.put("approved", v.getId().equals(finalWinnerId));
-                        updatedVariants.put(vObj);
-                    }
-                    context.log("[APPROVED:" + finalWinnerId + "] [DARWIN_BRANCHES] " + updatedVariants.toString());
+                    context.log("[APPROVED:" + finalWinnerId + "] [KERNEL] Winner variant selected: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
                 }
             }
 

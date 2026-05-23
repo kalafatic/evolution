@@ -420,7 +420,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
              context.log("[DARWIN] High-confidence atomic intent detected. Using ATOMIC seed.");
              mutationSeeds.add(new DarwinStrategySeed(DarwinStrategyType.KEEPER_EVOLUTION, "Atomic Execution: " + goal, true));
              // For high-confidence atomic, we don't necessarily need diversity unless EPS is very high
-             if (eps >= 0.8) {
+             if (eps >= 0.4) {
                  mutationSeeds.add(DarwinStrategySeed.divergenceA());
              }
              // ATOMIC tasks MUST have higher priority than synthetic analytical branches to avoid being outranked in ranking phase
