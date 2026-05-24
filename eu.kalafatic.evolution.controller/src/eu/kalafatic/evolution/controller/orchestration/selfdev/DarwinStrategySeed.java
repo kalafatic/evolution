@@ -124,4 +124,38 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed synthesisHybrid() {
         return stabilizationRecovery();
     }
+
+    // --- Mediated Cognitive Seeds ---
+
+    public static DarwinStrategySeed architectureMapping() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.ARCHITECTURE_MAPPING,
+            "Focus on mapping the core architecture, identification of primary components, and high-level structural patterns.",
+            true
+        );
+    }
+
+    public static DarwinStrategySeed dependencyExploration() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.DEPENDENCY_EXPLORATION,
+            "Analyze module relationships, dependency graphs, and cross-cutting concerns to understand the ripple effects of changes.",
+            true
+        );
+    }
+
+    public static DarwinStrategySeed refactorHotspotAnalysis() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.REFACTOR_HOTSPOT_ANALYSIS,
+            "Identify areas of high complexity, technical debt, or frequent instability that are prime candidates for refactoring.",
+            true
+        );
+    }
+
+    public static DarwinStrategySeed contextReduction() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.CONTEXT_REDUCTION,
+            "Evolve a minimal, high-signal context package. Identify the exact set of files and metadata needed for external reasoning with zero noise.",
+            true
+        );
+    }
 }
