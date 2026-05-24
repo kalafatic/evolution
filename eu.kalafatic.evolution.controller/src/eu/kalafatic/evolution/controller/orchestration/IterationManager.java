@@ -505,7 +505,7 @@ public class IterationManager {
             if (context.getMetadata().containsKey("testMode")) {
                 summary = "Darwin evolution completed (Test Mode).";
             } else {
-                summary = getFinalResponseAgent().generateFinalResponse(request, List.of(), context);
+                summary = getFinalResponseAgent().generateFinalResponse(request, context.getOrchestrator().getTasks(), context);
             }
         } else {
             summary = "Darwin evolution completed at phase: " + state.getCurrentPhase();

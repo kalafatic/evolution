@@ -14,6 +14,7 @@ public class VariantExecutionContext {
     private final String variantId;
     private final Map<String, Object> metadata = new ConcurrentHashMap<>();
     private final List<RuntimeEvent> localEvents = new ArrayList<>();
+    private final List<eu.kalafatic.evolution.model.orchestration.Task> tasks = new ArrayList<>();
 
     public VariantExecutionContext(String variantId) {
         this.variantId = variantId;
@@ -33,5 +34,9 @@ public class VariantExecutionContext {
 
     public Map<String, Object> getMetadata() {
         return metadata;
+    }
+
+    public List<eu.kalafatic.evolution.model.orchestration.Task> getTasks() {
+        return tasks;
     }
 }
