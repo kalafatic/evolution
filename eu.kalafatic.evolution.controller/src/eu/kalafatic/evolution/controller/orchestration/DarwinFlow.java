@@ -82,139 +82,92 @@ public class DarwinFlow implements IOrchestrationFlow {
         return manager.executeDarwin(request, context);
     }
 
-    public EvaluationResult runDarwinIteration(TaskContext context) throws Exception {
-        OrchestrationState state = context.getOrchestrationState();
-        String goal = state.getRawInput();
-        if (goal == null || goal.isEmpty()) {
-            goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
+    public List<BranchVariant> generateProposals(TaskContext context, String goal) throws Exception {
+        Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
+        String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
+
+        Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
+        StateSnapshot snapshot = initialEval.snapshot;
+        Trajectory trajectory = new Trajectory();
+        FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
+
+        List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
+
+        if (rawVariants.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        // Implementation phases
-        if (manager.getGitManager().isGitRepository()) {
-            manager.getGitManager().ensureInitialCommit();
+        context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
+            "darwin-mutation-" + System.currentTimeMillis(),
+            "MUTATION",
+            "DarwinEngine",
+            List.of(goal),
+            rawVariants.stream().map(v -> v.getId()).collect(Collectors.toList()),
+            1.0,
+            "Generated " + rawVariants.size() + " variants."
+        ));
+
+        ISchedulingContract scheduler = CapabilityRegistry.getInstance().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
+        ScheduledExecutionPlan executionPlan = scheduler.schedule(rawVariants, context);
+        List<BranchVariant> variants = executionPlan.getScheduledVariants();
+        context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
+
+        // METADATA PERSISTENCE: Record trajectory analysis for ALL proposals
+        for (BranchVariant v : variants) {
+            TrajectoryAnalysisRecord tar = new TrajectoryAnalysisRecord();
+            tar.setIterationId(iterId);
+            tar.setBranchId(v.getId());
+            tar.setStrategy(v.getStrategy());
+            tar.setFitnessScore(v.getScore());
+            context.getKernelContext().getMemoryService().saveTrajectoryAnalysis(tar);
         }
+        context.getKernelContext().getMemoryService().flush();
+
+        return variants;
+    }
+
+    public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, String goal) throws Exception {
         String originalBranch = manager.getGitManager().getCurrentBranch();
         String baseCommit = manager.getGitManager().getHeadCommit();
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
         String snapshotBranch = "snapshot/" + iterId + "-" + System.currentTimeMillis();
 
+        String finalWinnerId = decision.getSelectedVariantId();
+        BranchVariant selectedVariant = null;
+        if (finalWinnerId != null) {
+            selectedVariant = variants.stream()
+                    .filter(v -> v.getId().equals(finalWinnerId))
+                    .findFirst().orElse(null);
+        }
+
+        if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE && selectedVariant.getScore() < 0.3)) {
+            context.log("[KERNEL] Darwin Evolution: No viable winner selected or winner score too low.");
+            return manager.failedResult();
+        }
+
+        context.log("[APPROVED:" + finalWinnerId + "] [KERNEL] Winner variant selected: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
+
+        if (currentIterationModelImpl != null) {
+            currentIterationModelImpl.setSurvivalArgument(selectedVariant.getSurvivalArgument());
+            currentIterationModelImpl.setTradeoffs(selectedVariant.getTradeoffs());
+            currentIterationModelImpl.setFailureRisks(selectedVariant.getFailureRisks());
+            currentIterationModelImpl.setJustification(selectedVariant.getStrategy());
+        }
+
         try {
             manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
-            Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
-            StateSnapshot snapshot = initialEval.snapshot;
-            Trajectory trajectory = new Trajectory();
-            FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
-
-            List<BranchVariant> rawVariants;
-            try {
-                rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
-            } catch (Exception e) {
-                context.log("[DARWIN] FATAL ERROR: Mutation engine failed: " + e.getMessage());
-                return manager.failedResult();
-            }
-
-            if (rawVariants.isEmpty()) {
-                context.log("[DARWIN] ERROR: No variants generated for goal. Evolution blocked.");
-                return manager.failedResult();
-            }
-
-            context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
-                "darwin-mutation-" + System.currentTimeMillis(),
-                "MUTATION",
-                "DarwinEngine",
-                List.of(goal),
-                rawVariants.stream().map(v -> v.getId()).collect(Collectors.toList()),
-                1.0,
-                "Generated " + rawVariants.size() + " variants."
-            ));
-
-            ISchedulingContract scheduler = CapabilityRegistry.getInstance().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
-            ScheduledExecutionPlan executionPlan = scheduler.schedule(rawVariants, context);
-            List<BranchVariant> variants = executionPlan.getScheduledVariants();
-            context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
-
-            // METADATA PERSISTENCE: Record trajectory analysis for ALL proposals
-            for (BranchVariant v : variants) {
-                TrajectoryAnalysisRecord tar = new TrajectoryAnalysisRecord();
-                tar.setIterationId(iterId);
-                tar.setBranchId(v.getId());
-                tar.setStrategy(v.getStrategy());
-                tar.setFitnessScore(v.getScore());
-                context.getKernelContext().getMemoryService().saveTrajectoryAnalysis(tar);
-            }
-            context.getKernelContext().getMemoryService().flush();
-
-            BranchVariant selectedVariant = null;
-            String manualId = null;
-
-            // BYPASS SELECTION: Skip pause for single-variant non-state-changing turns
-            boolean skipSelectionPause = variants.size() == 1 && !hasStateChangeIntent(context);
-
-            if (!context.isAutoApprove() && !skipSelectionPause) {
-                manualId = manager.handleVariantSelection(context, variants, goal);
-                if ("REGENERATE".equals(manualId)) {
-                    // User provided guidance, restart mutation
-                    return runDarwinIteration(context);
-                }
-                if (manualId == null && !context.isAutoApprove()) {
-                    // Manual selection failed or was rejected
-                    EvaluationResult res = manager.failedResult();
-                    res.setDecision(SelfDevDecision.STOP);
-                    return res;
-                }
-            }
-
-            // SINGLE AUTHORITY DECISION CALL - Selection happens BEFORE execution
-            eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = manager.decide(iterId, variants, context, manualId);
-
-            String finalWinnerId = decision.getSelectedVariantId();
-            if (finalWinnerId != null) {
-                selectedVariant = variants.stream()
-                        .filter(v -> v.getId().equals(finalWinnerId))
-                        .findFirst().orElse(null);
-
-                // STAMP APPROVED FOR UI
-                if (selectedVariant != null) {
-                    context.log("[APPROVED:" + finalWinnerId + "] [KERNEL] Winner variant selected: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
-                }
-            }
-
-            if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE && selectedVariant.getScore() < 0.3)) {
-                context.log("[KERNEL] Darwin Evolution: No viable winner selected or winner score too low.");
-                manager.getGitManager().forceCheckout(originalBranch);
-                manager.getGitManager().rollback();
-                return manager.failedResult();
-            }
-
-            if (currentIterationModelImpl != null) {
-                currentIterationModelImpl.setSurvivalArgument(selectedVariant.getSurvivalArgument());
-                currentIterationModelImpl.setTradeoffs(selectedVariant.getTradeoffs());
-                currentIterationModelImpl.setFailureRisks(selectedVariant.getFailureRisks());
-                currentIterationModelImpl.setJustification(selectedVariant.getStrategy());
-            }
-
-            // EXECUTION PHASE - Only for the winner
             manager.getGitManager().forceCheckout(snapshotBranch);
 
             context.log("[KERNEL] Executing winner variant: " + selectedVariant.getId() + " (" + selectedVariant.getStrategy() + ")");
-            // Provision branch for winner
             manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
 
             evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit);
 
-            // SYNONIMOUS WITH evaluateVariantsInternal in old flow:
             ResultSynthesizer synthesizer = new ResultSynthesizer();
             synthesizer.synthesize(List.of(selectedVariant), context);
 
-            // HYBRID INSIGHT MERGING: Collect insights from non-winning analytical/stabilization branches
             mergeHybridInsights(variants, selectedVariant, context);
-
-            // Convergence check
-            if (checkConvergence(variants, context)) {
-                context.log("[KERNEL] Convergence detected. Transitioning to final synthesis.");
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
-            }
 
             if (!selectedVariant.isSuccess()) {
                 context.log("[KERNEL] Winner variant execution failed.");
@@ -230,7 +183,6 @@ public class DarwinFlow implements IOrchestrationFlow {
             WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
             context.log("[KERNEL] Reality Check: Winner variant applied. Analysis: " + reality.toString());
 
-            // Record physical changes for Final Response
             reality.getChangedFileMap().forEach((path, type) -> {
                 context.getFileChangeTracker().recordChange(path, type);
             });
@@ -246,12 +198,11 @@ public class DarwinFlow implements IOrchestrationFlow {
             IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
             EvaluationResult result = evaluator.evaluate(context.getProjectRoot(), context, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
 
-            // HARDENING: Non-final phases succeed even with failing builds (e.g. initial empty project)
-            boolean isFinalPhase = EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(state.getCurrentPhase());
+            boolean isFinalPhase = EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(context.getOrchestrationState().getCurrentPhase());
             if (result.isSuccess() || (!isFinalPhase && selectedVariant != null)) {
-                String completedPhase = state.getCurrentPhase();
+                String completedPhase = context.getOrchestrationState().getCurrentPhase();
                 IterationRecord record = new IterationRecord();
-                record.setIteration(state.getIterationCount());
+                record.setIteration(context.getOrchestrationState().getIterationCount());
                 record.setGoal(goal);
                 record.setStrategy(selectedVariant.getStrategy());
                 record.setBranchId(selectedVariant.getId());
@@ -263,8 +214,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
 
                 result.setDecision(isFinalPhase ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
-                result.setSuccess(true); // Treat phase as successful to allow progression
-
+                result.setSuccess(true);
                 return result;
             } else {
                 manager.getGitManager().rollback();
@@ -454,7 +404,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
     }
 
-    private boolean checkConvergence(List<BranchVariant> variants, TaskContext context) {
+    public boolean checkConvergence(List<BranchVariant> variants, TaskContext context) {
         if (variants == null || variants.size() < 2) return false;
 
         // 1. Fitness Stability: Check if top variants have stabilized at high scores
@@ -485,14 +435,6 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
 
         return false;
-    }
-
-    private boolean hasStateChangeIntent(TaskContext context) {
-        return context.getOrchestrationState().getTaskIntents() != null && (
-                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.IMPLEMENTATION) ||
-                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.REFACTORING) ||
-                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.DEBUGGING)
-        );
     }
 
     private String sanitize(String s) {
