@@ -1,12 +1,11 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 /**
- * Supported Darwin strategy roles for history-driven sequential mutation.
+ * Trajectory-driven Darwin strategy types for competing engineering futures.
  */
 public enum DarwinStrategyType {
-    KEEPER_EVOLUTION,
-    DIVERGENCE_A,
-    DIVERGENCE_B,
-    SYNTHESIS_HYBRID,
-    SEMANTIC_FUTURE
+    PROBABLE_SURVIVOR,
+    PHILOSOPHY_MUTATION,
+    MAXIMAL_DIVERGENCE,
+    STABILIZATION_RECOVERY
 }

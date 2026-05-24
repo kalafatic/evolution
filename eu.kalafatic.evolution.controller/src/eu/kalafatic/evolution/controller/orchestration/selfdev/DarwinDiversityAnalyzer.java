@@ -9,12 +9,12 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
- * Analyzer to ensure semantic diversity among Darwin variants.
+ * Analyzer to ensure conceptual and architectural diversity among Darwin trajectories.
  */
 public class DarwinDiversityAnalyzer {
 
     /**
-     * Filters a list of variants to remove semantic duplicates.
+     * Filters a list of variants to remove semantic and conceptual duplicates.
      */
     public List<JSONObject> analyze(List<JSONObject> variants, TaskContext context) {
         if (variants.size() < 2) return variants;
@@ -24,7 +24,7 @@ public class DarwinDiversityAnalyzer {
             if (isUnique(v, unique)) {
                 unique.add(v);
             } else {
-                context.log("[DIVERSITY] Dropping duplicate variant: " + v.optString("strategy"));
+                context.log("[DIVERSITY] Dropping redundant trajectory: " + v.optString("strategy"));
             }
         }
         return unique;
@@ -32,37 +32,42 @@ public class DarwinDiversityAnalyzer {
 
     private boolean isUnique(JSONObject candidate, List<JSONObject> existing) {
         String cStrategy = candidate.optString("strategy").toLowerCase();
+        String cPhilosophy = candidate.optString("semantic_justification").toLowerCase();
+        String cTradeoffs = candidate.optString("tradeoffs").toLowerCase();
+        String cRisks = candidate.optString("failure_risks").toLowerCase();
+
         Set<String> cTargets = getActionTargets(candidate);
         Set<String> cSteps = getProjectedSteps(candidate);
-        Set<String> cEffects = getExpectedEffects(candidate);
 
         for (JSONObject other : existing) {
             String oStrategy = other.optString("strategy").toLowerCase();
+            String oPhilosophy = other.optString("semantic_justification").toLowerCase();
+            String oTradeoffs = other.optString("tradeoffs").toLowerCase();
+            String oRisks = other.optString("failure_risks").toLowerCase();
+
             Set<String> oTargets = getActionTargets(other);
             Set<String> oSteps = getProjectedSteps(other);
-            Set<String> oEffects = getExpectedEffects(other);
 
-            // 1. Exact strategy match is an automatic duplicate
-            if (cStrategy.equals(oStrategy)) return false;
+            // 1. CONCEPTUAL OVERLAP: Check if the engineering philosophy is the same
+            double philosophySim = computeSimilarity(cPhilosophy, oPhilosophy);
+            if (philosophySim > 0.8) return false;
 
-            // 2. SEMANTIC OVERLAP: Relaxed for small models (threshold increased from 0.7 to 0.85)
-            double strategySimilarity = computeSimilarity(cStrategy, oStrategy);
-            if (strategySimilarity > 0.85) {
-                return false;
-            }
+            // 2. TRADEOFF OVERLAP: Check if they are proposing the same technical compromises
+            double tradeoffSim = computeSimilarity(cTradeoffs, oTradeoffs);
+            if (tradeoffSim > 0.8) return false;
 
-            // 3. TARGET OVERLAP: If they have the exact same file targets AND high strategy similarity
+            // 3. RISK OVERLAP: Check if they identify the same failure modes
+            double riskSim = computeSimilarity(cRisks, oRisks);
+            if (riskSim > 0.85) return false;
+
+            // 4. STRATEGY SIMILARITY: Basic word overlap check
+            double strategySim = computeSimilarity(cStrategy, oStrategy);
+            if (strategySim > 0.8) return false;
+
+            // 5. TARGET + STEP OVERLAP (Operational Redundancy)
             if (!cTargets.isEmpty() && cTargets.equals(oTargets)) {
-                if (strategySimilarity > 0.7) return false;
-            }
-
-            // 4. FUTURE TRAJECTORY OVERLAP: Convergence check
-            double stepSimilarity = computeJaccard(cSteps, oSteps);
-            double effectSimilarity = computeJaccard(cEffects, oEffects);
-
-            if (stepSimilarity > 0.6 && effectSimilarity > 0.6) {
-                // They are proposing the same engineering future, redundant.
-                return false;
+                double stepSim = computeJaccard(cSteps, oSteps);
+                if (stepSim > 0.7) return false;
             }
         }
         return true;
@@ -88,18 +93,6 @@ public class DarwinDiversityAnalyzer {
         return steps;
     }
 
-    private Set<String> getExpectedEffects(JSONObject variant) {
-        Set<String> effects = new HashSet<>();
-        JSONObject hyp = variant.optJSONObject("hypothesis");
-        if (hyp != null) {
-            JSONArray arr = hyp.optJSONArray("expected_effects");
-            if (arr != null) {
-                for (int i = 0; i < arr.length(); i++) effects.add(arr.getString(i).toLowerCase());
-            }
-        }
-        return effects;
-    }
-
     private double computeJaccard(Set<String> s1, Set<String> s2) {
         if (s1.isEmpty() && s2.isEmpty()) return 1.0;
         if (s1.isEmpty() || s2.isEmpty()) return 0.0;
@@ -114,7 +107,8 @@ public class DarwinDiversityAnalyzer {
     }
 
     private double computeSimilarity(String s1, String s2) {
-        // Very basic Jaccard similarity for now
+        if (s1 == null || s2 == null || s1.isEmpty() || s2.isEmpty()) return 0.0;
+
         Set<String> w1 = tokenize(s1);
         Set<String> w2 = tokenize(s2);
         if (w1.isEmpty() || w2.isEmpty()) return 0.0;
@@ -131,7 +125,7 @@ public class DarwinDiversityAnalyzer {
     private Set<String> tokenize(String s) {
         Set<String> tokens = new HashSet<>();
         // Filter out generic architectural filler words to focus on real semantic tokens
-        Set<String> filler = Set.of("architecture", "implementation", "approach", "strategy", "robust", "flexible", "modular", "solution", "engineering", "using", "with", "provide");
+        Set<String> filler = Set.of("architecture", "implementation", "approach", "strategy", "robust", "flexible", "modular", "solution", "engineering", "using", "with", "provide", "provides", "focus", "focuses");
 
         for (String word : s.split("\\s+")) {
             String clean = word.toLowerCase().replaceAll("[^a-z]", "");

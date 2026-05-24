@@ -124,96 +124,21 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
     @Override
     protected String getAgentInstructions() {
-        // This is now handled by generateVariants using PromptComposer
-        return "Role: Darwin Engine. Strategy: Iterative cognitive orchestration.";
+        return "Role: Darwin Engine. Strategy: Trajectory-driven engineering evolution.";
     }
 
     @Override
     protected String getFooterInstructions() {
-        return getFooterInstructions(Collections.emptyList());
-    }
-
-    protected String getFooterInstructions(List<EvolutionBranch> selectedStrategies) {
-        double eps = 0.5;
-        if (context != null && context.getOrchestrationState() != null) {
-            Object epsObj = context.getOrchestrationState().getMetadata().get("eps");
-            if (epsObj instanceof Double) eps = (Double) epsObj;
-        }
-
-        int variantCount = Math.max(2, selectedStrategies.size());
-
-        StringBuilder countInstruction = new StringBuilder();
-        countInstruction.append("Output MUST be a valid JSON array of EXACTLY ").append(variantCount).append(" object").append(variantCount > 1 ? "s" : "").append(".\n");
-        countInstruction.append("CRITICAL: Each object must represent a DISTINCT engineering strategy with different technical trade-offs.\n");
-
-        if (!selectedStrategies.isEmpty()) {
-            countInstruction.append("Each object in the array MUST correspond to one of the following strategies in the specified order:\n");
-            for (int i = 0; i < selectedStrategies.size(); i++) {
-                EvolutionBranch strategy = selectedStrategies.get(i);
-                countInstruction.append(i + 1).append(". ").append(strategy.getType().name()).append(": ").append(strategy.getInstructions()).append("\n");
-            }
-            if (selectedStrategies.size() < 2) {
-                countInstruction.append("2. CURIOSITY: Explore an alternative architectural path or hidden project dependency that might impact the goal.\n");
-                variantCount = Math.max(variantCount, 2);
-            }
-        } else {
-            countInstruction.append("You MUST propose at least 2 DIFFERENT strategies (e.g., one CONSERVATIVE_FUTURE and one INNOVATIVE_FUTURE).\n");
-            countInstruction.append("STRICT RULE: Do NOT return the same strategy twice. If you only have one idea, create an 'EXPLORATION' variant to explore the codebase.\n");
-        }
-
-        return countInstruction.toString() + "\n" +
-               "CRITICAL: Do NOT include any conversation, explanation, or <think> tags. ONLY return the JSON array.\n" +
-               "Schema:\n" +
-               "[\n" +
-               "  {\n" +
-               "    \"id\": \"string-id\",\n" +
-               "    \"strategy_type\": \"<CONSERVATIVE_FUTURE | INNOVATIVE_FUTURE | STRUCTURAL_FUTURE | STABILIZATION | EXPLORATION>\",\n" +
-               "    \"strategy\": \"<high-level intent>\",\n" +
-               "    \"survival_argument\": \"<why this trajectory should continue - REQUIRED for survival>\",\n" +
-               "    \"tradeoffs\": \"<explicit technical tradeoffs>\",\n" +
-               "    \"failure_risks\": \"<potential risks and failure modes>\",\n" +
-               "    \"pros_cons\": \"<pros and cons analysis of this specific hypothesis>\",\n" +
-               "    \"semantic_justification\": \"<why this future should exist in the architecture>\",\n" +
-               "    \"projected_steps\": [\"<future adaptive step 1 (N+1)>\", \"<future adaptive step 2 (N+2)>\"],\n" +
-               "    \"expected_outputs\": [\"<file/artifact path 1>\", \"<file/artifact path 2>\"],\n" +
-               "    \"score\": 0.0-1.0, // Predicted fitness score\n" +
-               "    \"suffix\": \"<short string for branch name>\",\n" +
-               "    \"actions\": [\n" +
-               "      {\n" +
-               "        \"domain\": \"file | test | build | structure\",\n" +
-               "        \"operation\": \"<operation name, e.g. WRITE, DELETE, MKDIR, TEST, BUILD, ANALYZE>\",\n" +
-               "        \"target\": \"<file/module/test path>\",\n" +
-               "        \"description\": \"<detailed instruction for the FIRST step only>\"\n" +
-               "      }\n" +
-               "    ],\n" +
-               "    \"hypothesis\": {\n" +
-               "      \"description\": \"<causal explanation of why this will work>\",\n" +
-               "      \"expected_effects\": [\"<measurable outcome 1>\", \"<measurable outcome 2>\"]\n" +
-               "    },\n" +
-               "    \"expected_effect\": {\n" +
-               "      \"short_term\": \"...\",\n" +
-               "      \"long_term\": \"...\",\n" +
-               "      \"risk\": 0.0-1.0,\n" +
-               "      \"reversibility\": 0.0-1.0\n" +
-               "    }\n" +
-               "  }\n" +
-               "]";
+        return "CRITICAL: Return a valid JSON object for the requested Darwin evolutionary trajectory.";
     }
 
     public List<BranchVariant> generateVariants(String goal, StateSnapshot snapshot, FailureMemory failureMemory, Trajectory trajectory) throws Exception {
-        context.log("[DARWIN] Generating variants for goal: " + goal);
+        context.log("[DARWIN] Generating trajectory-driven variants for goal: " + goal);
 
-        // 1. Check for ATOMIC INTENT first - Simplified path for high-confidence simple tasks
-        // We still create variants but we ensure diversity if EPS is high enough
         AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
-
-        // 2. Read BitState from context
         long bitState = context.getOrchestrationState().getBitState();
-
-        // 2. Pass BitState → PolicyResolver
         ExecutionPolicy policy = policyResolver.resolve(bitState);
 
-        // 3. Use ExecutionPolicy to select InstructionModules
         List<InstructionModule> modules = new ArrayList<>();
         if (policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED) modules.add(new MediatedInstructionModule());
         if (policy.getWorkflowModel() == ExecutionPolicy.WorkflowModel.SELF_DEV) modules.add(new SelfDevInstructionModule());
@@ -224,49 +149,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         StringBuilder state = new StringBuilder();
         state.append("Current Goal: ").append(goal).append("\n");
-        state.append("Execution Mode: ").append(policy.getExecutionMode()).append("\n");
-        state.append("Workflow Model: ").append(policy.getWorkflowModel()).append("\n");
-        state.append("Supervision Level: ").append(policy.getSupervisionLevel()).append("\n");
-        state.append("Reasoning Strategy: ").append(policy.getReasoningStrategy()).append("\n");
-        state.append("Repository Isolation: ").append(policy.getRepositoryMode()).append("\n");
-
-        String currentPhase = context.getOrchestrationState().getCurrentPhase();
-        if (currentPhase != null) {
-            state.append("\n--- EVOLUTIONARY STRATEGY HINT: ").append(currentPhase).append(" ---\n");
-            if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(currentPhase)) {
-                state.append("STRATEGY: USER INTENT RECONSTRUCTION\n");
-                state.append("Focus on analyzing explicit/implied intent, hidden expectations, and missing constraints. Reformulate the user request into a precise engineering objective.\n");
-                state.append("STRICT RULE: Reformulations MUST stay grounded in the user's primary objective. Do NOT propose unrelated boilerplate or structural changes.\n");
-            } else if (EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS.equals(currentPhase)) {
-                state.append("STRATEGY: ARCHITECTURE DISCOVERY & DESIGN\n");
-                state.append("Focus on analyzing repository structure intelligently. Identify orchestrators, controllers, and architecture-defining files. Propose competing architectural designs.\n");
-            } else if (EvolutionConstants.PHASE_SELECTION_REFINEMENT.equals(currentPhase)) {
-                state.append("STRATEGY: CONTEXT CURATION & SELECTION\n");
-                state.append("Focus on constructing a STRICT CONTEXT MANIFEST. Categorize files into CORE, ARCHITECTURE, and DOCS context.\n");
-            } else if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(currentPhase)) {
-                state.append("STRATEGY: PROMPT EVOLUTION & PLANNING\n");
-                state.append("Focus on constructing the FINAL EXECUTION PROMPT. Brief an external LLM as a senior architect briefing an elite engineer.\n");
-            } else if (EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(currentPhase)) {
-                state.append("STRATEGY: IMPLEMENTATION GUIDANCE & PACKAGING\n");
-                state.append("Focus on providing architectural constraints, integration cautions, and validation expectations.\n");
-            }
-        }
 
         if (snapshot != null) {
             state.append("\n--- CURRENT STATE SNAPSHOT ---\n");
             state.append("Build Status: ").append(snapshot.build.status).append("\n");
             state.append("Build Errors: ").append(snapshot.build.errorCount).append(" (").append(snapshot.build.errorTypes).append(")\n");
             state.append("Tests: ").append(snapshot.tests.passed).append("/").append(snapshot.tests.total).append(" passed\n");
-            if (!snapshot.tests.failingTests.isEmpty()) {
-                state.append("Failing Tests: ").append(snapshot.tests.failingTests).append("\n");
-            }
-        }
-
-        if (trajectory != null) {
-            state.append("\n--- TRAJECTORY ---\n");
-            state.append("Build Trend: ").append(trajectory.buildTrend).append("\n");
-            state.append("Test Trend: ").append(trajectory.testTrend).append("\n");
-            state.append("Failure Change: ").append(trajectory.failureChange).append("\n");
         }
 
         if (failureMemory != null && !failureMemory.getFingerprints().isEmpty()) {
@@ -281,124 +169,41 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             state.append(stateProvider.getSystemStateSignal());
         }
 
-        // PERSISTENCE: Inject successful historical mutation patterns from Workspace
-        List<WorkspaceArtifact> patterns = context.getSemanticWorkspace().findArtifactsByType("mutation-pattern");
-        if (!patterns.isEmpty()) {
-            state.append("\n--- SUCCESSFUL HISTORICAL MUTATION PATTERNS ---\n");
-            for (WorkspaceArtifact p : patterns) {
-                if (p.getConfidence() > 0.8) {
-                    state.append("- ").append(p.getContent()).append("\n");
-                }
-            }
-        }
-
         IntentExpansionResult expansion = (IntentExpansionResult) context.getMetadata().get("intentExpansion");
         if (expansion != null) {
             state.append("\n--- STRUCTURED INTENT ANALYSIS ---\n");
-            state.append("Interpretation State: ").append(expansion.getState()).append("\n");
-            if (expansion.getDominantIntent() != null) {
-                state.append("Dominant Intent: ").append(expansion.getDominantIntent()).append("\n");
-            }
+            state.append("Dominant Intent: ").append(expansion.getDominantIntent()).append("\n");
 
             if (!expansion.getImplementationStrategies().isEmpty()) {
-                state.append("\nPROPOSED IMPLEMENTATION STRATEGIES (SPAWN BRANCHES FOR THESE):\n");
-                for (String strategy : expansion.getImplementationStrategies()) {
-                    state.append("- ").append(strategy).append("\n");
-                }
+                state.append("\nPROPOSED IMPLEMENTATION STRATEGIES:\n");
+                for (String s : expansion.getImplementationStrategies()) state.append("- ").append(s).append("\n");
             }
 
             state.append("\nHYPOTHESES:\n");
             for (IntentHypothesis h : expansion.getHypotheses()) {
                 state.append("- Hypothesis [").append(h.getId()).append("]: ").append(h.getDescription()).append("\n");
-                for (IntentHypothesis.DimensionValue dv : h.getDimensionValues()) {
-                    state.append("  * ").append(dv.getDimensionId()).append(": ").append(dv.getValue()).append("\n");
-                }
             }
-            state.append("\nYour variants MUST be derived from the dominant intent and these strategies/hypotheses.\n");
         }
 
-        // Activation Gate: Only ACTIVE branches influence subsequent iterations
         List<IterationRecord> records = memoryService.getRecords();
         List<IterationRecord> activeRecords = memoryService.getActiveLineage();
 
-        String history;
-        if (activeRecords.isEmpty()) {
-            history = "No active previous iteration history available. Fallback to general history analysis.\n" + memoryService.getHistoryAnalysis();
-        } else {
-            history = "ACTIVE LINEAGE HISTORY (Explicitly selected trajectories):\n" +
+        String history = activeRecords.isEmpty() ? "No active lineage history." :
                       activeRecords.stream()
-                        .map(r -> "- Iteration " + r.getIteration() + ": " + r.getStrategy() + " [Result: " + r.getResult() + "]")
+                        .map(r -> "- Iteration " + r.getIteration() + ": " + r.getStrategy())
                         .collect(Collectors.joining("\n"));
-        }
 
-        context.log("[DARWIN] History Analysis (Filtered by Activation Gate): " + history);
-        state.append("\n--- LEARNING FROM HISTORY (ACTIVATED LINEAGE ONLY) ---\n");
-        state.append(history).append("\n");
+        state.append("\n--- ACTIVE LINEAGE HISTORY ---\n").append(history).append("\n");
 
-        // SEQUENTIAL MUTATION CHAIN: Retrieve all previous branches in this iteration history
-        List<TrajectoryAnalysisRecord> currentIterationBranches = memoryService.getTrajectoryAnalyses().stream()
-                .filter(t -> String.valueOf(context.getCurrentIteration()).equals(t.getIterationId()))
-                .collect(Collectors.toList());
-
-        if (!currentIterationBranches.isEmpty()) {
-            state.append("\n--- EVOLUTION MEMORY (CURRENT ITERATION PROPOSALS) ---\n");
-            for (TrajectoryAnalysisRecord t : currentIterationBranches) {
-                state.append("- Previously proposed in this iteration: ").append(t.getStrategy()).append("\n");
-            }
-        }
-
-        // Adaptive Feedback Learning: Extract guidance from rejected patterns
-        try {
-            context.log("[DARWIN] Running adaptive feedback analysis on " + records.size() + " records.");
-            JSONObject adaptiveAnalysis = rejectionAnalyzer.analyze(records, context);
-            if (adaptiveAnalysis != null) {
-                penaltyModel.updateFromAnalysis(adaptiveAnalysis);
-                state.append("\n--- ADAPTIVE EVOLUTIONARY GUIDANCE ---\n");
-
-                JSONArray avoid = adaptiveAnalysis.optJSONArray("avoidGuidelines");
-                if (avoid != null && avoid.length() > 0) {
-                    state.append("AVOID PATTERNS:\n");
-                    for (int i = 0; i < avoid.length(); i++) state.append("- ").append(avoid.getString(i)).append("\n");
-                }
-
-                JSONArray prefer = adaptiveAnalysis.optJSONArray("preferGuidelines");
-                if (prefer != null && prefer.length() > 0) {
-                    state.append("PREFER APPROACHES:\n");
-                    for (int i = 0; i < prefer.length(); i++) state.append("- ").append(prefer.getString(i)).append("\n");
-                }
-
-                JSONArray diversity = adaptiveAnalysis.optJSONArray("diversityDirectives");
-                if (diversity != null && diversity.length() > 0) {
-                    state.append("DIVERSITY OBJECTIVES:\n");
-                    for (int i = 0; i < diversity.length(); i++) state.append("- ").append(diversity.getString(i)).append("\n");
-                    diversityController.increasePressure();
-                }
-
-                context.log("[DARWIN] Adaptive guidance injected. Pressure Level: " + diversityController.getPressureLevel());
-            }
-        } catch (Exception e) {
-            context.log("[DARWIN] WARNING: Adaptive feedback analysis failed (non-critical). Continuing evolution loop. Error: " + e.getMessage());
-        }
-
-        // 4. Build final prompt via PromptComposer
         String composedPrompt = promptComposer.compose(policy, modules, state.toString());
         String basePrompt = buildPrompt(composedPrompt, context, null);
 
-        // MODULATION: Inject EPS context into the prompt
         Object epsObj = context.getOrchestrationState().getMetadata().get("eps");
         double eps = (epsObj instanceof Double) ? (Double) epsObj : 0.5;
-
-        // ADJUST PRESSURE: Increase EPS if last reality check was not significant
-        Boolean lastSignificant = (Boolean) context.getOrchestrationState().getMetadata().get("lastRealityCheckSignificant");
-        if (lastSignificant != null && !lastSignificant) {
-            eps = Math.min(1.0, eps + 0.2);
-            context.log("[DARWIN] Increasing Evolution Pressure (EPS) due to insignificant last reality check: " + String.format("%.2f", eps));
-            context.getOrchestrationState().getMetadata().put("eps", eps);
-        }
         basePrompt += "\n[SYSTEM_DIRECTIVE] Evolution Pressure Scalar (EPS): " + String.format("%.2f", eps) + ".\n";
 
         // ========================================
-        // SEMANTIC MUTATION PIPELINE (REFACTOR)
+        // TRAJECTORY MUTATION PIPELINE
         // ========================================
 
         DarwinVariantSpawner spawner = new DarwinVariantSpawner(aiService);
@@ -406,62 +211,34 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         List<DarwinStrategySeed> mutationSeeds = new ArrayList<>();
         int currentIteration = context.getOrchestrationState().getIterationCount();
-        boolean isHighConfidenceAtomic = atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning();
+        boolean isHighConfidenceAtomic = atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8;
 
         if (isHighConfidenceAtomic && currentIteration == 0) {
-            context.log("[DARWIN] High-confidence atomic intent detected. Spawning competing simple futures.");
-            mutationSeeds.add(new DarwinStrategySeed(DarwinStrategyType.KEEPER_EVOLUTION, "Direct minimal implementation of: " + goal, true));
-
-            // Simple tasks produce 2-4 trajectories
-            mutationSeeds.add(DarwinStrategySeed.semanticFuture("Minimalist", "Atomic Utility", "A minimal, zero-dependency atomic utility for: " + goal));
-            mutationSeeds.add(DarwinStrategySeed.semanticFuture("Extensible", "Service Abstraction", "A reusable service abstraction with an interface for: " + goal));
-            if (eps >= 0.4) { // Lowered threshold for more diversity in simple tasks
-                mutationSeeds.add(DarwinStrategySeed.semanticFuture("Robust", "Defensive Engineering", "A robust implementation with extensive error handling and logging for: " + goal));
-            }
+            context.log("[DARWIN] Atomic intent detected. Spawning competing futures.");
+            mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
+            mutationSeeds.add(DarwinStrategySeed.philosophyMutation());
+            mutationSeeds.add(DarwinStrategySeed.maximalDivergence());
+            mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery());
             context.getOrchestrationState().getMetadata().put("is_atomic_round", true);
         } else if (currentIteration == 0) {
-            if (expansion != null && (!expansion.getImplementationStrategies().isEmpty() || !expansion.getHypotheses().isEmpty())) {
-                context.log("[DARWIN] Iteration 1: Spawning seeds from expanded intent space.");
-                for (IntentHypothesis h : expansion.getHypotheses()) {
-                    mutationSeeds.add(DarwinStrategySeed.semanticFuture("Hypothesis", h.getDescription(), h.getDescription()));
-                }
-                for (String strategy : expansion.getImplementationStrategies()) {
-                    mutationSeeds.add(DarwinStrategySeed.semanticFuture("Implementation Strategy", "Architectural Assumption", strategy));
-                }
-            }
-
-            if (mutationSeeds.isEmpty()) {
-                mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
-                mutationSeeds.add(DarwinStrategySeed.divergenceA());
-                if (eps >= 0.6) {
-                    mutationSeeds.add(DarwinStrategySeed.divergenceB());
-                }
-            }
+            context.log("[DARWIN] Iteration 0: Spawning 4-branch trajectory model.");
+            mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
+            mutationSeeds.add(DarwinStrategySeed.philosophyMutation());
+            mutationSeeds.add(DarwinStrategySeed.maximalDivergence());
+            mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery());
         } else {
             context.log("[DARWIN] Iteration " + currentIteration + ": Mutating surviving trajectory.");
-            IterationRecord winner = activeRecords.isEmpty() ? null : activeRecords.get(activeRecords.size() - 1);
-            if (winner != null) {
-                mutationSeeds.add(DarwinStrategySeed.keeperEvolution()); // Refinement
-
-                // Mutate the winner's trajectory along different dimensions
-                mutationSeeds.add(DarwinStrategySeed.semanticFuture(winner.getStrategy(), "Robustness Mutation", "Extend " + winner.getStrategy() + " with production-grade error handling and validation."));
-                mutationSeeds.add(DarwinStrategySeed.semanticFuture(winner.getStrategy(), "Performance Mutation", "Optimize " + winner.getStrategy() + " for high-throughput or non-blocking execution."));
-                mutationSeeds.add(DarwinStrategySeed.semanticFuture(winner.getStrategy(), "Flexibility Mutation", "Extract interfaces and apply dependency injection to " + winner.getStrategy()));
-            } else {
-                mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
-                mutationSeeds.add(DarwinStrategySeed.divergenceA());
-            }
+            mutationSeeds.add(DarwinStrategySeed.probableSurvivor()); // Refinement of the winner
+            mutationSeeds.add(DarwinStrategySeed.philosophyMutation()); // Direct mutation of the winner's philosophy
+            mutationSeeds.add(DarwinStrategySeed.maximalDivergence()); // Explore conceptual distance
+            mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery()); // Stability fallback
         }
 
-        // Limit seeds to 4 for small model stability, but ensure at least 2
-        if (mutationSeeds.size() > 4) mutationSeeds = mutationSeeds.subList(0, 4);
-        while (mutationSeeds.size() < 2) mutationSeeds.add(DarwinStrategySeed.divergenceA());
-
-        context.log("[DARWIN] Executing Semantic Mutation Chain with " + mutationSeeds.size() + " seeds.");
+        context.log("[DARWIN] Executing Trajectory Mutation Chain with " + mutationSeeds.size() + " seeds.");
         List<JSONObject> mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, context);
         List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, context);
 
-        // 8. Synthetic Recovery (Phase 6)
+        // Synthetic Recovery
         DarwinSyntheticVariantFactory syntheticFactory = new DarwinSyntheticVariantFactory();
         if (uniqueVariants.isEmpty()) {
             uniqueVariants.add(syntheticFactory.synthesizeImplementation(goal, atomicAnalysis));
@@ -470,22 +247,17 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             uniqueVariants.add(syntheticFactory.synthesizeSemanticAlternative(uniqueVariants.get(0), goal));
         }
 
-        // 9. Fitness Ranking
+        // Fitness Ranking
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
         Object isAtomicRound = context.getOrchestrationState().getMetadata().get("is_atomic_round");
         ranker.rank(uniqueVariants, isAtomicRound instanceof Boolean && (Boolean)isAtomicRound);
 
         context.log("[DARWIN_BRANCHES] " + uniqueVariants.toString());
 
-        // 10. Map to Model
         List<BranchVariant> variants = new ArrayList<>();
         for (JSONObject obj : uniqueVariants) {
-            BranchVariant v = mapToBranchVariant(obj, goal, currentPhase, trajectory, context);
-            variants.add(v);
+            variants.add(mapToBranchVariant(obj, goal, "TRAJECTORY_EVOLUTION", trajectory, context));
         }
-
-        // PERSISTENCE: Save successful historical mutation patterns
-        persistSuccessfulPatterns(variants, context);
 
         return variants;
     }
@@ -499,7 +271,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         v.setStrategyType(obj.optString("strategy_type", "UNKNOWN"));
         v.setStrategy(obj.optString("strategy", "unknown"));
         v.setSemanticAnchor(v.getStrategy());
-        v.setMutationTrace("Generated in phase: " + currentPhase);
+        v.setMutationTrace("Generated in trajectory round.");
         v.setScore(obj.optDouble("score", 0.0));
         String suffix = obj.optString("suffix", "variant");
         v.setBranchName("exp/" + sanitize(goal) + "/" + sanitize(suffix));
@@ -507,13 +279,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         v.setTradeoffs(obj.optString("tradeoffs", "none"));
         v.setFailureRisks(obj.optString("failure_risks", "none"));
 
-        // Initialize Trajectory metadata
         Trajectory t = new Trajectory(v.getId(), v.getStrategy());
         t.setProsConsAnalysis(obj.optString("pros_cons", "none"));
         t.setSemanticJustification(obj.optString("semantic_justification", "none"));
         t.setFitnessScore(v.getScore());
 
-        // Darwinian Lineage Tracking
         if (trajectory != null) {
             t.setParentTrajectoryId(trajectory.getTrajectoryId());
             trajectory.addChildTrajectoryId(t.getTrajectoryId());
@@ -528,19 +298,14 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         JSONArray stepsArr = obj.optJSONArray("projected_steps");
         if (stepsArr != null) {
-            for (int j = 0; j < stepsArr.length(); j++) {
-                v.getProjectedSteps().add(stepsArr.getString(j));
-            }
+            for (int j = 0; j < stepsArr.length(); j++) v.getProjectedSteps().add(stepsArr.getString(j));
         }
 
         JSONArray outputsArr = obj.optJSONArray("expected_outputs");
         if (outputsArr != null) {
-            for (int j = 0; j < outputsArr.length(); j++) {
-                v.getExpectedOutputs().add(outputsArr.getString(j));
-            }
+            for (int j = 0; j < outputsArr.length(); j++) v.getExpectedOutputs().add(outputsArr.getString(j));
         }
 
-        // Parse Actions
         JSONArray actionsArr = obj.optJSONArray("actions");
         if (actionsArr != null) {
             for (int i = 0; i < actionsArr.length(); i++) {
@@ -554,21 +319,17 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
         }
 
-        // Parse Hypothesis
         JSONObject hypObj = obj.optJSONObject("hypothesis");
         if (hypObj != null) {
             BranchVariant.Hypothesis hyp = new BranchVariant.Hypothesis();
             hyp.setDescription(hypObj.optString("description"));
             JSONArray effectsArr = hypObj.optJSONArray("expected_effects");
             if (effectsArr != null) {
-                for (int j = 0; j < effectsArr.length(); j++) {
-                    hyp.getExpectedEffects().add(effectsArr.getString(j));
-                }
+                for (int j = 0; j < effectsArr.length(); j++) hyp.getExpectedEffects().add(effectsArr.getString(j));
             }
             v.setHypothesis(hyp);
         }
 
-        // Parse Expected Effect
         JSONObject effectObj = obj.optJSONObject("expected_effect");
         if (effectObj != null) {
             BranchVariant.ExpectedEffect effect = new BranchVariant.ExpectedEffect();
@@ -580,24 +341,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         return v;
-    }
-
-    private void persistSuccessfulPatterns(List<BranchVariant> variants, TaskContext context) {
-        for (BranchVariant variant : variants) {
-            if (variant.getScore() > 0.8) {
-                String artifactId = "mutation-pattern-" + variant.getId() + "-" + System.currentTimeMillis();
-                WorkspaceArtifact artifact = new WorkspaceArtifact(artifactId, "mutation-pattern");
-                artifact.setContent("Successful mutation pattern identified: " + variant.getStrategy());
-                artifact.setConfidence(variant.getScore());
-                artifact.getSemanticTags().add("mutation");
-                artifact.getSemanticTags().add(variant.getStrategy());
-                artifact.setSourceIteration("it-" + context.getCurrentIteration());
-                artifact.setLineageId(variant.getLineageId());
-
-                context.getSemanticWorkspace().addArtifact(artifact);
-                context.log("[WORKSPACE] Persisted mutation pattern: " + variant.getStrategy());
-            }
-        }
     }
 
     private String sanitize(String s) {

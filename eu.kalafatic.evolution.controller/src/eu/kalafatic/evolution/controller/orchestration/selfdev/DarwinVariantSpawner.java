@@ -27,13 +27,13 @@ public class DarwinVariantSpawner {
         List<JSONObject> variants = new ArrayList<>();
         Orchestrator orchestrator = context.getOrchestrator();
 
-        // Sequential Evolution: Collect summaries of already generated variants in this round
-        List<String> currentRoundStrategies = new ArrayList<>();
+        // Sequential Evolution: Collect full JSON of already generated variants in this round
+        List<JSONObject> currentRoundVariants = new ArrayList<>();
 
         for (DarwinStrategySeed seed : seeds) {
-            context.log("[SPAWNER] Generating " + seed.getType() + " variant...");
+            context.log("[SPAWNER] Generating " + seed.getType() + " trajectory...");
 
-            String seedPrompt = buildSeedPrompt(seed, basePrompt, currentRoundStrategies);
+            String seedPrompt = buildSeedPrompt(seed, basePrompt, currentRoundVariants);
             JSONObject validated = null;
 
             for (int retry = 0; retry < 2; retry++) {
@@ -51,49 +51,58 @@ public class DarwinVariantSpawner {
 
             if (validated != null) {
                 variants.add(validated);
-                currentRoundStrategies.add(validated.optString("strategy"));
-                context.log("[SPAWNER] Successfully generated " + seed.getType() + " variant.");
+                currentRoundVariants.add(validated);
+                context.log("[SPAWNER] Successfully generated " + seed.getType() + " trajectory.");
             } else if (seed.isMandatory()) {
-                context.log("[SPAWNER] FAILED to generate mandatory " + seed.getType() + " variant after retries.");
+                context.log("[SPAWNER] FAILED to generate mandatory " + seed.getType() + " trajectory after retries.");
             }
         }
 
         return variants;
     }
 
-    private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, List<String> currentRoundStrategies) {
+    private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, List<JSONObject> currentRoundVariants) {
         StringBuilder sb = new StringBuilder();
         sb.append("SYSTEM:\n")
-          .append("You are an adaptive engineering evolution engine generating ONE Darwin evolutionary branch variant.\n\n")
+          .append("You are an adaptive engineering evolution engine generating ONE Darwin evolutionary branch trajectory.\n\n")
           .append("CRITICAL OBJECTIVE:\n")
-          .append("Realize a specific ENGINEERING FUTURE. Do NOT think in terms of roles (e.g., 'implementation', 'analytical').\n")
-          .append("Think in terms of COMPETING ARCHITECTURAL ASSUMPTIONS and engineering trajectories.\n\n")
+          .append("Realize a specific COMPETING ENGINEERING FUTURE. Do NOT think in terms of roles (e.g., 'implementation', 'analytical').\n")
+          .append("Think in terms of COMPETING ARCHITECTURAL PHILOSOPHIES and execution trajectories.\n\n")
           .append("RULES:\n")
           .append("- Output EXACTLY ONE JSON object.\n")
           .append("- Do NOT generate an array.\n")
           .append("- strategy_type is FIXED to: ").append(seed.getType()).append("\n")
-          .append("- The variant MUST be semantically distinct and represent a concrete engineering path.\n")
-          .append("- Avoid generic architectural boilerplate (e.g., 'Modular architecture', 'Robust implementation').\n")
-          .append("- Focus on concrete actions, specific tradeoffs, and technical assumptions.\n")
+          .append("- The variant MUST be semantically and conceptually distinct from previous trajectories.\n")
+          .append("- Mutate the PHILOSOPHY, DEPTH, and TRADEOFFS, not just the wording.\n")
+          .append("- Focus on concrete technical assumptions and operational strategies.\n")
           .append("- Do NOT include conversation or markdown blocks.\n\n");
 
-        if (seed.getType() == DarwinStrategyType.SEMANTIC_FUTURE) {
-            sb.append("TARGET ENGINEERING FUTURE:\n")
-              .append("Goal: ").append(seed.getFutureGoal()).append("\n")
-              .append("Interpretation: ").append(seed.getInterpretation()).append("\n")
-              .append("Architectural Assumption: ").append(seed.getAssumption()).append("\n\n");
+        if (seed.getType() == DarwinStrategyType.PROBABLE_SURVIVOR) {
+            sb.append("TRAJECTORY GOAL: PROBABLE SURVIVOR\n")
+              .append("Propose the most direct and reliable engineering path to solve the goal.\n\n");
         }
 
-        if (!currentRoundStrategies.isEmpty()) {
-            sb.append("SEMANTIC DIVERGENCE PRESSURE:\n")
-              .append("The following engineering paths have already been explored in this round. You MUST diverge significantly in terms of assumption, abstraction, or implementation philosophy:\n");
-            for (String s : currentRoundStrategies) {
-                sb.append("- ").append(s).append("\n");
+        if (!currentRoundVariants.isEmpty()) {
+            sb.append("EVOLUTIONARY MUTATION PRESSURE (PREVIOUS TRAJECTORIES):\n")
+              .append("The following trajectories have already been explored in this round. You MUST intentionally mutate AWAY from their engineering philosophy:\n\n");
+            for (JSONObject v : currentRoundVariants) {
+                sb.append("--- Trajectory: ").append(v.optString("strategy_type")).append(" ---\n")
+                  .append("Strategy: ").append(v.optString("strategy")).append("\n")
+                  .append("Philosophy: ").append(v.optString("semantic_justification")).append("\n")
+                  .append("Tradeoffs: ").append(v.optString("tradeoffs")).append("\n")
+                  .append("Risks: ").append(v.optString("failure_risks")).append("\n\n");
             }
-            sb.append("\n");
+            sb.append("INSTRUCTION FOR THIS BRANCH: Maximize conceptual distance and tradeoff contrast from the above.\n\n");
         }
 
-        sb.append("STRATEGY CONTEXT:\n")
+        if (seed.getInterpretation() != null) {
+            sb.append("TARGET ENGINEERING FUTURE:\n")
+              .append("Interpretation: ").append(seed.getInterpretation()).append("\n")
+              .append("Architectural Assumption: ").append(seed.getAssumption()).append("\n")
+              .append("Goal Detail: ").append(seed.getFutureGoal()).append("\n\n");
+        }
+
+        sb.append("TRAJECTORY CONTEXT:\n")
           .append(seed.getInstructions()).append("\n\n")
           .append("USER GOAL AND WORKSPACE CONTEXT:\n")
           .append(basePrompt).append("\n\n");
@@ -103,12 +112,12 @@ public class DarwinVariantSpawner {
                "{\n" +
                "  \"id\": \"v-" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"strategy_type\": \"" + seed.getType() + "\",\n" +
-               "  \"strategy\": \"<precise engineering strategy for this task>\",\n" +
-               "  \"survival_argument\": \"<why this branch should survive based on technical merit>\",\n" +
-               "  \"tradeoffs\": \"<technical tradeoffs of this specific approach>\",\n" +
-               "  \"failure_risks\": \"<potential failure modes for this branch>\",\n" +
+               "  \"strategy\": \"<precise engineering strategy for this trajectory>\",\n" +
+               "  \"survival_argument\": \"<why this specific future should survive technically>\",\n" +
+               "  \"tradeoffs\": \"<specific technical tradeoffs compared to other trajectories>\",\n" +
+               "  \"failure_risks\": \"<potential failure modes for this trajectory>\",\n" +
                "  \"pros_cons\": \"<detailed pros/cons analysis>\",\n" +
-               "  \"semantic_justification\": \"<architectural justification>\",\n" +
+               "  \"semantic_justification\": \"<engineering philosophy justification>\",\n" +
                "  \"projected_steps\": [\"<next logical step 1>\", \"<next logical step 2>\"],\n" +
                "  \"expected_outputs\": [\"<expected file/artifact 1>\"],\n" +
                "  \"score\": 0.0-1.0, // Numerical predicted fitness score\n" +
@@ -122,7 +131,7 @@ public class DarwinVariantSpawner {
                "    }\n" +
                "  ],\n" +
                "  \"hypothesis\": {\n" +
-               "    \"description\": \"<testable hypothesis for why this works>\",\n" +
+               "    \"description\": \"<testable hypothesis for why this trajectory works>\",\n" +
                "    \"expected_effects\": [\"<measurable effect 1>\"]\n" +
                "  },\n" +
                "  \"expected_effect\": {\n" +

@@ -6,7 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * Ranker for Darwin variants based on structural completeness and architectural awareness.
+ * Ranker for Darwin trajectories based on structural completeness and architectural divergence.
  */
 public class DarwinFitnessRanker {
 
@@ -23,7 +23,7 @@ public class DarwinFitnessRanker {
     public void rank(List<JSONObject> variants, boolean isAtomicRound) {
         for (JSONObject v : variants) {
             double score = calculateFitness(v);
-            if (isAtomicRound && DarwinStrategyType.KEEPER_EVOLUTION.name().equals(v.optString("strategy_type"))) {
+            if (isAtomicRound && DarwinStrategyType.PROBABLE_SURVIVOR.name().equals(v.optString("strategy_type"))) {
                 score = Math.max(score, 0.95);
             }
             v.put("score", score);
@@ -33,11 +33,12 @@ public class DarwinFitnessRanker {
     }
 
     private double calculateFitness(JSONObject variant) {
-        double score = 0.5; // Base
+        double score = 0.4; // Base
 
         // 1. Structural Completeness
-        if (variant.has("tradeoffs") && !variant.optString("tradeoffs").isEmpty()) score += 0.1;
-        if (variant.has("failure_risks") && !variant.optString("failure_risks").isEmpty()) score += 0.1;
+        if (variant.has("tradeoffs") && variant.optString("tradeoffs").length() > 20) score += 0.1;
+        if (variant.has("failure_risks") && variant.optString("failure_risks").length() > 20) score += 0.1;
+        if (variant.has("semantic_justification") && variant.optString("semantic_justification").length() > 20) score += 0.1;
         if (variant.has("expected_effect")) score += 0.05;
 
         // 2. Action Specificity
@@ -45,7 +46,6 @@ public class DarwinFitnessRanker {
         if (actions != null && actions.length() > 0) {
             score += Math.min(0.2, actions.length() * 0.05);
 
-            // Reward specific targets (not just '.')
             boolean specific = false;
             for (int i = 0; i < actions.length(); i++) {
                 String target = actions.getJSONObject(i).optString("target");
@@ -57,11 +57,12 @@ public class DarwinFitnessRanker {
             if (specific) score += 0.05;
         }
 
-        // 3. Strategy Role weighting (History-Aware)
+        // 3. Trajectory Type weighting (Balanced)
         String type = variant.optString("strategy_type");
-        if (DarwinStrategyType.KEEPER_EVOLUTION.name().equals(type)) score += 0.05; // Prefer evolving the winner
-        if (DarwinStrategyType.SEMANTIC_FUTURE.name().equals(type)) score += 0.04; // Preference for semantic futures
-        if (DarwinStrategyType.SYNTHESIS_HYBRID.name().equals(type)) score += 0.03; // Slight preference for synthesis
+        if (DarwinStrategyType.PROBABLE_SURVIVOR.name().equals(type)) score += 0.05;
+        if (DarwinStrategyType.PHILOSOPHY_MUTATION.name().equals(type)) score += 0.05;
+        if (DarwinStrategyType.MAXIMAL_DIVERGENCE.name().equals(type)) score += 0.04;
+        if (DarwinStrategyType.STABILIZATION_RECOVERY.name().equals(type)) score += 0.03;
 
         return Math.min(1.0, score);
     }
