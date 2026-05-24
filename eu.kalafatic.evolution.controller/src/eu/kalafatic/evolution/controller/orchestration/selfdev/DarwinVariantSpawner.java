@@ -64,34 +64,42 @@ public class DarwinVariantSpawner {
     private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, List<String> currentRoundStrategies) {
         StringBuilder sb = new StringBuilder();
         sb.append("SYSTEM:\n")
-          .append("You are generating ONE Darwin evolutionary branch variant.\n\n")
+          .append("You are an adaptive engineering evolution engine generating ONE Darwin evolutionary branch variant.\n\n")
+          .append("CRITICAL OBJECTIVE:\n")
+          .append("Realize a specific ENGINEERING FUTURE. Do NOT think in terms of roles (e.g., 'implementation', 'analytical').\n")
+          .append("Think in terms of COMPETING ARCHITECTURAL ASSUMPTIONS and engineering trajectories.\n\n")
           .append("RULES:\n")
           .append("- Output EXACTLY ONE JSON object.\n")
           .append("- Do NOT generate an array.\n")
           .append("- strategy_type is FIXED to: ").append(seed.getType()).append("\n")
-          .append("- Do NOT generate markdown code blocks (```json ... ```).\n")
-          .append("- Do NOT include conversational text or explanations outside the JSON.\n")
-          .append("- The variant MUST be semantically distinct but STRICTLY GROUNDED in the user goal.\n")
-          .append("- Avoid generic architectural advice; focus on concrete engineering actions for this specific task.\n\n");
+          .append("- The variant MUST be semantically distinct and represent a concrete engineering path.\n")
+          .append("- Avoid generic architectural boilerplate (e.g., 'Modular architecture', 'Robust implementation').\n")
+          .append("- Focus on concrete actions, specific tradeoffs, and technical assumptions.\n")
+          .append("- Do NOT include conversation or markdown blocks.\n\n");
+
+        if (seed.getType() == DarwinStrategyType.SEMANTIC_FUTURE) {
+            sb.append("TARGET ENGINEERING FUTURE:\n")
+              .append("Goal: ").append(seed.getFutureGoal()).append("\n")
+              .append("Interpretation: ").append(seed.getInterpretation()).append("\n")
+              .append("Architectural Assumption: ").append(seed.getAssumption()).append("\n\n");
+        }
 
         if (!currentRoundStrategies.isEmpty()) {
-            sb.append("SEQUENTIAL MUTATION DIVERGENCE:\n")
-              .append("The following strategies have already been generated in this mutation chain. You MUST intentionally diverge from these architectural paths to ensure variety:\n");
+            sb.append("SEMANTIC DIVERGENCE PRESSURE:\n")
+              .append("The following engineering paths have already been explored in this round. You MUST diverge significantly in terms of assumption, abstraction, or implementation philosophy:\n");
             for (String s : currentRoundStrategies) {
                 sb.append("- ").append(s).append("\n");
             }
             sb.append("\n");
         }
 
-        sb.append("FIXED STRATEGY TYPE:\n")
-          .append(seed.getType()).append("\n\n")
-          .append("STRATEGY INSTRUCTIONS:\n")
+        sb.append("STRATEGY CONTEXT:\n")
           .append(seed.getInstructions()).append("\n\n")
-          .append("CONTEXT AND GOAL:\n")
+          .append("USER GOAL AND WORKSPACE CONTEXT:\n")
           .append(basePrompt).append("\n\n");
 
         return sb.toString() +
-               "REQUIRED SCHEMA (CRITICAL: DO NOT echo placeholder text, provide REAL technical values):\n" +
+               "REQUIRED SCHEMA (CRITICAL: PROVIDE SPECIFIC TECHNICAL VALUES):\n" +
                "{\n" +
                "  \"id\": \"v-" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"strategy_type\": \"" + seed.getType() + "\",\n" +

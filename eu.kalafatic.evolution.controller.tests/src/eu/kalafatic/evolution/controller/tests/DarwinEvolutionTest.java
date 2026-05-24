@@ -99,13 +99,12 @@ public class DarwinEvolutionTest {
         context.setAiService(aiService);
 
         // Hardened variant JSON with all required fields for the new Darwin Engine
-        String variantJson = "[" +
-            "{\"id\": \"v0\", \"strategy_type\": \"IMPLEMENTATION\", \"strategy\": \"Add Validation\", \"suffix\": \"val\", \"score\": 0.9, " +
+        String variantJson =
+            "{\"id\": \"v0\", \"strategy_type\": \"KEEPER_EVOLUTION\", \"strategy\": \"Add Validation\", \"suffix\": \"val\", \"score\": 0.9, " +
             "\"survival_argument\": \"Critical for stability\", \"tradeoffs\": \"none\", \"failure_risks\": \"low\", " +
             "\"actions\": [" +
             "{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"src/Validator.java\", \"description\":\"public class Validator { }\"}" +
-            "], \"expected_effect\": {\"short_term\":\"Fixed\", \"risk\":0.1}}" +
-            "]";
+            "], \"expected_effect\": {\"short_term\":\"Fixed\", \"risk\":0.1}}";
 
         String expansionJson = "{\"dimensions\": [], \"hypotheses\": [{\"id\": \"h1\", \"description\": \"Add Validation\", \"confidence\": 0.9}], \"confidence\": {\"overallConfidence\": 0.9}}";
 
@@ -117,7 +116,7 @@ public class DarwinEvolutionTest {
 
         mockLlm.setResponseSequence(new String[] {
             expansionJson, // Intent Expansion Phase
-            "{}",          // Adaptive Analysis
+            "{\"avoidGuidelines\": []}",          // Adaptive Analysis
             variantJson,   // Architecture Discovery Phase
             "public class Validator { }", // Execution
             evalSuccess    // Verification
@@ -152,24 +151,22 @@ public class DarwinEvolutionTest {
         context.setAutoApprove(true);
         context.setAiService(aiService);
 
-        String failVariant = "[" +
-            "{\"id\": \"v_fail\", \"strategy_type\": \"EXPLORATION\", \"strategy\": \"Risky Refactor\", \"suffix\": \"risky\", \"score\": 0.1, " +
+        String failVariant =
+            "{\"id\": \"v_fail\", \"strategy_type\": \"KEEPER_EVOLUTION\", \"strategy\": \"Risky Refactor\", \"suffix\": \"risky\", \"score\": 0.1, " +
             "\"survival_argument\": \"High risk high reward\", \"tradeoffs\": \"destabilizes core\", \"failure_risks\": \"high\", " +
             "\"actions\": [" +
             "{\"domain\":\"file\", \"operation\":\"DELETE\", \"target\":\"pom.xml\", \"description\":\"Delete pom\"}" +
-            "], \"expected_effect\": {\"short_term\":\"Broken\", \"risk\":0.9}}" +
-            "]";
+            "], \"expected_effect\": {\"short_term\":\"Broken\", \"risk\":0.9}}";
 
-        String successVariant = "[" +
-            "{\"id\": \"v_success\", \"strategy_type\": \"STABILIZATION\", \"strategy\": \"Safe Refactor\", \"suffix\": \"safe\", \"score\": 0.9, " +
+        String successVariant =
+            "{\"id\": \"v_success\", \"strategy_type\": \"KEEPER_EVOLUTION\", \"strategy\": \"Safe Refactor\", \"suffix\": \"safe\", \"score\": 0.9, " +
             "\"survival_argument\": \"Safe and incremental\", \"tradeoffs\": \"slow progress\", \"failure_risks\": \"none\", " +
             "\"actions\": [" +
             "{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"README.md\", \"description\":\"Update readme\"}" +
-            "], \"expected_effect\": {\"short_term\":\"Doc\", \"risk\":0.0}}" +
-            "]";
+            "], \"expected_effect\": {\"short_term\":\"Doc\", \"risk\":0.0}}";
 
         // Mappings for parallel execution robustness
-        mockLlm.addResponseMapping("Darwin Engine", failVariant); // First call
+        mockLlm.addResponseMapping("DarwinEngine", failVariant); // First call
         mockLlm.addResponseMapping("Risky Refactor", failVariant);
         mockLlm.addResponseMapping("Safe Refactor", successVariant);
         mockLlm.addResponseMapping("Delete pom.xml", "delete pom");
@@ -185,11 +182,11 @@ public class DarwinEvolutionTest {
         // We use sequence to provide different Darwin Engine responses for iteration 1 and 2
         mockLlm.setResponseSequence(new String[] {
             expansionJson, // Intent Expansion Phase
-            "{}",          // Adaptive analysis
+            "{\"avoidGuidelines\": []}",          // Adaptive analysis
             failVariant,   // Iteration 1 Architecture (fails)
             "delete pom",
             evalFail,
-            "{}",          // Iteration 2 Adaptive analysis
+            "{\"avoidGuidelines\": []}",          // Iteration 2 Adaptive analysis
             successVariant, // Iteration 2 Architecture (success)
             "Update readme",
             evalSuccess

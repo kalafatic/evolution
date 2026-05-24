@@ -7,5 +7,6 @@ public enum DarwinStrategyType {
     KEEPER_EVOLUTION,
     DIVERGENCE_A,
     DIVERGENCE_B,
-    SYNTHESIS_HYBRID
+    SYNTHESIS_HYBRID,
+    SEMANTIC_FUTURE
 }
