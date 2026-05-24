@@ -42,12 +42,23 @@ public class TaskPlanner extends BaseAiAgent {
                 target = "GeneratedArtifact";
             }
 
+            String domain = action.getDomain() != null ? action.getDomain().toLowerCase() : "";
+
             // Smart extension appending for known artifact types
-            if (target != null && !target.contains(".") && !target.isEmpty()) {
-                String domain = action.getDomain() != null ? action.getDomain().toLowerCase() : "";
+            if (target != null && !target.isEmpty()) {
                 if ("java".equals(domain) || "class".equals(domain) || "interface".equals(domain) || "enum".equals(domain) || "record".equals(domain)) {
-                    target = target.substring(0, 1).toUpperCase() + target.substring(1) + ".java";
-                } else if ("script".equals(domain)) {
+                    if (!target.endsWith(".java")) {
+                        if (target.contains(".")) {
+                            target = target.substring(0, target.lastIndexOf('.')) + ".java";
+                        } else {
+                            target = target + ".java";
+                        }
+                    }
+                    // Ensure PascalCase for Java classes if it's a simple name
+                    if (!target.contains("/") && !target.contains("\\") && Character.isLowerCase(target.charAt(0))) {
+                        target = Character.toUpperCase(target.charAt(0)) + target.substring(1);
+                    }
+                } else if ("script".equals(domain) && !target.contains(".")) {
                     target = target + ".sh";
                 }
             }
@@ -55,7 +66,7 @@ public class TaskPlanner extends BaseAiAgent {
             task.setName(op + " " + target);
 
             String type = "llm";
-            if ("file".equalsIgnoreCase(action.getDomain()) || "class".equalsIgnoreCase(action.getDomain())) {
+            if ("file".equalsIgnoreCase(domain) || "class".equalsIgnoreCase(domain) || "java".equalsIgnoreCase(domain)) {
                 type = "file";
                 if (op.equals("DELETE") || op.equals("REMOVE")) {
                     task.setName("DELETE " + target);
