@@ -154,7 +154,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
         String taskName = task.getName();
 
         if ("file".equalsIgnoreCase(taskType)) {
-            String path = taskName.replaceFirst("(?i)^(Write|Create|Update|MKDIR|DELETE)\\s+", "").trim().split(" ")[0];
+            // Robust path extraction: strip operation prefix (including underscores/hallucinations)
+            String path = taskName.replaceFirst("(?i)^[A-Z_]+\\s+", "").trim().split(" ")[0];
+
             // Sanitization: Remove leading slashes and drive letters, and normalize separators
             path = path.replaceFirst("^([a-zA-Z]:)?[/\\\\]+", "").replace('\\', '/');
 
@@ -163,7 +165,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
             }
 
             String extractedCode = CodeExtractor.extractCode(patch);
-            return ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("WRITE " + path + "\n" + extractedCode, context.getProjectRoot(), context);
+            String result = ToolFactory.getTool(EvolutionConstants.TOOL_FILE).execute("WRITE " + path + "\n" + extractedCode, context.getProjectRoot(), context);
+            task.setResultSummary("Successfully updated " + path);
+            return result;
         } else if (EvolutionConstants.TASK_MAVEN.equalsIgnoreCase(taskType)) {
             return ToolFactory.getTool(EvolutionConstants.TOOL_MAVEN).execute(taskName, context.getProjectRoot(), context);
         } else if (EvolutionConstants.TASK_GIT.equalsIgnoreCase(taskType)) {

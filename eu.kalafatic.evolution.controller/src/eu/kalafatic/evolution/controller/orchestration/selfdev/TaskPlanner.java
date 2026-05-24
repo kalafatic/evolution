@@ -52,17 +52,25 @@ public class TaskPlanner extends BaseAiAgent {
                 }
             }
 
-            task.setName(op + " " + target);
-
             String type = "llm";
-            if ("file".equalsIgnoreCase(action.getDomain()) || "class".equalsIgnoreCase(action.getDomain())) {
+            if ("file".equalsIgnoreCase(action.getDomain()) || "class".equalsIgnoreCase(action.getDomain()) ||
+                op.startsWith("WRITE") || op.startsWith("CREATE") || op.startsWith("UPDATE") || op.startsWith("MKDIR") || op.startsWith("DELETE")) {
+
                 type = "file";
+
+                // Normalize hallucinated operations
+                if (op.startsWith("WRITE")) op = "WRITE";
+                else if (op.startsWith("CREATE")) op = "WRITE";
+                else if (op.startsWith("UPDATE")) op = "WRITE";
+
                 if (op.equals("DELETE") || op.equals("REMOVE")) {
                     task.setName("DELETE " + target);
                     task.setType("shell");
                 } else if (op.equals("MKDIR")) {
                     task.setName("MKDIR " + target);
                     task.setType("shell");
+                } else {
+                    task.setName(op + " " + target);
                 }
             }
             else if ("build".equalsIgnoreCase(action.getDomain())) type = "maven";
