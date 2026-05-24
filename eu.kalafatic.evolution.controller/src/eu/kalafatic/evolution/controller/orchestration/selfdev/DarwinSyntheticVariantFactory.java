@@ -14,6 +14,13 @@ public class DarwinSyntheticVariantFactory {
      * Programmatically synthesizes a missing semantic alternative trajectory.
      */
     public JSONObject synthesizeSemanticAlternative(JSONObject reference, String goal) {
+        return synthesizeSemanticAlternative(reference, goal, null);
+    }
+
+    /**
+     * Programmatically synthesizes a missing semantic alternative trajectory, informed by atomic analysis.
+     */
+    public JSONObject synthesizeSemanticAlternative(JSONObject reference, String goal, AtomicIntentAnalysis analysis) {
         JSONObject alternative = new JSONObject(reference.toString());
 
         alternative.put("id", "v-synthetic-alt-" + System.currentTimeMillis());
@@ -42,9 +49,14 @@ public class DarwinSyntheticVariantFactory {
 
             String target = action.optString("target", ".");
             if (target.equals(".") || target.isEmpty()) {
-                String lower = goal.toLowerCase();
-                if (lower.contains("java") || lower.contains("class")) action.put("target", "GeneratedClass.java");
-                else if (lower.contains("readme")) action.put("target", "README.md");
+                if (analysis != null && analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty()) {
+                    target = analysis.getTargetArtifact();
+                } else {
+                    String lower = goal.toLowerCase();
+                    if (lower.contains("java") || lower.contains("class")) target = "GeneratedClass.java";
+                    else if (lower.contains("readme")) target = "README.md";
+                }
+                action.put("target", target);
             }
         }
 
@@ -74,10 +86,14 @@ public class DarwinSyntheticVariantFactory {
         impl.put("score", 0.85);
 
         String target = "implementation.txt";
-        String lower = goal.toLowerCase();
-        if (lower.contains("java") || lower.contains("class")) target = "GeneratedClass.java";
-        else if (lower.contains("readme")) target = "README.md";
-        else if (lower.contains("script") || lower.contains("sh")) target = "script.sh";
+        if (analysis != null && analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty()) {
+            target = analysis.getTargetArtifact();
+        } else {
+            String lower = goal.toLowerCase();
+            if (lower.contains("java") || lower.contains("class")) target = "GeneratedClass.java";
+            else if (lower.contains("readme")) target = "README.md";
+            else if (lower.contains("script") || lower.contains("sh")) target = "script.sh";
+        }
 
         JSONArray actions = new JSONArray();
         JSONObject action = new JSONObject();

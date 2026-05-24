@@ -185,6 +185,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
         }
 
+        if (atomicAnalysis != null) {
+            state.append("\n--- ATOMIC EXECUTION CONTEXT ---\n");
+            state.append("EXPECTED TARGET ARTIFACT: ").append(atomicAnalysis.getTargetArtifact()).append("\n");
+            state.append("EXPECTED ARTIFACT TYPE: ").append(atomicAnalysis.getArtifactType()).append("\n");
+        }
+
         List<IterationRecord> records = memoryService.getRecords();
         List<IterationRecord> activeRecords = memoryService.getActiveLineage();
 
@@ -264,7 +270,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             uniqueVariants.add(syntheticFactory.synthesizeImplementation(goal, atomicAnalysis));
         }
         if (uniqueVariants.size() < 2) {
-            uniqueVariants.add(syntheticFactory.synthesizeSemanticAlternative(uniqueVariants.get(0), goal));
+            uniqueVariants.add(syntheticFactory.synthesizeSemanticAlternative(uniqueVariants.get(0), goal, atomicAnalysis));
         }
 
         // Fitness Ranking

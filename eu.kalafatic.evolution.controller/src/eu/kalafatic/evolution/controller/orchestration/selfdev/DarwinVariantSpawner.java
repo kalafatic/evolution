@@ -139,7 +139,7 @@ public class DarwinVariantSpawner {
                "  \"suffix\": \"" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"actions\": [\n" +
                "    {\n" +
-               "      \"domain\": \"file|test|build|structure\",\n" +
+               "      \"domain\": \"file|class|test|build|structure\",\n" +
                "      \"operation\": \"WRITE|DELETE|MKDIR|TEST|BUILD|ANALYZE\",\n" +
                "      \"target\": \"<actual path or identifier>\",\n" +
                "      \"description\": \"<specific technical instruction for this action>\"\n" +
