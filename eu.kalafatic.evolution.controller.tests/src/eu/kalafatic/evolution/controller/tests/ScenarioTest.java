@@ -102,7 +102,7 @@ public class ScenarioTest {
         String javaCode = "public class Example { public static void main(String[] args) { System.out.println(\"Hello\"); } }";
         String evalResponse = "{\"success\": true, \"comment\": \"Looks good\", \"feedback\": \"Looks good\"}";
         String intentExpansion = "{\"state\": \"CLEAR\", \"dominantIntent\": \"create java class Example\", \"hypotheses\": [{\"id\": \"h1\", \"description\": \"Create Example.java\", \"dimensionValues\": []}], \"confidence\": {\"overallConfidence\": 1.0, \"rationale\": \"clear\"}}";
-        String variantResponse1 = "{\"id\": \"v-keeper_evolution\", \"strategy_type\": \"KEEPER_EVOLUTION\", \"strategy\": \"Direct minimal implementation of: create java class Example\", \"survival_argument\": \"Atomic creation\", \"actions\": [{\"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"Example.java\", \"description\": \"Write Example.java\"}]}";
+        String variantResponse1 = "{\"id\": \"v-probable\", \"strategy_type\": \"PROBABLE_SURVIVOR\", \"strategy\": \"Direct minimal implementation of: create java class Example\", \"survival_argument\": \"Atomic creation\", \"semantic_justification\": \"Probable path\", \"tradeoffs\": \"Minimal abstraction\", \"failure_risks\": \"None\", \"actions\": [{\"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"Example.java\", \"description\": \"Write Example.java\"}]}";
 
         eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis atomic = new eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis();
         atomic.setAtomic(true);
@@ -111,9 +111,10 @@ public class ScenarioTest {
 
         mockLlm.addResponseMapping("Provide a concise summary of the project structure", "Tycho project.");
         mockLlm.addResponseMapping("Analyze the following user request and expand the intent space", intentExpansion);
-        mockLlm.addResponseMapping("FIXED to: KEEPER_EVOLUTION", variantResponse1);
-        mockLlm.addResponseMapping("FIXED to: SEMANTIC_FUTURE", "{\"id\": \"v-semantic\", \"strategy_type\": \"SEMANTIC_FUTURE\", \"strategy\": \"Alternative Strategy\", \"survival_argument\": \"Diversity\", \"actions\": []}");
-        mockLlm.addResponseMapping("FIXED to: DIVERGENCE_A", "{\"id\": \"v-diva\", \"strategy_type\": \"DIVERGENCE_A\", \"strategy\": \"Divergent Strategy\", \"survival_argument\": \"Diversity\", \"actions\": []}");
+        mockLlm.addResponseMapping("FIXED to: PROBABLE_SURVIVOR", variantResponse1);
+        mockLlm.addResponseMapping("FIXED to: PHILOSOPHY_MUTATION", "{\"id\": \"v-philo\", \"strategy_type\": \"PHILOSOPHY_MUTATION\", \"strategy\": \"Alternative Strategy\", \"survival_argument\": \"Diversity\", \"semantic_justification\": \"Different phil\", \"tradeoffs\": \"None\", \"failure_risks\": \"None\", \"actions\": []}");
+        mockLlm.addResponseMapping("FIXED to: MAXIMAL_DIVERGENCE", "{\"id\": \"v-maxdiv\", \"strategy_type\": \"MAXIMAL_DIVERGENCE\", \"strategy\": \"Divergent Strategy\", \"survival_argument\": \"Diversity\", \"semantic_justification\": \"Max divergence\", \"tradeoffs\": \"None\", \"failure_risks\": \"None\", \"actions\": []}");
+        mockLlm.addResponseMapping("FIXED to: STABILIZATION_RECOVERY", "{\"id\": \"v-stab\", \"strategy_type\": \"STABILIZATION_RECOVERY\", \"strategy\": \"Stabilization Strategy\", \"survival_argument\": \"Stability\", \"semantic_justification\": \"Stabilization\", \"tradeoffs\": \"None\", \"failure_risks\": \"None\", \"actions\": []}");
         mockLlm.addResponseMapping("You are a Final Response Agent", "Final summary.");
 
         mockLlm.setResponseSequence(new String[] {

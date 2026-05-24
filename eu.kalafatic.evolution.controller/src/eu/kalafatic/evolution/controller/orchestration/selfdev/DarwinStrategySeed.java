@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 /**
- * Seed for spawning a specific Darwin evolutionary branch role.
+ * Seed for spawning a specific Darwin evolutionary branch trajectory.
  */
 public class DarwinStrategySeed {
     private final DarwinStrategyType type;
@@ -55,17 +55,42 @@ public class DarwinStrategySeed {
         return mandatory;
     }
 
-    public static DarwinStrategySeed keeperEvolution() {
+    public static DarwinStrategySeed probableSurvivor() {
         return new DarwinStrategySeed(
-            DarwinStrategyType.KEEPER_EVOLUTION,
-            "Take the previous selected branch (if exists) and produce the BEST continuation or improvement. Focus on direct solution evolution and refinement of the current trajectory.",
+            DarwinStrategyType.PROBABLE_SURVIVOR,
+            "Generate the most probable surviving engineering future. Focus on direct, high-confidence execution of the primary objective with standard architectural patterns.",
             true
         );
     }
 
-    public static DarwinStrategySeed semanticFuture(String interpretation, String assumption, String futureGoal) {
+    public static DarwinStrategySeed philosophyMutation() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.PHILOSOPHY_MUTATION,
+            "Analyze the previous probable trajectory and intentionally mutate the engineering philosophy (e.g., flip from service-oriented to atomic utility, or from synchronous to event-driven).",
+            true
+        );
+    }
+
+    public static DarwinStrategySeed maximalDivergence() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.MAXIMAL_DIVERGENCE,
+            "Maximize conceptual distance from all previous trajectories. Explore unconventional engineering tradeoffs, high-risk/high-payoff architectures, or radically different implementation scopes.",
+            true
+        );
+    }
+
+    public static DarwinStrategySeed stabilizationRecovery() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.STABILIZATION_RECOVERY,
+            "Focus on system stability, risk reduction, or architectural analysis. This future prioritizes understanding and mapping the system before or instead of direct implementation mutation.",
+            true
+        );
+    }
+
+    // Semantic metadata wrapper for flexible future spawning
+    public static DarwinStrategySeed semanticFuture(DarwinStrategyType type, String interpretation, String assumption, String futureGoal) {
         DarwinStrategySeed seed = new DarwinStrategySeed(
-            DarwinStrategyType.SEMANTIC_FUTURE,
+            type,
             "Realize this specific engineering future: " + futureGoal + ". Grounded in interpretation: " + interpretation + " and architectural assumption: " + assumption,
             false
         );
@@ -75,56 +100,28 @@ public class DarwinStrategySeed {
         return seed;
     }
 
+    /**
+     * Legacy support for semanticFuture with 3 args.
+     * Defaults to PHILOSOPHY_MUTATION as it usually represents a variation.
+     */
+    public static DarwinStrategySeed semanticFuture(String interpretation, String assumption, String futureGoal) {
+        return semanticFuture(DarwinStrategyType.PHILOSOPHY_MUTATION, interpretation, assumption, futureGoal);
+    }
+
+    // Compatibility bridge
+    public static DarwinStrategySeed keeperEvolution() {
+        return probableSurvivor();
+    }
+
     public static DarwinStrategySeed divergenceA() {
-        return new DarwinStrategySeed(
-            DarwinStrategyType.DIVERGENCE_A,
-            "Explicitly FORBID repeating the architecture, execution model, or core approach of previous branches. Generate a DIFFERENT, structurally distinct solution direction.",
-            true
-        );
+        return philosophyMutation();
     }
 
     public static DarwinStrategySeed divergenceB() {
-        return new DarwinStrategySeed(
-            DarwinStrategyType.DIVERGENCE_B,
-            "Ensure divergence from all previous branches. Choose an alternative architecture, a major refactor direction, or a risk/stability-focused redesign that has not been explored yet.",
-            true
-        );
+        return maximalDivergence();
     }
 
     public static DarwinStrategySeed synthesisHybrid() {
-        return new DarwinStrategySeed(
-            DarwinStrategyType.SYNTHESIS_HYBRID,
-            "Perform a synthesis of all previous branches. Compare tradeoffs, identify risks, and propose a hybrid or optimized trajectory. MUST NOT duplicate prior branches.",
-            true
-        );
-    }
-
-    // Compatibility bridge - mapping old roles to new mutation steps
-    public static DarwinStrategySeed exploration() {
-        return keeperEvolution();
-    }
-
-    public static DarwinStrategySeed analytical() {
-        return synthesisHybrid();
-    }
-
-    public static DarwinStrategySeed stabilization() {
-        return divergenceA();
-    }
-
-    public static DarwinStrategySeed implementation() {
-        return keeperEvolution();
-    }
-
-    public static DarwinStrategySeed conservativeFuture() {
-        return divergenceB();
-    }
-
-    public static DarwinStrategySeed innovativeFuture() {
-        return divergenceA();
-    }
-
-    public static DarwinStrategySeed structuralFuture() {
-        return synthesisHybrid();
+        return stabilizationRecovery();
     }
 }

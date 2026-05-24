@@ -8,13 +8,13 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Validator for Darwin evolutionary branch variants.
- * Ensures structural and semantic completeness of a single variant proposal.
+ * Validator for Darwin evolutionary branch trajectories.
+ * Ensures structural and conceptual completeness of a single trajectory proposal.
  */
 public class DarwinVariantValidator {
 
     /**
-     * Validates a raw LLM response for a single Darwin variant.
+     * Validates a raw LLM response for a single Darwin trajectory.
      * @param rawResponse The raw text from the LLM.
      * @param expectedType The expected strategy type.
      * @param context Task context for logging.
@@ -25,10 +25,10 @@ public class DarwinVariantValidator {
             return null;
         }
 
-        // 1. Prohibit Markdown and conversation text
-        if (rawResponse.contains("```") || rawResponse.toLowerCase().contains("here is") || rawResponse.toLowerCase().contains("i have generated")) {
-             // We try to extract JSON anyway but log a warning if it's too noisy
-             if (context != null) context.log("[VALIDATOR] Warning: Noisy response detected. Attempting JSON extraction.");
+        // 1. Prohibit reasoning tags in output
+        if (rawResponse.contains("<think>") || rawResponse.contains("</think>")) {
+            if (context != null) context.log("[VALIDATOR] Error: Response contains hidden reasoning tags.");
+            return null;
         }
 
         // 2. Prohibit Arrays
@@ -45,7 +45,7 @@ public class DarwinVariantValidator {
         }
 
         // 4. Validate Required Fields
-        List<String> requiredFields = List.of("id", "strategy_type", "strategy", "survival_argument", "actions");
+        List<String> requiredFields = List.of("id", "strategy_type", "strategy", "survival_argument", "semantic_justification", "tradeoffs", "failure_risks", "actions");
         for (String field : requiredFields) {
             if (!json.has(field)) {
                 if (context != null) context.log("[VALIDATOR] Error: Missing required field: " + field);
@@ -68,32 +68,26 @@ public class DarwinVariantValidator {
 
         // 6. Validate minimum completeness and PROHIBIT PLACEHOLDERS
         String strategy = json.optString("strategy");
-        if (strategy.length() < 10) {
-            if (context != null) context.log("[VALIDATOR] Error: Strategy description too short.");
-            return null;
-        }
-
-        if (strategy.toLowerCase().contains("high-level intent description") || strategy.contains("<") || strategy.contains(">")) {
-            if (context != null) context.log("[VALIDATOR] Error: Variant contains literal placeholder text in 'strategy'.");
+        if (strategy.length() < 10 || strategy.contains("<") || strategy.contains(">")) {
+            if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder strategy.");
             return null;
         }
 
         String survival = json.optString("survival_argument");
-        if (survival.toLowerCase().contains("justification of why this trajectory is valuable") || survival.contains("<") || survival.contains(">")) {
-            if (context != null) context.log("[VALIDATOR] Error: Variant contains literal placeholder text in 'survival_argument'.");
+        if (survival.length() < 10 || survival.contains("<") || survival.contains(">")) {
+            if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder survival_argument.");
+            return null;
+        }
+
+        String philosophy = json.optString("semantic_justification");
+        if (philosophy.length() < 10 || philosophy.contains("<") || philosophy.contains(">")) {
+            if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder semantic_justification.");
             return null;
         }
 
         JSONArray actions = json.optJSONArray("actions");
-        if (actions == null) {
-            if (context != null) context.log("[VALIDATOR] Error: 'actions' field must be an array.");
-            return null;
-        }
-
-        // Prohibit reasoning tags in output
-        String fullJson = json.toString();
-        if (fullJson.contains("<think>") || fullJson.contains("</think>")) {
-            if (context != null) context.log("[VALIDATOR] Error: Response contains hidden reasoning tags.");
+        if (actions == null || actions.length() == 0) {
+            if (context != null) context.log("[VALIDATOR] Error: 'actions' field must be a non-empty array.");
             return null;
         }
 
