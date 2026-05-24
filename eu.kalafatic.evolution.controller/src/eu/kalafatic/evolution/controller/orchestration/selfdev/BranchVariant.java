@@ -38,6 +38,8 @@ public class BranchVariant {
     private ActivationState activationState = ActivationState.CREATED;
     private String semanticAnchor;
     private String mutationTrace;
+    private String inheritedContext;
+    private List<String> rejectedSiblings = new ArrayList<>();
 
     private List<String> expectedOutputs = new ArrayList<>();
 
@@ -103,6 +105,12 @@ public class BranchVariant {
 
     public String getMutationTrace() { return mutationTrace; }
     public void setMutationTrace(String mutationTrace) { this.mutationTrace = mutationTrace; }
+
+    public String getInheritedContext() { return inheritedContext; }
+    public void setInheritedContext(String inheritedContext) { this.inheritedContext = inheritedContext; }
+
+    public List<String> getRejectedSiblings() { return rejectedSiblings; }
+    public void setRejectedSiblings(List<String> rejectedSiblings) { this.rejectedSiblings = rejectedSiblings; }
 
     public String getSurvivalArgument() { return survivalArgument; }
     public void setSurvivalArgument(String survivalArgument) { this.survivalArgument = survivalArgument; }

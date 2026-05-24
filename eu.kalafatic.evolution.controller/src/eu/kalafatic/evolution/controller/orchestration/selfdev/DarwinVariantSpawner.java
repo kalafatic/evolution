@@ -23,7 +23,7 @@ public class DarwinVariantSpawner {
     /**
      * Spawns variants for the given strategies.
      */
-    public List<JSONObject> spawn(String goal, List<DarwinStrategySeed> seeds, String basePrompt, TaskContext context) {
+    public List<JSONObject> spawn(String goal, List<DarwinStrategySeed> seeds, String basePrompt, String lineageContext, List<String> rejectedSiblings, TaskContext context) {
         List<JSONObject> variants = new ArrayList<>();
         Orchestrator orchestrator = context.getOrchestrator();
 
@@ -33,7 +33,7 @@ public class DarwinVariantSpawner {
         for (DarwinStrategySeed seed : seeds) {
             context.log("[SPAWNER] Generating " + seed.getType() + " trajectory...");
 
-            String seedPrompt = buildSeedPrompt(seed, basePrompt, currentRoundVariants);
+            String seedPrompt = buildSeedPrompt(seed, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants);
             JSONObject validated = null;
 
             for (int retry = 0; retry < 2; retry++) {
@@ -61,7 +61,7 @@ public class DarwinVariantSpawner {
         return variants;
     }
 
-    private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, List<JSONObject> currentRoundVariants) {
+    private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants) {
         StringBuilder sb = new StringBuilder();
         sb.append("SYSTEM:\n")
           .append("You are an adaptive engineering evolution engine generating ONE Darwin evolutionary branch trajectory.\n\n")
@@ -76,6 +76,21 @@ public class DarwinVariantSpawner {
           .append("- Mutate the PHILOSOPHY, DEPTH, and TRADEOFFS, not just the wording.\n")
           .append("- Focus on concrete technical assumptions and operational strategies.\n")
           .append("- Do NOT include conversation or markdown blocks.\n\n");
+
+        if (lineageContext != null && !lineageContext.isEmpty()) {
+            sb.append("LINEAGE CONTINUITY (PERSISTENT EVOLUTION):\n")
+              .append("You are evolving a surviving lineage. Inherit the successes and avoid the failures of your ancestors.\n")
+              .append(lineageContext).append("\n");
+
+            if (rejectedSiblings != null && !rejectedSiblings.isEmpty()) {
+                sb.append("REJECTED SIBLING AWARENESS (DO NOT EXPLORE THESE PATHS):\n")
+                  .append("The following trajectories were REJECTED in previous generations. Do NOT re-propose or pivot back to these engineering philosophies:\n");
+                for (String rejected : rejectedSiblings) {
+                    sb.append("- ").append(rejected).append("\n");
+                }
+                sb.append("\n");
+            }
+        }
 
         if (seed.getType() == DarwinStrategyType.PROBABLE_SURVIVOR) {
             sb.append("TRAJECTORY GOAL: PROBABLE SURVIVOR\n")

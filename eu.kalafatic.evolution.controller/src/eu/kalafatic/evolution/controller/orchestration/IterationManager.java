@@ -742,15 +742,24 @@ public class IterationManager {
         if (result.isSuccess()) {
             EvolutionPhase currentPhaseEnum = EvolutionPhase.fromString(state.getCurrentPhase());
 
+            boolean converged = darwinFlow.checkConvergence(variants, context);
             // CONVERGENCE ANALYSIS: DarwinFlow analyzes if we should finish early
-            if (darwinFlow.checkConvergence(variants, context)) {
+            if (converged && currentPhaseEnum != EvolutionPhase.FINAL_SYNTHESIS && !phaseMachine.isTerminal(currentPhaseEnum)) {
                 context.log("[KERNEL] Convergence detected. Transitioning to final synthesis.");
                 state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
                 currentPhaseEnum = EvolutionPhase.FINAL_SYNTHESIS;
             }
 
             if (!phaseMachine.isTerminal(currentPhaseEnum)) {
-                EvolutionPhase nextPhase = phaseMachine.next(currentPhaseEnum);
+                EvolutionPhase nextPhase = phaseMachine.next(currentPhaseEnum, converged);
+
+                // Increment iteration count to track evolutionary generations
+                state.setIterationCount(state.getIterationCount() + 1);
+
+                if (nextPhase == currentPhaseEnum) {
+                    context.log("[KERNEL] Evolution continuing in current phase: " + nextPhase + " (Generation: " + state.getIterationCount() + ")");
+                }
+
                 state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
                 result.setDecision(phaseMachine.isTerminal(nextPhase) ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
             }

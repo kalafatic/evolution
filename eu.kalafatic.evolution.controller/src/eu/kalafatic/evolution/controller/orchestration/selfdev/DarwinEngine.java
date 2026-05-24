@@ -234,8 +234,28 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery()); // Stability fallback
         }
 
+        // 1. Lineage Retrieval: Find the winner of the previous iteration
+        IterationRecord lastWinner = records.stream()
+                .filter(r -> "ACTIVE".equals(r.getActivationState()))
+                .reduce((first, second) -> second)
+                .orElse(null);
+
+        String lineageContext = "";
+        List<String> rejectedSiblings = new ArrayList<>();
+        if (lastWinner != null) {
+            lineageContext = "SURVIVING TRAJECTORY: " + lastWinner.getStrategy() + "\n" +
+                             "PHILOSOPHY: " + lastWinner.getSemanticAnchor() + "\n" +
+                             "MUTATION HISTORY: " + lastWinner.getMutationTrace() + "\n";
+
+            // Collect siblings that were rejected in the same iteration as the winner
+            rejectedSiblings = records.stream()
+                    .filter(r -> r.getIteration() == lastWinner.getIteration() && !"ACTIVE".equals(r.getActivationState()))
+                    .map(IterationRecord::getStrategy)
+                    .collect(Collectors.toList());
+        }
+
         context.log("[DARWIN] Executing Trajectory Mutation Chain with " + mutationSeeds.size() + " seeds.");
-        List<JSONObject> mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, context);
+        List<JSONObject> mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, lineageContext, rejectedSiblings, context);
         List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, context);
 
         // Synthetic Recovery
@@ -250,13 +270,18 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         // Fitness Ranking
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
         Object isAtomicRound = context.getOrchestrationState().getMetadata().get("is_atomic_round");
-        ranker.rank(uniqueVariants, isAtomicRound instanceof Boolean && (Boolean)isAtomicRound);
+        ranker.rank(uniqueVariants, isAtomicRound instanceof Boolean && (Boolean)isAtomicRound, currentIteration);
 
         context.log("[DARWIN_BRANCHES] " + uniqueVariants.toString());
 
         List<BranchVariant> variants = new ArrayList<>();
         for (JSONObject obj : uniqueVariants) {
-            variants.add(mapToBranchVariant(obj, goal, "TRAJECTORY_EVOLUTION", trajectory, context));
+            BranchVariant v = mapToBranchVariant(obj, goal, "TRAJECTORY_EVOLUTION", trajectory, context);
+            if (lastWinner != null) {
+                v.setInheritedContext(lineageContext);
+                v.setRejectedSiblings(rejectedSiblings);
+            }
+            variants.add(v);
         }
 
         return variants;

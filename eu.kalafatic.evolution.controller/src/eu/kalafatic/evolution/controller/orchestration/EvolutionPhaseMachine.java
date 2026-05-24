@@ -12,6 +12,15 @@ public class EvolutionPhaseMachine {
     }
 
     public EvolutionPhase next(EvolutionPhase current) {
+        return next(current, false);
+    }
+
+    public EvolutionPhase next(EvolutionPhase current, boolean converged) {
+        if (!converged && (current == EvolutionPhase.ARCHITECTURE_VARIANTS || current == EvolutionPhase.SELECTION_REFINEMENT)) {
+            // Stay in the same phase to allow multi-generation trajectory evolution
+            return current;
+        }
+
         switch (current) {
             case INTENT_EXPANSION:
                 return EvolutionPhase.ARCHITECTURE_VARIANTS;
