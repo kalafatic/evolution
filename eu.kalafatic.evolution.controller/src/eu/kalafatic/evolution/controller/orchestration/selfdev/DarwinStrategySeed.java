@@ -8,10 +8,39 @@ public class DarwinStrategySeed {
     private final String instructions;
     private final boolean mandatory;
 
+    // Semantic metadata for mutation-driven exploration
+    private String interpretation;
+    private String assumption;
+    private String futureGoal;
+
     public DarwinStrategySeed(DarwinStrategyType type, String instructions, boolean mandatory) {
         this.type = type;
         this.instructions = instructions;
         this.mandatory = mandatory;
+    }
+
+    public String getInterpretation() {
+        return interpretation;
+    }
+
+    public void setInterpretation(String interpretation) {
+        this.interpretation = interpretation;
+    }
+
+    public String getAssumption() {
+        return assumption;
+    }
+
+    public void setAssumption(String assumption) {
+        this.assumption = assumption;
+    }
+
+    public String getFutureGoal() {
+        return futureGoal;
+    }
+
+    public void setFutureGoal(String futureGoal) {
+        this.futureGoal = futureGoal;
     }
 
     public DarwinStrategyType getType() {
@@ -32,6 +61,18 @@ public class DarwinStrategySeed {
             "Take the previous selected branch (if exists) and produce the BEST continuation or improvement. Focus on direct solution evolution and refinement of the current trajectory.",
             true
         );
+    }
+
+    public static DarwinStrategySeed semanticFuture(String interpretation, String assumption, String futureGoal) {
+        DarwinStrategySeed seed = new DarwinStrategySeed(
+            DarwinStrategyType.SEMANTIC_FUTURE,
+            "Realize this specific engineering future: " + futureGoal + ". Grounded in interpretation: " + interpretation + " and architectural assumption: " + assumption,
+            false
+        );
+        seed.setInterpretation(interpretation);
+        seed.setAssumption(assumption);
+        seed.setFutureGoal(futureGoal);
+        return seed;
     }
 
     public static DarwinStrategySeed divergenceA() {

@@ -398,57 +398,66 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         basePrompt += "\n[SYSTEM_DIRECTIVE] Evolution Pressure Scalar (EPS): " + String.format("%.2f", eps) + ".\n";
 
         // ========================================
-        // SEQUENTIAL MUTATION PIPELINE (REFRACTOR)
+        // SEMANTIC MUTATION PIPELINE (REFACTOR)
         // ========================================
 
-        // 5. Strategy Spawning (Sequential Mutation Chain)
         DarwinVariantSpawner spawner = new DarwinVariantSpawner(aiService);
         DarwinDiversityAnalyzer diversityAnalyzer = new DarwinDiversityAnalyzer();
 
         List<DarwinStrategySeed> mutationSeeds = new ArrayList<>();
-
-        // ADAPTIVE BRANCH SCALING: Modulate variety based on EPS and Intent
-        boolean hasStateChangeIntent = context.getOrchestrationState().getTaskIntents() != null && (
-                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.IMPLEMENTATION) ||
-                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.REFACTORING) ||
-                context.getOrchestrationState().getTaskIntents().contains(TaskIntent.DEBUGGING)
-        );
-
+        int currentIteration = context.getCurrentIteration();
         boolean isHighConfidenceAtomic = atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning();
 
-        if (isHighConfidenceAtomic) {
-             context.log("[DARWIN] High-confidence atomic intent detected. Using ATOMIC seed.");
-             mutationSeeds.add(new DarwinStrategySeed(DarwinStrategyType.KEEPER_EVOLUTION, "Atomic Execution: " + goal, true));
-             // For high-confidence atomic, we don't necessarily need diversity unless EPS is very high
-             if (eps >= 0.4) {
-                 mutationSeeds.add(DarwinStrategySeed.divergenceA());
-             }
-             // ATOMIC tasks MUST have higher priority than synthetic analytical branches to avoid being outranked in ranking phase
-             context.getOrchestrationState().getMetadata().put("is_atomic_round", true);
-        } else if (hasStateChangeIntent) {
-            context.log("[DARWIN] State-change intent detected. Enforcing at least dual-seed mode (KEEPER + DIVERGENCE_A) for diversity.");
-            mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
-            mutationSeeds.add(DarwinStrategySeed.divergenceA());
-            if (eps >= 0.6) {
-                mutationSeeds.add(DarwinStrategySeed.divergenceB());
-                mutationSeeds.add(DarwinStrategySeed.synthesisHybrid());
+        if (isHighConfidenceAtomic && currentIteration == 1) {
+            context.log("[DARWIN] High-confidence atomic intent detected. Spawning competing simple futures.");
+            mutationSeeds.add(new DarwinStrategySeed(DarwinStrategyType.KEEPER_EVOLUTION, "Direct minimal implementation of: " + goal, true));
+
+            // Simple tasks produce 2-4 trajectories
+            mutationSeeds.add(DarwinStrategySeed.semanticFuture("Minimalist", "Atomic Utility", "A minimal, zero-dependency atomic utility for: " + goal));
+            mutationSeeds.add(DarwinStrategySeed.semanticFuture("Extensible", "Service Abstraction", "A reusable service abstraction with an interface for: " + goal));
+            if (eps >= 0.7) {
+                mutationSeeds.add(DarwinStrategySeed.semanticFuture("Robust", "Defensive Engineering", "A robust implementation with extensive error handling and logging for: " + goal));
             }
-        } else if (eps < 0.3) {
-            context.log("[DARWIN] Low evolutionary pressure and no state-change intent. Single-seed mode (KEEPER).");
-            mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
-        } else if (eps < 0.6) {
-            context.log("[DARWIN] Moderate evolutionary pressure. Dual-seed mode (KEEPER + DIVERGENCE_A).");
-            mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
-            mutationSeeds.add(DarwinStrategySeed.divergenceA());
+            context.getOrchestrationState().getMetadata().put("is_atomic_round", true);
+        } else if (currentIteration == 1) {
+            if (expansion != null && (!expansion.getImplementationStrategies().isEmpty() || !expansion.getHypotheses().isEmpty())) {
+                context.log("[DARWIN] Iteration 1: Spawning seeds from expanded intent space.");
+                for (IntentHypothesis h : expansion.getHypotheses()) {
+                    mutationSeeds.add(DarwinStrategySeed.semanticFuture("Hypothesis", h.getDescription(), h.getDescription()));
+                }
+                for (String strategy : expansion.getImplementationStrategies()) {
+                    mutationSeeds.add(DarwinStrategySeed.semanticFuture("Implementation Strategy", "Architectural Assumption", strategy));
+                }
+            }
+
+            if (mutationSeeds.isEmpty()) {
+                mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
+                mutationSeeds.add(DarwinStrategySeed.divergenceA());
+                if (eps >= 0.6) {
+                    mutationSeeds.add(DarwinStrategySeed.divergenceB());
+                }
+            }
         } else {
-            context.log("[DARWIN] High evolutionary pressure. Full-seed mode (Full Chain).");
-            mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
-            mutationSeeds.add(DarwinStrategySeed.divergenceA());
-            mutationSeeds.add(DarwinStrategySeed.divergenceB());
-            mutationSeeds.add(DarwinStrategySeed.synthesisHybrid());
+            context.log("[DARWIN] Iteration " + currentIteration + ": Mutating surviving trajectory.");
+            IterationRecord winner = activeRecords.isEmpty() ? null : activeRecords.get(activeRecords.size() - 1);
+            if (winner != null) {
+                mutationSeeds.add(DarwinStrategySeed.keeperEvolution()); // Refinement
+
+                // Mutate the winner's trajectory along different dimensions
+                mutationSeeds.add(DarwinStrategySeed.semanticFuture(winner.getStrategy(), "Robustness Mutation", "Extend " + winner.getStrategy() + " with production-grade error handling and validation."));
+                mutationSeeds.add(DarwinStrategySeed.semanticFuture(winner.getStrategy(), "Performance Mutation", "Optimize " + winner.getStrategy() + " for high-throughput or non-blocking execution."));
+                mutationSeeds.add(DarwinStrategySeed.semanticFuture(winner.getStrategy(), "Flexibility Mutation", "Extract interfaces and apply dependency injection to " + winner.getStrategy()));
+            } else {
+                mutationSeeds.add(DarwinStrategySeed.keeperEvolution());
+                mutationSeeds.add(DarwinStrategySeed.divergenceA());
+            }
         }
 
-        context.log("[DARWIN] Executing Sequential Mutation Chain with " + mutationSeeds.size() + " seeds.");
+        // Limit seeds to 4 for small model stability, but ensure at least 2
+        if (mutationSeeds.size() > 4) mutationSeeds = mutationSeeds.subList(0, 4);
+        while (mutationSeeds.size() < 2) mutationSeeds.add(DarwinStrategySeed.divergenceA());
+
+        context.log("[DARWIN] Executing Semantic Mutation Chain with " + mutationSeeds.size() + " seeds.");
         List<JSONObject> mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, context);
         List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, context);
 
@@ -458,7 +467,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             uniqueVariants.add(syntheticFactory.synthesizeImplementation(goal, atomicAnalysis));
         }
         if (uniqueVariants.size() < 2) {
-            uniqueVariants.add(syntheticFactory.synthesizeAnalytical(uniqueVariants.get(0), goal));
+            uniqueVariants.add(syntheticFactory.synthesizeSemanticAlternative(uniqueVariants.get(0), goal));
         }
 
         // 9. Fitness Ranking

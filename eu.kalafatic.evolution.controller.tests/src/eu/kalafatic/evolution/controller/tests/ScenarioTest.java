@@ -102,11 +102,18 @@ public class ScenarioTest {
         String javaCode = "public class Example { public static void main(String[] args) { System.out.println(\"Hello\"); } }";
         String evalResponse = "{\"success\": true, \"comment\": \"Looks good\", \"feedback\": \"Looks good\"}";
         String intentExpansion = "{\"state\": \"CLEAR\", \"dominantIntent\": \"create java class Example\", \"hypotheses\": [{\"id\": \"h1\", \"description\": \"Create Example.java\", \"dimensionValues\": []}], \"confidence\": {\"overallConfidence\": 1.0, \"rationale\": \"clear\"}}";
-        String variantResponse1 = "{\"id\": \"v-keeper_evolution\", \"strategy_type\": \"KEEPER_EVOLUTION\", \"strategy\": \"Create Example class\", \"survival_argument\": \"Atomic creation\", \"actions\": [{\"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"Example.java\", \"description\": \"Write Example.java\"}]}";
+        String variantResponse1 = "{\"id\": \"v-keeper_evolution\", \"strategy_type\": \"KEEPER_EVOLUTION\", \"strategy\": \"Direct minimal implementation of: create java class Example\", \"survival_argument\": \"Atomic creation\", \"actions\": [{\"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"Example.java\", \"description\": \"Write Example.java\"}]}";
+
+        eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis atomic = new eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis();
+        atomic.setAtomic(true);
+        atomic.setConfidence(1.0);
+        context.getOrchestrationState().getMetadata().put("atomicAnalysis", atomic);
 
         mockLlm.addResponseMapping("Provide a concise summary of the project structure", "Tycho project.");
         mockLlm.addResponseMapping("Analyze the following user request and expand the intent space", intentExpansion);
-        mockLlm.addResponseMapping("FIXED STRATEGY TYPE:\nKEEPER_EVOLUTION", variantResponse1);
+        mockLlm.addResponseMapping("FIXED to: KEEPER_EVOLUTION", variantResponse1);
+        mockLlm.addResponseMapping("FIXED to: SEMANTIC_FUTURE", "{\"id\": \"v-semantic\", \"strategy_type\": \"SEMANTIC_FUTURE\", \"strategy\": \"Alternative Strategy\", \"survival_argument\": \"Diversity\", \"actions\": []}");
+        mockLlm.addResponseMapping("FIXED to: DIVERGENCE_A", "{\"id\": \"v-diva\", \"strategy_type\": \"DIVERGENCE_A\", \"strategy\": \"Divergent Strategy\", \"survival_argument\": \"Diversity\", \"actions\": []}");
         mockLlm.addResponseMapping("You are a Final Response Agent", "Final summary.");
 
         mockLlm.setResponseSequence(new String[] {

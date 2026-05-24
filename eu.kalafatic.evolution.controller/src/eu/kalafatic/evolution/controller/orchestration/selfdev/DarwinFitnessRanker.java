@@ -60,6 +60,7 @@ public class DarwinFitnessRanker {
         // 3. Strategy Role weighting (History-Aware)
         String type = variant.optString("strategy_type");
         if (DarwinStrategyType.KEEPER_EVOLUTION.name().equals(type)) score += 0.05; // Prefer evolving the winner
+        if (DarwinStrategyType.SEMANTIC_FUTURE.name().equals(type)) score += 0.04; // Preference for semantic futures
         if (DarwinStrategyType.SYNTHESIS_HYBRID.name().equals(type)) score += 0.03; // Slight preference for synthesis
 
         return Math.min(1.0, score);

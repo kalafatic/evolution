@@ -11,30 +11,38 @@ import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalys
 public class DarwinSyntheticVariantFactory {
 
     /**
-     * Programmatically synthesizes a missing SYNTHESIS_HYBRID variant.
+     * Programmatically synthesizes a missing SEMANTIC_FUTURE variant.
      */
-    public JSONObject synthesizeAnalytical(JSONObject reference, String goal) {
-        JSONObject analytical = new JSONObject(reference.toString());
+    public JSONObject synthesizeSemanticAlternative(JSONObject reference, String goal) {
+        JSONObject alternative = new JSONObject(reference.toString());
 
-        analytical.put("id", "v-synthetic-synthesis-" + System.currentTimeMillis());
-        analytical.put("strategy_type", DarwinStrategyType.SYNTHESIS_HYBRID.name());
-        analytical.put("strategy", "Analytical validation and risk synthesis for: " + goal);
-        analytical.put("survival_argument", "Provides a defensive architectural anchor by evaluating the semantic and technical risks of the primary implementation trajectory.");
-        analytical.put("tradeoffs", "Prioritizes long-term architectural stability and regression safety over immediate feature velocity.");
-        analytical.put("failure_risks", "May delay implementation if severe architectural risks are identified during analysis.");
-        analytical.put("suffix", "synthesis-fallback");
-        analytical.put("score", 0.4);
+        alternative.put("id", "v-synthetic-alt-" + System.currentTimeMillis());
+        alternative.put("strategy_type", DarwinStrategyType.SEMANTIC_FUTURE.name());
 
-        JSONArray actions = new JSONArray();
-        JSONObject action = new JSONObject();
-        action.put("domain", "structure");
-        action.put("operation", "ANALYZE");
-        action.put("target", ".");
-        action.put("description", "Perform a structural risk and tradeoff analysis for the goal: " + goal);
-        actions.put(action);
-        analytical.put("actions", actions);
+        // Semantic Mutation: Flip the assumption of the reference
+        String refStrategy = reference.optString("strategy", "").toLowerCase();
+        if (refStrategy.contains("service") || refStrategy.contains("abstraction")) {
+            alternative.put("strategy", "Minimal Atomic Utility: " + goal);
+            alternative.put("survival_argument", "Prioritizes zero-dependency minimalism and direct execution over complex service abstractions.");
+            alternative.put("suffix", "alt-minimalist");
+        } else {
+            alternative.put("strategy", "Reusable Service Abstraction: " + goal);
+            alternative.put("survival_argument", "Prioritizes extensibility, interface-driven design, and long-term reusability over atomic execution.");
+            alternative.put("suffix", "alt-extensible");
+        }
 
-        return analytical;
+        alternative.put("tradeoffs", "Balances the previous trajectory by offering a different abstraction level.");
+        alternative.put("failure_risks", "May introduce more complexity if an abstraction is chosen, or less flexibility if atomic.");
+        alternative.put("score", 0.7);
+
+        // Map actions to the new strategy
+        JSONArray actions = alternative.optJSONArray("actions");
+        if (actions != null && actions.length() > 0) {
+            JSONObject action = actions.getJSONObject(0);
+            action.put("description", "Implement " + alternative.getString("strategy"));
+        }
+
+        return alternative;
     }
 
     /**

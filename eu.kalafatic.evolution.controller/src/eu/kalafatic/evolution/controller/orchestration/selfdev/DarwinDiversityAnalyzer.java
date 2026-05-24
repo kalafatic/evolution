@@ -42,22 +42,26 @@ public class DarwinDiversityAnalyzer {
             Set<String> oSteps = getProjectedSteps(other);
             Set<String> oEffects = getExpectedEffects(other);
 
-            // Simple semantic check
+            // 1. Exact strategy match is an automatic duplicate
             if (cStrategy.equals(oStrategy)) return false;
 
-            // Action target overlap check
-            if (!cTargets.isEmpty() && cTargets.equals(oTargets)) {
-                // If they have the exact same file targets, they might be duplicates
-                // especially if strategies are similar.
-                if (computeSimilarity(cStrategy, oStrategy) > 0.8) return false;
+            // 2. STRICT SEMANTIC OVERLAP: If strategies are very similar, even with different labels, they are duplicates
+            double strategySimilarity = computeSimilarity(cStrategy, oStrategy);
+            if (strategySimilarity > 0.7) {
+                return false;
             }
 
-            // Future Trajectory Overlap Check (Convergence vs Diversity)
+            // 3. TARGET OVERLAP: If they have the exact same file targets AND high strategy similarity
+            if (!cTargets.isEmpty() && cTargets.equals(oTargets)) {
+                if (strategySimilarity > 0.5) return false;
+            }
+
+            // 4. FUTURE TRAJECTORY OVERLAP: Convergence check
             double stepSimilarity = computeJaccard(cSteps, oSteps);
             double effectSimilarity = computeJaccard(cEffects, oEffects);
 
-            if (stepSimilarity > 0.7 && effectSimilarity > 0.7) {
-                // They are proposing the same future, redundant.
+            if (stepSimilarity > 0.6 && effectSimilarity > 0.6) {
+                // They are proposing the same engineering future, redundant.
                 return false;
             }
         }
@@ -126,8 +130,14 @@ public class DarwinDiversityAnalyzer {
 
     private Set<String> tokenize(String s) {
         Set<String> tokens = new HashSet<>();
+        // Filter out generic architectural filler words to focus on real semantic tokens
+        Set<String> filler = Set.of("architecture", "implementation", "approach", "strategy", "robust", "flexible", "modular", "solution", "engineering", "using", "with", "provide");
+
         for (String word : s.split("\\s+")) {
-            if (word.length() > 3) tokens.add(word);
+            String clean = word.toLowerCase().replaceAll("[^a-z]", "");
+            if (clean.length() > 3 && !filler.contains(clean)) {
+                tokens.add(clean);
+            }
         }
         return tokens;
     }
