@@ -369,7 +369,7 @@ public class InstructionsGroup extends AEvoGroup {
 
     public void resetBackground() {
         if (requestText != null && !requestText.isDisposed()) {
-            setBackgroundSafe(requestText, null);
+            setBackgroundSafe(requestText, colorWhite);
             setForegroundSafe(requestText, null);
         }
     }

@@ -148,6 +148,17 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         context.log("[APPROVED:" + finalWinnerId + "] [KERNEL] Winner variant selected: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
 
+        // Branch Stamping: Mark all other variants as REJECTED or KEPT in logs for UI sealing
+        for (BranchVariant v : variants) {
+            if (v.getId().equals(finalWinnerId)) continue;
+
+            String status = "REJECTED";
+            if (v.getActivationState() == BranchVariant.ActivationState.KEPT) {
+                status = "KEPT";
+            }
+            context.log("[" + status + ":" + v.getId() + "] [KERNEL] Proposal " + v.getId() + " marked as " + status);
+        }
+
         if (currentIterationModelImpl != null) {
             currentIterationModelImpl.setSurvivalArgument(selectedVariant.getSurvivalArgument());
             currentIterationModelImpl.setTradeoffs(selectedVariant.getTradeoffs());

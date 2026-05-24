@@ -138,7 +138,26 @@ public class FinalResponseAssembler {
             refs.add(new FileReference(relativePath, displayName, uri));
         }
 
-        return refs;
+        // Fallback: If no files tracked in tracker, check tasks for mentioned artifacts
+        if (refs.isEmpty()) {
+            for (Task task : context.getOrchestrator().getTasks()) {
+                String summary = task.getResultSummary();
+                if (summary != null) {
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)(?:file|wrote|created|at):?\\s*([a-zA-Z0-9_/\\\\.-]+\\.java)\\b").matcher(summary);
+                    while (m.find()) {
+                        String path = m.group(1);
+                        File f = new File(projectRoot, path);
+                        String uri = "file://" + f.getAbsolutePath().replace('\\', '/');
+                        if (!uri.startsWith("file:///")) {
+                             uri = uri.replace("file://", "file:///");
+                        }
+                        refs.add(new FileReference(path, f.getName(), uri));
+                    }
+                }
+            }
+        }
+
+        return refs.stream().distinct().collect(java.util.stream.Collectors.toList());
     }
 
     private String buildExecutionStatus(TaskContext context, boolean success) {
