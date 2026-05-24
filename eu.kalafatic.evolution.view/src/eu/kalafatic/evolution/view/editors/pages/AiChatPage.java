@@ -1457,22 +1457,23 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
             priority = MessagePriority.USER_ACTION_REQUIRED;
         }
 
-        java.util.regex.Pattern approvedPattern = java.util.regex.Pattern.compile("\\[APPROVED:([^\\]]+)\\]");
+        java.util.regex.Pattern approvedPattern = java.util.regex.Pattern.compile("\\[(APPROVED|REJECTED|KEPT):([^\\]]+)\\]");
         java.util.regex.Matcher approvedMatcher = approvedPattern.matcher(content);
         if (approvedMatcher.find()) {
-            String variantId = approvedMatcher.group(1);
-            if (!agentType.contains("approved")) {
+            String status = approvedMatcher.group(1).toLowerCase();
+            String variantId = approvedMatcher.group(2);
+            if (!agentType.contains(status)) {
                 agentType = agentType.replace("waiting", "").trim();
                 if (agentType.isEmpty()) agentType = "ai";
-                agentType += " approved:" + variantId;
+                agentType += " " + status + ":" + variantId;
             }
             content = content.replace(approvedMatcher.group(0), "").trim();
 
-            // If this was a darwin-branches message that is now approved,
+            // If this was a darwin-branches message that is now resolved,
             // we strip the JSON to keep the history clean, as the UI already rendered the selection.
             if (agentType.contains("darwin-branches")) {
                  content = content.replaceAll("\\[[\\s\\S]*\\]", "").trim();
-                 if (content.isEmpty()) content = "Variant " + variantId + " approved.";
+                 if (content.isEmpty()) content = "Variant " + variantId + " " + status + ".";
             }
 
             priority = MessagePriority.NORMAL;
