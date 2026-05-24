@@ -121,6 +121,8 @@ public class BehaviorResolver {
             case HYBRID_MANUAL_EXPORT:
                 profile.addTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY);
                 profile.addTrait(BehaviorTrait.WORKFLOW_HYBRID);
+                // Mediated Mode is intentionally Darwinian
+                profile.addTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE);
                 break;
             case SIMPLE_CHAT:
             default:

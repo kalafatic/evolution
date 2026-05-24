@@ -167,6 +167,8 @@ public class DarwinFlow implements IOrchestrationFlow {
             currentIterationModelImpl.setJustification(selectedVariant.getStrategy());
         }
 
+        boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED);
+
         try {
             manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
             manager.getGitManager().forceCheckout(snapshotBranch);
@@ -183,17 +185,36 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             if (!selectedVariant.isSuccess()) {
                 context.log("[KERNEL] Winner variant execution failed.");
-                manager.getGitManager().forceCheckout(originalBranch);
-                manager.getGitManager().rollback();
+                if (!isMediated) {
+                    manager.getGitManager().forceCheckout(originalBranch);
+                    manager.getGitManager().rollback();
+                }
                 return manager.failedResult();
             }
 
-            manager.getGitManager().forceCheckout(originalBranch);
-            manager.getGitManager().merge(selectedVariant.getBranchName());
+            if (!isMediated) {
+                manager.getGitManager().forceCheckout(originalBranch);
+                manager.getGitManager().merge(selectedVariant.getBranchName());
+            } else {
+                // MEDIATED COGNITIVE MERGE: Apply the winner's understanding to the session context
+                context.log("[KERNEL] Applying cognitive winner: " + selectedVariant.getStrategy());
+                context.getOrchestrationState().getMetadata().put("current_understanding", selectedVariant.getStrategy());
+                context.getOrchestrationState().getMetadata().put("current_strategy", selectedVariant.getStrategyType());
+                context.getOrchestrationState().getMetadata().put("current_actions", selectedVariant.getActions());
+            }
 
             // TASK PROPAGATION: Ensure tasks executed in the variant are visible in the main context
             if (winningContext != null) {
                 context.getOrchestrator().getTasks().addAll(winningContext.getTasks());
+            }
+
+            if (isMediated) {
+                // In mediated mode, we skip physical evaluation and commit.
+                // We return a success result to allow phase progression.
+                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                res.setSuccess(true);
+                res.setDecision(SelfDevDecision.CONTINUE);
+                return res;
             }
 
             WorkspaceDeltaAnalyzer analyzer = new WorkspaceDeltaAnalyzer(context.getProjectRoot(), context);

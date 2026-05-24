@@ -82,6 +82,13 @@ import eu.kalafatic.evolution.model.orchestration.IterationStatus;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
+import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
+import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
+import eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor;
+import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
+import eu.kalafatic.evolution.controller.mediation.analysis.PromptSynthesizer;
+import eu.kalafatic.evolution.controller.workflow.MediatedExportManager;
 
 /**
  * The Kernel Control Plane. Sole authority for state transitions and strategic orchestration.
@@ -289,6 +296,19 @@ public class IterationManager {
                     archArtifact.getSemanticTags().add("architecture");
                     archArtifact.getSemanticTags().add("structure");
                     context.getSemanticWorkspace().addArtifact(archArtifact);
+
+                    // MEDIATED DISCOVERY: Build semantic snapshot
+                    if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+                        context.log("[KERNEL] Mediated Discovery: Building semantic repository snapshot.");
+                        TargetScanner scanner = new TargetScanner();
+                        TargetSnapshot.TargetType type = context.getProjectRoot().getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
+                        TargetSnapshot snapshot = scanner.scanToSnapshot(context.getProjectRoot(), type);
+
+                        SemanticExtractor extractor = new SemanticExtractor();
+                        extractor.extractToSnapshot(snapshot);
+
+                        state.getMetadata().put("mediatedSnapshot", snapshot);
+                    }
 
                     context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Discovery complete. Repository-aware context initialized.");
                 }
@@ -504,6 +524,8 @@ public class IterationManager {
         if (state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")) {
             if (context.getMetadata().containsKey("testMode")) {
                 summary = "Darwin evolution completed (Test Mode).";
+            } else if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+                summary = performMediatedExportConvergence(request, context);
             } else {
                 summary = getFinalResponseAgent().generateFinalResponse(request, context.getOrchestrator().getTasks(), context);
             }
@@ -1029,6 +1051,11 @@ public class IterationManager {
         );
 
         if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY) && profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+            // Mediated Mode now uses Darwinian logic for cognitive evolution
+            if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE)) {
+                context.log("[KERNEL] Mediated Mode with Darwinian Reasoning. Routing to DarwinFlow.");
+                return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
+            }
             return router.resolveFlow(context.getPlatformMode(), aiService, this);
         }
 
@@ -1065,6 +1092,64 @@ public class IterationManager {
             state.setCurrentPhase(EvolutionConstants.PHASE_IMPLEMENTATION_PLAN);
         } else if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(current)) {
             state.setCurrentPhase(EvolutionConstants.PHASE_FINAL_SYNTHESIS);
+        }
+    }
+
+    private String performMediatedExportConvergence(String request, TaskContext context) {
+        try {
+            context.log("[KERNEL] Mediated Mode: Converging understanding into export package.");
+
+            TargetSnapshot snapshot = (TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+            if (snapshot == null) {
+                TargetScanner scanner = new TargetScanner();
+                TargetSnapshot.TargetType type = context.getProjectRoot().getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
+                snapshot = scanner.scanToSnapshot(context.getProjectRoot(), type);
+                SemanticExtractor extractor = new SemanticExtractor();
+                extractor.extractToSnapshot(snapshot);
+            }
+
+            ContextCurator curator = new ContextCurator();
+            List<String> selectedPaths = curator.selectContext(snapshot, request, 16);
+
+            PromptSynthesizer synthesizer = new PromptSynthesizer();
+            String optimizedPrompt = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths);
+
+            // Final explicit approval for packaging in mediated mode
+            if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && !context.isAutoApprove()) {
+                boolean approved = context.requestApproval("Final review: Ready to generate export package with " + selectedPaths.size() + " files?").get();
+                if (!approved) return "Export cancelled by user.";
+            }
+
+            String sessionId = context.getSessionId();
+            String outputPath = null;
+            if (context.getOrchestrator().getAiChat() != null) {
+                ChatSession session = context.getOrchestrator().getAiChat().getSessions().stream()
+                        .filter(s -> s != null && s.getId() != null && s.getId().equals(sessionId))
+                        .findFirst().orElse(null);
+                outputPath = session != null ? session.getOutputPath() : null;
+            }
+
+            MediatedExportManager exportManager = new MediatedExportManager();
+            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath);
+
+            StringBuilder summaryBuilder = new StringBuilder();
+            summaryBuilder.append("### Mediated Darwin Evolution Complete\n\n");
+            summaryBuilder.append("**Export Package:** `").append(exportPackage.getName()).append("`\n");
+            summaryBuilder.append("**Selected Files:** ").append(selectedPaths.size()).append(" (Limit: 16)\n\n");
+            summaryBuilder.append("**Target Type:** ").append(snapshot.getTargetType()).append("\n");
+            summaryBuilder.append("**Inferred Architecture:** ").append(snapshot.getMetadata().get("architectureInference")).append("\n\n");
+
+            summaryBuilder.append("**Optimized Prompt Sample:**\n\n");
+            if (optimizedPrompt.length() > 500) {
+                summaryBuilder.append(optimizedPrompt.substring(0, 500)).append("...\n");
+            } else {
+                summaryBuilder.append(optimizedPrompt);
+            }
+
+            return summaryBuilder.toString();
+        } catch (Exception e) {
+            context.log("[KERNEL] Mediated Export Failed: " + e.getMessage());
+            return "Mediated Export Failed: " + e.getMessage();
         }
     }
 

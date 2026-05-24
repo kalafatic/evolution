@@ -218,8 +218,15 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         List<DarwinStrategySeed> mutationSeeds = new ArrayList<>();
         int currentIteration = context.getOrchestrationState().getIterationCount();
         boolean isHighConfidenceAtomic = atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8;
+        boolean isMediated = policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED;
 
-        if (isHighConfidenceAtomic && currentIteration == 0) {
+        if (isMediated) {
+            context.log("[DARWIN] Mediated Mode: Spawning cognitive interpretation trajectories.");
+            mutationSeeds.add(DarwinStrategySeed.architectureMapping());
+            mutationSeeds.add(DarwinStrategySeed.dependencyExploration());
+            mutationSeeds.add(DarwinStrategySeed.refactorHotspotAnalysis());
+            mutationSeeds.add(DarwinStrategySeed.contextReduction());
+        } else if (isHighConfidenceAtomic && currentIteration == 0) {
             context.log("[DARWIN] Atomic intent detected. Spawning competing futures.");
             mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
             mutationSeeds.add(DarwinStrategySeed.philosophyMutation());
