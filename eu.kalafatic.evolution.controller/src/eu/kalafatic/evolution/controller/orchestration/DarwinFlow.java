@@ -127,6 +127,7 @@ public class DarwinFlow implements IOrchestrationFlow {
     }
 
     public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, String goal) throws Exception {
+        VariantExecutionContext winningContext = null;
         String originalBranch = manager.getGitManager().getCurrentBranch();
         String baseCommit = manager.getGitManager().getHeadCommit();
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
@@ -173,7 +174,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             context.log("[KERNEL] Executing winner variant: " + selectedVariant.getId() + " (" + selectedVariant.getStrategy() + ")");
             manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
 
-            evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit);
+            winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit);
 
             ResultSynthesizer synthesizer = new ResultSynthesizer();
             synthesizer.synthesize(List.of(selectedVariant), context);
@@ -189,6 +190,11 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             manager.getGitManager().forceCheckout(originalBranch);
             manager.getGitManager().merge(selectedVariant.getBranchName());
+
+            // TASK PROPAGATION: Ensure tasks executed in the variant are visible in the main context
+            if (winningContext != null) {
+                context.getOrchestrator().getTasks().addAll(winningContext.getTasks());
+            }
 
             WorkspaceDeltaAnalyzer analyzer = new WorkspaceDeltaAnalyzer(context.getProjectRoot(), context);
             WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
@@ -242,7 +248,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
     }
 
-    private BranchVariant evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context, String baseCommit) {
+    private VariantExecutionContext evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context, String baseCommit) {
         File tempDir = null;
         AuthorityController authority = context.getKernelContext().getAuthority();
         VariantExecutionContext variantExecContext = new VariantExecutionContext(variant.getId());
@@ -283,11 +289,14 @@ public class DarwinFlow implements IOrchestrationFlow {
                 }
 
                 variant.setMutationTrace("Mocked in test mode");
-                return variant;
+                return variantExecContext;
             }
 
             for (Task task : tasks) {
                 boolean taskSuccess = variantManager.executeTasksWithRetries(List.of(task));
+                if (variantExecContext != null) {
+                    variantExecContext.getTasks().add(task);
+                }
                 if (!taskSuccess) {
                     success = false;
                     break;
@@ -336,10 +345,10 @@ public class DarwinFlow implements IOrchestrationFlow {
             variant.setMutationTrace(deltaTool.execute("diff " + baseCommit + " HEAD", tempDir, variantContext));
             variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
 
-            return variant;
+            return variantExecContext;
         } catch (Exception e) {
             variant.setScore(0.0);
-            return variant;
+            return variantExecContext;
         } finally {
             if (tempDir != null && !context.getMetadata().containsKey("testMode")) {
                 try {

@@ -143,15 +143,17 @@ public class FinalResponseAssembler {
             for (Task task : context.getOrchestrator().getTasks()) {
                 String summary = task.getResultSummary();
                 if (summary != null) {
-                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)(?:file|wrote|created|at):?\\s*([a-zA-Z0-9_/\\\\.-]+\\.java)\\b").matcher(summary);
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)(?:file|wrote|created|at):?\\s*([a-zA-Z0-9_/\\\\\\s.-]+\\.[a-zA-Z0-9]+)\\b").matcher(summary);
                     while (m.find()) {
-                        String path = m.group(1);
+                        String path = m.group(1).trim();
                         File f = new File(projectRoot, path);
-                        String uri = "file://" + f.getAbsolutePath().replace('\\', '/');
-                        if (!uri.startsWith("file:///")) {
-                             uri = uri.replace("file://", "file:///");
+                        if (f.exists()) {
+                            String uri = "file://" + f.getAbsolutePath().replace('\\', '/');
+                            if (!uri.startsWith("file:///")) {
+                                 uri = uri.replace("file://", "file:///");
+                            }
+                            refs.add(new FileReference(path, f.getName(), uri));
                         }
-                        refs.add(new FileReference(path, f.getName(), uri));
                     }
                 }
             }

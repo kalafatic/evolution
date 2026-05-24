@@ -32,8 +32,15 @@ public class WorkspaceDeltaAnalyzer {
             String diff = gitTool.execute("diff " + baseCommit + " HEAD", projectRoot, context);
             analysis.setRawDiff(diff);
 
+            // Use diff --name-status to capture both committed and uncommitted changes since baseCommit
+            String diffNames = gitTool.execute("diff --name-status " + baseCommit + " HEAD", projectRoot, context);
+            Map<String, FileChangeTracker.ChangeType> changes = parseChangedFiles(diffNames);
+
+            // Also include untracked files via status
             String status = gitTool.execute("status --porcelain", projectRoot, context);
-            analysis.setChangedFiles(parseChangedFiles(status));
+            changes.putAll(parseChangedFiles(status));
+
+            analysis.setChangedFiles(changes);
 
             performSemanticAnalysis(diff, analysis);
 

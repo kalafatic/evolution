@@ -78,7 +78,7 @@ public class FinalResponse {
         if (files != null && !files.isEmpty()) {
             sb.append("**Files**\n");
             for (FileReference f : files) {
-                sb.append("- [FILE: ").append(f.getPath()).append("]\n");
+                sb.append("- [").append(f.getDisplayName()).append("](").append(f.getEclipseUri()).append(") [FILE: ").append(f.getPath()).append("]\n");
             }
             sb.append("\n");
         }
