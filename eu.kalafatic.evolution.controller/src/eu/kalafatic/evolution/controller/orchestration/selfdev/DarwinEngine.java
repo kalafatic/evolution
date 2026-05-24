@@ -405,21 +405,21 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         DarwinDiversityAnalyzer diversityAnalyzer = new DarwinDiversityAnalyzer();
 
         List<DarwinStrategySeed> mutationSeeds = new ArrayList<>();
-        int currentIteration = context.getCurrentIteration();
+        int currentIteration = context.getOrchestrationState().getIterationCount();
         boolean isHighConfidenceAtomic = atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8 && !atomicAnalysis.isRequiresPlanning();
 
-        if (isHighConfidenceAtomic && currentIteration == 1) {
+        if (isHighConfidenceAtomic && currentIteration == 0) {
             context.log("[DARWIN] High-confidence atomic intent detected. Spawning competing simple futures.");
             mutationSeeds.add(new DarwinStrategySeed(DarwinStrategyType.KEEPER_EVOLUTION, "Direct minimal implementation of: " + goal, true));
 
             // Simple tasks produce 2-4 trajectories
             mutationSeeds.add(DarwinStrategySeed.semanticFuture("Minimalist", "Atomic Utility", "A minimal, zero-dependency atomic utility for: " + goal));
             mutationSeeds.add(DarwinStrategySeed.semanticFuture("Extensible", "Service Abstraction", "A reusable service abstraction with an interface for: " + goal));
-            if (eps >= 0.7) {
+            if (eps >= 0.4) { // Lowered threshold for more diversity in simple tasks
                 mutationSeeds.add(DarwinStrategySeed.semanticFuture("Robust", "Defensive Engineering", "A robust implementation with extensive error handling and logging for: " + goal));
             }
             context.getOrchestrationState().getMetadata().put("is_atomic_round", true);
-        } else if (currentIteration == 1) {
+        } else if (currentIteration == 0) {
             if (expansion != null && (!expansion.getImplementationStrategies().isEmpty() || !expansion.getHypotheses().isEmpty())) {
                 context.log("[DARWIN] Iteration 1: Spawning seeds from expanded intent space.");
                 for (IntentHypothesis h : expansion.getHypotheses()) {

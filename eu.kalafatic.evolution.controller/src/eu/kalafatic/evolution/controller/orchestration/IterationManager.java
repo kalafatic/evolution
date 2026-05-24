@@ -250,7 +250,16 @@ public class IterationManager {
         transition(SystemState.INIT, context);
         String request = taskRequest.getPrompt();
         OrchestrationState state = context.getOrchestrationState();
+
+        // CHECKPOINT INVALIDATION: If the new goal differs from the checkpoint goal, reset evolution phase
+        String checkpointGoal = (String) state.getMetadata().get("checkpoint_goal");
+        if (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
+            context.log("[KERNEL] New request detected. Invalidating stale evolution phase: " + state.getCurrentPhase());
+            state.setCurrentPhase(null);
+            state.setIterationCount(0);
+        }
         state.setRawInput(request);
+        state.getMetadata().put("checkpoint_goal", request);
 
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);

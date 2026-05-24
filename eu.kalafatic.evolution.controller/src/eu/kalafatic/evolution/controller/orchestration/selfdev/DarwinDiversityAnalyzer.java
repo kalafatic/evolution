@@ -45,15 +45,15 @@ public class DarwinDiversityAnalyzer {
             // 1. Exact strategy match is an automatic duplicate
             if (cStrategy.equals(oStrategy)) return false;
 
-            // 2. STRICT SEMANTIC OVERLAP: If strategies are very similar, even with different labels, they are duplicates
+            // 2. SEMANTIC OVERLAP: Relaxed for small models (threshold increased from 0.7 to 0.85)
             double strategySimilarity = computeSimilarity(cStrategy, oStrategy);
-            if (strategySimilarity > 0.7) {
+            if (strategySimilarity > 0.85) {
                 return false;
             }
 
             // 3. TARGET OVERLAP: If they have the exact same file targets AND high strategy similarity
             if (!cTargets.isEmpty() && cTargets.equals(oTargets)) {
-                if (strategySimilarity > 0.5) return false;
+                if (strategySimilarity > 0.7) return false;
             }
 
             // 4. FUTURE TRAJECTORY OVERLAP: Convergence check

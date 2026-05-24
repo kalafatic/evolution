@@ -35,11 +35,19 @@ public class DarwinSyntheticVariantFactory {
         alternative.put("failure_risks", "May introduce more complexity if an abstraction is chosen, or less flexibility if atomic.");
         alternative.put("score", 0.7);
 
-        // Map actions to the new strategy
+        // Map actions to the new strategy and inherit/fix targets
         JSONArray actions = alternative.optJSONArray("actions");
         if (actions != null && actions.length() > 0) {
             JSONObject action = actions.getJSONObject(0);
             action.put("description", "Implement " + alternative.getString("strategy"));
+
+            // HEURISTIC TARGET FIX: If target is missing or generic '.', try to infer from goal
+            String target = action.optString("target", ".");
+            if (target.equals(".") || target.isEmpty()) {
+                String lower = goal.toLowerCase();
+                if (lower.contains("java") || lower.contains("class")) action.put("target", "GeneratedClass.java");
+                else if (lower.contains("readme")) action.put("target", "README.md");
+            }
         }
 
         return alternative;
