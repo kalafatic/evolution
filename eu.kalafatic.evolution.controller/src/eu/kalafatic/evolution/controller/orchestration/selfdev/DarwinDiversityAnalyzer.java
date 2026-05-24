@@ -50,17 +50,22 @@ public class DarwinDiversityAnalyzer {
 
             // 1. CONCEPTUAL OVERLAP: Check if the engineering philosophy is the same
             double philosophySim = computeSimilarity(cPhilosophy, oPhilosophy);
-            if (philosophySim > 0.8) return false;
+            if (philosophySim > 0.75) return false; // More strict: Philosophies must diverge
 
             // 2. TRADEOFF OVERLAP: Check if they are proposing the same technical compromises
             double tradeoffSim = computeSimilarity(cTradeoffs, oTradeoffs);
-            if (tradeoffSim > 0.8) return false;
+            if (tradeoffSim > 0.75) return false;
 
             // 3. RISK OVERLAP: Check if they identify the same failure modes
             double riskSim = computeSimilarity(cRisks, oRisks);
-            if (riskSim > 0.85) return false;
+            if (riskSim > 0.8) return false;
 
-            // 4. STRATEGY SIMILARITY: Basic word overlap check
+            // 4. ARCHITECTURAL DIRECTION OVERLAP
+            // Check if they are targeting different abstraction depths or operational scopes
+            double directionSim = computeArchitecturalDirectionSimilarity(candidate, other);
+            if (directionSim > 0.8) return false;
+
+            // 5. STRATEGY SIMILARITY: Basic word overlap check
             double strategySim = computeSimilarity(cStrategy, oStrategy);
             if (strategySim > 0.8) return false;
 
@@ -104,6 +109,32 @@ public class DarwinDiversityAnalyzer {
         union.addAll(s2);
 
         return (double) intersection.size() / union.size();
+    }
+
+    private double computeArchitecturalDirectionSimilarity(JSONObject c1, JSONObject c2) {
+        // Evaluate diversity in abstraction depth and operational behavior
+        double sim = 0.0;
+
+        // Compare strategy types
+        if (c1.optString("strategy_type").equals(c2.optString("strategy_type"))) {
+            sim += 0.3;
+        }
+
+        // Compare expected effects (Short-term vs Long-term focus)
+        JSONObject e1 = c1.optJSONObject("expected_effect");
+        JSONObject e2 = c2.optJSONObject("expected_effect");
+        if (e1 != null && e2 != null) {
+            double stSim = computeSimilarity(e1.optString("short_term"), e2.optString("short_term"));
+            double ltSim = computeSimilarity(e1.optString("long_term"), e2.optString("long_term"));
+            sim += (stSim * 0.2) + (ltSim * 0.2);
+        }
+
+        // Compare projected steps (Operational path)
+        Set<String> steps1 = getProjectedSteps(c1);
+        Set<String> steps2 = getProjectedSteps(c2);
+        sim += computeJaccard(steps1, steps2) * 0.3;
+
+        return sim;
     }
 
     private double computeSimilarity(String s1, String s2) {

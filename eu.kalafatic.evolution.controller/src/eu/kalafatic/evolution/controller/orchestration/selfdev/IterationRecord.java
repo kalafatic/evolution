@@ -27,6 +27,8 @@ public class IterationRecord {
     private String activationState;
     private String semanticAnchor;
     private String mutationTrace;
+    private String inheritedContext;
+    private List<String> rejectedSiblings;
 
     public int getIteration() { return iteration; }
     public void setIteration(int iteration) { this.iteration = iteration; }
@@ -91,4 +93,10 @@ public class IterationRecord {
 
     public String getMutationTrace() { return mutationTrace; }
     public void setMutationTrace(String mutationTrace) { this.mutationTrace = mutationTrace; }
+
+    public String getInheritedContext() { return inheritedContext; }
+    public void setInheritedContext(String inheritedContext) { this.inheritedContext = inheritedContext; }
+
+    public List<String> getRejectedSiblings() { return rejectedSiblings; }
+    public void setRejectedSiblings(List<String> rejectedSiblings) { this.rejectedSiblings = rejectedSiblings; }
 }

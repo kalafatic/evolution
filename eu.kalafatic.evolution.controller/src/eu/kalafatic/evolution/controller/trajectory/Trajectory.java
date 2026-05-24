@@ -13,7 +13,13 @@ public class Trajectory {
     private final String goalContext;
     private final List<SignalRecord> signalHistory = new ArrayList<>();
     private Phase phase = Phase.EXPLORATION;
-    
+
+    // Lineage and Evolution Memory
+    private final List<String> rejectedSiblingIds = new ArrayList<>();
+    private final List<String> adaptationHistory = new ArrayList<>();
+    private String survivalJustification;
+    private int generation = 0;
+
     // Core Darwinian metrics
     private double fitnessScore = 0.5;
     private double stabilityScore = 0.5;
@@ -94,6 +100,18 @@ public class Trajectory {
 
     public List<String> getFailureClusters() { return failureClusters; }
     public void addFailureCluster(String cluster) { this.failureClusters.add(cluster); }
+
+    public List<String> getRejectedSiblingIds() { return rejectedSiblingIds; }
+    public void addRejectedSiblingId(String id) { this.rejectedSiblingIds.add(id); }
+
+    public List<String> getAdaptationHistory() { return adaptationHistory; }
+    public void addAdaptation(String adaptation) { this.adaptationHistory.add(adaptation); }
+
+    public String getSurvivalJustification() { return survivalJustification; }
+    public void setSurvivalJustification(String survivalJustification) { this.survivalJustification = survivalJustification; }
+
+    public int getGeneration() { return generation; }
+    public void setGeneration(int generation) { this.generation = generation; }
 
     public double getConvergenceRate() { return convergenceRate; }
     public void setConvergenceRate(double rate) { this.convergenceRate = rate; }

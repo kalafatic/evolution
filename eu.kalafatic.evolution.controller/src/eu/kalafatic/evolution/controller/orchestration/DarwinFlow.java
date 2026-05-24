@@ -205,6 +205,10 @@ public class DarwinFlow implements IOrchestrationFlow {
                 record.setIteration(context.getOrchestrationState().getIterationCount());
                 record.setGoal(goal);
                 record.setStrategy(selectedVariant.getStrategy());
+                record.setSemanticAnchor(selectedVariant.getSemanticAnchor());
+                record.setMutationTrace(selectedVariant.getMutationTrace());
+                record.setInheritedContext(selectedVariant.getInheritedContext());
+                record.setRejectedSiblings(selectedVariant.getRejectedSiblings());
                 record.setBranchId(selectedVariant.getId());
                 record.setResult(result.isSuccess() ? "SUCCESS" : "SUCCESS_WITH_BUILD_ERROR");
                 record.setActivationState("ACTIVE");

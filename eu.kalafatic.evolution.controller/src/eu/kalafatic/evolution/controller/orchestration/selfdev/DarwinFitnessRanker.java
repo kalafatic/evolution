@@ -14,15 +14,22 @@ public class DarwinFitnessRanker {
      * Ranks variants by fitness score.
      */
     public void rank(List<JSONObject> variants) {
-        rank(variants, false);
+        rank(variants, false, 0);
     }
 
     /**
      * Ranks variants by fitness score with optional atomic priority.
      */
     public void rank(List<JSONObject> variants, boolean isAtomicRound) {
+        rank(variants, isAtomicRound, 0);
+    }
+
+    /**
+     * Ranks variants by fitness score with optional atomic priority.
+     */
+    public void rank(List<JSONObject> variants, boolean isAtomicRound, int generation) {
         for (JSONObject v : variants) {
-            double score = calculateFitness(v);
+            double score = calculateFitness(v, generation);
             if (isAtomicRound && DarwinStrategyType.PROBABLE_SURVIVOR.name().equals(v.optString("strategy_type"))) {
                 score = Math.max(score, 0.95);
             }
@@ -32,7 +39,7 @@ public class DarwinFitnessRanker {
         variants.sort(Comparator.comparingDouble((JSONObject v) -> v.optDouble("score")).reversed());
     }
 
-    private double calculateFitness(JSONObject variant) {
+    private double calculateFitness(JSONObject variant, int generation) {
         double score = 0.4; // Base
 
         // 1. Structural Completeness
@@ -57,12 +64,16 @@ public class DarwinFitnessRanker {
             if (specific) score += 0.05;
         }
 
-        // 3. Trajectory Type weighting (Balanced)
+        // 3. Trajectory Type weighting (Balanced with generational pressure)
         String type = variant.optString("strategy_type");
         if (DarwinStrategyType.PROBABLE_SURVIVOR.name().equals(type)) score += 0.05;
         if (DarwinStrategyType.PHILOSOPHY_MUTATION.name().equals(type)) score += 0.05;
         if (DarwinStrategyType.MAXIMAL_DIVERGENCE.name().equals(type)) score += 0.04;
-        if (DarwinStrategyType.STABILIZATION_RECOVERY.name().equals(type)) score += 0.03;
+
+        // Increase value of stabilization in later generations (Convergence Pressure)
+        if (DarwinStrategyType.STABILIZATION_RECOVERY.name().equals(type)) {
+            score += 0.03 + (generation * 0.02);
+        }
 
         return Math.min(1.0, score);
     }
