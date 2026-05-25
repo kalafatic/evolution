@@ -245,7 +245,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery()); // Stability fallback
         }
 
-        // 1. Lineage Retrieval: Find the winner of the previous iteration
+        // 1. Lineage Retrieval: Prioritize the in-memory surviving BranchVariant if available, otherwise fallback to records
+        BranchVariant lastSurvivorVariant = (BranchVariant) context.getOrchestrationState().getMetadata().get("lastSurvivor");
         IterationRecord lastWinner = records.stream()
                 .filter(r -> "ACTIVE".equals(r.getActivationState()))
                 .reduce((first, second) -> second)
@@ -253,7 +254,14 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         String lineageContext = "";
         List<String> rejectedSiblings = new ArrayList<>();
-        if (lastWinner != null) {
+
+        if (lastSurvivorVariant != null) {
+            lineageContext = "SURVIVING TRAJECTORY: " + lastSurvivorVariant.getStrategy() + "\n" +
+                             "PHILOSOPHY: " + lastSurvivorVariant.getSemanticAnchor() + "\n" +
+                             "MUTATION HISTORY: " + lastSurvivorVariant.getMutationTrace() + "\n" +
+                             "LAST SURVIVAL ARGUMENT: " + lastSurvivorVariant.getSurvivalArgument() + "\n";
+            rejectedSiblings = lastSurvivorVariant.getRejectedSiblings();
+        } else if (lastWinner != null) {
             lineageContext = "SURVIVING TRAJECTORY: " + lastWinner.getStrategy() + "\n" +
                              "PHILOSOPHY: " + lastWinner.getSemanticAnchor() + "\n" +
                              "MUTATION HISTORY: " + lastWinner.getMutationTrace() + "\n";

@@ -32,8 +32,6 @@ public interface IOrchestrator {
      * @param context The shared execution context.
      * @return The result of task execution.
      * @throws Exception if execution fails.
-     * @deprecated Use {@link #handle(TaskRequest, TaskContext)} instead.
      */
-    @Deprecated
     String executeTask(eu.kalafatic.evolution.model.orchestration.Task task, TaskContext context) throws Exception;
 }
