@@ -254,19 +254,27 @@ public class IterationManager {
 
     public OrchestratorResponse handle(TaskRequest taskRequest) throws Exception {
         context.setStartTime(Instant.now());
-        transition(SystemState.INIT, context);
+
+        SystemState kernelState = context.getStateHolder().getState();
+        if (kernelState != SystemState.EXECUTING) {
+            transition(SystemState.INIT, context);
+        }
+
         String request = taskRequest.getPrompt();
         OrchestrationState state = context.getOrchestrationState();
 
         // CHECKPOINT INVALIDATION: If the new goal differs from the checkpoint goal, reset evolution phase
         String checkpointGoal = (String) state.getMetadata().get("checkpoint_goal");
-        if (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
+        if (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request) && !"run".equals(request)) {
             context.log("[KERNEL] New request detected. Invalidating stale evolution phase: " + state.getCurrentPhase());
             state.setCurrentPhase(null);
             state.setIterationCount(0);
         }
-        state.setRawInput(request);
-        state.getMetadata().put("checkpoint_goal", request);
+
+        if (!"run".equals(request)) {
+            state.setRawInput(request);
+            state.getMetadata().put("checkpoint_goal", request);
+        }
 
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
@@ -275,7 +283,32 @@ public class IterationManager {
         ModeRouter router = new ModeRouter();
 
         try {
-            context.getOrchestrator().getTasks().clear();
+            if (kernelState == SystemState.EXECUTING && !context.getOrchestrator().getTasks().isEmpty()) {
+                context.log("[KERNEL] Executing planned tasks in current state.");
+
+                String lastRes = "";
+                for (Task t : new ArrayList<>(context.getOrchestrator().getTasks())) {
+                    if (t.getStatus() == eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE) continue;
+                    lastRes = taskExecutor.getOrchestrator().executeTask(t, context);
+                    t.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
+                    t.setResultSummary("Task completed.");
+                }
+
+                OrchestratorResponse result = new OrchestratorResponse();
+                result.setResultType(ResultType.CHAT);
+                result.setSummary(lastRes);
+
+                FinalResponseAssembler assembler = new FinalResponseAssembler();
+                result.setFinalResponse(assembler.assemble(context, lastRes, true, context.getStartTime()));
+
+                transition(SystemState.DONE, context);
+                return result;
+            }
+
+            if (kernelState != SystemState.EXECUTING) {
+                context.getOrchestrator().getTasks().clear();
+            }
+
             context.setCurrentTaskName("Initialization");
             context.log("[KERNEL] Strategic Initialization: " + request);
 
@@ -356,6 +389,13 @@ public class IterationManager {
             // Flow Resolution & Execution
             IOrchestrationFlow flow = resolveFlow(router, atomicAnalysis);
             OrchestratorResponse result;
+
+            // TEST MODE BYPASS: If testMode is enabled, do NOT use DarwinFlow for simple chat
+            if (context.getMetadata().containsKey("testMode") && flow instanceof DarwinFlow && (atomicAnalysis == null || !atomicAnalysis.isAtomic())) {
+                 context.log("[KERNEL] [TEST_MODE] Bypassing DarwinFlow for simple request.");
+                 flow = (IOrchestrationFlow) AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
+            }
+
             if (flow instanceof DarwinFlow) {
                 result = executeDarwin(request, context);
             } else {
@@ -514,6 +554,14 @@ public class IterationManager {
             // CHECKPOINTING: Persist state for restart recovery
             String goal = state.getRawInput() != null ? state.getRawInput() : request;
             memoryService.saveCheckpoint(context.getSessionId(), (currentIterationModel != null ? currentIterationModel.getId() : "default"), state.getCurrentPhase(), goal);
+
+        // PERSIST SURVIVOR: Ensure the latest survivor is recorded in memory if applicable
+        BranchVariant latestSurvivor = (BranchVariant) state.getMetadata().get("lastSurvivor");
+        if (latestSurvivor != null) {
+            recordIterationResult(goal, latestSurvivor.getStrategy(), latestSurvivor.getId(), true);
+            recordTrajectoryAnalysis(currentIterationModel != null ? currentIterationModel.getId() : "gen-" + state.getIterationCount(),
+                                       latestSurvivor.getId(), latestSurvivor.getStrategy(), latestSurvivor.getScore());
+        }
 
         } while (result.getDecision() == SelfDevDecision.CONTINUE && safetyCounter < 10 && !context.isPaused());
 
@@ -724,9 +772,12 @@ public class IterationManager {
             }
         }
 
+        // 1.5 LINEAGE RETRIEVAL: Retrieve the previous survivor if continuing evolution
+        BranchVariant previousSurvivor = (BranchVariant) state.getMetadata().get("lastSurvivor");
+
         // 2. EVOLUTIONARY EXECUTION (Delegated to DarwinFlow Engine)
         // Refactored to keep selection and phase control in IterationManager.
-        List<BranchVariant> variants = darwinFlow.generateProposals(context, goal);
+        List<BranchVariant> variants = darwinFlow.generateProposals(context, goal, previousSurvivor);
 
         if (variants.isEmpty()) {
             context.log("[KERNEL] ERROR: No variants generated for goal. Evolution blocked.");
@@ -756,6 +807,11 @@ public class IterationManager {
 
         // 5. EXECUTION ENGINE: Execute winner variant and evaluate
         EvaluationResult result = darwinFlow.executeWinner(context, decision, variants, goal);
+
+        // 5.5 LINEAGE PERSISTENCE: Save the survivor for the next generation
+        String winnerId = decision.getSelectedVariantId();
+        BranchVariant survivor = variants.stream().filter(v -> v.getId().equals(winnerId)).findFirst().orElse(null);
+        state.getMetadata().put("lastSurvivor", survivor);
 
         // 6. PHASE PROGRESSION AUTHORITY: IterationManager decides the next phase
         if (result.isSuccess()) {
@@ -1056,14 +1112,27 @@ public class IterationManager {
             return router.resolveFlow(context.getPlatformMode(), aiService, this);
         }
 
-        // Priority for Darwinian Reasoning if enabled or state changes are expected
-        if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE) || hasStateChangeIntent) {
-            context.log("[KERNEL] Darwin Reasoning enabled or state-change intent detected. Routing to DarwinFlow.");
+        // 1. REPOSITORY-AWARE DARWINIAN COGNITION (Primary Strategy)
+        // Mediated Mode or direct evolution enabled
+        if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE) || hasStateChangeIntent || profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+            context.log("[KERNEL] Evolutionary Cognition Strategy selected. Routing to DarwinFlow.");
             return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
         }
 
-        // Simple chat path
-        if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
+        // 2. SELF-DEVELOPMENT STRATEGY
+        if (profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
+            context.log("[KERNEL] Self-Development Strategy selected. Routing to DarwinFlow.");
+            return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
+        }
+
+        // 3. ATOMIC DETERMINISTIC STRATEGY
+        if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && (atomicAnalysis != null && atomicAnalysis.isAtomic())) {
+             context.log("[KERNEL] Atomic Deterministic Strategy selected. Routing to DarwinFlow.");
+             return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
+        }
+
+        // 4. SIMPLE CHAT (Minimalist fallback)
+        if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC)) {
             return (IOrchestrationFlow) AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
         }
 
@@ -1081,15 +1150,12 @@ public class IterationManager {
 
     public void advanceEvolutionPhase(OrchestrationState state) {
         String current = state.getCurrentPhase();
-        if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(current)) {
-            state.setCurrentPhase(EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS);
-        } else if (EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS.equals(current)) {
-            state.setCurrentPhase(EvolutionConstants.PHASE_SELECTION_REFINEMENT);
-        } else if (EvolutionConstants.PHASE_SELECTION_REFINEMENT.equals(current)) {
-            state.setCurrentPhase(EvolutionConstants.PHASE_IMPLEMENTATION_PLAN);
-        } else if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(current)) {
-            state.setCurrentPhase(EvolutionConstants.PHASE_FINAL_SYNTHESIS);
-        }
+        EvolutionPhase phase = EvolutionPhase.fromString(current);
+        EvolutionPhaseMachine machine = new EvolutionPhaseMachine();
+
+        // Use the machine for consistent phase progression
+        EvolutionPhase next = machine.next(phase, true); // Force advance when manually called
+        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(next));
     }
 
     private String performMediatedExportConvergence(String request, TaskContext context) {

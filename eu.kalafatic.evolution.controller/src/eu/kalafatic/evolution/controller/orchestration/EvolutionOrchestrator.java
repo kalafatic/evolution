@@ -25,87 +25,19 @@ import eu.kalafatic.evolution.controller.tools.ToolFactory;
 import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
 
 /**
- * Core Orchestrator implementation. Blind executor of tasks.
- * Strictly gated by SystemState.
+ * Core Task Executor implementation. Blindly executes individual tasks.
+ * State gating and lifecycle are managed by the {@link IterationManager}.
  *
  * @evo:21:A reason=kernel-refactor-alignment
  */
 public class EvolutionOrchestrator implements IOrchestrator {
 
-    private static final int MAX_RETRIES = EvolutionConstants.MAX_TASK_RETRIES;
-    private AnalyticAgent analyticAgent;
-    private ValidatorAgent validator;
-    private RepairAgent repairAgent;
-    private ProposalConsolidatorAgent consolidator;
-    private final List<IAgent> availableAgents = new ArrayList<>();
-    private AiService aiService = new AiService();
-
-    public EvolutionOrchestrator() {
-        availableAgents.addAll(AgentFactory.getAllAgents());
-        analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
-        validator = (ValidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_VALIDATOR);
-        repairAgent = (RepairAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_REPAIR);
-        consolidator = (ProposalConsolidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_PROPOSAL_CONSOLIDATOR);
-    }
-
-    public void setAiService(AiService aiService) {
-        this.aiService = aiService;
-        if (analyticAgent != null) analyticAgent.setAiService(aiService);
-        if (validator != null) validator.setAiService(aiService);
-        if (repairAgent != null) repairAgent.setAiService(aiService);
-        if (consolidator != null) consolidator.setAiService(aiService);
-    }
-
     @Override
-    public OrchestratorResponse handle(TaskRequest taskRequest, TaskContext context) throws Exception {
-        String request = taskRequest.getPrompt();
-        OrchestratorResponse response = new OrchestratorResponse();
-        response.setResultType(ResultType.CHAT);
-
-        try {
-            SystemState kernelState = context.getStateHolder().getState();
-            if (kernelState != SystemState.EXECUTING && kernelState != SystemState.INIT && kernelState != SystemState.ANALYZING) {
-                 throw new IllegalStateException("Kernel violation: Orchestrator handle() must be gated by the Control Plane. State: " + kernelState);
-            }
-
-            context.setCurrentTaskName("Execution");
-            context.log("Evo-Orchestrator-Kernel: Starting " + kernelState + " sequence.");
-
-            List<Task> tasks = new ArrayList<>(context.getOrchestrator().getTasks());
-            String lastResult = "";
-
-            if (tasks.isEmpty() && (kernelState == SystemState.EXECUTING || kernelState == SystemState.INIT)) {
-                 // Fallback for direct prompt execution if no tasks planned
-                 GeneralAgent chatAgent = (GeneralAgent) availableAgents.stream()
-                        .filter(a -> a instanceof GeneralAgent)
-                        .findFirst()
-                        .orElse(new GeneralAgent());
-                 lastResult = chatAgent.process(request, context, null);
-            }
-
-            for (int i = 0; i < tasks.size(); i++) {
-                Task task = tasks.get(i);
-                if (task.getStatus() == TaskStatus.DONE || task.getStatus() == TaskStatus.FAILED) continue;
-
-                context.checkPause();
-                context.setCurrentTaskName(task.getName());
-                task.setStatus(TaskStatus.RUNNING);
-
-                lastResult = executeTaskInternal(task, context);
-                task.setStatus(TaskStatus.DONE);
-                task.setResultSummary("Task completed.");
-            }
-
-            response.setSummary(lastResult);
-            FinalResponseAssembler assembler = new FinalResponseAssembler();
-            response.setFinalResponse(assembler.assemble(context, lastResult, true, context.getStartTime()));
-            return response;
-
-        } catch (Exception e) {
-            response.setResultType(ResultType.ERROR);
-            response.setContent(e.getMessage());
-            return response;
-        }
+    public OrchestratorResponse handle(TaskRequest request, TaskContext context) throws Exception {
+        // Direct handling is now deprecated for the executor.
+        // It must be routed through IterationManager.
+        IterationManager kernel = KernelFactory.create(context, aiService);
+        return kernel.handle(request);
     }
 
     @Override
@@ -115,12 +47,28 @@ public class EvolutionOrchestrator implements IOrchestrator {
         return response.getSummary();
     }
 
-    @Override
+    private static final int MAX_RETRIES = EvolutionConstants.MAX_TASK_RETRIES;
+    private final List<IAgent> availableAgents = new ArrayList<>();
+    private AiService aiService = new AiService();
+
+    public EvolutionOrchestrator() {
+        availableAgents.addAll(AgentFactory.getAllAgents());
+    }
+
+    public void setAiService(AiService aiService) {
+        this.aiService = aiService;
+    }
+
+    /**
+     * Executes a single task using the orchestrator's available agents and tools.
+     * This is now a "blind" execution of a single task.
+     *
+     * @param task The task to execute.
+     * @param context The shared execution context.
+     * @return The result of task execution.
+     * @throws Exception if execution fails.
+     */
     public String executeTask(Task task, TaskContext context) throws Exception {
-        SystemState kernelState = context.getStateHolder().getState();
-        if (kernelState != SystemState.EXECUTING && kernelState != SystemState.INIT && kernelState != SystemState.ANALYZING) {
-             throw new IllegalStateException("Kernel violation: Orchestrator executeTask() must be gated by the Control Plane. State: " + kernelState);
-        }
         return executeTaskInternal(task, context);
     }
 
@@ -140,6 +88,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
         String patch = generatePatch(task, agent, context, task.getFeedback(), task.getPlan(), contextPrompt);
         String result = applyPatch(task, agent, context, task.getFeedback(), patch);
         task.setResponse(result);
+        task.setResultSummary("Task completed.");
 
         return result;
     }

@@ -82,13 +82,18 @@ public class DarwinFlow implements IOrchestrationFlow {
         return manager.executeDarwin(request, context);
     }
 
-    public List<BranchVariant> generateProposals(TaskContext context, String goal) throws Exception {
+    public List<BranchVariant> generateProposals(TaskContext context, String goal, BranchVariant previousSurvivor) throws Exception {
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
 
         Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
         StateSnapshot snapshot = initialEval.snapshot;
+
         Trajectory trajectory = new Trajectory();
+        if (previousSurvivor != null && previousSurvivor.getTrajectoryId() != null) {
+            trajectory.setParentTrajectoryId(previousSurvivor.getTrajectoryId());
+        }
+
         FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
 
         List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
