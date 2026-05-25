@@ -88,7 +88,24 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
         StateSnapshot snapshot = initialEval.snapshot;
-        Trajectory trajectory = new Trajectory();
+
+        // PERSISTENT TRAJECTORY LINEAGE: Retrieve existing trajectory from memory if available
+        // to ensure multi-generational continuity.
+        Trajectory trajectory = null;
+        IterationRecord lastWinner = context.getKernelContext().getMemoryService().getRecords().stream()
+                .filter(r -> "ACTIVE".equals(r.getActivationState()))
+                .reduce((first, second) -> second)
+                .orElse(null);
+
+        if (lastWinner != null && lastWinner.getBranchId() != null) {
+             trajectory = context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(lastWinner.getBranchId());
+        }
+
+        if (trajectory == null) {
+            trajectory = new Trajectory("traj-" + iterId, goal);
+            context.getSemanticWorkspace().getTrajectoryMemory().recordTrajectory(trajectory);
+        }
+
         FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
 
         List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);

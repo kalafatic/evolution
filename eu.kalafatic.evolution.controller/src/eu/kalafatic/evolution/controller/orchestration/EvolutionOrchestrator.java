@@ -58,54 +58,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
     @Override
     public OrchestratorResponse handle(TaskRequest taskRequest, TaskContext context) throws Exception {
-        String request = taskRequest.getPrompt();
-        OrchestratorResponse response = new OrchestratorResponse();
-        response.setResultType(ResultType.CHAT);
+        // Evolutionary Architecture Change:
+        // EvolutionOrchestrator is now a 'Blind' Executor.
+        // It no longer manages execution loops or high-level strategic fallbacks.
+        // Orchestration MUST be driven by IterationManager.
 
-        try {
-            SystemState kernelState = context.getStateHolder().getState();
-            if (kernelState != SystemState.EXECUTING && kernelState != SystemState.INIT && kernelState != SystemState.ANALYZING) {
-                 throw new IllegalStateException("Kernel violation: Orchestrator handle() must be gated by the Control Plane. State: " + kernelState);
-            }
-
-            context.setCurrentTaskName("Execution");
-            context.log("Evo-Orchestrator-Kernel: Starting " + kernelState + " sequence.");
-
-            List<Task> tasks = new ArrayList<>(context.getOrchestrator().getTasks());
-            String lastResult = "";
-
-            if (tasks.isEmpty() && (kernelState == SystemState.EXECUTING || kernelState == SystemState.INIT)) {
-                 // Fallback for direct prompt execution if no tasks planned
-                 GeneralAgent chatAgent = (GeneralAgent) availableAgents.stream()
-                        .filter(a -> a instanceof GeneralAgent)
-                        .findFirst()
-                        .orElse(new GeneralAgent());
-                 lastResult = chatAgent.process(request, context, null);
-            }
-
-            for (int i = 0; i < tasks.size(); i++) {
-                Task task = tasks.get(i);
-                if (task.getStatus() == TaskStatus.DONE || task.getStatus() == TaskStatus.FAILED) continue;
-
-                context.checkPause();
-                context.setCurrentTaskName(task.getName());
-                task.setStatus(TaskStatus.RUNNING);
-
-                lastResult = executeTaskInternal(task, context);
-                task.setStatus(TaskStatus.DONE);
-                task.setResultSummary("Task completed.");
-            }
-
-            response.setSummary(lastResult);
-            FinalResponseAssembler assembler = new FinalResponseAssembler();
-            response.setFinalResponse(assembler.assemble(context, lastResult, true, context.getStartTime()));
-            return response;
-
-        } catch (Exception e) {
-            response.setResultType(ResultType.ERROR);
-            response.setContent(e.getMessage());
-            return response;
-        }
+        IterationManager kernel = KernelFactory.create(context, aiService);
+        return kernel.handle(taskRequest);
     }
 
     @Override

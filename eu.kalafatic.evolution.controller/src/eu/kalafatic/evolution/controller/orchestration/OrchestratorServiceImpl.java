@@ -112,47 +112,12 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     result.setWaitingMessage(msg);
                 });
 
-                // Git Integration: Branching
-                if (promptInstructions.isGitAutomation()) {
-                    GitTool gitTool = new GitTool();
-                    String requestedBranch = (String) request.getContext().get("branch");
-                    String branchName = (requestedBranch != null && !requestedBranch.isEmpty()) ?
-                                         requestedBranch : "evo-" + taskId.substring(0, 8);
+                // NOTE: Git Automation (Branching and Commit) is now centrally managed by the IterationManager Kernel.
+                // Redundant Git logic removed to ensure single authority.
 
-                    try {
-                        eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
-
-                        if (requestedBranch != null && !requestedBranch.isEmpty()) {
-                            context.log("GIT: Checking out existing branch " + branchName);
-                            try {
-                                shell.execute("git checkout " + branchName, request.getProjectRoot(), context);
-                            } catch (Exception e) {
-                                context.log("GIT: Branch " + branchName + " not found, creating it.");
-                                shell.execute("git checkout -b " + branchName, request.getProjectRoot(), context);
-                            }
-                        } else {
-                            context.log("GIT: Creating new branch " + branchName);
-                            shell.execute("git checkout -b " + branchName, request.getProjectRoot(), context);
-                        }
-                    } catch (Exception e) {
-                        context.log("GIT WARNING: Could not manage branch: " + e.getMessage());
-                    }
-                }
-
-                OrchestratorResponse orchResponse = kernel.handle(request, context);
+                OrchestratorResponse orchResponse = kernel.handle(request);
 
                 result.setResponse(orchResponse.getSummary());
-
-                // Git Integration: Commit
-                if (orchResponse.getResultType() != ResultType.ERROR && promptInstructions.isGitAutomation() && result.getStatus() == TaskResult.Status.SUCCESS) {
-                    try {
-                        context.log("GIT: Committing changes");
-                        GitTool gitTool = new GitTool();
-                        gitTool.execute("add commit", request.getProjectRoot(), context);
-                    } catch (Exception e) {
-                        context.log("GIT WARNING: Could not commit changes: " + e.getMessage());
-                    }
-                }
                 result.setStatus(TaskResult.Status.SUCCESS);
 
                 // Capture file changes (simplified for now)
