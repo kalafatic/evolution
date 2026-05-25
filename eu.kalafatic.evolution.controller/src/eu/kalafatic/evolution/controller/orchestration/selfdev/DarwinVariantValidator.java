@@ -96,8 +96,18 @@ public class DarwinVariantValidator {
             if (action != null) {
                 String op = action.optString("operation", "");
                 String target = action.optString("target", "");
-                if (op.contains("|") || op.contains("<") || target.contains("<") || target.contains(">")) {
-                    if (context != null) context.log("[VALIDATOR] Error: Placeholder detected in action: " + op + " " + target);
+                String domain = action.optString("domain", "");
+
+                if (op.contains("|") || op.contains("<") || op.contains(">")) {
+                    if (context != null) context.log("[VALIDATOR] Error: Placeholder detected in action operation: '" + op + "'. Do not use '|' or '< >'.");
+                    return null;
+                }
+                if (target.contains("<") || target.contains(">") || target.contains("actual_file_path")) {
+                    if (context != null) context.log("[VALIDATOR] Error: Placeholder detected in action target: '" + target + "'. Provide a real path.");
+                    return null;
+                }
+                if (domain.contains("|")) {
+                    if (context != null) context.log("[VALIDATOR] Error: Placeholder detected in action domain: '" + domain + "'.");
                     return null;
                 }
             }

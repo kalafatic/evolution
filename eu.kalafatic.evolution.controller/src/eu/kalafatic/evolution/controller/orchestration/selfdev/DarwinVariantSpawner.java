@@ -121,40 +121,40 @@ public class DarwinVariantSpawner {
           .append(seed.getInstructions()).append("\n\n")
           .append("USER GOAL AND WORKSPACE CONTEXT:\n")
           .append(basePrompt).append("\n\n")
-          .append("CRITICAL: If an EXPECTED TARGET ARTIFACT is provided in the context, you MUST use it in your actions. Do NOT use placeholders like '<actual path>' or 'WRITE|DELETE'.\n\n");
+          .append("CRITICAL: If an EXPECTED TARGET ARTIFACT is provided in the context, you MUST use it in your actions. Do NOT use placeholders like 'actual path' or 'WRITE or DELETE'.\n\n");
 
         return sb.toString() +
                "REQUIRED SCHEMA (CRITICAL: PROVIDE SPECIFIC TECHNICAL VALUES):\n" +
                "{\n" +
                "  \"id\": \"v-" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"strategy_type\": \"" + seed.getType() + "\",\n" +
-               "  \"strategy\": \"<precise engineering strategy for this trajectory>\",\n" +
-               "  \"survival_argument\": \"<why this specific future should survive technically>\",\n" +
-               "  \"tradeoffs\": \"<specific technical tradeoffs compared to other trajectories>\",\n" +
-               "  \"failure_risks\": \"<potential failure modes for this trajectory>\",\n" +
-               "  \"pros_cons\": \"<detailed pros/cons analysis>\",\n" +
-               "  \"semantic_justification\": \"<engineering philosophy justification>\",\n" +
-               "  \"projected_steps\": [\"<next logical step 1>\", \"<next logical step 2>\"],\n" +
-               "  \"expected_outputs\": [\"<expected file/artifact 1>\"],\n" +
-               "  \"score\": 0.0-1.0, // Numerical predicted fitness score\n" +
+               "  \"strategy\": \"precise engineering strategy for this trajectory\",\n" +
+               "  \"survival_argument\": \"why this specific future should survive technically\",\n" +
+               "  \"tradeoffs\": \"specific technical tradeoffs compared to other trajectories\",\n" +
+               "  \"failure_risks\": \"potential failure modes for this trajectory\",\n" +
+               "  \"pros_cons\": \"detailed pros/cons analysis\",\n" +
+               "  \"semantic_justification\": \"engineering philosophy justification\",\n" +
+               "  \"projected_steps\": [\"next logical step 1\", \"next logical step 2\"],\n" +
+               "  \"expected_outputs\": [\"expected file/artifact 1\"],\n" +
+               "  \"score\": 0.5, // Numerical predicted fitness score between 0.0 and 1.0\n" +
                "  \"suffix\": \"" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"actions\": [\n" +
                "    {\n" +
-               "      \"domain\": \"file|class|test|build|structure\",\n" +
-               "      \"operation\": \"WRITE|DELETE|MKDIR|TEST|BUILD|ANALYZE\",\n" +
-               "      \"target\": \"<actual path or identifier>\",\n" +
-               "      \"description\": \"<specific technical instruction for this action>\"\n" +
+               "      \"domain\": \"file\", // use: file, class, test, build, or structure\n" +
+               "      \"operation\": \"WRITE\", // use: WRITE, DELETE, MKDIR, TEST, BUILD, or ANALYZE\n" +
+               "      \"target\": \"actual_file_path.java\",\n" +
+               "      \"description\": \"specific technical instruction for this action\"\n" +
                "    }\n" +
                "  ],\n" +
                "  \"hypothesis\": {\n" +
-               "    \"description\": \"<testable hypothesis for why this trajectory works>\",\n" +
-               "    \"expected_effects\": [\"<measurable effect 1>\"]\n" +
+               "    \"description\": \"testable hypothesis for why this trajectory works\",\n" +
+               "    \"expected_effects\": [\"measurable effect 1\"]\n" +
                "  },\n" +
                "  \"expected_effect\": {\n" +
-               "    \"short_term\": \"<expected result after execution>\",\n" +
-               "    \"long_term\": \"<long-term architectural impact>\",\n" +
-               "    \"risk\": 0.0-1.0, // Risk score\n" +
-               "    \"reversibility\": 0.0-1.0 // Reversibility score\n" +
+               "    \"short_term\": \"expected result after execution\",\n" +
+               "    \"long_term\": \"long-term architectural impact\",\n" +
+               "    \"risk\": 0.5, // Risk score between 0.0 and 1.0\n" +
+               "    \"reversibility\": 1.0 // Reversibility score between 0.0 and 1.0\n" +
                "  }\n" +
                "}";
     }

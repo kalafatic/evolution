@@ -14,7 +14,8 @@ public class FileAgent extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are an AI File Agent. Your primary task is to manage files and directories.\n" +
-               "Use the FileTool to read, write, or delete files as requested.";
+        return "You are an AI File Agent. Your primary task is to generate full content for files.\n" +
+               "CRITICAL: Return ONLY the content for the file, preferably in a single markdown code block (e.g. ```java ... ```).\n" +
+               "Do NOT attempt to use tool commands like 'WRITE' or explain what you are doing. Your output will be processed directly as the file content.";
     }
 }

@@ -45,7 +45,7 @@ public class DarwinSyntheticVariantFactory {
         JSONArray actions = alternative.optJSONArray("actions");
         if (actions != null && actions.length() > 0) {
             JSONObject action = actions.getJSONObject(0);
-            action.put("description", "Implement " + alternative.getString("strategy"));
+            action.put("description", "Generate the full source code for " + goal + " following the strategy: " + alternative.getString("strategy"));
 
             String target = action.optString("target", ".");
             if (target.equals(".") || target.isEmpty()) {
@@ -100,7 +100,7 @@ public class DarwinSyntheticVariantFactory {
         action.put("domain", "file");
         action.put("operation", "WRITE");
         action.put("target", target);
-        action.put("description", goal);
+        action.put("description", "Generate the full source code for " + goal + " as a new artifact.");
         actions.put(action);
         impl.put("actions", actions);
 

@@ -1192,7 +1192,7 @@ public class IterationManager {
         Task t = OrchestrationFactory.eINSTANCE.createTask();
         t.setId("atomic-task-1");
         t.setName("Write " + path);
-        t.setDescription(request);
+        t.setDescription("Generate the full source code for " + request + " and return it in a single markdown block.");
         t.setType("file");
         t.setApprovalRequired(false);
         tasks.add(t);
