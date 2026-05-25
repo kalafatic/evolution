@@ -120,7 +120,8 @@ public class DarwinVariantSpawner {
         sb.append("TRAJECTORY CONTEXT:\n")
           .append(seed.getInstructions()).append("\n\n")
           .append("USER GOAL AND WORKSPACE CONTEXT:\n")
-          .append(basePrompt).append("\n\n");
+          .append(basePrompt).append("\n\n")
+          .append("CRITICAL: If an EXPECTED TARGET ARTIFACT is provided in the context, you MUST use it in your actions. Do NOT use placeholders like '<actual path>' or 'WRITE|DELETE'.\n\n");
 
         return sb.toString() +
                "REQUIRED SCHEMA (CRITICAL: PROVIDE SPECIFIC TECHNICAL VALUES):\n" +

@@ -21,7 +21,7 @@ public class AtomicIntentClassifierTest {
     public void testDefaultTargetAssignment() {
         AtomicIntentAnalysis analysis = HybridAtomicIntentClassifier.heuristicAnalyze("create java class");
         assertTrue(analysis.isAtomic());
-        assertEquals("NewClass", analysis.getTargetArtifact());
+        assertEquals("NewClass.java", analysis.getTargetArtifact());
         assertTrue(analysis.getSignals().contains("default_target_assigned"));
 
         analysis = HybridAtomicIntentClassifier.heuristicAnalyze("create readme");
