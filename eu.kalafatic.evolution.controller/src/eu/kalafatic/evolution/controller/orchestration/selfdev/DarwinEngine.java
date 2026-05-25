@@ -227,11 +227,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             mutationSeeds.add(DarwinStrategySeed.refactorHotspotAnalysis());
             mutationSeeds.add(DarwinStrategySeed.contextReduction());
         } else if (isHighConfidenceAtomic && currentIteration == 0) {
-            context.log("[DARWIN] Atomic intent detected. Spawning competing futures.");
+            context.log("[DARWIN] Atomic intent detected. Spawning 2-proposal competing future.");
             mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
             mutationSeeds.add(DarwinStrategySeed.philosophyMutation());
-            mutationSeeds.add(DarwinStrategySeed.maximalDivergence());
-            mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery());
             context.getOrchestrationState().getMetadata().put("is_atomic_round", true);
         } else if (currentIteration == 0) {
             context.log("[DARWIN] Iteration 0: Spawning 4-branch trajectory model.");

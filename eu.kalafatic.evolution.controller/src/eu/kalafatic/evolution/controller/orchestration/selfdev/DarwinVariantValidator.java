@@ -91,6 +91,18 @@ public class DarwinVariantValidator {
             return null;
         }
 
+        for (int i = 0; i < actions.length(); i++) {
+            JSONObject action = actions.optJSONObject(i);
+            if (action != null) {
+                String op = action.optString("operation", "");
+                String target = action.optString("target", "");
+                if (op.contains("|") || op.contains("<") || target.contains("<") || target.contains(">")) {
+                    if (context != null) context.log("[VALIDATOR] Error: Placeholder detected in action: " + op + " " + target);
+                    return null;
+                }
+            }
+        }
+
         return json;
     }
 }

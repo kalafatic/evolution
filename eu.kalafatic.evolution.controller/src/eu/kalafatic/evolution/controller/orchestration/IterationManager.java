@@ -672,14 +672,10 @@ public class IterationManager {
         if (phase == EvolutionPhase.INTENT_EXPANSION) {
             AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
             if (atomicAnalysis != null && atomicAnalysis.getConfidence() > 0.8 && !atomicAnalysis.isMultiStep()) {
-                context.log("[KERNEL] Simple goal detected. Fast-forwarding to implementation planning.");
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.IMPLEMENTATION_PLAN));
-
-                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                res.setSuccess(true);
-                res.setDecision(SelfDevDecision.CONTINUE);
-                return res;
-            }
+                context.log("[KERNEL] Simple goal detected. Fast-forwarding to final synthesis.");
+                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
+                // Do NOT return early here, allow fall-through to variant generation and execution in one go.
+            } else {
 
             transition(SystemState.ANALYZING, context);
             IntentExpansionResult expansion = getIntentExpansionEngine().expand(goal, context);
@@ -724,7 +720,8 @@ public class IterationManager {
                 res.setDecision(SelfDevDecision.CONTINUE);
                 return res;
             }
-            context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
+                context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
+            }
         }
 
         // 2. EVOLUTIONARY EXECUTION (Delegated to DarwinFlow Engine)

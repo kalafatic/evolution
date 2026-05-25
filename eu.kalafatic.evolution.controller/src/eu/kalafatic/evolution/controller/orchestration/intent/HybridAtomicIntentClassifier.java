@@ -195,7 +195,7 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
 
             if (analysis.getTargetArtifact() == null || analysis.getTargetArtifact().isEmpty()) {
                 String defaultName = "GeneratedArtifact";
-                if (lower.contains("class")) defaultName = "NewClass";
+                if (lower.contains("class")) defaultName = "NewClass.java";
                 else if (lower.contains("readme")) defaultName = "README.md";
                 analysis.setTargetArtifact(defaultName);
                 analysis.getSignals().add("default_target_assigned");
