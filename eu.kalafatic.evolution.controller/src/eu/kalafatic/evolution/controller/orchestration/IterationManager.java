@@ -257,6 +257,11 @@ public class IterationManager {
         String request = taskRequest.getPrompt();
         OrchestrationState state = context.getOrchestrationState();
 
+        // CONTEXT PROPAGATION: Synchronize metadata from TaskRequest
+        if (taskRequest.getContext() != null) {
+            state.getMetadata().putAll(taskRequest.getContext());
+        }
+
         // 3. ATOMIC EXECUTION BYPASS: If EXECUTING and request is 'run', directly execute pre-populated tasks.
         // This ensures compatibility with deterministic task execution requirements and preserves test-injected state.
         if (context.getStateHolder().getState() == SystemState.EXECUTING && "run".equalsIgnoreCase(request) && !context.getOrchestrator().getTasks().isEmpty()) {
@@ -338,14 +343,17 @@ public class IterationManager {
                         context.getOrchestrator().getAiChat().getPromptInstructions() : null;
 
                 if (instructions != null && instructions.isGitAutomation()) {
-                    String branchName = "evo-" + context.getSessionId().substring(0, Math.min(context.getSessionId().length(), 8));
+                    String requestedBranch = (String) state.getMetadata().get("branch");
+                    String branchName = (requestedBranch != null && !requestedBranch.isEmpty()) ?
+                                         requestedBranch : "evo-" + context.getSessionId().substring(0, Math.min(context.getSessionId().length(), 8));
+
                     context.log("[KERNEL] Git Automation enabled. Creating/Switching to branch: " + branchName);
                     try {
                         if (!gitManager.getCurrentBranch().equals(branchName)) {
                             gitManager.createBranch(branchName);
                         }
                     } catch (Exception e) {
-                        context.log("[KERNEL] Git Warning: Could not create branch " + branchName + ": " + e.getMessage());
+                        context.log("[KERNEL] Git Warning: Could not manage branch " + branchName + ": " + e.getMessage());
                     }
                 }
             }

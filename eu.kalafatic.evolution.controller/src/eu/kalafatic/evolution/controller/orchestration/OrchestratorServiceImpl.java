@@ -115,7 +115,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 // NOTE: Git Automation (Branching and Commit) is now centrally managed by the IterationManager Kernel.
                 // Redundant Git logic removed to ensure single authority.
 
-                OrchestratorResponse orchResponse = kernel.handle(request);
+                OrchestratorResponse orchResponse = kernel.handle(request, context);
 
                 result.setResponse(orchResponse.getSummary());
                 result.setStatus(TaskResult.Status.SUCCESS);
