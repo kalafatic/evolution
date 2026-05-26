@@ -22,23 +22,21 @@ public class EvolutionPhaseMachine {
         // Iteration 2 (Gen 2) -> IMPLEMENTATION_PLAN (Refine execution strategy)
         // Iteration 3 (Gen 3) -> FINAL_SYNTHESIS (Execution and stabilization)
 
-        if (generation == 0 && current == EvolutionPhase.INTENT_EXPANSION) return EvolutionPhase.ARCHITECTURE_VARIANTS;
-        if (generation == 1 && current == EvolutionPhase.ARCHITECTURE_VARIANTS) return EvolutionPhase.SELECTION_REFINEMENT;
-        if (generation == 2 && current == EvolutionPhase.SELECTION_REFINEMENT) return EvolutionPhase.IMPLEMENTATION_PLAN;
-        if (generation == 3 && current == EvolutionPhase.IMPLEMENTATION_PLAN) return EvolutionPhase.FINAL_SYNTHESIS;
-
-        // Enforce minimum evolutionary depth (at least until generation 4)
+        // STRICT SEQUENTIAL PROGRESSION FOR FIRST 4 GENERATIONS
+        // This ensures mandatory evolutionary depth and prevents premature convergence.
         if (generation < 4 && !isTerminal(current)) {
-            // Force progression if we are not at the expected phase for the current generation
-            if (generation == 1 && current == EvolutionPhase.INTENT_EXPANSION) return EvolutionPhase.ARCHITECTURE_VARIANTS;
-            if (generation == 2 && (current == EvolutionPhase.INTENT_EXPANSION || current == EvolutionPhase.ARCHITECTURE_VARIANTS)) return EvolutionPhase.SELECTION_REFINEMENT;
-
-            // If already in the target phase for the generation, stay there to satisfy multi-gen requirement if not converged
-            return current;
+            switch (current) {
+                case INTENT_EXPANSION: return EvolutionPhase.ARCHITECTURE_VARIANTS;
+                case ARCHITECTURE_VARIANTS: return EvolutionPhase.SELECTION_REFINEMENT;
+                case SELECTION_REFINEMENT: return EvolutionPhase.IMPLEMENTATION_PLAN;
+                case IMPLEMENTATION_PLAN: return EvolutionPhase.FINAL_SYNTHESIS;
+                default: break;
+            }
         }
 
+        // After generation 4, we allow convergence or manual shortcuts if requested
         if (!converged && (current == EvolutionPhase.ARCHITECTURE_VARIANTS || current == EvolutionPhase.SELECTION_REFINEMENT)) {
-            // Stay in the same phase to allow multi-generation trajectory evolution
+            // Stay in the same phase to allow multi-generation trajectory evolution if not converged
             return current;
         }
 

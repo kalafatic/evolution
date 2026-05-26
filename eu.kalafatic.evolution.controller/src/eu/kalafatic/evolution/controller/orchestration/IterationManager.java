@@ -764,7 +764,7 @@ public class IterationManager {
 
         // 3. SELECTION AUTHORITY: Handle trajectory selection (Manual/Auto/Step)
         String manualId = null;
-        boolean skipSelectionPause = variants.size() == 1 && !hasStateChangeIntent(context);
+        boolean skipSelectionPause = false; // EVOLUTIONARY MANDATE: Always allow selection/review in non-auto modes
 
         if (!context.isAutoApprove() && !skipSelectionPause) {
             manualId = handleVariantSelection(context, variants, goal);
@@ -1142,6 +1142,7 @@ public class IterationManager {
 
             // Final explicit approval for packaging in mediated mode
             if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && !context.isAutoApprove()) {
+                context.log("[KERNEL] Mediated Mode: Pausing for final export package review.");
                 boolean approved = context.requestApproval("Final review: Ready to generate export package with " + selectedPaths.size() + " files?").get();
                 if (!approved) return "Export cancelled by user.";
             }
@@ -1201,11 +1202,6 @@ public class IterationManager {
         state.setConfirmedRequirements(frozen);
     }
 
-    public static boolean isSimpleFileCreate(String request) {
-        if (request.toLowerCase().contains("complex")) return false;
-        AtomicIntentAnalysis analysis = HybridAtomicIntentClassifier.heuristicAnalyze(request);
-        return analysis.isAtomic() && analysis.getConfidence() >= 0.80 && !analysis.isRequiresPlanning();
-    }
 
     /**
      * Generates a single-step atomic plan for simple file creation tasks.

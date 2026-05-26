@@ -68,9 +68,11 @@ public class DarwinVariantSpawner {
           .append("CRITICAL OBJECTIVE:\n")
           .append("Realize a specific COMPETING ENGINEERING FUTURE. Do NOT think in terms of roles (e.g., 'implementation', 'analytical').\n")
           .append("Think in terms of COMPETING ARCHITECTURAL PHILOSOPHIES and execution trajectories.\n\n")
-          .append("DIVERGENCE RULES (STRICT):\n")
+          .append("DIVERGENCE RULES (MANDATORY):\n")
           .append("- YOU ARE STRICTLY PROHIBITED FROM GENERATING SEMANTIC REWRITES.\n")
-          .append("- You MUST force ARCHITECTURAL DIVERGENCE.\n")
+          .append("- Every trajectory MUST realize a technical philosophy that DIVERGES from siblings and parents.\n")
+          .append("- If sibling trajectories are provided, you MUST intentionally mutate AGAINST them.\n")
+          .append("- You MUST force ARCHITECTURAL DIVERGENCE (e.g., changing abstraction levels, state management, or component boundaries).\n")
           .append("- Each trajectory MUST realize a distinct engineering future with different technical assumptions.\n")
           .append("- Output EXACTLY ONE JSON object.\n")
           .append("- Do NOT generate an array.\n")
@@ -122,20 +124,19 @@ public class DarwinVariantSpawner {
         }
 
         if (!currentRoundVariants.isEmpty()) {
-            sb.append("EVOLUTIONARY MUTATION PRESSURE (OCCUPIED SOLUTION SPACE):\n")
-              .append("The following trajectories have already been explored in this generation. You MUST intentionally mutate AWAY from their engineering philosophy, abstraction depth, and operational behavior. SEMANTIC REWRITES ARE A FAILURE.\n\n");
+            sb.append("FORBIDDEN PHILOSOPHIES (SIBLING MUTATION PRESSURE):\n")
+              .append("The following engineering philosophies have already been claimed in this generation. You ARE STRICTLY PROHIBITED from proposing a semantic variation of these. You MUST intentionally mutate AGAINST them.\n\n");
             for (JSONObject v : currentRoundVariants) {
-                sb.append("--- Trajectory: ").append(v.optString("strategy_type")).append(" ---\n")
+                sb.append("--- OCCUPIED: ").append(v.optString("strategy_type")).append(" ---\n")
                   .append("Strategy: ").append(v.optString("strategy")).append("\n")
                   .append("Philosophy: ").append(v.optString("semantic_justification")).append("\n")
                   .append("Tradeoffs: ").append(v.optString("tradeoffs")).append("\n")
-                  .append("Operational Behavior: ").append(v.optJSONArray("projected_steps")).append("\n")
-                  .append("Risks: ").append(v.optString("failure_risks")).append("\n\n");
+                  .append("Operational Behavior: ").append(v.optJSONArray("projected_steps")).append("\n\n");
             }
             sb.append("INSTRUCTION FOR THIS BRANCH:\n")
-              .append("- Maximize CONCEPTUAL DISTANCE and TRADEOFF CONTRAST from the above.\n")
-              .append("- Do NOT propose a semantic variation of an existing trajectory.\n")
-              .append("- Pivot to a DIFFERENT abstraction level or execution philosophy.\n\n");
+              .append("- Identify the 'DIVERGENCE AXIS' (e.g., Abstraction Depth, State Management, Runtime Strategy, Dependency Complexity).\n")
+              .append("- PIVOT to an unexplored technical quadrant.\n")
+              .append("- Maximize TECHNICAL CONTRAST from the occupied space above.\n\n");
         }
 
         if (seed.getInterpretation() != null) {
