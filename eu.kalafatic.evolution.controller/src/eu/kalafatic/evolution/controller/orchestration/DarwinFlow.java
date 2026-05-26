@@ -481,10 +481,21 @@ public class DarwinFlow implements IOrchestrationFlow {
     public boolean checkConvergence(List<BranchVariant> variants, TaskContext context) {
         if (variants == null || variants.size() < 2) return false;
 
-        // 0. Minimum Depth: Enforce at least 3 generations of evolution
-        // Evolution MUST not converge before completing the mandatory exploration generations.
-        if (context.getOrchestrationState().getIterationCount() < 3) {
+        // 0. Minimum Evolution Guarantees
+        // Required: minimum 2 iterations AND minimum 3 distinct surviving branches across history before convergence.
+        int iterationCount = context.getOrchestrationState().getIterationCount();
+        if (iterationCount < 2) {
             return false;
+        }
+
+        long distinctSurvivors = context.getKernelContext().getMemoryService().getRecords().stream()
+                .filter(r -> "ACTIVE".equals(r.getActivationState()))
+                .map(r -> r.getStrategy())
+                .distinct()
+                .count();
+
+        if (distinctSurvivors < 3 && iterationCount < 4) {
+             return false;
         }
 
         // 1. Fitness Stability: Check if top variants have stabilized at high scores

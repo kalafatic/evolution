@@ -58,7 +58,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed probableSurvivor() {
         return new DarwinStrategySeed(
             DarwinStrategyType.PROBABLE_SURVIVOR,
-            "TRAJECTORY: MINIMAL RISK. Realize the most predictable and direct engineering future. Focus on standard patterns, high stability, and immediate solvability with zero architectural bloat.",
+            "TRAJECTORY: MOST PRACTICAL PATH. Goal: most practical and direct engineering future. Characteristics: low risk, direct implementation, predictable execution, minimal architecture, and zero bloat.",
             true
         );
     }
@@ -66,7 +66,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed philosophyMutation() {
         return new DarwinStrategySeed(
             DarwinStrategyType.PHILOSOPHY_MUTATION,
-            "TRAJECTORY: ARCHITECTURAL PIVOT. Intentionally mutate the core engineering philosophy. If the survivor is service-oriented, pivot to atomic utility. If imperative, pivot to declarative. Force a shift in abstraction depth.",
+            "TRAJECTORY: ALTERNATIVE PHILOSOPHY. Goal: alternative engineering philosophy. Characteristics: different abstraction level, different extensibility tradeoffs, different maintainability assumptions. Intentionally mutate the core engineering philosophy (e.g., pivot from service-oriented to atomic utility).",
             true
         );
     }
@@ -74,7 +74,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed maximalDivergence() {
         return new DarwinStrategySeed(
             DarwinStrategyType.MAXIMAL_DIVERGENCE,
-            "TRAJECTORY: RADICAL EXPLORATION. Maximize conceptual distance from all occupied quadrants. Explore high-risk/high-payoff architectures, unconventional tradeoffs, or radically different execution strategies that challenge current assumptions.",
+            "TRAJECTORY: OPPOSITE EXECUTION. Goal: explore opposite execution philosophy. Characteristics: opposite runtime assumptions, opposite architecture style, different dependency strategy, different implementation philosophy. Maximize conceptual distance from all previous trajectories.",
             true
         );
     }
@@ -82,7 +82,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed stabilizationRecovery() {
         return new DarwinStrategySeed(
             DarwinStrategyType.STABILIZATION_RECOVERY,
-            "TRAJECTORY: SAFETY FIRST. Focus on system stabilization, rigorous validation, or deep architectural mapping. Prioritize error handling, testability, and risk reduction over feature mutation.",
+            "TRAJECTORY: SAFETY FIRST. Goal: safety-first trajectory. Characteristics: validation-heavy, testing-first, minimal change surface, rollback-friendly, and repository-safe. Prioritize stability and risk reduction over feature mutation.",
             true
         );
     }

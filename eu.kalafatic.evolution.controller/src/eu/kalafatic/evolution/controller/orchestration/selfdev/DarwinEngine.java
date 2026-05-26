@@ -283,12 +283,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, context);
 
-        // Synthetic Recovery
+        // Synthetic Recovery: EMERGENCY ONLY
+        // Synthetic branches should activate ONLY if ALL real LLM branches fail diversity requirements.
         DarwinSyntheticVariantFactory syntheticFactory = new DarwinSyntheticVariantFactory();
         if (uniqueVariants.isEmpty()) {
+            context.log("[DARWIN] EMERGENCY: All LLM variants failed diversity. Activating synthetic recovery.");
             uniqueVariants.add(syntheticFactory.synthesizeImplementation(goal, atomicAnalysis));
-        }
-        if (uniqueVariants.size() < 2) {
             uniqueVariants.add(syntheticFactory.synthesizeSemanticAlternative(uniqueVariants.get(0), goal, atomicAnalysis));
         }
 

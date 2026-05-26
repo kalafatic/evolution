@@ -74,6 +74,8 @@ public class DarwinVariantSpawner {
           .append("- If sibling trajectories are provided, you MUST intentionally mutate AGAINST them.\n")
           .append("- You MUST force ARCHITECTURAL DIVERGENCE (e.g., changing abstraction levels, state management, or component boundaries).\n")
           .append("- Each trajectory MUST realize a distinct engineering future with different technical assumptions.\n")
+          .append("- Identify the 'DIVERGENCE AXIS' (e.g., Abstraction Depth, State Management, Runtime Strategy, Dependency Complexity).\n")
+          .append("- Maximize TECHNICAL CONTRAST from all other proposed or rejected trajectories.\n")
           .append("- Output EXACTLY ONE JSON object.\n")
           .append("- Do NOT generate an array.\n")
           .append("- strategy_type is FIXED to: ").append(seed.getType()).append("\n")
@@ -97,9 +99,13 @@ public class DarwinVariantSpawner {
               .append("You are evolving a surviving lineage. Inherit the successes and avoid the failures of your ancestors.\n")
               .append(lineageContext).append("\n");
 
+            sb.append("FORBIDDEN ARCHITECTURAL ASSUMPTIONS (LINEAGE PRESSURE):\n")
+              .append("- Do NOT reuse the same abstraction level as the ancestor if you are a mutation.\n")
+              .append("- Do NOT propose the same implementation style.\n\n");
+
             if (rejectedSiblings != null && !rejectedSiblings.isEmpty()) {
-                sb.append("REJECTED SIBLING AWARENESS (DO NOT EXPLORE THESE PATHS):\n")
-                  .append("The following trajectories were REJECTED in previous generations. Do NOT re-propose or pivot back to these engineering philosophies:\n");
+                sb.append("REJECTED SIBLING AWARENESS (FORBIDDEN PHILOSOPHIES):\n")
+                  .append("The following trajectories were REJECTED in previous generations. You ARE STRICTLY PROHIBITED from re-proposing or pivoting back to these engineering philosophies or their semantic variations:\n");
                 for (String rejected : rejectedSiblings) {
                     sb.append("- ").append(rejected).append("\n");
                 }
