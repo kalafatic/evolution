@@ -191,6 +191,20 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             state.append("EXPECTED ARTIFACT TYPE: ").append(atomicAnalysis.getArtifactType()).append("\n");
         }
 
+        // GROUNDING: Inject real repository evidence
+        String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
+        if (projectStructure != null) {
+            state.append("\n--- REPOSITORY STRUCTURE (REAL EVIDENCE) ---\n").append(projectStructure).append("\n");
+        }
+
+        eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshotMed = (eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+        if (snapshotMed != null) {
+            state.append("\n--- SEMANTIC REPOSITORY SNAPSHOT (REAL EVIDENCE) ---\n");
+            state.append("Architecture Inference: ").append(snapshotMed.getMetadata().get("architectureInference")).append("\n");
+            state.append("Detected Technologies: ").append(snapshotMed.getMetadata().get("detectedTechnologies")).append("\n");
+            state.append("Total Semantic Nodes: ").append(snapshotMed.getNodes().size()).append("\n");
+        }
+
         List<IterationRecord> records = memoryService.getRecords();
         List<IterationRecord> activeRecords = memoryService.getActiveLineage();
 
@@ -261,7 +275,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         context.log("[DARWIN] Executing Trajectory Mutation Chain with " + mutationSeeds.size() + " seeds.");
-        List<JSONObject> mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, lineageContext, rejectedSiblings, context);
+        List<JSONObject> mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, lineageContext, rejectedSiblings, isMediated, context);
         List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, context);
 
         // Synthetic Recovery

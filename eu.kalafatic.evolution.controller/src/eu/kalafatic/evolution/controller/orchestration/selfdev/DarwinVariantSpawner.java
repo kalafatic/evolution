@@ -23,7 +23,7 @@ public class DarwinVariantSpawner {
     /**
      * Spawns variants for the given strategies.
      */
-    public List<JSONObject> spawn(String goal, List<DarwinStrategySeed> seeds, String basePrompt, String lineageContext, List<String> rejectedSiblings, TaskContext context) {
+    public List<JSONObject> spawn(String goal, List<DarwinStrategySeed> seeds, String basePrompt, String lineageContext, List<String> rejectedSiblings, boolean isMediated, TaskContext context) {
         List<JSONObject> variants = new ArrayList<>();
         Orchestrator orchestrator = context.getOrchestrator();
 
@@ -33,7 +33,7 @@ public class DarwinVariantSpawner {
         for (DarwinStrategySeed seed : seeds) {
             context.log("[SPAWNER] Generating " + seed.getType() + " trajectory...");
 
-            String seedPrompt = buildSeedPrompt(seed, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants);
+            String seedPrompt = buildSeedPrompt(seed, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated);
             JSONObject validated = null;
 
             for (int retry = 0; retry < 2; retry++) {
@@ -61,7 +61,7 @@ public class DarwinVariantSpawner {
         return variants;
     }
 
-    private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants) {
+    private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated) {
         StringBuilder sb = new StringBuilder();
         sb.append("SYSTEM:\n")
           .append("You are an adaptive engineering evolution engine generating ONE Darwin evolutionary branch trajectory.\n\n")
@@ -76,6 +76,16 @@ public class DarwinVariantSpawner {
           .append("- Mutate the PHILOSOPHY, DEPTH, and TRADEOFFS, not just the wording.\n")
           .append("- Focus on concrete technical assumptions and operational strategies.\n")
           .append("- Do NOT include conversation or markdown blocks.\n\n");
+
+        if (isMediated) {
+            sb.append("MEDIATED MODE COGNITION RULES (CRITICAL):\n")
+              .append("- You are performing ITERATIVE REPOSITORY COGNITION.\n")
+              .append("- Your goal is to EVOLVE ARCHITECTURAL UNDERSTANDING, not code.\n")
+              .append("- DO NOT hallucinate synthetic runtime context, sensors, or memory systems.\n")
+              .append("- USE ONLY REAL repository evidence provided in the context (files, structure, technologies).\n")
+              .append("- Focus on identifying architecture hotspots, important files, and high-value reasoning context.\n")
+              .append("- Strictly prohibit invented APIs or fictitious infrastructure.\n\n");
+        }
 
         if (lineageContext != null && !lineageContext.isEmpty()) {
             sb.append("LINEAGE CONTINUITY (PERSISTENT EVOLUTION):\n")

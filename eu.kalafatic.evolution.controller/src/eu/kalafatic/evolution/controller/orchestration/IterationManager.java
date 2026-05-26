@@ -387,7 +387,7 @@ public class IterationManager {
             );
 
             // Priority 1: Simple chat reasoning (lowest density)
-            if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV) && !hasStateChangeIntent) {
+            if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV) && !hasStateChangeIntent && !profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
                 context.log("[KERNEL] Routing to simple chat reasoning.");
                 transition(SystemState.EXECUTING, context);
                 IOrchestrationFlow flow = (IOrchestrationFlow) eu.kalafatic.evolution.controller.agents.AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
@@ -1082,13 +1082,10 @@ public class IterationManager {
                 state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.OPTIMIZATION)
         );
 
-        if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY) && profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
-            // Mediated Mode now uses Darwinian logic for cognitive evolution
-            if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE)) {
-                context.log("[KERNEL] Mediated Mode with Darwinian Reasoning. Routing to DarwinFlow.");
-                return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
-            }
-            return router.resolveFlow(context.getPlatformMode(), aiService, this);
+        if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+            // Mediated Mode always uses Darwinian logic for cognitive evolution
+            context.log("[KERNEL] Mediated Mode detected. Routing to DarwinFlow for cognitive evolution.");
+            return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
         }
 
         // Priority for Darwinian Reasoning if enabled or state changes are expected
@@ -1143,8 +1140,10 @@ public class IterationManager {
             ContextCurator curator = new ContextCurator();
             List<String> selectedPaths = curator.selectContext(snapshot, request, 16);
 
+            String evolvedUnderstanding = (String) context.getOrchestrationState().getMetadata().get("current_understanding");
+
             PromptSynthesizer synthesizer = new PromptSynthesizer();
-            String optimizedPrompt = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths);
+            String optimizedPrompt = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths, evolvedUnderstanding);
 
             // Final explicit approval for packaging in mediated mode
             if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && !context.isAutoApprove()) {
