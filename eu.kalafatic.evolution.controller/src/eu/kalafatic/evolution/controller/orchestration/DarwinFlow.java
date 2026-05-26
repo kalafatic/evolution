@@ -79,12 +79,14 @@ public class DarwinFlow implements IOrchestrationFlow {
     @Override
     public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
         // DarwinFlow is now an execution engine. Orchestration is owned by IterationManager.
-        return manager.executeDarwin(request, context);
+        return manager.evolve(request, context);
     }
 
     public List<BranchVariant> generateProposals(TaskContext context, String goal) throws Exception {
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
+
+        context.log("[DARWIN] Evolving competing trajectories for goal: " + goal);
 
         Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
         StateSnapshot snapshot = initialEval.snapshot;
@@ -129,7 +131,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         List<BranchVariant> variants = executionPlan.getScheduledVariants();
         context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
 
-        // METADATA PERSISTENCE: Record trajectory analysis for ALL proposals
+        // METADATA PERSISTENCE: Record trajectory analysis for ALL trajectories
         for (BranchVariant v : variants) {
             TrajectoryAnalysisRecord tar = new TrajectoryAnalysisRecord();
             tar.setIterationId(iterId);
@@ -164,9 +166,9 @@ public class DarwinFlow implements IOrchestrationFlow {
             return manager.failedResult();
         }
 
-        context.log("[APPROVED:" + finalWinnerId + "] [KERNEL] Winner variant selected: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
+        context.log("[APPROVED:" + finalWinnerId + "] [KERNEL] Surviving trajectory selected: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
 
-        // Branch Stamping: Mark all other variants as REJECTED or KEPT in logs for UI sealing
+        // Branch Stamping: Mark all other trajectories as REJECTED or KEPT in logs for UI sealing
         for (BranchVariant v : variants) {
             if (v.getId().equals(finalWinnerId)) continue;
 
@@ -174,7 +176,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             if (v.getActivationState() == BranchVariant.ActivationState.KEPT) {
                 status = "KEPT";
             }
-            context.log("[" + status + ":" + v.getId() + "] [KERNEL] Proposal " + v.getId() + " marked as " + status);
+            context.log("[" + status + ":" + v.getId() + "] [KERNEL] Trajectory " + v.getId() + " marked as " + status);
         }
 
         if (currentIterationModelImpl != null) {
@@ -260,6 +262,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 record.setIteration(context.getOrchestrationState().getIterationCount());
                 record.setGoal(goal);
                 record.setStrategy(selectedVariant.getStrategy());
+                record.setStrategyType(selectedVariant.getStrategyType() != null ? selectedVariant.getStrategyType().toString() : null);
                 record.setSemanticAnchor(selectedVariant.getSemanticAnchor());
                 record.setMutationTrace(selectedVariant.getMutationTrace());
                 record.setInheritedContext(selectedVariant.getInheritedContext());
@@ -403,7 +406,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         v.setBranchId(v.getId());
         v.setLineageId(context.getSessionId());
         v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
-        v.setStrategyType("USER_PROPOSAL");
+        v.setStrategyType("USER_TRAJECTORY");
 
         String strategyText = input.startsWith("Propose:") ? input.substring(8).trim() : input;
 

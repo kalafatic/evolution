@@ -38,6 +38,16 @@ public class OrchestratorFlowTest {
         orchestrator.setId("test-flow");
         orchestrator.setAiMode(AiMode.LOCAL);
 
+        // Init git repo
+        TaskContext initContext = new TaskContext(orchestrator, tempDir);
+        eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
+        shell.execute("git init", tempDir, initContext);
+        shell.execute("git config user.email \"test@example.com\"", tempDir, initContext);
+        shell.execute("git config user.name \"Test User\"", tempDir, initContext);
+        Files.writeString(new File(tempDir, "pom.xml").toPath(), "<project></project>");
+        shell.execute("git add .", tempDir, initContext);
+        shell.execute("git commit -m \"Initial commit\"", tempDir, initContext);
+
         Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();
         ollama.setUrl("http://localhost:11434");
         ollama.setModel("llama3");
@@ -193,6 +203,10 @@ public class OrchestratorFlowTest {
 
         @Override
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+            if (prompt.contains("summary of the project structure")) return "Structure: Java";
+            if (prompt.contains("user intent")) return "{\"state\": \"CLEAR\", \"dominantIntent\": \"Goal\", \"dimensions\": [], \"hypotheses\": [], \"confidence\": {\"overallConfidence\": 1.0}}";
+            if (prompt.contains("Reviewer") || prompt.contains("TECHNICAL task")) return "{\"success\": true, \"comment\": \"Verified\"}";
+
             int current = callCount.getAndIncrement();
             return (responseSequence != null && current < responseSequence.length) ? responseSequence[current] : "Default Response";
         }
