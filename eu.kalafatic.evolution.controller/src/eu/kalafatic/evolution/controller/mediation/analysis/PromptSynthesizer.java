@@ -29,13 +29,19 @@ public class PromptSynthesizer {
         return sb.toString();
     }
 
-    public String synthesizeOptimized(String request, TargetSnapshot snapshot, List<String> selectedPaths) {
+    public String synthesizeOptimized(String request, TargetSnapshot snapshot, List<String> selectedPaths, String evolvedUnderstanding) {
         StringBuilder sb = new StringBuilder();
         sb.append("# OPTIMIZED MEDIATED CONTEXT PROMPT\n\n");
 
         sb.append("## REFORMULATED REQUEST\n");
         sb.append("Identify and propose evolutionary improvements for the following objective:\n");
         sb.append("> ").append(request).append("\n\n");
+
+        if (evolvedUnderstanding != null && !evolvedUnderstanding.isEmpty()) {
+            sb.append("## EVOLVED COGNITIVE UNDERSTANDING\n");
+            sb.append("The platform has evolved the following repository understanding through iterative Darwinian reasoning:\n");
+            sb.append("> ").append(evolvedUnderstanding).append("\n\n");
+        }
 
         sb.append("## PROJECT SNAPSHOT (Metadata-Only)\n");
         sb.append("Architecture: ").append(snapshot.getMetadata().get("architectureInference")).append("\n");
