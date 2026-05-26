@@ -375,16 +375,35 @@ public class IterationManager {
             transition(SystemState.ANALYZING, context);
             context.log("[KERNEL] Performing repository-grounded intent analysis.");
             intentService.analyze(request, context);
-            AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
 
-            // Flow Resolution & Execution
-            IOrchestrationFlow flow = resolveFlow(router, atomicAnalysis);
+            // UNIFIED COGNITIVE EVOLUTION
             OrchestratorResponse result;
-            if (flow instanceof DarwinFlow) {
-                result = executeDarwin(request, context);
-            } else {
+            boolean hasStateChangeIntent = state.getTaskIntents() != null && (
+                    state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.IMPLEMENTATION) ||
+                    state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.REFACTORING) ||
+                    state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.DEBUGGING) ||
+                    state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.TESTING) ||
+                    state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.OPTIMIZATION)
+            );
+
+            // Priority 1: Simple chat reasoning (lowest density)
+            if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV) && !hasStateChangeIntent) {
+                context.log("[KERNEL] Routing to simple chat reasoning.");
                 transition(SystemState.EXECUTING, context);
+                IOrchestrationFlow flow = (IOrchestrationFlow) eu.kalafatic.evolution.controller.agents.AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
                 result = flow.execute(request, context);
+            }
+            // Priority 2: Unified iterative evolutionary kernel (highest density)
+            else {
+                context.log("[KERNEL] Routing to iterative evolutionary kernel.");
+                AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
+                IOrchestrationFlow flow = resolveFlow(router, atomicAnalysis);
+                if (flow instanceof DarwinFlow) {
+                    result = evolve(request, context);
+                } else {
+                    transition(SystemState.EXECUTING, context);
+                    result = flow.execute(request, context);
+                }
             }
 
             if (result != null && result.getResultType() == ResultType.ERROR) {
@@ -513,18 +532,18 @@ public class IterationManager {
         ));
     }
 
-    public OrchestratorResponse executeDarwin(String request, TaskContext context) throws Exception {
-        context.log("[KERNEL] Strategy-Driven Evolution: Starting Full Darwin Evolution.");
+    public OrchestratorResponse evolve(String request, TaskContext context) throws Exception {
+        context.log("[KERNEL] Starting Unified Evolutionary Cognition Loop.");
 
         OrchestrationState state = context.getOrchestrationState();
         state.getCognitiveTrace().addNode(new CausalNode(
-            "darwin-start-" + System.currentTimeMillis(),
-            "STRATEGY_SELECTION",
+            "evolution-start-" + System.currentTimeMillis(),
+            "EVOLUTION_INIT",
             "IterationManager",
             List.of(),
             List.of("DarwinFlow"),
             1.0,
-            "Executing dynamic branch strategy system via DarwinFlow engine."
+            "Unified iterative evolution kernel active."
         ));
 
         EvaluationResult result;
@@ -547,14 +566,14 @@ public class IterationManager {
         String summary;
         if (state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")) {
             if (context.getMetadata().containsKey("testMode")) {
-                summary = "Darwin evolution completed (Test Mode).";
+                summary = "Evolution completed (Test Mode).";
             } else if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
                 summary = performMediatedExportConvergence(request, context);
             } else {
                 summary = getFinalResponseAgent().generateFinalResponse(request, context.getOrchestrator().getTasks(), context);
             }
         } else {
-            summary = "Darwin evolution completed at phase: " + state.getCurrentPhase();
+            summary = "Evolution completed at phase: " + state.getCurrentPhase();
         }
 
         response.setSummary(summary);
@@ -753,11 +772,11 @@ public class IterationManager {
         List<BranchVariant> variants = darwinFlow.generateProposals(context, goal);
 
         if (variants.isEmpty()) {
-            context.log("[KERNEL] ERROR: No variants generated for goal. Evolution blocked.");
+            context.log("[KERNEL] ERROR: No trajectories generated for goal. Evolution blocked.");
             return failedResult();
         }
 
-        // 3. SELECTION AUTHORITY: Handle variant selection (Manual/Auto/Step)
+        // 3. SELECTION AUTHORITY: Handle trajectory selection (Manual/Auto/Step)
         String manualId = null;
         boolean skipSelectionPause = variants.size() == 1 && !hasStateChangeIntent(context);
 
@@ -932,14 +951,14 @@ public class IterationManager {
     public String handleVariantSelection(TaskContext context, List<BranchVariant> variants, String goal) throws Exception {
         while (true) {
             transition(SystemState.CLARIFYING, context);
-            context.log("[KERNEL] Darwin Evolution: Pausing for variant selection (Manual Mode).");
+            context.log("[KERNEL] Darwin Evolution: Pausing for trajectory selection (Manual Mode).");
 
-            StringBuilder sb = new StringBuilder("Darwin generated " + variants.size() + " proposals for your review:\n");
+            StringBuilder sb = new StringBuilder("Darwin evolved " + variants.size() + " trajectories for your review:\n");
             for (BranchVariant v : variants) {
                 String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? " [KEPT]" : "";
                 sb.append(String.format("- [%s] %s (Predicted Score: %.2f)%s\n", v.getId(), v.getStrategy(), v.getScore(), status));
             }
-            sb.append("\nSelect a variant to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
+            sb.append("\nSelect a trajectory to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
 
             String input = context.requestInput(sb.toString()).get();
             if (input == null || input.trim().isEmpty()) continue;
@@ -954,33 +973,33 @@ public class IterationManager {
                 String manualId = input.startsWith("Select ") ? input.substring(7).trim() : input.substring(16).trim();
                 boolean found = variants.stream().anyMatch(v -> v.getId().equals(manualId));
                 if (found) {
-                    context.log("[KERNEL] User selected variant: " + manualId);
+                    context.log("[KERNEL] User selected trajectory: " + manualId);
                     return manualId;
                 } else {
-                    context.log("[KERNEL] Warning: Selected variant ID not found: " + manualId);
+                    context.log("[KERNEL] Warning: Selected trajectory ID not found: " + manualId);
                 }
             } else if (input.startsWith("Keep variant ")) {
                 String keepId = input.substring(13).trim();
                 variants.stream().filter(v -> v.getId().equals(keepId)).findFirst().ifPresent(v -> {
                     v.setActivationState(BranchVariant.ActivationState.KEPT);
-                    context.log("[KERNEL] Variant " + keepId + " marked as KEPT for final evaluation.");
+                    context.log("[KERNEL] Trajectory " + keepId + " marked as KEPT for final evaluation.");
                 });
             } else if (input.startsWith("Reject variant ")) {
                 String rejectedId = input.substring(15).trim();
-                context.log("[KERNEL] User rejected variant: " + rejectedId + ". Evolution stopped by user.");
-                recordRejection(goal, "Darwin variant " + rejectedId + " rejected by user ('no way').");
+                context.log("[KERNEL] User rejected trajectory: " + rejectedId + ". Evolution stopped by user.");
+                recordRejection(goal, "Darwin trajectory " + rejectedId + " rejected by user ('no way').");
                 return "STOP";
             } else if ("Rejected".equalsIgnoreCase(input) || "Reject".equalsIgnoreCase(input) || "No".equalsIgnoreCase(input)) {
-                recordRejection(goal, "Darwin proposals rejected by user.");
+                recordRejection(goal, "Darwin trajectories rejected by user.");
                 return "FAILED";
             } else if (input.startsWith("Propose:") || input.trim().startsWith("{")) {
-                context.log("[KERNEL] User injected a new solution proposal. Integrating as a first-class candidate.");
+                context.log("[KERNEL] User injected a new trajectory. Integrating as a first-class candidate.");
                 BranchVariant userVariant = createUserVariant(input, goal, context);
                 variants.add(userVariant);
-                context.log("[KERNEL] User variant " + userVariant.getId() + " added to the evolutionary pool.");
+                context.log("[KERNEL] User trajectory " + userVariant.getId() + " added to the evolutionary pool.");
             } else {
                 // High priority guidance text input
-                context.log("[KERNEL] User provided guidance: " + input + ". Refining intent and regenerating variants.");
+                context.log("[KERNEL] User provided guidance: " + input + ". Refining intent and regenerating trajectories.");
                 String newGoal = goal + " (Guidance: " + input + ")";
                 context.getOrchestrationState().setRawInput(newGoal);
                 if (context.getOrchestrator().getSelfDevSession() != null) {
@@ -1195,6 +1214,7 @@ public class IterationManager {
     }
 
     public static boolean isSimpleFileCreate(String request) {
+        if (request.toLowerCase().contains("complex")) return false;
         AtomicIntentAnalysis analysis = HybridAtomicIntentClassifier.heuristicAnalyze(request);
         return analysis.isAtomic() && analysis.getConfidence() >= 0.80 && !analysis.isRequiresPlanning();
     }

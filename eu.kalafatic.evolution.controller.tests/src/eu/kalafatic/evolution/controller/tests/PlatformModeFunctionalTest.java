@@ -41,6 +41,16 @@ public class PlatformModeFunctionalTest {
         orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
         orchestrator.setAiMode(AiMode.LOCAL);
 
+        // Initialize git repository to satisfy kernel discovery
+        TaskContext initContext = new TaskContext(orchestrator, tempDir);
+        eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
+        shell.execute("git init", tempDir, initContext);
+        shell.execute("git config user.email \"test@example.com\"", tempDir, initContext);
+        shell.execute("git config user.name \"Test User\"", tempDir, initContext);
+        Files.writeString(new File(tempDir, "pom.xml").toPath(), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>test</artifactId><version>1.0</version></project>");
+        shell.execute("git add .", tempDir, initContext);
+        shell.execute("git commit -m \"Initial commit\"", tempDir, initContext);
+
         // Initialize AiChat and PromptInstructions to avoid NPE in BaseAiAgent
         orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
         orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
@@ -197,6 +207,18 @@ public class PlatformModeFunctionalTest {
 
         @Override
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+            if (prompt.contains("summary of the project structure")) return "Structure: Java";
+            if (prompt.contains("user intent")) return "{\"state\": \"CLEAR\", \"dominantIntent\": \"Goal\", \"dimensions\": [], \"hypotheses\": [], \"confidence\": {\"overallConfidence\": 1.0}}";
+            if (prompt.contains("Reviewer") || prompt.contains("TECHNICAL task")) return "{\"success\": true, \"comment\": \"Verified\"}";
+            if (prompt.contains("SINGLE deterministic artifact")) return "{\"atomic\": false, \"confidence\": 0.1}";
+            if (prompt.contains("Final Response Agent")) return "Finalized summary.";
+
+            if (prompt.contains("strategy_type is FIXED to:")) {
+                String type = "PROBABLE_SURVIVOR";
+                if (prompt.contains("PHILOSOPHY_MUTATION")) type = "PHILOSOPHY_MUTATION";
+                return "{\"id\": \"v-test\", \"strategy_type\": \"" + type + "\", \"strategy\": \"Test Strategy\", \"survival_argument\": \"Test survival argument for validation.\", \"semantic_justification\": \"Test philosophy justification.\", \"tradeoffs\": \"Test tradeoffs description.\", \"failure_risks\": \"Test failure risks.\", \"actions\": [{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"README.md\", \"description\":\"test\"}]}";
+            }
+
             int current = callCount.getAndIncrement();
             if (responseSequence != null && current < responseSequence.length) {
                 return responseSequence[current];

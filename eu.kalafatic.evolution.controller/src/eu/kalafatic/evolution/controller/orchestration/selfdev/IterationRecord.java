@@ -8,6 +8,7 @@ public class IterationRecord {
     private int iteration;
     private String goal;
     private String strategy;
+    private String strategyType;
     private List<BranchVariant.Action> actions;
     private BranchVariant.ExpectedEffect expectedEffect;
     private String branch;
@@ -38,6 +39,9 @@ public class IterationRecord {
 
     public String getStrategy() { return strategy; }
     public void setStrategy(String strategy) { this.strategy = strategy; }
+
+    public String getStrategyType() { return strategyType; }
+    public void setStrategyType(String strategyType) { this.strategyType = strategyType; }
 
     public List<BranchVariant.Action> getActions() { return actions; }
     public void setActions(List<BranchVariant.Action> actions) { this.actions = actions; }
