@@ -17,7 +17,9 @@ public class MediatedInstructionModule implements InstructionModule {
           .append("→ DARWINIAN COMPETITION: Branches compete on repository comprehension, architectural insight, context efficiency, and prompt clarity.\n")
           .append("→ MANDATORY: You DO NOT implement code changes. Your physical artifact is a cognition export (ZIP), not a code merge.\n")
           .append("→ OUTPUT: 1. Refined architectural understanding, 2. Optimized context selection, 3. Synthesized high-signal prompt.\n\n")
-          .append("MEDIATED OPERATIONAL GUIDELINES:\n")
+          .append("MEDIATED OPERATIONAL GUIDELINES (STRICT):\n")
+          .append("→ YOU ARE STRICTLY PROHIBITED FROM INVENTING: fake architecture, fake APIs, fake runtime state, fake memory systems, or fake repository structures.\n")
+          .append("→ You MUST perform REPOSITORY-GROUNDED COGNITION using ONLY the provided real repository metadata.\n")
           .append("→ Strictly evolve repository interpretations through competing futures (Architecture Mapping vs. Dependency Exploration, etc.).\n")
           .append("→ Determine what the external LLM SHOULD see to maximize its reasoning density.\n")
           .append("→ Prioritize high-signal files and structural metadata over bulk repository inclusion.");

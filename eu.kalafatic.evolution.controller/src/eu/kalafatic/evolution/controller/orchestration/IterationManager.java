@@ -217,6 +217,8 @@ public class IterationManager {
         this.trajectoryEngine = new DefaultTrajectoryEngine(memoryService);
         this.gitAdapter = new DefaultGitEvolutionAdapter(gitManager);
 
+        context.getKernelContext().setGitManager(gitManager);
+
         // Register Capabilities
         try {
             CapabilityRegistry.getInstance().register(evaluator);
@@ -376,35 +378,10 @@ public class IterationManager {
             context.log("[KERNEL] Performing repository-grounded intent analysis.");
             intentService.analyze(request, context);
 
-            // UNIFIED COGNITIVE EVOLUTION
-            OrchestratorResponse result;
-            boolean hasStateChangeIntent = state.getTaskIntents() != null && (
-                    state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.IMPLEMENTATION) ||
-                    state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.REFACTORING) ||
-                    state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.DEBUGGING) ||
-                    state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.TESTING) ||
-                    state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.OPTIMIZATION)
-            );
-
-            // Priority 1: Simple chat reasoning (lowest density)
-            if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV) && !hasStateChangeIntent && !profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
-                context.log("[KERNEL] Routing to simple chat reasoning.");
-                transition(SystemState.EXECUTING, context);
-                IOrchestrationFlow flow = (IOrchestrationFlow) eu.kalafatic.evolution.controller.agents.AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
-                result = flow.execute(request, context);
-            }
-            // Priority 2: Unified iterative evolutionary kernel (highest density)
-            else {
-                context.log("[KERNEL] Routing to iterative evolutionary kernel.");
-                AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
-                IOrchestrationFlow flow = resolveFlow(router, atomicAnalysis);
-                if (flow instanceof DarwinFlow) {
-                    result = evolve(request, context);
-                } else {
-                    transition(SystemState.EXECUTING, context);
-                    result = flow.execute(request, context);
-                }
-            }
+            // UNIFIED EVOLUTIONARY KERNEL: All cognition flows route through evolve()
+            // The kernel handles iterations, branching, mutation, convergence, and supervision.
+            context.log("[KERNEL] Routing to unified iterative evolutionary kernel.");
+            OrchestratorResponse result = evolve(request, context);
 
             if (result != null && result.getResultType() == ResultType.ERROR) {
                 transition(SystemState.FAILED, context);
@@ -729,6 +706,22 @@ public class IterationManager {
             ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
             context.log("[KERNEL] Clarification Strategy: " + strategy);
 
+            // SUPERVISION POLICY: MANUAL mode pauses ONLY for trajectory survival decisions.
+            // Downgrade CLARIFY_USER to BRANCH_PARALLEL or AUTO_INFER if not in STEP mode.
+            boolean isStepMode = context.getOrchestrator().getAiChat() != null &&
+                               context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
+                               context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
+
+            if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER && !isStepMode) {
+                if (context.isAutoApprove()) {
+                    context.log("[KERNEL] AUTO Mode: Downgrading CLARIFY_USER to AUTO_INFER.");
+                    strategy = ClarificationPlanner.Strategy.AUTO_INFER;
+                } else {
+                    context.log("[KERNEL] MANUAL Mode: Downgrading CLARIFY_USER to BRANCH_PARALLEL for evolutionary steering.");
+                    strategy = ClarificationPlanner.Strategy.BRANCH_PARALLEL;
+                }
+            }
+
             if (strategy == ClarificationPlanner.Strategy.BRANCH_PARALLEL) {
                 context.log("[KERNEL] Ambiguity detected but evolvable. Spawning parallel implementation branches.");
                 state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase, false, context.getOrchestrationState().getIterationCount())));
@@ -761,6 +754,7 @@ public class IterationManager {
 
         // 2. EVOLUTIONARY EXECUTION (Delegated to DarwinFlow Engine)
         // Refactored to keep selection and phase control in IterationManager.
+        checkStep(state.getCurrentPhase(), "BRANCH_GENERATION", "Spawning competing trajectories for: " + goal);
         List<BranchVariant> variants = darwinFlow.generateProposals(context, goal);
 
         if (variants.isEmpty()) {
@@ -1127,6 +1121,7 @@ public class IterationManager {
     private String performMediatedExportConvergence(String request, TaskContext context) {
         try {
             context.log("[KERNEL] Mediated Mode: Converging understanding into export package.");
+            checkStep(context.getSessionId(), "MEDIATION_EXPORT", "Preparing final repository-grounded cognition export.");
 
             TargetSnapshot snapshot = (TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
             if (snapshot == null) {
@@ -1161,7 +1156,9 @@ public class IterationManager {
             }
 
             MediatedExportManager exportManager = new MediatedExportManager();
-            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath);
+            String metadataJson = snapshot.getMetadata().toString();
+            String historyAnalysis = memoryService.getHistoryAnalysis();
+            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis);
 
             StringBuilder summaryBuilder = new StringBuilder();
             summaryBuilder.append("### Mediated Darwin Evolution Complete\n\n");
@@ -1240,6 +1237,7 @@ public class IterationManager {
 
     public List<Task> iterativePlan(String request, TaskContext context) throws Exception {
         context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Starting iterative planning.");
+        checkStep("planner", "PLANNING", "Generating and critiquing implementation plan for: " + request);
         List<Task> currentTasks = strategicPlanner.plan(request, context);
         for (int i = 1; i <= EvolutionConstants.MAX_PLANNING_ITERATIONS; i++) {
             JSONArray taskArray = new JSONArray();

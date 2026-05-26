@@ -16,8 +16,24 @@ public class EvolutionPhaseMachine {
     }
 
     public EvolutionPhase next(EvolutionPhase current, boolean converged, int generation) {
-        // Enforce minimum evolutionary depth (3 generations)
-        if (generation < 3 && (current == EvolutionPhase.ARCHITECTURE_VARIANTS || current == EvolutionPhase.SELECTION_REFINEMENT)) {
+        // MANDATORY EVOLUTIONARY FLOW (First 4 Generations)
+        // Iteration 0 (Gen 0) -> ARCHITECTURE_VARIANTS (Explore philosophies)
+        // Iteration 1 (Gen 1) -> SELECTION_REFINEMENT (Mutate philosophy)
+        // Iteration 2 (Gen 2) -> IMPLEMENTATION_PLAN (Refine execution strategy)
+        // Iteration 3 (Gen 3) -> FINAL_SYNTHESIS (Execution and stabilization)
+
+        if (generation == 0 && current == EvolutionPhase.INTENT_EXPANSION) return EvolutionPhase.ARCHITECTURE_VARIANTS;
+        if (generation == 1 && current == EvolutionPhase.ARCHITECTURE_VARIANTS) return EvolutionPhase.SELECTION_REFINEMENT;
+        if (generation == 2 && current == EvolutionPhase.SELECTION_REFINEMENT) return EvolutionPhase.IMPLEMENTATION_PLAN;
+        if (generation == 3 && current == EvolutionPhase.IMPLEMENTATION_PLAN) return EvolutionPhase.FINAL_SYNTHESIS;
+
+        // Enforce minimum evolutionary depth (at least until generation 4)
+        if (generation < 4 && !isTerminal(current)) {
+            // Force progression if we are not at the expected phase for the current generation
+            if (generation == 1 && current == EvolutionPhase.INTENT_EXPANSION) return EvolutionPhase.ARCHITECTURE_VARIANTS;
+            if (generation == 2 && (current == EvolutionPhase.INTENT_EXPANSION || current == EvolutionPhase.ARCHITECTURE_VARIANTS)) return EvolutionPhase.SELECTION_REFINEMENT;
+
+            // If already in the target phase for the generation, stay there to satisfy multi-gen requirement if not converged
             return current;
         }
 

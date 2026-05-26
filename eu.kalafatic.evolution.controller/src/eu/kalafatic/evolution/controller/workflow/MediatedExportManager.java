@@ -12,7 +12,7 @@ import java.util.zip.ZipOutputStream;
  */
 public class MediatedExportManager {
 
-    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath) throws IOException {
+    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis) throws IOException {
         String fileName = "mediated_export_" + sessionId + "_" + System.currentTimeMillis() + ".zip";
         File targetDir = projectRoot;
         if (outputPath != null && !outputPath.isEmpty()) {
@@ -27,7 +27,15 @@ public class MediatedExportManager {
             // 1. Add Prompt
             addStringToZip(zos, "PROMPT.md", prompt);
 
-            // 2. Add Selected File Contents
+            // 2. Add Metadata and Analysis
+            if (metadataJson != null) {
+                addStringToZip(zos, "METADATA.json", metadataJson);
+            }
+            if (historyAnalysis != null) {
+                addStringToZip(zos, "EVOLUTION_ANALYSIS.md", historyAnalysis);
+            }
+
+            // 3. Add Selected File Contents
             for (String relativePath : selectedPaths) {
                 File file = new File(projectRoot, relativePath);
                 if (file.exists() && file.isFile()) {

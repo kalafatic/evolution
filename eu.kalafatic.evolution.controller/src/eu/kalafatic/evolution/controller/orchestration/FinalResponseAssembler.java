@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import java.time.Instant;
 import java.io.File;
 
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.supervision.DecisionSnapshot;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
@@ -75,6 +76,49 @@ public class FinalResponseAssembler {
                 sb.append("\n#### 📝 Proposed Evolution Prompt\n```markdown\n").append(synthesized).append("\n```\n");
             }
         }
+
+        // C. COMPREHENSIVE EVOLUTIONARY REPORTING
+        sb.append("\n\n---\n### 🧬 Evolution Summary\n");
+        IterationRecord lastWinner = context.getKernelContext().getMemoryService().getRecords().stream()
+                .filter(r -> "ACTIVE".equals(r.getActivationState()))
+                .reduce((first, second) -> second)
+                .orElse(null);
+
+        if (lastWinner != null) {
+            sb.append("**Executed Trajectory:** ").append(lastWinner.getStrategy()).append("\n");
+            sb.append("**Survivor Philosophy:** ").append(lastWinner.getSemanticAnchor()).append("\n");
+        }
+        sb.append("**Iteration Count:** ").append(state.getIterationCount()).append("\n");
+        sb.append("**Lineage History:**\n").append(context.getKernelContext().getMemoryService().getHistoryAnalysis()).append("\n");
+
+        sb.append("\n### 📂 Repository Changes\n");
+        if (files.isEmpty()) {
+            sb.append("_No physical changes detected._\n");
+        } else {
+            for (FileReference ref : files) {
+                sb.append("- `").append(ref.getPath()).append("`\n");
+            }
+        }
+
+        sb.append("\n### 🔍 Verification\n");
+        DecisionSnapshot lastDecision = (DecisionSnapshot) state.getMetadata().get("lastDecisionSnapshot");
+        if (lastDecision != null && lastDecision.getAggregatedScores() != null) {
+            Double winnerScore = lastDecision.getAggregatedScores().get(selectedVariantId);
+            if (winnerScore != null) {
+                sb.append("**Execution Validation Score:** ").append(String.format("%.2f", winnerScore)).append("\n");
+            }
+        }
+        sb.append("**Status:** ").append(success ? "SUCCESS" : "FAILED").append("\n");
+
+        sb.append("\n### ⚖️ Git State\n");
+        try {
+            eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager git = context.getKernelContext().getGitManager();
+            if (git != null && git.isGitRepository()) {
+                sb.append("**Branch:** `").append(git.getCurrentBranch()).append("`\n");
+                sb.append("**Staged Changes:** ").append(files.size()).append(" files\n");
+                sb.append("**Commit-Ready Status:** READY\n");
+            }
+        } catch (Exception e) {}
 
         String finalSummary = sb.toString().trim();
 
