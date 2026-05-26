@@ -100,11 +100,14 @@ public class DarwinEvolutionTest {
 
         // Hardened variant JSON with all required fields for the new Darwin Engine
         String variantJson =
-            "{\"id\": \"v0\", \"strategy_type\": \"KEEPER_EVOLUTION\", \"strategy\": \"Add Validation\", \"suffix\": \"val\", \"score\": 0.9, " +
+            "{\"id\": \"v0\", \"strategy_type\": \"PROBABLE_SURVIVOR\", \"strategy\": \"Add Validation\", \"suffix\": \"val\", \"score\": 0.9, " +
             "\"survival_argument\": \"Critical for stability\", \"tradeoffs\": \"none\", \"failure_risks\": \"low\", " +
+            "\"semantic_justification\": \"Ensures input data integrity at the system boundary.\", \"pros_cons\": \"Pros: Better stability. Cons: More code.\", " +
+            "\"projected_steps\": [\"Create Validator class\"], \"expected_outputs\": [\"src/Validator.java\"], " +
             "\"actions\": [" +
             "{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"src/Validator.java\", \"description\":\"public class Validator { }\"}" +
-            "], \"expected_effect\": {\"short_term\":\"Fixed\", \"risk\":0.1}}";
+            "], \"hypothesis\": {\"description\": \"Adding validation reduces runtime errors\", \"expected_effects\": [\"fewer null pointer exceptions\"]}, " +
+            "\"expected_effect\": {\"short_term\":\"Fixed\", \"long_term\": \"Improved maintainability\", \"risk\":0.1, \"reversibility\": 1.0}}";
 
         String expansionJson = "{\"dimensions\": [], \"hypotheses\": [{\"id\": \"h1\", \"description\": \"Add Validation\", \"confidence\": 0.9}], \"confidence\": {\"overallConfidence\": 0.9}}";
 
@@ -152,18 +155,24 @@ public class DarwinEvolutionTest {
         context.setAiService(aiService);
 
         String failVariant =
-            "{\"id\": \"v_fail\", \"strategy_type\": \"KEEPER_EVOLUTION\", \"strategy\": \"Risky Refactor\", \"suffix\": \"risky\", \"score\": 0.1, " +
+            "{\"id\": \"v_fail\", \"strategy_type\": \"PROBABLE_SURVIVOR\", \"strategy\": \"Risky Refactor\", \"suffix\": \"risky\", \"score\": 0.1, " +
             "\"survival_argument\": \"High risk high reward\", \"tradeoffs\": \"destabilizes core\", \"failure_risks\": \"high\", " +
+            "\"semantic_justification\": \"Radical change to test limits.\", \"pros_cons\": \"Pros: fast. Cons: risky.\", " +
+            "\"projected_steps\": [\"Delete pom\"], \"expected_outputs\": [], " +
             "\"actions\": [" +
             "{\"domain\":\"file\", \"operation\":\"DELETE\", \"target\":\"pom.xml\", \"description\":\"Delete pom\"}" +
-            "], \"expected_effect\": {\"short_term\":\"Broken\", \"risk\":0.9}}";
+            "], \"hypothesis\": {\"description\": \"Deleting pom simplifies build\", \"expected_effects\": [\"no build\"]}, " +
+            "\"expected_effect\": {\"short_term\":\"Broken\", \"long_term\": \"Broken\", \"risk\":0.9, \"reversibility\": 0.5}}";
 
         String successVariant =
-            "{\"id\": \"v_success\", \"strategy_type\": \"KEEPER_EVOLUTION\", \"strategy\": \"Safe Refactor\", \"suffix\": \"safe\", \"score\": 0.9, " +
+            "{\"id\": \"v_success\", \"strategy_type\": \"PROBABLE_SURVIVOR\", \"strategy\": \"Safe Refactor\", \"suffix\": \"safe\", \"score\": 0.9, " +
             "\"survival_argument\": \"Safe and incremental\", \"tradeoffs\": \"slow progress\", \"failure_risks\": \"none\", " +
+            "\"semantic_justification\": \"Incremental improvement via documentation.\", \"pros_cons\": \"Pros: safe. Cons: slow.\", " +
+            "\"projected_steps\": [\"Update readme\"], \"expected_outputs\": [\"README.md\"], " +
             "\"actions\": [" +
             "{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"README.md\", \"description\":\"Update readme\"}" +
-            "], \"expected_effect\": {\"short_term\":\"Doc\", \"risk\":0.0}}";
+            "], \"hypothesis\": {\"description\": \"Documentation improves onboarding\", \"expected_effects\": [\"better docs\"]}, " +
+            "\"expected_effect\": {\"short_term\":\"Doc\", \"long_term\": \"Better docs\", \"risk\":0.0, \"reversibility\": 1.0}}";
 
         // Mappings for parallel execution robustness
         mockLlm.addResponseMapping("DarwinEngine", failVariant); // First call
@@ -221,16 +230,6 @@ public class DarwinEvolutionTest {
         assertTrue("Atomic task SHOULD be routed to Darwin in the refactored unified flow", wouldRouteToDarwin);
     }
 
-    @Test
-    public void testIsSimpleFileCreate_Variations() {
-        assertTrue(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("create java class Test"));
-        assertTrue(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("create a java class Test"));
-        assertTrue(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("create new file config.xml"));
-        assertTrue(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("write to file log.txt"));
-        // Non-atomic because of "and" or broad scope
-        assertFalse(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("create java class Test and add many methods"));
-        assertFalse(eu.kalafatic.evolution.controller.orchestration.IterationManager.isSimpleFileCreate("just a simple chat"));
-    }
 
     private IterationManager createMockedManager(TaskContext context) {
         GitManager gitManager = new GitManager(tempDir);

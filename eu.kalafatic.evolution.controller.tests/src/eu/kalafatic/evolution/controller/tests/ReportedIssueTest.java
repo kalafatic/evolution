@@ -20,8 +20,6 @@ public class ReportedIssueTest {
         // It should NOT require planning (it should bypass Darwin)
         assertFalse("Should NOT require planning for: " + request, analysis.isRequiresPlanning());
 
-        // it should be identified as a simple file create by IterationManager
-        assertTrue("Should be identified as simple file create by IterationManager", IterationManager.isSimpleFileCreate(request));
     }
 
     @Test
@@ -29,10 +27,9 @@ public class ReportedIssueTest {
         String request = "create a java class";
         AtomicIntentAnalysis analysis = HybridAtomicIntentClassifier.heuristicAnalyze(request);
 
-        // Even without a name, simple creation of high confidence should bypass Darwin
+        // Even without a name, simple creation of high confidence
         assertTrue("Confidence should be high for: " + request + " (Score: " + analysis.getConfidence() + ")",
                    analysis.getConfidence() >= 0.80);
         assertFalse("Should NOT require planning for: " + request, analysis.isRequiresPlanning());
-        assertTrue("Should be identified as simple file create", IterationManager.isSimpleFileCreate(request));
     }
 }

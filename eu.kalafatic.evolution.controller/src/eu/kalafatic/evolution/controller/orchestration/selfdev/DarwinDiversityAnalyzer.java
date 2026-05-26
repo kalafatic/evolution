@@ -50,11 +50,11 @@ public class DarwinDiversityAnalyzer {
 
             // 1. CONCEPTUAL OVERLAP: Check if the engineering philosophy is the same
             double philosophySim = computeSimilarity(cPhilosophy, oPhilosophy);
-            if (philosophySim > 0.50) return false; // HIGHER PRESSURE: Philosophies MUST diverge significantly
+            if (philosophySim > 0.40) return false; // MANDATORY DIVERGENCE: Philosophies MUST diverge significantly
 
             // 2. TRADEOFF OVERLAP: Check if they are proposing the same technical compromises
             double tradeoffSim = computeSimilarity(cTradeoffs, oTradeoffs);
-            if (tradeoffSim > 0.55) return false;
+            if (tradeoffSim > 0.45) return false;
 
             // 3. RISK OVERLAP: Check if they identify the same failure modes
             double riskSim = computeSimilarity(cRisks, oRisks);

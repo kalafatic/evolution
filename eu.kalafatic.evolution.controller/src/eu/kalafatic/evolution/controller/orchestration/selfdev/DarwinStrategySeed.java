@@ -58,7 +58,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed probableSurvivor() {
         return new DarwinStrategySeed(
             DarwinStrategyType.PROBABLE_SURVIVOR,
-            "Generate the most probable surviving engineering future. Focus on direct, high-confidence execution of the primary objective with standard architectural patterns.",
+            "TRAJECTORY: MINIMAL RISK. Realize the most predictable and direct engineering future. Focus on standard patterns, high stability, and immediate solvability with zero architectural bloat.",
             true
         );
     }
@@ -66,7 +66,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed philosophyMutation() {
         return new DarwinStrategySeed(
             DarwinStrategyType.PHILOSOPHY_MUTATION,
-            "Analyze the previous probable trajectory and intentionally mutate the engineering philosophy (e.g., flip from service-oriented to atomic utility, or from synchronous to event-driven).",
+            "TRAJECTORY: ARCHITECTURAL PIVOT. Intentionally mutate the core engineering philosophy. If the survivor is service-oriented, pivot to atomic utility. If imperative, pivot to declarative. Force a shift in abstraction depth.",
             true
         );
     }
@@ -74,7 +74,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed maximalDivergence() {
         return new DarwinStrategySeed(
             DarwinStrategyType.MAXIMAL_DIVERGENCE,
-            "Maximize conceptual distance from all previous trajectories. Explore unconventional engineering tradeoffs, high-risk/high-payoff architectures, or radically different implementation scopes.",
+            "TRAJECTORY: RADICAL EXPLORATION. Maximize conceptual distance from all occupied quadrants. Explore high-risk/high-payoff architectures, unconventional tradeoffs, or radically different execution strategies that challenge current assumptions.",
             true
         );
     }
@@ -82,7 +82,7 @@ public class DarwinStrategySeed {
     public static DarwinStrategySeed stabilizationRecovery() {
         return new DarwinStrategySeed(
             DarwinStrategyType.STABILIZATION_RECOVERY,
-            "Focus on system stability, risk reduction, or architectural analysis. This future prioritizes understanding and mapping the system before or instead of direct implementation mutation.",
+            "TRAJECTORY: SAFETY FIRST. Focus on system stabilization, rigorous validation, or deep architectural mapping. Prioritize error handling, testability, and risk reduction over feature mutation.",
             true
         );
     }

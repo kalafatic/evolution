@@ -263,19 +263,24 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         String lineageContext = "";
         List<String> rejectedSiblings = new ArrayList<>();
         if (lastWinner != null) {
-            lineageContext = "SURVIVING TRAJECTORY: " + lastWinner.getStrategy() + "\n" +
+            lineageContext = "SURVIVING TRAJECTORY (ANCESTOR): " + lastWinner.getStrategy() + "\n" +
                              "PHILOSOPHY: " + lastWinner.getSemanticAnchor() + "\n" +
                              "MUTATION HISTORY: " + lastWinner.getMutationTrace() + "\n";
 
-            // Collect siblings that were rejected in the same iteration as the winner
+            // CUMULATIVE REJECTED LINEAGE: Collect all rejected philosophies from ALL previous iterations
             rejectedSiblings = records.stream()
-                    .filter(r -> r.getIteration() == lastWinner.getIteration() && !"ACTIVE".equals(r.getActivationState()))
-                    .map(IterationRecord::getStrategy)
+                    .filter(r -> !"ACTIVE".equals(r.getActivationState()))
+                    .map(r -> r.getStrategy() + " (Iteration " + r.getIteration() + ")")
+                    .distinct()
                     .collect(Collectors.toList());
         }
 
         context.log("[DARWIN] Executing Trajectory Mutation Chain with " + mutationSeeds.size() + " seeds.");
         List<JSONObject> mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, lineageContext, rejectedSiblings, isMediated, context);
+
+        // LOG ALL RAW VARIANTS BEFORE DIVERSITY FILTERING
+        context.log("[DARWIN_RAW_VARIANTS] " + mutationVariants.size() + " trajectories spawned.");
+
         List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, context);
 
         // Synthetic Recovery

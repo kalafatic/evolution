@@ -224,7 +224,11 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             // TASK PROPAGATION: Ensure tasks executed in the variant are visible in the main context
             if (winningContext != null) {
-                context.getOrchestrator().getTasks().addAll(winningContext.getTasks());
+                for (Task t : winningContext.getTasks()) {
+                    if (!context.getOrchestrator().getTasks().contains(t)) {
+                        context.getOrchestrator().getTasks().add(t);
+                    }
+                }
             }
 
             if (isMediated) {
@@ -478,6 +482,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         if (variants == null || variants.size() < 2) return false;
 
         // 0. Minimum Depth: Enforce at least 3 generations of evolution
+        // Evolution MUST not converge before completing the mandatory exploration generations.
         if (context.getOrchestrationState().getIterationCount() < 3) {
             return false;
         }
