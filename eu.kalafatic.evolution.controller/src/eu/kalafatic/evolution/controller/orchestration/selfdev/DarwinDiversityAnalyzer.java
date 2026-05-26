@@ -50,29 +50,30 @@ public class DarwinDiversityAnalyzer {
 
             // 1. CONCEPTUAL OVERLAP: Check if the engineering philosophy is the same
             double philosophySim = computeSimilarity(cPhilosophy, oPhilosophy);
-            if (philosophySim > 0.75) return false; // More strict: Philosophies must diverge
+            if (philosophySim > 0.65) return false; // High pressure: Philosophies MUST diverge significantly
 
             // 2. TRADEOFF OVERLAP: Check if they are proposing the same technical compromises
             double tradeoffSim = computeSimilarity(cTradeoffs, oTradeoffs);
-            if (tradeoffSim > 0.75) return false;
+            if (tradeoffSim > 0.70) return false;
 
             // 3. RISK OVERLAP: Check if they identify the same failure modes
             double riskSim = computeSimilarity(cRisks, oRisks);
-            if (riskSim > 0.8) return false;
+            if (riskSim > 0.75) return false;
 
             // 4. ARCHITECTURAL DIRECTION OVERLAP
             // Check if they are targeting different abstraction depths or operational scopes
             double directionSim = computeArchitecturalDirectionSimilarity(candidate, other);
-            if (directionSim > 0.8) return false;
+            if (directionSim > 0.75) return false;
 
             // 5. STRATEGY SIMILARITY: Basic word overlap check
             double strategySim = computeSimilarity(cStrategy, oStrategy);
-            if (strategySim > 0.8) return false;
+            if (strategySim > 0.75) return false;
 
-            // 5. TARGET + STEP OVERLAP (Operational Redundancy)
+            // 6. OPERATIONAL REDUNDANCY: Even if philosophy is slightly different,
+            // if they do EXACTLY the same thing on the same files, they are redundant.
             if (!cTargets.isEmpty() && cTargets.equals(oTargets)) {
                 double stepSim = computeJaccard(cSteps, oSteps);
-                if (stepSim > 0.7) return false;
+                if (stepSim > 0.6) return false;
             }
         }
         return true;

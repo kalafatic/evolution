@@ -472,6 +472,11 @@ public class DarwinFlow implements IOrchestrationFlow {
     public boolean checkConvergence(List<BranchVariant> variants, TaskContext context) {
         if (variants == null || variants.size() < 2) return false;
 
+        // 0. Minimum Depth: Enforce at least 3 generations of evolution
+        if (context.getOrchestrationState().getIterationCount() < 3) {
+            return false;
+        }
+
         // 1. Fitness Stability: Check if top variants have stabilized at high scores
         double maxScore = variants.stream().mapToDouble(BranchVariant::getScore).max().orElse(0.0);
         double avgScore = variants.stream().mapToDouble(BranchVariant::getScore).average().orElse(0.0);

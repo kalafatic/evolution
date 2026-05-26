@@ -12,10 +12,15 @@ public class EvolutionPhaseMachine {
     }
 
     public EvolutionPhase next(EvolutionPhase current) {
-        return next(current, false);
+        return next(current, false, 0);
     }
 
-    public EvolutionPhase next(EvolutionPhase current, boolean converged) {
+    public EvolutionPhase next(EvolutionPhase current, boolean converged, int generation) {
+        // Enforce minimum evolutionary depth (3 generations)
+        if (generation < 3 && (current == EvolutionPhase.ARCHITECTURE_VARIANTS || current == EvolutionPhase.SELECTION_REFINEMENT)) {
+            return current;
+        }
+
         if (!converged && (current == EvolutionPhase.ARCHITECTURE_VARIANTS || current == EvolutionPhase.SELECTION_REFINEMENT)) {
             // Stay in the same phase to allow multi-generation trajectory evolution
             return current;

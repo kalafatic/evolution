@@ -98,16 +98,20 @@ public class DarwinVariantSpawner {
         }
 
         if (!currentRoundVariants.isEmpty()) {
-            sb.append("EVOLUTIONARY MUTATION PRESSURE (PREVIOUS TRAJECTORIES):\n")
-              .append("The following trajectories have already been explored in this round. You MUST intentionally mutate AWAY from their engineering philosophy:\n\n");
+            sb.append("EVOLUTIONARY MUTATION PRESSURE (OCCUPIED SOLUTION SPACE):\n")
+              .append("The following trajectories have already been explored in this generation. You MUST intentionally mutate AWAY from their engineering philosophy, abstraction depth, and operational behavior:\n\n");
             for (JSONObject v : currentRoundVariants) {
                 sb.append("--- Trajectory: ").append(v.optString("strategy_type")).append(" ---\n")
                   .append("Strategy: ").append(v.optString("strategy")).append("\n")
                   .append("Philosophy: ").append(v.optString("semantic_justification")).append("\n")
                   .append("Tradeoffs: ").append(v.optString("tradeoffs")).append("\n")
+                  .append("Operational Behavior: ").append(v.optJSONArray("projected_steps")).append("\n")
                   .append("Risks: ").append(v.optString("failure_risks")).append("\n\n");
             }
-            sb.append("INSTRUCTION FOR THIS BRANCH: Maximize conceptual distance and tradeoff contrast from the above.\n\n");
+            sb.append("INSTRUCTION FOR THIS BRANCH:\n")
+              .append("- Maximize CONCEPTUAL DISTANCE and TRADEOFF CONTRAST from the above.\n")
+              .append("- Do NOT propose a semantic variation of an existing trajectory.\n")
+              .append("- Pivot to a DIFFERENT abstraction level or execution philosophy.\n\n");
         }
 
         if (seed.getInterpretation() != null) {
