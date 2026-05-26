@@ -713,13 +713,6 @@ public class IterationManager {
 
         // 1. PHASE AUTHORITY: IterationManager decides if we skip INTENT_EXPANSION
         if (phase == EvolutionPhase.INTENT_EXPANSION) {
-            AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) state.getMetadata().get("atomicAnalysis");
-            if (atomicAnalysis != null && atomicAnalysis.getConfidence() > 0.8 && !atomicAnalysis.isMultiStep()) {
-                context.log("[KERNEL] Simple goal detected. Fast-forwarding to final synthesis.");
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
-                // Do NOT return early here, allow fall-through to variant generation and execution in one go.
-            } else {
-
             transition(SystemState.ANALYZING, context);
             IntentExpansionResult expansion = getIntentExpansionEngine().expand(goal, context);
             state.setIntentAnalysis(null);
@@ -738,7 +731,7 @@ public class IterationManager {
 
             if (strategy == ClarificationPlanner.Strategy.BRANCH_PARALLEL) {
                 context.log("[KERNEL] Ambiguity detected but evolvable. Spawning parallel implementation branches.");
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));
+                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase, false, context.getOrchestrationState().getIterationCount())));
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
                 res.setDecision(SelfDevDecision.CONTINUE);
@@ -755,7 +748,7 @@ public class IterationManager {
                 return res;
             }
 
-            state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase)));
+            state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase, false, context.getOrchestrationState().getIterationCount())));
 
             if (strategy != ClarificationPlanner.Strategy.AUTO_INFER || !context.isAutoApprove()) {
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -763,8 +756,7 @@ public class IterationManager {
                 res.setDecision(SelfDevDecision.CONTINUE);
                 return res;
             }
-                context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
-            }
+            context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
         }
 
         // 2. EVOLUTIONARY EXECUTION (Delegated to DarwinFlow Engine)
@@ -813,7 +805,7 @@ public class IterationManager {
             }
 
             if (!phaseMachine.isTerminal(currentPhaseEnum)) {
-                EvolutionPhase nextPhase = phaseMachine.next(currentPhaseEnum, converged);
+                EvolutionPhase nextPhase = phaseMachine.next(currentPhaseEnum, converged, state.getIterationCount());
 
                 // Increment iteration count to track evolutionary generations
                 state.setIterationCount(state.getIterationCount() + 1);
