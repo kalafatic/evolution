@@ -68,11 +68,14 @@ public class DarwinVariantSpawner {
           .append("CRITICAL OBJECTIVE:\n")
           .append("Realize a specific COMPETING ENGINEERING FUTURE. Do NOT think in terms of roles (e.g., 'implementation', 'analytical').\n")
           .append("Think in terms of COMPETING ARCHITECTURAL PHILOSOPHIES and execution trajectories.\n\n")
-          .append("RULES:\n")
+          .append("DIVERGENCE RULES (STRICT):\n")
+          .append("- YOU ARE STRICTLY PROHIBITED FROM GENERATING SEMANTIC REWRITES.\n")
+          .append("- You MUST force ARCHITECTURAL DIVERGENCE.\n")
+          .append("- Each trajectory MUST realize a distinct engineering future with different technical assumptions.\n")
           .append("- Output EXACTLY ONE JSON object.\n")
           .append("- Do NOT generate an array.\n")
           .append("- strategy_type is FIXED to: ").append(seed.getType()).append("\n")
-          .append("- The variant MUST be semantically and conceptually distinct from previous trajectories.\n")
+          .append("- The variant MUST be conceptually distinct from previous trajectories.\n")
           .append("- Mutate the PHILOSOPHY, DEPTH, and TRADEOFFS, not just the wording.\n")
           .append("- Focus on concrete technical assumptions and operational strategies.\n")
           .append("- Do NOT include conversation or markdown blocks.\n\n");
@@ -107,9 +110,20 @@ public class DarwinVariantSpawner {
               .append("Propose the most direct and reliable engineering path to solve the goal.\n\n");
         }
 
+        if (seed.getType() == DarwinStrategyType.PHILOSOPHY_MUTATION) {
+            sb.append("TRAJECTORY GOAL: PHILOSOPHY MUTATION\n")
+              .append("Identify the core engineering philosophy of the surviving trajectory and RADICALLY MUTATE it.\n")
+              .append("Example: If survivor is 'Service-Oriented', mutate to 'Atomic Utility' or 'Event-Driven'.\n\n");
+        }
+
+        if (seed.getType() == DarwinStrategyType.MAXIMAL_DIVERGENCE) {
+            sb.append("TRAJECTORY GOAL: MAXIMAL DIVERGENCE\n")
+              .append("Maximize conceptual distance from ALL previous trajectories. Explore unconventional engineering tradeoffs.\n\n");
+        }
+
         if (!currentRoundVariants.isEmpty()) {
             sb.append("EVOLUTIONARY MUTATION PRESSURE (OCCUPIED SOLUTION SPACE):\n")
-              .append("The following trajectories have already been explored in this generation. You MUST intentionally mutate AWAY from their engineering philosophy, abstraction depth, and operational behavior:\n\n");
+              .append("The following trajectories have already been explored in this generation. You MUST intentionally mutate AWAY from their engineering philosophy, abstraction depth, and operational behavior. SEMANTIC REWRITES ARE A FAILURE.\n\n");
             for (JSONObject v : currentRoundVariants) {
                 sb.append("--- Trajectory: ").append(v.optString("strategy_type")).append(" ---\n")
                   .append("Strategy: ").append(v.optString("strategy")).append("\n")

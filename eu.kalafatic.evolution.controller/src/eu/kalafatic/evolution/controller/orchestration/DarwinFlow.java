@@ -273,6 +273,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 record.setTimestamp(System.currentTimeMillis());
                 context.getKernelContext().getMemoryService().saveRecord(record);
 
+                manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
                 manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
 
                 result.setDecision(isFinalPhase ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
@@ -293,9 +294,10 @@ public class DarwinFlow implements IOrchestrationFlow {
         File tempDir = null;
         AuthorityController authority = context.getKernelContext().getAuthority();
         VariantExecutionContext variantExecContext = new VariantExecutionContext(variant.getId());
+        boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED);
 
         try {
-            if (context.getMetadata().containsKey("testMode")) {
+            if (context.getMetadata().containsKey("testMode") || isMediated) {
                 tempDir = context.getProjectRoot();
             } else {
                 tempDir = Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
@@ -315,8 +317,8 @@ public class DarwinFlow implements IOrchestrationFlow {
             boolean success = true;
             manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.EXECUTING, context);
 
-            // PROHIBIT BUILD/GIT FOR TEST MODE
-            if (context.getMetadata().containsKey("testMode")) {
+            // PROHIBIT BUILD/GIT FOR TEST MODE AND MEDIATED MODE
+            if (context.getMetadata().containsKey("testMode") || isMediated) {
                 variant.setSuccess(true);
                 variant.setScore(0.95);
 
@@ -329,11 +331,12 @@ public class DarwinFlow implements IOrchestrationFlow {
                     }
                 }
 
-                variant.setMutationTrace("Mocked in test mode");
+                variant.setMutationTrace(isMediated ? "Cognitive evolution in mediated mode" : "Mocked in test mode");
                 return variantExecContext;
             }
 
             for (Task task : tasks) {
+                // Task-level supervision is already handled inside executeTasksWithRetries via manager.checkStep()
                 boolean taskSuccess = variantManager.executeTasksWithRetries(List.of(task));
                 if (variantExecContext != null) {
                     variantExecContext.getTasks().add(task);
@@ -342,6 +345,8 @@ public class DarwinFlow implements IOrchestrationFlow {
                     success = false;
                     break;
                 }
+
+                manager.checkStep(task.getId(), "GIT_STAGING", "Staging changes for task: " + task.getName());
 
                 try {
                     GitTool gitTool = new GitTool();
