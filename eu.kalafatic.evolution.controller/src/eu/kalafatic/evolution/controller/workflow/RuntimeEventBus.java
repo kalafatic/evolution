@@ -12,7 +12,7 @@ public class RuntimeEventBus {
     private final List<RuntimeEventListener> listeners = new CopyOnWriteArrayList<>();
     private ExecutionBudget budget = ExecutionBudget.defaultProfile();
 
-    private RuntimeEventBus() {}
+    public RuntimeEventBus() {}
 
     public static RuntimeEventBus getInstance() { return INSTANCE; }
 
@@ -29,6 +29,11 @@ public class RuntimeEventBus {
     }
 
     public void publish(RuntimeEvent event) {
+        // Forward to global bus if this is a session-specific instance
+        if (this != INSTANCE) {
+            INSTANCE.publish(event);
+        }
+
         // Backpressure check for evaluation signals
         if (event.getType() == RuntimeEventType.EVALUATION_SIGNAL_CREATED) {
             BackpressureController.getInstance().recordSignal();

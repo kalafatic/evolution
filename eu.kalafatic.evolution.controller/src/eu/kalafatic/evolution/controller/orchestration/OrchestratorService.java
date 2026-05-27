@@ -24,4 +24,10 @@ public interface OrchestratorService {
      * @return The task result.
      */
     TaskResult getTaskResult(String id);
+
+    /**
+     * Shuts down and removes a session.
+     * @param sessionId The session ID.
+     */
+    void shutdownSession(String sessionId);
 }

@@ -143,16 +143,17 @@ public class TaskContext {
     }
 
     public void log(String message) {
-        logs.add(message);
-        Log.log(message);
-        notifyListeners(message);
+        String formatted = "[" + sessionId + "] " + message;
+        logs.add(formatted);
+        Log.log(formatted);
+        notifyListeners(formatted);
     }
 
     /**
      * Logs only to the console and file, without notifying UI listeners (chat history).
      */
     public void consoleLog(String message) {
-        Log.log(message);
+        Log.log("[" + sessionId + "] " + message);
     }
 
     public void addLogListener(LogListener listener) {

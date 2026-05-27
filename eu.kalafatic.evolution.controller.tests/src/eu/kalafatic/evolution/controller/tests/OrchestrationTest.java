@@ -45,6 +45,6 @@ public class OrchestrationTest {
         assertEquals("value", context.getState("key"));
 
         context.log("test log");
-        assertTrue(context.getLogs().contains("test log"));
+        assertTrue(context.getLogs().get(0).contains("test log"));
     }
 }

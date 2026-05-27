@@ -17,16 +17,25 @@ import eu.kalafatic.evolution.model.orchestration.Task;
  */
 public class OrchestratorServiceImpl implements OrchestratorService {
     private final Map<String, TaskResult> tasks = new ConcurrentHashMap<>();
-    private final Map<String, TaskContext> contexts = new ConcurrentHashMap<>();
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final Map<String, SessionContext> sessions = new ConcurrentHashMap<>();
 
     @Override
     public OrchestratorResponse handle(TaskRequest request) {
         final Orchestrator inputOrchModel = (Orchestrator) request.getContext().get("orchestrator");
         TaskContext context = (TaskContext) request.getContext().get("taskContext");
+
+        String sessionId = (String) request.getContext().get("sessionId");
+        if (sessionId == null) sessionId = UUID.randomUUID().toString();
+
+        SessionContext session = sessions.computeIfAbsent(sessionId, SessionContext::new);
+
         if (context == null) {
             context = new TaskContext(inputOrchModel, request.getProjectRoot());
+            context.setSessionId(sessionId);
+            session.setTaskContext(context);
         }
+
+        context.getMetadata().put("sessionContext", session);
 
         try {
             KernelFacade kernel = new KernelFacade();
@@ -43,15 +52,21 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     @Override
     public TaskResult execute(TaskRequest request) {
         final Orchestrator inputOrchModel = (Orchestrator) request.getContext().get("orchestrator");
-        String taskId = (inputOrchModel != null && inputOrchModel.getId() != null && !inputOrchModel.getId().isEmpty()) ?
+        String sessionId = (String) request.getContext().get("sessionId");
+        if (sessionId == null || sessionId.isEmpty()) {
+            sessionId = (inputOrchModel != null && inputOrchModel.getId() != null && !inputOrchModel.getId().isEmpty()) ?
                          inputOrchModel.getId() : UUID.randomUUID().toString();
+        }
+
+        final String finalSessionId = sessionId;
+        SessionContext session = sessions.computeIfAbsent(finalSessionId, SessionContext::new);
 
         TaskResult result = new TaskResult();
-        result.setId(taskId);
+        result.setId(finalSessionId);
         result.setStatus(TaskResult.Status.RUNNING);
-        tasks.put(taskId, result);
+        tasks.put(finalSessionId, result);
 
-        executor.submit(() -> {
+        session.getExecutorService().submit(() -> {
             try {
                 KernelFacade kernel = new KernelFacade();
                 Orchestrator orchModel = inputOrchModel;
@@ -61,7 +76,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 
                 if (orchModel == null) {
                     orchModel = OrchestrationFactory.eINSTANCE.createOrchestrator();
-                    orchModel.setId(taskId);
+                    orchModel.setId(finalSessionId);
                     
                     if (orchModel.getAiChat() == null) orchModel.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
                 	
@@ -89,18 +104,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 }
 
                 TaskContext context = new TaskContext(orchModel, request.getProjectRoot());
-                String sessionId = (String) request.getContext().get("sessionId");
-                if (sessionId != null && !sessionId.isEmpty()) {
-			context.setSessionId(sessionId);
-                } else {
-			context.setSessionId(taskId);
-                }
+                context.setSessionId(finalSessionId);
+                session.setTaskContext(context);
+                context.getMetadata().put("sessionContext", session);
 
                 context.addLogListener(log -> {
                     result.getLogs().add(log);
                 });
-
-                contexts.put(taskId, context);
 
                 context.addApprovalListener(msg -> {
                     result.setStatus(TaskResult.Status.WAITING_FOR_APPROVAL);
@@ -130,7 +140,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             } catch (Exception e) {
                 result.setStatus(TaskResult.Status.FAILED);
                 result.setError(e.getMessage());
-                result.getLogs().add("ERROR: " + e.getMessage());
+                result.getLogs().add("[" + finalSessionId + "] ERROR: " + e.getMessage());
             }
         });
 
@@ -140,6 +150,15 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     @Override
     public TaskResult getTaskResult(String id) {
         return tasks.get(id);
+    }
+
+    @Override
+    public void shutdownSession(String sessionId) {
+        SessionContext session = sessions.remove(sessionId);
+        if (session != null) {
+            session.shutdown();
+        }
+        tasks.remove(sessionId);
     }
 
     private Orchestrator orchestrator;
@@ -153,11 +172,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     }
 
     public void registerContext(String id, TaskContext context) {
-        contexts.put(id, context);
+        SessionContext session = sessions.computeIfAbsent(id, SessionContext::new);
+        session.setTaskContext(context);
     }
 
     public void provideApproval(String taskId, boolean approved) {
-        TaskContext context = contexts.get(taskId);
+        SessionContext session = sessions.get(taskId);
+        TaskContext context = session != null ? session.getTaskContext() : null;
         if (context != null) {
             context.log("User Interaction: Approval provided - " + approved);
             context.provideApproval(approved);
@@ -170,7 +191,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     }
 
     public void provideInput(String taskId, String input) {
-        TaskContext context = contexts.get(taskId);
+        SessionContext session = sessions.get(taskId);
+        TaskContext context = session != null ? session.getTaskContext() : null;
         if (context != null) {
             context.log("User Interaction: Input provided - " + input);
             context.provideInput(input);
