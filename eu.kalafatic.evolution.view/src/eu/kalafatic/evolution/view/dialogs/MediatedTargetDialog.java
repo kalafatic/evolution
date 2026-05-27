@@ -143,6 +143,9 @@ public class MediatedTargetDialog extends DynamicMapDialog {
                             protected IStatus run(IProgressMonitor monitor) {
                                 MetadataAgent generator = new MetadataAgent();
                                 final MetadataResult result = generator.generate(root, new IProgressMonitor() {
+                                    private long lastUpdate = 0;
+                                    private int pendingWork = 0;
+
                                     @Override public void beginTask(String name, int totalWork) {
                                         Display.getDefault().asyncExec(() -> {
                                             if (!progressBar.isDisposed()) {
@@ -157,19 +160,30 @@ public class MediatedTargetDialog extends DynamicMapDialog {
                                     @Override public boolean isCanceled() { return monitor.isCanceled(); }
                                     @Override public void setCanceled(boolean value) { monitor.setCanceled(value); }
                                     @Override public void setTaskName(String name) {
-                                        Display.getDefault().asyncExec(() -> {
-                                            if (!progressLabel.isDisposed()) progressLabel.setText(name);
-                                        });
+                                        updateSubTask(name);
                                     }
                                     @Override public void subTask(String name) {
-                                        Display.getDefault().asyncExec(() -> {
-                                            if (!progressLabel.isDisposed()) progressLabel.setText(name);
-                                        });
+                                        updateSubTask(name);
                                     }
                                     @Override public void worked(int work) {
-                                        Display.getDefault().asyncExec(() -> {
-                                            if (!progressBar.isDisposed()) progressBar.setSelection(progressBar.getSelection() + work);
-                                        });
+                                        pendingWork += work;
+                                        long now = System.currentTimeMillis();
+                                        if (now - lastUpdate > 100) { // Throttle UI updates to 10Hz
+                                            int toReport = pendingWork;
+                                            pendingWork = 0;
+                                            lastUpdate = now;
+                                            Display.getDefault().asyncExec(() -> {
+                                                if (!progressBar.isDisposed()) progressBar.setSelection(progressBar.getSelection() + toReport);
+                                            });
+                                        }
+                                    }
+                                    private void updateSubTask(String name) {
+                                        long now = System.currentTimeMillis();
+                                        if (now - lastUpdate > 100) {
+                                            Display.getDefault().asyncExec(() -> {
+                                                if (!progressLabel.isDisposed()) progressLabel.setText(name);
+                                            });
+                                        }
                                     }
                                 });
 

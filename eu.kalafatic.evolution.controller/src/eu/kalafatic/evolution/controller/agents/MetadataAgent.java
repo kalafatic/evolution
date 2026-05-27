@@ -65,6 +65,7 @@ public class MetadataAgent {
         result.setSummary(summary.toString());
 
         monitor.done();
+        processedMetadata.clear(); // Free memory
         return result;
     }
 
