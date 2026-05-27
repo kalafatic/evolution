@@ -33,6 +33,18 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "Identify 'Evolutionary Axes' - dimensions where implementation choices exist.\n" +
                "For each axis, identify potential candidate strategies/blueprints.\n" +
                "\n" +
+               "MANDATORY: Derive engineering dimensions before branch spawning. These dimensions become the mutation space.\n" +
+               "Specifically analyze the following 9 dimensions for the user request:\n" +
+               "1. Engineering Philosophy\n" +
+               "2. Execution Model\n" +
+               "3. Abstraction Depth\n" +
+               "4. Modularity Approach\n" +
+               "5. Testing Strategy\n" +
+               "6. Extensibility\n" +
+               "7. Dependency Assumptions\n" +
+               "8. Runtime Behavior\n" +
+               "9. Risk Acceptance\n" +
+               "\n" +
                "CRITICAL DISTINCTION:\n" +
                "1. SEMANTIC AMBIGUITY: Missing critical information or contradictory constraints that prevent safe execution.\n" +
                "2. IMPLEMENTATION POLYMORPHISM (EVOLUTIONARY AXES): Multiple valid ways to implement a clear intent.\n" +
@@ -51,6 +63,17 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "  \"state\": \"CLEAR\", // [CLEAR, EVOLVABLE, NEEDS_CLARIFICATION, BLOCKED, CONTRADICTORY]\n" +
                "  \"dominantIntent\": \"string\",\n" +
                "  \"dominantConfidence\": float,\n" +
+               "  \"engineeringDimensions\": {\n" +
+               "    \"philosophy\": \"string\",\n" +
+               "    \"execution_model\": \"string\",\n" +
+               "    \"abstraction_depth\": \"string\",\n" +
+               "    \"modularity_approach\": \"string\",\n" +
+               "    \"testing_strategy\": \"string\",\n" +
+               "    \"extensibility\": \"string\",\n" +
+               "    \"dependency_assumptions\": \"string\",\n" +
+               "    \"runtime_behavior\": \"string\",\n" +
+               "    \"risk_acceptance\": \"string\"\n" +
+               "  },\n" +
                "  \"evolutionaryAxes\": [\n" +
                "    {\n" +
                "      \"name\": \"string (e.g., Output Strategy)\",\n" +
@@ -126,6 +149,19 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
         result.setDominantIntent(json.optString("dominantIntent"));
         result.setDominantConfidence(json.optDouble("dominantConfidence", 0.5));
+
+        // Parse Engineering Dimensions
+        JSONObject dimensions = json.optJSONObject("engineeringDimensions");
+        if (dimensions != null) {
+            java.util.Map<String, Object> dimMap = new java.util.HashMap<>();
+            java.util.Iterator<String> keys = dimensions.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                dimMap.put(key, dimensions.get(key));
+            }
+            context.getOrchestrationState().getMetadata().put("engineeringDimensions", dimMap);
+            context.log("[INTENT EXPANSION] Derived 9 engineering dimensions.");
+        }
 
         context.log("[INTENT EXPANSION] Interpretation State: " + result.getState());
         context.log("[INTENT EXPANSION] Dominant Intent: " + result.getDominantIntent());

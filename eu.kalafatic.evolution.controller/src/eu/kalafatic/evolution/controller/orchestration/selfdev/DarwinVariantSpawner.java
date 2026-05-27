@@ -160,15 +160,24 @@ public class DarwinVariantSpawner {
           .append("- YOU ARE STRICTLY PROHIBITED FROM GENERATING SEMANTIC REWRITES.\n")
           .append("- Every trajectory MUST realize a technical philosophy that DIVERGES from siblings and parents.\n")
           .append("- If sibling trajectories are provided, you MUST intentionally mutate AGAINST them.\n")
-          .append("- You MUST force ARCHITECTURAL DIVERGENCE (e.g., changing abstraction levels, state management, or component boundaries).\n")
+          .append("- You MUST force ARCHITECTURAL DIVERGENCE across 9 dimensions:\n")
+          .append("  1. Engineering Philosophy\n")
+          .append("  2. Execution Model\n")
+          .append("  3. Abstraction Depth\n")
+          .append("  4. Modularity Approach\n")
+          .append("  5. Testing Strategy\n")
+          .append("  6. Extensibility\n")
+          .append("  7. Dependency Assumptions\n")
+          .append("  8. Runtime Behavior\n")
+          .append("  9. Risk Acceptance\n")
           .append("- Each trajectory MUST realize a distinct engineering future with different technical assumptions.\n")
-          .append("- Identify the 'DIVERGENCE AXIS' (e.g., Abstraction Depth, State Management, Runtime Strategy, Dependency Complexity).\n")
+          .append("- Identify the 'DIVERGENCE AXIS' and PIVOT to an unexplored technical quadrant.\n")
           .append("- Maximize TECHNICAL CONTRAST from all other proposed or rejected trajectories.\n")
           .append("- Output EXACTLY ONE JSON object.\n")
           .append("- Do NOT generate an array.\n")
           .append("- strategy_type is FIXED to: ").append(seed.getType()).append("\n")
           .append("- The variant MUST be conceptually distinct from previous trajectories.\n")
-          .append("- Mutate the PHILOSOPHY, DEPTH, and TRADEOFFS, not just the wording.\n")
+          .append("- Mutate the PHILOSOPHY and architectural dimensions, not just the wording.\n")
           .append("- Focus on concrete technical assumptions and operational strategies.\n")
           .append("- Do NOT include conversation or markdown blocks.\n\n");
 
@@ -252,6 +261,17 @@ public class DarwinVariantSpawner {
                "  \"id\": \"v-" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"strategy_type\": \"" + seed.getType() + "\",\n" +
                "  \"strategy\": \"precise engineering strategy for this trajectory\",\n" +
+               "  \"engineering_dimensions\": {\n" +
+               "    \"philosophy\": \"specific philosophy for this branch\",\n" +
+               "    \"execution_model\": \"atomic/service/reactive/etc\",\n" +
+               "    \"abstraction_depth\": \"low/medium/high\",\n" +
+               "    \"modularity_approach\": \"monolithic/modular/functional/etc\",\n" +
+               "    \"testing_strategy\": \"unit/integration/tdd/etc\",\n" +
+               "    \"extensibility\": \"low/medium/high\",\n" +
+               "    \"dependency_assumptions\": \"none/internal/external\",\n" +
+               "    \"runtime_behavior\": \"deterministic/async/etc\",\n" +
+               "    \"risk_acceptance\": \"conservative/experimental/etc\"\n" +
+               "  },\n" +
                "  \"survival_argument\": \"why this specific future should survive technically\",\n" +
                "  \"tradeoffs\": \"specific technical tradeoffs compared to other trajectories\",\n" +
                "  \"failure_risks\": \"potential failure modes for this trajectory\",\n" +
@@ -259,12 +279,12 @@ public class DarwinVariantSpawner {
                "  \"semantic_justification\": \"engineering philosophy justification\",\n" +
                "  \"projected_steps\": [\"next logical step 1\", \"next logical step 2\"],\n" +
                "  \"expected_outputs\": [\"expected file/artifact 1\"],\n" +
-               "  \"score\": 0.5, // Numerical predicted fitness score between 0.0 and 1.0\n" +
+               "  \"score\": 0.5,\n" +
                "  \"suffix\": \"" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"actions\": [\n" +
                "    {\n" +
-               "      \"domain\": \"file\", // use: file, class, test, build, or structure\n" +
-               "      \"operation\": \"WRITE\", // use: WRITE, DELETE, MKDIR, TEST, BUILD, or ANALYZE\n" +
+               "      \"domain\": \"file\",\n" +
+               "      \"operation\": \"WRITE\",\n" +
                "      \"target\": \"actual_file_path.java\",\n" +
                "      \"description\": \"specific technical instruction for this action\"\n" +
                "    }\n" +
@@ -276,8 +296,8 @@ public class DarwinVariantSpawner {
                "  \"expected_effect\": {\n" +
                "    \"short_term\": \"expected result after execution\",\n" +
                "    \"long_term\": \"long-term architectural impact\",\n" +
-               "    \"risk\": 0.5, // Risk score between 0.0 and 1.0\n" +
-               "    \"reversibility\": 1.0 // Reversibility score between 0.0 and 1.0\n" +
+               "    \"risk\": 0.5,\n" +
+               "    \"reversibility\": 1.0\n" +
                "  }\n" +
                "}";
     }
