@@ -30,37 +30,99 @@ public class DarwinVariantSpawner {
         List<JSONObject> currentRoundVariants = new ArrayList<>();
 
         for (TrajectoryBlueprint bp : blueprints) {
-            context.log("[SPAWNER] Realizing trajectory from blueprint: " + bp.getId());
+            context.log("[SPAWNER] Materializing trajectory from blueprint: " + bp.getId());
 
             String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated, context);
             JSONObject validated = null;
 
-            for (int retry = 0; retry < 2; retry++) {
+            // Materialization Retries: The branch topology (blueprint) is preserved; only the implementation details are retried.
+            for (int retry = 0; retry < 3; retry++) {
                 try {
                     String response = aiService.sendRequest(orchestrator, bpPrompt, context);
                     validated = validator.validate(response, DarwinStrategyType.PHILOSOPHY_MUTATION, context); // Blueprints are technical mutations
                     if (validated != null) break;
+
+                    context.log("[SPAWNER] Materialization failed for blueprint " + bp.getId() + ". Retry " + (retry + 1) + "/3...");
                 } catch (Exception e) {
-                    context.log("[SPAWNER] Error during blueprint generation for " + bp.getId() + ": " + e.getMessage());
+                    context.log("[SPAWNER] Error during blueprint materialization for " + bp.getId() + ": " + e.getMessage());
                 }
             }
 
             if (validated != null) {
                 variants.add(validated);
                 currentRoundVariants.add(validated);
-                context.log("[SPAWNER] Successfully realized blueprint: " + bp.getId());
+                context.log("[SPAWNER] Successfully materialized blueprint: " + bp.getId());
+            } else {
+                context.log("[SPAWNER] Materialization retries failed for " + bp.getId() + ". Attempting deterministic auto-repair.");
+                JSONObject repaired = autoRepair(bp, context);
+                if (repaired != null) {
+                    variants.add(repaired);
+                    currentRoundVariants.add(repaired);
+                    context.log("[SPAWNER] Successfully auto-repaired blueprint: " + bp.getId());
+                } else {
+                    context.log("[SPAWNER] CRITICAL: Failed to materialize or repair mandatory blueprint: " + bp.getId());
+                }
             }
         }
         return variants;
     }
 
+    private JSONObject autoRepair(TrajectoryBlueprint bp, TaskContext context) {
+        try {
+            JSONObject repair = new JSONObject();
+            repair.put("id", bp.getId());
+            repair.put("strategy_type", "PHILOSOPHY_MUTATION");
+            repair.put("strategy", bp.getGoal());
+            repair.put("reasoning_focus", "Auto-repaired trajectory for " + bp.getId());
+            repair.put("selected_files", new org.json.JSONArray());
+            repair.put("survival_argument", "Deterministic fallback for mandatory architectural branch.");
+            repair.put("tradeoffs", "Minimal detail, auto-generated from blueprint.");
+            repair.put("failure_risks", "Lacks implementation specificity.");
+            repair.put("semantic_justification", bp.getPhilosophy());
+
+            org.json.JSONArray steps = new org.json.JSONArray();
+            for (String s : bp.getRequiredCharacteristics()) steps.put("Address: " + s);
+            repair.put("projected_steps", steps);
+
+            repair.put("expected_outputs", new org.json.JSONArray());
+            repair.put("score", 0.5);
+
+            org.json.JSONArray actions = new org.json.JSONArray();
+            JSONObject action = new JSONObject();
+            action.put("domain", "kernel");
+            action.put("operation", "ANALYZE");
+            action.put("target", "workspace");
+            action.put("description", "Materialize " + bp.getId() + " architectural strategy.");
+            actions.put(action);
+            repair.put("actions", actions);
+
+            JSONObject dimensions = new JSONObject();
+            dimensions.put("philosophy", bp.getPhilosophy());
+            dimensions.put("execution_model", "deterministic");
+            dimensions.put("abstraction_depth", "medium");
+            dimensions.put("modularity_approach", "modular");
+            dimensions.put("testing_strategy", "unit");
+            dimensions.put("extensibility", "medium");
+            dimensions.put("dependency_assumptions", "internal");
+            dimensions.put("runtime_behavior", "deterministic");
+            dimensions.put("risk_acceptance", "conservative");
+            repair.put("engineering_dimensions", dimensions);
+
+            return repair;
+        } catch (Exception e) {
+            context.log("[SPAWNER] Auto-repair failed: " + e.getMessage());
+            return null;
+        }
+    }
+
     private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated, TaskContext context) {
         StringBuilder sb = new StringBuilder();
         sb.append("SYSTEM:\n")
-          .append("You are an engineering trajectory materializer. You must REALIZES a SPECIFIC BLUEPRINT.\n\n")
-          .append("CRITICAL: You are NOT deciding the divergence. The divergence is PREDEFINED by the BLUEPRINT.\n")
+          .append("You are an engineering trajectory materializer. You must MATERIALIZE a SPECIFIC BLUEPRINT.\n\n")
+          .append("CRITICAL: You are NOT deciding the divergence. The divergence is PREDEFINED by the ORCHESTRATOR.\n")
           .append("Your task is to CONSTRAIN your output to the technical characteristics required by the blueprint.\n\n")
           .append("BLUEPRINT TO MATERIALIZE:\n")
+          .append("ID: ").append(bp.getId()).append("\n")
           .append("Goal: ").append(bp.getGoal()).append("\n")
           .append("Philosophy: ").append(bp.getPhilosophy()).append("\n")
           .append("Required Characteristics: ").append(bp.getRequiredCharacteristics()).append("\n")
@@ -70,7 +132,7 @@ public class DarwinVariantSpawner {
           .append("- Adhere STRICTLY to the philosophy and required characteristics.\n")
           .append("- DO NOT propose anything mentioned in 'Forbidden Overlaps'.\n")
           .append("- If you fail to stay within the blueprint constraints, the trajectory will be REJECTED.\n")
-          .append("- Provide concrete technical actions and steps.\n\n");
+          .append("- Provide CONCRETE technical actions and steps. Do NOT use placeholders.\n\n");
 
         if (isMediated) {
             sb.append("MEDIATED MODE COGNITION RULES (CRITICAL):\n")

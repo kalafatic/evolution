@@ -244,19 +244,10 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         if (currentBlueprints.isEmpty()) {
             if (isMediated) {
                 context.log("[DARWIN] Mediated Mode: Spawning cognitive interpretation trajectories.");
-                mutationSeeds.add(DarwinStrategySeed.architectureMapping());
-                mutationSeeds.add(DarwinStrategySeed.dependencyExploration());
-                mutationSeeds.add(DarwinStrategySeed.refactorHotspotAnalysis());
-                mutationSeeds.add(DarwinStrategySeed.contextReduction());
-                mutationSeeds.add(DarwinStrategySeed.dependencyRiskAudit());
-                mutationSeeds.add(DarwinStrategySeed.runtimeBehaviorInspection());
-                mutationSeeds.add(DarwinStrategySeed.modularityReview());
+                currentBlueprints.addAll(generateMediatedBlueprints(goal));
             } else {
-                context.log("[DARWIN] Spawning MANDATORY 4-branch mutation chain (Iteration " + currentIteration + ").");
-                mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
-                mutationSeeds.add(DarwinStrategySeed.philosophyMutation());
-                mutationSeeds.add(DarwinStrategySeed.maximalDivergence());
-                mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery());
+                context.log("[DARWIN] Orchestrator Planning: Spawning MANDATORY 4-branch architectural blueprints.");
+                currentBlueprints.addAll(generateStandardBlueprints(goal));
             }
         }
 
@@ -317,6 +308,77 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         return variants;
+    }
+
+    private List<TrajectoryBlueprint> generateStandardBlueprints(String goal) {
+        List<TrajectoryBlueprint> blueprints = new ArrayList<>();
+
+        TrajectoryBlueprint direct = new TrajectoryBlueprint("direct_minimal", goal, "Minimal executable implementation");
+        direct.addRequiredCharacteristic("Direct output/execution");
+        direct.addRequiredCharacteristic("Primary entry point");
+        direct.addRequiredCharacteristic("Atomic structure");
+        direct.addForbiddenOverlap("abstractions");
+        direct.addForbiddenOverlap("layered architecture");
+        direct.addForbiddenOverlap("external services");
+        direct.setArchitecturalDirection("Goal: Minimal executable implementation. Philosophy: direct, low abstraction, and zero bloat.");
+        blueprints.add(direct);
+
+        TrajectoryBlueprint persistent = new TrajectoryBlueprint("persistent_storage", goal, "Persistent data management");
+        persistent.addRequiredCharacteristic("Persistence support");
+        persistent.addRequiredCharacteristic("External state management");
+        persistent.addForbiddenOverlap("ephemeral execution");
+        persistent.addForbiddenOverlap("stateless model");
+        persistent.setArchitecturalDirection("Goal: Persistent state management. Philosophy: side-effect focused, externalized storage.");
+        blueprints.add(persistent);
+
+        TrajectoryBlueprint stabilized = new TrajectoryBlueprint("stabilized_resilient", goal, "Resilient implementation");
+        stabilized.addRequiredCharacteristic("Input validation");
+        stabilized.addRequiredCharacteristic("Error recovery/handling");
+        stabilized.addRequiredCharacteristic("Verification logic");
+        stabilized.addForbiddenOverlap("speculative features");
+        stabilized.addForbiddenOverlap("complex abstractions");
+        stabilized.setArchitecturalDirection("Goal: Resilient implementation. Philosophy: safety-first, deterministic error recovery.");
+        blueprints.add(stabilized);
+
+        TrajectoryBlueprint service = new TrajectoryBlueprint("reusable_service", goal, "Extensible and modular architecture");
+        service.addRequiredCharacteristic("Component separation");
+        service.addRequiredCharacteristic("Decoupled execution");
+        service.addForbiddenOverlap("direct coupling");
+        service.addForbiddenOverlap("hardcoded logic");
+        service.setArchitecturalDirection("Goal: Future extensibility. Philosophy: layered, decoupled, and modularly extensible.");
+        blueprints.add(service);
+
+        return blueprints;
+    }
+
+    private List<TrajectoryBlueprint> generateMediatedBlueprints(String goal) {
+        List<TrajectoryBlueprint> blueprints = new ArrayList<>();
+
+        TrajectoryBlueprint arch = new TrajectoryBlueprint("architecture_mapping", goal, "Structural and architectural mapping");
+        arch.addRequiredCharacteristic("Map core components");
+        arch.addRequiredCharacteristic("Identify structural patterns");
+        arch.setArchitecturalDirection("Focus: Architecture hotspots and high-level structure.");
+        blueprints.add(arch);
+
+        TrajectoryBlueprint dep = new TrajectoryBlueprint("dependency_audit", goal, "Dependency and relationship exploration");
+        dep.addRequiredCharacteristic("Analyze module relationships");
+        dep.addRequiredCharacteristic("Identify cross-cutting concerns");
+        dep.setArchitecturalDirection("Focus: Dependency graphs and ripple effects.");
+        blueprints.add(dep);
+
+        TrajectoryBlueprint hotspot = new TrajectoryBlueprint("hotspot_analysis", goal, "Complexity and technical debt analysis");
+        hotspot.addRequiredCharacteristic("Identify technical debt");
+        hotspot.addRequiredCharacteristic("Identify high-complexity areas");
+        hotspot.setArchitecturalDirection("Focus: Instability and refactoring opportunities.");
+        blueprints.add(hotspot);
+
+        TrajectoryBlueprint context = new TrajectoryBlueprint("context_distillation", goal, "High-signal context package evolution");
+        context.addRequiredCharacteristic("Distill minimal context");
+        context.addRequiredCharacteristic("Zero-noise file selection");
+        context.setArchitecturalDirection("Focus: Evolving the minimal reasoning package.");
+        blueprints.add(context);
+
+        return blueprints;
     }
 
     private BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory, TaskContext context) {
