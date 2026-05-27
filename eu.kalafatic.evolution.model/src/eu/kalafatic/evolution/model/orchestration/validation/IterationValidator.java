@@ -28,4 +28,14 @@ public interface IterationValidator {
 	boolean validateComments(String value);
 	boolean validateRating(int value);
 	boolean validateRationale(String value);
+
+	boolean validateJustification(String value);
+
+	boolean validateSemanticPressure(String value);
+
+	boolean validateSurvivalArgument(String value);
+
+	boolean validateTradeoffs(String value);
+
+	boolean validateFailureRisks(String value);
 }

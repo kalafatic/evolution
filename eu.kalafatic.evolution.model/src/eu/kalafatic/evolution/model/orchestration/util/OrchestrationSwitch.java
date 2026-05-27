@@ -36,6 +36,7 @@ import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
+import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
 
@@ -294,6 +295,12 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 			case OrchestrationPackage.CHANGE_SET: {
 				ChangeSet changeSet = (ChangeSet)theEObject;
 				T result = caseChangeSet(changeSet);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.SUPERVISOR_SETTINGS: {
+				SupervisorSettings supervisorSettings = (SupervisorSettings)theEObject;
+				T result = caseSupervisorSettings(supervisorSettings);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -802,6 +809,21 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseChangeSet(ChangeSet object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Supervisor Settings</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Supervisor Settings</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseSupervisorSettings(SupervisorSettings object) {
 		return null;
 	}
 

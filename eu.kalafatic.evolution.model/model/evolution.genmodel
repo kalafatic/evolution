@@ -123,6 +123,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/maxIterations"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/stepMode"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/bitState"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/justification"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Agent">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Agent/id"/>
@@ -303,6 +304,11 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/comments"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/rating"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/rationale"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/justification"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/semanticPressure"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/survivalArgument"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/tradeoffs"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Iteration/failureRisks"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Eclipse">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Eclipse/workspace"/>
@@ -317,6 +323,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/errors"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/decision"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/userSatisfaction"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//EvaluationResult/fitnessHistory"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//Test">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Test/id"/>

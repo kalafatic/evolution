@@ -21,6 +21,10 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#isIsItalic <em>Is Italic</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getAgentType <em>Agent Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getTimestamp <em>Timestamp</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getPriority <em>Priority</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getSequenceNumber <em>Sequence Number</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getTurnId <em>Turn Id</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#isIsTerminal <em>Is Terminal</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatMessage()

@@ -41,6 +41,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute maxIterations : EInt
     Attribute stepMode : EBoolean
     Attribute bitState : ELong
+    Attribute justification : EString
 
   Class Agent
     Attribute id : EString
@@ -221,6 +222,11 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute comments : EString
     Attribute rating : EInt
     Attribute rationale : EString
+    Attribute justification : EString
+    Attribute semanticPressure : EString
+    Attribute survivalArgument : EString
+    Attribute tradeoffs : EString
+    Attribute failureRisks : EString
 
   Class Eclipse
     Attribute workspace : EString
@@ -235,6 +241,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute errors : EString<<0..*>>
     Attribute decision : SelfDevDecision
     Attribute userSatisfaction : EInt
+    Attribute fitnessHistory : EString
 
   Class Test
     Attribute id : EString

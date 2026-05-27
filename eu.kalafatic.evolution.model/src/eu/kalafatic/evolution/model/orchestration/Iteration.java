@@ -24,6 +24,11 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getComments <em>Comments</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRating <em>Rating</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getRationale <em>Rationale</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getJustification <em>Justification</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getSemanticPressure <em>Semantic Pressure</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getSurvivalArgument <em>Survival Argument</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getTradeoffs <em>Tradeoffs</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Iteration#getFailureRisks <em>Failure Risks</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getIteration()

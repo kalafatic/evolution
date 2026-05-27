@@ -51,4 +51,10 @@ public interface TaskValidator {
 	boolean validateDarwinMode(boolean value);
 	boolean validateGitAutomation(boolean value);
 	boolean validateMaxIterations(int value);
+
+	boolean validateStepMode(boolean value);
+
+	boolean validateBitState(long value);
+
+	boolean validateJustification(String value);
 }

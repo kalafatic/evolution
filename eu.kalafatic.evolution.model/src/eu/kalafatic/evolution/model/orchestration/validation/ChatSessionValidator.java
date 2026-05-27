@@ -25,4 +25,10 @@ public interface ChatSessionValidator {
 	boolean validateGitAutomation(boolean value);
 	boolean validateMaxIterations(int value);
 	boolean validateStepMode(boolean value);
+
+	boolean validateTargetPath(String value);
+
+	boolean validateTargetType(String value);
+
+	boolean validateOutputPath(String value);
 }

@@ -20,6 +20,7 @@ import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
+import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
 
@@ -64,4 +65,6 @@ public interface OrchestratorValidator {
 	boolean validateServerSettings(ServerSettings value);
 	boolean validateServerSessions(EList<ServerSession> value);
 	boolean validateMonitoringHistory(EList<MonitoringData> value);
+
+	boolean validateSupervisorSettings(SupervisorSettings value);
 }

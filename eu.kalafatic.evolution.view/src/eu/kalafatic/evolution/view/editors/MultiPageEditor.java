@@ -57,7 +57,6 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.listeners.EditorResourceChangeListener;
 import eu.kalafatic.evolution.view.editors.listeners.EditorSelectionListener;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
-import eu.kalafatic.evolution.view.editors.pages.AiFlowPage;
 import eu.kalafatic.evolution.view.editors.pages.ArchitecturePage;
 import eu.kalafatic.evolution.view.editors.pages.ApprovalPage;
 import eu.kalafatic.evolution.view.editors.pages.DevelopmentPage;
@@ -88,7 +87,6 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private McpSettingsPage mcpSettingsPage;   
     private GraphPage graphPage;
     private BrowserPage browserPage;
-    private AiFlowPage aiFlowPage;
     private ApprovalPage approvalPage;
     private DevelopmentPage developmentPage;
     private ToolsPage toolsPage;
@@ -213,7 +211,6 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
                 mcpSettingsPage = McpSettingsPageFactory.createMcpSettingsPage(this, orchestrator);              
                 browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
-                aiFlowPage = AiFlowPageFactory.createAiFlowPage(this, orchestrator);
                 approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
                 developmentPage = DevelopmentPageFactory.createDevelopmentPage(this, orchestrator);
                 toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
@@ -398,7 +395,6 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (mcpSettingsPage != null) mcpSettingsPage.setOrchestrator(orchestrator);
         if (graphPage != null) graphPage.setOrchestrator(orchestrator);
         if (browserPage != null) browserPage.setOrchestrator(orchestrator);
-        if (aiFlowPage != null) aiFlowPage.setOrchestrator(orchestrator);
         if (approvalPage != null) approvalPage.setOrchestrator(orchestrator);
         if (developmentPage != null) developmentPage.setOrchestrator(orchestrator);
         if (toolsPage != null) toolsPage.setOrchestrator(orchestrator);

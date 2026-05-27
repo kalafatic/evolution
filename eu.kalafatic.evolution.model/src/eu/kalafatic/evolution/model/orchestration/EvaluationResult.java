@@ -21,6 +21,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getErrors <em>Errors</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getDecision <em>Decision</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getUserSatisfaction <em>User Satisfaction</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getFitnessHistory <em>Fitness History</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getEvaluationResult()

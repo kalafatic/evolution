@@ -2860,7 +2860,100 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewSession()
 	 * @generated
 	 */
-	int REVIEW_SESSION = 32;
+	int REVIEW_SESSION = 33;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl <em>Chat Session</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatSession()
+	 * @generated
+	 */
+	int CHAT_SESSION = 34;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatMessage()
+	 * @generated
+	 */
+	int CHAT_MESSAGE = 35;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl <em>Supervisor Settings</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSupervisorSettings()
+	 * @generated
+	 */
+	int SUPERVISOR_SETTINGS = 32;
+
+	/**
+	 * The feature id for the '<em><b>Executable Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__EXECUTABLE_PATH = 0;
+
+	/**
+	 * The feature id for the '<em><b>Deployed</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__DEPLOYED = 1;
+
+	/**
+	 * The feature id for the '<em><b>Source Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__SOURCE_PATH = 2;
+
+	/**
+	 * The feature id for the '<em><b>Commands</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__COMMANDS = 3;
+
+	/**
+	 * The feature id for the '<em><b>Settings</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__SETTINGS = 4;
+
+	/**
+	 * The number of structural features of the '<em>Supervisor Settings</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS_FEATURE_COUNT = 5;
+
+	/**
+	 * The number of operations of the '<em>Supervisor Settings</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS_OPERATION_COUNT = 0;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -2915,16 +3008,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int REVIEW_SESSION_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl <em>Chat Session</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatSession()
-	 * @generated
-	 */
-	int CHAT_SESSION = 33;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -3032,7 +3115,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_SESSION_FEATURE_COUNT = 12;
+	int CHAT_SESSION_FEATURE_COUNT = 11;
 
 	/**
 	 * The number of operations of the '<em>Chat Session</em>' class.
@@ -3042,16 +3125,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int CHAT_SESSION_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatMessage()
-	 * @generated
-	 */
-	int CHAT_MESSAGE = 34;
 
 	/**
 	 * The feature id for the '<em><b>Index</b></em>' attribute.
@@ -3178,70 +3251,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int CHAT_MESSAGE_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl <em>Supervisor Settings</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSupervisorSettings()
-	 * @generated
-	 */
-	int SUPERVISOR_SETTINGS = 35;
-
-	/**
-	 * The feature id for the '<em><b>Executable Path</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int SUPERVISOR_SETTINGS__EXECUTABLE_PATH = 0;
-
-	/**
-	 * The feature id for the '<em><b>Deployed</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int SUPERVISOR_SETTINGS__DEPLOYED = 1;
-
-	/**
-	 * The feature id for the '<em><b>Source Path</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int SUPERVISOR_SETTINGS__SOURCE_PATH = 2;
-
-	/**
-	 * The feature id for the '<em><b>Commands</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int SUPERVISOR_SETTINGS__COMMANDS = 3;
-
-	/**
-	 * The feature id for the '<em><b>Settings</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int SUPERVISOR_SETTINGS__SETTINGS = 4;
-
-	/**
-	 * The number of structural features of the '<em>Supervisor Settings</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int SUPERVISOR_SETTINGS_FEATURE_COUNT = 5;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl <em>Prompt Instructions</em>}' class.

@@ -23,4 +23,6 @@ public interface EvaluationResultValidator {
 	boolean validateErrors(EList<String> value);
 	boolean validateDecision(SelfDevDecision value);
 	boolean validateUserSatisfaction(int value);
+
+	boolean validateFitnessHistory(String value);
 }

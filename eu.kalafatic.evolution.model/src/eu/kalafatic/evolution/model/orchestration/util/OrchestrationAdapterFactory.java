@@ -36,6 +36,7 @@ import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
+import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
 
@@ -229,6 +230,10 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 			@Override
 			public Adapter caseChangeSet(ChangeSet object) {
 				return createChangeSetAdapter();
+			}
+			@Override
+			public Adapter caseSupervisorSettings(SupervisorSettings object) {
+				return createSupervisorSettingsAdapter();
 			}
 			@Override
 			public Adapter caseReviewSession(ReviewSession object) {
@@ -711,6 +716,20 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createChangeSetAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings <em>Supervisor Settings</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings
+	 * @generated
+	 */
+	public Adapter createSupervisorSettingsAdapter() {
 		return null;
 	}
 

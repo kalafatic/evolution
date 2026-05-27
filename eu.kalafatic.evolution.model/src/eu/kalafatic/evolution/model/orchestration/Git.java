@@ -18,6 +18,8 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getUsername <em>Username</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getLocalPath <em>Local Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getTestStatus <em>Test Status</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getBranchName <em>Branch Name</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getCommitMsg <em>Commit Msg</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Git#getPassword <em>Password</em>}</li>
  * </ul>
  *
