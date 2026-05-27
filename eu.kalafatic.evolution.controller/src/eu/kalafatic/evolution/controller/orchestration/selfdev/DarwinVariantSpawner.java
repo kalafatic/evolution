@@ -21,6 +21,94 @@ public class DarwinVariantSpawner {
     }
 
     /**
+     * Spawns variants based on blueprints.
+     */
+    public List<JSONObject> spawnBlueprints(String goal, List<TrajectoryBlueprint> blueprints, String basePrompt, String lineageContext, List<String> rejectedSiblings, boolean isMediated, TaskContext context) {
+        List<JSONObject> variants = new ArrayList<>();
+        Orchestrator orchestrator = context.getOrchestrator();
+
+        List<JSONObject> currentRoundVariants = new ArrayList<>();
+
+        for (TrajectoryBlueprint bp : blueprints) {
+            context.log("[SPAWNER] Realizing trajectory from blueprint: " + bp.getId());
+
+            String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated);
+            JSONObject validated = null;
+
+            for (int retry = 0; retry < 2; retry++) {
+                try {
+                    String response = aiService.sendRequest(orchestrator, bpPrompt, context);
+                    validated = validator.validate(response, DarwinStrategyType.PHILOSOPHY_MUTATION, context); // Blueprints are technical mutations
+                    if (validated != null) break;
+                } catch (Exception e) {
+                    context.log("[SPAWNER] Error during blueprint generation for " + bp.getId() + ": " + e.getMessage());
+                }
+            }
+
+            if (validated != null) {
+                variants.add(validated);
+                currentRoundVariants.add(validated);
+                context.log("[SPAWNER] Successfully realized blueprint: " + bp.getId());
+            }
+        }
+        return variants;
+    }
+
+    private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SYSTEM:\n")
+          .append("You are an engineering trajectory materializer. You must REALIZES a SPECIFIC BLUEPRINT.\n\n")
+          .append("CRITICAL: You are NOT deciding the divergence. The divergence is PREDEFINED by the BLUEPRINT.\n")
+          .append("Your task is to CONSTRAIN your output to the technical characteristics required by the blueprint.\n\n")
+          .append("BLUEPRINT TO MATERIALIZE:\n")
+          .append("Goal: ").append(bp.getGoal()).append("\n")
+          .append("Philosophy: ").append(bp.getPhilosophy()).append("\n")
+          .append("Required Characteristics: ").append(bp.getRequiredCharacteristics()).append("\n")
+          .append("Forbidden Overlaps: ").append(bp.getForbiddenOverlaps()).append("\n")
+          .append("Architectural Direction: ").append(bp.getArchitecturalDirection()).append("\n\n")
+          .append("STRICT MATERIALIZATION RULES:\n")
+          .append("- Adhere STRICTLY to the philosophy and required characteristics.\n")
+          .append("- DO NOT propose anything mentioned in 'Forbidden Overlaps'.\n")
+          .append("- If you fail to stay within the blueprint constraints, the trajectory will be REJECTED.\n")
+          .append("- Provide concrete technical actions and steps.\n\n");
+
+        if (isMediated) {
+            sb.append("MEDIATED MODE COGNITION RULES (CRITICAL):\n")
+              .append("- Focus on ARCHITECTURAL UNDERSTANDING, not code.\n")
+              .append("- USE ONLY REAL repository evidence.\n\n");
+        }
+
+        if (!currentRoundVariants.isEmpty()) {
+            sb.append("FORBIDDEN PHILOSOPHIES (SIBLING MUTATION PRESSURE):\n")
+              .append("The following engineering philosophies have already been claimed in this generation. You MUST intentionally mutate AGAINST them.\n\n");
+            for (JSONObject v : currentRoundVariants) {
+                sb.append("--- OCCUPIED: ").append(v.optString("id")).append(" ---\n")
+                  .append("Strategy: ").append(v.optString("strategy")).append("\n")
+                  .append("Philosophy: ").append(v.optString("semantic_justification")).append("\n\n");
+            }
+        }
+
+        sb.append("CONTEXT:\n")
+          .append(basePrompt).append("\n\n")
+          .append("REQUIRED SCHEMA (CRITICAL: PROVIDE SPECIFIC TECHNICAL VALUES):\n")
+          .append("{\n")
+          .append("  \"id\": \"").append(bp.getId()).append("\",\n")
+          .append("  \"strategy_type\": \"PHILOSOPHY_MUTATION\",\n")
+          .append("  \"strategy\": \"precise engineering strategy based on the blueprint\",\n")
+          .append("  \"survival_argument\": \"technical argument for this blueprint\",\n")
+          .append("  \"tradeoffs\": \"technical tradeoffs inherent to this blueprint\",\n")
+          .append("  \"failure_risks\": \"potential failure modes\",\n")
+          .append("  \"semantic_justification\": \"philosophy materialization\",\n")
+          .append("  \"projected_steps\": [\"step 1\", \"step 2\"],\n")
+          .append("  \"expected_outputs\": [\"artifact 1\"],\n")
+          .append("  \"score\": 0.8,\n")
+          .append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"path.java\", \"description\": \"desc\" }]\n")
+          .append("}");
+
+        return sb.toString();
+    }
+
+    /**
      * Spawns variants for the given strategies.
      */
     public List<JSONObject> spawn(String goal, List<DarwinStrategySeed> seeds, String basePrompt, String lineageContext, List<String> rejectedSiblings, boolean isMediated, TaskContext context) {

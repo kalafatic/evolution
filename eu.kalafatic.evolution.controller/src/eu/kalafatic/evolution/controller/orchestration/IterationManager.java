@@ -752,6 +752,15 @@ public class IterationManager {
             context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
         }
 
+        // EVOLUTIONARY AXIS PROGRESSION
+        IntentExpansionResult intentExpansion = (IntentExpansionResult) state.getMetadata().get("intentExpansion");
+        if (intentExpansion != null && !intentExpansion.getEvolutionaryAxes().isEmpty()) {
+            int currentGen = state.getIterationCount();
+            int axisIndex = currentGen % intentExpansion.getEvolutionaryAxes().size();
+            eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionAxis currentAxis = intentExpansion.getEvolutionaryAxes().get(axisIndex);
+            context.log("[KERNEL] Evolutionary Axis: " + currentAxis.getName() + " (Generation: " + currentGen + ")");
+        }
+
         // 2. EVOLUTIONARY EXECUTION (Delegated to DarwinFlow Engine)
         // Refactored to keep selection and phase control in IterationManager.
         checkStep(state.getCurrentPhase(), "BRANCH_GENERATION", "Spawning competing trajectories for: " + goal);

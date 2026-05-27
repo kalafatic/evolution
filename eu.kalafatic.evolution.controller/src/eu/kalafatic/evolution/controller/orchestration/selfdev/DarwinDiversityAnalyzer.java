@@ -17,10 +17,26 @@ public class DarwinDiversityAnalyzer {
      * Filters a list of variants to remove semantic and conceptual duplicates.
      */
     public List<JSONObject> analyze(List<JSONObject> variants, TaskContext context) {
+        return analyze(variants, null, context);
+    }
+
+    /**
+     * Filters a list of variants and ensures they adhere to their blueprints.
+     */
+    public List<JSONObject> analyze(List<JSONObject> variants, List<TrajectoryBlueprint> blueprints, TaskContext context) {
         if (variants.size() < 2) return variants;
 
         List<JSONObject> unique = new ArrayList<>();
         for (JSONObject v : variants) {
+            // Blueprint Adherence Check
+            if (blueprints != null) {
+                TrajectoryBlueprint bp = blueprints.stream().filter(b -> b.getId().equals(v.optString("id"))).findFirst().orElse(null);
+                if (bp != null && !adheresToBlueprint(v, bp, context)) {
+                    context.log("[DIVERSITY] Dropping variant as it violates blueprint: " + v.optString("id"));
+                    continue;
+                }
+            }
+
             if (isUnique(v, unique)) {
                 unique.add(v);
             } else {
@@ -28,6 +44,27 @@ public class DarwinDiversityAnalyzer {
             }
         }
         return unique;
+    }
+
+    private boolean adheresToBlueprint(JSONObject variant, TrajectoryBlueprint bp, TaskContext context) {
+        String strategy = variant.optString("strategy").toLowerCase();
+        String philosophy = variant.optString("semantic_justification").toLowerCase();
+
+        // Basic check: Philosophy must mention core blueprint goal/philosophy
+        String bpGoal = bp.getGoal().toLowerCase();
+        if (computeSimilarity(philosophy, bpGoal) < 0.1 && computeSimilarity(strategy, bpGoal) < 0.1) {
+            return false;
+        }
+
+        // Forbidden overlap check
+        for (String forbidden : bp.getForbiddenOverlaps()) {
+            if (strategy.contains(forbidden.toLowerCase()) || philosophy.contains(forbidden.toLowerCase())) {
+                context.log("[DIVERSITY] Blueprint Violation: Variant contains forbidden overlap: " + forbidden);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private boolean isUnique(JSONObject candidate, List<JSONObject> existing) {

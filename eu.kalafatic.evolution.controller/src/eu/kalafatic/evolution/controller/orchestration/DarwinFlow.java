@@ -488,13 +488,21 @@ public class DarwinFlow implements IOrchestrationFlow {
             return false;
         }
 
+        IntentExpansionResult expansion = (IntentExpansionResult) context.getOrchestrationState().getMetadata().get("intentExpansion");
+        int totalAxes = (expansion != null && expansion.getEvolutionaryAxes() != null) ? expansion.getEvolutionaryAxes().size() : 1;
+
+        // Converge only if we have explored all identified evolutionary axes at least once
+        if (iterationCount < totalAxes) {
+            return false;
+        }
+
         long distinctSurvivors = context.getKernelContext().getMemoryService().getRecords().stream()
                 .filter(r -> "ACTIVE".equals(r.getActivationState()))
                 .map(r -> r.getStrategy())
                 .distinct()
                 .count();
 
-        if (distinctSurvivors < 3 && iterationCount < 4) {
+        if (distinctSurvivors < 3 && iterationCount < Math.max(4, totalAxes)) {
              return false;
         }
 

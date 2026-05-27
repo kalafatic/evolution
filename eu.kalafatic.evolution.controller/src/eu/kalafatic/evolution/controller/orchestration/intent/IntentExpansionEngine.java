@@ -7,6 +7,8 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionAxis;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.TrajectoryBlueprint;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,11 +26,16 @@ public class IntentExpansionEngine extends BaseAiAgent {
         return "You are an Intent Expansion Engine. Your goal is to analyze user requests for ambiguity and explore the 'intent space' before implementation begins.\n" +
                "Identify unresolved dimensions of intent and generate coherent hypotheses for what the user might want.\n" +
                "\n" +
-               "CRITICAL DISTINCTION:\n" +
-               "1. SEMANTIC AMBIGUITY: Missing critical information or contradictory constraints that prevent safe execution (e.g., unknown platform, unknown auth model).\n" +
-               "2. IMPLEMENTATION POLYMORPHISM: Multiple valid ways to implement a clear intent (e.g., choice of library, sync vs async, logger vs println).\n" +
+               "CRITICAL: CONSTRUCT THE EVOLUTIONARY SEARCH SPACE.\n" +
+               "Analyze implementation dimensions, ambiguity points, architectural axes, and extensibility potential.\n" +
                "\n" +
-               "Implementation polymorphism MUST be captured as 'implementationStrategies', NOT as ambiguities requiring user clarification.\n" +
+               "PHASE 1 - INTENT DECOMPOSITION:\n" +
+               "Identify 'Evolutionary Axes' - dimensions where implementation choices exist.\n" +
+               "For each axis, identify potential candidate strategies/blueprints.\n" +
+               "\n" +
+               "CRITICAL DISTINCTION:\n" +
+               "1. SEMANTIC AMBIGUITY: Missing critical information or contradictory constraints that prevent safe execution.\n" +
+               "2. IMPLEMENTATION POLYMORPHISM (EVOLUTIONARY AXES): Multiple valid ways to implement a clear intent.\n" +
                "\n" +
                "STRICT RULES:\n" +
                "1. Do NOT generate code.\n" +
@@ -41,39 +48,26 @@ public class IntentExpansionEngine extends BaseAiAgent {
     protected String getFooterInstructions() {
         return "OUTPUT SCHEMA:\n" +
                "{\n" +
-               "  \"state\": \"CLEAR\", // CRITICAL: Choose exactly ONE from [CLEAR, EVOLVABLE, NEEDS_CLARIFICATION, BLOCKED, CONTRADICTORY]. Do NOT echo the list.\n" +
-               "  \"dominantIntent\": \"string (clear engineering objective)\",\n" +
-               "  \"dominantConfidence\": float (0.0-1.0),\n" +
-               "  \"ambiguityScore\": float (0.0-1.0, only for semantic ambiguity),\n" +
-               "  \"executionRiskScore\": float (0.0-1.0),\n" +
-               "  \"evolutionOpportunityScore\": float (0.0-1.0),\n" +
-               "  \"implementationStrategies\": [\"string (valid alternative approach)\"],\n" +
-               "  \"dimensions\": [\n" +
+               "  \"state\": \"CLEAR\", // [CLEAR, EVOLVABLE, NEEDS_CLARIFICATION, BLOCKED, CONTRADICTORY]\n" +
+               "  \"dominantIntent\": \"string\",\n" +
+               "  \"dominantConfidence\": float,\n" +
+               "  \"evolutionaryAxes\": [\n" +
                "    {\n" +
-               "      \"dimensionId\": \"string\",\n" +
-               "      \"name\": \"string\",\n" +
-               "      \"confidence\": float,\n" +
-               "      \"inferredValue\": \"string\",\n" +
-               "      \"candidateValues\": [\"string\"],\n" +
-               "      \"ambiguityScore\": float,\n" +
-               "      \"requiresUserInput\": boolean,\n" +
-               "      \"rationale\": \"string\"\n" +
-               "    }\n" +
-               "  ],\n" +
-               "  \"hypotheses\": [\n" +
-               "    {\n" +
-               "      \"id\": \"string\",\n" +
+               "      \"name\": \"string (e.g., Output Strategy)\",\n" +
                "      \"description\": \"string\",\n" +
-               "      \"confidence\": float,\n" +
-               "      \"dimensionValues\": [\n" +
-               "        { \"dimensionId\": \"string\", \"value\": \"string\" }\n" +
+               "      \"candidateBlueprints\": [\n" +
+               "        {\n" +
+               "          \"id\": \"string\",\n" +
+               "          \"goal\": \"string\",\n" +
+               "          \"philosophy\": \"string\",\n" +
+               "          \"requiredCharacteristics\": [\"string\"],\n" +
+               "          \"forbiddenOverlaps\": [\"string\"]\n" +
+               "        }\n" +
                "      ]\n" +
                "    }\n" +
                "  ],\n" +
                "  \"confidence\": {\n" +
                "    \"overallConfidence\": float,\n" +
-               "    \"structuralConfidence\": float,\n" +
-               "    \"semanticConfidence\": float,\n" +
                "    \"rationale\": \"string\"\n" +
                "  }\n" +
                "}";
@@ -132,53 +126,29 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
         result.setDominantIntent(json.optString("dominantIntent"));
         result.setDominantConfidence(json.optDouble("dominantConfidence", 0.5));
-        result.setAmbiguityScore(json.optDouble("ambiguityScore", 0.0));
-        result.setExecutionRiskScore(json.optDouble("executionRiskScore", 0.0));
-        result.setEvolutionOpportunityScore(json.optDouble("evolutionOpportunityScore", 0.0));
-        result.setImplementationStrategies(JsonUtils.toStringList(json.optJSONArray("implementationStrategies")));
 
         context.log("[INTENT EXPANSION] Interpretation State: " + result.getState());
         context.log("[INTENT EXPANSION] Dominant Intent: " + result.getDominantIntent());
 
-        // Parse Dimensions
-        JSONArray dims = json.optJSONArray("dimensions");
-        if (dims != null) {
-            for (int i = 0; i < dims.length(); i++) {
-                JSONObject dObj = dims.getJSONObject(i);
-                IntentDimension d = new IntentDimension();
-                d.setDimensionId(dObj.optString("dimensionId"));
-                d.setName(dObj.optString("name"));
-                d.setConfidence(dObj.optDouble("confidence", 0.5));
-                d.setInferredValue(dObj.optString("inferredValue"));
-                d.setCandidateValues(JsonUtils.toStringList(dObj.optJSONArray("candidateValues")));
-                d.setAmbiguityScore(dObj.optDouble("ambiguityScore", 0.0));
-                d.setRequiresUserInput(dObj.optBoolean("requiresUserInput", false));
-                d.setRationale(dObj.optString("rationale"));
-                result.getDimensions().add(d);
-            }
-        }
+        // Parse Evolutionary Axes
+        JSONArray axes = json.optJSONArray("evolutionaryAxes");
+        if (axes != null) {
+            for (int i = 0; i < axes.length(); i++) {
+                JSONObject axisObj = axes.getJSONObject(i);
+                EvolutionAxis axis = new EvolutionAxis(axisObj.optString("name"), axisObj.optString("description"));
 
-        // Parse Hypotheses
-        JSONArray hyps = json.optJSONArray("hypotheses");
-        if (hyps != null) {
-            for (int i = 0; i < hyps.length(); i++) {
-                JSONObject hObj = hyps.getJSONObject(i);
-                IntentHypothesis h = new IntentHypothesis();
-                h.setId(hObj.optString("id"));
-                h.setDescription(hObj.optString("description"));
-                h.setConfidence(hObj.optDouble("confidence", 0.5));
+                JSONArray blueprints = axisObj.optJSONArray("candidateBlueprints");
+                if (blueprints != null) {
+                    for (int j = 0; j < blueprints.length(); j++) {
+                        JSONObject bpObj = blueprints.getJSONObject(j);
+                        TrajectoryBlueprint bp = new TrajectoryBlueprint(bpObj.optString("id"), bpObj.optString("goal"), bpObj.optString("philosophy"));
 
-                JSONArray vals = hObj.optJSONArray("dimensionValues");
-                if (vals != null) {
-                    for (int j = 0; j < vals.length(); j++) {
-                        JSONObject vObj = vals.getJSONObject(j);
-                        IntentHypothesis.DimensionValue dv = new IntentHypothesis.DimensionValue();
-                        dv.setDimensionId(vObj.optString("dimensionId"));
-                        dv.setValue(vObj.optString("value"));
-                        h.getDimensionValues().add(dv);
+                        bp.getRequiredCharacteristics().addAll(JsonUtils.toStringList(bpObj.optJSONArray("requiredCharacteristics")));
+                        bp.getForbiddenOverlaps().addAll(JsonUtils.toStringList(bpObj.optJSONArray("forbiddenOverlaps")));
+                        axis.addBlueprint(bp);
                     }
                 }
-                result.getHypotheses().add(h);
+                result.getEvolutionaryAxes().add(axis);
             }
         }
 
@@ -187,8 +157,6 @@ public class IntentExpansionEngine extends BaseAiAgent {
         IntentConfidence c = new IntentConfidence();
         if (confObj != null) {
             c.setOverallConfidence(confObj.optDouble("overallConfidence", 0.5));
-            c.setStructuralConfidence(confObj.optDouble("structuralConfidence", 0.5));
-            c.setSemanticConfidence(confObj.optDouble("semanticConfidence", 0.5));
             c.setRationale(confObj.optString("rationale", "Inferred from content"));
         } else {
             c.setOverallConfidence(0.5);
@@ -196,16 +164,13 @@ public class IntentExpansionEngine extends BaseAiAgent {
         }
         result.setConfidence(c);
 
-        // PERSISTENCE: Save clarification conclusions to Semantic Workspace
-        persistClarifications(result, context);
-
         // DIAGNOSTICS: Emit causal node for intent expansion
         context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
             "intent-expansion-" + System.currentTimeMillis(),
             "INTENT_EXPANSION",
             "IntentExpansionEngine",
             List.of(prompt),
-            result.getHypotheses().stream().map(h -> h.getId()).collect(java.util.stream.Collectors.toList()),
+            result.getEvolutionaryAxes().stream().map(a -> a.getName()).collect(java.util.stream.Collectors.toList()),
             result.getConfidence().getOverallConfidence(),
             result.getConfidence().getRationale()
         ));
@@ -248,31 +213,4 @@ public class IntentExpansionEngine extends BaseAiAgent {
         }
     }
 
-    private void persistClarifications(IntentExpansionResult result, TaskContext context) {
-        List<WorkspaceArtifact> existing = context.getSemanticWorkspace().findArtifactsByType("clarification-conclusion");
-
-        for (IntentDimension dim : result.getDimensions()) {
-            if (dim.getConfidence() > 0.7 && dim.getInferredValue() != null && !dim.getInferredValue().isEmpty()) {
-                String newContent = "Intent clarified: " + dim.getName() + " is resolved to: " + dim.getInferredValue();
-
-                boolean alreadyExists = existing.stream()
-                        .anyMatch(a -> a.getContent() != null && a.getContent().equalsIgnoreCase(newContent));
-
-                if (alreadyExists) {
-                    continue;
-                }
-
-                String artifactId = "clarification-" + dim.getDimensionId() + "-" + System.currentTimeMillis();
-                WorkspaceArtifact artifact = new WorkspaceArtifact(artifactId, "clarification-conclusion");
-                artifact.setContent(newContent);
-                artifact.setConfidence(dim.getConfidence());
-                artifact.getSemanticTags().add(dim.getName());
-                artifact.getSemanticTags().add("intent");
-                artifact.setSourceIteration("it-" + context.getCurrentIteration());
-
-                context.getSemanticWorkspace().addArtifact(artifact);
-                context.log("[WORKSPACE] Persisted intent clarification: " + dim.getName());
-            }
-        }
-    }
 }
