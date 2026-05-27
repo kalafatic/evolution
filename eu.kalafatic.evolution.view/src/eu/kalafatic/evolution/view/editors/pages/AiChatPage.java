@@ -1479,7 +1479,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
             priority = MessagePriority.NORMAL;
         }
 
-        boolean needsApproval = content.toLowerCase().contains("waiting for user") ||
+        boolean needsApproval = (content.toLowerCase().contains("waiting for user") ||
                 content.toLowerCase().contains("guidance?") ||
                 content.toLowerCase().contains("clarify") ||
                 content.toLowerCase().contains("clarification") ||
@@ -1487,7 +1487,10 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
                 content.toLowerCase().contains("ambiguous") ||
                 content.toLowerCase().contains("approve") ||
                 content.toLowerCase().contains("approval") ||
-                content.toLowerCase().contains("proceed?");
+                content.toLowerCase().contains("proceed?")) &&
+                !content.contains("AUTO_INFER") &&
+                !content.contains("BRANCH_PARALLEL") &&
+                !content.contains("Interpretation State: CLEAR");
 
         if (needsApproval && !agentType.contains("user")) {
 		if (!agentType.contains("waiting")) agentType += " waiting";
