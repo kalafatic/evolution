@@ -68,8 +68,14 @@ public class DarwinVariantValidator {
 
         // 6. Validate minimum completeness and PROHIBIT PLACEHOLDERS
         String strategy = json.optString("strategy");
-        if (strategy.length() < 10 || strategy.contains("<") || strategy.contains(">")) {
+        if (strategy.length() < 10 || strategy.contains("<") || strategy.contains(">") || strategy.contains("precise engineering strategy")) {
             if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder strategy.");
+            return null;
+        }
+
+        String reasoningFocus = json.optString("reasoning_focus");
+        if (reasoningFocus.contains("<") || reasoningFocus.contains(">") || reasoningFocus.contains("specific architectural focus")) {
+            if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder reasoning_focus.");
             return null;
         }
 
@@ -89,6 +95,17 @@ public class DarwinVariantValidator {
         if (actions == null || actions.length() == 0) {
             if (context != null) context.log("[VALIDATOR] Error: 'actions' field must be a non-empty array.");
             return null;
+        }
+
+        JSONArray selectedFiles = json.optJSONArray("selected_files");
+        if (selectedFiles != null) {
+            for (int i = 0; i < selectedFiles.length(); i++) {
+                String path = selectedFiles.optString(i, "");
+                if (path.contains("<") || path.contains(">") || path.contains("path/to/file")) {
+                    if (context != null) context.log("[VALIDATOR] Error: Placeholder detected in selected_files: '" + path + "'.");
+                    return null;
+                }
+            }
         }
 
         for (int i = 0; i < actions.length(); i++) {

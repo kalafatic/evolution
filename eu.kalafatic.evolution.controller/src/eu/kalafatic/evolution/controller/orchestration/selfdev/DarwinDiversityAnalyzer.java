@@ -77,6 +77,27 @@ public class DarwinDiversityAnalyzer {
             JSONObject oDimensions = other.optJSONObject("engineering_dimensions");
             Set<String> oTargets = getActionTargets(other);
 
+            // 0. MEDIATED COGNITION DIVERSITY: Check reasoning focus and file selection
+            String cFocus = candidate.optString("reasoning_focus", "").toLowerCase();
+            String oFocus = other.optString("reasoning_focus", "").toLowerCase();
+            if (!cFocus.isEmpty() && !oFocus.isEmpty()) {
+                if (computeSimilarity(cFocus, oFocus) > 0.7) {
+                    return false;
+                }
+            }
+
+            JSONArray cFilesArr = candidate.optJSONArray("selected_files");
+            JSONArray oFilesArr = other.optJSONArray("selected_files");
+            if (cFilesArr != null && oFilesArr != null) {
+                Set<String> cFiles = new HashSet<>();
+                Set<String> oFiles = new HashSet<>();
+                for (int i = 0; i < cFilesArr.length(); i++) cFiles.add(cFilesArr.getString(i));
+                for (int i = 0; i < oFilesArr.length(); i++) oFiles.add(oFilesArr.getString(i));
+                if (computeJaccard(cFiles, oFiles) > 0.8) {
+                    return false;
+                }
+            }
+
             // 1. DIMENSION-BASED COMPARISON: Check for architectural duplication across 9 dimensions
             if (cDimensions != null && oDimensions != null) {
                 double dimensionSim = computeDimensionSimilarity(cDimensions, oDimensions);

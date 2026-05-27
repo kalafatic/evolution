@@ -32,7 +32,7 @@ public class DarwinVariantSpawner {
         for (TrajectoryBlueprint bp : blueprints) {
             context.log("[SPAWNER] Realizing trajectory from blueprint: " + bp.getId());
 
-            String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated);
+            String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated, context);
             JSONObject validated = null;
 
             for (int retry = 0; retry < 2; retry++) {
@@ -54,7 +54,7 @@ public class DarwinVariantSpawner {
         return variants;
     }
 
-    private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated) {
+    private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated, TaskContext context) {
         StringBuilder sb = new StringBuilder();
         sb.append("SYSTEM:\n")
           .append("You are an engineering trajectory materializer. You must REALIZES a SPECIFIC BLUEPRINT.\n\n")
@@ -76,6 +76,20 @@ public class DarwinVariantSpawner {
             sb.append("MEDIATED MODE COGNITION RULES (CRITICAL):\n")
               .append("- Focus on ARCHITECTURAL UNDERSTANDING, not code.\n")
               .append("- USE ONLY REAL repository evidence.\n\n");
+
+            if (context != null && context.getOrchestrationState() != null) {
+                var metadata = context.getOrchestrationState().getMetadata();
+                if (metadata.get("current_understanding") != null) {
+                    sb.append("→ CURRENT EVOLVED UNDERSTANDING: ").append(metadata.get("current_understanding")).append("\n");
+                }
+                if (metadata.get("current_reasoning_focus") != null) {
+                    sb.append("→ CURRENT REASONING FOCUS: ").append(metadata.get("current_reasoning_focus")).append("\n");
+                }
+                if (metadata.get("current_selected_files") != null) {
+                    sb.append("→ CURRENT SELECTED FILES: ").append(metadata.get("current_selected_files")).append("\n");
+                }
+                sb.append("\n");
+            }
         }
 
         if (!currentRoundVariants.isEmpty()) {
@@ -95,6 +109,8 @@ public class DarwinVariantSpawner {
           .append("  \"id\": \"").append(bp.getId()).append("\",\n")
           .append("  \"strategy_type\": \"PHILOSOPHY_MUTATION\",\n")
           .append("  \"strategy\": \"precise engineering strategy based on the blueprint\",\n")
+          .append("  \"reasoning_focus\": \"specific architectural focus for this mediated trajectory\",\n")
+          .append("  \"selected_files\": [\"path/to/file1.java\", \"path/to/file2.java\"],\n")
           .append("  \"survival_argument\": \"technical argument for this blueprint\",\n")
           .append("  \"tradeoffs\": \"technical tradeoffs inherent to this blueprint\",\n")
           .append("  \"failure_risks\": \"potential failure modes\",\n")
@@ -121,7 +137,7 @@ public class DarwinVariantSpawner {
         for (DarwinStrategySeed seed : seeds) {
             context.log("[SPAWNER] Generating " + seed.getType() + " trajectory...");
 
-            String seedPrompt = buildSeedPrompt(seed, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated);
+            String seedPrompt = buildSeedPrompt(seed, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated, context);
             JSONObject validated = null;
 
             for (int retry = 0; retry < 2; retry++) {
@@ -149,7 +165,7 @@ public class DarwinVariantSpawner {
         return variants;
     }
 
-    private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated) {
+    private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated, TaskContext context) {
         StringBuilder sb = new StringBuilder();
         sb.append("SYSTEM:\n")
           .append("You are an adaptive engineering evolution engine generating ONE Darwin evolutionary branch trajectory.\n\n")
@@ -189,6 +205,20 @@ public class DarwinVariantSpawner {
               .append("- USE ONLY REAL repository evidence provided in the context (files, structure, technologies).\n")
               .append("- Focus on identifying architecture hotspots, important files, and high-value reasoning context.\n")
               .append("- Strictly prohibit invented APIs or fictitious infrastructure.\n\n");
+
+            if (context != null && context.getOrchestrationState() != null) {
+                var metadata = context.getOrchestrationState().getMetadata();
+                if (metadata.get("current_understanding") != null) {
+                    sb.append("→ CURRENT EVOLVED UNDERSTANDING: ").append(metadata.get("current_understanding")).append("\n");
+                }
+                if (metadata.get("current_reasoning_focus") != null) {
+                    sb.append("→ CURRENT REASONING FOCUS: ").append(metadata.get("current_reasoning_focus")).append("\n");
+                }
+                if (metadata.get("current_selected_files") != null) {
+                    sb.append("→ CURRENT SELECTED FILES: ").append(metadata.get("current_selected_files")).append("\n");
+                }
+                sb.append("\n");
+            }
         }
 
         if (lineageContext != null && !lineageContext.isEmpty()) {
@@ -261,6 +291,8 @@ public class DarwinVariantSpawner {
                "  \"id\": \"v-" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"strategy_type\": \"" + seed.getType() + "\",\n" +
                "  \"strategy\": \"precise engineering strategy for this trajectory\",\n" +
+               "  \"reasoning_focus\": \"specific architectural focus for this mediated trajectory\",\n" +
+               "  \"selected_files\": [\"path/to/file1.java\", \"path/to/file2.java\"],\n" +
                "  \"engineering_dimensions\": {\n" +
                "    \"philosophy\": \"specific philosophy for this branch\",\n" +
                "    \"execution_model\": \"atomic/service/reactive/etc\",\n" +

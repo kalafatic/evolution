@@ -1110,13 +1110,19 @@ public class IterationManager {
                 extractor.extractToSnapshot(snapshot);
             }
 
-            ContextCurator curator = new ContextCurator();
-            List<String> selectedPaths = curator.selectContext(snapshot, request, 16);
+            // USE EVOLVED METADATA: Prioritize evolved selection over static curation
+            List<String> selectedPaths = (List<String>) context.getOrchestrationState().getMetadata().get("current_selected_files");
+            if (selectedPaths == null || selectedPaths.isEmpty()) {
+                context.log("[KERNEL] Mediated Mode: No evolved file selection found. Falling back to static curation.");
+                ContextCurator curator = new ContextCurator();
+                selectedPaths = curator.selectContext(snapshot, request, 16);
+            }
 
             String evolvedUnderstanding = (String) context.getOrchestrationState().getMetadata().get("current_understanding");
+            String evolvedReasoningFocus = (String) context.getOrchestrationState().getMetadata().get("current_reasoning_focus");
 
             PromptSynthesizer synthesizer = new PromptSynthesizer();
-            String optimizedPrompt = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths, evolvedUnderstanding);
+            String optimizedPrompt = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths, evolvedUnderstanding + "\n\nREASONING FOCUS: " + evolvedReasoningFocus);
 
             // Final explicit approval for packaging in mediated mode
             if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && !context.isAutoApprove()) {

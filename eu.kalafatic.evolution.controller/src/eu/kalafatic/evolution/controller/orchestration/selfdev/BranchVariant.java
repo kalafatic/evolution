@@ -23,6 +23,8 @@ public class BranchVariant {
     private List<String> changedFiles = new ArrayList<>();
     private String strategy; // description of approach
     private String strategyType; // IMPLEMENTATION, ANALYTICAL, CURIOSITY, STABILIZATION, EXPLORATION
+    private List<String> selectedFiles = new ArrayList<>();
+    private String reasoningFocus;
     private List<Action> actions = new ArrayList<>();
     private ExpectedEffect expectedEffect;
     private Hypothesis hypothesis;
@@ -80,6 +82,12 @@ public class BranchVariant {
 
     public List<Action> getActions() { return actions; }
     public void setActions(List<Action> actions) { this.actions = actions; }
+
+    public List<String> getSelectedFiles() { return selectedFiles; }
+    public void setSelectedFiles(List<String> selectedFiles) { this.selectedFiles = selectedFiles; }
+
+    public String getReasoningFocus() { return reasoningFocus; }
+    public void setReasoningFocus(String reasoningFocus) { this.reasoningFocus = reasoningFocus; }
 
     public ExpectedEffect getExpectedEffect() { return expectedEffect; }
     public void setExpectedEffect(ExpectedEffect expectedEffect) { this.expectedEffect = expectedEffect; }

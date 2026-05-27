@@ -223,6 +223,8 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.log("[KERNEL] Applying cognitive winner: " + selectedVariant.getStrategy());
                 context.getOrchestrationState().getMetadata().put("current_understanding", selectedVariant.getStrategy());
                 context.getOrchestrationState().getMetadata().put("current_strategy", selectedVariant.getStrategyType());
+                context.getOrchestrationState().getMetadata().put("current_reasoning_focus", selectedVariant.getReasoningFocus());
+                context.getOrchestrationState().getMetadata().put("current_selected_files", selectedVariant.getSelectedFiles());
                 context.getOrchestrationState().getMetadata().put("current_actions", selectedVariant.getActions());
             }
 
