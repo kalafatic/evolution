@@ -231,7 +231,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         List<DarwinStrategySeed> mutationSeeds = new ArrayList<>();
         int currentIteration = context.getOrchestrationState().getIterationCount();
-        boolean isHighConfidenceAtomic = atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8;
         boolean isMediated = policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED;
 
         List<TrajectoryBlueprint> currentBlueprints = new ArrayList<>();
@@ -249,14 +248,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 mutationSeeds.add(DarwinStrategySeed.dependencyExploration());
                 mutationSeeds.add(DarwinStrategySeed.refactorHotspotAnalysis());
                 mutationSeeds.add(DarwinStrategySeed.contextReduction());
-            } else if (currentIteration == 0) {
-                context.log("[DARWIN] Iteration 0: Spawning 4-branch trajectory model.");
-                mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
-                mutationSeeds.add(DarwinStrategySeed.philosophyMutation());
-                mutationSeeds.add(DarwinStrategySeed.maximalDivergence());
-                mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery());
             } else {
-                context.log("[DARWIN] Iteration " + currentIteration + ": Mutating surviving trajectory.");
+                context.log("[DARWIN] Spawning MANDATORY 4-branch mutation chain (Iteration " + currentIteration + ").");
                 mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
                 mutationSeeds.add(DarwinStrategySeed.philosophyMutation());
                 mutationSeeds.add(DarwinStrategySeed.maximalDivergence());
@@ -299,13 +292,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, currentBlueprints.isEmpty() ? null : currentBlueprints, context);
 
-        // Synthetic Recovery: EMERGENCY ONLY
-        // Synthetic branches should activate ONLY if ALL real LLM branches fail diversity requirements.
-        DarwinSyntheticVariantFactory syntheticFactory = new DarwinSyntheticVariantFactory();
         if (uniqueVariants.isEmpty()) {
-            context.log("[DARWIN] EMERGENCY: All LLM variants failed diversity. Activating synthetic recovery.");
-            uniqueVariants.add(syntheticFactory.synthesizeImplementation(goal, atomicAnalysis));
-            uniqueVariants.add(syntheticFactory.synthesizeSemanticAlternative(uniqueVariants.get(0), goal, atomicAnalysis));
+            context.log("[DARWIN] CRITICAL: All LLM variants failed diversity analysis. Evolution stalled.");
         }
 
         // Fitness Ranking

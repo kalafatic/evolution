@@ -264,19 +264,6 @@ public class IterationManager {
             state.getMetadata().putAll(taskRequest.getContext());
         }
 
-        // 3. ATOMIC EXECUTION BYPASS: If EXECUTING and request is 'run', directly execute pre-populated tasks.
-        // This ensures compatibility with deterministic task execution requirements and preserves test-injected state.
-        if (context.getStateHolder().getState() == SystemState.EXECUTING && "run".equalsIgnoreCase(request) && !context.getOrchestrator().getTasks().isEmpty()) {
-            context.log("[KERNEL] Atomic bypass: Executing pre-planned tasks directly.");
-            boolean success = executeTasksWithRetries(new ArrayList<>(context.getOrchestrator().getTasks()));
-            OrchestratorResponse bypassResponse = new OrchestratorResponse();
-            bypassResponse.setResultType(success ? ResultType.CHAT : ResultType.ERROR);
-            bypassResponse.setSummary(success ? "Execution completed." : "Execution failed.");
-
-            FinalResponseAssembler bypassAssembler = new FinalResponseAssembler();
-            bypassResponse.setFinalResponse(bypassAssembler.assemble(context, bypassResponse.getSummary(), success, context.getStartTime()));
-            return bypassResponse;
-        }
 
         transition(SystemState.INIT, context);
 
@@ -1076,33 +1063,15 @@ public class IterationManager {
 
         context.log("[KERNEL] Resolving flow. Profile traits: " + profile.getTraits());
 
-        // Unified Darwin Flow for all tasks that are NOT simple chat.
-        boolean hasStateChangeIntent = state.getTaskIntents() != null && (
-                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.IMPLEMENTATION) ||
-                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.REFACTORING) ||
-                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.DEBUGGING) ||
-                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.TESTING) ||
-                state.getTaskIntents().contains(eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent.OPTIMIZATION)
-        );
-
-        if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
-            // Mediated Mode always uses Darwinian logic for cognitive evolution
-            context.log("[KERNEL] Mediated Mode detected. Routing to DarwinFlow for cognitive evolution.");
-            return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
-        }
-
-        // Priority for Darwinian Reasoning if enabled or state changes are expected
-        if (profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE) || hasStateChangeIntent) {
-            context.log("[KERNEL] Darwin Reasoning enabled or state-change intent detected. Routing to DarwinFlow.");
-            return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
-        }
-
-        // Simple chat path
+        // MANDATORY DARWIN EVOLUTION: All non-chat requests MUST route through the evolutionary kernel.
+        // No more shortcuts for "atomic" or "simple" tasks.
         if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
+            context.log("[KERNEL] Simple chat path detected.");
             return (IOrchestrationFlow) AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
         }
 
-        return router.resolveFlow(context.getPlatformMode(), aiService, this);
+        context.log("[KERNEL] Routing to DarwinFlow for evolutionary branching.");
+        return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
     }
 
     public void replayIteration(CognitiveTrace trace) {

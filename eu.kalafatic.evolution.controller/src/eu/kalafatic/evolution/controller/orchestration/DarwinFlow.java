@@ -101,11 +101,15 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         if (lastWinner != null && lastWinner.getBranchId() != null) {
              trajectory = context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(lastWinner.getBranchId());
+             if (trajectory != null) {
+                 context.log("[DARWIN] Continuing lineage from survivor: " + trajectory.getTrajectoryId());
+             }
         }
 
         if (trajectory == null) {
             trajectory = new Trajectory("traj-" + iterId, goal);
             context.getSemanticWorkspace().getTrajectoryMemory().recordTrajectory(trajectory);
+            context.log("[DARWIN] Starting new lineage trajectory: " + trajectory.getTrajectoryId());
         }
 
         FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();

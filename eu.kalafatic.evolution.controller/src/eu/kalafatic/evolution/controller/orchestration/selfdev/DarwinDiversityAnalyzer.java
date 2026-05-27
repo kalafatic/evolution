@@ -69,51 +69,52 @@ public class DarwinDiversityAnalyzer {
 
     private boolean isUnique(JSONObject candidate, List<JSONObject> existing) {
         String cStrategy = candidate.optString("strategy").toLowerCase();
-        String cPhilosophy = candidate.optString("semantic_justification").toLowerCase();
-        String cTradeoffs = candidate.optString("tradeoffs").toLowerCase();
-        String cRisks = candidate.optString("failure_risks").toLowerCase();
 
+        JSONObject cDimensions = candidate.optJSONObject("engineering_dimensions");
         Set<String> cTargets = getActionTargets(candidate);
-        Set<String> cSteps = getProjectedSteps(candidate);
 
         for (JSONObject other : existing) {
-            String oStrategy = other.optString("strategy").toLowerCase();
-            String oPhilosophy = other.optString("semantic_justification").toLowerCase();
-            String oTradeoffs = other.optString("tradeoffs").toLowerCase();
-            String oRisks = other.optString("failure_risks").toLowerCase();
-
+            JSONObject oDimensions = other.optJSONObject("engineering_dimensions");
             Set<String> oTargets = getActionTargets(other);
-            Set<String> oSteps = getProjectedSteps(other);
 
-            // 1. CONCEPTUAL OVERLAP: Check if the engineering philosophy is the same
-            double philosophySim = computeSimilarity(cPhilosophy, oPhilosophy);
-            if (philosophySim > 0.35) return false; // MANDATORY DIVERGENCE: Philosophies MUST diverge significantly
+            // 1. DIMENSION-BASED COMPARISON: Check for architectural duplication across 9 dimensions
+            if (cDimensions != null && oDimensions != null) {
+                double dimensionSim = computeDimensionSimilarity(cDimensions, oDimensions);
+                if (dimensionSim > 0.70) return false; // Reject if dimensions are too similar
+            } else {
+                // Fallback to legacy semantic check if dimensions are missing
+                String cPhilosophy = candidate.optString("semantic_justification").toLowerCase();
+                String oPhilosophy = other.optString("semantic_justification").toLowerCase();
+                if (computeSimilarity(cPhilosophy, oPhilosophy) > 0.35) return false;
+            }
 
-            // 2. TRADEOFF OVERLAP: Check if they are proposing the same technical compromises
-            double tradeoffSim = computeSimilarity(cTradeoffs, oTradeoffs);
-            if (tradeoffSim > 0.40) return false;
-
-            // 3. RISK OVERLAP: Check if they identify the same failure modes
-            double riskSim = computeSimilarity(cRisks, oRisks);
-            if (riskSim > 0.55) return false;
-
-            // 4. ARCHITECTURAL DIRECTION OVERLAP
-            // Check if they are targeting different abstraction depths or operational scopes
-            double directionSim = computeArchitecturalDirectionSimilarity(candidate, other);
-            if (directionSim > 0.55) return false;
-
-            // 5. STRATEGY SIMILARITY: Basic word overlap check
-            double strategySim = computeSimilarity(cStrategy, oStrategy);
-            if (strategySim > 0.55) return false;
-
-            // 6. OPERATIONAL REDUNDANCY: Even if philosophy is slightly different,
-            // if they do EXACTLY the same thing on the same files, they are redundant.
+            // 2. OPERATIONAL REDUNDANCY: Even if wording is different, if they do EXACTLY the same thing
+            // on the same files, they are duplicates.
             if (!cTargets.isEmpty() && cTargets.equals(oTargets)) {
-                double stepSim = computeJaccard(cSteps, oSteps);
-                if (stepSim > 0.6) return false;
+                String oStrategy = other.optString("strategy").toLowerCase();
+                if (computeSimilarity(cStrategy, oStrategy) > 0.6) return false;
             }
         }
         return true;
+    }
+
+    private double computeDimensionSimilarity(JSONObject d1, JSONObject d2) {
+        String[] dimensions = {
+            "philosophy", "execution_model", "abstraction_depth", "modularity_approach",
+            "testing_strategy", "extensibility", "dependency_assumptions", "runtime_behavior", "risk_acceptance"
+        };
+
+        double matches = 0;
+        for (String dim : dimensions) {
+            String v1 = d1.optString(dim, "").toLowerCase();
+            String v2 = d2.optString(dim, "").toLowerCase();
+            if (v1.equals(v2) && !v1.isEmpty()) {
+                matches += 1.0;
+            } else if (!v1.isEmpty() && !v2.isEmpty() && computeSimilarity(v1, v2) > 0.6) {
+                matches += 0.5;
+            }
+        }
+        return matches / dimensions.length;
     }
 
     private Set<String> getActionTargets(JSONObject variant) {
