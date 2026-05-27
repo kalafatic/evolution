@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration.intent;
 
 import java.util.ArrayList;
 import java.util.List;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionAxis;
 
 /**
  * Container for the results of the expansion engine.
@@ -12,6 +13,7 @@ public class IntentExpansionResult {
     private List<IntentHypothesis> hypotheses = new ArrayList<>();
     private IntentConfidence confidence;
     private String recommendedClarification;
+    private List<EvolutionAxis> evolutionaryAxes = new ArrayList<>();
 
     // Refactored IntentResolution model
     private InterpretationState state = InterpretationState.CLEAR;
@@ -36,6 +38,9 @@ public class IntentExpansionResult {
 
     public String getRecommendedClarification() { return recommendedClarification; }
     public void setRecommendedClarification(String recommendedClarification) { this.recommendedClarification = recommendedClarification; }
+
+    public List<EvolutionAxis> getEvolutionaryAxes() { return evolutionaryAxes; }
+    public void setEvolutionaryAxes(List<EvolutionAxis> evolutionaryAxes) { this.evolutionaryAxes = evolutionaryAxes; }
 
     public InterpretationState getState() { return state; }
     public void setState(InterpretationState state) { this.state = state; }

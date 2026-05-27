@@ -234,24 +234,34 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         boolean isHighConfidenceAtomic = atomicAnalysis != null && atomicAnalysis.isAtomic() && atomicAnalysis.getConfidence() >= 0.8;
         boolean isMediated = policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED;
 
-        if (isMediated) {
-            context.log("[DARWIN] Mediated Mode: Spawning cognitive interpretation trajectories.");
-            mutationSeeds.add(DarwinStrategySeed.architectureMapping());
-            mutationSeeds.add(DarwinStrategySeed.dependencyExploration());
-            mutationSeeds.add(DarwinStrategySeed.refactorHotspotAnalysis());
-            mutationSeeds.add(DarwinStrategySeed.contextReduction());
-        } else if (currentIteration == 0) {
-            context.log("[DARWIN] Iteration 0: Spawning 4-branch trajectory model.");
-            mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
-            mutationSeeds.add(DarwinStrategySeed.philosophyMutation());
-            mutationSeeds.add(DarwinStrategySeed.maximalDivergence());
-            mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery());
-        } else {
-            context.log("[DARWIN] Iteration " + currentIteration + ": Mutating surviving trajectory.");
-            mutationSeeds.add(DarwinStrategySeed.probableSurvivor()); // Refinement of the winner
-            mutationSeeds.add(DarwinStrategySeed.philosophyMutation()); // Direct mutation of the winner's philosophy
-            mutationSeeds.add(DarwinStrategySeed.maximalDivergence()); // Explore conceptual distance
-            mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery()); // Stability fallback
+        List<TrajectoryBlueprint> currentBlueprints = new ArrayList<>();
+        if (expansion != null && !expansion.getEvolutionaryAxes().isEmpty()) {
+            int axisIndex = currentIteration % expansion.getEvolutionaryAxes().size();
+            EvolutionAxis currentAxis = expansion.getEvolutionaryAxes().get(axisIndex);
+            context.log("[DARWIN] Blueprint Planning: Exploring Axis - " + currentAxis.getName());
+            currentBlueprints.addAll(currentAxis.getCandidateBlueprints());
+        }
+
+        if (currentBlueprints.isEmpty()) {
+            if (isMediated) {
+                context.log("[DARWIN] Mediated Mode: Spawning cognitive interpretation trajectories.");
+                mutationSeeds.add(DarwinStrategySeed.architectureMapping());
+                mutationSeeds.add(DarwinStrategySeed.dependencyExploration());
+                mutationSeeds.add(DarwinStrategySeed.refactorHotspotAnalysis());
+                mutationSeeds.add(DarwinStrategySeed.contextReduction());
+            } else if (currentIteration == 0) {
+                context.log("[DARWIN] Iteration 0: Spawning 4-branch trajectory model.");
+                mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
+                mutationSeeds.add(DarwinStrategySeed.philosophyMutation());
+                mutationSeeds.add(DarwinStrategySeed.maximalDivergence());
+                mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery());
+            } else {
+                context.log("[DARWIN] Iteration " + currentIteration + ": Mutating surviving trajectory.");
+                mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
+                mutationSeeds.add(DarwinStrategySeed.philosophyMutation());
+                mutationSeeds.add(DarwinStrategySeed.maximalDivergence());
+                mutationSeeds.add(DarwinStrategySeed.stabilizationRecovery());
+            }
         }
 
         // 1. Lineage Retrieval: Find the winner of the previous iteration
@@ -275,13 +285,19 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                     .collect(Collectors.toList());
         }
 
-        context.log("[DARWIN] Executing Trajectory Mutation Chain with " + mutationSeeds.size() + " seeds.");
-        List<JSONObject> mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, lineageContext, rejectedSiblings, isMediated, context);
+        List<JSONObject> mutationVariants = new ArrayList<>();
+        if (!currentBlueprints.isEmpty()) {
+            context.log("[DARWIN] Executing Blueprint-Driven Spawning with " + currentBlueprints.size() + " blueprints.");
+            mutationVariants = spawner.spawnBlueprints(goal, currentBlueprints, basePrompt, lineageContext, rejectedSiblings, isMediated, context);
+        } else {
+            context.log("[DARWIN] Executing Trajectory Mutation Chain with " + mutationSeeds.size() + " seeds.");
+            mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, lineageContext, rejectedSiblings, isMediated, context);
+        }
 
         // LOG ALL RAW VARIANTS BEFORE DIVERSITY FILTERING
         context.log("[DARWIN_RAW_VARIANTS] " + mutationVariants.size() + " trajectories spawned.");
 
-        List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, context);
+        List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, currentBlueprints.isEmpty() ? null : currentBlueprints, context);
 
         // Synthetic Recovery: EMERGENCY ONLY
         // Synthetic branches should activate ONLY if ALL real LLM branches fail diversity requirements.

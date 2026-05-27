@@ -1,0 +1,80 @@
+package eu.kalafatic.evolution.controller.orchestration.selfdev;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Defines a specific engineering path within an EvolutionAxis.
+ * Predefines the divergence before the LLM materializes the trajectory.
+ */
+public class TrajectoryBlueprint {
+    private String id;
+    private String goal;
+    private String philosophy;
+    private List<String> requiredCharacteristics = new ArrayList<>();
+    private List<String> forbiddenOverlaps = new ArrayList<>();
+    private String mutationPressure;
+    private String architecturalDirection;
+
+    public TrajectoryBlueprint(String id, String goal, String philosophy) {
+        this.id = id;
+        this.goal = goal;
+        this.philosophy = philosophy;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getGoal() {
+        return goal;
+    }
+
+    public void setGoal(String goal) {
+        this.goal = goal;
+    }
+
+    public String getPhilosophy() {
+        return philosophy;
+    }
+
+    public void setPhilosophy(String philosophy) {
+        this.philosophy = philosophy;
+    }
+
+    public List<String> getRequiredCharacteristics() {
+        return requiredCharacteristics;
+    }
+
+    public void addRequiredCharacteristic(String characteristic) {
+        this.requiredCharacteristics.add(characteristic);
+    }
+
+    public List<String> getForbiddenOverlaps() {
+        return forbiddenOverlaps;
+    }
+
+    public void addForbiddenOverlap(String overlap) {
+        this.forbiddenOverlaps.add(overlap);
+    }
+
+    public String getMutationPressure() {
+        return mutationPressure;
+    }
+
+    public void setMutationPressure(String mutationPressure) {
+        this.mutationPressure = mutationPressure;
+    }
+
+    public String getArchitecturalDirection() {
+        return architecturalDirection;
+    }
+
+    public void setArchitecturalDirection(String architecturalDirection) {
+        this.architecturalDirection = architecturalDirection;
+    }
+}
