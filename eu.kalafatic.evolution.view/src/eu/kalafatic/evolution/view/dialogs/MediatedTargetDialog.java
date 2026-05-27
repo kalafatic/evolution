@@ -3,15 +3,22 @@ package eu.kalafatic.evolution.view.dialogs;
 import java.io.File;
 import java.util.LinkedHashMap;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 
 import eu.kalafatic.evolution.controller.agents.MetadataAgent;
+import eu.kalafatic.evolution.controller.agents.MetadataResult;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -26,6 +33,9 @@ public class MediatedTargetDialog extends DynamicMapDialog {
     private ChatSession session;
     private File projectRoot;
     private MultiPageEditor editor;
+
+    private ProgressBar progressBar;
+    private Label progressLabel;
 
     private static final String TARGET_PATH = "targetPath";
     private static final String TARGET_TYPE = "targetType";
@@ -100,17 +110,88 @@ public class MediatedTargetDialog extends DynamicMapDialog {
             gd.widthHint = GUIFactory.BUTTON_WIDTH * 2;
             syncBtn.setLayoutData(gd);
             syncBtn.setToolTipText("Generate AI Metadata sidecar files for the target project");
+
+            new Label(parent, SWT.NONE); // Filler
+            progressLabel = new Label(parent, SWT.NONE);
+            progressLabel.setText("Ready");
+            GridData labelGd = new GridData(GridData.FILL_HORIZONTAL);
+            labelGd.exclude = true;
+            progressLabel.setLayoutData(labelGd);
+            progressLabel.setVisible(false);
+
+            new Label(parent, SWT.NONE); // Filler
+            progressBar = new ProgressBar(parent, SWT.HORIZONTAL | SWT.SMOOTH);
+            GridData pbGd = new GridData(GridData.FILL_HORIZONTAL);
+            pbGd.exclude = true;
+            progressBar.setLayoutData(pbGd);
+            progressBar.setVisible(false);
+
             syncBtn.addListener(SWT.Selection, e -> {
                 String path = getString(TARGET_PATH);
                 if (path != null && !path.isEmpty()) {
                     File root = new File(path);
                     if (root.exists() && root.isDirectory()) {
-                        MetadataAgent generator = new MetadataAgent();
-                        eu.kalafatic.evolution.controller.agents.MetadataResult result = generator.generate(root);
-                        if (result != null) {
-                            MetadataResultDialog resDlg = new MetadataResultDialog(getShell(), result, projectRoot);
-                            resDlg.open();
-                        }
+                        syncBtn.setEnabled(false);
+                        progressLabel.setVisible(true);
+                        ((GridData) progressLabel.getLayoutData()).exclude = false;
+                        progressBar.setVisible(true);
+                        ((GridData) progressBar.getLayoutData()).exclude = false;
+                        parent.layout(true);
+
+                        Job job = new Job("Generating AI Metadata") {
+                            @Override
+                            protected IStatus run(IProgressMonitor monitor) {
+                                MetadataAgent generator = new MetadataAgent();
+                                final MetadataResult result = generator.generate(root, new IProgressMonitor() {
+                                    @Override public void beginTask(String name, int totalWork) {
+                                        Display.getDefault().asyncExec(() -> {
+                                            if (!progressBar.isDisposed()) {
+                                                progressBar.setMaximum(totalWork);
+                                                progressBar.setSelection(0);
+                                                progressLabel.setText(name);
+                                            }
+                                        });
+                                    }
+                                    @Override public void done() {}
+                                    @Override public void internalWorked(double work) {}
+                                    @Override public boolean isCanceled() { return monitor.isCanceled(); }
+                                    @Override public void setCanceled(boolean value) { monitor.setCanceled(value); }
+                                    @Override public void setTaskName(String name) {
+                                        Display.getDefault().asyncExec(() -> {
+                                            if (!progressLabel.isDisposed()) progressLabel.setText(name);
+                                        });
+                                    }
+                                    @Override public void subTask(String name) {
+                                        Display.getDefault().asyncExec(() -> {
+                                            if (!progressLabel.isDisposed()) progressLabel.setText(name);
+                                        });
+                                    }
+                                    @Override public void worked(int work) {
+                                        Display.getDefault().asyncExec(() -> {
+                                            if (!progressBar.isDisposed()) progressBar.setSelection(progressBar.getSelection() + work);
+                                        });
+                                    }
+                                });
+
+                                Display.getDefault().asyncExec(() -> {
+                                    if (syncBtn.isDisposed()) return;
+                                    syncBtn.setEnabled(true);
+                                    progressLabel.setVisible(false);
+                                    ((GridData) progressLabel.getLayoutData()).exclude = true;
+                                    progressBar.setVisible(false);
+                                    ((GridData) progressBar.getLayoutData()).exclude = true;
+                                    parent.layout(true);
+
+                                    if (result != null && !monitor.isCanceled()) {
+                                        MetadataResultDialog resDlg = new MetadataResultDialog(getShell(), result, projectRoot);
+                                        resDlg.open();
+                                    }
+                                });
+                                return Status.OK_STATUS;
+                            }
+                        };
+                        job.setUser(true);
+                        job.schedule();
                     }
                 }
             });

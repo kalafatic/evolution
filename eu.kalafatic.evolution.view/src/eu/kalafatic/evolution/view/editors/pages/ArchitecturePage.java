@@ -127,7 +127,7 @@ public class ArchitecturePage extends Composite {
                 protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
                     try {
                         MetadataAgent generator = new MetadataAgent();
-                        generator.generate(root);
+                        generator.generate(root, monitor);
 
                         Display.getDefault().asyncExec(() -> {
                             if (!getShell().isDisposed()) {

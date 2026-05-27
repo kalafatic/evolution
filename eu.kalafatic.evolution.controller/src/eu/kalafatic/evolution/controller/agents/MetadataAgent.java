@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.stream.Collectors;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
+
 import eu.kalafatic.utils.semantic.AIContextTool;
 import eu.kalafatic.utils.semantic.EvoMetadata;
 import eu.kalafatic.utils.semantic.Stability;
@@ -28,13 +32,28 @@ public class MetadataAgent {
     private final Map<File, EvoMetadata> processedMetadata = new HashMap<>();
 
     public MetadataResult generate(File root) {
+        return generate(root, new NullProgressMonitor());
+    }
+
+    public MetadataResult generate(File root, IProgressMonitor monitor) {
         if (!root.exists() || !root.isDirectory()) return null;
 
         MetadataResult result = new MetadataResult(root);
         processedMetadata.clear();
-        scanAndEnrich(root, root, result);
 
+        int totalFiles = countFiles(root);
+        monitor.beginTask("Generating AI Metadata", totalFiles + 10);
+
+        scanAndEnrich(root, root, result, monitor);
+
+        if (monitor.isCanceled()) {
+            monitor.done();
+            return result;
+        }
+
+        monitor.subTask("Generating Navigation Maps");
         generateNavigationMaps(root, result);
+        monitor.worked(10);
 
         StringBuilder summary = new StringBuilder();
         summary.append("Metadata Generation Summary:\n");
@@ -45,21 +64,46 @@ public class MetadataAgent {
         });
         result.setSummary(summary.toString());
 
+        monitor.done();
         return result;
     }
 
-    private void scanAndEnrich(File current, File root, MetadataResult result) {
+    private int countFiles(File current) {
+        int count = 0;
         File[] files = current.listFiles();
-        if (files == null) return;
+        if (files == null) return 0;
 
         for (File file : files) {
             if (file.isDirectory()) {
                 if (!file.getName().startsWith(".") && !file.getName().equals("target") && !file.getName().equals("bin")) {
-                    scanAndEnrich(file, root, result);
+                    count += countFiles(file);
                 }
             } else {
                 if (shouldProcess(file)) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private void scanAndEnrich(File current, File root, MetadataResult result, IProgressMonitor monitor) {
+        if (monitor.isCanceled()) return;
+
+        File[] files = current.listFiles();
+        if (files == null) return;
+
+        for (File file : files) {
+            if (monitor.isCanceled()) return;
+            if (file.isDirectory()) {
+                if (!file.getName().startsWith(".") && !file.getName().equals("target") && !file.getName().equals("bin")) {
+                    scanAndEnrich(file, root, result, monitor);
+                }
+            } else {
+                if (shouldProcess(file)) {
+                    monitor.subTask("Enriching " + file.getName());
                     processFile(file, root, result);
+                    monitor.worked(1);
                 }
             }
         }
