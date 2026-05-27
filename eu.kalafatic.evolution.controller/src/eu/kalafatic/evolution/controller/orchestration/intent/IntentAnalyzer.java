@@ -63,9 +63,9 @@ public class IntentAnalyzer {
 
         String userPrompt = "Analyze the following user request:\n\n" + prompt;
 
-        context.log("[INTENT ANALYZER] Analyzing intent for: " + prompt);
+        context.consoleLog("[INTENT ANALYZER] Analyzing intent for: " + prompt);
         String response = aiService.sendRequest(context.getOrchestrator(), systemPrompt + "\n\n" + userPrompt, context);
-        context.log("[INTENT ANALYZER] Raw response: " + response);
+        context.consoleLog("[INTENT ANALYZER] Raw response: " + response);
 
         JSONObject json = JsonUtils.extractJsonObject(response);
         if (json == null) {
@@ -133,19 +133,19 @@ public class IntentAnalyzer {
     }
 
     private void logResult(IntentAnalysisResult result, TaskContext context) {
-        context.log("[INTENT ANALYZER] Extracted Intent:");
-        context.log("  Goal: " + result.getGoal());
-        context.log("  Language: " + result.getLanguage());
-        context.log("  Framework: " + result.getFramework());
-        context.log("  Confidence: " + result.getConfidenceScore());
+        context.consoleLog("[INTENT ANALYZER] Extracted Intent:");
+        context.consoleLog("  Goal: " + result.getGoal());
+        context.consoleLog("  Language: " + result.getLanguage());
+        context.consoleLog("  Framework: " + result.getFramework());
+        context.consoleLog("  Confidence: " + result.getConfidenceScore());
         if (!result.getMissingInformation().isEmpty()) {
-            context.log("  Missing Information: " + result.getMissingInformation());
+            context.consoleLog("  Missing Information: " + result.getMissingInformation());
         }
         if (!result.getAmbiguities().isEmpty()) {
-            context.log("  Ambiguities: " + result.getAmbiguities());
+            context.consoleLog("  Ambiguities: " + result.getAmbiguities());
         }
         if (!result.getContradictions().isEmpty()) {
-            context.log("  Contradictions: " + result.getContradictions());
+            context.consoleLog("  Contradictions: " + result.getContradictions());
         }
     }
 }

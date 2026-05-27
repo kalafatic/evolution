@@ -362,7 +362,7 @@ public class IterationManager {
 
             // Unified Intent Analysis
             transition(SystemState.ANALYZING, context);
-            context.log("[KERNEL] Performing repository-grounded intent analysis.");
+            context.consoleLog("[KERNEL] Performing repository-grounded intent analysis.");
             intentService.analyze(request, context);
 
             // UNIFIED EVOLUTIONARY KERNEL: All cognition flows route through evolve()
@@ -682,7 +682,7 @@ public class IterationManager {
             state.setIntentAnalysis(null);
             state.getMetadata().put("intentExpansion", expansion);
 
-            context.log("[KERNEL] Intent Interpretation: " + expansion.getState());
+            context.consoleLog("[KERNEL] Intent Interpretation: " + expansion.getState());
 
             // INTENT REVIEW LOOP (Ownership restored to IterationManager)
             if (!handleIntentReview(context, expansion, goal)) {
@@ -691,7 +691,7 @@ public class IterationManager {
 
             ClarificationPlanner planner = getClarificationPlanner();
             ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
-            context.log("[KERNEL] Clarification Strategy: " + strategy);
+            context.consoleLog("[KERNEL] Clarification Strategy: " + strategy);
 
             // SUPERVISION POLICY: MANUAL mode pauses ONLY for trajectory survival decisions.
             // Downgrade CLARIFY_USER to BRANCH_PARALLEL or AUTO_INFER if not in STEP mode.

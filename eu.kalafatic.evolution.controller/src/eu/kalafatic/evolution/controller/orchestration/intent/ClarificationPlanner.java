@@ -18,7 +18,7 @@ public class ClarificationPlanner {
 
     public Strategy determineStrategy(IntentExpansionResult result, eu.kalafatic.evolution.controller.orchestration.TaskContext context) {
         InterpretationState state = result.getState();
-        context.log("[KERNEL] Determining clarification strategy for InterpretationState: " + state);
+        context.consoleLog("[KERNEL] Determining clarification strategy for InterpretationState: " + state);
 
         // 1. CLEAR: one dominant interpretation -> proceed immediately
         if (state == InterpretationState.CLEAR) {

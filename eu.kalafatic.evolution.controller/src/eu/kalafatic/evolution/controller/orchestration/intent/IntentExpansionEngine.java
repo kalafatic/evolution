@@ -97,12 +97,12 @@ public class IntentExpansionEngine extends BaseAiAgent {
     }
 
     public IntentExpansionResult expand(String prompt, TaskContext context) throws Exception {
-        context.log("[INTENT EXPANSION] Analyzing intent space for: " + prompt);
+        context.consoleLog("[INTENT EXPANSION] Analyzing intent space for: " + prompt);
 
         // FAST BYPASS: Detect direct variant selection or force solution commands
         String lower = prompt.toLowerCase().trim();
         if (lower.startsWith("select ") || lower.startsWith("approve variant ") || lower.equalsIgnoreCase("force solution")) {
-            context.log("[INTENT EXPANSION] Detected bypass command: " + lower + ". Bypassing LLM expansion.");
+            context.consoleLog("[INTENT EXPANSION] Detected bypass command: " + lower + ". Bypassing LLM expansion.");
             IntentExpansionResult result = new IntentExpansionResult();
             result.setOriginalPrompt(prompt);
             result.setState(InterpretationState.CLEAR);
@@ -125,7 +125,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
                 sb.append("- ").append(a.getContent()).append("\n");
             }
             priorContext = sb.toString();
-            context.log("[INTENT EXPANSION] Found " + priorConclusions.size() + " prior clarifications in workspace.");
+            context.consoleLog("[INTENT EXPANSION] Found " + priorConclusions.size() + " prior clarifications in workspace.");
         }
 
         String systemPrompt = getAgentInstructions() + "\n\n" + getFooterInstructions();
@@ -160,11 +160,11 @@ public class IntentExpansionEngine extends BaseAiAgent {
                 dimMap.put(key, dimensions.get(key));
             }
             context.getOrchestrationState().getMetadata().put("engineeringDimensions", dimMap);
-            context.log("[INTENT EXPANSION] Derived 9 engineering dimensions.");
+            context.consoleLog("[INTENT EXPANSION] Derived 9 engineering dimensions.");
         }
 
-        context.log("[INTENT EXPANSION] Interpretation State: " + result.getState());
-        context.log("[INTENT EXPANSION] Dominant Intent: " + result.getDominantIntent());
+        context.consoleLog("[INTENT EXPANSION] Interpretation State: " + result.getState());
+        context.consoleLog("[INTENT EXPANSION] Dominant Intent: " + result.getDominantIntent());
 
         // Parse Evolutionary Axes
         JSONArray axes = json.optJSONArray("evolutionaryAxes");
@@ -221,7 +221,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
         // HARDENING: If the model echoes the whole enum list, it's probably actually CLEAR or EVOLVABLE
         if (cleanState.contains("|") || (cleanState.contains("CLEAR") && cleanState.contains("CONTRADICTORY"))) {
             if (context != null) {
-                context.log("[INTENT EXPANSION] Detected enum list echo in state: " + stateStr + ". Defaulting to CLEAR.");
+                context.consoleLog("[INTENT EXPANSION] Detected enum list echo in state: " + stateStr + ". Defaulting to CLEAR.");
             }
             // If it contains BLOCKED but also others, it might be BLOCKED.
             // But if it's the full list, it's a hallucination.
@@ -243,7 +243,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
                 }
             }
             if (context != null) {
-                context.log("[INTENT EXPANSION] WARNING: Noisy state string '" + stateStr + "' resolved to " + resolved);
+                context.consoleLog("[INTENT EXPANSION] WARNING: Noisy state string '" + stateStr + "' resolved to " + resolved);
             }
             return resolved;
         }
