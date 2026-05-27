@@ -73,6 +73,7 @@ import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.StepModeController;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStep;
@@ -109,6 +110,7 @@ import eu.kalafatic.evolution.controller.workflow.MediatedExportManager;
 public class IterationManager {
 
     private final TaskContext context;
+    private SessionContext sessionContext;
     private final AiService aiService;
     private final GitManager gitManager;
     private final TaskPlanner taskPlanner;
@@ -173,7 +175,21 @@ public class IterationManager {
             Evaluator evaluator,
             DarwinEngine darwinEngine,
             IterationMemoryService memoryService) {
+        this(context, null, aiService, gitManager, taskPlanner, taskExecutor, evaluator, darwinEngine, memoryService);
+    }
+
+    public IterationManager(
+            TaskContext context,
+            SessionContext sessionContext,
+            AiService aiService,
+            GitManager gitManager,
+            TaskPlanner taskPlanner,
+            TaskExecutor taskExecutor,
+            Evaluator evaluator,
+            DarwinEngine darwinEngine,
+            IterationMemoryService memoryService) {
         this.context = context;
+        this.sessionContext = sessionContext;
         this.aiService = aiService;
         this.gitManager = gitManager;
         this.taskPlanner = taskPlanner;
@@ -181,6 +197,24 @@ public class IterationManager {
         this.evaluator = evaluator;
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
+
+        if (sessionContext != null) {
+            if (sessionContext.getAgentRegistry().isEmpty()) {
+                List<IAgent> isolated = AgentFactory.createIsolatedAgents();
+                isolated.forEach(a -> sessionContext.getAgentRegistry().put(a.getType(), a));
+            }
+            availableAgents.addAll(sessionContext.getAgentRegistry().values());
+        } else {
+            availableAgents.addAll(AgentFactory.getAllAgents());
+        }
+
+        analyticAgent = (AnalyticAgent) getInternalAgent(EvolutionConstants.AGENT_ANALYTIC);
+        structureAgent = (StructureAgent) getInternalAgent(EvolutionConstants.AGENT_STRUCTURE);
+        strategicPlanner = (PlannerAgent) getInternalAgent(EvolutionConstants.AGENT_PLANNER);
+        criticAgent = (CriticAgent) getInternalAgent(EvolutionConstants.AGENT_CRITIC);
+        finalResponseAgent = (FinalResponseAgent) getInternalAgent(EvolutionConstants.AGENT_FINAL_RESPONSE);
+        validator = (eu.kalafatic.evolution.controller.agents.ValidatorAgent) getInternalAgent(EvolutionConstants.AGENT_VALIDATOR);
+        repairAgent = (eu.kalafatic.evolution.controller.agents.RepairAgent) getInternalAgent(EvolutionConstants.AGENT_REPAIR);
 
         // RESTART CONTINUITY: Sync state from model or memory checkpoint if resuming
         boolean resumed = false;
@@ -198,7 +232,7 @@ public class IterationManager {
             }
         }
 
-        if (!resumed) {
+        if (!resumed && memoryService != null) {
             Map<String, String> checkpoint = memoryService.loadCheckpoint(context.getSessionId());
             if (checkpoint != null) {
                 context.log("[KERNEL] Found memory checkpoint for session: " + context.getSessionId());
@@ -221,12 +255,15 @@ public class IterationManager {
 
         // Register Capabilities
         try {
-            CapabilityRegistry.getInstance().register(evaluator);
-            CapabilityRegistry.getInstance().register(darwinEngine);
-            CapabilityRegistry.getInstance().register(context.getSemanticWorkspace());
-            CapabilityRegistry.getInstance().register(context.getOrchestrationState().getCognitiveTrace());
-            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.execution.KernelScheduler());
-            CapabilityRegistry.getInstance().register(new eu.kalafatic.evolution.controller.supervision.ActivationResolver(memoryService.getTrajectoryMemory()));
+            CapabilityRegistry reg = (sessionContext != null) ? sessionContext.getCapabilityRegistry() : CapabilityRegistry.getInstance();
+            reg.register(evaluator);
+            reg.register(darwinEngine);
+            reg.register(context.getSemanticWorkspace());
+            reg.register(context.getOrchestrationState().getCognitiveTrace());
+            reg.register(new eu.kalafatic.evolution.controller.execution.KernelScheduler());
+            if (memoryService != null) {
+                reg.register(new eu.kalafatic.evolution.controller.supervision.ActivationResolver(memoryService.getTrajectoryMemory()));
+            }
         } catch (CapabilityException e) {
             context.log("[KERNEL] Capability registration error: " + e.getMessage());
         }
@@ -234,15 +271,6 @@ public class IterationManager {
         this.intentService = new IntentService(aiService);
         this.intentExpansionEngine = new IntentExpansionEngine();
         this.intentExpansionEngine.setAiService(aiService);
-
-        availableAgents.addAll(AgentFactory.getAllAgents());
-        analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
-        structureAgent = (StructureAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_STRUCTURE);
-        strategicPlanner = (PlannerAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_PLANNER);
-        criticAgent = (CriticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_CRITIC);
-        finalResponseAgent = (FinalResponseAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_FINAL_RESPONSE);
-        validator = (eu.kalafatic.evolution.controller.agents.ValidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_VALIDATOR);
-        repairAgent = (eu.kalafatic.evolution.controller.agents.RepairAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_REPAIR);
 
         // Inject AiService into agents
         availableAgents.forEach(a -> {
@@ -353,10 +381,28 @@ public class IterationManager {
                 context.setPlatformMode(mode);
                 context.log("Platform Mode: " + mode.getType());
 
-                eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+            RuntimeEventBus bus = (sessionContext != null) ? sessionContext.getEventBus() : RuntimeEventBus.getInstance();
+            bus.publish(
                     new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                         eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MODE_CHANGED,
                         context.getSessionId(), "Kernel", mode.getType().toString()));
+            }
+
+            // --- Priority 1 Routing (Simple Chat & fast-track) ---
+            if (context.getPlatformMode() != null &&
+               (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT ||
+                "SIMPLE_CHAT".equals(context.getPlatformMode().getType().name()))) {
+                 IOrchestrationFlow flow = (IOrchestrationFlow) getInternalAgent(EvolutionConstants.AGENT_GENERAL);
+                 String resultStr = ((eu.kalafatic.evolution.controller.agents.GeneralAgent)flow).process(request, context, null);
+                 response.setResultType(ResultType.CHAT);
+                 response.setSummary(resultStr);
+                 response.setContent(resultStr);
+
+                 transition(SystemState.DONE, context);
+
+                 FinalResponseAssembler assembler = new FinalResponseAssembler();
+                 response.setFinalResponse(assembler.assemble(context, resultStr, true, context.getStartTime()));
+                 return response;
             }
 
 
@@ -424,7 +470,8 @@ public class IterationManager {
 
             WorkflowStep step = new WorkflowStep("step-" + System.currentTimeMillis(), entityId, type);
             step.setDescription(description);
-            WorkflowStatus result = StepModeController.getInstance().waitForStep(context.getSessionId(), step, context);
+            StepModeController smc = (sessionContext != null) ? sessionContext.getStepModeController() : StepModeController.getInstance();
+            WorkflowStatus result = smc.waitForStep(context.getSessionId(), step, context);
             if (result == WorkflowStatus.FAILED) {
                 throw new Exception("Step failed or rejected by user: " + description);
             }
@@ -474,7 +521,8 @@ public class IterationManager {
             }
         }
 
-        eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+        RuntimeEventBus bus = (sessionContext != null) ? sessionContext.getEventBus() : RuntimeEventBus.getInstance();
+        bus.publish(
             new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                 eu.kalafatic.evolution.controller.workflow.RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
                 ctx.getSessionId(), "Kernel", to.toString())
@@ -1271,7 +1319,8 @@ public class IterationManager {
                 transition(SystemState.EXECUTING, context);
                 task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.RUNNING);
 
-                eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+                RuntimeEventBus bus = (sessionContext != null) ? sessionContext.getEventBus() : RuntimeEventBus.getInstance();
+                bus.publish(
                     new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                         eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_STARTED,
                         context.getSessionId(), "Kernel", task.getId()));
@@ -1291,7 +1340,7 @@ public class IterationManager {
                     task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
                     state.addDiagnostic("[OrchestrationTrace] Task " + task.getName() + " succeeded.");
 
-                    eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+                    bus.publish(
                         new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                             eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_COMPLETED,
                             context.getSessionId(), "Kernel", task.getId()));
@@ -1341,6 +1390,13 @@ public class IterationManager {
                 variant.setRank("noise");
             }
         }
+    }
+
+    private IAgent getInternalAgent(String type) {
+        if (sessionContext != null) {
+            return sessionContext.getAgentRegistry().get(type);
+        }
+        return AgentFactory.getAgent(type);
     }
 
     public void updateVariantFromInput(List<BranchVariant> variants, String input) {

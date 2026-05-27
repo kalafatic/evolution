@@ -52,6 +52,33 @@ public class AgentFactory {
         return agents.get(type);
     }
 
+    /**
+     * Creates new instances of all default agents for session-specific isolation.
+     */
+    public static List<IAgent> createIsolatedAgents() {
+        List<IAgent> isolated = new ArrayList<>();
+        isolated.add(new AnalyticAgent());
+        isolated.add(new ArchitectAgent());
+        isolated.add(new JavaDevAgent());
+        isolated.add(new TesterAgent());
+        isolated.add(new ValidatorAgent());
+        isolated.add(new GeneralAgent());
+        isolated.add(new TerminalAgent());
+        isolated.add(new FileAgent());
+        isolated.add(new MavenAgent());
+        isolated.add(new GitAgent());
+        isolated.add(new StructureAgent());
+        isolated.add(new WebSearchAgent());
+        isolated.add(new QualityAgent());
+        isolated.add(new ObservabilityAgent());
+        isolated.add(new RepairAgent());
+        isolated.add(new PlannerAgent());
+        isolated.add(new ProposalConsolidatorAgent());
+        isolated.add(new CriticAgent());
+        isolated.add(new FinalResponseAgent());
+        return isolated;
+    }
+
     public static List<IAgent> getAllAgents() {
         return new ArrayList<>(agents.values());
     }

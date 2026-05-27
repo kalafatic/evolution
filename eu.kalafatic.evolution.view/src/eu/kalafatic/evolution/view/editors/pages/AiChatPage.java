@@ -158,6 +158,16 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			public void widgetDisposed(DisposeEvent e) {
 				RuntimeEventBus.getInstance().unsubscribe(AiChatPage.this);
 				if (outputController != null) outputController.unsubscribe(messageSubscriber);
+
+				// Shut down all sessions associated with this page/orchestrator
+				if (orchestrator != null && orchestrator.getAiChat() != null) {
+					orchestrator.getAiChat().getSessions().forEach(s -> {
+						if (s.getId() != null) {
+							OrchestratorServiceImpl.getInstance().shutdownSession(s.getId());
+						}
+					});
+				}
+
 				if (chatFont != null && !chatFont.isDisposed()) chatFont.dispose();
 				if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
 				if (colorWaiting != null && !colorWaiting.isDisposed()) colorWaiting.dispose();
@@ -563,6 +573,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(taskRequest);
 
 				Display.getDefault().asyncExec(() -> {
+					if (isDisposed()) return;
 					if (sessionId.equals(getCurrentSessionName())) instructionsGroup.resetBackground();
 
 					if (response.getResultType() == eu.kalafatic.evolution.controller.orchestration.ResultType.ERROR) {
@@ -592,6 +603,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				});
 			} catch (Exception e) {
 				Display.getDefault().asyncExec(() -> {
+					if (isDisposed()) return;
 					if (state.currentStackTask != null) {
 						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
 						state.currentStackTask.setResultSummary("Error: " + e.getMessage());
@@ -604,6 +616,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				});
 			} finally {
 				Display.getDefault().asyncExec(() -> {
+					if (isDisposed()) return;
 					state.isRunning = false;
 					if (sessionId.equals(getCurrentSessionName())) {
 						instructionsGroup.setOrchestrationRunning(false);
@@ -652,6 +665,9 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			state.orchestrationSession.interrupt();
 			state.isRunning = false;
 			instructionsGroup.setOrchestrationRunning(false);
+
+			// Also shut down and cleanup the session resources
+			OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
 		}
 	}
 
@@ -862,6 +878,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				eu.kalafatic.evolution.controller.orchestration.FinalResponse finalResponse = assembler.assemble(context, modeLabel + " session finished. Status: " + session.getStatus(), session.getStatus() == eu.kalafatic.evolution.model.orchestration.SelfDevStatus.COMPLETED, context.getStartTime());
 
 				Display.getDefault().asyncExec(() -> {
+					if (isDisposed()) return;
 					if (sessionId.equals(getCurrentSessionName())) instructionsGroup.resetBackground();
 					if (state.currentStackTask != null) {
 						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
@@ -882,6 +899,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				});
 			} catch (Exception e) {
 				Display.getDefault().asyncExec(() -> {
+					if (isDisposed()) return;
 					if (state.currentStackTask != null) {
 						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
 						state.currentStackTask.setResultSummary("Supervisor Error: " + e.getMessage());
@@ -920,6 +938,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 //				});
 				
 				Display.getDefault().asyncExec(() -> {
+					if (isDisposed()) return;
 				    state.isRunning = false;
 
 				    if (!sessionId.equals(getCurrentSessionName())) {
@@ -1219,6 +1238,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			if (iFile != null) {
 				final String finalPath = path;
 				Display.getDefault().asyncExec(() -> {
+					if (isDisposed()) return;
 					editor.refreshNavigator(iFile);
 					editor.showComparePage(iFile);
 					chatGroup.selectFile(finalPath);

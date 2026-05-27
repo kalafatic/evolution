@@ -66,8 +66,7 @@ public class KernelUnitTest {
     @Test
     public void testSimpleChatFlow() throws Exception {
         mockLlm.setResponseSequence(new String[] {
-            "{\"atomic\": false, \"confidence\": 0.1}", // AtomicIntentClassifier LLM validation
-            "Hello, I am a mock response." // GeneralAgent (IterationManager handles SIMPLE_CHAT mode by calling chatAgent directly after atomic check)
+            "Hello, I am a mock response." // GeneralAgent
         });
 
         IterationManager manager = createManager();

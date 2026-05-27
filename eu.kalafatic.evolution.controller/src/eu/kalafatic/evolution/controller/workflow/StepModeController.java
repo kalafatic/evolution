@@ -9,7 +9,7 @@ public class StepModeController {
     private static final StepModeController instance = new StepModeController();
     private final Map<String, CompletableFuture<WorkflowStatus>> stepGates = new ConcurrentHashMap<>();
 
-    private StepModeController() {}
+    public StepModeController() {}
 
     public static StepModeController getInstance() { return instance; }
 

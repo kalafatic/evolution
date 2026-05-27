@@ -21,7 +21,15 @@ public class KernelFactory {
         return create(context, new AiService());
     }
 
+    public static IterationManager create(TaskContext context, SessionContext sessionContext) {
+        return create(context, sessionContext, new AiService());
+    }
+
     public static IterationManager create(TaskContext context, AiService aiService) {
+        return create(context, null, aiService);
+    }
+
+    public static IterationManager create(TaskContext context, SessionContext sessionContext, AiService aiService) {
         GitManager gitManager = new GitManager(context.getProjectRoot());
         TaskPlanner taskPlanner = new TaskPlanner();
         TaskExecutor taskExecutor = new TaskExecutor(context, context.getOrchestrator());
@@ -30,8 +38,9 @@ public class KernelFactory {
         }
         Evaluator evaluator = new Evaluator(context.getProjectRoot(), context);
 
-        EvolutionKernelContext kernelContext = context.getKernelContext();
-        IterationMemoryService memoryService = kernelContext.getMemoryService();
+        IterationMemoryService memoryService = (sessionContext != null) ?
+                sessionContext.getMemoryService(context.getProjectRoot()) :
+                context.getKernelContext().getMemoryService();
 
         SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(context.getProjectRoot(), context);
         DarwinEngine darwinEngine = new DarwinEngine(context, memoryService, stateProvider);
@@ -39,21 +48,36 @@ public class KernelFactory {
 
         // Register static capabilities
         try {
-            CapabilityRegistry.getInstance().register(new KernelScheduler());
-            CapabilityRegistry.getInstance().register(new ActivationResolver(memoryService.getTrajectoryMemory()));
+            CapabilityRegistry reg = (sessionContext != null) ? sessionContext.getCapabilityRegistry() : CapabilityRegistry.getInstance();
+            reg.register(new KernelScheduler());
+            reg.register(new ActivationResolver(memoryService.getTrajectoryMemory()));
         } catch (CapabilityException e) {
             context.log("[KERNEL] Factory capability registration error: " + e.getMessage());
         }
 
-        return new IterationManager(
-            context,
-            aiService,
-            gitManager,
-            taskPlanner,
-            taskExecutor,
-            evaluator,
-            darwinEngine,
-            memoryService
-        );
+        if (sessionContext != null) {
+            return new IterationManager(
+                context,
+                sessionContext,
+                aiService,
+                gitManager,
+                taskPlanner,
+                taskExecutor,
+                evaluator,
+                darwinEngine,
+                memoryService
+            );
+        } else {
+            return new IterationManager(
+                context,
+                aiService,
+                gitManager,
+                taskPlanner,
+                taskExecutor,
+                evaluator,
+                darwinEngine,
+                memoryService
+            );
+        }
     }
 }

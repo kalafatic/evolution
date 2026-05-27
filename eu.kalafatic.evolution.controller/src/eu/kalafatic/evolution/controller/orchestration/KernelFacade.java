@@ -10,7 +10,8 @@ public class KernelFacade implements IOrchestrator {
 
     @Override
     public OrchestratorResponse handle(TaskRequest taskRequest, TaskContext context) throws Exception {
-        IterationManager kernel = KernelFactory.create(context);
+        SessionContext session = (SessionContext) context.getMetadata().get("sessionContext");
+        IterationManager kernel = KernelFactory.create(context, session);
         return kernel.handle(taskRequest);
     }
 
@@ -28,7 +29,8 @@ public class KernelFacade implements IOrchestrator {
     public String executeTask(Task task, TaskContext context) throws Exception {
         // Direct task execution is still routed through IterationManager
         // to ensure the system is in the correct state (EXECUTING).
-        IterationManager kernel = KernelFactory.create(context);
+        SessionContext session = (SessionContext) context.getMetadata().get("sessionContext");
+        IterationManager kernel = KernelFactory.create(context, session);
         java.util.List<Task> tasks = new java.util.ArrayList<>();
         tasks.add(task);
         boolean success = kernel.executeTasksWithRetries(tasks);

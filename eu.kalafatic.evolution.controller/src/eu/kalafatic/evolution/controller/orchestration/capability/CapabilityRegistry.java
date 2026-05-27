@@ -15,7 +15,7 @@ public class CapabilityRegistry {
 
     private final Map<String, ICapability> capabilities = new HashMap<>();
 
-    private CapabilityRegistry() {}
+    public CapabilityRegistry() {}
 
     public static CapabilityRegistry getInstance() {
         return INSTANCE;
