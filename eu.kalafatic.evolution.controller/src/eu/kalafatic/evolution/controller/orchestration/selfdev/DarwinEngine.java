@@ -248,6 +248,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 mutationSeeds.add(DarwinStrategySeed.dependencyExploration());
                 mutationSeeds.add(DarwinStrategySeed.refactorHotspotAnalysis());
                 mutationSeeds.add(DarwinStrategySeed.contextReduction());
+                mutationSeeds.add(DarwinStrategySeed.dependencyRiskAudit());
+                mutationSeeds.add(DarwinStrategySeed.runtimeBehaviorInspection());
+                mutationSeeds.add(DarwinStrategySeed.modularityReview());
             } else {
                 context.log("[DARWIN] Spawning MANDATORY 4-branch mutation chain (Iteration " + currentIteration + ").");
                 mutationSeeds.add(DarwinStrategySeed.probableSurvivor());
@@ -348,6 +351,14 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         v.setTrajectoryId(t.getTrajectoryId());
         if (memoryService != null && memoryService.getTrajectoryMemory() != null) {
             memoryService.getTrajectoryMemory().recordTrajectory(t);
+        }
+
+        v.setReasoningFocus(obj.optString("reasoning_focus"));
+        JSONArray selectedFilesArr = obj.optJSONArray("selected_files");
+        if (selectedFilesArr != null) {
+            for (int i = 0; i < selectedFilesArr.length(); i++) {
+                v.getSelectedFiles().add(selectedFilesArr.getString(i));
+            }
         }
 
         JSONArray stepsArr = obj.optJSONArray("projected_steps");

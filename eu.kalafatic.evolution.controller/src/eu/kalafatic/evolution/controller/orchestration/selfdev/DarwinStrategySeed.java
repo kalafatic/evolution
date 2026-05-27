@@ -158,4 +158,28 @@ public class DarwinStrategySeed {
             true
         );
     }
+
+    public static DarwinStrategySeed dependencyRiskAudit() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.DEPENDENCY_EXPLORATION,
+            "TRAJECTORY: DEPENDENCY RISK AUDIT. Goal: Identify high-risk dependency chains and ripple effects. Focus on structural integrity and external contract safety.",
+            false
+        );
+    }
+
+    public static DarwinStrategySeed runtimeBehaviorInspection() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.ARCHITECTURE_MAPPING,
+            "TRAJECTORY: RUNTIME BEHAVIOR INSPECTION. Goal: Analyze execution flows and concurrency patterns. Focus on thread safety, resource lifecycles, and performance hotspots.",
+            false
+        );
+    }
+
+    public static DarwinStrategySeed modularityReview() {
+        return new DarwinStrategySeed(
+            DarwinStrategyType.REFACTOR_HOTSPOT_ANALYSIS,
+            "TRAJECTORY: MODULARITY REVIEW. Goal: Assess encapsulation and decoupling. Focus on identifying monolithic leaks and suggesting cleaner module boundaries.",
+            false
+        );
+    }
 }
