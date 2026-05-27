@@ -23,18 +23,11 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are an Intent Expansion Engine. Your goal is to analyze user requests for ambiguity and explore the 'intent space' before implementation begins.\n" +
-               "Identify unresolved dimensions of intent and generate coherent hypotheses for what the user might want.\n" +
-               "\n" +
-               "CRITICAL: CONSTRUCT THE EVOLUTIONARY SEARCH SPACE.\n" +
-               "Analyze implementation dimensions, ambiguity points, architectural axes, and extensibility potential.\n" +
+        return "You are an Intent Expansion Engine. Your goal is to analyze user requests and CONSTRUCT THE EVOLUTIONARY SEARCH SPACE.\n" +
+               "Identify implementation polymorphism - multiple valid ways to implement the intent.\n" +
                "\n" +
                "PHASE 1 - INTENT DECOMPOSITION:\n" +
-               "Identify 'Evolutionary Axes' - dimensions where implementation choices exist.\n" +
-               "For each axis, identify potential candidate strategies/blueprints.\n" +
-               "\n" +
-               "MANDATORY: Derive engineering dimensions before branch spawning. These dimensions become the mutation space.\n" +
-               "Specifically analyze the following 9 dimensions for the user request:\n" +
+               "Derive engineering dimensions before branch spawning. Analyze the following 9 dimensions:\n" +
                "1. Engineering Philosophy\n" +
                "2. Execution Model\n" +
                "3. Abstraction Depth\n" +
@@ -45,15 +38,19 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "8. Runtime Behavior\n" +
                "9. Risk Acceptance\n" +
                "\n" +
-               "CRITICAL DISTINCTION:\n" +
-               "1. SEMANTIC AMBIGUITY: Missing critical information or contradictory constraints that prevent safe execution.\n" +
-               "2. IMPLEMENTATION POLYMORPHISM (EVOLUTIONARY AXES): Multiple valid ways to implement a clear intent.\n" +
+               "PHASE 2 - AXIS DETECTION:\n" +
+               "Identify 'Evolutionary Axes' where critical architectural choices must be made.\n" +
+               "For each axis, you MUST define deterministic 'Candidate Blueprints'.\n" +
+               "\n" +
+               "BLUEPRINT RULES:\n" +
+               "- Each blueprint MUST be architecturally distinct.\n" +
+               "- Blueprints MUST contain 'requiredCharacteristics' (technical requirements).\n" +
+               "- Blueprints MUST contain 'forbiddenOverlaps' (technical constraints to ensure divergence).\n" +
                "\n" +
                "STRICT RULES:\n" +
-               "1. Do NOT generate code.\n" +
-               "2. Do NOT execute tasks.\n" +
-               "3. Focus on structural and behavioral assumptions.\n" +
-               "4. Output MUST be ONLY valid JSON.";
+               "1. Do NOT generate code or tasks.\n" +
+               "2. Focus on structural and behavioral assumptions.\n" +
+               "3. Output MUST be ONLY valid JSON.";
     }
 
     @Override
@@ -76,15 +73,16 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "  },\n" +
                "  \"evolutionaryAxes\": [\n" +
                "    {\n" +
-               "      \"name\": \"string (e.g., Output Strategy)\",\n" +
+               "      \"name\": \"string (e.g., Output Philosophy)\",\n" +
                "      \"description\": \"string\",\n" +
                "      \"candidateBlueprints\": [\n" +
                "        {\n" +
-               "          \"id\": \"string\",\n" +
+               "          \"id\": \"string (e.g., direct_console, file_persistent)\",\n" +
                "          \"goal\": \"string\",\n" +
                "          \"philosophy\": \"string\",\n" +
                "          \"requiredCharacteristics\": [\"string\"],\n" +
-               "          \"forbiddenOverlaps\": [\"string\"]\n" +
+               "          \"forbiddenOverlaps\": [\"string\"],\n" +
+               "          \"architecturalDirection\": \"string\"\n" +
                "        }\n" +
                "      ]\n" +
                "    }\n" +
@@ -181,6 +179,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
                         bp.getRequiredCharacteristics().addAll(JsonUtils.toStringList(bpObj.optJSONArray("requiredCharacteristics")));
                         bp.getForbiddenOverlaps().addAll(JsonUtils.toStringList(bpObj.optJSONArray("forbiddenOverlaps")));
+                        bp.setArchitecturalDirection(bpObj.optString("architecturalDirection"));
                         axis.addBlueprint(bp);
                     }
                 }

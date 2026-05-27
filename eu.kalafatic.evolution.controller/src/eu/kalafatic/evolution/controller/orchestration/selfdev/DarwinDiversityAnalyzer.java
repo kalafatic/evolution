@@ -50,21 +50,50 @@ public class DarwinDiversityAnalyzer {
         String strategy = variant.optString("strategy").toLowerCase();
         String philosophy = variant.optString("semantic_justification").toLowerCase();
 
-        // Basic check: Philosophy must mention core blueprint goal/philosophy
-        String bpGoal = bp.getGoal().toLowerCase();
-        if (computeSimilarity(philosophy, bpGoal) < 0.1 && computeSimilarity(strategy, bpGoal) < 0.1) {
-            return false;
-        }
-
-        // Forbidden overlap check
-        for (String forbidden : bp.getForbiddenOverlaps()) {
-            if (strategy.contains(forbidden.toLowerCase()) || philosophy.contains(forbidden.toLowerCase())) {
-                context.log("[DIVERSITY] Blueprint Violation: Variant contains forbidden overlap: " + forbidden);
+        // 1. Philosophy/Goal Alignment Check (Dimension-based)
+        JSONObject dimensions = variant.optJSONObject("engineering_dimensions");
+        if (dimensions != null) {
+            String vPhilosophy = dimensions.optString("philosophy", "").toLowerCase();
+            String bpPhilosophy = bp.getPhilosophy().toLowerCase();
+            if (computeSimilarity(vPhilosophy, bpPhilosophy) < 0.2) {
+                // If the philosophy dimension is wildly off, reject
+                context.log("[DIVERSITY] Blueprint Violation: Philosophy mismatch for " + bp.getId());
+                return false;
+            }
+        } else {
+            // Fallback for missing dimensions
+            String bpGoal = bp.getGoal().toLowerCase();
+            if (computeSimilarity(philosophy, bpGoal) < 0.1 && computeSimilarity(strategy, bpGoal) < 0.1) {
                 return false;
             }
         }
 
+        // 2. Forbidden overlap check (Structural divergence enforcement)
+        for (String forbidden : bp.getForbiddenOverlaps()) {
+            if (strategy.contains(forbidden.toLowerCase()) || philosophy.contains(forbidden.toLowerCase())) {
+                context.log("[DIVERSITY] Blueprint Violation: Variant contains forbidden overlap: '" + forbidden + "' in " + bp.getId());
+                return false;
+            }
+
+            // Check dimensions for forbidden overlaps if they represent architectural layers
+            if (dimensions != null) {
+                for (String dim : dkeys(dimensions)) {
+                    if (dimensions.optString(dim).toLowerCase().contains(forbidden.toLowerCase())) {
+                        context.log("[DIVERSITY] Blueprint Violation: Dimension '" + dim + "' contains forbidden overlap: " + forbidden);
+                        return false;
+                    }
+                }
+            }
+        }
+
         return true;
+    }
+
+    private java.util.List<String> dkeys(JSONObject obj) {
+        java.util.List<String> keys = new java.util.ArrayList<>();
+        java.util.Iterator<String> it = obj.keys();
+        while (it.hasNext()) keys.add(it.next());
+        return keys;
     }
 
     private boolean isUnique(JSONObject candidate, List<JSONObject> existing) {

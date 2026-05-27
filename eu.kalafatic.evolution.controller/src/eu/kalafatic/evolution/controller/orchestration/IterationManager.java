@@ -389,9 +389,11 @@ public class IterationManager {
             }
 
             // --- Priority 1 Routing (Simple Chat & fast-track) ---
+            // EXCLUDE MEDIATED MODE from Priority 1 routing to ensure it uses the Darwin kernel
             if (context.getPlatformMode() != null &&
                (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT ||
-                "SIMPLE_CHAT".equals(context.getPlatformMode().getType().name()))) {
+                "SIMPLE_CHAT".equals(context.getPlatformMode().getType().name())) &&
+                !profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
                  IOrchestrationFlow flow = (IOrchestrationFlow) getInternalAgent(EvolutionConstants.AGENT_GENERAL);
                  String resultStr = ((eu.kalafatic.evolution.controller.agents.GeneralAgent)flow).process(request, context, null);
                  response.setResultType(ResultType.CHAT);
@@ -808,9 +810,13 @@ public class IterationManager {
 
         // 3. SELECTION AUTHORITY: Handle trajectory selection (Manual/Auto/Step)
         String manualId = null;
-        boolean skipSelectionPause = false; // EVOLUTIONARY MANDATE: Always allow selection/review in non-auto modes
 
-        if (!context.isAutoApprove() && !skipSelectionPause) {
+        // EVOLUTIONARY MANDATE: Minimum 4 branches in early generations
+        if (variants.size() < 4 && state.getIterationCount() < 2) {
+            context.log("[KERNEL] WARNING: Less than 4 branches in early evolution. Current count: " + variants.size());
+        }
+
+        if (!context.isAutoApprove()) {
             manualId = handleVariantSelection(context, variants, goal);
             if ("REGENERATE".equals(manualId)) {
                 // User provided guidance, restart mutation in the current phase
@@ -988,7 +994,8 @@ public class IterationManager {
                 String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? " [KEPT]" : "";
                 sb.append(String.format("- [%s] %s (Predicted Score: %.2f)%s\n", v.getId(), v.getStrategy(), v.getScore(), status));
             }
-            sb.append("\nSelect a trajectory to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
+            sb.append("\nMANUAL MODE: ALL branches preserved. No auto-collapse.\n");
+            sb.append("Select a trajectory to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
 
             String input = context.requestInput(sb.toString()).get();
             if (input == null || input.trim().isEmpty()) continue;
@@ -1113,7 +1120,8 @@ public class IterationManager {
 
         // MANDATORY DARWIN EVOLUTION: All non-chat requests MUST route through the evolutionary kernel.
         // No more shortcuts for "atomic" or "simple" tasks.
-        if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
+        if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)
+            && !profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
             context.log("[KERNEL] Simple chat path detected.");
             return (IOrchestrationFlow) AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
         }
