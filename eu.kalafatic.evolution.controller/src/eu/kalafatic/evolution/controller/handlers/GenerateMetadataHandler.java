@@ -29,7 +29,7 @@ public class GenerateMetadataHandler extends AbstractOrchestratorHandler {
                     protected IStatus run(IProgressMonitor monitor) {
                         try {
                             MetadataAgent generator = new MetadataAgent();
-                            generator.generate(project.getLocation().toFile());
+                            generator.generate(project.getLocation().toFile(), monitor);
 
                             Display.getDefault().asyncExec(() -> {
                                 MessageDialog.openInformation(null, "Metadata Generation",
