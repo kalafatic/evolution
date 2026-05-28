@@ -176,6 +176,21 @@ public class DarwinVariantSpawner {
             }
         }
 
+        if (lineageContext != null && !lineageContext.isEmpty()) {
+            sb.append("LINEAGE CONTINUITY (PERSISTENT EVOLUTION):\n")
+              .append("You are evolving a surviving lineage. Inherit the successes and avoid the failures of your ancestors.\n")
+              .append(lineageContext).append("\n");
+
+            if (rejectedSiblings != null && !rejectedSiblings.isEmpty()) {
+                sb.append("REJECTED SIBLING AWARENESS (FORBIDDEN PHILOSOPHIES):\n")
+                  .append("The following trajectories were REJECTED in previous generations. You ARE STRICTLY PROHIBITED from re-proposing or pivoting back to these engineering philosophies or their semantic variations:\n");
+                for (String rejected : rejectedSiblings) {
+                    sb.append("- ").append(rejected).append("\n");
+                }
+                sb.append("\n");
+            }
+        }
+
         if (!currentRoundVariants.isEmpty()) {
             sb.append("FORBIDDEN PHILOSOPHIES (SIBLING MUTATION PRESSURE):\n")
               .append("The following engineering philosophies have already been claimed in this generation. You MUST intentionally mutate AGAINST them to ensure maximum divergence.\n\n");

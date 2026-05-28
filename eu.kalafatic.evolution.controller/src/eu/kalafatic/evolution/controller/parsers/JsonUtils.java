@@ -27,6 +27,10 @@ public class JsonUtils {
         // Strip <think> blocks
         text = text.replaceAll("(?is)<think>.*?</think>", "");
 
+        // Strip Log Contamination (e.g., [Default] [DARWIN_BRANCHES])
+        text = text.replaceAll("^\\[.*?\\]\\s+", "");
+        text = text.replaceAll("^\\[.*?\\]\\s+\\[.*?\\]\\s+", "");
+
         int firstStart = text.indexOf("{");
         int lastEnd = text.lastIndexOf("}");
 
@@ -252,6 +256,10 @@ public class JsonUtils {
 
         // Strip <think> blocks
         text = text.replaceAll("(?is)<think>.*?</think>", "");
+
+        // Strip Log Contamination
+        text = text.replaceAll("^\\[.*?\\]\\s+", "");
+        text = text.replaceAll("^\\[.*?\\]\\s+\\[.*?\\]\\s+", "");
 
         int start = text.indexOf("[");
         int end = text.lastIndexOf("]");

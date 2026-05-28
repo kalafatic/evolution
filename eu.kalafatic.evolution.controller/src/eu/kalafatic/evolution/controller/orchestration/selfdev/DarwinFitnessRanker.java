@@ -33,6 +33,7 @@ public class DarwinFitnessRanker {
             if (isAtomicRound && DarwinStrategyType.PROBABLE_SURVIVOR.name().equals(v.optString("strategy_type"))) {
                 score = Math.max(score, 0.95);
             }
+
             v.put("score", score);
         }
 
