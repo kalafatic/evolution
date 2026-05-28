@@ -305,6 +305,11 @@ window.ChatApp.Renderer = {
         container.className = 'branch-container';
         try {
             let text = (m.text || '').trim();
+
+            // Strip Log Contamination (e.g., [Default] [80ff...])
+            // We strip leading brackets that don't look like the start of a JSON array/object
+            text = text.replace(/^(\[[^\{\"\[]+\]\s*)+/g, '');
+
             if (text.startsWith('```')) text = text.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
 
             let data;

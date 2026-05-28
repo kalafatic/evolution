@@ -223,15 +223,15 @@ public class DarwinVariantSpawner {
           .append("    \"runtime_behavior\": \"deterministic/async/etc\",\n")
           .append("    \"risk_acceptance\": \"conservative/experimental/etc\"\n")
           .append("  },\n")
-          .append("  \"selected_files\": [\"actual/path/to/file.java\"],\n")
+          .append("  \"selected_files\": [\"src/main/java/App.java\"],\n")
           .append("  \"survival_argument\": \"(Technical justification)\",\n")
           .append("  \"tradeoffs\": \"(Technical tradeoffs)\",\n")
           .append("  \"failure_risks\": \"(Potential failure modes)\",\n")
           .append("  \"semantic_justification\": \"").append(bp.getPhilosophy()).append("\",\n")
           .append("  \"projected_steps\": [\"step 1\", \"step 2\"],\n")
-          .append("  \"expected_outputs\": [\"artifact.java\"],\n")
+          .append("  \"expected_outputs\": [\"App.java\"],\n")
           .append("  \"score\": 0.8,\n")
-          .append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"target_file.java\", \"description\": \"Action description\" }]\n")
+          .append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"src/main/java/App.java\", \"description\": \"Action description\" }]\n")
           .append("}");
 
         return sb.toString();
@@ -405,7 +405,7 @@ public class DarwinVariantSpawner {
                "  \"strategy_type\": \"" + seed.getType() + "\",\n" +
                "  \"strategy\": \"precise engineering strategy for this trajectory\",\n" +
                "  \"reasoning_focus\": \"specific architectural focus for this mediated trajectory\",\n" +
-               "  \"selected_files\": [\"path/to/file1.java\", \"path/to/file2.java\"],\n" +
+               "  \"selected_files\": [\"src/main/java/Main.java\"],\n" +
                "  \"engineering_dimensions\": {\n" +
                "    \"philosophy\": \"specific philosophy for this branch\",\n" +
                "    \"execution_model\": \"atomic/service/reactive/etc\",\n" +
@@ -430,7 +430,7 @@ public class DarwinVariantSpawner {
                "    {\n" +
                "      \"domain\": \"file\",\n" +
                "      \"operation\": \"WRITE\",\n" +
-               "      \"target\": \"actual_file_path.java\",\n" +
+               "      \"target\": \"src/main/java/Main.java\",\n" +
                "      \"description\": \"specific technical instruction for this action\"\n" +
                "    }\n" +
                "  ],\n" +

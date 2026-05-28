@@ -64,9 +64,12 @@ public class DarwinDiversityAnalyzer {
                 String dimKey = entry.getKey();
                 String bpValue = entry.getValue().toLowerCase();
                 String vValue = dimensions.optString(dimKey, "").toLowerCase();
-                if (!vValue.isEmpty() && !bpValue.isEmpty() && computeSimilarity(vValue, bpValue) < 0.4) {
-                     context.log("[DIVERSITY] Blueprint Violation: Dimension mismatch for " + dimKey + " in " + bp.getId());
-                     return false;
+                if (!vValue.isEmpty() && !bpValue.isEmpty()) {
+                    if (vValue.equals(bpValue)) continue;
+                    if (computeSimilarity(vValue, bpValue) < 0.4) {
+                        context.log("[DIVERSITY] Blueprint Violation: Dimension mismatch for " + dimKey + " in " + bp.getId());
+                        return false;
+                    }
                 }
             }
 
@@ -263,11 +266,11 @@ public class DarwinDiversityAnalyzer {
     private Set<String> tokenize(String s) {
         Set<String> tokens = new HashSet<>();
         // Filter out generic architectural filler words to focus on real semantic tokens
-        Set<String> filler = Set.of("architecture", "implementation", "approach", "strategy", "robust", "flexible", "modular", "solution", "engineering", "using", "with", "provide", "provides", "focus", "focuses");
+        Set<String> filler = Set.of("architecture", "implementation", "approach", "robust", "flexible", "solution", "engineering", "using", "with", "provide", "provides", "focuses");
 
         for (String word : s.split("\\s+")) {
             String clean = word.toLowerCase().replaceAll("[^a-z]", "");
-            if (clean.length() > 3 && !filler.contains(clean)) {
+            if (clean.length() >= 3 && !filler.contains(clean)) {
                 tokens.add(clean);
             }
         }
