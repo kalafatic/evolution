@@ -3,7 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**

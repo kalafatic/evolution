@@ -11,6 +11,8 @@ public class TrajectoryBlueprint {
     private String id;
     private String goal;
     private String philosophy;
+    private String survivalArgument;
+    private String tradeoffs;
     private List<String> requiredCharacteristics = new ArrayList<>();
     private List<String> forbiddenOverlaps = new ArrayList<>();
     private String mutationPressure;
@@ -104,4 +106,10 @@ public class TrajectoryBlueprint {
     public void setTargetVector(TrajectoryVector targetVector) {
         this.targetVector = targetVector;
     }
+
+	public String getSurvivalArgument() { return survivalArgument; }
+    public void setSurvivalArgument(String survivalArgument) { this.survivalArgument = survivalArgument; }
+
+    public String getTradeoffs() { return tradeoffs; }
+    public void setTradeoffs(String tradeoffs) { this.tradeoffs = tradeoffs; }
 }

@@ -1,11 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.List;
+
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 
 public class TaskExecutor {
     private final EvolutionOrchestrator orchestrator;

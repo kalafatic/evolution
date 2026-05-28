@@ -1,13 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
-import eu.kalafatic.evolution.controller.orchestration.ModeRouter;
-import eu.kalafatic.evolution.controller.orchestration.PlatformType;
-import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
-import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
-import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 import eu.kalafatic.evolution.controller.orchestration.KernelFactory;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;

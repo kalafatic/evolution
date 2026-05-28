@@ -1,12 +1,11 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import eu.kalafatic.evolution.controller.tools.GitTool;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.tools.GitTool;
 
 public class GitManager {
     private final File root;

@@ -1,8 +1,5 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Represents a trajectory as a point in multidimensional evolutionary space.
  * Each dimension is a continuous coefficient from 0.0 to 1.0.

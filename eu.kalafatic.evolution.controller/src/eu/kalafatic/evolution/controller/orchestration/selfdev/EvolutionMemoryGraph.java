@@ -1,8 +1,9 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
-import java.util.*;
-import org.json.JSONObject;
-import org.json.JSONArray;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Tracks the decision hierarchy and entropy progression of the evolution.

@@ -2,8 +2,6 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.List;
 
-import eu.kalafatic.evolution.model.orchestration.IterationStatus;
-
 public class IterationRecord {
     private int iteration;
     private String goal;

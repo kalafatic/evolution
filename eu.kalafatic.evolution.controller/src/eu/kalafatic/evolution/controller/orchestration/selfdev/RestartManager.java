@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import org.eclipse.emf.ecore.resource.Resource;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 public class RestartManager {

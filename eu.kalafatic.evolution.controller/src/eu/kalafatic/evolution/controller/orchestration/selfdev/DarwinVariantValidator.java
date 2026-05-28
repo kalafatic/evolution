@@ -1,11 +1,12 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
+import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
-import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import java.util.List;
-import java.util.ArrayList;
+import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 
 /**
  * Validator for Darwin evolutionary branch trajectories.

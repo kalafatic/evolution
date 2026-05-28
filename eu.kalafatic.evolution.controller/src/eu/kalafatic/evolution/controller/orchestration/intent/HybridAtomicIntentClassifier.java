@@ -1,6 +1,5 @@
 package eu.kalafatic.evolution.controller.orchestration.intent;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;

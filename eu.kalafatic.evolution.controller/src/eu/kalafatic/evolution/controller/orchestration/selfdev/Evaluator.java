@@ -1,31 +1,31 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IEvaluationContract;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
+import eu.kalafatic.evolution.controller.tools.MavenTool;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import eu.kalafatic.evolution.controller.trajectory.FitnessEvaluation;
 import eu.kalafatic.evolution.controller.trajectory.SignalSeverity;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
-import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
-import eu.kalafatic.evolution.controller.tools.MavenTool;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
-import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
-import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IEvaluationContract;
-import java.util.Collections;
 
 public class Evaluator implements ICapability, IEvaluationContract {
     private final File projectRoot;

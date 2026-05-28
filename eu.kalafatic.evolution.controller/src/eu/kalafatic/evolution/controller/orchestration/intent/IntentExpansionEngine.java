@@ -1,16 +1,20 @@
 package eu.kalafatic.evolution.controller.orchestration.intent;
 
+import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomain;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionAxis;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.TrajectoryBlueprint;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Engine for expanding user intent and exploring ambiguity before Darwin execution.

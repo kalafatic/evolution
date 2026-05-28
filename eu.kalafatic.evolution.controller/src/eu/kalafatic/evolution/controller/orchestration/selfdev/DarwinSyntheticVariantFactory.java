@@ -2,7 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import java.util.List;
+
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 
 /**
