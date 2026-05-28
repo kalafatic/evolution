@@ -27,6 +27,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "Identify implementation polymorphism - multiple valid ways to implement the intent.\n" +
                "\n" +
                "PHASE 1 - INTENT DECOMPOSITION:\n" +
+               "Analyze: execution goals, ambiguity, extensibility potential, stabilization opportunities, persistence requirements, runtime behavior, integration possibilities, architectural depth, failure risks.\n" +
                "Derive engineering dimensions before branch spawning. Analyze the following 9 dimensions:\n" +
                "1. Engineering Philosophy\n" +
                "2. Execution Model\n" +
@@ -43,12 +44,14 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "For each axis, you MUST define deterministic 'Candidate Blueprints'.\n" +
                "\n" +
                "BLUEPRINT RULES:\n" +
+               "- THE ORCHESTRATOR OWNS THE EVOLUTION. You only define the search space.\n" +
                "- Each blueprint MUST be architecturally distinct.\n" +
                "- Blueprints MUST contain 'requiredCharacteristics' (technical requirements).\n" +
                "- Blueprints MUST contain 'forbiddenOverlaps' (technical constraints to ensure divergence).\n" +
+               "- DIVERSITY MUST BE PRE-SPAWN. Architecturally separate these blueprints now.\n" +
                "\n" +
                "STRICT RULES:\n" +
-               "1. Do NOT generate code or tasks.\n" +
+               "1. Do NOT generate code, tasks, or actual implementation branches.\n" +
                "2. Focus on structural and behavioral assumptions.\n" +
                "3. Output MUST be ONLY valid JSON.";
     }
@@ -57,7 +60,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
     protected String getFooterInstructions() {
         return "OUTPUT SCHEMA:\n" +
                "{\n" +
-               "  \"state\": \"CLEAR\", // [CLEAR, EVOLVABLE, NEEDS_CLARIFICATION, BLOCKED, CONTRADICTORY]\n" +
+               "  \"state\": \"CLEAR\", // Choose EXACTLY ONE: [CLEAR, EVOLVABLE, NEEDS_CLARIFICATION, BLOCKED, CONTRADICTORY]\n" +
                "  \"dominantIntent\": \"string\",\n" +
                "  \"dominantConfidence\": float,\n" +
                "  \"engineeringDimensions\": {\n" +
@@ -214,37 +217,35 @@ public class IntentExpansionEngine extends BaseAiAgent {
     }
 
     public static InterpretationState parseState(String stateStr, TaskContext context) {
-        if (stateStr == null) return InterpretationState.CLEAR;
+        if (stateStr == null || stateStr.trim().isEmpty()) return InterpretationState.CLEAR;
         String cleanState = stateStr.trim().toUpperCase();
 
-        // HARDENING: If the model echoes the whole enum list, it's probably actually CLEAR or EVOLVABLE
-        if (cleanState.contains("|") || (cleanState.contains("CLEAR") && cleanState.contains("CONTRADICTORY"))) {
+        // HARDENING: If the model echoes the whole enum list or example comments, it's likely CLEAR/EVOLVABLE
+        if (cleanState.contains("|") || cleanState.contains("[") || cleanState.contains("/") ||
+           (cleanState.contains("CLEAR") && cleanState.contains("CONTRADICTORY"))) {
             if (context != null) {
-                context.consoleLog("[INTENT EXPANSION] Detected enum list echo in state: " + stateStr + ". Defaulting to CLEAR.");
-            }
-            // If it contains BLOCKED but also others, it might be BLOCKED.
-            // But if it's the full list, it's a hallucination.
-            if (cleanState.contains("BLOCKED") && !cleanState.contains("CLEAR")) {
-                return InterpretationState.BLOCKED;
+                context.consoleLog("[INTENT EXPANSION] Detected placeholder or list echo in state: " + stateStr + ". Resolving to CLEAR.");
             }
             return InterpretationState.CLEAR;
         }
 
         try {
+            // Exact match
             return InterpretationState.valueOf(cleanState);
         } catch (IllegalArgumentException e) {
-            // Robust fallback for noisy LLM output (e.g., "State: CLEAR")
-            InterpretationState resolved = InterpretationState.CLEAR;
+            // Robust substring match for noisy LLM output (e.g., "State: CLEAR")
             for (InterpretationState s : InterpretationState.values()) {
                 if (cleanState.contains(s.name())) {
-                    resolved = s;
-                    break;
+                    if (context != null) {
+                        context.consoleLog("[INTENT EXPANSION] Noisy state string '" + stateStr + "' resolved to " + s);
+                    }
+                    return s;
                 }
             }
             if (context != null) {
-                context.consoleLog("[INTENT EXPANSION] WARNING: Noisy state string '" + stateStr + "' resolved to " + resolved);
+                context.consoleLog("[INTENT EXPANSION] WARNING: Unrecognized state '" + stateStr + "'. Defaulting to CLEAR.");
             }
-            return resolved;
+            return InterpretationState.CLEAR;
         }
     }
 

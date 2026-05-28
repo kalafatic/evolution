@@ -313,39 +313,49 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private List<TrajectoryBlueprint> generateStandardBlueprints(String goal) {
         List<TrajectoryBlueprint> blueprints = new ArrayList<>();
 
+        // BRANCH A - DIRECT_MINIMAL
         TrajectoryBlueprint direct = new TrajectoryBlueprint("direct_minimal", goal, "Minimal executable implementation");
         direct.addRequiredCharacteristic("Direct output/execution");
         direct.addRequiredCharacteristic("Primary entry point");
         direct.addRequiredCharacteristic("Atomic structure");
-        direct.addForbiddenOverlap("abstractions");
+        direct.addForbiddenOverlap("interfaces");
+        direct.addForbiddenOverlap("services");
         direct.addForbiddenOverlap("layered architecture");
-        direct.addForbiddenOverlap("external services");
-        direct.setArchitecturalDirection("Goal: Minimal executable implementation. Philosophy: direct, low abstraction, and zero bloat.");
+        direct.addForbiddenOverlap("factories");
+        direct.setArchitecturalDirection("Goal: Minimal implementation. Philosophy: direct, low abstraction, zero bloat. Execution Model: atomic.");
         blueprints.add(direct);
 
+        // BRANCH B - PERSISTENT_STORAGE
         TrajectoryBlueprint persistent = new TrajectoryBlueprint("persistent_storage", goal, "Persistent data management");
-        persistent.addRequiredCharacteristic("Persistence support");
+        persistent.addRequiredCharacteristic("Persistence support (FileWriter/Database)");
         persistent.addRequiredCharacteristic("External state management");
-        persistent.addForbiddenOverlap("ephemeral execution");
-        persistent.addForbiddenOverlap("stateless model");
-        persistent.setArchitecturalDirection("Goal: Persistent state management. Philosophy: side-effect focused, externalized storage.");
+        persistent.addRequiredCharacteristic("Configurable storage paths");
+        persistent.addForbiddenOverlap("console-only execution");
+        persistent.addForbiddenOverlap("ephemeral state");
+        persistent.addForbiddenOverlap("logger abstraction");
+        persistent.setArchitecturalDirection("Goal: Persistent state. Philosophy: side-effect focused. Execution Model: synchronous persistence.");
         blueprints.add(persistent);
 
-        TrajectoryBlueprint stabilized = new TrajectoryBlueprint("stabilized_resilient", goal, "Resilient implementation");
+        // BRANCH C - STABILIZED_RESILIENT
+        TrajectoryBlueprint stabilized = new TrajectoryBlueprint("stabilized_resilient", goal, "Resilient and validated implementation");
         stabilized.addRequiredCharacteristic("Input validation");
-        stabilized.addRequiredCharacteristic("Error recovery/handling");
-        stabilized.addRequiredCharacteristic("Verification logic");
-        stabilized.addForbiddenOverlap("speculative features");
-        stabilized.addForbiddenOverlap("complex abstractions");
-        stabilized.setArchitecturalDirection("Goal: Resilient implementation. Philosophy: safety-first, deterministic error recovery.");
+        stabilized.addRequiredCharacteristic("Exception handling and recovery");
+        stabilized.addRequiredCharacteristic("Unit tests for edge cases");
+        stabilized.addForbiddenOverlap("speculative abstractions");
+        stabilized.addForbiddenOverlap("overengineering");
+        stabilized.addForbiddenOverlap("persistence overlap");
+        stabilized.setArchitecturalDirection("Goal: Reliability. Philosophy: safety-first. Execution Model: defensive.");
         blueprints.add(stabilized);
 
-        TrajectoryBlueprint service = new TrajectoryBlueprint("reusable_service", goal, "Extensible and modular architecture");
-        service.addRequiredCharacteristic("Component separation");
-        service.addRequiredCharacteristic("Decoupled execution");
-        service.addForbiddenOverlap("direct coupling");
-        service.addForbiddenOverlap("hardcoded logic");
-        service.setArchitecturalDirection("Goal: Future extensibility. Philosophy: layered, decoupled, and modularly extensible.");
+        // BRANCH D - REUSABLE_SERVICE
+        TrajectoryBlueprint service = new TrajectoryBlueprint("reusable_service", goal, "Extensible and modular service architecture");
+        service.addRequiredCharacteristic("Interface-based design");
+        service.addRequiredCharacteristic("Implementation separation (Service/Impl)");
+        service.addRequiredCharacteristic("Dependency injection or factory patterns");
+        service.addForbiddenOverlap("hardcoded output");
+        service.addForbiddenOverlap("direct println coupling");
+        service.addForbiddenOverlap("monolithic structure");
+        service.setArchitecturalDirection("Goal: Extensibility. Philosophy: decoupled, layered. Execution Model: service-oriented.");
         blueprints.add(service);
 
         return blueprints;
@@ -354,29 +364,41 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private List<TrajectoryBlueprint> generateMediatedBlueprints(String goal) {
         List<TrajectoryBlueprint> blueprints = new ArrayList<>();
 
+        // BRANCH A - ARCHITECTURE_MAPPING
         TrajectoryBlueprint arch = new TrajectoryBlueprint("architecture_mapping", goal, "Structural and architectural mapping");
         arch.addRequiredCharacteristic("Map core components");
         arch.addRequiredCharacteristic("Identify structural patterns");
-        arch.setArchitecturalDirection("Focus: Architecture hotspots and high-level structure.");
+        arch.addForbiddenOverlap("dependency details");
+        arch.addForbiddenOverlap("implementation hotspots");
+        arch.setArchitecturalDirection("Focus: High-level topology. Philosophy: structural mapping.");
         blueprints.add(arch);
 
+        // BRANCH B - DEPENDENCY_AUDIT
         TrajectoryBlueprint dep = new TrajectoryBlueprint("dependency_audit", goal, "Dependency and relationship exploration");
         dep.addRequiredCharacteristic("Analyze module relationships");
         dep.addRequiredCharacteristic("Identify cross-cutting concerns");
-        dep.setArchitecturalDirection("Focus: Dependency graphs and ripple effects.");
+        dep.addForbiddenOverlap("architectural patterns");
+        dep.addForbiddenOverlap("technical debt analysis");
+        dep.setArchitecturalDirection("Focus: Interaction graphs. Philosophy: relationship auditing.");
         blueprints.add(dep);
 
+        // BRANCH C - HOTSPOT_ANALYSIS
         TrajectoryBlueprint hotspot = new TrajectoryBlueprint("hotspot_analysis", goal, "Complexity and technical debt analysis");
         hotspot.addRequiredCharacteristic("Identify technical debt");
         hotspot.addRequiredCharacteristic("Identify high-complexity areas");
-        hotspot.setArchitecturalDirection("Focus: Instability and refactoring opportunities.");
+        hotspot.addForbiddenOverlap("minimal context selection");
+        hotspot.addForbiddenOverlap("structural mapping");
+        hotspot.setArchitecturalDirection("Focus: Risk and debt. Philosophy: instability analysis.");
         blueprints.add(hotspot);
 
-        TrajectoryBlueprint context = new TrajectoryBlueprint("context_distillation", goal, "High-signal context package evolution");
-        context.addRequiredCharacteristic("Distill minimal context");
-        context.addRequiredCharacteristic("Zero-noise file selection");
-        context.setArchitecturalDirection("Focus: Evolving the minimal reasoning package.");
-        blueprints.add(context);
+        // BRANCH D - CONTEXT_DISTILLATION
+        TrajectoryBlueprint contextBlueprint = new TrajectoryBlueprint("context_distillation", goal, "High-signal context package evolution");
+        contextBlueprint.addRequiredCharacteristic("Distill minimal context");
+        contextBlueprint.addRequiredCharacteristic("Zero-noise file selection");
+        contextBlueprint.addForbiddenOverlap("dependency graphs");
+        contextBlueprint.addForbiddenOverlap("architectural hotspots");
+        contextBlueprint.setArchitecturalDirection("Focus: Reasoning efficiency. Philosophy: information density distillation.");
+        blueprints.add(contextBlueprint);
 
         return blueprints;
     }
