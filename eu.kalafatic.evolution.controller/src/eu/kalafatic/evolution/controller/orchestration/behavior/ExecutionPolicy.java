@@ -21,6 +21,7 @@ public class ExecutionPolicy {
     private WorkflowModel workflowModel;
     private RepositoryMode repositoryMode = RepositoryMode.ISOLATED;
     private double explorationLevel = 0.5;
+    private double evolutionaryStrictness = 0.5;
     private final List<String> constraints = new ArrayList<>();
 
     public ExecutionMode getExecutionMode() { return executionMode; }
@@ -43,6 +44,9 @@ public class ExecutionPolicy {
 
     public double getExplorationLevel() { return explorationLevel; }
     public void setExplorationLevel(double explorationLevel) { this.explorationLevel = explorationLevel; }
+
+    public double getEvolutionaryStrictness() { return evolutionaryStrictness; }
+    public void setEvolutionaryStrictness(double evolutionaryStrictness) { this.evolutionaryStrictness = evolutionaryStrictness; }
 
     public List<String> getConstraints() { return constraints; }
     public void addConstraint(String constraint) { this.constraints.add(constraint); }

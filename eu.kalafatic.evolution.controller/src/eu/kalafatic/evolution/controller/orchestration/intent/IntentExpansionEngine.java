@@ -234,8 +234,9 @@ public class IntentExpansionEngine extends BaseAiAgent {
         String cleanState = stateStr.trim().toUpperCase();
 
         // HARDENING: If the model echoes the whole enum list or example comments, it's likely CLEAR/EVOLVABLE
-        if (cleanState.contains("|") || cleanState.contains("[") || cleanState.contains("/") ||
-           (cleanState.contains("CLEAR") && cleanState.contains("CONTRADICTORY"))) {
+        // Only trigger if it looks like a generic template/list rather than a set of specific states
+        if ((cleanState.contains("|") || cleanState.contains("[") || cleanState.contains("/")) &&
+           (cleanState.contains("CLEAR") && cleanState.contains("NEEDS_CLARIFICATION") && cleanState.contains("BLOCKED"))) {
             if (context != null) {
                 context.consoleLog("[INTENT EXPANSION] Detected placeholder or list echo in state: " + stateStr + ". Resolving to CLEAR.");
             }

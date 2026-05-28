@@ -199,12 +199,17 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED);
 
+        boolean isTestMode = context.getMetadata().containsKey("testMode");
         try {
-            manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
-            manager.getGitManager().forceCheckout(snapshotBranch);
+            if (!isMediated && !isTestMode) {
+                manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
+                manager.getGitManager().forceCheckout(snapshotBranch);
+            }
 
             context.log("[KERNEL] Executing winner variant: " + selectedVariant.getId() + " (" + selectedVariant.getStrategy() + ")");
-            manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
+            if (!isMediated && !isTestMode) {
+                manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
+            }
 
             winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit);
 
@@ -215,17 +220,17 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             if (!selectedVariant.isSuccess()) {
                 context.log("[KERNEL] Winner variant execution failed.");
-                if (!isMediated) {
+                if (!isMediated && !isTestMode) {
                     manager.getGitManager().forceCheckout(originalBranch);
                     manager.getGitManager().rollback();
                 }
                 return manager.failedResult();
             }
 
-            if (!isMediated) {
+            if (!isMediated && !isTestMode) {
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.getGitManager().merge(selectedVariant.getBranchName());
-            } else {
+            } else if (isMediated) {
                 // MEDIATED COGNITIVE MERGE: Apply the winner's understanding to the session context
                 context.log("[KERNEL] Applying cognitive winner: " + selectedVariant.getStrategy());
                 context.getOrchestrationState().getMetadata().put("current_understanding", selectedVariant.getStrategy());
@@ -515,12 +520,15 @@ public class DarwinFlow implements IOrchestrationFlow {
                 .distinct()
                 .count();
 
-        if (distinctSurvivors < 3 && iterationCount < Math.max(4, totalAxes)) {
-             return false;
-        }
+        AtomicIntentAnalysis atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
+        boolean isAtomicSuccess = atomic != null && !atomic.isRequiresPlanning();
 
         // 1. Fitness Stability: Check if top variants have stabilized at high scores
         double maxScore = variants.stream().mapToDouble(BranchVariant::getScore).max().orElse(0.0);
+
+        if (distinctSurvivors < 3 && iterationCount < Math.max(4, totalAxes) && (!isAtomicSuccess || maxScore < 0.92)) {
+             return false;
+        }
         double avgScore = variants.stream().mapToDouble(BranchVariant::getScore).average().orElse(0.0);
 
         if (maxScore > 0.92 && (maxScore - avgScore) < 0.03) {

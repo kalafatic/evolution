@@ -14,21 +14,18 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 public class DarwinDiversityAnalyzer {
 
     /**
-     * Filters a list of variants to remove semantic and conceptual duplicates.
+     * Filters a list of variants and ensures they adhere to their blueprints using vector-based scoring.
      */
-    public List<JSONObject> analyze(List<JSONObject> variants, TaskContext context) {
-        return analyze(variants, null, context);
-    }
+    public List<JSONObject> analyze(List<JSONObject> variants, List<TrajectoryBlueprint> blueprints, double strictness, double modelCapability, TaskContext context) {
+        if (variants.isEmpty()) return variants;
 
-    /**
-     * Filters a list of variants and ensures they adhere to their blueprints.
-     */
-    public List<JSONObject> analyze(List<JSONObject> variants, List<TrajectoryBlueprint> blueprints, TaskContext context) {
-        if (variants.size() < 2) return variants;
+        double effectiveStrictness = strictness * modelCapability;
+        context.log(String.format("[DIVERSITY] Starting vector analysis. Strictness: %.2f, Model Capability: %.2f, Effective Threshold: %.2f",
+                strictness, modelCapability, effectiveStrictness));
 
         List<JSONObject> unique = new ArrayList<>();
         for (JSONObject v : variants) {
-            DiversityResultType result = evaluate(v, blueprints, unique, context);
+            DiversityResultType result = evaluate(v, blueprints, unique, effectiveStrictness, context);
 
             if (result == DiversityResultType.ACCEPTED || result == DiversityResultType.ACCEPTED_WITH_WARNINGS) {
                 unique.add(v);
@@ -40,20 +37,30 @@ public class DarwinDiversityAnalyzer {
         return unique;
     }
 
-    private DiversityResultType evaluate(JSONObject v, List<TrajectoryBlueprint> blueprints, List<JSONObject> unique, TaskContext context) {
-        // Blueprint Adherence Check
+    private DiversityResultType evaluate(JSONObject v, List<TrajectoryBlueprint> blueprints, List<JSONObject> unique, double threshold, TaskContext context) {
+        // 1. Schema Validation (Hard failure - Architecture is STRICT)
+        if (v.optJSONArray("actions") == null || v.optJSONArray("actions").length() == 0) {
+            context.log("[DIVERSITY] SCHEMA FATAL: Trajectory " + v.optString("id") + " has no executable actions.");
+            return DiversityResultType.REJECTED_FATAL;
+        }
+
+        // 2. Blueprint Adherence Check
         TrajectoryBlueprint bp = null;
         if (blueprints != null) {
             bp = blueprints.stream().filter(b -> b.getId().equals(v.optString("id"))).findFirst().orElse(null);
             if (bp != null) {
-                DiversityResultType adherence = checkBlueprintAdherence(v, bp, context);
-                if (adherence == DiversityResultType.REJECTED_FATAL) {
-                    context.log("[DIVERSITY] Blueprint Violation detected for: " + v.optString("id") + ". REJECTED.");
+                DiversityResultType adherence = checkBlueprintAdherence(v, bp, threshold, context);
+                // Fatal rejections only for corrupted or exact duplicate state
+                if (adherence == DiversityResultType.REJECTED_FATAL) return DiversityResultType.REJECTED_FATAL;
+
+                double diversity = calculateDiversity(v, unique);
+                if (diversity < 0.05) { // EXACT DUPLICATE (dist near 0)
+                    context.log(String.format("[DIVERSITY] COLLAPSE FATAL: %s is an exact evolutionary duplicate (dist=%.2f).", v.optString("id"), diversity));
                     return DiversityResultType.REJECTED_FATAL;
                 }
 
-                if (!isUnique(v, unique)) {
-                    context.log("[DIVERSITY] MANDATORY BRANCH REDUNDANCY: " + v.optString("id") + " is too similar to siblings. Preserving with WARNING.");
+                if (diversity < threshold) {
+                    context.log(String.format("[DIVERSITY] SIBLING OVERLAP: %s (dist=%.2f) preserved with low-confidence warning.", v.optString("id"), diversity));
                     return DiversityResultType.ACCEPTED_WITH_WARNINGS;
                 }
 
@@ -61,56 +68,37 @@ public class DarwinDiversityAnalyzer {
             }
         }
 
-        if (isUnique(v, unique)) {
-            return DiversityResultType.ACCEPTED;
+        double diversity = calculateDiversity(v, unique);
+        if (diversity < 0.05) {
+             context.log(String.format("[DIVERSITY] COLLAPSE FATAL: %s is an exact duplicate (dist=%.2f).", v.optString("id"), diversity));
+             return DiversityResultType.REJECTED_FATAL;
         }
 
-        return DiversityResultType.REJECTED_FATAL;
+        if (diversity >= threshold) {
+            return DiversityResultType.ACCEPTED;
+        } else {
+            // Adaptive Graceful Degradation: preserve weak variants instead of fatal rejection
+            context.log(String.format("[DIVERSITY] WEAK DIVERGENCE: %s (dist=%.2f) preserved for evolutionary richness.", v.optString("id"), diversity));
+            return DiversityResultType.ACCEPTED_WITH_WARNINGS;
+        }
     }
 
-    private DiversityResultType checkBlueprintAdherence(JSONObject variant, TrajectoryBlueprint bp, TaskContext context) {
+    private DiversityResultType checkBlueprintAdherence(JSONObject variant, TrajectoryBlueprint bp, double threshold, TaskContext context) {
+        TrajectoryVector vVector = mapToVector(variant);
+        double dist = vVector.distance(bp.getTargetVector());
+        // Gradient warnings instead of binary fatal mismatch
+        boolean hasWarnings = dist > threshold;
+
+        context.log(String.format("[DIVERSITY] Vector Adherence for %s: dist=%.2f (threshold=%.2f)", bp.getId(), dist, threshold));
+
+        if (dist > 0.95) {
+            context.log("[DIVERSITY] CORRUPTION FATAL: Trajectory " + bp.getId() + " has zero architectural alignment with its blueprint.");
+            return DiversityResultType.REJECTED_FATAL;
+        }
+
         String strategy = variant.optString("strategy").toLowerCase();
         String philosophy = variant.optString("semantic_justification").toLowerCase();
-        boolean hasWarnings = false;
-
-        // 1. Philosophy/Goal Alignment Check (Dimension-based)
         JSONObject dimensions = variant.optJSONObject("engineering_dimensions");
-        if (dimensions != null) {
-            // Check all dimensions defined in the blueprint
-            for (java.util.Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
-                String dimKey = entry.getKey();
-                String bpValue = entry.getValue().toLowerCase();
-                String vValue = dimensions.optString(dimKey, "").toLowerCase();
-                if (!vValue.isEmpty() && !bpValue.isEmpty()) {
-                    if (vValue.equals(bpValue)) continue;
-
-                    double sim = computeSimilarity(vValue, bpValue);
-
-                    // STRICT Dimensions: Reject if mismatch
-                    if (isStrictDimension(dimKey)) {
-                        if (sim < 0.4) {
-                            context.log("[DIVERSITY] Blueprint FATAL Violation: Strict dimension mismatch for " + dimKey + " in " + bp.getId());
-                            return DiversityResultType.REJECTED_FATAL;
-                        } else {
-                            hasWarnings = true;
-                        }
-                    } else {
-                        // SOFT Dimensions: Warning only
-                        if (sim < 0.3) {
-                            context.log("[DIVERSITY] Blueprint Warning: Soft dimension mismatch for " + dimKey + " in " + bp.getId());
-                            hasWarnings = true;
-                        }
-                    }
-                }
-            }
-
-            String vPhilosophy = dimensions.optString("philosophy", "").toLowerCase();
-            String bpPhilosophy = bp.getPhilosophy().toLowerCase();
-            if (computeSimilarity(vPhilosophy, bpPhilosophy) < 0.2) {
-                context.log("[DIVERSITY] Blueprint FATAL Violation: Philosophy mismatch for " + bp.getId());
-                return DiversityResultType.REJECTED_FATAL;
-            }
-        }
 
         // 2. Forbidden overlap check (Structural divergence enforcement)
         for (String forbidden : bp.getForbiddenOverlaps()) {
@@ -132,10 +120,6 @@ public class DarwinDiversityAnalyzer {
         return hasWarnings ? DiversityResultType.ACCEPTED_WITH_WARNINGS : DiversityResultType.ACCEPTED;
     }
 
-    private boolean isStrictDimension(String dim) {
-        return "philosophy".equals(dim) || "execution_model".equals(dim);
-    }
-
     private java.util.List<String> dkeys(JSONObject obj) {
         java.util.List<String> keys = new java.util.ArrayList<>();
         java.util.Iterator<String> it = obj.keys();
@@ -143,57 +127,65 @@ public class DarwinDiversityAnalyzer {
         return keys;
     }
 
-    private boolean isUnique(JSONObject candidate, List<JSONObject> existing) {
-        String cStrategy = candidate.optString("strategy").toLowerCase();
+    private double calculateDiversity(JSONObject candidate, List<JSONObject> existing) {
+        if (existing.isEmpty()) return 1.0;
 
-        JSONObject cDimensions = candidate.optJSONObject("engineering_dimensions");
-        Set<String> cTargets = getActionTargets(candidate);
+        TrajectoryVector cVector = mapToVector(candidate);
+        double minDistance = 1.0;
 
         for (JSONObject other : existing) {
-            JSONObject oDimensions = other.optJSONObject("engineering_dimensions");
-            Set<String> oTargets = getActionTargets(other);
+            TrajectoryVector oVector = mapToVector(other);
+            double dist = cVector.distance(oVector);
 
-            // 0. MEDIATED COGNITION DIVERSITY: Check reasoning focus and file selection
-            String cFocus = candidate.optString("reasoning_focus", "").toLowerCase();
-            String oFocus = other.optString("reasoning_focus", "").toLowerCase();
-            if (!cFocus.isEmpty() && !oFocus.isEmpty()) {
-                if (computeSimilarity(cFocus, oFocus) > 0.7) {
-                    return false;
-                }
+            // Penalize for operational redundancy
+            if (getActionTargets(candidate).equals(getActionTargets(other))) {
+                dist *= 0.5;
             }
 
-            JSONArray cFilesArr = candidate.optJSONArray("selected_files");
-            JSONArray oFilesArr = other.optJSONArray("selected_files");
-            if (cFilesArr != null && oFilesArr != null) {
-                Set<String> cFiles = new HashSet<>();
-                Set<String> oFiles = new HashSet<>();
-                for (int i = 0; i < cFilesArr.length(); i++) cFiles.add(cFilesArr.getString(i));
-                for (int i = 0; i < oFilesArr.length(); i++) oFiles.add(oFilesArr.getString(i));
-                if (computeJaccard(cFiles, oFiles) > 0.8) {
-                    return false;
-                }
-            }
-
-            // 1. DIMENSION-BASED COMPARISON: Check for architectural duplication across 9 dimensions
-            if (cDimensions != null && oDimensions != null) {
-                double dimensionSim = computeDimensionSimilarity(cDimensions, oDimensions);
-                // HIGHER DIVERSITY PRESSURE: Reject if dimensions are too similar (above 60%)
-                if (dimensionSim > 0.60) return false;
-            } else {
-                // Fallback to legacy semantic check if dimensions are missing
-                String cPhilosophy = candidate.optString("semantic_justification").toLowerCase();
-                String oPhilosophy = other.optString("semantic_justification").toLowerCase();
-                if (computeSimilarity(cPhilosophy, oPhilosophy) > 0.30) return false;
-            }
-
-            // 2. OPERATIONAL REDUNDANCY: Even if wording is different, if they do EXACTLY the same thing
-            // on the same files, they are duplicates.
-            if (!cTargets.isEmpty() && cTargets.equals(oTargets)) {
-                String oStrategy = other.optString("strategy").toLowerCase();
-                if (computeSimilarity(cStrategy, oStrategy) > 0.6) return false;
-            }
+            if (dist < minDistance) minDistance = dist;
         }
-        return true;
+
+        return minDistance;
+    }
+
+    private TrajectoryVector mapToVector(JSONObject variant) {
+        TrajectoryVector v = new TrajectoryVector();
+        JSONObject dims = variant.optJSONObject("engineering_dimensions");
+        if (dims == null) return v;
+
+        v.setModularity(mapDimension(dims.optString("modularity_approach")));
+        v.setResilience(mapDimension(dims.optString("resilience_strategy")));
+        v.setArchitecturalDepth(mapDimension(dims.optString("abstraction_depth")));
+        v.setServiceOrientation(mapDimension(dims.optString("execution_model")));
+        v.setPersistence(mapDimension(dims.optString("persistence_orientation")));
+        v.setDeterminism(mapDimension(dims.optString("runtime_behavior")));
+        v.setExtensibility(mapDimension(dims.optString("extensibility")));
+        v.setCoupling(1.0 - mapDimension(dims.optString("dependency_assumptions"))); // High internal deps => low coupling coefficient
+        v.setAbstraction(mapDimension(dims.optString("abstraction_depth")));
+        v.setRiskAcceptance(mapDimension(dims.optString("risk_acceptance")));
+
+        return v;
+    }
+
+    private double mapDimension(String value) {
+        if (value == null) return 0.5;
+        String val = value.toLowerCase();
+
+        // High intensity signals
+        if (matches(val, "high", "service", "modular", "extensible", "persistent", "async", "experimental", "reactive", "external")) return 0.9;
+
+        // Low intensity signals
+        if (matches(val, "low", "monolithic", "atomic", "none", "conservative", "deterministic", "smoke", "internal", "direct")) return 0.1;
+
+        // Medium
+        if (matches(val, "medium", "standard", "balanced", "hybrid")) return 0.5;
+
+        return 0.5;
+    }
+
+    private boolean matches(String text, String... keywords) {
+        for (String kw : keywords) if (text.contains(kw)) return true;
+        return false;
     }
 
     private double computeDimensionSimilarity(JSONObject d1, JSONObject d2) {

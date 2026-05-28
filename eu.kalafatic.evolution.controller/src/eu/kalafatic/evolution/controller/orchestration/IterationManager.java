@@ -821,11 +821,9 @@ public class IterationManager {
         // 3. SELECTION AUTHORITY: Handle trajectory selection (Manual/Auto/Step)
         String manualId = null;
 
-        // EVOLUTIONARY MANDATE: Minimum 4 branches in early generations
+        // EVOLUTIONARY MANDATE: Maximize diversity in early generations
         if (variants.size() < 4 && state.getIterationCount() < 2) {
-            context.log("[KERNEL] MANDATORY BRANCH RULE: Enforcing minimum 4 architecturally distinct branches.");
-            // The DarwinEngine.generateVariants logic already prioritizes this via blueprints.
-            // If we still have < 4, it means materialization failed and repair is needed or already happened.
+            context.log("[KERNEL] EVOLUTIONARY MANDATE: Attempting to maximize vector diversity within capability envelope.");
         }
 
         if (!context.isAutoApprove() || profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {

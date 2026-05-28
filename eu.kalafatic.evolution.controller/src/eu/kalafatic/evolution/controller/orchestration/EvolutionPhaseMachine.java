@@ -24,7 +24,11 @@ public class EvolutionPhaseMachine {
 
         // STRICT SEQUENTIAL PROGRESSION FOR FIRST 4 GENERATIONS
         // This ensures mandatory evolutionary depth and prevents premature convergence.
+        // Accelerated path: If converged, allow skipping to FINAL_SYNTHESIS even in early generations.
         if (generation < 4 && !isTerminal(current)) {
+            if (converged && current != EvolutionPhase.FINAL_SYNTHESIS) {
+                return EvolutionPhase.FINAL_SYNTHESIS;
+            }
             switch (current) {
                 case INTENT_EXPANSION: return EvolutionPhase.ARCHITECTURE_VARIANTS;
                 case ARCHITECTURE_VARIANTS: return EvolutionPhase.SELECTION_REFINEMENT;
