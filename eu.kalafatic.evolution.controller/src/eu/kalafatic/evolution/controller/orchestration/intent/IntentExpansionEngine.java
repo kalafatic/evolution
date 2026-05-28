@@ -30,14 +30,14 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "Analyze: execution goals, ambiguity, extensibility potential, stabilization opportunities, persistence requirements, runtime behavior, integration possibilities, architectural depth, failure risks.\n" +
                "Derive engineering dimensions before branch spawning. Analyze the following 9 dimensions:\n" +
                "1. Engineering Philosophy\n" +
-               "2. Execution Model\n" +
-               "3. Abstraction Depth\n" +
-               "4. Modularity Approach\n" +
-               "5. Testing Strategy\n" +
-               "6. Extensibility\n" +
-               "7. Dependency Assumptions\n" +
-               "8. Runtime Behavior\n" +
-               "9. Risk Acceptance\n" +
+               "2. Execution Model (atomic/service/reactive/etc)\n" +
+               "3. Abstraction Depth (low/medium/high)\n" +
+               "4. Modularity Approach (monolithic/modular/etc)\n" +
+               "5. Testing Strategy (unit/integration/etc)\n" +
+               "6. Extensibility (low/medium/high)\n" +
+               "7. Dependency Assumptions (none/internal/external)\n" +
+               "8. Runtime Behavior (deterministic/async/etc)\n" +
+               "9. Risk Acceptance (conservative/experimental/etc)\n" +
                "\n" +
                "PHASE 2 - AXIS DETECTION:\n" +
                "Identify 'Evolutionary Axes' where critical architectural choices must be made.\n" +
@@ -45,7 +45,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "\n" +
                "BLUEPRINT RULES:\n" +
                "- THE ORCHESTRATOR OWNS THE EVOLUTION. You only define the search space.\n" +
-               "- Each blueprint MUST be architecturally distinct.\n" +
+               "- Each blueprint MUST be architecturally distinct across the 9 engineering dimensions.\n" +
                "- Blueprints MUST contain 'requiredCharacteristics' (technical requirements).\n" +
                "- Blueprints MUST contain 'forbiddenOverlaps' (technical constraints to ensure divergence).\n" +
                "- DIVERSITY MUST BE PRE-SPAWN. Architecturally separate these blueprints now.\n" +
@@ -83,6 +83,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "          \"id\": \"string (e.g., direct_console, file_persistent)\",\n" +
                "          \"goal\": \"string\",\n" +
                "          \"philosophy\": \"string\",\n" +
+               "          \"engineeringDimensions\": { /* 9 dimensions here as well */ },\n" +
                "          \"requiredCharacteristics\": [\"string\"],\n" +
                "          \"forbiddenOverlaps\": [\"string\"],\n" +
                "          \"architecturalDirection\": \"string\"\n" +
@@ -183,6 +184,18 @@ public class IntentExpansionEngine extends BaseAiAgent {
                         bp.getRequiredCharacteristics().addAll(JsonUtils.toStringList(bpObj.optJSONArray("requiredCharacteristics")));
                         bp.getForbiddenOverlaps().addAll(JsonUtils.toStringList(bpObj.optJSONArray("forbiddenOverlaps")));
                         bp.setArchitecturalDirection(bpObj.optString("architecturalDirection"));
+
+                        // Parse Blueprint Engineering Dimensions if present
+                        JSONObject bpDimensions = bpObj.optJSONObject("engineeringDimensions");
+                        if (bpDimensions != null) {
+                            java.util.Iterator<String> dKeys = bpDimensions.keys();
+                            while (dKeys.hasNext()) {
+                                String dKey = dKeys.next();
+                                bp.getEngineeringDimensions().put(dKey, bpDimensions.optString(dKey));
+                            }
+                            context.log("[INTENT EXPANSION] Blueprint " + bp.getId() + " identified with custom dimensions.");
+                        }
+
                         axis.addBlueprint(bp);
                     }
                 }

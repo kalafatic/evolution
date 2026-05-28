@@ -336,6 +336,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         direct.addForbiddenOverlap("layered architecture");
         direct.addForbiddenOverlap("factories");
         direct.setArchitecturalDirection("Goal: Minimal implementation. Philosophy: direct, low abstraction, zero bloat. Execution Model: atomic.");
+        direct.getEngineeringDimensions().put("execution_model", "atomic");
+        direct.getEngineeringDimensions().put("abstraction_depth", "low");
+        direct.getEngineeringDimensions().put("modularity_approach", "monolithic");
         blueprints.add(direct);
 
         // BRANCH B - PERSISTENT_STORAGE
@@ -347,6 +350,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         persistent.addForbiddenOverlap("ephemeral state");
         persistent.addForbiddenOverlap("logger abstraction");
         persistent.setArchitecturalDirection("Goal: Persistent state. Philosophy: side-effect focused. Execution Model: synchronous persistence.");
+        persistent.getEngineeringDimensions().put("execution_model", "synchronous");
+        persistent.getEngineeringDimensions().put("abstraction_depth", "medium");
+        persistent.getEngineeringDimensions().put("modularity_approach", "modular");
         blueprints.add(persistent);
 
         // BRANCH C - STABILIZED_RESILIENT
@@ -358,6 +364,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         stabilized.addForbiddenOverlap("overengineering");
         stabilized.addForbiddenOverlap("persistence overlap");
         stabilized.setArchitecturalDirection("Goal: Reliability. Philosophy: safety-first. Execution Model: defensive.");
+        stabilized.getEngineeringDimensions().put("execution_model", "defensive");
+        stabilized.getEngineeringDimensions().put("abstraction_depth", "medium");
+        stabilized.getEngineeringDimensions().put("modularity_approach", "modular");
         blueprints.add(stabilized);
 
         // BRANCH D - REUSABLE_SERVICE
@@ -369,6 +378,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         service.addForbiddenOverlap("direct println coupling");
         service.addForbiddenOverlap("monolithic structure");
         service.setArchitecturalDirection("Goal: Extensibility. Philosophy: decoupled, layered. Execution Model: service-oriented.");
+        service.getEngineeringDimensions().put("execution_model", "service-oriented");
+        service.getEngineeringDimensions().put("abstraction_depth", "high");
+        service.getEngineeringDimensions().put("modularity_approach", "modular");
         blueprints.add(service);
 
         return blueprints;
@@ -384,6 +396,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         arch.addForbiddenOverlap("dependency details");
         arch.addForbiddenOverlap("implementation hotspots");
         arch.setArchitecturalDirection("Focus: High-level topology. Philosophy: structural mapping.");
+        arch.getEngineeringDimensions().put("philosophy", "structural mapping");
+        arch.getEngineeringDimensions().put("abstraction_depth", "high");
         blueprints.add(arch);
 
         // BRANCH B - DEPENDENCY_AUDIT
@@ -393,6 +407,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         dep.addForbiddenOverlap("architectural patterns");
         dep.addForbiddenOverlap("technical debt analysis");
         dep.setArchitecturalDirection("Focus: Interaction graphs. Philosophy: relationship auditing.");
+        dep.getEngineeringDimensions().put("philosophy", "relationship auditing");
+        dep.getEngineeringDimensions().put("execution_model", "analytical");
         blueprints.add(dep);
 
         // BRANCH C - HOTSPOT_ANALYSIS
@@ -402,6 +418,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         hotspot.addForbiddenOverlap("minimal context selection");
         hotspot.addForbiddenOverlap("structural mapping");
         hotspot.setArchitecturalDirection("Focus: Risk and debt. Philosophy: instability analysis.");
+        hotspot.getEngineeringDimensions().put("philosophy", "instability analysis");
+        hotspot.getEngineeringDimensions().put("risk_acceptance", "experimental");
         blueprints.add(hotspot);
 
         // BRANCH D - CONTEXT_DISTILLATION
@@ -411,6 +429,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         contextBlueprint.addForbiddenOverlap("dependency graphs");
         contextBlueprint.addForbiddenOverlap("architectural hotspots");
         contextBlueprint.setArchitecturalDirection("Focus: Reasoning efficiency. Philosophy: information density distillation.");
+        contextBlueprint.getEngineeringDimensions().put("philosophy", "information density distillation");
+        contextBlueprint.getEngineeringDimensions().put("abstraction_depth", "high");
         blueprints.add(contextBlueprint);
 
         return blueprints;
