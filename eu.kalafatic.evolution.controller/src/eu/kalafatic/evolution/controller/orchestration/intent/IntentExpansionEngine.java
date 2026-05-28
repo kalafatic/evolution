@@ -13,6 +13,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomain;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomainResolver;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 
@@ -157,16 +158,25 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
         // Parse Unresolved Dimensions
         JSONArray unresolved = json.optJSONArray("unresolvedDimensions");
+        SemanticDomainResolver domainResolver = new SemanticDomainResolver();
         if (unresolved != null) {
             for (int i = 0; i < unresolved.length(); i++) {
                 JSONObject dimObj = unresolved.getJSONObject(i);
+
+                String levelStr = dimObj.optString("abstractionLevel", "IMPLEMENTATION");
+                AbstractionLevel level = AbstractionLevel.IMPLEMENTATION;
+                try {
+                    level = AbstractionLevel.valueOf(levelStr.trim().toUpperCase());
+                } catch (Exception e) {}
+
                 EvolutionDimension dim = new EvolutionDimension(
                     dimObj.optString("id"),
                     dimObj.optString("description"),
-                    AbstractionLevel.valueOf(dimObj.optString("abstractionLevel", "IMPLEMENTATION")),
-                    SemanticDomain.valueOf(dimObj.optString("semanticDomain", "EXECUTION"))
+                    level,
+                    domainResolver.resolve(dimObj.optString("semanticDomain", "EXECUTION"))
                 );
                 dim.setAmbiguityScore(dimObj.optDouble("ambiguityScore", 0.0));
+                dim.setSignificanceScore(dimObj.optDouble("significanceScore", 0.5));
 
                 JSONObject pressureObj = dimObj.optJSONObject("pressure");
                 if (pressureObj != null) {

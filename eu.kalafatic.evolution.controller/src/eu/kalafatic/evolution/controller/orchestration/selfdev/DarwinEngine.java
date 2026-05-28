@@ -310,7 +310,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
         boolean isAtomicRound = false;
         if (atomicAnalysis != null) {
-            isAtomicRound = atomicAnalysis.isAtomic() && !atomicAnalysis.isRequiresPlanning();
+            isAtomicRound = atomicAnalysis.isAtomic() && atomicAnalysis.getComplexityVector().determinismConfidence > 0.8;
         }
         ranker.rank(uniqueVariants, isAtomicRound, currentIteration);
 

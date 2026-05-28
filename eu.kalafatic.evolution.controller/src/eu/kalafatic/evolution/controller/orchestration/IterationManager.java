@@ -26,6 +26,9 @@ import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentClassifier;
 import eu.kalafatic.evolution.controller.orchestration.intent.HybridAtomicIntentClassifier;
+import eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment;
+import eu.kalafatic.evolution.controller.orchestration.intent.DimensionInferenceEngine;
+import eu.kalafatic.evolution.controller.orchestration.intent.DefaultDimensionInferenceEngine;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord;
@@ -133,6 +136,7 @@ public class IterationManager {
     private final ClarificationManager clarificationManager = new ClarificationManager();
     private final IntentService intentService;
     private final IntentExpansionEngine intentExpansionEngine;
+    private final DimensionInferenceEngine dimensionInferenceEngine;
     private final ClarificationPlanner clarificationPlanner = new ClarificationPlanner();
 
     private final AnalyticAgent analyticAgent;
@@ -276,6 +280,7 @@ public class IterationManager {
         this.intentService = new IntentService(aiService);
         this.intentExpansionEngine = new IntentExpansionEngine();
         this.intentExpansionEngine.setAiService(aiService);
+        this.dimensionInferenceEngine = new DefaultDimensionInferenceEngine(intentExpansionEngine);
 
         // Inject AiService into agents
         availableAgents.forEach(a -> {
@@ -297,6 +302,17 @@ public class IterationManager {
             state.getMetadata().putAll(taskRequest.getContext());
         }
 
+        // EXECUTION BYPASS: Allow direct task execution if already in EXECUTING state
+        // (Legacy support and variant execution propagation)
+        if (context.getStateHolder().getState() == SystemState.EXECUTING && !context.getOrchestrator().getTasks().isEmpty()) {
+            context.log("[KERNEL] Pre-populated tasks detected in EXECUTING state. Bypassing orchestration for direct execution.");
+            boolean success = executeTasksWithRetries(context.getOrchestrator().getTasks());
+            OrchestratorResponse bypassResponse = new OrchestratorResponse();
+            bypassResponse.setResultType(ResultType.CHAT);
+            bypassResponse.setSummary(success ? "Execution completed successfully." : "Execution failed.");
+            transition(success ? SystemState.DONE : SystemState.FAILED, context);
+            return bypassResponse;
+        }
 
         transition(SystemState.INIT, context);
 
@@ -418,6 +434,18 @@ public class IterationManager {
                 }
             }
 
+            // --- RECURSIVE EVOLUTIONARY COGNITION ---
+            // Before proceeding, we MUST check for unresolved semantic dimensions.
+            // Even "simple" tasks contain hidden assumptions that require evolution.
+            context.log("[KERNEL] Inspecting goal for unresolved semantic uncertainty.");
+            EvolutionAssessment initialAssessment = dimensionInferenceEngine.analyze(request, context);
+            if (initialAssessment.hasUnresolvedDimensions()) {
+                context.log("[KERNEL] Unresolved dimensions detected: " +
+                    initialAssessment.getUnresolvedDimensions().stream().map(d -> d.getId()).collect(Collectors.joining(", ")));
+            } else {
+                context.log("[KERNEL] No significant semantic uncertainty detected. Evolution will proceed with discovery grounding.");
+            }
+
             // Unified Intent Analysis
             transition(SystemState.ANALYZING, context);
             context.consoleLog("[KERNEL] Performing repository-grounded intent analysis.");
@@ -426,7 +454,7 @@ public class IterationManager {
             // UNIFIED EVOLUTIONARY KERNEL: All cognition flows route through evolve()
             // The kernel handles iterations, branching, mutation, convergence, and supervision.
             context.log("[KERNEL] Routing to unified iterative evolutionary kernel.");
-            OrchestratorResponse result = evolve(request, context);
+            OrchestratorResponse result = evolve(request, context, initialAssessment);
 
             if (result != null && result.getResultType() == ResultType.ERROR) {
                 transition(SystemState.FAILED, context);
@@ -557,7 +585,11 @@ public class IterationManager {
     }
 
     public OrchestratorResponse evolve(String request, TaskContext context) throws Exception {
-        context.log("[KERNEL] Starting Unified Evolutionary Cognition Loop.");
+        return evolve(request, context, null);
+    }
+
+    public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment) throws Exception {
+        context.log("[KERNEL] Starting Recursive Evolutionary Cognition Loop.");
 
         OrchestrationState state = context.getOrchestrationState();
         state.getCognitiveTrace().addNode(new CausalNode(
@@ -567,14 +599,22 @@ public class IterationManager {
             List.of(),
             List.of("DarwinFlow"),
             1.0,
-            "Unified iterative evolution kernel active."
+            "Recursive evolutionary cognition kernel active."
         ));
 
-        EvaluationResult result;
+        EvaluationResult result = null;
         int safetyCounter = 0;
         DarwinFlow darwinFlow = new DarwinFlow(aiService, this);
 
-        do {
+        while (safetyCounter < 10 && !context.isPaused()) {
+            EvolutionAssessment assessment = (safetyCounter == 0 && initialAssessment != null) ? initialAssessment :
+                dimensionInferenceEngine.analyze(state.getRawInput() != null ? state.getRawInput() : request, context);
+
+            if (!assessment.hasUnresolvedDimensions()) {
+                context.log("[KERNEL] All semantic dimensions resolved. Proceeding to deterministic execution.");
+                return deterministicExecution(state.getRawInput() != null ? state.getRawInput() : request, context);
+            }
+
             result = runDarwinIteration(context, darwinFlow);
             safetyCounter++;
 
@@ -582,7 +622,10 @@ public class IterationManager {
             String goal = state.getRawInput() != null ? state.getRawInput() : request;
             memoryService.saveCheckpoint(context.getSessionId(), (currentIterationModel != null ? currentIterationModel.getId() : "default"), state.getCurrentPhase(), goal);
 
-        } while (result.getDecision() == SelfDevDecision.CONTINUE && safetyCounter < 10 && !context.isPaused());
+            if (result.getDecision() != SelfDevDecision.CONTINUE) {
+                break;
+            }
+        }
 
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
@@ -862,6 +905,10 @@ public class IterationManager {
         String iterId = currentIterationModel != null ? currentIterationModel.getId() : "default";
         eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = decide(iterId, variants, context, manualId);
 
+        if ("force solution".equalsIgnoreCase(manualId)) {
+            context.log("[KERNEL] Committing selected trajectory via Force Solution.");
+        }
+
         // 5. EXECUTION ENGINE: Execute winner variant and evaluate
         EvaluationResult result = darwinFlow.executeWinner(context, decision, variants, goal);
 
@@ -922,7 +969,7 @@ public class IterationManager {
 
         if (!context.isAutoApprove() && isStepMode) {
             while (true) {
-                context.log("[KERNEL] Darwin Evolution: Pausing for intent interpretation review.");
+                context.log("[COGNITION] Intent Interpretation: Pausing for semantic review.");
                 transition(SystemState.CLARIFYING, context);
                 String userResponse = context.requestInput("Intent interpretation complete. State: " + expansion.getState() + ". Review and select a hypothesis to proceed, or reject to refine.").get();
 
@@ -995,7 +1042,7 @@ public class IterationManager {
         String nextPhase = state.getCurrentPhase();
 
         if (!context.isAutoApprove() && isStepModeConfirmation) {
-            context.log("[KERNEL] Darwin Evolution: Phase completed. Pausing for user confirmation before next phase: " + nextPhase);
+            context.log("[COGNITION] Evolutionary Phase: Generation completed. Proceeding to: " + nextPhase);
             try {
                 String userResponse = context.requestInput("Phase completed successfully. Proceed to " + nextPhase + "? (Yes/No)").get();
                 if ("Force Solution".equalsIgnoreCase(userResponse)) {
@@ -1016,7 +1063,7 @@ public class IterationManager {
     public String handleVariantSelection(TaskContext context, List<BranchVariant> variants, String goal) throws Exception {
         while (true) {
             transition(SystemState.AWAITING_BRANCH_SELECTION, context);
-            context.log("[KERNEL] Darwin Evolution: Pausing for trajectory selection (Manual Mode).");
+            context.log("[COGNITION] Trajectory Competition: Pausing for semantic selection (Manual Mode).");
 
             StringBuilder sb = new StringBuilder("Darwin evolved " + variants.size() + " trajectories for your review:\n");
             for (BranchVariant v : variants) {
@@ -1181,6 +1228,34 @@ public class IterationManager {
         } else if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(current)) {
             state.setCurrentPhase(EvolutionConstants.PHASE_FINAL_SYNTHESIS);
         }
+    }
+
+    private OrchestratorResponse deterministicExecution(String request, TaskContext context) throws Exception {
+        context.log("[KERNEL] Starting Deterministic Execution (No unresolved semantic dimensions).");
+        OrchestrationState state = context.getOrchestrationState();
+
+        // Transition to final phase
+        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
+
+        // For simple chat or non-implementation tasks, use GeneralAgent
+        if (!hasStateChangeIntent(context)) {
+            context.log("[KERNEL] Non-implementation task detected. Routing to GeneralAgent.");
+            String resultStr = ((GeneralAgent)getInternalAgent(EvolutionConstants.AGENT_GENERAL)).process(request, context, null);
+            OrchestratorResponse response = new OrchestratorResponse();
+            response.setResultType(ResultType.CHAT);
+            response.setSummary(resultStr);
+            response.setContent(resultStr);
+            return response;
+        }
+
+        // For implementation tasks, run PEV or simple planning
+        context.log("[KERNEL] Implementation task detected. Routing to deterministic PEV loop.");
+        EvaluationResult result = runPEV();
+
+        OrchestratorResponse response = new OrchestratorResponse();
+        response.setResultType(ResultType.CHAT);
+        response.setSummary(result.isSuccess() ? "Execution completed successfully." : "Execution failed.");
+        return response;
     }
 
     private String performMediatedExportConvergence(String request, TaskContext context) {

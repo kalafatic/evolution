@@ -86,7 +86,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
 
-        context.log("[DARWIN] Evolving competing trajectories for goal: " + goal);
+        context.log("[COGNITION] Discovering semantic trajectories to resolve goal: " + goal);
 
         Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
         StateSnapshot snapshot = initialEval.snapshot;
@@ -109,7 +109,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         if (trajectory == null) {
             trajectory = new Trajectory("traj-" + iterId, goal);
             context.getSemanticWorkspace().getTrajectoryMemory().recordTrajectory(trajectory);
-            context.log("[DARWIN] Starting new lineage trajectory: " + trajectory.getTrajectoryId());
+            context.log("[COGNITION] Starting new evolutionary lineage trajectory: " + trajectory.getTrajectoryId());
         }
 
         FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
@@ -177,7 +177,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             return manager.failedResult();
         }
 
-        context.log("[APPROVED:" + finalWinnerId + "] [KERNEL] Surviving trajectory selected: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
+        context.log("[APPROVED:" + finalWinnerId + "] [COGNITION] Surviving trajectory committed: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
 
         // Branch Stamping: Mark all other trajectories as REJECTED or KEPT in logs for UI sealing
         for (BranchVariant v : variants) {
@@ -521,7 +521,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 .count();
 
         AtomicIntentAnalysis atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
-        boolean isAtomicSuccess = atomic != null && !atomic.isRequiresPlanning();
+        boolean isAtomicSuccess = atomic != null && atomic.getComplexityVector().determinismConfidence > 0.8;
 
         // 1. Fitness Stability: Check if top variants have stabilized at high scores
         double maxScore = variants.stream().mapToDouble(BranchVariant::getScore).max().orElse(0.0);

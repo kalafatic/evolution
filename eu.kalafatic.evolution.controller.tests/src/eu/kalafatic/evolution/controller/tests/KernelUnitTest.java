@@ -18,6 +18,7 @@ import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.llm.ILlmProvider;
+import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
@@ -47,12 +48,9 @@ public class KernelUnitTest {
         orchestrator.setAiMode(AiMode.LOCAL);
 
         mockLlm = new MockLlmProvider();
-        aiService = new AiService() {
-            @Override
-            public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-                return mockLlm.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
-            }
-        };
+        aiService = new AiService();
+        aiService.setLlmRouter(LlmRouter.getInstance());
+        LlmRouter.getInstance().setLocalProvider(mockLlm);
 
         context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);
@@ -66,7 +64,9 @@ public class KernelUnitTest {
     @Test
     public void testSimpleChatFlow() throws Exception {
         mockLlm.setResponseSequence(new String[] {
-            "Hello, I am a mock response." // GeneralAgent
+            "{\"state\": \"CLEAR\", \"dominantIntent\": \"Answer question\", \"unresolvedDimensions\": [], \"confidence\": {\"overallConfidence\": 1.0}}", // Dimension discovery (analyzing request)
+            "{\"state\": \"CLEAR\", \"dominantIntent\": \"Answer question\", \"unresolvedDimensions\": [], \"confidence\": {\"overallConfidence\": 1.0}}", // IntentExpansion (inside evolve)
+            "Hello, I am a mock response." // FinalResponseAgent
         });
 
         IterationManager manager = createManager();
