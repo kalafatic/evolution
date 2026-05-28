@@ -75,6 +75,9 @@ window.ChatApp.Panel = {
         const item = document.querySelector(`.file-stack-item[data-path="${path}"]`);
         if (!item) return;
 
+        // Ensure panel is open when selecting a file
+        window.ChatApp.UI.ensureSidePanelOpen();
+
         // Remove active-file from any other item
         document.querySelectorAll('.file-stack-item.active-file').forEach(el => el.classList.remove('active-file'));
 
