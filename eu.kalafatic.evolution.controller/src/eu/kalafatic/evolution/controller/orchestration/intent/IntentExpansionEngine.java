@@ -26,29 +26,21 @@ public class IntentExpansionEngine extends BaseAiAgent {
         return "You are an Intent Expansion Engine. Your goal is to analyze user requests and CONSTRUCT THE EVOLUTIONARY SEARCH SPACE.\n" +
                "Identify implementation polymorphism - multiple valid ways to implement the intent.\n" +
                "\n" +
-               "PHASE 1 - INTENT DECOMPOSITION:\n" +
-               "Analyze: execution goals, ambiguity, extensibility potential, stabilization opportunities, persistence requirements, runtime behavior, integration possibilities, architectural depth, failure risks.\n" +
-               "Derive engineering dimensions before branch spawning. Analyze the following 9 dimensions:\n" +
-               "1. Engineering Philosophy\n" +
-               "2. Execution Model (atomic/service/reactive/etc)\n" +
-               "3. Abstraction Depth (low/medium/high)\n" +
-               "4. Modularity Approach (monolithic/modular/etc)\n" +
-               "5. Testing Strategy (unit/integration/etc)\n" +
-               "6. Extensibility (low/medium/high)\n" +
-               "7. Dependency Assumptions (none/internal/external)\n" +
-               "8. Runtime Behavior (deterministic/async/etc)\n" +
-               "9. Risk Acceptance (conservative/experimental/etc)\n" +
+               "PHASE 1 - SEMANTIC DIMENSION DISCOVERY:\n" +
+               "Analyze the goal to identify UNRESOLVED SEMANTIC DIMENSIONS.\n" +
+               "A dimension is a decision point (e.g., Error Handling Strategy, Output Target, Persistence Model).\n" +
+               "For each dimension, analyze:\n" +
+               "- Abstraction Level: [PHILOSOPHY, STRATEGY, ARCHITECTURE, DESIGN, IMPLEMENTATION, SYNTAX]\n" +
+               "- Semantic Domain: [EXECUTION, PERSISTENCE, RESILIENCE, COMMUNICATION, STRUCTURE, VALIDATION]\n" +
+               "- Ambiguity Score: How much uncertainty exists?\n" +
+               "- Evolutionary Pressure: [ambiguity, extensibility, scalability, failureExposure, implementationUncertainty, dependencyComplexity, integrationInstability, concurrencyPressure, performanceSensitivity]\n" +
                "\n" +
-               "PHASE 2 - AXIS DETECTION:\n" +
-               "Identify 'Evolutionary Axes' where critical architectural choices must be made.\n" +
-               "For each axis, you MUST define deterministic 'Candidate Blueprints'.\n" +
+               "PHASE 2 - DIMENSION PRIORITIZATION:\n" +
+               "Select exactly ONE dimension to evolve in this iteration.\n" +
+               "Priority Rule: Higher abstraction levels (Philosophy/Strategy) MUST be resolved before lower levels (Architecture/Implementation).\n" +
                "\n" +
-               "BLUEPRINT RULES:\n" +
-               "- THE ORCHESTRATOR OWNS THE EVOLUTION. You only define the search space.\n" +
-               "- Each blueprint MUST be architecturally distinct across the 9 engineering dimensions.\n" +
-               "- Blueprints MUST contain 'requiredCharacteristics' (technical requirements).\n" +
-               "- Blueprints MUST contain 'forbiddenOverlaps' (technical constraints to ensure divergence).\n" +
-               "- DIVERSITY MUST BE PRE-SPAWN. Architecturally separate these blueprints now.\n" +
+               "PHASE 3 - CANDIDATE TRAJECTORIES:\n" +
+               "For the selected dimension, define sibling branches (blueprints) that compete to resolve it.\n" +
                "\n" +
                "STRICT RULES:\n" +
                "1. Do NOT generate code, tasks, or actual implementation branches.\n" +
@@ -60,41 +52,32 @@ public class IntentExpansionEngine extends BaseAiAgent {
     protected String getFooterInstructions() {
         return "OUTPUT SCHEMA:\n" +
                "{\n" +
-               "  \"state\": \"CLEAR\", // Choose EXACTLY ONE: [CLEAR, EVOLVABLE, NEEDS_CLARIFICATION, BLOCKED, CONTRADICTORY]\n" +
+               "  \"state\": \"CLEAR\",\n" +
                "  \"dominantIntent\": \"string\",\n" +
-               "  \"dominantConfidence\": float,\n" +
-               "  \"engineeringDimensions\": {\n" +
-               "    \"philosophy\": \"string\",\n" +
-               "    \"execution_model\": \"string\",\n" +
-               "    \"abstraction_depth\": \"string\",\n" +
-               "    \"modularity_approach\": \"string\",\n" +
-               "    \"testing_strategy\": \"string\",\n" +
-               "    \"extensibility\": \"string\",\n" +
-               "    \"dependency_assumptions\": \"string\",\n" +
-               "    \"runtime_behavior\": \"string\",\n" +
-               "    \"risk_acceptance\": \"string\"\n" +
-               "  },\n" +
-               "  \"evolutionaryAxes\": [\n" +
+               "  \"unresolvedDimensions\": [\n" +
                "    {\n" +
-               "      \"name\": \"string (e.g., Output Philosophy)\",\n" +
+               "      \"id\": \"string\",\n" +
                "      \"description\": \"string\",\n" +
+               "      \"abstractionLevel\": \"PHILOSOPHY|STRATEGY|ARCHITECTURE|DESIGN|IMPLEMENTATION|SYNTAX\",\n" +
+               "      \"semanticDomain\": \"EXECUTION|PERSISTENCE|RESILIENCE|COMMUNICATION|STRUCTURE|VALIDATION\",\n" +
+               "      \"ambiguityScore\": float,\n" +
+               "      \"pressure\": {\n" +
+               "        \"ambiguity\": float, \"extensibility\": float, \"scalability\": float, \"failureExposure\": float,\n" +
+               "        \"implementationUncertainty\": float, \"dependencyComplexity\": float, \"integrationInstability\": float,\n" +
+               "        \"concurrencyPressure\": float, \"performanceSensitivity\": float\n" +
+               "      },\n" +
                "      \"candidateBlueprints\": [\n" +
                "        {\n" +
-               "          \"id\": \"string (e.g., direct_console, file_persistent)\",\n" +
-               "          \"goal\": \"string\",\n" +
-               "          \"philosophy\": \"string\",\n" +
-               "          \"engineeringDimensions\": { /* 9 dimensions here as well */ },\n" +
-               "          \"requiredCharacteristics\": [\"string\"],\n" +
-               "          \"forbiddenOverlaps\": [\"string\"],\n" +
-               "          \"architecturalDirection\": \"string\"\n" +
+               "          \"id\": \"string\",\n" +
+               "          \"strategy\": \"string\",\n" +
+               "          \"survivalArgument\": \"string\",\n" +
+               "          \"tradeoffs\": \"string\"\n" +
                "        }\n" +
                "      ]\n" +
                "    }\n" +
                "  ],\n" +
-               "  \"confidence\": {\n" +
-               "    \"overallConfidence\": float,\n" +
-               "    \"rationale\": \"string\"\n" +
-               "  }\n" +
+               "  \"activeDimension\": \"id_of_selected_dimension\",\n" +
+               "  \"confidence\": {\"overallConfidence\": float, \"rationale\": \"string\"}\n" +
                "}";
     }
 
@@ -168,40 +151,50 @@ public class IntentExpansionEngine extends BaseAiAgent {
         context.consoleLog("[INTENT EXPANSION] Interpretation State: " + result.getState());
         context.consoleLog("[INTENT EXPANSION] Dominant Intent: " + result.getDominantIntent());
 
-        // Parse Evolutionary Axes
-        JSONArray axes = json.optJSONArray("evolutionaryAxes");
-        if (axes != null) {
-            for (int i = 0; i < axes.length(); i++) {
-                JSONObject axisObj = axes.getJSONObject(i);
-                EvolutionAxis axis = new EvolutionAxis(axisObj.optString("name"), axisObj.optString("description"));
+        // Parse Unresolved Dimensions
+        JSONArray unresolved = json.optJSONArray("unresolvedDimensions");
+        if (unresolved != null) {
+            for (int i = 0; i < unresolved.length(); i++) {
+                JSONObject dimObj = unresolved.getJSONObject(i);
+                EvolutionDimension dim = new EvolutionDimension(
+                    dimObj.optString("id"),
+                    dimObj.optString("description"),
+                    AbstractionLevel.valueOf(dimObj.optString("abstractionLevel", "IMPLEMENTATION")),
+                    SemanticDomain.valueOf(dimObj.optString("semanticDomain", "EXECUTION"))
+                );
+                dim.setAmbiguityScore(dimObj.optDouble("ambiguityScore", 0.0));
 
-                JSONArray blueprints = axisObj.optJSONArray("candidateBlueprints");
+                JSONObject pressureObj = dimObj.optJSONObject("pressure");
+                if (pressureObj != null) {
+                    EvolutionaryPressureVector pressure = new EvolutionaryPressureVector();
+                    pressure.ambiguity = pressureObj.optDouble("ambiguity", 0.0);
+                    pressure.extensibility = pressureObj.optDouble("extensibility", 0.0);
+                    pressure.scalability = pressureObj.optDouble("scalability", 0.0);
+                    pressure.failureExposure = pressureObj.optDouble("failureExposure", 0.0);
+                    pressure.implementationUncertainty = pressureObj.optDouble("implementationUncertainty", 0.0);
+                    pressure.dependencyComplexity = pressureObj.optDouble("dependencyComplexity", 0.0);
+                    pressure.integrationInstability = pressureObj.optDouble("integrationInstability", 0.0);
+                    pressure.concurrencyPressure = pressureObj.optDouble("concurrencyPressure", 0.0);
+                    pressure.performanceSensitivity = pressureObj.optDouble("performanceSensitivity", 0.0);
+                    dim.setEvolutionaryPressure(pressure.getTotalPressure());
+                }
+
+                JSONArray blueprints = dimObj.optJSONArray("candidateBlueprints");
                 if (blueprints != null) {
                     for (int j = 0; j < blueprints.length(); j++) {
                         JSONObject bpObj = blueprints.getJSONObject(j);
-                        TrajectoryBlueprint bp = new TrajectoryBlueprint(bpObj.optString("id"), bpObj.optString("goal"), bpObj.optString("philosophy"));
-
-                        bp.getRequiredCharacteristics().addAll(JsonUtils.toStringList(bpObj.optJSONArray("requiredCharacteristics")));
-                        bp.getForbiddenOverlaps().addAll(JsonUtils.toStringList(bpObj.optJSONArray("forbiddenOverlaps")));
-                        bp.setArchitecturalDirection(bpObj.optString("architecturalDirection"));
-
-                        // Parse Blueprint Engineering Dimensions if present
-                        JSONObject bpDimensions = bpObj.optJSONObject("engineeringDimensions");
-                        if (bpDimensions != null) {
-                            java.util.Iterator<String> dKeys = bpDimensions.keys();
-                            while (dKeys.hasNext()) {
-                                String dKey = dKeys.next();
-                                bp.getEngineeringDimensions().put(dKey, bpDimensions.optString(dKey));
-                            }
-                            context.log("[INTENT EXPANSION] Blueprint " + bp.getId() + " identified with custom dimensions.");
-                        }
-
-                        axis.addBlueprint(bp);
+                        BranchVariant bv = new BranchVariant();
+                        bv.setId(bpObj.optString("id"));
+                        bv.setStrategy(bpObj.optString("strategy"));
+                        bv.setSurvivalArgument(bpObj.optString("survival_argument"));
+                        bv.setTradeoffs(bpObj.optString("tradeoffs"));
+                        dim.getCandidateBranches().add(bv);
                     }
                 }
-                result.getEvolutionaryAxes().add(axis);
+                result.getUnresolvedDimensions().add(dim);
             }
         }
+        result.setActiveDimensionId(json.optString("activeDimension"));
 
         // Parse Confidence
         JSONObject confObj = json.optJSONObject("confidence");
