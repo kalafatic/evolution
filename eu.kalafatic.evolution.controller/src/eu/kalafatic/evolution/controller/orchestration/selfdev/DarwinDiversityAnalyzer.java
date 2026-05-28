@@ -29,18 +29,25 @@ public class DarwinDiversityAnalyzer {
         List<JSONObject> unique = new ArrayList<>();
         for (JSONObject v : variants) {
             // Blueprint Adherence Check
+            TrajectoryBlueprint bp = null;
             if (blueprints != null) {
-                TrajectoryBlueprint bp = blueprints.stream().filter(b -> b.getId().equals(v.optString("id"))).findFirst().orElse(null);
+                bp = blueprints.stream().filter(b -> b.getId().equals(v.optString("id"))).findFirst().orElse(null);
                 if (bp != null && !adheresToBlueprint(v, bp, context)) {
-                    context.log("[DIVERSITY] Dropping variant as it violates blueprint: " + v.optString("id"));
-                    continue;
+                    context.log("[DIVERSITY] Blueprint Violation detected for: " + v.optString("id"));
+                    // In a mandatory branch environment, we DON'T drop the variant here if it's from a blueprint.
+                    // We let it through but it might be flagged or repaired later if it's a complete duplicate.
                 }
             }
 
             if (isUnique(v, unique)) {
                 unique.add(v);
             } else {
-                context.log("[DIVERSITY] Dropping redundant trajectory: " + v.optString("strategy"));
+                if (bp != null) {
+                    context.log("[DIVERSITY] MANDATORY BRANCH REDUNDANCY: " + v.optString("id") + " is too similar to siblings. Preserving but flagging.");
+                    unique.add(v); // MANDATORY branches must survive
+                } else {
+                    context.log("[DIVERSITY] Dropping redundant trajectory: " + v.optString("strategy"));
+                }
             }
         }
         return unique;
@@ -130,12 +137,13 @@ public class DarwinDiversityAnalyzer {
             // 1. DIMENSION-BASED COMPARISON: Check for architectural duplication across 9 dimensions
             if (cDimensions != null && oDimensions != null) {
                 double dimensionSim = computeDimensionSimilarity(cDimensions, oDimensions);
-                if (dimensionSim > 0.70) return false; // Reject if dimensions are too similar
+                // HIGHER DIVERSITY PRESSURE: Reject if dimensions are too similar (above 60%)
+                if (dimensionSim > 0.60) return false;
             } else {
                 // Fallback to legacy semantic check if dimensions are missing
                 String cPhilosophy = candidate.optString("semantic_justification").toLowerCase();
                 String oPhilosophy = other.optString("semantic_justification").toLowerCase();
-                if (computeSimilarity(cPhilosophy, oPhilosophy) > 0.35) return false;
+                if (computeSimilarity(cPhilosophy, oPhilosophy) > 0.30) return false;
             }
 
             // 2. OPERATIONAL REDUNDANCY: Even if wording is different, if they do EXACTLY the same thing

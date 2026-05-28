@@ -81,26 +81,47 @@ public class DarwinVariantSpawner {
             repair.put("semantic_justification", bp.getPhilosophy());
 
             org.json.JSONArray steps = new org.json.JSONArray();
-            for (String s : bp.getRequiredCharacteristics()) steps.put("Address: " + s);
+            for (String s : bp.getRequiredCharacteristics()) steps.put("Address required characteristic: " + s);
             repair.put("projected_steps", steps);
 
             repair.put("expected_outputs", new org.json.JSONArray());
-            repair.put("score", 0.5);
+            repair.put("score", 0.4); // Auto-repaired branches start with lower fitness
 
             org.json.JSONArray actions = new org.json.JSONArray();
             JSONObject action = new JSONObject();
             action.put("domain", "kernel");
             action.put("operation", "ANALYZE");
             action.put("target", "workspace");
-            action.put("description", "Materialize " + bp.getId() + " architectural strategy.");
+            action.put("description", "Materialize " + bp.getId() + " architectural strategy from orchestrator blueprint.");
             actions.put(action);
             repair.put("actions", actions);
 
             JSONObject dimensions = new JSONObject();
             dimensions.put("philosophy", bp.getPhilosophy());
-            dimensions.put("execution_model", "deterministic");
-            dimensions.put("abstraction_depth", "medium");
-            dimensions.put("modularity_approach", "modular");
+
+            // Map blueprints to deterministic dimensions for repair
+            if (bp.getId().contains("minimal")) {
+                dimensions.put("execution_model", "atomic");
+                dimensions.put("abstraction_depth", "low");
+                dimensions.put("modularity_approach", "monolithic");
+            } else if (bp.getId().contains("persistent")) {
+                dimensions.put("execution_model", "synchronous");
+                dimensions.put("abstraction_depth", "medium");
+                dimensions.put("modularity_approach", "modular");
+            } else if (bp.getId().contains("resilient")) {
+                dimensions.put("execution_model", "defensive");
+                dimensions.put("abstraction_depth", "medium");
+                dimensions.put("modularity_approach", "modular");
+            } else if (bp.getId().contains("service")) {
+                dimensions.put("execution_model", "service-oriented");
+                dimensions.put("abstraction_depth", "high");
+                dimensions.put("modularity_approach", "modular");
+            } else {
+                dimensions.put("execution_model", "deterministic");
+                dimensions.put("abstraction_depth", "medium");
+                dimensions.put("modularity_approach", "modular");
+            }
+
             dimensions.put("testing_strategy", "unit");
             dimensions.put("extensibility", "medium");
             dimensions.put("dependency_assumptions", "internal");
@@ -132,7 +153,8 @@ public class DarwinVariantSpawner {
           .append("- Adhere STRICTLY to the philosophy and required characteristics.\n")
           .append("- DO NOT propose anything mentioned in 'Forbidden Overlaps'.\n")
           .append("- If you fail to stay within the blueprint constraints, the trajectory will be REJECTED.\n")
-          .append("- Provide CONCRETE technical actions and steps. Do NOT use placeholders.\n\n");
+          .append("- Provide CONCRETE technical actions and steps. Do NOT use placeholders like '<path.java>' or 'precise engineering strategy'.\n")
+          .append("- Every field MUST contain real, specific technical detail.\n\n");
 
         if (isMediated) {
             sb.append("MEDIATED MODE COGNITION RULES (CRITICAL):\n")
@@ -171,31 +193,43 @@ public class DarwinVariantSpawner {
 
         if (!currentRoundVariants.isEmpty()) {
             sb.append("FORBIDDEN PHILOSOPHIES (SIBLING MUTATION PRESSURE):\n")
-              .append("The following engineering philosophies have already been claimed in this generation. You MUST intentionally mutate AGAINST them.\n\n");
+              .append("The following engineering philosophies have already been claimed in this generation. You MUST intentionally mutate AGAINST them to ensure maximum divergence.\n\n");
             for (JSONObject v : currentRoundVariants) {
                 sb.append("--- OCCUPIED: ").append(v.optString("id")).append(" ---\n")
                   .append("Strategy: ").append(v.optString("strategy")).append("\n")
-                  .append("Philosophy: ").append(v.optString("semantic_justification")).append("\n\n");
+                  .append("Philosophy: ").append(v.optString("semantic_justification")).append("\n")
+                  .append("Engineering Dimensions: ").append(v.optJSONObject("engineering_dimensions")).append("\n\n");
             }
         }
 
         sb.append("CONTEXT:\n")
           .append(basePrompt).append("\n\n")
-          .append("REQUIRED SCHEMA (CRITICAL: PROVIDE SPECIFIC TECHNICAL VALUES):\n")
+          .append("REQUIRED SCHEMA (CRITICAL: PROVIDE SPECIFIC TECHNICAL VALUES, NO PLACEHOLDERS):\n")
           .append("{\n")
           .append("  \"id\": \"").append(bp.getId()).append("\",\n")
           .append("  \"strategy_type\": \"PHILOSOPHY_MUTATION\",\n")
-          .append("  \"strategy\": \"precise engineering strategy based on the blueprint\",\n")
-          .append("  \"reasoning_focus\": \"specific architectural focus for this mediated trajectory\",\n")
-          .append("  \"selected_files\": [\"path/to/file1.java\", \"path/to/file2.java\"],\n")
-          .append("  \"survival_argument\": \"technical argument for this blueprint\",\n")
-          .append("  \"tradeoffs\": \"technical tradeoffs inherent to this blueprint\",\n")
-          .append("  \"failure_risks\": \"potential failure modes\",\n")
-          .append("  \"semantic_justification\": \"philosophy materialization\",\n")
+          .append("  \"strategy\": \"(Concrete description of implementation)\",\n")
+          .append("  \"reasoning_focus\": \"(Specific architectural focus)\",\n")
+          .append("  \"engineering_dimensions\": {\n")
+          .append("    \"philosophy\": \"").append(bp.getPhilosophy()).append("\",\n")
+          .append("    \"execution_model\": \"atomic/service/reactive/etc\",\n")
+          .append("    \"abstraction_depth\": \"low/medium/high\",\n")
+          .append("    \"modularity_approach\": \"monolithic/modular/etc\",\n")
+          .append("    \"testing_strategy\": \"unit/integration/etc\",\n")
+          .append("    \"extensibility\": \"low/medium/high\",\n")
+          .append("    \"dependency_assumptions\": \"none/internal/external\",\n")
+          .append("    \"runtime_behavior\": \"deterministic/async/etc\",\n")
+          .append("    \"risk_acceptance\": \"conservative/experimental/etc\"\n")
+          .append("  },\n")
+          .append("  \"selected_files\": [\"actual/path/to/file.java\"],\n")
+          .append("  \"survival_argument\": \"(Technical justification)\",\n")
+          .append("  \"tradeoffs\": \"(Technical tradeoffs)\",\n")
+          .append("  \"failure_risks\": \"(Potential failure modes)\",\n")
+          .append("  \"semantic_justification\": \"").append(bp.getPhilosophy()).append("\",\n")
           .append("  \"projected_steps\": [\"step 1\", \"step 2\"],\n")
-          .append("  \"expected_outputs\": [\"artifact 1\"],\n")
+          .append("  \"expected_outputs\": [\"artifact.java\"],\n")
           .append("  \"score\": 0.8,\n")
-          .append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"path.java\", \"description\": \"desc\" }]\n")
+          .append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"target_file.java\", \"description\": \"Action description\" }]\n")
           .append("}");
 
         return sb.toString();

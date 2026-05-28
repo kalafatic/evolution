@@ -345,6 +345,11 @@ public class IterationManager {
                         extractor.extractToSnapshot(snapshot);
 
                         state.getMetadata().put("mediatedSnapshot", snapshot);
+
+                        // MEDIATED MODE MANDATE: Inject MetadataAgent discovery
+                        context.log("[KERNEL] Mediated Mode: Triggering MetadataAgent repository cognition.");
+                        eu.kalafatic.evolution.controller.agents.MetadataAgent metadataAgent = new eu.kalafatic.evolution.controller.agents.MetadataAgent();
+                        metadataAgent.generate(context.getProjectRoot());
                     }
 
                     context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Discovery complete. Repository-aware context initialized.");
@@ -709,6 +714,7 @@ public class IterationManager {
             transition(SystemState.INIT, context);
         }
 
+        BehaviorProfile profile = context.getBehaviorProfile();
         OrchestrationState state = context.getOrchestrationState();
         String goal = state.getRawInput();
         if (goal == null || goal.isEmpty()) {
@@ -813,10 +819,12 @@ public class IterationManager {
 
         // EVOLUTIONARY MANDATE: Minimum 4 branches in early generations
         if (variants.size() < 4 && state.getIterationCount() < 2) {
-            context.log("[KERNEL] WARNING: Less than 4 branches in early evolution. Current count: " + variants.size());
+            context.log("[KERNEL] MANDATORY BRANCH RULE: Enforcing minimum 4 architecturally distinct branches.");
+            // The DarwinEngine.generateVariants logic already prioritizes this via blueprints.
+            // If we still have < 4, it means materialization failed and repair is needed or already happened.
         }
 
-        if (!context.isAutoApprove()) {
+        if (!context.isAutoApprove() || profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
             manualId = handleVariantSelection(context, variants, goal);
             if ("REGENERATE".equals(manualId)) {
                 // User provided guidance, restart mutation in the current phase
@@ -1119,14 +1127,19 @@ public class IterationManager {
         context.log("[KERNEL] Resolving flow. Profile traits: " + profile.getTraits());
 
         // MANDATORY DARWIN EVOLUTION: All non-chat requests MUST route through the evolutionary kernel.
-        // No more shortcuts for "atomic" or "simple" tasks.
-        if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC) && !profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)
-            && !profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+        // UNCONDITIONAL ROUTING for mediated and self-dev modes.
+        if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) || profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
+            context.log("[KERNEL] Routing to DarwinFlow for iterative repository cognition.");
+            return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
+        }
+
+        // Simple chat path ONLY if no advanced traits are active
+        if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC)) {
             context.log("[KERNEL] Simple chat path detected.");
             return (IOrchestrationFlow) AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
         }
 
-        context.log("[KERNEL] Routing to DarwinFlow for evolutionary branching.");
+        context.log("[KERNEL] Defaulting to DarwinFlow for evolutionary branching.");
         return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
     }
 

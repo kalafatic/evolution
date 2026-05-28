@@ -326,79 +326,49 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private List<TrajectoryBlueprint> generateStandardBlueprints(String goal) {
         List<TrajectoryBlueprint> blueprints = new ArrayList<>();
 
-        TrajectoryBlueprint direct = new TrajectoryBlueprint("direct_minimal", goal, "Minimalist");
+        // BRANCH A - DIRECT_MINIMAL
+        TrajectoryBlueprint direct = new TrajectoryBlueprint("direct_minimal", goal, "Minimal executable implementation");
         direct.addRequiredCharacteristic("Direct output/execution");
         direct.addRequiredCharacteristic("Primary entry point");
         direct.addRequiredCharacteristic("Atomic structure");
-        direct.addForbiddenOverlap("abstractions");
+        direct.addForbiddenOverlap("interfaces");
+        direct.addForbiddenOverlap("services");
         direct.addForbiddenOverlap("layered architecture");
-        direct.addForbiddenOverlap("external services");
-        direct.setArchitecturalDirection("Goal: Minimal executable implementation. Philosophy: direct, low abstraction, and zero bloat.");
-        JSONObject d1 = direct.getEngineeringDimensions();
-        d1.put("philosophy", "Minimalist");
-        d1.put("execution_model", "atomic");
-        d1.put("abstraction_depth", "low");
-        d1.put("modularity_approach", "monolithic");
-        d1.put("testing_strategy", "unit");
-        d1.put("extensibility", "low");
-        d1.put("dependency_assumptions", "none");
-        d1.put("runtime_behavior", "deterministic");
-        d1.put("risk_acceptance", "conservative");
+        direct.addForbiddenOverlap("factories");
+        direct.setArchitecturalDirection("Goal: Minimal implementation. Philosophy: direct, low abstraction, zero bloat. Execution Model: atomic.");
         blueprints.add(direct);
 
-        TrajectoryBlueprint persistent = new TrajectoryBlueprint("persistent_storage", goal, "Persistent State");
-        persistent.addRequiredCharacteristic("Persistence support");
+        // BRANCH B - PERSISTENT_STORAGE
+        TrajectoryBlueprint persistent = new TrajectoryBlueprint("persistent_storage", goal, "Persistent data management");
+        persistent.addRequiredCharacteristic("Persistence support (FileWriter/Database)");
         persistent.addRequiredCharacteristic("External state management");
-        persistent.addForbiddenOverlap("ephemeral execution");
-        persistent.addForbiddenOverlap("stateless model");
-        persistent.setArchitecturalDirection("Goal: Persistent state management. Philosophy: side-effect focused, externalized storage.");
-        JSONObject d2 = persistent.getEngineeringDimensions();
-        d2.put("philosophy", "Persistent State");
-        d2.put("execution_model", "stateful");
-        d2.put("abstraction_depth", "medium");
-        d2.put("modularity_approach", "modular");
-        d2.put("testing_strategy", "integration");
-        d2.put("extensibility", "medium");
-        d2.put("dependency_assumptions", "internal");
-        d2.put("runtime_behavior", "deterministic");
-        d2.put("risk_acceptance", "conservative");
+        persistent.addRequiredCharacteristic("Configurable storage paths");
+        persistent.addForbiddenOverlap("console-only execution");
+        persistent.addForbiddenOverlap("ephemeral state");
+        persistent.addForbiddenOverlap("logger abstraction");
+        persistent.setArchitecturalDirection("Goal: Persistent state. Philosophy: side-effect focused. Execution Model: synchronous persistence.");
         blueprints.add(persistent);
 
-        TrajectoryBlueprint stabilized = new TrajectoryBlueprint("stabilized_resilient", goal, "Resilient");
+        // BRANCH C - STABILIZED_RESILIENT
+        TrajectoryBlueprint stabilized = new TrajectoryBlueprint("stabilized_resilient", goal, "Resilient and validated implementation");
         stabilized.addRequiredCharacteristic("Input validation");
-        stabilized.addRequiredCharacteristic("Error recovery/handling");
-        stabilized.addRequiredCharacteristic("Verification logic");
-        stabilized.addForbiddenOverlap("speculative features");
-        stabilized.addForbiddenOverlap("complex abstractions");
-        stabilized.setArchitecturalDirection("Goal: Resilient implementation. Philosophy: safety-first, deterministic error recovery.");
-        JSONObject d3 = stabilized.getEngineeringDimensions();
-        d3.put("philosophy", "Resilient");
-        d3.put("execution_model", "stabilized");
-        d3.put("abstraction_depth", "medium");
-        d3.put("modularity_approach", "modular");
-        d3.put("testing_strategy", "tdd");
-        d3.put("extensibility", "medium");
-        d3.put("dependency_assumptions", "internal");
-        d3.put("runtime_behavior", "deterministic");
-        d3.put("risk_acceptance", "conservative");
+        stabilized.addRequiredCharacteristic("Exception handling and recovery");
+        stabilized.addRequiredCharacteristic("Unit tests for edge cases");
+        stabilized.addForbiddenOverlap("speculative abstractions");
+        stabilized.addForbiddenOverlap("overengineering");
+        stabilized.addForbiddenOverlap("persistence overlap");
+        stabilized.setArchitecturalDirection("Goal: Reliability. Philosophy: safety-first. Execution Model: defensive.");
         blueprints.add(stabilized);
 
-        TrajectoryBlueprint service = new TrajectoryBlueprint("reusable_service", goal, "Service-Oriented");
-        service.addRequiredCharacteristic("Component separation");
-        service.addRequiredCharacteristic("Decoupled execution");
-        service.addForbiddenOverlap("direct coupling");
-        service.addForbiddenOverlap("hardcoded logic");
-        service.setArchitecturalDirection("Goal: Future extensibility. Philosophy: layered, decoupled, and modularly extensible.");
-        JSONObject d4 = service.getEngineeringDimensions();
-        d4.put("philosophy", "Service-Oriented");
-        d4.put("execution_model", "service");
-        d4.put("abstraction_depth", "high");
-        d4.put("modularity_approach", "modular");
-        d4.put("testing_strategy", "integration");
-        d4.put("extensibility", "high");
-        d4.put("dependency_assumptions", "external");
-        d4.put("runtime_behavior", "async");
-        d4.put("risk_acceptance", "conservative");
+        // BRANCH D - REUSABLE_SERVICE
+        TrajectoryBlueprint service = new TrajectoryBlueprint("reusable_service", goal, "Extensible and modular service architecture");
+        service.addRequiredCharacteristic("Interface-based design");
+        service.addRequiredCharacteristic("Implementation separation (Service/Impl)");
+        service.addRequiredCharacteristic("Dependency injection or factory patterns");
+        service.addForbiddenOverlap("hardcoded output");
+        service.addForbiddenOverlap("direct println coupling");
+        service.addForbiddenOverlap("monolithic structure");
+        service.setArchitecturalDirection("Goal: Extensibility. Philosophy: decoupled, layered. Execution Model: service-oriented.");
         blueprints.add(service);
 
         return blueprints;
@@ -407,69 +377,41 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private List<TrajectoryBlueprint> generateMediatedBlueprints(String goal) {
         List<TrajectoryBlueprint> blueprints = new ArrayList<>();
 
-        TrajectoryBlueprint arch = new TrajectoryBlueprint("architecture_mapping", goal, "Structural Mapping");
+        // BRANCH A - ARCHITECTURE_MAPPING
+        TrajectoryBlueprint arch = new TrajectoryBlueprint("architecture_mapping", goal, "Structural and architectural mapping");
         arch.addRequiredCharacteristic("Map core components");
         arch.addRequiredCharacteristic("Identify structural patterns");
-        arch.setArchitecturalDirection("Focus: Architecture hotspots and high-level structure.");
-        JSONObject d1 = arch.getEngineeringDimensions();
-        d1.put("philosophy", "Structural Mapping");
-        d1.put("execution_model", "analytical");
-        d1.put("abstraction_depth", "high");
-        d1.put("modularity_approach", "top-down");
-        d1.put("testing_strategy", "none");
-        d1.put("extensibility", "medium");
-        d1.put("dependency_assumptions", "internal");
-        d1.put("runtime_behavior", "static");
-        d1.put("risk_acceptance", "conservative");
+        arch.addForbiddenOverlap("dependency details");
+        arch.addForbiddenOverlap("implementation hotspots");
+        arch.setArchitecturalDirection("Focus: High-level topology. Philosophy: structural mapping.");
         blueprints.add(arch);
 
-        TrajectoryBlueprint dep = new TrajectoryBlueprint("dependency_audit", goal, "Dependency Audit");
+        // BRANCH B - DEPENDENCY_AUDIT
+        TrajectoryBlueprint dep = new TrajectoryBlueprint("dependency_audit", goal, "Dependency and relationship exploration");
         dep.addRequiredCharacteristic("Analyze module relationships");
         dep.addRequiredCharacteristic("Identify cross-cutting concerns");
-        dep.setArchitecturalDirection("Focus: Dependency graphs and ripple effects.");
-        JSONObject d2 = dep.getEngineeringDimensions();
-        d2.put("philosophy", "Dependency Audit");
-        d2.put("execution_model", "analytical");
-        d2.put("abstraction_depth", "medium");
-        d2.put("modularity_approach", "relational");
-        d2.put("testing_strategy", "none");
-        d2.put("extensibility", "low");
-        d2.put("dependency_assumptions", "internal");
-        d2.put("runtime_behavior", "static");
-        d2.put("risk_acceptance", "conservative");
+        dep.addForbiddenOverlap("architectural patterns");
+        dep.addForbiddenOverlap("technical debt analysis");
+        dep.setArchitecturalDirection("Focus: Interaction graphs. Philosophy: relationship auditing.");
         blueprints.add(dep);
 
-        TrajectoryBlueprint hotspot = new TrajectoryBlueprint("hotspot_analysis", goal, "Hotspot Analysis");
+        // BRANCH C - HOTSPOT_ANALYSIS
+        TrajectoryBlueprint hotspot = new TrajectoryBlueprint("hotspot_analysis", goal, "Complexity and technical debt analysis");
         hotspot.addRequiredCharacteristic("Identify technical debt");
         hotspot.addRequiredCharacteristic("Identify high-complexity areas");
-        hotspot.setArchitecturalDirection("Focus: Instability and refactoring opportunities.");
-        JSONObject d3 = hotspot.getEngineeringDimensions();
-        d3.put("philosophy", "Hotspot Analysis");
-        d3.put("execution_model", "analytical");
-        d3.put("abstraction_depth", "medium");
-        d3.put("modularity_approach", "targeted");
-        d3.put("testing_strategy", "none");
-        d3.put("extensibility", "medium");
-        d3.put("dependency_assumptions", "internal");
-        d3.put("runtime_behavior", "static");
-        d3.put("risk_acceptance", "conservative");
+        hotspot.addForbiddenOverlap("minimal context selection");
+        hotspot.addForbiddenOverlap("structural mapping");
+        hotspot.setArchitecturalDirection("Focus: Risk and debt. Philosophy: instability analysis.");
         blueprints.add(hotspot);
 
-        TrajectoryBlueprint context = new TrajectoryBlueprint("context_distillation", goal, "Context Distillation");
-        context.addRequiredCharacteristic("Distill minimal context");
-        context.addRequiredCharacteristic("Zero-noise file selection");
-        context.setArchitecturalDirection("Focus: Evolving the minimal reasoning package.");
-        JSONObject d4 = context.getEngineeringDimensions();
-        d4.put("philosophy", "Context Distillation");
-        d4.put("execution_model", "analytical");
-        d4.put("abstraction_depth", "low");
-        d4.put("modularity_approach", "minimalist");
-        d4.put("testing_strategy", "none");
-        d4.put("extensibility", "low");
-        d4.put("dependency_assumptions", "internal");
-        d4.put("runtime_behavior", "static");
-        d4.put("risk_acceptance", "conservative");
-        blueprints.add(context);
+        // BRANCH D - CONTEXT_DISTILLATION
+        TrajectoryBlueprint contextBlueprint = new TrajectoryBlueprint("context_distillation", goal, "High-signal context package evolution");
+        contextBlueprint.addRequiredCharacteristic("Distill minimal context");
+        contextBlueprint.addRequiredCharacteristic("Zero-noise file selection");
+        contextBlueprint.addForbiddenOverlap("dependency graphs");
+        contextBlueprint.addForbiddenOverlap("architectural hotspots");
+        contextBlueprint.setArchitecturalDirection("Focus: Reasoning efficiency. Philosophy: information density distillation.");
+        blueprints.add(contextBlueprint);
 
         return blueprints;
     }
