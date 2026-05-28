@@ -84,5 +84,12 @@ window.ChatApp.UI = {
     toggleSidePanel: function() {
         const panel = document.getElementById('side-panel');
         if (panel) panel.style.width = (panel.style.width === '0px' || panel.style.width === '0') ? '320px' : '0px';
+    },
+
+    ensureSidePanelOpen: function() {
+        const panel = document.getElementById('side-panel');
+        if (panel && (panel.style.width === '0px' || panel.style.width === '0')) {
+            panel.style.width = '320px';
+        }
     }
 };

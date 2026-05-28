@@ -191,7 +191,35 @@ public class ChatGroup extends AEvoGroup {
         new Thread(() -> {
             try {
                 eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider gitProvider = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
-                List<String> changedFiles = gitProvider.getChangedFiles(projectRoot, "HEAD");
+                List<String> changedFiles = new java.util.ArrayList<>();
+                try {
+                    changedFiles.addAll(gitProvider.getChangedFiles(projectRoot, "HEAD"));
+                } catch (Exception e) {
+                    // Not a git repo, ignore
+                }
+
+                // Merge with AI-tracked changes from the current context
+                if (editor.getCurrentContext() != null && editor.getCurrentContext().getFileChangeTracker() != null) {
+                    java.util.Map<String, eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType> aiChanges =
+                        editor.getCurrentContext().getFileChangeTracker().getChangedFiles();
+
+                    for (java.util.Map.Entry<String, eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType> entry : aiChanges.entrySet()) {
+                        String path = entry.getKey();
+                        String prefix = "M ";
+                        if (entry.getValue() == eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType.NEW) prefix = "A ";
+                        else if (entry.getValue() == eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType.REMOVED) prefix = "D ";
+
+                        final String finalPath = path;
+                        if (changedFiles.stream().noneMatch(f -> {
+                            if (f.length() > 2) {
+                                return f.substring(2).equals(finalPath);
+                            }
+                            return f.equals(finalPath);
+                        })) {
+                            changedFiles.add(prefix + path);
+                        }
+                    }
+                }
 
                 JSONArray array = new JSONArray();
                 java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -218,7 +246,7 @@ public class ChatGroup extends AEvoGroup {
                     }
                 });
             } catch (Exception e) {
-                // Ignore git errors in background refresh
+                // Ignore errors in background refresh
             }
         }).start();
     }
