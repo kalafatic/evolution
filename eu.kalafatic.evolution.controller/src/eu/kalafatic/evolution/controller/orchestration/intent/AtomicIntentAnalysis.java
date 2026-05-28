@@ -11,8 +11,12 @@ public class AtomicIntentAnalysis {
     private boolean atomic;
     private double confidence;
     private boolean deterministic;
+    /** @deprecated Use EvolutionaryComplexityVector for finer-grained control */
+    @Deprecated
     private boolean requiresPlanning;
     private boolean multiStep;
+
+    private EvolutionaryComplexityVector complexityVector = new EvolutionaryComplexityVector();
 
     private String targetArtifact;
     private String artifactType;
@@ -45,12 +49,24 @@ public class AtomicIntentAnalysis {
         this.deterministic = deterministic;
     }
 
+    /** @deprecated Use EvolutionaryComplexityVector */
+    @Deprecated
     public boolean isRequiresPlanning() {
         return requiresPlanning;
     }
 
+    /** @deprecated Use EvolutionaryComplexityVector */
+    @Deprecated
     public void setRequiresPlanning(boolean requiresPlanning) {
         this.requiresPlanning = requiresPlanning;
+    }
+
+    public EvolutionaryComplexityVector getComplexityVector() {
+        return complexityVector;
+    }
+
+    public void setComplexityVector(EvolutionaryComplexityVector complexityVector) {
+        this.complexityVector = complexityVector;
     }
 
     public boolean isMultiStep() {

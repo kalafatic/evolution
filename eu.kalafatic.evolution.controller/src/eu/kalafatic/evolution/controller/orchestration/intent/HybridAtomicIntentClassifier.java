@@ -35,7 +35,7 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
 
         context.log("[KERNEL] AtomicIntentClassifier score=" + String.format("%.2f", analysis.getConfidence()));
         context.log("[KERNEL] Signals=" + analysis.getSignals());
-        context.log("[KERNEL] requiresPlanning=" + analysis.isRequiresPlanning());
+        context.log("[KERNEL] ComplexityVector=" + analysis.getComplexityVector());
         context.log("[KERNEL] LLM validation skipped");
 
         return analysis;
@@ -205,6 +205,13 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
         analysis.setAtomic(analysis.getConfidence() > 0.6);
         analysis.setDeterministic(analysis.getConfidence() > 0.7);
 
+        EvolutionaryComplexityVector vector = analysis.getComplexityVector();
+        vector.ambiguity = 1.0 - analysis.getConfidence();
+        vector.determinismConfidence = analysis.getConfidence();
+        vector.branchability = analysis.isAtomic() ? 0.2 : 0.8;
+        vector.semanticUncertainty = analysis.isDeterministic() ? 0.1 : 0.6;
+        vector.recursionPotential = analysis.isMultiStep() ? 0.7 : 0.2;
+
         boolean hasTarget = analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty();
         boolean isAtomicCreation = analysis.getConfidence() >= 0.80 && !analysis.isMultiStep();
 
@@ -239,6 +246,14 @@ public class HybridAtomicIntentClassifier implements AtomicIntentClassifier {
                 llmAnalysis.setDeterministic(json.optBoolean("deterministic", heuristic.isDeterministic()));
                 llmAnalysis.setRequiresPlanning(json.optBoolean("requiresPlanning", heuristic.isRequiresPlanning()));
                 llmAnalysis.setMultiStep(json.optBoolean("multiStep", heuristic.isMultiStep()));
+
+                EvolutionaryComplexityVector vector = llmAnalysis.getComplexityVector();
+                vector.ambiguity = json.optDouble("ambiguity", 1.0 - llmAnalysis.getConfidence());
+                vector.branchability = json.optDouble("branchability", llmAnalysis.isAtomic() ? 0.2 : 0.8);
+                vector.semanticUncertainty = json.optDouble("semanticUncertainty", llmAnalysis.isDeterministic() ? 0.1 : 0.6);
+                vector.recursionPotential = json.optDouble("recursionPotential", llmAnalysis.isMultiStep() ? 0.7 : 0.2);
+                vector.determinismConfidence = llmAnalysis.getConfidence();
+
                 llmAnalysis.setTargetArtifact(json.optString("targetArtifact", heuristic.getTargetArtifact()));
                 llmAnalysis.setArtifactType(json.optString("artifactType", heuristic.getArtifactType()));
                 llmAnalysis.setReason(json.optString("reason"));
