@@ -131,7 +131,14 @@ public class DarwinFlow implements IOrchestrationFlow {
         ));
 
         ISchedulingContract scheduler = CapabilityRegistry.getInstance().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
-        ScheduledExecutionPlan executionPlan = scheduler.schedule(rawVariants, context);
+
+        ScheduledExecutionPlan executionPlan;
+        if (scheduler != null) {
+            executionPlan = scheduler.schedule(rawVariants, context);
+        } else {
+            context.log("[DARWIN] Scheduler unavailable. Entering manual continuation mode.");
+            executionPlan = new ScheduledExecutionPlan(rawVariants, "Manual fallback (No scheduler)", ExecutionBudget.defaultProfile());
+        }
         List<BranchVariant> variants = executionPlan.getScheduledVariants();
         context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
 

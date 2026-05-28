@@ -77,4 +77,22 @@ public class JsonUtilsTest {
         assertNotNull(result);
         assertEquals("truncated value", result.getString("key"));
     }
+
+    @Test
+    public void testDarwinTagExtraction() {
+        String text = "Some log\n<BEGIN_DARWIN_JSON>\n{\"id\": \"v1\", \"strategy\": \"S1\"}\n<END_DARWIN_JSON>\nMore logs";
+        JSONObject result = JsonUtils.extractJsonObject(text);
+        assertNotNull(result);
+        assertEquals("v1", result.getString("id"));
+        assertEquals("S1", result.getString("strategy"));
+    }
+
+    @Test
+    public void testDarwinTagExtractionWithContamination() {
+        String text = "[Default] Some log\n<BEGIN_DARWIN_JSON>\n{\"id\": \"v2\", \"strategy\": \"S2\"}\n<END_DARWIN_JSON>\n[Default] More logs";
+        JSONObject result = JsonUtils.extractJsonObject(text);
+        assertNotNull(result);
+        assertEquals("v2", result.getString("id"));
+        assertEquals("S2", result.getString("strategy"));
+    }
 }

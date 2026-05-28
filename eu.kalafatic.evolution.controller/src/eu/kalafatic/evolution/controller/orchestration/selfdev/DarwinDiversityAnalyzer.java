@@ -28,33 +28,50 @@ public class DarwinDiversityAnalyzer {
 
         List<JSONObject> unique = new ArrayList<>();
         for (JSONObject v : variants) {
-            // Blueprint Adherence Check
-            TrajectoryBlueprint bp = null;
-            if (blueprints != null) {
-                bp = blueprints.stream().filter(b -> b.getId().equals(v.optString("id"))).findFirst().orElse(null);
-                if (bp != null && !adheresToBlueprint(v, bp, context)) {
-                    context.log("[DIVERSITY] Blueprint Violation detected for: " + v.optString("id") + ". Rejecting variant.");
-                    continue; // REJECT variants that violate blueprint constraints
-                }
-            }
+            DiversityResultType result = evaluate(v, blueprints, unique, context);
 
-            if (isUnique(v, unique)) {
+            if (result == DiversityResultType.ACCEPTED || result == DiversityResultType.ACCEPTED_WITH_WARNINGS) {
                 unique.add(v);
+                v.put("diversity_result", result.name());
             } else {
-                if (bp != null) {
-                    context.log("[DIVERSITY] MANDATORY BRANCH REDUNDANCY: " + v.optString("id") + " is too similar to siblings. Preserving but flagging.");
-                    unique.add(v); // MANDATORY branches must survive
-                } else {
-                    context.log("[DIVERSITY] Dropping redundant trajectory: " + v.optString("strategy"));
-                }
+                context.log("[DIVERSITY] Dropping redundant or invalid trajectory: " + v.optString("id"));
             }
         }
         return unique;
     }
 
-    private boolean adheresToBlueprint(JSONObject variant, TrajectoryBlueprint bp, TaskContext context) {
+    private DiversityResultType evaluate(JSONObject v, List<TrajectoryBlueprint> blueprints, List<JSONObject> unique, TaskContext context) {
+        // Blueprint Adherence Check
+        TrajectoryBlueprint bp = null;
+        if (blueprints != null) {
+            bp = blueprints.stream().filter(b -> b.getId().equals(v.optString("id"))).findFirst().orElse(null);
+            if (bp != null) {
+                DiversityResultType adherence = checkBlueprintAdherence(v, bp, context);
+                if (adherence == DiversityResultType.REJECTED_FATAL) {
+                    context.log("[DIVERSITY] Blueprint Violation detected for: " + v.optString("id") + ". REJECTED.");
+                    return DiversityResultType.REJECTED_FATAL;
+                }
+
+                if (!isUnique(v, unique)) {
+                    context.log("[DIVERSITY] MANDATORY BRANCH REDUNDANCY: " + v.optString("id") + " is too similar to siblings. Preserving with WARNING.");
+                    return DiversityResultType.ACCEPTED_WITH_WARNINGS;
+                }
+
+                return adherence;
+            }
+        }
+
+        if (isUnique(v, unique)) {
+            return DiversityResultType.ACCEPTED;
+        }
+
+        return DiversityResultType.REJECTED_FATAL;
+    }
+
+    private DiversityResultType checkBlueprintAdherence(JSONObject variant, TrajectoryBlueprint bp, TaskContext context) {
         String strategy = variant.optString("strategy").toLowerCase();
         String philosophy = variant.optString("semantic_justification").toLowerCase();
+        boolean hasWarnings = false;
 
         // 1. Philosophy/Goal Alignment Check (Dimension-based)
         JSONObject dimensions = variant.optJSONObject("engineering_dimensions");
@@ -66,9 +83,23 @@ public class DarwinDiversityAnalyzer {
                 String vValue = dimensions.optString(dimKey, "").toLowerCase();
                 if (!vValue.isEmpty() && !bpValue.isEmpty()) {
                     if (vValue.equals(bpValue)) continue;
-                    if (computeSimilarity(vValue, bpValue) < 0.4) {
-                        context.log("[DIVERSITY] Blueprint Violation: Dimension mismatch for " + dimKey + " in " + bp.getId());
-                        return false;
+
+                    double sim = computeSimilarity(vValue, bpValue);
+
+                    // STRICT Dimensions: Reject if mismatch
+                    if (isStrictDimension(dimKey)) {
+                        if (sim < 0.4) {
+                            context.log("[DIVERSITY] Blueprint FATAL Violation: Strict dimension mismatch for " + dimKey + " in " + bp.getId());
+                            return DiversityResultType.REJECTED_FATAL;
+                        } else {
+                            hasWarnings = true;
+                        }
+                    } else {
+                        // SOFT Dimensions: Warning only
+                        if (sim < 0.3) {
+                            context.log("[DIVERSITY] Blueprint Warning: Soft dimension mismatch for " + dimKey + " in " + bp.getId());
+                            hasWarnings = true;
+                        }
                     }
                 }
             }
@@ -76,37 +107,33 @@ public class DarwinDiversityAnalyzer {
             String vPhilosophy = dimensions.optString("philosophy", "").toLowerCase();
             String bpPhilosophy = bp.getPhilosophy().toLowerCase();
             if (computeSimilarity(vPhilosophy, bpPhilosophy) < 0.2) {
-                // If the philosophy dimension is wildly off, reject
-                context.log("[DIVERSITY] Blueprint Violation: Philosophy mismatch for " + bp.getId());
-                return false;
-            }
-        } else {
-            // Fallback for missing dimensions
-            String bpGoal = bp.getGoal().toLowerCase();
-            if (computeSimilarity(philosophy, bpGoal) < 0.1 && computeSimilarity(strategy, bpGoal) < 0.1) {
-                return false;
+                context.log("[DIVERSITY] Blueprint FATAL Violation: Philosophy mismatch for " + bp.getId());
+                return DiversityResultType.REJECTED_FATAL;
             }
         }
 
         // 2. Forbidden overlap check (Structural divergence enforcement)
         for (String forbidden : bp.getForbiddenOverlaps()) {
             if (strategy.contains(forbidden.toLowerCase()) || philosophy.contains(forbidden.toLowerCase())) {
-                context.log("[DIVERSITY] Blueprint Violation: Variant contains forbidden overlap: '" + forbidden + "' in " + bp.getId());
-                return false;
+                context.log("[DIVERSITY] Blueprint FATAL Violation: Variant contains forbidden overlap: '" + forbidden + "' in " + bp.getId());
+                return DiversityResultType.REJECTED_FATAL;
             }
 
-            // Check dimensions for forbidden overlaps if they represent architectural layers
             if (dimensions != null) {
                 for (String dim : dkeys(dimensions)) {
                     if (dimensions.optString(dim).toLowerCase().contains(forbidden.toLowerCase())) {
-                        context.log("[DIVERSITY] Blueprint Violation: Dimension '" + dim + "' contains forbidden overlap: " + forbidden);
-                        return false;
+                        context.log("[DIVERSITY] Blueprint FATAL Violation: Dimension '" + dim + "' contains forbidden overlap: " + forbidden);
+                        return DiversityResultType.REJECTED_FATAL;
                     }
                 }
             }
         }
 
-        return true;
+        return hasWarnings ? DiversityResultType.ACCEPTED_WITH_WARNINGS : DiversityResultType.ACCEPTED;
+    }
+
+    private boolean isStrictDimension(String dim) {
+        return "philosophy".equals(dim) || "execution_model".equals(dim);
     }
 
     private java.util.List<String> dkeys(JSONObject obj) {
