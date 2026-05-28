@@ -743,6 +743,14 @@ public class IterationManager {
 
             context.consoleLog("[KERNEL] Intent Interpretation: " + expansion.getState());
 
+            // DIMENSION DISCOVERY
+            if (expansion.getUnresolvedDimensions() != null) {
+                for (EvolutionDimension dim : expansion.getUnresolvedDimensions()) {
+                    memoryService.getEvolutionGraph().recordDimension(dim);
+                    context.log("[KERNEL] Discovered Dimension: " + dim.getId() + " (" + dim.getAbstractionLevel() + ")");
+                }
+            }
+
             // INTENT REVIEW LOOP (Ownership restored to IterationManager)
             if (!handleIntentReview(context, expansion, goal)) {
                 return failedResult();
@@ -798,13 +806,22 @@ public class IterationManager {
             context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
         }
 
-        // EVOLUTIONARY AXIS PROGRESSION
+        // EVOLUTIONARY DIMENSION PROGRESSION
         IntentExpansionResult intentExpansion = (IntentExpansionResult) state.getMetadata().get("intentExpansion");
-        if (intentExpansion != null && !intentExpansion.getEvolutionaryAxes().isEmpty()) {
-            int currentGen = state.getIterationCount();
-            int axisIndex = currentGen % intentExpansion.getEvolutionaryAxes().size();
-            eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionAxis currentAxis = intentExpansion.getEvolutionaryAxes().get(axisIndex);
-            context.log("[KERNEL] Evolutionary Axis: " + currentAxis.getName() + " (Generation: " + currentGen + ")");
+        if (intentExpansion != null && intentExpansion.getActiveDimensionId() != null) {
+            context.log("[KERNEL] Evolving Semantic Dimension: " + intentExpansion.getActiveDimensionId() + " (Generation: " + state.getIterationCount() + ")");
+
+            // ARCHITECTURE EMERGENCE RULE: Suppress architecture branching if pressure is low
+            EvolutionDimension activeDim = intentExpansion.getUnresolvedDimensions().stream()
+                .filter(d -> d.getId().equals(intentExpansion.getActiveDimensionId()))
+                .findFirst().orElse(null);
+
+            if (activeDim != null && activeDim.getAbstractionLevel() == AbstractionLevel.ARCHITECTURE) {
+                if (activeDim.getEvolutionaryPressure() < 0.3) {
+                    context.log("[KERNEL] Architecture Emergence Rule: Low pressure detected. Suppressing architectural branching.");
+                    // Fall back to a direct implementation if pressure is low
+                }
+            }
         }
 
         // 2. EVOLUTIONARY EXECUTION (Delegated to DarwinFlow Engine)
@@ -1035,9 +1052,11 @@ public class IterationManager {
                 String rejectedId = input.substring(15).trim();
                 context.log("[KERNEL] User rejected trajectory: " + rejectedId + ". Evolution stopped by user.");
                 recordRejection(goal, "Darwin trajectory " + rejectedId + " rejected by user ('no way').");
+                memoryService.getEvolutionGraph().recordRejection("MANUAL_SELECTION", rejectedId, "User rejected explicitly.");
                 return "STOP";
             } else if ("Rejected".equalsIgnoreCase(input) || "Reject".equalsIgnoreCase(input) || "No".equalsIgnoreCase(input)) {
                 recordRejection(goal, "Darwin trajectories rejected by user.");
+                memoryService.getEvolutionGraph().recordEntropy(1.0); // Maximum entropy on total rejection
                 return "FAILED";
             } else if (input.startsWith("Propose:") || input.trim().startsWith("{")) {
                 context.log("[KERNEL] User injected a new trajectory. Integrating as a first-class candidate.");

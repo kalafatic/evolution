@@ -30,6 +30,7 @@ public class IterationMemoryService {
     private Map<String, Integer> architectureHotspots = new HashMap<>();
     private final FailureMemory failureMemory = new FailureMemory();
     private final TrajectoryMemory trajectoryMemory = new TrajectoryMemory();
+    private final EvolutionMemoryGraph evolutionGraph = new EvolutionMemoryGraph();
 
     private long lastMemoryDirModified = 0;
     private long lastIterationsDirModified = 0;
@@ -330,6 +331,10 @@ public class IterationMemoryService {
 
     public TrajectoryMemory getTrajectoryMemory() {
         return trajectoryMemory;
+    }
+
+    public EvolutionMemoryGraph getEvolutionGraph() {
+        return evolutionGraph;
     }
 
     public String getHistoryAnalysis() {

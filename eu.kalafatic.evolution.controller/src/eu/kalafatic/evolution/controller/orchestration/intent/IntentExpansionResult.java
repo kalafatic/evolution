@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.intent;
 import java.util.ArrayList;
 import java.util.List;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionAxis;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension;
 
 /**
  * Container for the results of the expansion engine.
@@ -10,6 +11,8 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionAxis;
 public class IntentExpansionResult {
     private String originalPrompt;
     private List<IntentDimension> dimensions = new ArrayList<>();
+    private List<EvolutionDimension> unresolvedDimensions = new ArrayList<>();
+    private String activeDimensionId;
     private List<IntentHypothesis> hypotheses = new ArrayList<>();
     private IntentConfidence confidence;
     private String recommendedClarification;
@@ -29,6 +32,12 @@ public class IntentExpansionResult {
 
     public List<IntentDimension> getDimensions() { return dimensions; }
     public void setDimensions(List<IntentDimension> dimensions) { this.dimensions = dimensions; }
+
+    public List<EvolutionDimension> getUnresolvedDimensions() { return unresolvedDimensions; }
+    public void setUnresolvedDimensions(List<EvolutionDimension> unresolvedDimensions) { this.unresolvedDimensions = unresolvedDimensions; }
+
+    public String getActiveDimensionId() { return activeDimensionId; }
+    public void setActiveDimensionId(String activeDimensionId) { this.activeDimensionId = activeDimensionId; }
 
     public List<IntentHypothesis> getHypotheses() { return hypotheses; }
     public void setHypotheses(List<IntentHypothesis> hypotheses) { this.hypotheses = hypotheses; }

@@ -125,7 +125,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
     @Override
     protected String getAgentInstructions() {
-        return "Role: Darwin Engine. Strategy: Trajectory-driven engineering evolution.";
+        return "Role: Darwin Engine. Strategy: Trajectory-driven engineering evolution.\n" +
+               "EVOLUTIONARY MANDATE:\n" +
+               "- Evolve EXACTLY ONE semantic dimension per iteration.\n" +
+               "- If an activeDimension is provided, generate candidate branches ONLY for that dimension.\n" +
+               "- Preserve lineage continuity. Each branch must modify the surviving parent trajectory.\n" +
+               "- Diversity must be semantic, not just architectural.";
     }
 
     @Override
@@ -175,9 +180,20 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             state.append("\n--- STRUCTURED INTENT ANALYSIS ---\n");
             state.append("Dominant Intent: ").append(expansion.getDominantIntent()).append("\n");
 
-            if (!expansion.getImplementationStrategies().isEmpty()) {
-                state.append("\nPROPOSED IMPLEMENTATION STRATEGIES:\n");
-                for (String s : expansion.getImplementationStrategies()) state.append("- ").append(s).append("\n");
+            if (expansion.getActiveDimensionId() != null) {
+                state.append("ACTIVE SEMANTIC DIMENSION: ").append(expansion.getActiveDimensionId()).append("\n");
+                EvolutionDimension activeDim = expansion.getUnresolvedDimensions().stream()
+                    .filter(d -> d.getId().equals(expansion.getActiveDimensionId()))
+                    .findFirst().orElse(null);
+                if (activeDim != null) {
+                    state.append("Dimension Description: ").append(activeDim.getDescription()).append("\n");
+                    state.append("Abstraction Level: ").append(activeDim.getAbstractionLevel()).append("\n");
+                }
+            }
+
+            state.append("\nUNRESOLVED DIMENSIONS:\n");
+            for (EvolutionDimension dim : expansion.getUnresolvedDimensions()) {
+                state.append("- ").append(dim.getId()).append(" (").append(dim.getAbstractionLevel()).append(")\n");
             }
 
             state.append("\nHYPOTHESES:\n");
@@ -235,11 +251,20 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         boolean isMediated = policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED;
 
         List<TrajectoryBlueprint> currentBlueprints = new ArrayList<>();
-        if (expansion != null && !expansion.getEvolutionaryAxes().isEmpty()) {
-            int axisIndex = currentIteration % expansion.getEvolutionaryAxes().size();
-            EvolutionAxis currentAxis = expansion.getEvolutionaryAxes().get(axisIndex);
-            context.log("[DARWIN] Blueprint Planning: Exploring Axis - " + currentAxis.getName());
-            currentBlueprints.addAll(currentAxis.getCandidateBlueprints());
+        if (expansion != null && expansion.getActiveDimensionId() != null) {
+            EvolutionDimension activeDim = expansion.getUnresolvedDimensions().stream()
+                .filter(d -> d.getId().equals(expansion.getActiveDimensionId()))
+                .findFirst().orElse(null);
+
+            if (activeDim != null && !activeDim.getCandidateBranches().isEmpty()) {
+                context.log("[DARWIN] Dimension-Scoped Branching: " + activeDim.getId());
+                for (BranchVariant bv : activeDim.getCandidateBranches()) {
+                    TrajectoryBlueprint bp = new TrajectoryBlueprint(bv.getId(), goal, bv.getStrategy());
+                    bp.setSurvivalArgument(bv.getSurvivalArgument());
+                    bp.setTradeoffs(bv.getTradeoffs());
+                    currentBlueprints.add(bp);
+                }
+            }
         }
 
         if (currentBlueprints.isEmpty()) {
