@@ -31,6 +31,20 @@ public class JsonUtils {
         text = text.replaceAll("^\\[.*?\\]\\s+", "");
         text = text.replaceAll("^\\[.*?\\]\\s+\\[.*?\\]\\s+", "");
 
+        // DARWIN TAG EXTRACTION: Prioritize content between explicit tags
+        if (text.contains("<BEGIN_DARWIN_JSON>") && text.contains("<END_DARWIN_JSON>")) {
+            int tagStart = text.indexOf("<BEGIN_DARWIN_JSON>") + "<BEGIN_DARWIN_JSON>".length();
+            int tagEnd = text.indexOf("<END_DARWIN_JSON>");
+            if (tagEnd > tagStart) {
+                String tagged = text.substring(tagStart, tagEnd).trim();
+                try {
+                    return new JSONObject(tagged);
+                } catch (JSONException e) {
+                    // fall back to standard extraction
+                }
+            }
+        }
+
         int firstStart = text.indexOf("{");
         int lastEnd = text.lastIndexOf("}");
 

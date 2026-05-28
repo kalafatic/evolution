@@ -12,6 +12,7 @@ public enum SystemState {
     CLARIFYING,
     MUTATING,
     EXPORTING,
+    AWAITING_BRANCH_SELECTION,
     DONE,
     FAILED,
     RECOVERING

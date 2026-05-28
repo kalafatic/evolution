@@ -260,7 +260,10 @@ public class IterationManager {
             reg.register(darwinEngine);
             reg.register(context.getSemanticWorkspace());
             reg.register(context.getOrchestrationState().getCognitiveTrace());
-            reg.register(new eu.kalafatic.evolution.controller.execution.KernelScheduler());
+            ISchedulingContract existingScheduler = reg.getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
+            if (existingScheduler == null) {
+                reg.register(new eu.kalafatic.evolution.controller.execution.KernelScheduler());
+            }
             if (memoryService != null) {
                 reg.register(new eu.kalafatic.evolution.controller.supervision.ActivationResolver(memoryService.getTrajectoryMemory()));
             }
@@ -810,7 +813,8 @@ public class IterationManager {
         List<BranchVariant> variants = darwinFlow.generateProposals(context, goal);
 
         if (variants.isEmpty()) {
-            context.log("[KERNEL] ERROR: No trajectories generated for goal. Evolution blocked.");
+            context.log("[KERNEL] CRITICAL: No trajectories survived diversity analysis. Evolution blocked.");
+            // Only trigger failure if NO branches survived
             return failedResult();
         }
 
@@ -994,7 +998,7 @@ public class IterationManager {
 
     public String handleVariantSelection(TaskContext context, List<BranchVariant> variants, String goal) throws Exception {
         while (true) {
-            transition(SystemState.CLARIFYING, context);
+            transition(SystemState.AWAITING_BRANCH_SELECTION, context);
             context.log("[KERNEL] Darwin Evolution: Pausing for trajectory selection (Manual Mode).");
 
             StringBuilder sb = new StringBuilder("Darwin evolved " + variants.size() + " trajectories for your review:\n");

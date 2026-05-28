@@ -335,10 +335,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         direct.addForbiddenOverlap("services");
         direct.addForbiddenOverlap("layered architecture");
         direct.addForbiddenOverlap("factories");
-        direct.setArchitecturalDirection("Goal: Minimal implementation. Philosophy: direct, low abstraction, zero bloat. Execution Model: atomic.");
+        direct.setArchitecturalDirection("A minimalist, single-class approach focusing on raw execution speed and zero external dependencies. Ideal for atomic utilities.");
         direct.getEngineeringDimensions().put("execution_model", "atomic");
         direct.getEngineeringDimensions().put("abstraction_depth", "low");
         direct.getEngineeringDimensions().put("modularity_approach", "monolithic");
+        direct.getEngineeringDimensions().put("testing_strategy", "smoke");
+        direct.getEngineeringDimensions().put("extensibility", "low");
         blueprints.add(direct);
 
         // BRANCH B - PERSISTENT_STORAGE
@@ -349,10 +351,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         persistent.addForbiddenOverlap("console-only execution");
         persistent.addForbiddenOverlap("ephemeral state");
         persistent.addForbiddenOverlap("logger abstraction");
-        persistent.setArchitecturalDirection("Goal: Persistent state. Philosophy: side-effect focused. Execution Model: synchronous persistence.");
+        persistent.setArchitecturalDirection("An implementation centered around state persistence and file/database IO, ensuring that execution results survive process termination.");
         persistent.getEngineeringDimensions().put("execution_model", "synchronous");
         persistent.getEngineeringDimensions().put("abstraction_depth", "medium");
         persistent.getEngineeringDimensions().put("modularity_approach", "modular");
+        persistent.getEngineeringDimensions().put("testing_strategy", "integration");
+        persistent.getEngineeringDimensions().put("extensibility", "medium");
         blueprints.add(persistent);
 
         // BRANCH C - STABILIZED_RESILIENT
@@ -363,10 +367,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         stabilized.addForbiddenOverlap("speculative abstractions");
         stabilized.addForbiddenOverlap("overengineering");
         stabilized.addForbiddenOverlap("persistence overlap");
-        stabilized.setArchitecturalDirection("Goal: Reliability. Philosophy: safety-first. Execution Model: defensive.");
+        stabilized.setArchitecturalDirection("A defensive engineering approach prioritizing input validation, robust error handling, and high test coverage to prevent runtime failures.");
         stabilized.getEngineeringDimensions().put("execution_model", "defensive");
         stabilized.getEngineeringDimensions().put("abstraction_depth", "medium");
         stabilized.getEngineeringDimensions().put("modularity_approach", "modular");
+        stabilized.getEngineeringDimensions().put("testing_strategy", "unit-tdd");
+        stabilized.getEngineeringDimensions().put("extensibility", "medium");
         blueprints.add(stabilized);
 
         // BRANCH D - REUSABLE_SERVICE
@@ -377,10 +383,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         service.addForbiddenOverlap("hardcoded output");
         service.addForbiddenOverlap("direct println coupling");
         service.addForbiddenOverlap("monolithic structure");
-        service.setArchitecturalDirection("Goal: Extensibility. Philosophy: decoupled, layered. Execution Model: service-oriented.");
+        service.setArchitecturalDirection("A decoupled, service-oriented architecture using interfaces and dependency separation to ensure long-term maintainability and reuse.");
         service.getEngineeringDimensions().put("execution_model", "service-oriented");
         service.getEngineeringDimensions().put("abstraction_depth", "high");
         service.getEngineeringDimensions().put("modularity_approach", "modular");
+        service.getEngineeringDimensions().put("testing_strategy", "contract");
+        service.getEngineeringDimensions().put("extensibility", "high");
         blueprints.add(service);
 
         return blueprints;

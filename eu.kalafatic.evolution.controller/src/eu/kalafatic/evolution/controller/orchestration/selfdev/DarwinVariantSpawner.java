@@ -40,7 +40,11 @@ public class DarwinVariantSpawner {
                 try {
                     String response = aiService.sendRequest(orchestrator, bpPrompt, context);
                     validated = validator.validate(response, DarwinStrategyType.PHILOSOPHY_MUTATION, context); // Blueprints are technical mutations
-                    if (validated != null) break;
+                    if (validated != null) {
+                        // ORCHESTRATOR SCHEMA COMPLETION: Inject metadata into semantic fragment
+                        validated = completeTrajectorySchema(validated, bp, context);
+                        break;
+                    }
 
                     context.log("[SPAWNER] Materialization failed for blueprint " + bp.getId() + ". Retry " + (retry + 1) + "/3...");
                 } catch (Exception e) {
@@ -67,66 +71,72 @@ public class DarwinVariantSpawner {
         return variants;
     }
 
+    private JSONObject completeTrajectorySchema(JSONObject fragment, TrajectoryBlueprint bp, TaskContext context) {
+        // Ensure core fields exist and are consistent with blueprint
+        fragment.put("id", bp.getId());
+        fragment.put("strategy_type", "PHILOSOPHY_MUTATION");
+        fragment.put("semantic_justification", bp.getPhilosophy());
+
+        // Inject dimensions from blueprint if missing in LLM response
+        JSONObject dimensions = fragment.optJSONObject("engineering_dimensions");
+        if (dimensions == null) {
+            dimensions = new JSONObject();
+            fragment.put("engineering_dimensions", dimensions);
+        }
+
+        for (java.util.Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
+            if (!dimensions.has(entry.getKey())) {
+                dimensions.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        if (!dimensions.has("philosophy")) {
+            dimensions.put("philosophy", bp.getPhilosophy());
+        }
+
+        return fragment;
+    }
+
     private JSONObject autoRepair(TrajectoryBlueprint bp, TaskContext context) {
         try {
             JSONObject repair = new JSONObject();
             repair.put("id", bp.getId());
             repair.put("strategy_type", "PHILOSOPHY_MUTATION");
-            repair.put("strategy", bp.getGoal());
-            repair.put("reasoning_focus", "Auto-repaired trajectory for " + bp.getId());
+
+            // Synthesize valid architectural strategy text
+            String synthesizedStrategy = "Architectural realization of " + bp.getId() + " philosophy: " + bp.getArchitecturalDirection();
+            repair.put("strategy", synthesizedStrategy);
+
+            repair.put("reasoning_focus", "Deterministic architectural recovery for " + bp.getId());
             repair.put("selected_files", new org.json.JSONArray());
-            repair.put("survival_argument", "Deterministic fallback for mandatory architectural branch.");
-            repair.put("tradeoffs", "Minimal detail, auto-generated from blueprint.");
-            repair.put("failure_risks", "Lacks implementation specificity.");
+            repair.put("survival_argument", "Mandatory architectural diversity branch ensured by orchestrator.");
+            repair.put("tradeoffs", "Deterministic fallback; lacks LLM-refined implementation nuance.");
+            repair.put("failure_risks", "Lower specificity than materialized variants.");
             repair.put("semantic_justification", bp.getPhilosophy());
 
             org.json.JSONArray steps = new org.json.JSONArray();
-            for (String s : bp.getRequiredCharacteristics()) steps.put("Address required characteristic: " + s);
+            for (String s : bp.getRequiredCharacteristics()) steps.put("Realize blueprint characteristic: " + s);
             repair.put("projected_steps", steps);
 
             repair.put("expected_outputs", new org.json.JSONArray());
-            repair.put("score", 0.4); // Auto-repaired branches start with lower fitness
+            repair.put("score", 0.45); // Auto-repaired branches start with lower fitness
 
             org.json.JSONArray actions = new org.json.JSONArray();
             JSONObject action = new JSONObject();
             action.put("domain", "kernel");
             action.put("operation", "ANALYZE");
             action.put("target", "workspace");
-            action.put("description", "Materialize " + bp.getId() + " architectural strategy from orchestrator blueprint.");
+            action.put("description", "Bootstrap " + bp.getId() + " architectural strategy.");
             actions.put(action);
             repair.put("actions", actions);
 
             JSONObject dimensions = new JSONObject();
-            dimensions.put("philosophy", bp.getPhilosophy());
-
-            // Map blueprints to deterministic dimensions for repair
-            if (bp.getId().contains("minimal")) {
-                dimensions.put("execution_model", "atomic");
-                dimensions.put("abstraction_depth", "low");
-                dimensions.put("modularity_approach", "monolithic");
-            } else if (bp.getId().contains("persistent")) {
-                dimensions.put("execution_model", "synchronous");
-                dimensions.put("abstraction_depth", "medium");
-                dimensions.put("modularity_approach", "modular");
-            } else if (bp.getId().contains("resilient")) {
-                dimensions.put("execution_model", "defensive");
-                dimensions.put("abstraction_depth", "medium");
-                dimensions.put("modularity_approach", "modular");
-            } else if (bp.getId().contains("service")) {
-                dimensions.put("execution_model", "service-oriented");
-                dimensions.put("abstraction_depth", "high");
-                dimensions.put("modularity_approach", "modular");
-            } else {
-                dimensions.put("execution_model", "deterministic");
-                dimensions.put("abstraction_depth", "medium");
-                dimensions.put("modularity_approach", "modular");
+            for (java.util.Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
+                dimensions.put(entry.getKey(), entry.getValue());
             }
-
-            dimensions.put("testing_strategy", "unit");
-            dimensions.put("extensibility", "medium");
-            dimensions.put("dependency_assumptions", "internal");
-            dimensions.put("runtime_behavior", "deterministic");
-            dimensions.put("risk_acceptance", "conservative");
+            if (!dimensions.has("philosophy")) {
+                dimensions.put("philosophy", bp.getPhilosophy());
+            }
             repair.put("engineering_dimensions", dimensions);
 
             return repair;
@@ -156,7 +166,8 @@ public class DarwinVariantSpawner {
           .append("- DO NOT propose anything mentioned in 'Forbidden Overlaps'.\n")
           .append("- If you fail to stay within the blueprint constraints, the trajectory will be REJECTED.\n")
           .append("- Provide CONCRETE technical actions and steps. Do NOT use placeholders like '<path.java>' or 'precise engineering strategy'.\n")
-          .append("- Every field MUST contain real, specific technical detail.\n\n");
+          .append("- Every field MUST contain real, specific technical detail.\n")
+          .append("- Output your response within <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n\n");
 
         if (isMediated) {
             sb.append("MEDIATED MODE COGNITION RULES (CRITICAL):\n")
@@ -308,6 +319,7 @@ public class DarwinVariantSpawner {
           .append("- The variant MUST be conceptually distinct from previous trajectories.\n")
           .append("- Mutate the PHILOSOPHY and architectural dimensions, not just the wording.\n")
           .append("- Focus on concrete technical assumptions and operational strategies.\n")
+          .append("- Output your response within <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n")
           .append("- Do NOT include conversation or markdown blocks.\n\n");
 
         if (isMediated) {
@@ -400,6 +412,7 @@ public class DarwinVariantSpawner {
 
         return sb.toString() +
                "REQUIRED SCHEMA (CRITICAL: PROVIDE SPECIFIC TECHNICAL VALUES):\n" +
+               "<BEGIN_DARWIN_JSON>\n" +
                "{\n" +
                "  \"id\": \"v-" + seed.getType().name().toLowerCase() + "\",\n" +
                "  \"strategy_type\": \"" + seed.getType() + "\",\n" +
@@ -444,6 +457,7 @@ public class DarwinVariantSpawner {
                "    \"risk\": 0.5,\n" +
                "    \"reversibility\": 1.0\n" +
                "  }\n" +
-               "}";
+               "}\n" +
+               "<END_DARWIN_JSON>";
     }
 }
