@@ -39,7 +39,7 @@ public class DarwinVariantSpawner {
             for (int retry = 0; retry < 3; retry++) {
                 try {
                     String response = aiService.sendRequest(orchestrator, bpPrompt, context);
-                    validated = validator.validate(response, DarwinStrategyType.PHILOSOPHY_MUTATION, context); // Blueprints are technical mutations
+                    validated = validator.validate(response, bp.getStrategyType(), context); // Blueprints are technical mutations
                     if (validated != null) {
                         // ORCHESTRATOR SCHEMA COMPLETION: Inject metadata into semantic fragment
                         validated = completeTrajectorySchema(validated, bp, context);
@@ -74,7 +74,7 @@ public class DarwinVariantSpawner {
     private JSONObject completeTrajectorySchema(JSONObject fragment, TrajectoryBlueprint bp, TaskContext context) {
         // Ensure core fields exist and are consistent with blueprint
         fragment.put("id", bp.getId());
-        fragment.put("strategy_type", "PHILOSOPHY_MUTATION");
+        fragment.put("strategy_type", bp.getStrategyType().name());
         fragment.put("semantic_justification", bp.getPhilosophy());
 
         // Inject dimensions from blueprint if missing in LLM response
@@ -85,8 +85,9 @@ public class DarwinVariantSpawner {
         }
 
         for (java.util.Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
-            if (!dimensions.has(entry.getKey())) {
-                dimensions.put(entry.getKey(), entry.getValue());
+            String dimKey = entry.getKey();
+            if (!dimensions.has(dimKey)) {
+                dimensions.put(dimKey, entry.getValue());
             }
         }
 
@@ -101,7 +102,7 @@ public class DarwinVariantSpawner {
         try {
             JSONObject repair = new JSONObject();
             repair.put("id", bp.getId());
-            repair.put("strategy_type", "PHILOSOPHY_MUTATION");
+            repair.put("strategy_type", bp.getStrategyType().name());
 
             // Synthesize valid architectural strategy text
             String synthesizedStrategy = "Architectural realization of " + bp.getId() + " philosophy: " + bp.getArchitecturalDirection();
@@ -220,7 +221,7 @@ public class DarwinVariantSpawner {
           .append("REQUIRED SCHEMA (CRITICAL: PROVIDE SPECIFIC TECHNICAL VALUES, NO PLACEHOLDERS):\n")
           .append("{\n")
           .append("  \"id\": \"").append(bp.getId()).append("\",\n")
-          .append("  \"strategy_type\": \"PHILOSOPHY_MUTATION\",\n")
+          .append("  \"strategy_type\": \"").append(bp.getStrategyType().name()).append("\",\n")
           .append("  \"strategy\": \"(Concrete description of implementation)\",\n")
           .append("  \"reasoning_focus\": \"(Specific architectural focus)\",\n")
           .append("  \"engineering_dimensions\": {\n")

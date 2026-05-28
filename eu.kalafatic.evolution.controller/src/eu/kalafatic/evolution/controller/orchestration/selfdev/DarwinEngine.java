@@ -252,6 +252,15 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
         }
 
+        // Model Capability Coefficient
+        String modelName = (context.getOrchestrator().getOllama() != null) ? context.getOrchestrator().getOllama().getModel() : "unknown";
+        double modelCapability = 0.5; // Default
+        if (modelName.contains("gemma3:1b")) modelCapability = 0.35;
+        else if (modelName.contains("qwen")) modelCapability = 0.45;
+        else if (modelName.contains("mistral")) modelCapability = 0.65;
+        else if (modelName.contains("llama3")) modelCapability = 0.75;
+        else if (modelName.contains("claude") || modelName.contains("gpt-4") || modelName.contains("o1")) modelCapability = 0.95;
+
         // 1. Lineage Retrieval: Find the winner of the previous iteration
         IterationRecord lastWinner = records.stream()
                 .filter(r -> "ACTIVE".equals(r.getActivationState()))
@@ -285,7 +294,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         // LOG ALL RAW VARIANTS BEFORE DIVERSITY FILTERING
         context.log("[DARWIN_RAW_VARIANTS] " + mutationVariants.size() + " trajectories spawned.");
 
-        List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, currentBlueprints.isEmpty() ? null : currentBlueprints, context);
+        List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, currentBlueprints.isEmpty() ? null : currentBlueprints, policy.getEvolutionaryStrictness(), modelCapability, context);
 
         if (uniqueVariants.isEmpty()) {
             context.log("[DARWIN] CRITICAL: All LLM variants failed diversity analysis. Evolution stalled.");
@@ -293,8 +302,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // Fitness Ranking
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
-        Object isAtomicRound = context.getOrchestrationState().getMetadata().get("is_atomic_round");
-        ranker.rank(uniqueVariants, isAtomicRound instanceof Boolean && (Boolean)isAtomicRound, currentIteration);
+        boolean isAtomicRound = false;
+        if (atomicAnalysis != null) {
+            isAtomicRound = atomicAnalysis.isAtomic() && !atomicAnalysis.isRequiresPlanning();
+        }
+        ranker.rank(uniqueVariants, isAtomicRound, currentIteration);
 
         // Manual override for test stability (only active in testMode)
         if (context.getMetadata().containsKey("testMode")) {
@@ -328,6 +340,10 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // BRANCH A - DIRECT_MINIMAL
         TrajectoryBlueprint direct = new TrajectoryBlueprint("direct_minimal", goal, "Minimal executable implementation");
+        direct.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
+        direct.getTargetVector().setAbstraction(0.1);
+        direct.getTargetVector().setDeterminism(0.9);
+        direct.getTargetVector().setModularity(0.1);
         direct.addRequiredCharacteristic("Direct output/execution");
         direct.addRequiredCharacteristic("Primary entry point");
         direct.addRequiredCharacteristic("Atomic structure");
@@ -345,6 +361,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // BRANCH B - PERSISTENT_STORAGE
         TrajectoryBlueprint persistent = new TrajectoryBlueprint("persistent_storage", goal, "Persistent data management");
+        persistent.getTargetVector().setPersistence(0.9);
+        persistent.getTargetVector().setAbstraction(0.5);
         persistent.addRequiredCharacteristic("Persistence support (FileWriter/Database)");
         persistent.addRequiredCharacteristic("External state management");
         persistent.addRequiredCharacteristic("Configurable storage paths");
@@ -361,6 +379,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // BRANCH C - STABILIZED_RESILIENT
         TrajectoryBlueprint stabilized = new TrajectoryBlueprint("stabilized_resilient", goal, "Resilient and validated implementation");
+        stabilized.setStrategyType(DarwinStrategyType.STABILIZATION_RECOVERY);
+        stabilized.getTargetVector().setResilience(0.9);
+        stabilized.getTargetVector().setRiskAcceptance(0.1);
         stabilized.addRequiredCharacteristic("Input validation");
         stabilized.addRequiredCharacteristic("Exception handling and recovery");
         stabilized.addRequiredCharacteristic("Unit tests for edge cases");
@@ -377,6 +398,10 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // BRANCH D - REUSABLE_SERVICE
         TrajectoryBlueprint service = new TrajectoryBlueprint("reusable_service", goal, "Extensible and modular service architecture");
+        service.getTargetVector().setServiceOrientation(0.9);
+        service.getTargetVector().setModularity(0.8);
+        service.getTargetVector().setAbstraction(0.8);
+        service.getTargetVector().setExtensibility(0.9);
         service.addRequiredCharacteristic("Interface-based design");
         service.addRequiredCharacteristic("Implementation separation (Service/Impl)");
         service.addRequiredCharacteristic("Dependency injection or factory patterns");

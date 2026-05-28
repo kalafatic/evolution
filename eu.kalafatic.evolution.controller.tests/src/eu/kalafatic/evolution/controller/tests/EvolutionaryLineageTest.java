@@ -77,7 +77,7 @@ public class EvolutionaryLineageTest {
 
         String v0 = "{" +
             "\"id\": \"direct_minimal\", " +
-            "\"strategy_type\": \"PHILOSOPHY_MUTATION\", " +
+            "\"strategy_type\": \"PROBABLE_SURVIVOR\", " +
             "\"strategy\": \"Initial Evolutionary Strategy\", " +
             "\"score\": 0.99, " +
             "\"actions\": [{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"t_initial.txt\", \"description\":\"initial\"}], " +
