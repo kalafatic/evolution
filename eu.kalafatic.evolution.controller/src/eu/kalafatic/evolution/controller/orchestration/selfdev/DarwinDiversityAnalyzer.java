@@ -33,9 +33,8 @@ public class DarwinDiversityAnalyzer {
             if (blueprints != null) {
                 bp = blueprints.stream().filter(b -> b.getId().equals(v.optString("id"))).findFirst().orElse(null);
                 if (bp != null && !adheresToBlueprint(v, bp, context)) {
-                    context.log("[DIVERSITY] Blueprint Violation detected for: " + v.optString("id"));
-                    // In a mandatory branch environment, we DON'T drop the variant here if it's from a blueprint.
-                    // We let it through but it might be flagged or repaired later if it's a complete duplicate.
+                    context.log("[DIVERSITY] Blueprint Violation detected for: " + v.optString("id") + ". Rejecting variant.");
+                    continue; // REJECT variants that violate blueprint constraints
                 }
             }
 
@@ -60,6 +59,17 @@ public class DarwinDiversityAnalyzer {
         // 1. Philosophy/Goal Alignment Check (Dimension-based)
         JSONObject dimensions = variant.optJSONObject("engineering_dimensions");
         if (dimensions != null) {
+            // Check all dimensions defined in the blueprint
+            for (java.util.Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
+                String dimKey = entry.getKey();
+                String bpValue = entry.getValue().toLowerCase();
+                String vValue = dimensions.optString(dimKey, "").toLowerCase();
+                if (!vValue.isEmpty() && !bpValue.isEmpty() && computeSimilarity(vValue, bpValue) < 0.4) {
+                     context.log("[DIVERSITY] Blueprint Violation: Dimension mismatch for " + dimKey + " in " + bp.getId());
+                     return false;
+                }
+            }
+
             String vPhilosophy = dimensions.optString("philosophy", "").toLowerCase();
             String bpPhilosophy = bp.getPhilosophy().toLowerCase();
             if (computeSimilarity(vPhilosophy, bpPhilosophy) < 0.2) {

@@ -15,6 +15,7 @@ public class TrajectoryBlueprint {
     private List<String> forbiddenOverlaps = new ArrayList<>();
     private String mutationPressure;
     private String architecturalDirection;
+    private java.util.Map<String, String> engineeringDimensions = new java.util.HashMap<>();
 
     public TrajectoryBlueprint(String id, String goal, String philosophy) {
         this.id = id;
@@ -76,5 +77,13 @@ public class TrajectoryBlueprint {
 
     public void setArchitecturalDirection(String architecturalDirection) {
         this.architecturalDirection = architecturalDirection;
+    }
+
+    public java.util.Map<String, String> getEngineeringDimensions() {
+        return engineeringDimensions;
+    }
+
+    public void setEngineeringDimensions(java.util.Map<String, String> engineeringDimensions) {
+        this.engineeringDimensions = engineeringDimensions;
     }
 }

@@ -393,25 +393,25 @@ public class IterationManager {
                         context.getSessionId(), "Kernel", mode.getType().toString()));
             }
 
-            // --- Priority 1 Routing (Simple Chat & fast-track) ---
-            // EXCLUDE MEDIATED MODE from Priority 1 routing to ensure it uses the Darwin kernel
-            if (context.getPlatformMode() != null &&
-               (context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT ||
-                "SIMPLE_CHAT".equals(context.getPlatformMode().getType().name())) &&
-                !profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
-                 IOrchestrationFlow flow = (IOrchestrationFlow) getInternalAgent(EvolutionConstants.AGENT_GENERAL);
-                 String resultStr = ((eu.kalafatic.evolution.controller.agents.GeneralAgent)flow).process(request, context, null);
-                 response.setResultType(ResultType.CHAT);
-                 response.setSummary(resultStr);
-                 response.setContent(resultStr);
-
-                 transition(SystemState.DONE, context);
-
-                 FinalResponseAssembler assembler = new FinalResponseAssembler();
-                 response.setFinalResponse(assembler.assemble(context, resultStr, true, context.getStartTime()));
-                 return response;
+            // --- Unified Evolutionary Mandate ---
+            // ALL requests must now flow through the iterative evolutionary kernel
+            // to ensure repository-grounded cognition and architectural divergence.
+            // Fast-track routing is strictly limited to greetings via ModeRouter.
+            if (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
+                PlatformMode fastMode = router.routeFast(request, context.getOrchestrator());
+                if (fastMode != null && fastMode.getType() == PlatformType.SIMPLE_CHAT) {
+                    context.log("[KERNEL] Fast-track greeting detected. Bypassing evolutionary kernel.");
+                    IOrchestrationFlow flow = (IOrchestrationFlow) getInternalAgent(EvolutionConstants.AGENT_GENERAL);
+                    String resultStr = ((eu.kalafatic.evolution.controller.agents.GeneralAgent)flow).process(request, context, null);
+                    response.setResultType(ResultType.CHAT);
+                    response.setSummary(resultStr);
+                    response.setContent(resultStr);
+                    transition(SystemState.DONE, context);
+                    FinalResponseAssembler assembler = new FinalResponseAssembler();
+                    response.setFinalResponse(assembler.assemble(context, resultStr, true, context.getStartTime()));
+                    return response;
+                }
             }
-
 
             // Unified Intent Analysis
             transition(SystemState.ANALYZING, context);
@@ -1133,13 +1133,8 @@ public class IterationManager {
             return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
         }
 
-        // Simple chat path ONLY if no advanced traits are active
-        if (profile.hasTrait(BehaviorTrait.REASONING_ATOMIC)) {
-            context.log("[KERNEL] Simple chat path detected.");
-            return (IOrchestrationFlow) AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
-        }
-
-        context.log("[KERNEL] Defaulting to DarwinFlow for evolutionary branching.");
+        // Unified Evolutionary Kernel: Default all other flows to DarwinFlow.
+        // Direct Agent routing is now only allowed for explicit fast-track greetings in handle().
         return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
     }
 
@@ -1255,34 +1250,6 @@ public class IterationManager {
         state.setConfirmedRequirements(frozen);
     }
 
-
-    /**
-     * Generates a single-step atomic plan for simple file creation tasks.
-     */
-    public List<Task> createAtomicFilePlan(String request, AtomicIntentAnalysis analysis, TaskContext context) {
-        List<Task> tasks = new ArrayList<>();
-        String path = (analysis != null && analysis.getTargetArtifact() != null && !analysis.getTargetArtifact().isEmpty()) ?
-                      analysis.getTargetArtifact() : "generated_file";
-
-        // Smart extension appending for known artifact types
-        if (analysis != null && analysis.getArtifactType() != null && !path.equals("generated_file") && !path.contains(".")) {
-            String type = analysis.getArtifactType().toLowerCase();
-            if ("java".equals(type) || "class".equals(type) || "interface".equals(type) || "enum".equals(type) || "record".equals(type)) {
-                path = path.substring(0, 1).toUpperCase() + path.substring(1) + ".java";
-            } else if ("script".equals(type)) {
-                path = path + ".sh";
-            }
-        }
-
-        Task t = OrchestrationFactory.eINSTANCE.createTask();
-        t.setId("atomic-task-1");
-        t.setName("Write " + path);
-        t.setDescription("Generate the full source code for " + request + " and return it in a single markdown block.");
-        t.setType("file");
-        t.setApprovalRequired(false);
-        tasks.add(t);
-        return tasks;
-    }
 
     public List<Task> iterativePlan(String request, TaskContext context) throws Exception {
         context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Starting iterative planning.");
