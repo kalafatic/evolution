@@ -778,10 +778,11 @@ public class IterationManager {
 
             if (strategy == ClarificationPlanner.Strategy.BRANCH_PARALLEL) {
                 context.log("[KERNEL] Ambiguity detected but evolvable. Spawning parallel implementation branches.");
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase, false, context.getOrchestrationState().getIterationCount())));
+                EvolutionPhase nextPhase = phaseMachine.next(phase, false, context.getOrchestrationState().getIterationCount());
+                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
-                res.setDecision(SelfDevDecision.CONTINUE);
+                res.setDecision(phaseMachine.determineDecision(nextPhase));
                 return res;
             }
 
@@ -795,7 +796,8 @@ public class IterationManager {
                 return res;
             }
 
-            state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phaseMachine.next(phase, false, context.getOrchestrationState().getIterationCount())));
+            EvolutionPhase nextPhase = phaseMachine.next(phase, false, context.getOrchestrationState().getIterationCount());
+            state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
 
             if (strategy != ClarificationPlanner.Strategy.AUTO_INFER || !context.isAutoApprove()) {
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -858,26 +860,19 @@ public class IterationManager {
 
         if (result.isSuccess()) {
             EvolutionPhase currentPhaseEnum = EvolutionPhase.fromString(state.getCurrentPhase());
-
             boolean converged = darwinFlow.checkConvergence(variants, context);
-            if (converged && currentPhaseEnum != EvolutionPhase.FINAL_SYNTHESIS && !phaseMachine.isTerminal(currentPhaseEnum)) {
-                context.log("[KERNEL] Convergence detected. Transitioning to final synthesis.");
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
-                currentPhaseEnum = EvolutionPhase.FINAL_SYNTHESIS;
+
+            EvolutionPhase nextPhase = phaseMachine.next(currentPhaseEnum, converged, state.getIterationCount());
+            state.setIterationCount(state.getIterationCount() + 1);
+
+            if (nextPhase == currentPhaseEnum) {
+                context.log("[KERNEL] Evolution continuing in current phase: " + nextPhase + " (Generation: " + state.getIterationCount() + ")");
+            } else {
+                context.log("[KERNEL] Evolution transitioning to phase: " + nextPhase + " (Generation: " + state.getIterationCount() + ")");
             }
 
-            if (!phaseMachine.isTerminal(currentPhaseEnum)) {
-                EvolutionPhase nextPhase = phaseMachine.next(currentPhaseEnum, converged, state.getIterationCount());
-
-                state.setIterationCount(state.getIterationCount() + 1);
-
-                if (nextPhase == currentPhaseEnum) {
-                    context.log("[KERNEL] Evolution continuing in current phase: " + nextPhase + " (Generation: " + state.getIterationCount() + ")");
-                }
-
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
-                result.setDecision(phaseMachine.isTerminal(nextPhase) ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
-            }
+            state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
+            result.setDecision(phaseMachine.determineDecision(nextPhase));
 
             if (!handlePhaseConfirmation(context, state)) {
                 result.setDecision(SelfDevDecision.STOP);
@@ -1145,22 +1140,17 @@ public class IterationManager {
     }
 
     public void advanceEvolutionPhase(OrchestrationState state) {
-        String current = state.getCurrentPhase();
-        if (EvolutionConstants.PHASE_INTENT_EXPANSION.equals(current)) {
-            state.setCurrentPhase(EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS);
-        } else if (EvolutionConstants.PHASE_ARCHITECTURE_VARIANTS.equals(current)) {
-            state.setCurrentPhase(EvolutionConstants.PHASE_SELECTION_REFINEMENT);
-        } else if (EvolutionConstants.PHASE_SELECTION_REFINEMENT.equals(current)) {
-            state.setCurrentPhase(EvolutionConstants.PHASE_IMPLEMENTATION_PLAN);
-        } else if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(current)) {
-            state.setCurrentPhase(EvolutionConstants.PHASE_FINAL_SYNTHESIS);
-        }
+        EvolutionPhaseMachine phaseMachine = new EvolutionPhaseMachine();
+        EvolutionPhase current = EvolutionPhase.fromString(state.getCurrentPhase());
+        EvolutionPhase next = phaseMachine.next(current, false, state.getIterationCount());
+        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(next));
     }
 
     private OrchestratorResponse deterministicExecution(String request, TaskContext context) throws Exception {
         context.log("[KERNEL] Starting Deterministic Execution (No unresolved semantic dimensions).");
         OrchestrationState state = context.getOrchestrationState();
 
+        EvolutionPhaseMachine phaseMachine = new EvolutionPhaseMachine();
         state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
 
         if (!hasStateChangeIntent(context)) {

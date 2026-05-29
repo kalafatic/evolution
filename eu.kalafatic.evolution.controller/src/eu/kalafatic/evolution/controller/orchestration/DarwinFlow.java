@@ -247,7 +247,6 @@ public class DarwinFlow implements IOrchestrationFlow {
             if (isMediated) {
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
-                res.setDecision(SelfDevDecision.CONTINUE);
                 return res;
             }
 
@@ -259,19 +258,16 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.getFileChangeTracker().recordChange(path, type);
             });
 
-            boolean isSynthesis = context.getOrchestrationState().getCurrentPhase() != null && context.getOrchestrationState().getCurrentPhase().contains("SYNTHESIS");
-            if (!reality.isSignificant() && !isSynthesis) {
-                context.log("[KERNEL] Reality Check WARNING: Winner variant resulted in NO physical changes in phase " + context.getOrchestrationState().getCurrentPhase());
-                context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", false);
-            } else {
-                context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", true);
+            boolean isSignificant = reality.isSignificant();
+            if (!isSignificant) {
+                context.log("[KERNEL] Reality Check WARNING: Winner variant resulted in NO physical changes.");
             }
+            context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", isSignificant);
 
             IEvaluationContract evaluator = sessionContainer.getCapabilityRegistry().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
             EvaluationResult result = evaluator.evaluate(context.getProjectRoot(), context, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
 
-            boolean isFinalPhase = EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(context.getOrchestrationState().getCurrentPhase());
-            if (result.isSuccess() || (!isFinalPhase && selectedVariant != null)) {
+            if (result.isSuccess() || selectedVariant != null) {
                 String completedPhase = context.getOrchestrationState().getCurrentPhase();
                 IterationRecord record = new IterationRecord();
                 record.setIteration(context.getOrchestrationState().getIterationCount());
@@ -291,7 +287,6 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
                 manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
 
-                result.setDecision(isFinalPhase ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
                 result.setSuccess(true);
                 return result;
             } else {
