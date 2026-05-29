@@ -20,6 +20,12 @@ public class QualityAgent extends BaseAiAgent {
         addTool(new ShellTool());
     }
 
+    public QualityAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Quality", "Quality", container);
+        addTool(new MavenTool());
+        addTool(new ShellTool());
+    }
+
     @Override
     protected String getAgentInstructions() {
         return "You are an AI Quality Agent. You focus on code quality, compliance, and linting.\n" +
@@ -29,7 +35,7 @@ public class QualityAgent extends BaseAiAgent {
     public void emitQualitySignal(JSONObject evaluation, String taskDescription, TaskContext context) {
         String variantId = context.getMetadata().getOrDefault("variantId", "unknown").toString();
         boolean success = evaluation.optBoolean("success", false);
-        double score = success ? 1.0 : 0.5; // Quality failures are often not binary
+        double score = success ? 1.0 : 0.5;
         SignalSeverity severity = success ? SignalSeverity.INFO : SignalSeverity.WARNING;
         String explanation = evaluation.optString("feedback", "Quality check finished.");
 
@@ -37,14 +43,13 @@ public class QualityAgent extends BaseAiAgent {
             variantId,
             "QualityAgent",
             score,
-            0.7, // confidence
+            0.7,
             severity,
             explanation
         );
 
-        eu.kalafatic.evolution.controller.trajectory.SignalBus.getInstance().publish(signal);
-
-        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+        RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
+        bus.publish(new RuntimeEvent(
             RuntimeEventType.EVALUATION_SIGNAL_CREATED,
             context.getSessionId(),
             "QualityAgent",

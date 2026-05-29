@@ -22,6 +22,10 @@ public class AnalyticAgent extends BaseAiAgent {
         super("Analytic", "Analytic");
     }
 
+    public AnalyticAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Analytic", "Analytic", container);
+    }
+
     @Override
     // @evo:14:B reason=flexible-analysis
     protected String getAgentInstructions() {

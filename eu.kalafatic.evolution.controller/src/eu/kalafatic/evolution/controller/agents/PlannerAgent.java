@@ -23,6 +23,10 @@ public class PlannerAgent extends BaseAiAgent implements IPlanner {
         super("Planner", "Planner");
     }
 
+    public PlannerAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Planner", "Planner", container);
+    }
+
     @Override
     protected String getFooterInstructions() {
         return "You MUST output a valid JSON array of objects. Do not include any conversational preamble or follow-up text outside the JSON structure.";

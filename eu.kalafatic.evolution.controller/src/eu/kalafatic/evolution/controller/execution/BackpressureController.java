@@ -15,8 +15,11 @@ public class BackpressureController {
     private final AtomicLong signalCount = new AtomicLong(0);
     private long lastSignalCheck = System.currentTimeMillis();
 
-    private BackpressureController() {}
+    public BackpressureController() {}
 
+    /**
+     * @deprecated Consider using session-scoped monitoring if system-wide metrics aren't needed.
+     */
     public static BackpressureController getInstance() { return INSTANCE; }
 
     public void incrementEvaluations() { activeEvaluations.incrementAndGet(); }
@@ -36,8 +39,6 @@ public class BackpressureController {
         if (duration > 0) {
             status.setSignalEventRate((double) signalCount.get() / (duration / 1000.0));
         }
-        // Reset counters for rate calculation if needed or keep rolling
-        // For simplicity, we just provide current snapshot
 
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
         double used = (double) memoryBean.getHeapMemoryUsage().getUsed();
@@ -45,7 +46,7 @@ public class BackpressureController {
         status.setMemoryPressure(used / max);
 
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-        status.setCpuPressure(osBean.getSystemLoadAverage()); // Note: may be negative on some OS
+        status.setCpuPressure(osBean.getSystemLoadAverage());
 
         return status;
     }

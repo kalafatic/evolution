@@ -10,6 +10,10 @@ public class WebSearchAgent extends BaseAiAgent {
         super("Web-Search", "Web-Search");
     }
 
+    public WebSearchAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Web-Search", "Web-Search", container);
+    }
+
     @Override
     protected String getAgentInstructions() {
         return "You are an AI Web-Search Agent. Your role is to find information on the web and analyze documentation.\n" +

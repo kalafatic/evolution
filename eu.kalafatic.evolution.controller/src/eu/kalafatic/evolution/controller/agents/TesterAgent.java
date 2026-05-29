@@ -20,6 +20,12 @@ public class TesterAgent extends BaseAiAgent {
         addTool(new ShellTool());
     }
 
+    public TesterAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Tester", "Tester", container);
+        addTool(new MavenTool());
+        addTool(new ShellTool());
+    }
+
     @Override
     protected String getAgentInstructions() {
         return "You are acting as a Quality Assurance and Test Engineer Agent.\n" +
@@ -37,14 +43,13 @@ public class TesterAgent extends BaseAiAgent {
             variantId,
             "TesterAgent",
             score,
-            0.9, // high confidence for tests
+            0.9,
             severity,
             explanation
         );
 
-        eu.kalafatic.evolution.controller.trajectory.SignalBus.getInstance().publish(signal);
-
-        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+        RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
+        bus.publish(new RuntimeEvent(
             RuntimeEventType.EVALUATION_SIGNAL_CREATED,
             context.getSessionId(),
             "TesterAgent",

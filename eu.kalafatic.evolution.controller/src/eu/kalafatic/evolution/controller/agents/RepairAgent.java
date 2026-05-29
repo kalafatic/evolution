@@ -14,6 +14,10 @@ public class RepairAgent extends BaseAiAgent {
 
     public RepairAgent() {
         super("Repair", "Repair");
+    }
+
+    public RepairAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Repair", "Repair", container);
         addTool(new FileTool());
         addTool(new MavenTool());
         addTool(new ShellTool());

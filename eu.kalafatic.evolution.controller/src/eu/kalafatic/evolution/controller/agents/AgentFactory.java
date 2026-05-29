@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import eu.kalafatic.evolution.controller.orchestration.WebSearchAgent;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 
 /**
@@ -48,6 +49,10 @@ public class AgentFactory {
         agents.put(type, agent);
     }
 
+    /**
+     * @deprecated Use session-scoped agent registry.
+     */
+    @Deprecated
     public static IAgent getAgent(String type) {
         return agents.get(type);
     }
@@ -55,27 +60,27 @@ public class AgentFactory {
     /**
      * Creates new instances of all default agents for session-specific isolation.
      */
-    public static List<IAgent> createIsolatedAgents() {
+    public static List<IAgent> createIsolatedAgents(SessionContainer container) {
         List<IAgent> isolated = new ArrayList<>();
-        isolated.add(new AnalyticAgent());
-        isolated.add(new ArchitectAgent());
-        isolated.add(new JavaDevAgent());
-        isolated.add(new TesterAgent());
-        isolated.add(new ValidatorAgent());
-        isolated.add(new GeneralAgent());
-        isolated.add(new TerminalAgent());
-        isolated.add(new FileAgent());
-        isolated.add(new MavenAgent());
-        isolated.add(new GitAgent());
-        isolated.add(new StructureAgent());
-        isolated.add(new WebSearchAgent());
-        isolated.add(new QualityAgent());
-        isolated.add(new ObservabilityAgent());
-        isolated.add(new RepairAgent());
-        isolated.add(new PlannerAgent());
-        isolated.add(new ProposalConsolidatorAgent());
-        isolated.add(new CriticAgent());
-        isolated.add(new FinalResponseAgent());
+        isolated.add(new AnalyticAgent(container));
+        isolated.add(new ArchitectAgent(container));
+        isolated.add(new JavaDevAgent(container));
+        isolated.add(new TesterAgent(container));
+        isolated.add(new ValidatorAgent(container));
+        isolated.add(new GeneralAgent(container));
+        isolated.add(new TerminalAgent(container));
+        isolated.add(new FileAgent(container));
+        isolated.add(new MavenAgent(container));
+        isolated.add(new GitAgent(container));
+        isolated.add(new StructureAgent(container));
+        isolated.add(new WebSearchAgent(container));
+        isolated.add(new QualityAgent(container));
+        isolated.add(new ObservabilityAgent(container));
+        isolated.add(new RepairAgent(container));
+        isolated.add(new PlannerAgent(container));
+        isolated.add(new ProposalConsolidatorAgent(container));
+        isolated.add(new CriticAgent(container));
+        isolated.add(new FinalResponseAgent(container));
         return isolated;
     }
 

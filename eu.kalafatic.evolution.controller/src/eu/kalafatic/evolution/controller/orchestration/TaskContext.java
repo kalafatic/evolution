@@ -49,7 +49,7 @@ public class TaskContext {
     private PlatformMode platformMode = null;
     private eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile behaviorProfile = null;
     private final SystemStateHolder stateHolder = new SystemStateHolder();
-    private final OrchestrationState orchestrationState = new OrchestrationState();
+    private OrchestrationState orchestrationState;
     private EvolutionKernelContext kernelContext;
     private final Map<String, Object> metadata = new ConcurrentHashMap<>();
     private final Object pauseLock = new Object();
@@ -140,6 +140,7 @@ public class TaskContext {
 
     public void setSessionId(String sessionId) {
         this.sessionId = sessionId;
+        this.orchestrationState = new OrchestrationState(sessionId);
     }
 
     public void log(String message) {
@@ -149,9 +150,6 @@ public class TaskContext {
         notifyListeners(formatted);
     }
 
-    /**
-     * Logs only to the console and file, without notifying UI listeners (chat history).
-     */
     public void consoleLog(String message) {
         Log.log("[" + sessionId + "] " + message);
     }
@@ -256,7 +254,7 @@ public class TaskContext {
             synchronized (pauseLock) {
                 while (paused || externalPause) {
                     try {
-                        pauseLock.wait(2000); // Poll external pause every 2s
+                        pauseLock.wait(2000);
                         control = protocol.readControl();
                         if (control != null) {
                             externalPause = control.optBoolean("pause", false);
@@ -324,7 +322,6 @@ public class TaskContext {
 
     public void setPlatformMode(PlatformMode platformMode) {
         this.platformMode = platformMode;
-        // Invalidate profile when mode changes
         this.behaviorProfile = null;
     }
 
@@ -332,11 +329,10 @@ public class TaskContext {
         if (behaviorProfile == null) {
             eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver resolver = new eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver();
             behaviorProfile = resolver.resolve(this);
-            // Single Authoritative Mutation Path: Synchronize bitState from current context/model
             long resolvedBitState = resolver.resolveBitState(this);
-            if (orchestrationState.getBitState() != resolvedBitState) {
+            if (getOrchestrationState().getBitState() != resolvedBitState) {
                 log("[KERNEL] Synchronizing Policy State: " + resolvedBitState);
-                orchestrationState.setBitState(resolvedBitState);
+                getOrchestrationState().setBitState(resolvedBitState);
             }
         }
         return behaviorProfile;
@@ -347,7 +343,9 @@ public class TaskContext {
     }
 
     public OrchestrationState getOrchestrationState() {
-        // Ensure bitState is initialized before returning
+        if (orchestrationState == null) {
+            orchestrationState = new OrchestrationState(sessionId);
+        }
         if (orchestrationState.getBitState() == 0) {
             getBehaviorProfile();
         }

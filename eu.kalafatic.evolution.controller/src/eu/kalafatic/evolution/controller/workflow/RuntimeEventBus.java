@@ -6,18 +6,31 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import eu.kalafatic.evolution.controller.execution.BackpressureController;
 import eu.kalafatic.evolution.controller.execution.ExecutionBudget;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
 public class RuntimeEventBus {
-    private static final RuntimeEventBus INSTANCE = new RuntimeEventBus();
+    private static final RuntimeEventBus INSTANCE = new RuntimeEventBus("global");
     private final List<RuntimeEventListener> listeners = new CopyOnWriteArrayList<>();
     private ExecutionBudget budget = ExecutionBudget.defaultProfile();
+    private final String sessionId;
 
-    public RuntimeEventBus() {}
+    public RuntimeEventBus(String sessionId) {
+        this.sessionId = sessionId;
+    }
 
+    /**
+     * @deprecated Use session-scoped bus instead.
+     */
+    @Deprecated
     public static RuntimeEventBus getInstance() { return INSTANCE; }
 
     public void setBudget(ExecutionBudget budget) {
         this.budget = budget;
+    }
+
+    public String getSessionId() {
+        return sessionId;
     }
 
     public void subscribe(RuntimeEventListener listener) {
@@ -29,17 +42,10 @@ public class RuntimeEventBus {
     }
 
     public void publish(RuntimeEvent event) {
-        // Forward to global bus if this is a session-specific instance
-        if (this != INSTANCE) {
-            INSTANCE.publish(event);
-        }
-
-        // Backpressure check for evaluation signals
         if (event.getType() == RuntimeEventType.EVALUATION_SIGNAL_CREATED) {
             BackpressureController.getInstance().recordSignal();
             if (BackpressureController.getInstance().shouldThrottleSignals(budget)) {
-                // Drop low-value signals or log throttling
-                System.err.println("[BUS] Throttling evaluation signal: " + event.getSource());
+                System.err.println("[BUS] [" + sessionId + "] Throttling evaluation signal: " + event.getSource());
                 return;
             }
         }
@@ -51,23 +57,24 @@ public class RuntimeEventBus {
                 e.printStackTrace();
             }
         }
-        // Evolutionary Signal Propagation: Automatically update continuous system signals
-        // We use a separate thread or lazy approach to avoid deadlocks during singleton initialization
         propagateToRegistry(event);
     }
 
     private void propagateToRegistry(RuntimeEvent event) {
         try {
-            // Lazy access to ProjectModelManager to avoid circular init issues
-            eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry registry =
-                eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getEvolutionRegistry();
+            eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry registry = null;
+            SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+            if (session != null) {
+                registry = session.getEvolutionRegistry();
+            } else {
+                registry = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getEvolutionRegistry();
+            }
+
             if (registry != null) {
                 registry.processEvent(event, "default-trajectory");
             }
         } catch (NoClassDefFoundError | ExceptionInInitializerError e) {
-            // If the manager is still initializing, we skip signal propagation for this specific event
-            // to allow the system to boot. Continuous signals will resume once initialized.
-            System.err.println("[BUS] Skipping signal propagation - Registry not yet available: " + e.getMessage());
+            System.err.println("[BUS] [" + sessionId + "] Skipping signal propagation - Registry not yet available: " + e.getMessage());
         }
     }
 }

@@ -4,6 +4,9 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 /**
  * Reconciles physical Git changes with semantic EMF memory using event sourcing.
@@ -72,7 +75,7 @@ public class GitEmfReconciler {
             type,
             "Physical divergence [" + type + "] detected: " + message
         );
-        SignalBus.getInstance().publish(signal);
+        RuntimeEventBus.getInstance().publish(new RuntimeEvent(RuntimeEventType.EVALUATION_SIGNAL_CREATED, "GLOBAL", "GitEmfReconciler", signal));
     }
 
     /**

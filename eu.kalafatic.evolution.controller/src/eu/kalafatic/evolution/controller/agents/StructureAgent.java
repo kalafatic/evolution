@@ -9,6 +9,10 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
 public class StructureAgent extends BaseAiAgent {
     public StructureAgent() {
         super("Structure", "Structure");
+    }
+
+    public StructureAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Structure", "Structure", container);
         addTool(new ShellTool());
         addTool(new FileTool());
     }
