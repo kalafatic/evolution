@@ -30,4 +30,18 @@ public interface OrchestratorService {
      * @param sessionId The session ID.
      */
     void shutdownSession(String sessionId);
+
+    /**
+     * Pauses or resumes a session.
+     * @param sessionId The session ID.
+     * @param paused True to pause, false to resume.
+     */
+    void setPaused(String sessionId, boolean paused);
+
+    /**
+     * Submits a request to a session.
+     * @param sessionId The session ID.
+     * @param request The task request.
+     */
+    void submit(String sessionId, TaskRequest request);
 }

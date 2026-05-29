@@ -38,16 +38,23 @@ public abstract class AEvoPage extends SharedScrolledComposite {
         setExpandVertical(true);
     }
 
+    private long lastRefreshTime = 0;
+    private static final long REFRESH_THROTTLE_MS = 100;
+
     /**
      * Coalesces multiple refresh requests.
      */
     public void scheduleRefresh() {
         needsRefresh = true;
         if (refreshPending.compareAndSet(false, true)) {
-            Display.getDefault().asyncExec(() -> {
+            long now = System.currentTimeMillis();
+            long delay = Math.max(0, REFRESH_THROTTLE_MS - (now - lastRefreshTime));
+
+            Display.getDefault().timerExec((int)delay, () -> {
                 try {
                     refreshPending.set(false);
                     if (!isDisposed() && isVisible()) {
+                        lastRefreshTime = System.currentTimeMillis();
                         needsRefresh = false;
                         refreshUI();
                     }

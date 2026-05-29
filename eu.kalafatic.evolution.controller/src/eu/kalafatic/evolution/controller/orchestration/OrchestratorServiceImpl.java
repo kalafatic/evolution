@@ -6,6 +6,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
@@ -150,8 +153,194 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
     @Override
     public void shutdownSession(String sessionId) {
+        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        RuntimeEventBus bus = session != null ? session.getEventBus() : RuntimeEventBus.getInstance();
         SessionManager.getInstance().shutdownSession(sessionId);
         tasks.remove(sessionId);
+        bus.publish(new RuntimeEvent(RuntimeEventType.KERNEL_SHUTDOWN, sessionId, "OrchestratorService", null));
+    }
+
+    @Override
+    public void setPaused(String sessionId, boolean paused) {
+        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
+        if (context != null) {
+            context.setPaused(paused);
+            RuntimeEventBus bus = session.getEventBus();
+            bus.publish(new RuntimeEvent(paused ? RuntimeEventType.FLOW_PAUSED : RuntimeEventType.STEP_RESUMED, sessionId, "OrchestratorService", null));
+        }
+    }
+
+    @Override
+    public void submit(String sessionId, TaskRequest request) {
+        final SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
+        final RuntimeEventBus bus = session.getEventBus();
+        final String turnId = sessionId + "__" + System.currentTimeMillis();
+
+        bus.publish(new RuntimeEvent(RuntimeEventType.USER_INTERACTION_RECEIVED, sessionId, "UI", request.getPrompt()));
+
+        session.getExecutorService().submit(() -> {
+            bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, sessionId, "OrchestratorService", request.getPrompt()));
+            try {
+                final Orchestrator orchModel = this.orchestrator != null ? this.orchestrator : (Orchestrator) request.getContext().get("orchestrator");
+                TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
+
+                if (context == null) {
+                    context = new TaskContext(orchModel, request.getProjectRoot());
+                    context.setSessionId(sessionId);
+                    if (session instanceof SessionContext) {
+                        ((SessionContext)session).setTaskContext(context);
+                    }
+                }
+                context.getMetadata().put("sessionContext", session);
+                context.setStartTime(java.time.Instant.now());
+
+                // Add log propagation to UI via ConversationOutputController
+                context.addLogListener(log -> processLogEntry(log, sessionId, turnId));
+                context.addApprovalListener(msg -> processLogEntry(msg, sessionId, turnId));
+                context.addInputListener(msg -> processLogEntry(msg, sessionId, turnId));
+
+                context.addTokenRequestListener((provider, future) -> bus.publish(new RuntimeEvent(RuntimeEventType.VIEW_UPDATED, sessionId, "TokenRequest", new Object[]{provider, future})));
+
+                KernelFacade kernel = new KernelFacade();
+                OrchestratorResponse response = kernel.handle(request, context);
+
+                processLogEntry("Final Response: " + response.getSummary(), sessionId, turnId);
+
+                // Refresh workspace
+                try {
+                    org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
+                } catch (Exception e) {}
+
+                bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, sessionId, "OrchestratorService", response));
+            } catch (Exception e) {
+                processLogEntry("Error: " + e.getMessage(), sessionId, turnId);
+                bus.publish(new RuntimeEvent(RuntimeEventType.TASK_FAILED, sessionId, "OrchestratorService", e.getMessage()));
+            }
+        });
+    }
+
+    private void processLogEntry(String log, String sessionId, String turnId) {
+        if (log == null || log.isEmpty()) return;
+
+        String trimmedText = log.trim();
+        String sender = "Evo";
+        String content = trimmedText;
+        String agentType = "ai";
+        MessagePriority priority = MessagePriority.PROGRESS;
+
+        java.util.regex.Pattern logPattern = java.util.regex.Pattern.compile("^([A-Z][A-Z0-9-]*)(?:\\s+\\[([^\\]*)\\])?(?:\\s+\\(\\d{2}:\\d{2}:\\d{2}\\))?:\\s*([\\s\\S]*)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher matcher = logPattern.matcher(trimmedText);
+
+        if (matcher.find()) {
+            sender = matcher.group(1);
+            String extra = matcher.group(2);
+            content = matcher.group(4);
+
+            String senderUpper = sender.toUpperCase();
+            if (senderUpper.startsWith("USER")) agentType = "user";
+            else if (senderUpper.startsWith("EVO")) agentType = "ai";
+            else if (senderUpper.startsWith("TOOL")) agentType = "tool";
+            else if (senderUpper.startsWith("LLMROUTER")) agentType = "orchestrator";
+
+            String agentSource = (sender + (extra != null ? "-" + extra : "")).toLowerCase();
+            if (agentSource.contains("planner")) agentType = "planner";
+            else if (agentSource.contains("architect")) agentType = "architect";
+            else if (agentSource.contains("javadev")) agentType = "javadev";
+            else if (agentSource.contains("tester")) agentType = "tester";
+            else if (agentSource.contains("reviewer")) agentType = "reviewer";
+            else if (agentSource.contains("analytic") || agentSource.contains("analysis")) agentType = "analytic";
+            else if (agentSource.contains("general")) agentType = "general";
+            else if (agentSource.contains("terminal")) agentType = "terminal";
+            else if (agentSource.contains("file")) agentType = "file";
+            else if (agentSource.contains("maven")) agentType = "maven";
+            else if (agentSource.contains("git")) agentType = "git";
+            else if (agentSource.contains("structure")) agentType = "structure";
+            else if (agentSource.contains("websearch")) agentType = "websearch";
+            else if (agentSource.contains("quality")) agentType = "quality";
+            else if (agentSource.contains("observability")) agentType = "observability";
+            else if (agentSource.contains("orchestrator")) agentType = "orchestrator";
+            else if (agentSource.contains("darwinengine")) agentType = "darwin";
+
+            if (agentSource.contains("thinking")) agentType = "thinking";
+            else if (agentSource.contains("response") && !agentType.equals("darwin")) {
+                agentType = "response";
+                priority = MessagePriority.NORMAL;
+            }
+        } else if (trimmedText.startsWith("Final Response: ")) {
+            sender = "Final Response";
+            content = trimmedText.substring(16);
+            agentType = "final-response";
+            priority = MessagePriority.FINAL;
+        } else if (trimmedText.startsWith("Error: ")) {
+            sender = "Error";
+            content = trimmedText.substring(7);
+            agentType = "error";
+            priority = MessagePriority.FINAL;
+        } else if (trimmedText.startsWith("Result Summary: ")) {
+            sender = "Result Summary";
+            content = trimmedText.substring(16);
+            agentType = "result-summary";
+            priority = MessagePriority.FINAL;
+        }
+
+        if (content.contains("[DARWIN_BRANCHES]")) {
+            agentType = "darwin-branches waiting";
+            content = content.replace("[DARWIN_BRANCHES]", "").trim();
+            priority = MessagePriority.USER_ACTION_REQUIRED;
+        }
+
+        java.util.regex.Pattern approvedPattern = java.util.regex.Pattern.compile("\\[(APPROVED|REJECTED|KEPT):([^\\]+)\\]");
+        java.util.regex.Matcher approvedMatcher = approvedPattern.matcher(content);
+        if (approvedMatcher.find()) {
+            String status = approvedMatcher.group(1).toLowerCase();
+            String variantId = approvedMatcher.group(2);
+            if (!agentType.contains(status)) {
+                agentType = agentType.replace("waiting", "").trim();
+                if (agentType.isEmpty()) agentType = "ai";
+                agentType += " " + status + ":" + variantId;
+            }
+            content = content.replace(approvedMatcher.group(0), "").trim();
+
+            if (agentType.contains("darwin-branches")) {
+                 content = content.replaceAll("\\[[\\s\\S]*\\]", "").trim();
+                 if (content.isEmpty()) content = "Variant " + variantId + " " + status + ".";
+            }
+
+            priority = MessagePriority.NORMAL;
+        }
+
+        boolean needsApproval = (content.toLowerCase().contains("waiting for user") ||
+                content.toLowerCase().contains("guidance?") ||
+                content.toLowerCase().contains("clarify") ||
+                content.toLowerCase().contains("clarification") ||
+                content.contains("[PROPOSAL:") ||
+                content.toLowerCase().contains("ambiguous") ||
+                content.toLowerCase().contains("approve") ||
+                content.toLowerCase().contains("approval") ||
+                content.toLowerCase().contains("proceed?")) &&
+                !content.contains("AUTO_INFER") &&
+                !content.contains("BRANCH_PARALLEL") &&
+                !content.contains("Interpretation State: CLEAR");
+
+        if (needsApproval && !agentType.contains("user")) {
+            if (!agentType.contains("waiting")) agentType += " waiting";
+            priority = MessagePriority.USER_ACTION_REQUIRED;
+        }
+
+        content = content.replaceAll("\\[KERNEL\\]", "")
+                        .replaceAll("\\[STRATEGY\\]", "")
+                        .replaceAll("\\[ANALYSIS\\]", "")
+                        .replaceAll("\\[DIAGNOSIS\\]", "")
+                        .replaceAll("\\[SUPERVISOR\\]", "")
+                        .replaceAll("\\[EVO\\]", "")
+                        .replaceAll("\\[DARWIN\\]", "")
+                        .replaceAll("\\[DARWINENGINE\\]", "")
+                        .replaceAll("\\[THINKING\\]", "")
+                        .replaceAll("\\[ORCHESTRATOR\\]", "")
+                        .trim();
+
+        ConversationOutputController.getInstance().submitMessage(sessionId, turnId, sender, content, agentType, priority, priority == MessagePriority.FINAL);
     }
 
     private Orchestrator orchestrator;
