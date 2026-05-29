@@ -75,10 +75,12 @@ import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import eu.kalafatic.evolution.view.application.Activator;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStepRegistry;
+import eu.kalafatic.evolution.view.projection.ProjectionService;
+import eu.kalafatic.evolution.view.projection.RuntimeProjection;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStep;
 import eu.kalafatic.evolution.controller.workflow.StepModeController;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
@@ -89,7 +91,7 @@ import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 /**
  * @evo:16:A reason=darwin-mode-sync
  */
-public class AiChatPage extends AEvoPage implements RuntimeEventListener {
+public class AiChatPage extends AEvoPage {
 	private boolean isUpdating = false;
 	private Label modeIndicatorLabel;
 	private ContentProposalAdapter assistAdapter;
@@ -109,24 +111,34 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	private int editingMessageIndex = -1;
 	private String editingVariantId = null;
 
-	private static class SessionState {
-		Thread orchestrationSession;
-		TaskContext currentContext;
-		String activeTaskId;
-		eu.kalafatic.evolution.model.orchestration.Task currentStackTask;
-		boolean isRunning = false;
-		boolean isPaused = false;
-	}
+	private final java.util.function.Consumer<RuntimeProjection> projectionObserver = projection -> {
+		if (isDisposed()) return;
+		if (projection.getSessionId().equals(getCurrentSessionName())) {
+			scheduleRefresh();
 
-	private java.util.Map<String, SessionState> sessionStates = new java.util.HashMap<>();
-
-	private SessionState getSessionState(String sessionId) {
-		return sessionStates.computeIfAbsent(sessionId, k -> new SessionState());
-	}
-
-	private SessionState getCurrentSessionState() {
-		return getSessionState(getCurrentSessionName());
-	}
+			// Handle special view updates from projection (like token requests)
+			projection.getEvents().stream()
+				.filter(e -> e.getType() == RuntimeEventType.VIEW_UPDATED && "TokenRequest".equals(e.getSource()))
+				.reduce((first, second) -> second) // get last
+				.ifPresent(e -> {
+					Object[] payload = (Object[]) e.getPayload();
+					String provider = (String) payload[0];
+					java.util.concurrent.CompletableFuture<String> future = (java.util.concurrent.CompletableFuture<String>) payload[1];
+					if (!future.isDone()) {
+						Display.getDefault().asyncExec(() -> {
+							String token = requestToken(provider);
+							if (token != null) {
+								eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
+									.updateToken(orchestrator, provider, token);
+								future.complete(token);
+							} else {
+								future.completeExceptionally(new Exception("Token request cancelled by user."));
+							}
+						});
+					}
+				});
+		}
+	};
 
 	private Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote, colorWaiting, colorLightOrange;
 	private Font chatFont, bannerFont;
@@ -152,11 +164,11 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		this.outputController = ConversationOutputController.getInstance();
 		this.outputController.subscribe(messageSubscriber);
 		createControl();
-		RuntimeEventBus.getInstance().subscribe(this);
+		ProjectionService.getInstance().subscribe(projectionObserver);
 		addDisposeListener(new DisposeListener() {
 			@Override
 			public void widgetDisposed(DisposeEvent e) {
-				RuntimeEventBus.getInstance().unsubscribe(AiChatPage.this);
+				ProjectionService.getInstance().unsubscribe(projectionObserver);
 				if (outputController != null) outputController.unsubscribe(messageSubscriber);
 
 				// Shut down all sessions associated with this page/orchestrator
@@ -400,7 +412,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	public void handleSend() {
 		instructionsGroup.resetBackground();
 		String request = instructionsGroup.getRequest();
-		SessionState state = getCurrentSessionState();
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
 
 		// Check for active steps in Step Mode - allow resumption even if command is already running
 		WorkflowStep activeStep = WorkflowStepRegistry.getInstance().getActiveStepForSession(getCurrentSessionName());
@@ -426,21 +438,12 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		}
 
 		// Check if we are waiting for user input or approval and unblock via chat if possible
-		boolean isWaiting = false;
-		if (state.currentContext != null) {
-			isWaiting = state.currentContext.isWaitingForInput() || state.currentContext.isWaitingForApproval();
-		} else if (state.activeTaskId != null) {
-			TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
-			if (result != null) {
-				isWaiting = result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT || result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL;
-			}
-		}
+		boolean isWaiting = projection.isRunning() && projection.isWaitingForUser();
 
 		if (isWaiting) {
 			String lower = request.toLowerCase().trim();
 
 			if (editingVariantId != null && request.toUpperCase().startsWith("EDIT PROPOSAL")) {
-				instructionsGroup.setOrchestrationRunning(true);
 				provideInput(request);
 				chatGroup.handleApproveDarwinVariant(editingMessageIndex, editingVariantId);
 				editingVariantId = null;
@@ -449,34 +452,26 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 				return;
 			}
 
-			boolean isApproval = false;
-			if (state.currentContext != null) isApproval = state.currentContext.isWaitingForApproval();
-			else {
-				TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
-				if (result != null) isApproval = result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL;
-			}
+			boolean isApproval = projection.isWaitingForUser();
 
 			if (isApproval) {
 				if (lower.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$") || lower.contains("approve variant")) {
-					instructionsGroup.setOrchestrationRunning(true);
 					provideApproval(true);
 					instructionsGroup.setRequest("");
 					return;
 				} else if (lower.matches("^(no|n|reject|stop|cancel|abort)$")) {
-					instructionsGroup.setOrchestrationRunning(true);
 					provideApproval(false);
 					instructionsGroup.setRequest("");
 					return;
 				}
 			}
 
-			instructionsGroup.setOrchestrationRunning(true);
 			provideInput(request);
 			instructionsGroup.setRequest("");
 			return;
 		}
 
-		if (state.isRunning) return; // Prevent duplicate sessions for same ID
+		if (projection.isRunning()) return; // Prevent duplicate sessions for same ID
 
 		if (request.isEmpty()) return;
 
@@ -521,154 +516,24 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		outputController.submitMessage(sessionId, currentTurnId, "You", request, "user", MessagePriority.NORMAL, false);
 		outputController.submitMessage(sessionId, currentTurnId, "Evo", "Initializing orchestration...", "ai", MessagePriority.PROGRESS, false);
 		instructionsGroup.setRequest("");
-		state.isRunning = true;
-		instructionsGroup.setOrchestrationRunning(true);
-		chatGroup.setThinking(true);
 		chatGroup.resetLogCount();
 
 		TaskRequest taskRequest = new TaskRequest(request, getProjectRoot());
 		taskRequest.getContext().put("orchestrator", orchestrator);
 		taskRequest.getContext().put("sessionId", sessionId);
 
-		TaskContext context = new TaskContext(orchestrator, getProjectRoot());
-		context.setStartTime(java.time.Instant.now());
-		context.setSessionId(sessionId);
-		state.currentContext = context;
-		OrchestratorServiceImpl.getInstance().registerContext(sessionId, context);
-		editor.setCurrentContext(context);
-
-		context.addLogListener(log -> Display.getDefault().asyncExec(() -> {
-			if (!chatGroup.isDisposed()) {
-				processLogEntry(log, sessionId);
-				if (sessionId.equals(getCurrentSessionName())) chatGroup.incrementLogCount();
-			}
-		}));
-		context.addApprovalListener(msg -> Display.getDefault().asyncExec(() -> {
-			if (!sessionId.equals(getCurrentSessionName())) return;
-			outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "Evo", msg, "ai waiting", MessagePriority.USER_ACTION_REQUIRED, false);
-			if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-				setTextSafe(modeIndicatorLabel, "WAITING FOR USER APPROVAL...");
-				setBackgroundSafe(modeIndicatorLabel, colorWaiting);
-			}
-			instructionsGroup.setOrchestrationRunning(false);
-			handleClarify();
-			feedbackGroup.showApproval(msg);
-		}));
-		context.addInputListener(msg -> Display.getDefault().asyncExec(() -> {
-			if (!sessionId.equals(getCurrentSessionName())) return;
-			outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "Evo", msg, "ai waiting", MessagePriority.USER_ACTION_REQUIRED, false);
-			if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-				setTextSafe(modeIndicatorLabel, "WAITING FOR USER INPUT...");
-				setBackgroundSafe(modeIndicatorLabel, colorWaiting);
-			}
-			instructionsGroup.setOrchestrationRunning(false);
-			handleClarify();
-			feedbackGroup.showInput(msg);
-		}));
-
-		taskRequest.getContext().put("taskContext", context);
-
-		state.orchestrationSession = new Thread(() -> {
-			try {
-				eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(taskRequest);
-
-				Display.getDefault().asyncExec(() -> {
-					if (isDisposed()) return;
-					if (sessionId.equals(getCurrentSessionName())) instructionsGroup.resetBackground();
-
-					if (response.getResultType() == eu.kalafatic.evolution.controller.orchestration.ResultType.ERROR) {
-						if (state.currentStackTask != null) {
-							state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
-							state.currentStackTask.setResultSummary("Error: " + response.getSummary());
-						}
-
-						chatGroup.setThinking(false);
-						outputController.submitMessage(sessionId, currentTurnId, "Error", response.getContent(), "error", MessagePriority.FINAL, true);
-						return;
-					}
-
-					if (state.currentStackTask != null) {
-						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
-						state.currentStackTask.setResultSummary(response.getSummary());
-					}
-
-					chatGroup.setThinking(false);
-					String finalMsg = response.getContent() != null ? response.getContent() : response.getSummary();
-					outputController.submitMessage(sessionId, currentTurnId, "Evo", finalMsg, "final-response", MessagePriority.FINAL, true);
-
-					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
-						editor.setDirty(true);
-						feedbackGroup.showSatisfaction(true);
-					}
-				});
-			} catch (Exception e) {
-				Display.getDefault().asyncExec(() -> {
-					if (isDisposed()) return;
-					if (state.currentStackTask != null) {
-						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
-						state.currentStackTask.setResultSummary("Error: " + e.getMessage());
-					}
-					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
-						chatGroup.setThinking(false);
-						chatGroup.appendText("\n\n", colorWhite, SWT.NORMAL);
-						chatGroup.appendText("Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD);
-					}
-				});
-			} finally {
-				Display.getDefault().asyncExec(() -> {
-					if (isDisposed()) return;
-					state.isRunning = false;
-					if (sessionId.equals(getCurrentSessionName())) {
-						instructionsGroup.setOrchestrationRunning(false);
-								chatGroup.refreshGitStatus();
-
-								// Force workspace refresh to show new files in navigator
-								try {
-									ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
-
-									// Identify newly created files and highlight in navigator
-									eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider git = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
-									List<String> changed = git.getChangedFiles(getProjectRoot(), "HEAD");
-									for (String path : changed) {
-										if (path.startsWith("A ")) {
-											String filePath = path.substring(2);
-											IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new org.eclipse.core.runtime.Path(new File(getProjectRoot(), filePath).getAbsolutePath()));
-											if (iFile != null) {
-												editor.refreshNavigator(iFile);
-											}
-										}
-									}
-								} catch (Exception e) {}
-					}
-					state.orchestrationSession = null;
-				});
-			}
-		});
-		state.orchestrationSession.start();
+		OrchestratorServiceImpl.getInstance().submit(sessionId, taskRequest);
 	}
 
 	public void handlePause() {
-		SessionState state = getCurrentSessionState();
-		if (state.currentContext != null) {
-			state.isPaused = !state.currentContext.isPaused();
-			state.currentContext.setPaused(state.isPaused);
-			instructionsGroup.setPaused(state.isPaused);
-			chatGroup.setThinking(!state.isPaused);
-		}
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+		OrchestratorServiceImpl.getInstance().setPaused(getCurrentSessionName(), !projection.isPaused());
 	}
 
 	public void handleStop() {
 		instructionsGroup.resetBackground();
-		SessionState state = getCurrentSessionState();
-		if (state.orchestrationSession != null && state.orchestrationSession.isAlive()) {
-			if (state.currentContext != null) state.currentContext.setPaused(false);
-			state.orchestrationSession.interrupt();
-			state.isRunning = false;
-			instructionsGroup.setOrchestrationRunning(false);
-
-			// Also shut down and cleanup the session resources
-			OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
-		}
+		// Shut down and cleanup the session resources - this will trigger KERNEL_SHUTDOWN event
+		OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
 	}
 
 	private String requestToken(String provider) {
@@ -740,22 +605,18 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 					currentSession = t;
 					chatGroup.setSession(currentSession);
 
-					SessionState state = getSessionState(sessionId);
-					instructionsGroup.setOrchestrationRunning(state.isRunning);
-					instructionsGroup.setPaused(state.isPaused);
-					chatGroup.setThinking(state.isRunning && !state.isPaused);
+					RuntimeProjection projection = ProjectionService.getInstance().getProjection(sessionId);
+
+					instructionsGroup.setOrchestrationRunning(projection.isRunning());
+					instructionsGroup.setPaused(projection.isPaused());
+					chatGroup.setThinking(projection.isRunning() && !projection.isPaused());
 
 					updateModeDisplay();
 
 					// Re-check status if running
-					if (state.isRunning && state.activeTaskId != null) {
-						TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
-						if (result != null) {
-							if (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
-								feedbackGroup.showApproval(result.getWaitingMessage());
-							} else if (result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT) {
-								feedbackGroup.showInput(result.getWaitingMessage());
-							}
+					if (projection.isRunning()) {
+						if (projection.isWaitingForUser()) {
+							feedbackGroup.showApproval(projection.getLastWaitingMessage());
 						}
 					}
 					updateScrolledContent();
@@ -790,16 +651,12 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	}
 
 	private void startSelfDevAction(String request) {
-		SessionState state = getCurrentSessionState();
-		if (state.isRunning) return;
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+		if (projection.isRunning()) return;
 
 		instructionsGroup.resetBackground();
 		if (request == null || request.isEmpty()) request = "Analyze the project and suggest improvements.";
-		if (state.currentContext != null && state.currentContext.isWaitingForInput()) {
-			provideInput(request);
-			instructionsGroup.setRequest("");
-			return;
-		}
+
 		final String finalRequest = request;
 		boolean isSelfDev = orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode();
 		boolean isDarwin = orchestrator != null && orchestrator.isDarwinMode();
@@ -820,195 +677,12 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		String loopSuffix = (isSelfDev) ? " Supervisor loop" : " loop";
 		outputController.submitMessage(sessionId, currentTurnId, "Evo", "Initializing " + modeLabel + loopSuffix + "...", "ai", MessagePriority.PROGRESS, false);
 		instructionsGroup.setRequest("");
-		state.isRunning = true;
-		instructionsGroup.setOrchestrationRunning(true);
-		chatGroup.setThinking(true);
-		final File projectRoot = getProjectRoot();
-		state.orchestrationSession = new Thread(() -> {
-			try {
-				TaskContext context = new TaskContext(orchestrator, projectRoot);
-				context.setStartTime(java.time.Instant.now());
-				context.setSessionId(sessionId);
-				context.getInstructionFiles().addAll(instructionsGroup.getInstructionFiles());
-				context.setPlatformMode(new eu.kalafatic.evolution.controller.orchestration.ModeRouter().route(finalRequest, orchestrator));
-				state.currentContext = context;
-				OrchestratorServiceImpl.getInstance().registerContext(sessionId, context);
-				Display.getDefault().asyncExec(() -> editor.setCurrentContext(context));
-				context.addLogListener(log -> Display.getDefault().asyncExec(() -> { if (!chatGroup.isDisposed()) processLogEntry(log, sessionId); }));
-				context.addApprovalListener(message -> Display.getDefault().asyncExec(() -> {
-					if (!sessionId.equals(getCurrentSessionName())) return;
-					outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "Evo", message, "ai waiting", MessagePriority.USER_ACTION_REQUIRED, false);
-					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-						setTextSafe(modeIndicatorLabel, "WAITING FOR USER APPROVAL...");
-						setBackgroundSafe(modeIndicatorLabel, colorWaiting);
-					}
-					instructionsGroup.setOrchestrationRunning(false);
-					handleClarify();
-					feedbackGroup.showApproval(message);
-				}));
-				context.addInputListener(message -> Display.getDefault().asyncExec(() -> {
-					if (!sessionId.equals(getCurrentSessionName())) return;
-					outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "Evo", message, "ai waiting", MessagePriority.USER_ACTION_REQUIRED, false);
-					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-						setTextSafe(modeIndicatorLabel, "WAITING FOR USER INPUT...");
-						setBackgroundSafe(modeIndicatorLabel, colorWaiting);
-					}
-					instructionsGroup.setOrchestrationRunning(false);
-					handleClarify();
-					feedbackGroup.showInput(message);
-				}));
-				context.addTokenRequestListener((provider, future) -> Display.getDefault().asyncExec(() -> {
-					String token = requestToken(provider);
-					if (token != null) {
-						eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
-						.updateToken(orchestrator, provider, token);
-						future.complete(token);
-					}
-					else future.completeExceptionally(new Exception("Token request cancelled by user."));
-				}));
-				SelfDevSession session = OrchestrationFactory.eINSTANCE.createSelfDevSession();
-				session.setId("session-" + System.currentTimeMillis());
-				session.setMaxIterations(5); session.setInitialRequest(finalRequest);
-				orchestrator.setSelfDevSession(session);
-				SelfDevSupervisor supervisor = new SelfDevSupervisor(session, context);
-				supervisor.startSession();
 
-				// Assembly Final Response for Supervisor sessions too
-				eu.kalafatic.evolution.controller.orchestration.FinalResponseAssembler assembler = new eu.kalafatic.evolution.controller.orchestration.FinalResponseAssembler();
-				eu.kalafatic.evolution.controller.orchestration.FinalResponse finalResponse = assembler.assemble(context, modeLabel + " session finished. Status: " + session.getStatus(), session.getStatus() == eu.kalafatic.evolution.model.orchestration.SelfDevStatus.COMPLETED, context.getStartTime());
+		TaskRequest taskRequest = new TaskRequest(finalRequest, getProjectRoot());
+		taskRequest.getContext().put("orchestrator", orchestrator);
+		taskRequest.getContext().put("sessionId", sessionId);
 
-				Display.getDefault().asyncExec(() -> {
-					if (isDisposed()) return;
-					if (sessionId.equals(getCurrentSessionName())) instructionsGroup.resetBackground();
-					if (state.currentStackTask != null) {
-						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
-						state.currentStackTask.setResultSummary("Self-Development session finished.");
-					}
-
-					chatGroup.setThinking(false);
-					outputController.submitMessage(sessionId, currentTurnId, "Evo", finalResponse.toString(), "final-response", MessagePriority.FINAL, true);
-
-					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
-						editor.setDirty(true);
-						feedbackGroup.showSatisfaction(true);
-						if (state.currentStackTask != null) {
-							state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE);
-							state.currentStackTask.setResultSummary("Self-Development session finished. Status: " + session.getStatus());
-						}
-					}
-				});
-			} catch (Exception e) {
-				Display.getDefault().asyncExec(() -> {
-					if (isDisposed()) return;
-					if (state.currentStackTask != null) {
-						state.currentStackTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
-						state.currentStackTask.setResultSummary("Supervisor Error: " + e.getMessage());
-					}
-					if (sessionId.equals(getCurrentSessionName()) && !chatGroup.isDisposed()) {
-						chatGroup.setThinking(false);
-						chatGroup.appendText("Supervisor Error: " + (e instanceof InterruptedException ? "Orchestration stopped by user." : e.getMessage()), colorError, SWT.BOLD);
-					}
-				});
-			} finally {
-//				Display.getDefault().asyncExec(() -> {
-//					state.isRunning = false;
-//					if (sessionId.equals(getCurrentSessionName())) {
-//						instructionsGroup.setOrchestrationRunning(false);
-//							chatGroup.refreshGitStatus();
-//
-//							// Force workspace refresh to show new files in navigator
-//							try {
-//								ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
-//
-//								// Identify newly created files and highlight in navigator
-//								eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider git = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
-//								List<String> changed = git.getChangedFiles(projectRoot, "HEAD");
-//								for (String path : changed) {
-//									if (path.startsWith("A ")) {
-//										String filePath = path.substring(2);
-//										IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new org.eclipse.core.runtime.Path(new File(projectRoot, filePath).getAbsolutePath()));
-//										if (iFile != null) {
-//											editor.refreshNavigator(iFile);
-//										}
-//									}
-//								}
-//							} catch (Exception e) {}
-//					}
-//					state.orchestrationSession = null;
-//				});
-				
-				Display.getDefault().asyncExec(() -> {
-					if (isDisposed()) return;
-				    state.isRunning = false;
-
-				    if (!sessionId.equals(getCurrentSessionName())) {
-				        state.orchestrationSession = null;
-				        return;
-				    }
-
-				    instructionsGroup.setOrchestrationRunning(false);
-				    chatGroup.refreshGitStatus();
-
-				    Job refreshJob = Job.create("Refresh changed resources", monitor -> {
-				        try {
-				            IWorkspace workspace = ResourcesPlugin.getWorkspace();
-
-				            workspace.run(pm -> {
-
-				                eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider git =
-				                        new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
-
-				                List<IFile> addedFiles = new ArrayList<>();
-								try {
-									List<String> changed = git.getChangedFiles(projectRoot, "HEAD");
-
-									for (String path : changed) {
-
-									    if (!path.startsWith("A ")) {
-									        continue;
-									    }
-
-									    String relativePath = path.substring(2);
-
-									    File file = new File(projectRoot, relativePath);
-
-									    IFile iFile = ResourcesPlugin.getWorkspace()
-									            .getRoot()
-									            .getFileForLocation(
-									                    new Path(file.getAbsolutePath()));
-
-									    if (iFile != null && iFile.exists()) {
-
-									        iFile.refreshLocal(IResource.DEPTH_ZERO, pm);
-
-									        addedFiles.add(iFile);
-									    }
-									}
-								} catch (Exception e) {
-									e.printStackTrace();
-								}
-
-				                Display.getDefault().asyncExec(() -> {
-				                    for (IFile file : addedFiles) {
-				                        editor.refreshNavigator(file);
-				                    }
-				                });
-
-				            }, monitor);
-
-				        } catch (Exception e) {
-				            e.printStackTrace();
-				        }
-				    });
-
-				    refreshJob.setSystem(true);
-				    refreshJob.schedule();
-
-				    state.orchestrationSession = null;
-				});
-			}
-		});
-		state.orchestrationSession.start();
+		OrchestratorServiceImpl.getInstance().submit(sessionId, taskRequest);
 	}
 
 	public File getProjectRoot() {
@@ -1089,11 +763,24 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		if (orchestrator != null && chatMgmtGroup != null && !isUpdating) {
 			isUpdating = true;
 			try {
+				RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+
 				chatMgmtGroup.updateUI();
 				instructionsGroup.updateUI();
 				if (feedbackGroup != null) feedbackGroup.updateUI();
 				updateStatusInfo();
-				updateModeDisplay();
+
+				// Update based on projection
+				if (projection.isWaitingForUser()) {
+					setTextSafe(modeIndicatorLabel, "WAITING FOR USER...");
+					setBackgroundSafe(modeIndicatorLabel, colorWaiting);
+				} else {
+					updateModeDisplay();
+				}
+
+				instructionsGroup.setOrchestrationRunning(projection.isRunning());
+				instructionsGroup.setPaused(projection.isPaused());
+				chatGroup.setThinking(projection.isRunning() && !projection.isPaused());
 
 				if (currentSession != null) {
 					chatGroup.setSession(currentSession);
@@ -1112,29 +799,8 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	}
 
 	private void resumeWaitingSessions() {
-		for (String sessionId : sessionStates.keySet()) {
-			SessionState state = sessionStates.get(sessionId);
-			if (state != null) {
-				if (state.currentContext != null) {
-					if (state.currentContext.isWaitingForInput()) {
-						provideInput(sessionId, "Approved");
-					} else if (state.currentContext.isWaitingForApproval()) {
-						provideApproval(sessionId, true);
-					}
-				}
-				if (state.activeTaskId != null) {
-					// Check if TaskResult is waiting for approval (legacy OrchestratorServiceImpl tasks)
-					TaskResult result = OrchestratorServiceImpl.getInstance().getTaskResult(state.activeTaskId);
-					if (result != null && (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL || result.getStatus() == TaskResult.Status.WAITING_FOR_INPUT)) {
-						if (result.getStatus() == TaskResult.Status.WAITING_FOR_APPROVAL) {
-							provideApproval(sessionId, true);
-						} else {
-							provideInput(sessionId, "Approved");
-						}
-					}
-				}
-			}
-		}
+		// This should now be handled by OrchestratorServiceImpl directly if needed
+		// or via events.
 	}
 
 	public void submitFeedback(int satisfaction, String comments) {
@@ -1163,18 +829,14 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			}
 			outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "You", approved ? "Approved" : "Rejected", "user", MessagePriority.NORMAL, false);
 		}
-		SessionState state = getSessionState(sessionId);
-		if (state.orchestrationSession != null) {
-			String taskId = state.activeTaskId != null ? state.activeTaskId : orchestrator.getId();
-			OrchestratorServiceImpl.getInstance().provideApproval(taskId, approved);
-		}
-		if (state.currentContext != null) {
-			state.currentContext.provideApproval(approved);
-			if (sessionId.equals(getCurrentSessionName())) {
-				feedbackGroup.hideApproval();
-				updateModeDisplay();
-				scheduleRefresh();
-			}
+
+		String taskId = sessionId != null ? sessionId : orchestrator.getId();
+		OrchestratorServiceImpl.getInstance().provideApproval(taskId, approved);
+
+		if (sessionId.equals(getCurrentSessionName())) {
+			feedbackGroup.hideApproval();
+			updateModeDisplay();
+			scheduleRefresh();
 		}
 	}
 
@@ -1333,8 +995,6 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		switchSession(sessionId);
 		updateSessionCombo();
 
-		getCurrentSessionState().currentStackTask = task;
-
 		// 2. Set instructions
 		String prompt = task.getPrompt();
 		if (prompt == null || prompt.isEmpty()) prompt = task.getDescription();
@@ -1372,18 +1032,14 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 			clearWaitingMessages();
 			outputController.submitMessage(sessionId, currentTurnId != null ? currentTurnId : sessionId, "You", input, "user", MessagePriority.NORMAL, false);
 		}
-		SessionState state = getSessionState(sessionId);
-		if (state.orchestrationSession != null) {
-			String taskId = state.activeTaskId != null ? state.activeTaskId : orchestrator.getId();
-			OrchestratorServiceImpl.getInstance().provideInput(taskId, input);
-		}
-		if (state.currentContext != null) {
-			state.currentContext.provideInput(input);
-			if (sessionId.equals(getCurrentSessionName())) {
-				feedbackGroup.hideInput();
-				updateModeDisplay();
-				scheduleRefresh();
-			}
+
+		String taskId = sessionId != null ? sessionId : orchestrator.getId();
+		OrchestratorServiceImpl.getInstance().provideInput(taskId, input);
+
+		if (sessionId.equals(getCurrentSessionName())) {
+			feedbackGroup.hideInput();
+			updateModeDisplay();
+			scheduleRefresh();
 		}
 	}
 
@@ -1416,7 +1072,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
         String agentType = "ai";
         MessagePriority priority = MessagePriority.PROGRESS;
 
-        java.util.regex.Pattern logPattern = java.util.regex.Pattern.compile("^([A-Z][A-Z0-9-]*)(?:\\s+\\[([^\\]]*)\\])?(?:\\s+\\[(\\d{2}:\\d{2}:\\d{2})\\])?:\\s*([\\s\\S]*)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Pattern logPattern = java.util.regex.Pattern.compile("^([A-Z][A-Z0-9-]*)(?:\\s+\\[([^\\]*)\\])?(?:\\s+\\(\\d{2}:\\d{2}:\\d{2}\\))?:\\s*([\\s\\S]*)$", java.util.regex.Pattern.CASE_INSENSITIVE);
         java.util.regex.Matcher matcher = logPattern.matcher(trimmedText);
 
         if (matcher.find()) {
@@ -1445,7 +1101,6 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
             else if (agentSource.contains("structure")) agentType = "structure";
             else if (agentSource.contains("websearch")) agentType = "websearch";
             else if (agentSource.contains("quality")) agentType = "quality";
-            else if (agentSource.contains("observability")) agentType = "observability";
             else if (agentSource.contains("orchestrator")) agentType = "orchestrator";
             else if (agentSource.contains("darwinengine")) agentType = "darwin";
 
@@ -1477,7 +1132,7 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
             priority = MessagePriority.USER_ACTION_REQUIRED;
         }
 
-        java.util.regex.Pattern approvedPattern = java.util.regex.Pattern.compile("\\[(APPROVED|REJECTED|KEPT):([^\\]]+)\\]");
+        java.util.regex.Pattern approvedPattern = java.util.regex.Pattern.compile("\\[(APPROVED|REJECTED|KEPT):([^\\]+)\\]");
         java.util.regex.Matcher approvedMatcher = approvedPattern.matcher(content);
         if (approvedMatcher.find()) {
             String status = approvedMatcher.group(1).toLowerCase();
@@ -1545,13 +1200,6 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 	 * @evo:14:A reason=categorized-assist
 	 */
 	private String getCategory() {
-		eu.kalafatic.evolution.model.orchestration.Task currentStackTask = getCurrentSessionState().currentStackTask;
-		if (currentStackTask != null) {
-			String type = currentStackTask.getType();
-			if ("SELF_DEV_MODE".equals(type) || "ASSISTED_CODING".equals(type) || "DARWIN_MODE".equals(type)) {
-				return "coding";
-			}
-		}
 		if (instructionsGroup != null) {
 			if (instructionsGroup.isSelfIterative() || instructionsGroup.isIterative() || instructionsGroup.isDarwin()) return "coding";
 		}
@@ -1630,33 +1278,6 @@ public class AiChatPage extends AEvoPage implements RuntimeEventListener {
 		assistAdapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyz/".toCharArray());
 	}
 
-	@Override
-	public void onEvent(RuntimeEvent event) {
-		String sessionId = event.getSessionId();
-		if (sessionId == null || !sessionId.equals(getCurrentSessionName())) return;
-
-		Display.getDefault().asyncExec(() -> {
-			if (isDisposed()) return;
-			switch (event.getType()) {
-				case STEP_WAITING:
-					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-						setTextSafe(modeIndicatorLabel, "WAITING FOR STEP APPROVAL...");
-						setBackgroundSafe(modeIndicatorLabel, colorWaiting);
-					}
-					instructionsGroup.setOrchestrationRunning(false);
-					instructionsGroup.focusAndHighlight(colorLightOrange, null);
-					break;
-				case STEP_RESUMED:
-					if (modeIndicatorLabel != null && !modeIndicatorLabel.isDisposed()) {
-						updateModeDisplay();
-					}
-					instructionsGroup.setOrchestrationRunning(true);
-					break;
-				default:
-					break;
-			}
-		});
-	}
 
 	public void testAiConnectionRemote(int modeIndex, String remoteModel, String token, String apiUrl) {
 		new Thread(() -> {
