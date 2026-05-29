@@ -23,13 +23,15 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
     @Override
     public OrchestratorResponse handle(TaskRequest request) {
-        final Orchestrator inputOrchModel = (Orchestrator) request.getContext().get("orchestrator");
+        Orchestrator inputOrchModel = (Orchestrator) request.getContext().get("orchestrator");
         TaskContext context = (TaskContext) request.getContext().get("taskContext");
 
         String sessionId = (String) request.getContext().get("sessionId");
         if (sessionId == null) sessionId = UUID.randomUUID().toString();
 
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
+
+        inputOrchModel = ensureOrchestratorModel(inputOrchModel, sessionId);
 
         if (context == null) {
             context = new TaskContext(inputOrchModel, request.getProjectRoot());
@@ -182,7 +184,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         session.getExecutorService().submit(() -> {
             bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, sessionId, "OrchestratorService", request.getPrompt()));
             try {
-                final Orchestrator orchModel = this.orchestrator != null ? this.orchestrator : (Orchestrator) request.getContext().get("orchestrator");
+                Orchestrator orchModel = this.orchestrator != null ? this.orchestrator : (Orchestrator) request.getContext().get("orchestrator");
+                orchModel = ensureOrchestratorModel(orchModel, sessionId);
+
                 TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
 
                 if (context == null) {
@@ -386,6 +390,23 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 result.setWaitingMessage(null);
             }
         }
+    }
+
+    private Orchestrator ensureOrchestratorModel(Orchestrator model, String sessionId) {
+        if (model != null) return model;
+
+        Orchestrator newModel = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        newModel.setId(sessionId);
+        if (newModel.getAiChat() == null) newModel.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+        if (newModel.getAiChat().getPromptInstructions() == null) {
+            newModel.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+        }
+        if (newModel.getOllama() == null) {
+            newModel.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
+            newModel.getOllama().setUrl("http://localhost:11434");
+            newModel.getOllama().setModel("llama3.2:3b");
+        }
+        return newModel;
     }
 
     private static OrchestratorServiceImpl instance;

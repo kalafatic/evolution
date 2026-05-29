@@ -470,6 +470,10 @@ public class IterationManager {
             return result;
 
         } catch (Exception e) {
+            context.log("[KERNEL] [CRITICAL] Orchestration failed: " + e.getMessage());
+            if (System.getProperty("evolution.test.debug") != null || context.getMetadata().containsKey("testMode")) {
+                e.printStackTrace();
+            }
             state.addDiagnostic("Critical error: " + e.getMessage());
             transition(SystemState.FAILED, context);
 
