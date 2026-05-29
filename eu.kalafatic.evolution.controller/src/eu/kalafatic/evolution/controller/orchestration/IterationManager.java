@@ -39,6 +39,9 @@ import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
+import eu.kalafatic.evolution.controller.orchestration.intent.InterpretationState;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentClarificationEngine;
+import eu.kalafatic.evolution.controller.trajectory.EvolutionaryTrajectoryEngine;
 import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
@@ -133,8 +136,11 @@ public class IterationManager {
     private final ClarificationManager clarificationManager = new ClarificationManager();
     private final IntentService intentService;
     private final IntentExpansionEngine intentExpansionEngine;
+    private final IntentClarificationEngine intentClarificationEngine;
     private final DimensionInferenceEngine dimensionInferenceEngine;
     private final ClarificationPlanner clarificationPlanner = new ClarificationPlanner();
+
+    private final EvolutionaryTrajectoryEngine evolutionaryTrajectoryEngine = new EvolutionaryTrajectoryEngine();
 
     private final AnalyticAgent analyticAgent;
     private final StructureAgent structureAgent;
@@ -278,6 +284,7 @@ public class IterationManager {
         this.intentService = new IntentService(aiService);
         this.intentExpansionEngine = new IntentExpansionEngine();
         this.intentExpansionEngine.setAiService(aiService);
+        this.intentClarificationEngine = new IntentClarificationEngine(aiService);
         this.dimensionInferenceEngine = new DefaultDimensionInferenceEngine(intentExpansionEngine);
 
         // Inject AiService into agents
@@ -576,17 +583,35 @@ public class IterationManager {
         int safetyCounter = 0;
         DarwinFlow darwinFlow = new DarwinFlow(aiService, this);
 
+        // 1. Initial Grounding (Intent Clarification)
+        context.log("[KERNEL] Phase: Intent Clarification & Grounding.");
+        IntentExpansionResult clarification = intentClarificationEngine.clarify(request, context);
+        state.getMetadata().put("intentExpansion", clarification);
+
+        if (clarification.getState() == InterpretationState.NEEDS_CLARIFICATION) {
+            context.log("[KERNEL] Intent clarification required before evolution.");
+            handleClarification(context, clarificationPlanner, clarification, request);
+            OrchestratorResponse response = new OrchestratorResponse();
+            response.setResultType(ResultType.CHAT);
+            response.setSummary("Clarification required.");
+            return response;
+        }
+
+        // 2. Recursive Evolutionary Loop
+        context.log("[KERNEL] Phase: Recursive Evolutionary Trajectory System.");
         while (safetyCounter < 10 && !context.isPaused()) {
-            EvolutionAssessment assessment = (safetyCounter == 0 && initialAssessment != null) ? initialAssessment :
-                dimensionInferenceEngine.analyze(state.getRawInput() != null ? state.getRawInput() : request, context);
-
-            if (!assessment.hasUnresolvedDimensions()) {
-                context.log("[KERNEL] All semantic dimensions resolved. Proceeding to deterministic execution.");
-                return deterministicExecution(state.getRawInput() != null ? state.getRawInput() : request, context);
-            }
-
             result = runDarwinIteration(context, darwinFlow);
             safetyCounter++;
+
+            // Evaluate Stability and Evolutionary Pressure
+            Trajectory activeTrajectory = getActiveTrajectory(context);
+            if (activeTrajectory != null) {
+                boolean stabilized = evolutionaryTrajectoryEngine.evolve(activeTrajectory, context);
+                if (stabilized) {
+                    context.log("[KERNEL] Evolutionary equilibrium detected. Converging.");
+                    break;
+                }
+            }
 
             saveFullCheckpoint();
 
@@ -810,7 +835,18 @@ public class IterationManager {
             context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
         }
 
-        IntentExpansionResult intentExpansion = (IntentExpansionResult) state.getMetadata().get("intentExpansion");
+        Object intentExpansionObj = state.getMetadata().get("intentExpansion");
+        IntentExpansionResult intentExpansionFinal = null;
+        if (intentExpansionObj instanceof IntentExpansionResult) {
+            intentExpansionFinal = (IntentExpansionResult) intentExpansionObj;
+        } else if (intentExpansionObj instanceof Map) {
+            intentExpansionFinal = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .convertValue(intentExpansionObj, IntentExpansionResult.class);
+            state.getMetadata().put("intentExpansion", intentExpansionFinal);
+        }
+
+        final IntentExpansionResult intentExpansion = intentExpansionFinal;
         if (intentExpansion != null && intentExpansion.getActiveDimensionId() != null) {
             context.log("[KERNEL] Evolving Semantic Dimension: " + intentExpansion.getActiveDimensionId() + " (Generation: " + state.getIterationCount() + ")");
 
@@ -1139,6 +1175,18 @@ public class IterationManager {
 
     public IterationManager createVariantManager(TaskContext variantContext, AiService aiService) {
         return KernelFactory.create(variantContext, aiService);
+    }
+
+    private Trajectory getActiveTrajectory(TaskContext context) {
+        IterationRecord lastWinner = context.getKernelContext().getMemoryService().getRecords().stream()
+                .filter(r -> "ACTIVE".equals(r.getActivationState()))
+                .reduce((first, second) -> second)
+                .orElse(null);
+
+        if (lastWinner != null && lastWinner.getBranchId() != null) {
+             return context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(lastWinner.getBranchId());
+        }
+        return null;
     }
 
     public void advanceEvolutionPhase(OrchestrationState state) {

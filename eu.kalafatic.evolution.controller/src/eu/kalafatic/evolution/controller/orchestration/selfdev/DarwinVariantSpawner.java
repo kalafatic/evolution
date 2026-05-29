@@ -156,6 +156,8 @@ public class DarwinVariantSpawner {
           .append("CRITICAL: You are NOT deciding the divergence. The divergence is PREDEFINED by the ORCHESTRATOR.\n")
           .append("The ORCHESTRATOR owns the evolutionary planning, while you ONLY materialize a constrained local trajectory.\n")
           .append("Your task is to CONSTRAIN your output to the technical characteristics required by the blueprint.\n\n")
+              .append("MANDATORY: Evolve the selected trajectory to address identified architectural pressures.\n")
+              .append("Do NOT restart brainstorming. Mutate the ancestor to improve stability, resilience, or maintainability.\n\n")
           .append("BLUEPRINT TO MATERIALIZE:\n")
           .append("ID: ").append(bp.getId()).append("\n")
           .append("Goal: ").append(bp.getGoal()).append("\n")

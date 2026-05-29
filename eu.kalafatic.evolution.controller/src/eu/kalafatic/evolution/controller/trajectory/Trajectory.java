@@ -17,8 +17,10 @@ public class Trajectory {
     // Lineage and Evolution Memory
     private final List<String> rejectedSiblingIds = new ArrayList<>();
     private final List<String> adaptationHistory = new ArrayList<>();
+    private final List<eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector> pressureHistory = new ArrayList<>();
     private String survivalJustification;
     private int generation = 0;
+    private double instabilityScore = 0.0;
 
     // Core Darwinian metrics
     private double fitnessScore = 0.5;
@@ -112,6 +114,12 @@ public class Trajectory {
 
     public int getGeneration() { return generation; }
     public void setGeneration(int generation) { this.generation = generation; }
+
+    public double getInstabilityScore() { return instabilityScore; }
+    public void setInstabilityScore(double instabilityScore) { this.instabilityScore = instabilityScore; }
+
+    public List<eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector> getPressureHistory() { return pressureHistory; }
+    public void recordPressure(eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) { this.pressureHistory.add(pressure); }
 
     public double getConvergenceRate() { return convergenceRate; }
     public void setConvergenceRate(double rate) { this.convergenceRate = rate; }
