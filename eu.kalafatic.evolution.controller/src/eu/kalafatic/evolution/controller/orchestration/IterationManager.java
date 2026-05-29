@@ -78,7 +78,9 @@ import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.workflow.StepModeController;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStep;
@@ -235,11 +237,11 @@ public class IterationManager {
         }
 
         if (!resumed && memoryService != null) {
-            Map<String, String> checkpoint = memoryService.loadCheckpoint(context.getSessionId());
+            Checkpoint checkpoint = memoryService.loadCheckpoint(context.getSessionId());
             if (checkpoint != null) {
                 context.log("[KERNEL] Found memory checkpoint for session: " + context.getSessionId());
-                context.getOrchestrationState().setCurrentPhase(checkpoint.get("phase"));
-                context.getOrchestrationState().setRawInput(checkpoint.get("goal"));
+                restoreStateFromCheckpoint(checkpoint);
+                resumed = true;
             }
         }
 
@@ -586,7 +588,7 @@ public class IterationManager {
             result = runDarwinIteration(context, darwinFlow);
             safetyCounter++;
 
-            memoryService.saveCheckpoint(context.getSessionId(), (currentIterationModel != null ? currentIterationModel.getId() : "default"), state.getCurrentPhase(), state.getRawInput());
+            saveFullCheckpoint();
 
             if (result.getDecision() != SelfDevDecision.CONTINUE) {
                 break;
@@ -1144,6 +1146,101 @@ public class IterationManager {
         EvolutionPhase current = EvolutionPhase.fromString(state.getCurrentPhase());
         EvolutionPhase next = phaseMachine.next(current, false, state.getIterationCount());
         state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(next));
+    }
+
+    private void saveFullCheckpoint() {
+        if (memoryService == null) return;
+
+        OrchestrationState state = context.getOrchestrationState();
+        Checkpoint cp = new Checkpoint();
+        cp.setSessionId(context.getSessionId());
+        cp.setCurrentPhase(state.getCurrentPhase());
+        cp.setRawInput(state.getRawInput());
+        cp.setIterationCount(state.getIterationCount());
+        cp.setMetadata(state.getMetadata());
+        cp.setChangedFiles(context.getFileChangeTracker().getChangedFiles());
+        cp.setActiveLineage(memoryService.getActiveLineage());
+        cp.setCurrentIterationId(currentIterationModel != null ? currentIterationModel.getId() : state.getCurrentIterationId());
+        cp.setArtifacts(context.getSemanticWorkspace().getAllArtifacts());
+        cp.setCognitiveTraceNodes(state.getCognitiveTrace().getNodes());
+        cp.setRejectedBranches(memoryService.getEvolutionGraph().getRejectedBranches());
+        cp.setEntropyHistory(memoryService.getEvolutionGraph().getEntropyHistory());
+        cp.setDimensions(memoryService.getEvolutionGraph().getDimensions());
+        cp.setTrajectories(context.getSemanticWorkspace().getTrajectoryMemory().getTrajectories());
+
+        Object lastSnapshot = state.getMetadata().get("lastSnapshot");
+        if (lastSnapshot instanceof StateSnapshot) {
+            cp.setLastSnapshot((StateSnapshot) lastSnapshot);
+        }
+
+        memoryService.saveCheckpoint(cp);
+    }
+
+    private void restoreStateFromCheckpoint(Checkpoint cp) {
+        OrchestrationState state = context.getOrchestrationState();
+        state.setCurrentPhase(cp.getCurrentPhase());
+        state.setRawInput(cp.getRawInput());
+        state.setIterationCount(cp.getIterationCount());
+        state.getMetadata().putAll(cp.getMetadata());
+
+        if (cp.getChangedFiles() != null) {
+            context.getFileChangeTracker().restore(cp.getChangedFiles());
+        }
+
+        if (cp.getCurrentIterationId() != null) {
+            state.setCurrentIterationId(cp.getCurrentIterationId());
+        }
+
+        if (cp.getArtifacts() != null) {
+            cp.getArtifacts().forEach(a -> context.getSemanticWorkspace().addArtifact(a));
+        }
+
+        if (cp.getCognitiveTraceNodes() != null) {
+            cp.getCognitiveTraceNodes().forEach(node -> state.getCognitiveTrace().addNode(node));
+        }
+
+        if (cp.getRejectedBranches() != null) {
+            cp.getRejectedBranches().forEach((dimId, branches) -> {
+                branches.forEach(b -> memoryService.getEvolutionGraph().recordRejection(dimId, b, "Restored from checkpoint"));
+            });
+        }
+
+        if (cp.getEntropyHistory() != null) {
+            cp.getEntropyHistory().forEach(e -> memoryService.getEvolutionGraph().recordEntropy(e));
+        }
+
+        if (cp.getDimensions() != null) {
+            cp.getDimensions().forEach(d -> memoryService.getEvolutionGraph().recordDimension(d));
+        }
+
+        if (cp.getTrajectories() != null) {
+            cp.getTrajectories().forEach((id, t) -> {
+                Trajectory traj = t;
+                if (t instanceof Map) {
+                    traj = new com.fasterxml.jackson.databind.ObjectMapper().convertValue(t, Trajectory.class);
+                }
+                context.getSemanticWorkspace().getTrajectoryMemory().recordTrajectory(traj);
+            });
+        }
+
+        if (cp.getLastSnapshot() != null) {
+            state.getMetadata().put("lastSnapshot", cp.getLastSnapshot());
+        }
+
+        if (cp.getActiveLineage() != null) {
+            for (IterationRecord r : cp.getActiveLineage()) {
+                boolean exists = memoryService.getRecords().stream()
+                        .anyMatch(existing -> r.getBranchId() != null && r.getBranchId().equals(existing.getBranchId()));
+                if (!exists) {
+                    memoryService.getRecords().add(r);
+                }
+            }
+        }
+
+        context.log("[KERNEL] Runtime continuity restored. Resuming at phase: " + cp.getCurrentPhase());
+
+        RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
+        bus.publish(new RuntimeEvent(RuntimeEventType.SESSION_RESUMED, context.getSessionId(), "Kernel", cp));
     }
 
     private OrchestratorResponse deterministicExecution(String request, TaskContext context) throws Exception {

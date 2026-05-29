@@ -19,12 +19,17 @@ public final class CausalNode {
     private final List<String> outputReferences;
     private final double confidence;
     private final String rationale;
-    private final long timestamp;
+    private long timestamp;
     private final Map<String, Object> metadata;
 
-    public CausalNode(String nodeId, String nodeType, String sourceComponent,
-                      List<String> inputReferences, List<String> outputReferences,
-                      double confidence, String rationale) {
+    @com.fasterxml.jackson.annotation.JsonCreator
+    public CausalNode(@com.fasterxml.jackson.annotation.JsonProperty("nodeId") String nodeId,
+                      @com.fasterxml.jackson.annotation.JsonProperty("nodeType") String nodeType,
+                      @com.fasterxml.jackson.annotation.JsonProperty("sourceComponent") String sourceComponent,
+                      @com.fasterxml.jackson.annotation.JsonProperty("inputReferences") List<String> inputReferences,
+                      @com.fasterxml.jackson.annotation.JsonProperty("outputReferences") List<String> outputReferences,
+                      @com.fasterxml.jackson.annotation.JsonProperty("confidence") double confidence,
+                      @com.fasterxml.jackson.annotation.JsonProperty("rationale") String rationale) {
         this(nodeId, nodeType, sourceComponent, inputReferences, outputReferences, confidence, rationale, new HashMap<>());
     }
 
@@ -39,7 +44,11 @@ public final class CausalNode {
         this.confidence = confidence;
         this.rationale = rationale;
         this.timestamp = System.currentTimeMillis();
-        this.metadata = Collections.unmodifiableMap(new HashMap<>(metadata));
+        this.metadata = metadata != null ? Collections.unmodifiableMap(new HashMap<>(metadata)) : Collections.emptyMap();
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     public String getNodeId() { return nodeId; }

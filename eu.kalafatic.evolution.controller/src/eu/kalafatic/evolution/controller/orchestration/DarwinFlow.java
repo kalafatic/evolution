@@ -488,7 +488,16 @@ public class DarwinFlow implements IOrchestrationFlow {
             return false;
         }
 
-        IntentExpansionResult expansion = (IntentExpansionResult) context.getOrchestrationState().getMetadata().get("intentExpansion");
+        Object expansionObj = context.getOrchestrationState().getMetadata().get("intentExpansion");
+        IntentExpansionResult expansion = null;
+        if (expansionObj instanceof IntentExpansionResult) {
+            expansion = (IntentExpansionResult) expansionObj;
+        } else if (expansionObj instanceof java.util.Map) {
+            expansion = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .convertValue(expansionObj, IntentExpansionResult.class);
+            context.getOrchestrationState().getMetadata().put("intentExpansion", expansion);
+        }
         int totalAxes = (expansion != null && expansion.getEvolutionaryAxes() != null) ? expansion.getEvolutionaryAxes().size() : 1;
 
         if (iterationCount < totalAxes) {

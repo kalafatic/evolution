@@ -34,7 +34,15 @@ public class FinalResponseAssembler {
 
         // 4. Selected variant
         String selectedVariantId = null;
-        DecisionSnapshot snapshot = (DecisionSnapshot) state.getMetadata().get("lastDecisionSnapshot");
+        Object snapshotObj = state.getMetadata().get("lastDecisionSnapshot");
+        DecisionSnapshot snapshot = null;
+        if (snapshotObj instanceof DecisionSnapshot) {
+            snapshot = (DecisionSnapshot) snapshotObj;
+        } else if (snapshotObj instanceof Map) {
+            try {
+                snapshot = DecisionSnapshot.fromJson(new org.json.JSONObject((Map<?, ?>) snapshotObj));
+            } catch (Exception e) {}
+        }
         if (snapshot != null) {
             selectedVariantId = snapshot.getSelectedVariantId();
         }
@@ -101,7 +109,15 @@ public class FinalResponseAssembler {
         }
 
         sb.append("\n### 🔍 Verification\n");
-        DecisionSnapshot lastDecision = (DecisionSnapshot) state.getMetadata().get("lastDecisionSnapshot");
+        Object lastDecisionObj = state.getMetadata().get("lastDecisionSnapshot");
+        DecisionSnapshot lastDecision = null;
+        if (lastDecisionObj instanceof DecisionSnapshot) {
+            lastDecision = (DecisionSnapshot) lastDecisionObj;
+        } else if (lastDecisionObj instanceof Map) {
+            try {
+                lastDecision = DecisionSnapshot.fromJson(new org.json.JSONObject((Map<?, ?>) lastDecisionObj));
+            } catch (Exception e) {}
+        }
         if (lastDecision != null && lastDecision.getAggregatedScores() != null) {
             Double winnerScore = lastDecision.getAggregatedScores().get(selectedVariantId);
             if (winnerScore != null) {
@@ -138,7 +154,15 @@ public class FinalResponseAssembler {
         OrchestrationState state = context.getOrchestrationState();
 
         // From decision snapshot (selected branch explanation)
-        DecisionSnapshot snapshot = (DecisionSnapshot) state.getMetadata().get("lastDecisionSnapshot");
+        Object snapshotObj = state.getMetadata().get("lastDecisionSnapshot");
+        DecisionSnapshot snapshot = null;
+        if (snapshotObj instanceof DecisionSnapshot) {
+            snapshot = (DecisionSnapshot) snapshotObj;
+        } else if (snapshotObj instanceof Map) {
+            try {
+                snapshot = DecisionSnapshot.fromJson(new org.json.JSONObject((Map<?, ?>) snapshotObj));
+            } catch (Exception e) {}
+        }
         if (snapshot != null && snapshot.getActivationReason() != null) {
             String reason = snapshot.getActivationReason();
             if (!reason.equalsIgnoreCase("Highest Score") && !reason.equalsIgnoreCase("No high-quality variant found.")) {
