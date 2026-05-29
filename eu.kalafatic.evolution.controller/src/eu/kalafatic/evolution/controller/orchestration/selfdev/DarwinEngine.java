@@ -41,6 +41,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private final RejectionPatternAnalyzer rejectionAnalyzer = new RejectionPatternAnalyzer();
     private final EvolutionaryPenaltyModel penaltyModel = new EvolutionaryPenaltyModel();
     private final DiversityPressureController diversityController = new DiversityPressureController();
+    private final eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine pressureEngine = new eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine();
 
     private final PolicyResolver policyResolver = new PolicyResolver();
     private final PromptComposer promptComposer = new PromptComposer();
@@ -219,6 +220,16 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         Object epsObj = context.getOrchestrationState().getMetadata().get("eps");
         double eps = (epsObj instanceof Double) ? (Double) epsObj : 0.5;
         basePrompt += "\n[SYSTEM_DIRECTIVE] Evolution Pressure Scalar (EPS): " + String.format("%.2f", eps) + ".\n";
+
+        if (trajectory != null) {
+            EvolutionaryPressureVector currentPressure = pressureEngine.analyze(trajectory, context);
+            trajectory.recordPressure(currentPressure);
+            basePrompt += "\n[EVOLUTIONARY_PRESSURE] Detected pressures: " +
+                          "Ambiguity=" + currentPressure.ambiguity + ", " +
+                          "Resilience=" + currentPressure.failureExposure + ", " +
+                          "Extensibility=" + currentPressure.extensibility + ".\n";
+            basePrompt += "[INSTRUCTION] Each mutation MUST specifically address at least one identified pressure.\n";
+        }
 
         // ========================================
         // TRAJECTORY MUTATION PIPELINE

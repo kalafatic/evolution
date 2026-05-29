@@ -481,64 +481,20 @@ public class DarwinFlow implements IOrchestrationFlow {
     }
 
     public boolean checkConvergence(List<BranchVariant> variants, TaskContext context) {
-        if (variants == null || variants.size() < 2) return false;
+        if (variants == null || variants.isEmpty()) return false;
 
-        int iterationCount = context.getOrchestrationState().getIterationCount();
-        if (iterationCount < 2) {
-            return false;
-        }
+        eu.kalafatic.evolution.controller.trajectory.StabilityAnalyzer analyzer = new eu.kalafatic.evolution.controller.trajectory.StabilityAnalyzer();
 
-        Object expansionObj = context.getOrchestrationState().getMetadata().get("intentExpansion");
-        IntentExpansionResult expansion = null;
-        if (expansionObj instanceof IntentExpansionResult) {
-            expansion = (IntentExpansionResult) expansionObj;
-        } else if (expansionObj instanceof java.util.Map) {
-            expansion = new com.fasterxml.jackson.databind.ObjectMapper()
-                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .convertValue(expansionObj, IntentExpansionResult.class);
-            context.getOrchestrationState().getMetadata().put("intentExpansion", expansion);
-        }
-        int totalAxes = (expansion != null && expansion.getEvolutionaryAxes() != null) ? expansion.getEvolutionaryAxes().size() : 1;
-
-        if (iterationCount < totalAxes) {
-            return false;
-        }
-
-        long distinctSurvivors = context.getKernelContext().getMemoryService().getRecords().stream()
+        IterationRecord lastWinner = context.getKernelContext().getMemoryService().getRecords().stream()
                 .filter(r -> "ACTIVE".equals(r.getActivationState()))
-                .map(r -> r.getStrategy())
-                .distinct()
-                .count();
+                .reduce((first, second) -> second)
+                .orElse(null);
 
-        AtomicIntentAnalysis atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
-        boolean isAtomicSuccess = atomic != null && atomic.getComplexityVector().determinismConfidence > 0.8;
-
-        double maxScore = variants.stream().mapToDouble(BranchVariant::getScore).max().orElse(0.0);
-
-        if (distinctSurvivors < 3 && iterationCount < Math.max(4, totalAxes) && (!isAtomicSuccess || maxScore < 0.92)) {
-             return false;
-        }
-        double avgScore = variants.stream().mapToDouble(BranchVariant::getScore).average().orElse(0.0);
-
-        if (maxScore > 0.92 && (maxScore - avgScore) < 0.03) {
-            context.log("[DARWIN] Strong convergence: Top variants have high and stable fitness.");
-            return true;
-        }
-
-        try {
-            String baseCommit = manager.getGitManager().getHeadCommit();
-            WorkspaceDeltaAnalyzer analyzer = new WorkspaceDeltaAnalyzer(context.getProjectRoot(), context);
-        WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
-
-            String phase = context.getOrchestrationState().getCurrentPhase();
-            if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(phase) || EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(phase)) {
-                if (reality.isSignificant() && (reality.getAddedLines() + reality.getRemovedLines()) < 5 && reality.getChangedFiles().size() <= 1) {
-                    context.log("[DARWIN] Convergence detected: Minimal delta in late evolution phase.");
-                    return true;
-                }
-            }
-        } catch (Exception e) {
-            context.log("[DARWIN] Convergence check failed: " + e.getMessage());
+        if (lastWinner != null && lastWinner.getBranchId() != null) {
+             Trajectory trajectory = context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(lastWinner.getBranchId());
+             if (trajectory != null) {
+                 return analyzer.isConverged(trajectory, context);
+             }
         }
 
         return false;

@@ -13,6 +13,8 @@ public class EvolutionMemoryGraph {
     private Map<String, List<String>> rejectedBranches = new HashMap<>();
     private Map<String, String> rationales = new HashMap<>();
     private List<Double> entropyHistory = new ArrayList<>();
+    private List<String> convergenceReasoning = new ArrayList<>();
+    private List<EvolutionaryPressureVector> globalPressureHistory = new ArrayList<>();
 
     public void recordDimension(EvolutionDimension dimension) {
         dimensions.add(dimension);
@@ -31,4 +33,10 @@ public class EvolutionMemoryGraph {
     public Map<String, List<String>> getRejectedBranches() { return rejectedBranches; }
     public Map<String, String> getRationales() { return rationales; }
     public List<Double> getEntropyHistory() { return entropyHistory; }
+
+    public void recordConvergenceReasoning(String reasoning) { convergenceReasoning.add(reasoning); }
+    public List<String> getConvergenceReasoning() { return convergenceReasoning; }
+
+    public void recordGlobalPressure(EvolutionaryPressureVector pressure) { globalPressureHistory.add(pressure); }
+    public List<EvolutionaryPressureVector> getGlobalPressureHistory() { return globalPressureHistory; }
 }
