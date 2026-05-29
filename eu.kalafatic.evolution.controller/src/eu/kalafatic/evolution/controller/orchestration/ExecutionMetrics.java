@@ -11,6 +11,10 @@ public class ExecutionMetrics {
     private final Instant finishedAt;
     private final Duration totalDuration;
 
+    private int repairAttempts = 0;
+    private int repairSuccesses = 0;
+    private int validationFailures = 0;
+
     public ExecutionMetrics(Instant startedAt, Instant finishedAt) {
         this.startedAt = startedAt;
         this.finishedAt = finishedAt;
@@ -34,4 +38,13 @@ public class ExecutionMetrics {
         long millis = totalDuration.toMillisPart();
         return seconds + "." + (millis / 100) + "s";
     }
+
+    public int getRepairAttempts() { return repairAttempts; }
+    public void incrementRepairAttempts() { this.repairAttempts++; }
+
+    public int getRepairSuccesses() { return repairSuccesses; }
+    public void incrementRepairSuccesses() { this.repairSuccesses++; }
+
+    public int getValidationFailures() { return validationFailures; }
+    public void incrementValidationFailures() { this.validationFailures++; }
 }

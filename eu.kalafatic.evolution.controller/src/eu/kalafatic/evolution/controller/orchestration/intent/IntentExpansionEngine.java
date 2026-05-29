@@ -16,11 +16,14 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomain;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomainResolver;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.controller.parsers.structured.StructuredResponsePipeline;
 
 /**
  * Engine for expanding user intent and exploring ambiguity before Darwin execution.
  */
 public class IntentExpansionEngine extends BaseAiAgent {
+
+    private final StructuredResponsePipeline pipeline = new StructuredResponsePipeline();
 
     public IntentExpansionEngine() {
         super("IntentExpansionEngine", "IntentExpansionEngine");
@@ -122,11 +125,14 @@ public class IntentExpansionEngine extends BaseAiAgent {
         String userPrompt = "Analyze the following user request and expand the intent space:\n\n" + prompt + priorContext;
 
         String response = aiService.sendRequest(context.getOrchestrator(), systemPrompt + "\n\n" + userPrompt, context);
-        JSONObject json = JsonUtils.extractJsonObject(response);
 
-        if (json == null) {
-            throw new Exception("Failed to parse intent expansion JSON: " + response);
-        }
+        // Define Schema for Intent Expansion
+        java.util.Map<String, Class<?>> schema = new java.util.HashMap<>();
+        schema.put("state", String.class);
+        schema.put("dominantIntent", String.class);
+        schema.put("confidence", JSONObject.class);
+
+        JSONObject json = pipeline.process(response, schema, context);
 
         context.log("[DARWIN_BRANCHES] " + json.toString());
 
