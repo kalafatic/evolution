@@ -8,7 +8,11 @@ import eu.kalafatic.evolution.controller.tools.ToolFactory;
  */
 public class JavaDevAgent extends BaseAiAgent {
     public JavaDevAgent() {
-        super(EvolutionConstants.AGENT_JAVA_DEV, EvolutionConstants.AGENT_JAVA_DEV);
+        super("JavaDev", "JavaDev");
+    }
+
+    public JavaDevAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("JavaDev", "JavaDev", container);
         addTool(ToolFactory.getTool(EvolutionConstants.TOOL_FILE));
         addTool(ToolFactory.getTool(EvolutionConstants.TOOL_MAVEN));
         addTool(ToolFactory.getTool(EvolutionConstants.TOOL_GIT));

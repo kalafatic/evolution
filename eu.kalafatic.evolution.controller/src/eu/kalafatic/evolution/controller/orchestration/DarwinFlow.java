@@ -70,15 +70,16 @@ public class DarwinFlow implements IOrchestrationFlow {
     private static final ExecutorService variantExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
     private final AiService aiService;
     private final IterationManager manager;
+    private final SessionContainer sessionContainer;
 
     public DarwinFlow(AiService aiService, IterationManager manager) {
         this.aiService = aiService;
         this.manager = manager;
+        this.sessionContainer = SessionManager.getInstance().getOrCreateSession(manager.getContext().getSessionId());
     }
 
     @Override
     public OrchestratorResponse execute(String request, TaskContext context) throws Exception {
-        // DarwinFlow is now an execution engine. Orchestration is owned by IterationManager.
         return manager.evolve(request, context);
     }
 
@@ -91,8 +92,6 @@ public class DarwinFlow implements IOrchestrationFlow {
         Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
         StateSnapshot snapshot = initialEval.snapshot;
 
-        // PERSISTENT TRAJECTORY LINEAGE: Retrieve existing trajectory from memory if available
-        // to ensure multi-generational continuity.
         Trajectory trajectory = null;
         IterationRecord lastWinner = context.getKernelContext().getMemoryService().getRecords().stream()
                 .filter(r -> "ACTIVE".equals(r.getActivationState()))
@@ -130,7 +129,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             "Generated " + rawVariants.size() + " variants."
         ));
 
-        ISchedulingContract scheduler = CapabilityRegistry.getInstance().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
+        ISchedulingContract scheduler = sessionContainer.getCapabilityRegistry().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
 
         ScheduledExecutionPlan executionPlan;
         if (scheduler != null) {
@@ -142,7 +141,6 @@ public class DarwinFlow implements IOrchestrationFlow {
         List<BranchVariant> variants = executionPlan.getScheduledVariants();
         context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
 
-        // METADATA PERSISTENCE: Record trajectory analysis for ALL trajectories
         for (BranchVariant v : variants) {
             TrajectoryAnalysisRecord tar = new TrajectoryAnalysisRecord();
             tar.setIterationId(iterId);
@@ -179,7 +177,6 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         context.log("[APPROVED:" + finalWinnerId + "] [COGNITION] Surviving trajectory committed: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
 
-        // Branch Stamping: Mark all other trajectories as REJECTED or KEPT in logs for UI sealing
         for (BranchVariant v : variants) {
             if (v.getId().equals(finalWinnerId)) continue;
 
@@ -231,7 +228,6 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.getGitManager().merge(selectedVariant.getBranchName());
             } else if (isMediated) {
-                // MEDIATED COGNITIVE MERGE: Apply the winner's understanding to the session context
                 context.log("[KERNEL] Applying cognitive winner: " + selectedVariant.getStrategy());
                 context.getOrchestrationState().getMetadata().put("current_understanding", selectedVariant.getStrategy());
                 context.getOrchestrationState().getMetadata().put("current_strategy", selectedVariant.getStrategyType());
@@ -240,7 +236,6 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.getOrchestrationState().getMetadata().put("current_actions", selectedVariant.getActions());
             }
 
-            // TASK PROPAGATION: Ensure tasks executed in the variant are visible in the main context
             if (winningContext != null) {
                 for (Task t : winningContext.getTasks()) {
                     if (!context.getOrchestrator().getTasks().contains(t)) {
@@ -250,8 +245,6 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
 
             if (isMediated) {
-                // In mediated mode, we skip physical evaluation and commit.
-                // We return a success result to allow phase progression.
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
                 res.setDecision(SelfDevDecision.CONTINUE);
@@ -274,7 +267,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", true);
             }
 
-            IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
+            IEvaluationContract evaluator = sessionContainer.getCapabilityRegistry().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
             EvaluationResult result = evaluator.evaluate(context.getProjectRoot(), context, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
 
             boolean isFinalPhase = EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(context.getOrchestrationState().getCurrentPhase());
@@ -339,12 +332,10 @@ public class DarwinFlow implements IOrchestrationFlow {
             boolean success = true;
             manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.EXECUTING, context);
 
-            // PROHIBIT BUILD/GIT FOR TEST MODE AND MEDIATED MODE
             if (context.getMetadata().containsKey("testMode") || isMediated) {
                 variant.setSuccess(true);
                 variant.setScore(0.95);
 
-                // Still need to perform the actions if it's a file write, to satisfy assertions
                 for (Task task : tasks) {
                     try {
                         variantManager.getTaskExecutor().getOrchestrator().executeTask(task, variantContext);
@@ -358,7 +349,6 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
 
             for (Task task : tasks) {
-                // Task-level supervision is already handled inside executeTasksWithRetries via manager.checkStep()
                 boolean taskSuccess = variantManager.executeTasksWithRetries(List.of(task));
                 if (variantExecContext != null) {
                     variantExecContext.getTasks().add(task);
@@ -380,7 +370,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                     variantExecContext.recordEvent(event);
 
                     ActivationResolver resolver = new ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory());
-                    DecisionSnapshot intermediateDecision = resolver.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant), SignalBus.getInstance().getSignalsForVariant(variant.getId()), variantContext);
+                    DecisionSnapshot intermediateDecision = resolver.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant), sessionContainer.getSignalBus().getSignalsForVariant(variant.getId()), variantContext);
 
                     Trajectory t = context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(variant.getTrajectoryId());
                     if (t != null) {
@@ -402,7 +392,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
             variant.setSuccess(success);
 
-            IEvaluationContract evaluator = CapabilityRegistry.getInstance().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
+            IEvaluationContract evaluator = sessionContainer.getCapabilityRegistry().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
             EvaluationResult result = evaluator.evaluate(tempDir, variantContext, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
             variant.setSuccess(result.isSuccess());
             if (result.isSuccess()) {
@@ -452,10 +442,9 @@ public class DarwinFlow implements IOrchestrationFlow {
             v.setTradeoffs("User-defined trajectory");
         }
 
-        v.setScore(0.95); // User proposals are highly valued
+        v.setScore(0.95);
         v.setBranchName("exp/user/" + sanitize(v.getStrategy()));
 
-        // Record trajectory for tracking
         Trajectory t = new Trajectory(v.getId(), v.getStrategy());
         t.setFitnessScore(v.getScore());
         v.setTrajectoryId(t.getTrajectoryId());
@@ -499,8 +488,6 @@ public class DarwinFlow implements IOrchestrationFlow {
     public boolean checkConvergence(List<BranchVariant> variants, TaskContext context) {
         if (variants == null || variants.size() < 2) return false;
 
-        // 0. Minimum Evolution Guarantees
-        // Required: minimum 2 iterations AND minimum 3 distinct surviving branches across history before convergence.
         int iterationCount = context.getOrchestrationState().getIterationCount();
         if (iterationCount < 2) {
             return false;
@@ -509,7 +496,6 @@ public class DarwinFlow implements IOrchestrationFlow {
         IntentExpansionResult expansion = (IntentExpansionResult) context.getOrchestrationState().getMetadata().get("intentExpansion");
         int totalAxes = (expansion != null && expansion.getEvolutionaryAxes() != null) ? expansion.getEvolutionaryAxes().size() : 1;
 
-        // Converge only if we have explored all identified evolutionary axes at least once
         if (iterationCount < totalAxes) {
             return false;
         }
@@ -523,7 +509,6 @@ public class DarwinFlow implements IOrchestrationFlow {
         AtomicIntentAnalysis atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
         boolean isAtomicSuccess = atomic != null && atomic.getComplexityVector().determinismConfidence > 0.8;
 
-        // 1. Fitness Stability: Check if top variants have stabilized at high scores
         double maxScore = variants.stream().mapToDouble(BranchVariant::getScore).max().orElse(0.0);
 
         if (distinctSurvivors < 3 && iterationCount < Math.max(4, totalAxes) && (!isAtomicSuccess || maxScore < 0.92)) {
@@ -536,13 +521,11 @@ public class DarwinFlow implements IOrchestrationFlow {
             return true;
         }
 
-        // 2. Reality Check Convergence: Check magnitude of recent workspace changes
         try {
             String baseCommit = manager.getGitManager().getHeadCommit();
             WorkspaceDeltaAnalyzer analyzer = new WorkspaceDeltaAnalyzer(context.getProjectRoot(), context);
         WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
 
-            // If we are in a late phase and changes are very small/refined, it may signal convergence
             String phase = context.getOrchestrationState().getCurrentPhase();
             if (EvolutionConstants.PHASE_IMPLEMENTATION_PLAN.equals(phase) || EvolutionConstants.PHASE_FINAL_SYNTHESIS.equals(phase)) {
                 if (reality.isSignificant() && (reality.getAddedLines() + reality.getRemovedLines()) < 5 && reality.getChangedFiles().size() <= 1) {

@@ -99,11 +99,6 @@ import eu.kalafatic.evolution.controller.workflow.MediatedExportManager;
 /**
  * The Kernel Control Plane. Sole authority for state transitions and strategic orchestration.
  * Unified and refactored for architectural coherence.
- *
- * <p><b>ARCHITECTURAL INVARIANT: SINGLE TRANSITION AUTHORITY</b></p>
- * Only IterationManager is permitted to change the system state. All components
- * MUST request state transitions through the {@code transition(SystemState, TaskContext)} method.
- * This ensures a deterministic and traceable state machine.
  */
 @EvolutionComponent(
     domain = "orchestration",
@@ -115,7 +110,7 @@ import eu.kalafatic.evolution.controller.workflow.MediatedExportManager;
 public class IterationManager {
 
     private final TaskContext context;
-    private SessionContext sessionContext;
+    private SessionContainer sessionContainer;
     private final AiService aiService;
     private final GitManager gitManager;
     private final TaskPlanner taskPlanner;
@@ -181,12 +176,12 @@ public class IterationManager {
             Evaluator evaluator,
             DarwinEngine darwinEngine,
             IterationMemoryService memoryService) {
-        this(context, null, aiService, gitManager, taskPlanner, taskExecutor, evaluator, darwinEngine, memoryService);
+        this(context, SessionManager.getInstance().getOrCreateSession(context.getSessionId()), aiService, gitManager, taskPlanner, taskExecutor, evaluator, darwinEngine, memoryService);
     }
 
     public IterationManager(
             TaskContext context,
-            SessionContext sessionContext,
+            SessionContainer sessionContainer,
             AiService aiService,
             GitManager gitManager,
             TaskPlanner taskPlanner,
@@ -195,7 +190,7 @@ public class IterationManager {
             DarwinEngine darwinEngine,
             IterationMemoryService memoryService) {
         this.context = context;
-        this.sessionContext = sessionContext;
+        this.sessionContainer = sessionContainer;
         this.aiService = aiService;
         this.gitManager = gitManager;
         this.taskPlanner = taskPlanner;
@@ -204,12 +199,13 @@ public class IterationManager {
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
 
-        if (sessionContext != null) {
-            if (sessionContext.getAgentRegistry().isEmpty()) {
-                List<IAgent> isolated = AgentFactory.createIsolatedAgents();
-                isolated.forEach(a -> sessionContext.getAgentRegistry().put(a.getType(), a));
+        if (sessionContainer != null) {
+            Map<String, IAgent> registry = (sessionContainer instanceof SessionContext) ? ((SessionContext)sessionContainer).getAgentRegistry() : new java.util.HashMap<>();
+            if (registry.isEmpty()) {
+                List<IAgent> isolated = AgentFactory.createIsolatedAgents(sessionContainer);
+                isolated.forEach(a -> registry.put(a.getType(), a));
             }
-            availableAgents.addAll(sessionContext.getAgentRegistry().values());
+            availableAgents.addAll(registry.values());
         } else {
             availableAgents.addAll(AgentFactory.getAllAgents());
         }
@@ -222,7 +218,7 @@ public class IterationManager {
         validator = (eu.kalafatic.evolution.controller.agents.ValidatorAgent) getInternalAgent(EvolutionConstants.AGENT_VALIDATOR);
         repairAgent = (eu.kalafatic.evolution.controller.agents.RepairAgent) getInternalAgent(EvolutionConstants.AGENT_REPAIR);
 
-        // RESTART CONTINUITY: Sync state from model or memory checkpoint if resuming
+        // RESTART CONTINUITY
         boolean resumed = false;
         if (context.getOrchestrator() != null && context.getOrchestrator().getSelfDevSession() != null) {
             SelfDevSession session = context.getOrchestrator().getSelfDevSession();
@@ -251,7 +247,7 @@ public class IterationManager {
         this.phaseEngine = new DefaultPhaseEngine();
         this.branchManager = new DefaultBranchManager(gitManager);
         this.mutationEngine = new DefaultMutationEngine(darwinEngine);
-        this.fitnessEngine = new DefaultFitnessEngine(evaluator);
+        this.fitnessEngine = new DefaultFitnessEngine(evaluator, sessionContainer);
         this.realityEngine = new DefaultRealityEngine(context.getProjectRoot(), context);
         this.authorityEngine = new DefaultAuthorityEngine(context.getKernelContext().getAuthority());
         this.trajectoryEngine = new DefaultTrajectoryEngine(memoryService);
@@ -261,7 +257,7 @@ public class IterationManager {
 
         // Register Capabilities
         try {
-            CapabilityRegistry reg = (sessionContext != null) ? sessionContext.getCapabilityRegistry() : CapabilityRegistry.getInstance();
+            CapabilityRegistry reg = (sessionContainer != null) ? sessionContainer.getCapabilityRegistry() : CapabilityRegistry.getInstance();
             reg.register(evaluator);
             reg.register(darwinEngine);
             reg.register(context.getSemanticWorkspace());
@@ -297,13 +293,10 @@ public class IterationManager {
         String request = taskRequest.getPrompt();
         OrchestrationState state = context.getOrchestrationState();
 
-        // CONTEXT PROPAGATION: Synchronize metadata from TaskRequest
         if (taskRequest.getContext() != null) {
             state.getMetadata().putAll(taskRequest.getContext());
         }
 
-        // EXECUTION BYPASS: Allow direct task execution if already in EXECUTING state
-        // (Legacy support and variant execution propagation)
         if (context.getStateHolder().getState() == SystemState.EXECUTING && !context.getOrchestrator().getTasks().isEmpty()) {
             context.log("[KERNEL] Pre-populated tasks detected in EXECUTING state. Bypassing orchestration for direct execution.");
             boolean success = executeTasksWithRetries(context.getOrchestrator().getTasks());
@@ -316,7 +309,6 @@ public class IterationManager {
 
         transition(SystemState.INIT, context);
 
-        // CHECKPOINT INVALIDATION: If the new goal differs from the checkpoint goal, reset evolution phase
         String checkpointGoal = (String) state.getMetadata().get("checkpoint_goal");
         if (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
             context.log("[KERNEL] New request detected. Invalidating stale evolution phase: " + state.getCurrentPhase());
@@ -340,7 +332,7 @@ public class IterationManager {
             ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());
             convState.addMessage("User: " + request);
 
-            // 1. DISCOVERY phase (Repository-First Reasoning)
+            // 1. DISCOVERY phase
             if (!profile.hasTrait(BehaviorTrait.REASONING_ATOMIC)) {
                 if (gitManager.isGitRepository()) {
                     transition(SystemState.ANALYZING, context);
@@ -348,14 +340,12 @@ public class IterationManager {
                     String projectStructure = structureAgent.process("Provide a concise summary of the project structure and technology stack.", context, null);
                     state.getMetadata().put("projectStructure", projectStructure);
 
-                    // PERSISTENCE: Store architecture summary in Semantic Workspace
                     WorkspaceArtifact archArtifact = new WorkspaceArtifact("arch-summary-" + System.currentTimeMillis(), "architecture-summary");
                     archArtifact.setContent(projectStructure);
                     archArtifact.getSemanticTags().add("architecture");
                     archArtifact.getSemanticTags().add("structure");
                     context.getSemanticWorkspace().addArtifact(archArtifact);
 
-                    // MEDIATED DISCOVERY: Build semantic snapshot
                     if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
                         context.log("[KERNEL] Mediated Discovery: Building semantic repository snapshot.");
                         TargetScanner scanner = new TargetScanner();
@@ -367,7 +357,6 @@ public class IterationManager {
 
                         state.getMetadata().put("mediatedSnapshot", snapshot);
 
-                        // MEDIATED MODE MANDATE: Inject MetadataAgent discovery
                         context.log("[KERNEL] Mediated Mode: Triggering MetadataAgent repository cognition.");
                         eu.kalafatic.evolution.controller.agents.MetadataAgent metadataAgent = new eu.kalafatic.evolution.controller.agents.MetadataAgent();
                         metadataAgent.generate(context.getProjectRoot());
@@ -377,7 +366,7 @@ public class IterationManager {
                 }
             }
 
-            // 2. ANALYZING stage & Git Synchronization
+            // 2. ANALYZING stage
             transition(SystemState.ANALYZING, context);
             if (gitManager.isGitRepository()) {
                 gitManager.ensureInitialCommit();
@@ -401,23 +390,18 @@ public class IterationManager {
                 }
             }
 
-            // Mode Routing
             if (context.getPlatformMode() == null) {
                 PlatformMode mode = router.route(request, context.getOrchestrator());
                 context.setPlatformMode(mode);
                 context.log("Platform Mode: " + mode.getType());
 
-            RuntimeEventBus bus = (sessionContext != null) ? sessionContext.getEventBus() : RuntimeEventBus.getInstance();
-            bus.publish(
+                RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
+                bus.publish(
                     new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                         eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MODE_CHANGED,
                         context.getSessionId(), "Kernel", mode.getType().toString()));
             }
 
-            // --- Unified Evolutionary Mandate ---
-            // ALL requests must now flow through the iterative evolutionary kernel
-            // to ensure repository-grounded cognition and architectural divergence.
-            // Fast-track routing is strictly limited to greetings via ModeRouter.
             if (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
                 PlatformMode fastMode = router.routeFast(request, context.getOrchestrator());
                 if (fastMode != null && fastMode.getType() == PlatformType.SIMPLE_CHAT) {
@@ -434,9 +418,6 @@ public class IterationManager {
                 }
             }
 
-            // --- RECURSIVE EVOLUTIONARY COGNITION ---
-            // Before proceeding, we MUST check for unresolved semantic dimensions.
-            // Even "simple" tasks contain hidden assumptions that require evolution.
             context.log("[KERNEL] Inspecting goal for unresolved semantic uncertainty.");
             EvolutionAssessment initialAssessment = dimensionInferenceEngine.analyze(request, context);
             if (initialAssessment.hasUnresolvedDimensions()) {
@@ -446,13 +427,10 @@ public class IterationManager {
                 context.log("[KERNEL] No significant semantic uncertainty detected. Evolution will proceed with discovery grounding.");
             }
 
-            // Unified Intent Analysis
             transition(SystemState.ANALYZING, context);
             context.consoleLog("[KERNEL] Performing repository-grounded intent analysis.");
             intentService.analyze(request, context);
 
-            // UNIFIED EVOLUTIONARY KERNEL: All cognition flows route through evolve()
-            // The kernel handles iterations, branching, mutation, convergence, and supervision.
             context.log("[KERNEL] Routing to unified iterative evolutionary kernel.");
             OrchestratorResponse result = evolve(request, context, initialAssessment);
 
@@ -462,7 +440,6 @@ public class IterationManager {
                 transition(SystemState.DONE, context);
             }
 
-            // Post-execution Git Automation
             if (result != null && result.getResultType() != ResultType.ERROR) {
                 PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?
                         context.getOrchestrator().getAiChat().getPromptInstructions() : null;
@@ -477,7 +454,6 @@ public class IterationManager {
                 }
             }
 
-            // Centralized Final Response Assembly
             FinalResponseAssembler assembler = new FinalResponseAssembler();
             FinalResponse finalResponse = assembler.assemble(context, result.getSummary(), true, context.getStartTime());
             result.setFinalResponse(finalResponse);
@@ -494,7 +470,6 @@ public class IterationManager {
             errorResponse.setResultType(ResultType.ERROR);
             errorResponse.setFinalResponse(finalResponse);
 
-            // Re-throw to allow tests to catch it if they expect it
             if (context.getMetadata().containsKey("testMode")) {
                 throw e;
             }
@@ -510,7 +485,7 @@ public class IterationManager {
 
             WorkflowStep step = new WorkflowStep("step-" + System.currentTimeMillis(), entityId, type);
             step.setDescription(description);
-            StepModeController smc = (sessionContext != null) ? sessionContext.getStepModeController() : StepModeController.getInstance();
+            StepModeController smc = (sessionContainer instanceof SessionContext) ? ((SessionContext)sessionContainer).getStepModeController() : StepModeController.getInstance();
             WorkflowStatus result = smc.waitForStep(context.getSessionId(), step, context);
             if (result == WorkflowStatus.FAILED) {
                 throw new Exception("Step failed or rejected by user: " + description);
@@ -518,10 +493,6 @@ public class IterationManager {
         }
     }
 
-    /**
-     * Internal transition for testing purposes.
-     * @deprecated Use {@link #transition(SystemState, TaskContext)} for production code.
-     */
     @Deprecated
     public static void forceTransition(SystemState to, TaskContext ctx) {
         ctx.getStateHolder().applyTransition(new TransitionToken(), to);
@@ -531,7 +502,6 @@ public class IterationManager {
         SystemState current = ctx.getStateHolder().getState();
         if (current == to) return;
 
-        // INVARIANT 1: Orchestration Guard
         if (current == SystemState.DONE || current == SystemState.FAILED) {
             if (to != SystemState.INIT && to != SystemState.RECOVERING) {
                 ctx.log("[KERNEL] Illegal state transition attempt: " + current + " -> " + to + ". Terminal states can only transition to INIT or RECOVERING.");
@@ -542,7 +512,6 @@ public class IterationManager {
         TransitionToken token = new TransitionToken();
         ctx.getStateHolder().applyTransition(token, to);
 
-        // KERNEL RECOVERY: Ensure Git locks are cleared when initializing or recovering
         if (to == SystemState.INIT || to == SystemState.RECOVERING) {
             if (gitManager != null) {
                 gitManager.cleanupLocks();
@@ -561,7 +530,7 @@ public class IterationManager {
             }
         }
 
-        RuntimeEventBus bus = (sessionContext != null) ? sessionContext.getEventBus() : RuntimeEventBus.getInstance();
+        RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
         bus.publish(
             new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                 eu.kalafatic.evolution.controller.workflow.RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
@@ -572,7 +541,6 @@ public class IterationManager {
         ctx.log(logMsg);
         ctx.getOrchestrationState().addDiagnostic("[OrchestrationTrace] " + logMsg);
 
-        // DIAGNOSTICS: Record transition in trace
         ctx.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
             "state-transition-" + System.currentTimeMillis(),
             "STATE_TRANSITION",
@@ -618,9 +586,7 @@ public class IterationManager {
             result = runDarwinIteration(context, darwinFlow);
             safetyCounter++;
 
-            // CHECKPOINTING: Persist state for restart recovery
-            String goal = state.getRawInput() != null ? state.getRawInput() : request;
-            memoryService.saveCheckpoint(context.getSessionId(), (currentIterationModel != null ? currentIterationModel.getId() : "default"), state.getCurrentPhase(), goal);
+            memoryService.saveCheckpoint(context.getSessionId(), (currentIterationModel != null ? currentIterationModel.getId() : "default"), state.getCurrentPhase(), state.getRawInput());
 
             if (result.getDecision() != SelfDevDecision.CONTINUE) {
                 break;
@@ -660,7 +626,6 @@ public class IterationManager {
             }
         } catch (Exception e) {
             context.log("[KERNEL] Critical error in iteration: " + e.getMessage());
-            // For debugging test failures
             if (System.getProperty("evolution.test.debug") != null) {
                 e.printStackTrace();
             }
@@ -671,9 +636,6 @@ public class IterationManager {
         }
     }
 
-    /**
-     * Standard PEV (Plan-Execute-Verify) Cycle.
-     */
     public EvaluationResult runPEV() throws Exception {
         transition(SystemState.INIT, context);
         transition(SystemState.ANALYZING, context);
@@ -696,7 +658,6 @@ public class IterationManager {
                 if (currentIterationModel != null) {
                     gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
 
-                    // PERSISTENCE: Record successful implementation decision
                     WorkspaceArtifact decisionArtifact = new WorkspaceArtifact("impl-decision-" + currentIterationModel.getId(), "implementation-decision");
                     decisionArtifact.setContent("Successfully implemented: " + goal);
                     decisionArtifact.setSourceIteration(currentIterationModel.getId());
@@ -705,7 +666,6 @@ public class IterationManager {
                     context.getSemanticWorkspace().addArtifact(decisionArtifact);
                 }
 
-                // Memory decay at the end of successful implementation
                 context.getSemanticWorkspace().applyDecay(context.getOrchestrationState().getCognitiveTrace());
 
                 transition(SystemState.DONE, context);
@@ -779,7 +739,6 @@ public class IterationManager {
 
         context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
 
-        // 1. PHASE AUTHORITY: IterationManager decides if we skip INTENT_EXPANSION
         if (phase == EvolutionPhase.INTENT_EXPANSION) {
             transition(SystemState.ANALYZING, context);
             IntentExpansionResult expansion = getIntentExpansionEngine().expand(goal, context);
@@ -788,15 +747,13 @@ public class IterationManager {
 
             context.consoleLog("[KERNEL] Intent Interpretation: " + expansion.getState());
 
-            // DIMENSION DISCOVERY
             if (expansion.getUnresolvedDimensions() != null) {
                 for (EvolutionDimension dim : expansion.getUnresolvedDimensions()) {
-                    memoryService.getEvolutionGraph().recordDimension(dim);
+                    sessionContainer.getEvolutionMemoryGraph().recordDimension(dim);
                     context.log("[KERNEL] Discovered Dimension: " + dim.getId() + " (" + dim.getAbstractionLevel() + ")");
                 }
             }
 
-            // INTENT REVIEW LOOP (Ownership restored to IterationManager)
             if (!handleIntentReview(context, expansion, goal)) {
                 return failedResult();
             }
@@ -805,8 +762,6 @@ public class IterationManager {
             ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
             context.consoleLog("[KERNEL] Clarification Strategy: " + strategy);
 
-            // SUPERVISION POLICY: MANUAL mode pauses ONLY for trajectory survival decisions.
-            // Downgrade CLARIFY_USER to BRANCH_PARALLEL or AUTO_INFER if not in STEP mode.
             boolean isStepMode = context.getOrchestrator().getAiChat() != null &&
                                context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
                                context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
@@ -851,12 +806,10 @@ public class IterationManager {
             context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
         }
 
-        // EVOLUTIONARY DIMENSION PROGRESSION
         IntentExpansionResult intentExpansion = (IntentExpansionResult) state.getMetadata().get("intentExpansion");
         if (intentExpansion != null && intentExpansion.getActiveDimensionId() != null) {
             context.log("[KERNEL] Evolving Semantic Dimension: " + intentExpansion.getActiveDimensionId() + " (Generation: " + state.getIterationCount() + ")");
 
-            // ARCHITECTURE EMERGENCE RULE: Suppress architecture branching if pressure is low
             EvolutionDimension activeDim = intentExpansion.getUnresolvedDimensions().stream()
                 .filter(d -> d.getId().equals(intentExpansion.getActiveDimensionId()))
                 .findFirst().orElse(null);
@@ -864,26 +817,20 @@ public class IterationManager {
             if (activeDim != null && activeDim.getAbstractionLevel() == AbstractionLevel.ARCHITECTURE) {
                 if (activeDim.getEvolutionaryPressure() < 0.3) {
                     context.log("[KERNEL] Architecture Emergence Rule: Low pressure detected. Suppressing architectural branching.");
-                    // Fall back to a direct implementation if pressure is low
                 }
             }
         }
 
-        // 2. EVOLUTIONARY EXECUTION (Delegated to DarwinFlow Engine)
-        // Refactored to keep selection and phase control in IterationManager.
         checkStep(state.getCurrentPhase(), "BRANCH_GENERATION", "Spawning competing trajectories for: " + goal);
         List<BranchVariant> variants = darwinFlow.generateProposals(context, goal);
 
         if (variants.isEmpty()) {
             context.log("[KERNEL] CRITICAL: No trajectories survived diversity analysis. Evolution blocked.");
-            // Only trigger failure if NO branches survived
             return failedResult();
         }
 
-        // 3. SELECTION AUTHORITY: Handle trajectory selection (Manual/Auto/Step)
         String manualId = null;
 
-        // EVOLUTIONARY MANDATE: Maximize diversity in early generations
         if (variants.size() < 4 && state.getIterationCount() < 2) {
             context.log("[KERNEL] EVOLUTIONARY MANDATE: Attempting to maximize vector diversity within capability envelope.");
         }
@@ -891,7 +838,6 @@ public class IterationManager {
         if (!context.isAutoApprove() || profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
             manualId = handleVariantSelection(context, variants, goal);
             if ("REGENERATE".equals(manualId)) {
-                // User provided guidance, restart mutation in the current phase
                 return runDarwinIteration(context, darwinFlow);
             }
             if (manualId == null || "STOP".equals(manualId) || "FAILED".equals(manualId)) {
@@ -901,7 +847,6 @@ public class IterationManager {
             }
         }
 
-        // 4. DECISION AUTHORITY: AuthorityController resolve winner
         String iterId = currentIterationModel != null ? currentIterationModel.getId() : "default";
         eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = decide(iterId, variants, context, manualId);
 
@@ -909,15 +854,12 @@ public class IterationManager {
             context.log("[KERNEL] Committing selected trajectory via Force Solution.");
         }
 
-        // 5. EXECUTION ENGINE: Execute winner variant and evaluate
         EvaluationResult result = darwinFlow.executeWinner(context, decision, variants, goal);
 
-        // 6. PHASE PROGRESSION AUTHORITY: IterationManager decides the next phase
         if (result.isSuccess()) {
             EvolutionPhase currentPhaseEnum = EvolutionPhase.fromString(state.getCurrentPhase());
 
             boolean converged = darwinFlow.checkConvergence(variants, context);
-            // CONVERGENCE ANALYSIS: DarwinFlow analyzes if we should finish early
             if (converged && currentPhaseEnum != EvolutionPhase.FINAL_SYNTHESIS && !phaseMachine.isTerminal(currentPhaseEnum)) {
                 context.log("[KERNEL] Convergence detected. Transitioning to final synthesis.");
                 state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
@@ -927,7 +869,6 @@ public class IterationManager {
             if (!phaseMachine.isTerminal(currentPhaseEnum)) {
                 EvolutionPhase nextPhase = phaseMachine.next(currentPhaseEnum, converged, state.getIterationCount());
 
-                // Increment iteration count to track evolutionary generations
                 state.setIterationCount(state.getIterationCount() + 1);
 
                 if (nextPhase == currentPhaseEnum) {
@@ -938,7 +879,6 @@ public class IterationManager {
                 result.setDecision(phaseMachine.isTerminal(nextPhase) ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE);
             }
 
-            // PHASE CONFIRMATION LOOP
             if (!handlePhaseConfirmation(context, state)) {
                 result.setDecision(SelfDevDecision.STOP);
             }
@@ -1079,7 +1019,7 @@ public class IterationManager {
             if ("Force Solution".equalsIgnoreCase(input)) {
                 context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
                 context.setAutoApprove(true);
-                return null; // Signals auto-activation
+                return null;
             }
 
             if (input.startsWith("Select ") || input.startsWith("Approve variant ")) {
@@ -1101,11 +1041,11 @@ public class IterationManager {
                 String rejectedId = input.substring(15).trim();
                 context.log("[KERNEL] User rejected trajectory: " + rejectedId + ". Evolution stopped by user.");
                 recordRejection(goal, "Darwin trajectory " + rejectedId + " rejected by user ('no way').");
-                memoryService.getEvolutionGraph().recordRejection("MANUAL_SELECTION", rejectedId, "User rejected explicitly.");
+                sessionContainer.getEvolutionMemoryGraph().recordRejection("MANUAL_SELECTION", rejectedId, "User rejected explicitly.");
                 return "STOP";
             } else if ("Rejected".equalsIgnoreCase(input) || "Reject".equalsIgnoreCase(input) || "No".equalsIgnoreCase(input)) {
                 recordRejection(goal, "Darwin trajectories rejected by user.");
-                memoryService.getEvolutionGraph().recordEntropy(1.0); // Maximum entropy on total rejection
+                sessionContainer.getEvolutionMemoryGraph().recordEntropy(1.0);
                 return "FAILED";
             } else if (input.startsWith("Propose:") || input.trim().startsWith("{")) {
                 context.log("[KERNEL] User injected a new trajectory. Integrating as a first-class candidate.");
@@ -1113,7 +1053,6 @@ public class IterationManager {
                 variants.add(userVariant);
                 context.log("[KERNEL] User trajectory " + userVariant.getId() + " added to the evolutionary pool.");
             } else {
-                // High priority guidance text input
                 context.log("[KERNEL] User provided guidance: " + input + ". Refining intent and regenerating trajectories.");
                 String newGoal = goal + " (Guidance: " + input + ")";
                 context.getOrchestrationState().setRawInput(newGoal);
@@ -1150,10 +1089,9 @@ public class IterationManager {
             v.setTradeoffs("User-defined trajectory");
         }
 
-        v.setScore(0.95); // User proposals are highly valued
+        v.setScore(0.95);
         v.setBranchName("exp/user/" + sanitizeForBranch(v.getStrategy()));
 
-        // Record trajectory for tracking
         Trajectory t = new Trajectory(v.getId(), v.getStrategy());
         t.setFitnessScore(v.getScore());
         v.setTrajectoryId(t.getTrajectoryId());
@@ -1192,19 +1130,8 @@ public class IterationManager {
 
     public IOrchestrationFlow resolveFlow(ModeRouter router, AtomicIntentAnalysis atomicAnalysis) {
         BehaviorProfile profile = context.getBehaviorProfile();
-        OrchestrationState state = context.getOrchestrationState();
-
         context.log("[KERNEL] Resolving flow. Profile traits: " + profile.getTraits());
 
-        // MANDATORY DARWIN EVOLUTION: All non-chat requests MUST route through the evolutionary kernel.
-        // UNCONDITIONAL ROUTING for mediated and self-dev modes.
-        if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) || profile.hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)) {
-            context.log("[KERNEL] Routing to DarwinFlow for iterative repository cognition.");
-            return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
-        }
-
-        // Unified Evolutionary Kernel: Default all other flows to DarwinFlow.
-        // Direct Agent routing is now only allowed for explicit fast-track greetings in handle().
         return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
     }
 
@@ -1234,10 +1161,8 @@ public class IterationManager {
         context.log("[KERNEL] Starting Deterministic Execution (No unresolved semantic dimensions).");
         OrchestrationState state = context.getOrchestrationState();
 
-        // Transition to final phase
         state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
 
-        // For simple chat or non-implementation tasks, use GeneralAgent
         if (!hasStateChangeIntent(context)) {
             context.log("[KERNEL] Non-implementation task detected. Routing to GeneralAgent.");
             String resultStr = ((GeneralAgent)getInternalAgent(EvolutionConstants.AGENT_GENERAL)).process(request, context, null);
@@ -1248,7 +1173,6 @@ public class IterationManager {
             return response;
         }
 
-        // For implementation tasks, run PEV or simple planning
         context.log("[KERNEL] Implementation task detected. Routing to deterministic PEV loop.");
         EvaluationResult result = runPEV();
 
@@ -1272,7 +1196,6 @@ public class IterationManager {
                 extractor.extractToSnapshot(snapshot);
             }
 
-            // USE EVOLVED METADATA: Prioritize evolved selection over static curation
             List<String> selectedPaths = (List<String>) context.getOrchestrationState().getMetadata().get("current_selected_files");
             if (selectedPaths == null || selectedPaths.isEmpty()) {
                 context.log("[KERNEL] Mediated Mode: No evolved file selection found. Falling back to static curation.");
@@ -1286,7 +1209,6 @@ public class IterationManager {
             PromptSynthesizer synthesizer = new PromptSynthesizer();
             String optimizedPrompt = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths, evolvedUnderstanding + "\n\nREASONING FOCUS: " + evolvedReasoningFocus);
 
-            // Final explicit approval for packaging in mediated mode
             if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && !context.isAutoApprove()) {
                 context.log("[KERNEL] Mediated Mode: Pausing for final export package review.");
                 boolean approved = context.requestApproval("Final review: Ready to generate export package with " + selectedPaths.size() + " files?").get();
@@ -1314,7 +1236,6 @@ public class IterationManager {
             summaryBuilder.append("**Target Type:** ").append(snapshot.getTargetType()).append("\n");
             summaryBuilder.append("**Inferred Architecture:** ").append(snapshot.getMetadata().get("architectureInference")).append("\n\n");
 
-            // PERSISTENT EVOLUTIONARY REASONING: Inject history analysis into the final summary
             summaryBuilder.append("#### Evolutionary Lineage Analysis\n");
             summaryBuilder.append(memoryService.getHistoryAnalysis()).append("\n\n");
 
@@ -1331,23 +1252,6 @@ public class IterationManager {
             return "Mediated Export Failed: " + e.getMessage();
         }
     }
-
-    private void deleteDirectory(File directory) {
-        File[] allContents = directory.listFiles();
-        if (allContents != null) {
-            for (File file : allContents) deleteDirectory(file);
-        }
-        directory.delete();
-    }
-
-    private void freezeRequirements(ConversationState state, IntentAnalysisResult result, TaskContext context) {
-        ConfirmedRequirements existing = state.getConfirmedRequirements();
-        if (existing != null && existing.getHash().equals(Integer.toHexString(java.util.Objects.hash(result.getGoal(), result.getLanguage(), result.getFramework(), result.getConstraints(), result.getExpectedOutput())))) return;
-        int version = existing != null ? existing.getVersion() + 1 : 1;
-        ConfirmedRequirements frozen = new ConfirmedRequirements(result.getGoal(), result.getLanguage(), result.getFramework(), result.getConstraints(), result.getExpectedOutput(), version);
-        state.setConfirmedRequirements(frozen);
-    }
-
 
     public List<Task> iterativePlan(String request, TaskContext context) throws Exception {
         context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Starting iterative planning.");
@@ -1405,7 +1309,7 @@ public class IterationManager {
                 transition(SystemState.EXECUTING, context);
                 task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.RUNNING);
 
-                RuntimeEventBus bus = (sessionContext != null) ? sessionContext.getEventBus() : RuntimeEventBus.getInstance();
+                RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
                 bus.publish(
                     new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                         eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_STARTED,
@@ -1479,14 +1383,14 @@ public class IterationManager {
     }
 
     private IAgent getInternalAgent(String type) {
-        if (sessionContext != null) {
-            return sessionContext.getAgentRegistry().get(type);
+        if (sessionContainer != null) {
+            Map<String, IAgent> registry = (sessionContainer instanceof SessionContext) ? ((SessionContext)sessionContainer).getAgentRegistry() : new java.util.HashMap<>();
+            return registry.get(type);
         }
         return AgentFactory.getAgent(type);
     }
 
     public void updateVariantFromInput(List<BranchVariant> variants, String input) {
-        // ... (implementation same as before, simplified for brevity here if needed, but keeping it for completeness)
         try {
             String[] lines = input.split("\n");
             if (lines.length == 0) return;

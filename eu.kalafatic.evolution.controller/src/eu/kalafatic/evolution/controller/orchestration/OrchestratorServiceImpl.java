@@ -17,7 +17,6 @@ import eu.kalafatic.evolution.model.orchestration.Task;
  */
 public class OrchestratorServiceImpl implements OrchestratorService {
     private final Map<String, TaskResult> tasks = new ConcurrentHashMap<>();
-    private final Map<String, SessionContext> sessions = new ConcurrentHashMap<>();
 
     @Override
     public OrchestratorResponse handle(TaskRequest request) {
@@ -27,12 +26,14 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         String sessionId = (String) request.getContext().get("sessionId");
         if (sessionId == null) sessionId = UUID.randomUUID().toString();
 
-        SessionContext session = sessions.computeIfAbsent(sessionId, SessionContext::new);
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
 
         if (context == null) {
             context = new TaskContext(inputOrchModel, request.getProjectRoot());
             context.setSessionId(sessionId);
-            session.setTaskContext(context);
+            if (session instanceof SessionContext) {
+                ((SessionContext)session).setTaskContext(context);
+            }
         }
 
         context.getMetadata().put("sessionContext", session);
@@ -59,7 +60,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         }
 
         final String finalSessionId = sessionId;
-        SessionContext session = sessions.computeIfAbsent(finalSessionId, SessionContext::new);
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(finalSessionId);
 
         TaskResult result = new TaskResult();
         result.setId(finalSessionId);
@@ -71,7 +72,6 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 KernelFacade kernel = new KernelFacade();
                 Orchestrator orchModel = inputOrchModel;
 
-                // We might need a real Orchestrator EMF object here if the system depends on it
                 PromptInstructions promptInstructions = null;
                 
                 if (orchModel == null) {
@@ -87,7 +87,6 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 		orchModel.getAiChat().setPromptInstructions(promptInstructions);
                 	}        	
                     
-                    // Default Ollama configuration if not present
                     if (orchModel.getOllama() == null) {
                         orchModel.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
                         orchModel.getOllama().setUrl("http://localhost:11434");
@@ -97,7 +96,6 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 					promptInstructions = orchModel.getAiChat().getPromptInstructions();
 				}
 
-                // Override model if provided in request
                 String requestedModel = (String) request.getContext().get("model");
                 if (requestedModel != null && !requestedModel.isEmpty()) {
                     orchModel.getOllama().setModel(requestedModel);
@@ -105,7 +103,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
                 TaskContext context = new TaskContext(orchModel, request.getProjectRoot());
                 context.setSessionId(finalSessionId);
-                session.setTaskContext(context);
+                if (session instanceof SessionContext) {
+                    ((SessionContext)session).setTaskContext(context);
+                }
                 context.getMetadata().put("sessionContext", session);
 
                 context.addLogListener(log -> {
@@ -122,15 +122,11 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     result.setWaitingMessage(msg);
                 });
 
-                // NOTE: Git Automation (Branching and Commit) is now centrally managed by the IterationManager Kernel.
-                // Redundant Git logic removed to ensure single authority.
-
                 OrchestratorResponse orchResponse = kernel.handle(request, context);
 
                 result.setResponse(orchResponse.getSummary());
                 result.setStatus(TaskResult.Status.SUCCESS);
 
-                // Capture file changes (simplified for now)
                 for (Task t : orchModel.getTasks()) {
                     if (t.getResultSummary() != null && t.getResultSummary().contains("[FILE:")) {
                         result.getFileChanges().add(t.getResultSummary());
@@ -154,10 +150,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
     @Override
     public void shutdownSession(String sessionId) {
-        SessionContext session = sessions.remove(sessionId);
-        if (session != null) {
-            session.shutdown();
-        }
+        SessionManager.getInstance().shutdownSession(sessionId);
         tasks.remove(sessionId);
     }
 
@@ -172,13 +165,15 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     }
 
     public void registerContext(String id, TaskContext context) {
-        SessionContext session = sessions.computeIfAbsent(id, SessionContext::new);
-        session.setTaskContext(context);
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(id);
+        if (session instanceof SessionContext) {
+            ((SessionContext)session).setTaskContext(context);
+        }
     }
 
     public void provideApproval(String taskId, boolean approved) {
-        SessionContext session = sessions.get(taskId);
-        TaskContext context = session != null ? session.getTaskContext() : null;
+        SessionContainer session = SessionManager.getInstance().getSession(taskId);
+        TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
         if (context != null) {
             context.log("User Interaction: Approval provided - " + approved);
             context.provideApproval(approved);
@@ -191,8 +186,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     }
 
     public void provideInput(String taskId, String input) {
-        SessionContext session = sessions.get(taskId);
-        TaskContext context = session != null ? session.getTaskContext() : null;
+        SessionContainer session = SessionManager.getInstance().getSession(taskId);
+        TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
         if (context != null) {
             context.log("User Interaction: Input provided - " + input);
             context.provideInput(input);
@@ -204,7 +199,6 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         }
     }
 
-    // singleton for easy access from RCP and REST
     private static OrchestratorServiceImpl instance;
     public static synchronized OrchestratorServiceImpl getInstance() {
         if (instance == null) {

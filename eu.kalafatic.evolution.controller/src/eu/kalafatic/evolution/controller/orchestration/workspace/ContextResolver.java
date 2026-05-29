@@ -7,6 +7,8 @@ import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
 /**
  * Determines which semantic artifacts should be injected into the context.
@@ -15,6 +17,13 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 public class ContextResolver {
     private static final int MAX_ARTIFACTS_PER_INJECTION = 10;
     private static final double MIN_RELEVANCE_THRESHOLD = 0.3;
+    private String sessionId = "GLOBAL";
+
+    public ContextResolver() {}
+
+    public ContextResolver(String sessionId) {
+        this.sessionId = sessionId;
+    }
 
     public List<WorkspaceArtifact> resolveRelevantArtifacts(String currentGoal, SemanticWorkspace workspace) {
         List<WorkspaceArtifact> allArtifacts = workspace.getAllArtifacts();
@@ -30,18 +39,21 @@ public class ContextResolver {
                 .limit(MAX_ARTIFACTS_PER_INJECTION)
                 .collect(Collectors.toList());
 
+        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        RuntimeEventBus bus = (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+
         if (relevant.size() > MAX_ARTIFACTS_PER_INJECTION * 0.8) {
-            RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+            bus.publish(new RuntimeEvent(
                 RuntimeEventType.CONTEXT_OVERLOAD_DETECTED,
-                "GLOBAL",
+                sessionId,
                 "ContextResolver",
                 "High density of relevant artifacts (" + relevant.size() + ") detected."));
         }
 
         if (!relevant.isEmpty()) {
-            RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+            bus.publish(new RuntimeEvent(
                 RuntimeEventType.CONTEXT_RETRIEVED,
-                "GLOBAL",
+                sessionId,
                 "ContextResolver",
                 "Retrieved " + relevant.size() + " semantic artifacts."));
         }
@@ -58,30 +70,25 @@ public class ContextResolver {
         String goalLower = currentGoal.toLowerCase();
         String contentLower = artifact.getContent().toLowerCase();
 
-        // 1. Keyword matching (simple)
         if (contentLower.contains(goalLower)) {
             score += 0.5;
         }
 
-        // 2. Tag matching
         for (String tag : artifact.getSemanticTags()) {
             if (goalLower.contains(tag.toLowerCase())) {
                 score += 0.3;
             }
         }
 
-        // 3. Exact tag boost
         for (String tag : artifact.getSemanticTags()) {
             if (goalLower.equals(tag.toLowerCase())) {
                 score += 0.4;
             }
         }
 
-        // 4. Weight by confidence and decay
         score *= artifact.getConfidence();
         score *= artifact.getDecayScore();
 
-        // 5. Boost by type
         if ("architecture-summary".equals(artifact.getArtifactType())) {
             score += 0.2;
         } else if ("implementation-decision".equals(artifact.getArtifactType())) {

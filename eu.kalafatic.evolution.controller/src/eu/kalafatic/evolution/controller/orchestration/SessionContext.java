@@ -8,19 +8,30 @@ import java.io.File;
 import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionMemoryGraph;
+import eu.kalafatic.evolution.controller.trajectory.SignalBus;
+import eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.StepModeController;
+import eu.kalafatic.evolution.controller.workflow.WorkflowStepRegistry;
 
 /**
  * Encapsulates all session-specific runtime state and isolated services.
  * Ensures true parallel multi-session execution without state corruption.
  */
-public class SessionContext {
+public class SessionContext implements SessionContainer {
     private final String sessionId;
     private final ExecutorService executorService;
     private final CapabilityRegistry capabilityRegistry;
     private final StepModeController stepModeController;
     private final RuntimeEventBus eventBus;
+    private final SignalBus signalBus;
+    private final WorkflowStepRegistry workflowRegistry;
+    private final EvolutionRegistry evolutionRegistry;
+    private final EvolutionMemoryGraph evolutionMemoryGraph;
+    private final FileChangeTracker fileChangeTracker;
+    private final RuntimeCoordinator runtimeCoordinator;
+
     private final Map<String, IAgent> agentRegistry = new ConcurrentHashMap<>();
     private IterationMemoryService memoryService;
     private TaskContext taskContext;
@@ -32,20 +43,31 @@ public class SessionContext {
             t.setDaemon(true);
             return t;
         });
-        // These will be refactored to allow instantiation
+
+        this.eventBus = new RuntimeEventBus(sessionId);
+        this.signalBus = new SignalBus(this.eventBus);
+        this.workflowRegistry = new WorkflowStepRegistry();
+        this.evolutionRegistry = new EvolutionRegistry();
         this.capabilityRegistry = new CapabilityRegistry();
-        this.stepModeController = new StepModeController();
-        this.eventBus = new RuntimeEventBus();
+        this.stepModeController = new StepModeController(this.eventBus, this.workflowRegistry);
+        this.evolutionMemoryGraph = new EvolutionMemoryGraph();
+        this.fileChangeTracker = new FileChangeTracker();
+        this.runtimeCoordinator = new RuntimeCoordinator(sessionId, this.eventBus, this.signalBus, this.workflowRegistry);
+
+        this.runtimeCoordinator.initialize();
     }
 
+    @Override
     public String getSessionId() {
         return sessionId;
     }
 
+    @Override
     public ExecutorService getExecutorService() {
         return executorService;
     }
 
+    @Override
     public CapabilityRegistry getCapabilityRegistry() {
         return capabilityRegistry;
     }
@@ -54,8 +76,44 @@ public class SessionContext {
         return stepModeController;
     }
 
+    @Override
     public RuntimeEventBus getEventBus() {
         return eventBus;
+    }
+
+    @Override
+    public SignalBus getSignalBus() {
+        return signalBus;
+    }
+
+    @Override
+    public WorkflowStepRegistry getWorkflowRegistry() {
+        return workflowRegistry;
+    }
+
+    @Override
+    public EvolutionRegistry getEvolutionRegistry() {
+        return evolutionRegistry;
+    }
+
+    @Override
+    public EvolutionMemoryGraph getEvolutionMemoryGraph() {
+        return evolutionMemoryGraph;
+    }
+
+    @Override
+    public FileChangeTracker getFileChangeTracker() {
+        return fileChangeTracker;
+    }
+
+    @Override
+    public OrchestrationState getSessionState() {
+        return taskContext != null ? taskContext.getOrchestrationState() : null;
+    }
+
+    @Override
+    public RuntimeCoordinator getRuntimeCoordinator() {
+        return runtimeCoordinator;
     }
 
     public Map<String, IAgent> getAgentRegistry() {
@@ -77,6 +135,7 @@ public class SessionContext {
         this.taskContext = taskContext;
     }
 
+    @Override
     public void shutdown() {
         executorService.shutdownNow();
         capabilityRegistry.shutdown();

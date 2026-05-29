@@ -9,6 +9,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
@@ -90,12 +92,9 @@ public class Evaluator implements ICapability, IEvaluationContract {
     @Override
     public List<EvaluationSignal> evaluate(String variantId) {
         try {
-            // This is a bridge between the contract and the existing implementation.
-            // In a real refactor, the logic would be properly decoupled.
             context.getMetadata().put("variantId", variantId);
             evaluate();
-            // The signal is emitted via RuntimeEventBus in emitSignal.
-            return new ArrayList<>(); // Existing logic uses the bus.
+            return new ArrayList<>();
         } catch (Exception e) {
             return new ArrayList<>();
         }
@@ -129,17 +128,13 @@ public class Evaluator implements ICapability, IEvaluationContract {
         StateSnapshot snapshot = new StateSnapshot();
 
         try {
-            // Run build and tests
             String output;
             try {
                 output = mavenTool.execute("clean install", projectRoot, context);
             } catch (Exception e) {
-                // Maven execution failed (e.g. exit code != 0)
                 output = e.getMessage();
             }
 
-            // Basic parsing of Maven output
-            // HARDENING: In test mode or when maven is missing, allow progression if progress was made
             boolean isTestMode = context != null && context.getMetadata().containsKey("testMode");
             boolean buildSuccess = output.contains("BUILD SUCCESS") || output.contains("SKIPPED: No pom.xml") || isTestMode;
             result.setSuccess(buildSuccess);
@@ -159,13 +154,13 @@ public class Evaluator implements ICapability, IEvaluationContract {
 
                 if (passRate < 1.0) {
                     if (context != null) context.log("[EVALUATOR] Tests failed despite build success.");
-                    result.setDecision(SelfDevDecision.CONTINUE); // Don't rollback immediately, let Darwin decide
+                    result.setDecision(SelfDevDecision.CONTINUE);
                     result.getErrors().add("Tests failed (Pass rate: " + passRate + ")");
                 } else {
                     result.setDecision(SelfDevDecision.CONTINUE);
                 }
             } else {
-                result.setDecision(SelfDevDecision.CONTINUE); // Continue even if build fails, so Darwin can fix it
+                result.setDecision(SelfDevDecision.CONTINUE);
                 result.getErrors().add("Build failed.");
             }
 
@@ -179,7 +174,6 @@ public class Evaluator implements ICapability, IEvaluationContract {
 
         if (context != null) context.log("[EVALUATOR] Evaluation finished. Success: " + result.isSuccess() + ", Decision: " + result.getDecision());
 
-        // Emit Standardized Evaluation Signal
         emitSignal(result, snapshot);
 
         Evaluation eval = new Evaluation();
@@ -191,7 +185,6 @@ public class Evaluator implements ICapability, IEvaluationContract {
     private void emitSignal(EvaluationResult result, StateSnapshot snapshot) {
         String variantId = context.getMetadata().getOrDefault("variantId", "unknown").toString();
 
-        // PERSISTENCE: Publish reusable observations into workspace
         if (!result.isSuccess() && !snapshot.build.errorTypes.isEmpty()) {
             String errorFingerprint = snapshot.build.errorTypes.toString() + (snapshot.tests.failingTests.isEmpty() ? "" : snapshot.tests.failingTests.toString());
             WorkspaceArtifact artifact = new WorkspaceArtifact("failure-" + System.currentTimeMillis(), "failure-cause");
@@ -208,14 +201,14 @@ public class Evaluator implements ICapability, IEvaluationContract {
         FitnessEvaluation fitness = new FitnessEvaluation(variantId);
         fitness.setDimension("test_success", result.getTestPassRate());
         fitness.setDimension("compilation_success", snapshot.build.status == StateSnapshot.BuildStatus.SUCCESS ? 1.0 : 0.0);
-        fitness.setDimension("architecture_stability", 0.7); // Placeholder
-        fitness.setDimension("semantic_alignment", 0.8); // Placeholder
+        fitness.setDimension("architecture_stability", 0.7);
+        fitness.setDimension("semantic_alignment", 0.8);
 
         EvaluationSignal signal = new EvaluationSignal(
             variantId,
             "MavenEvaluator",
             score,
-            1.0, // Confidence for deterministic maven evaluation
+            1.0,
             severity,
             eu.kalafatic.evolution.controller.trajectory.DivergenceType.NONE,
             explanation,
@@ -223,14 +216,17 @@ public class Evaluator implements ICapability, IEvaluationContract {
             fitness
         );
 
-        eu.kalafatic.evolution.controller.trajectory.SignalBus.getInstance().publish(signal);
-
-        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+        getEventBus().publish(new RuntimeEvent(
             RuntimeEventType.EVALUATION_SIGNAL_CREATED,
             context.getSessionId(),
             "MavenEvaluator",
             signal
         ));
+    }
+
+    private RuntimeEventBus getEventBus() {
+        SessionContainer session = SessionManager.getInstance().getSession(context.getSessionId());
+        return (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
     }
 
     private List<StateSnapshot.ErrorType> parseErrorTypes(String output) {
@@ -241,7 +237,6 @@ public class Evaluator implements ICapability, IEvaluationContract {
         if (output.contains("There are test failures")) {
             types.add(StateSnapshot.ErrorType.test);
         }
-        // Simplified detection for runtime errors during build
         if (output.contains("java.lang.RuntimeException") || output.contains("java.lang.NullPointerException")) {
             types.add(StateSnapshot.ErrorType.runtime);
         }
@@ -269,7 +264,6 @@ public class Evaluator implements ICapability, IEvaluationContract {
     }
 
     private Double parseCoverage(String output) {
-        // Placeholder for coverage parsing if JaCoCo is present in output
         return null;
     }
 
@@ -281,7 +275,6 @@ public class Evaluator implements ICapability, IEvaluationContract {
         else if (firstLine.contains("Test")) type = "test";
         else if (firstLine.contains("Exception")) type = "runtime";
 
-        // Try to find a location
         String location = "Global";
         Pattern locPattern = Pattern.compile("([a-zA-Z0-9_]+\\.java:[0-9]+)");
         Matcher locMatcher = locPattern.matcher(error);
@@ -294,7 +287,6 @@ public class Evaluator implements ICapability, IEvaluationContract {
     }
 
     private double parsePassRate(String output) {
-        // Look for "Tests run: 10, Failures: 0, Errors: 0, Skipped: 0"
         Pattern pattern = Pattern.compile("Tests run: (\\d+), Failures: (\\d+), Errors: (\\d+), Skipped: (\\d+)");
         Matcher matcher = pattern.matcher(output);
         int totalRun = 0;
@@ -307,7 +299,7 @@ public class Evaluator implements ICapability, IEvaluationContract {
             totalErrors += Integer.parseInt(matcher.group(3));
         }
 
-        if (totalRun == 0) return 1.0; // No tests run is considered success in pass rate terms
+        if (totalRun == 0) return 1.0;
         return (double) (totalRun - totalFailures - totalErrors) / totalRun;
     }
 }

@@ -10,8 +10,12 @@ public class WorkflowStepRegistry {
     private final Map<String, WorkflowStep> steps = new ConcurrentHashMap<>();
     private final Map<String, List<String>> sessionSteps = new ConcurrentHashMap<>();
 
-    private WorkflowStepRegistry() {}
+    public WorkflowStepRegistry() {}
 
+    /**
+     * @deprecated Use session-scoped registry instead.
+     */
+    @Deprecated
     public static WorkflowStepRegistry getInstance() { return instance; }
 
     public void registerStep(String sessionId, WorkflowStep step) {

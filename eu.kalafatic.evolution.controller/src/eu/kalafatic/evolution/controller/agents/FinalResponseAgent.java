@@ -15,6 +15,10 @@ public class FinalResponseAgent extends BaseAiAgent {
         super("FinalResponse", "FinalResponse");
     }
 
+    public FinalResponseAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("FinalResponse", "FinalResponse", container);
+    }
+
     @Override
     protected String getAgentInstructions() {
         return "You are a Final Response Agent. Your goal is to provide a concise, human-readable summary of the work performed.\n\n" +

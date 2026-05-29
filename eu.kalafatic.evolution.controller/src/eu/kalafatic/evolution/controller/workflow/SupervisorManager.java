@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.workflow;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevBootstrapController;
 import org.json.JSONObject;
 
@@ -21,7 +22,7 @@ public class SupervisorManager {
         if (controller == null) throw new java.io.IOException("Cannot start supervisor: No active task context.");
         controller.startBootstrap();
         publishStatus("STARTING");
-        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+        getEventBus().publish(new RuntimeEvent(
             RuntimeEventType.MODE_CHANGED, context.getSessionId(), "SupervisorManager", "SELF_DEV_MODE"));
     }
 
@@ -39,9 +40,16 @@ public class SupervisorManager {
         }
     }
 
+    private RuntimeEventBus getEventBus() {
+        if (context != null) {
+            return SessionManager.getInstance().getOrCreateSession(context.getSessionId()).getEventBus();
+        }
+        return RuntimeEventBus.getInstance();
+    }
+
     private void publishStatus(String status) {
         String sid = context != null ? context.getSessionId() : "Default";
-        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+        getEventBus().publish(new RuntimeEvent(
             RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
             sid,
             "SupervisorManager",

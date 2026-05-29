@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import java.util.Set;
@@ -32,8 +33,18 @@ public class OrchestrationState {
     private List<String> rejectionHistory = new ArrayList<>();
     private long bitState = 0;
     private String currentPhase;
-    private final SemanticWorkspace semanticWorkspace = new SemanticWorkspace();
+    private SemanticWorkspace semanticWorkspace;
     private CognitiveTrace cognitiveTrace;
+    private final String sessionId;
+
+    public OrchestrationState() {
+        this("GLOBAL");
+    }
+
+    public OrchestrationState(String sessionId) {
+        this.sessionId = sessionId;
+        this.semanticWorkspace = new SemanticWorkspace(sessionId);
+    }
 
     public String getRawInput() {
         return rawInput;

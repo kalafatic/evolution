@@ -1,8 +1,12 @@
 package eu.kalafatic.evolution.controller.orchestration;
+import java.util.Map;
+import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.*;
 
 import java.util.ArrayList;
 import java.io.File;
 import java.util.List;
+
 import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.Task;
@@ -22,13 +26,11 @@ import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.util.CodeExtractor;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.tools.ToolFactory;
-import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
+
 
 /**
  * Core Orchestrator implementation. Blind executor of tasks.
  * Strictly gated by SystemState.
- *
- * @evo:21:A reason=kernel-refactor-alignment
  */
 public class EvolutionOrchestrator implements IOrchestrator {
 
@@ -41,11 +43,26 @@ public class EvolutionOrchestrator implements IOrchestrator {
     private AiService aiService = new AiService();
 
     public EvolutionOrchestrator() {
-        availableAgents.addAll(AgentFactory.getAllAgents());
-        analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
-        validator = (ValidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_VALIDATOR);
-        repairAgent = (RepairAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_REPAIR);
-        consolidator = (ProposalConsolidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_PROPOSAL_CONSOLIDATOR);
+        this(null);
+    }
+
+    public EvolutionOrchestrator(SessionContainer container) {
+        if (container != null) {
+            if (container instanceof SessionContext) {
+                Map<String, IAgent> registry = ((SessionContext)container).getAgentRegistry();
+                availableAgents.addAll(registry.values());
+                analyticAgent = (AnalyticAgent) registry.get(EvolutionConstants.AGENT_ANALYTIC);
+                validator = (ValidatorAgent) registry.get(EvolutionConstants.AGENT_VALIDATOR);
+                repairAgent = (RepairAgent) registry.get(EvolutionConstants.AGENT_REPAIR);
+                consolidator = (ProposalConsolidatorAgent) registry.get(EvolutionConstants.AGENT_PROPOSAL_CONSOLIDATOR);
+            }
+        } else {
+            availableAgents.addAll(AgentFactory.getAllAgents());
+            analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
+            validator = (ValidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_VALIDATOR);
+            repairAgent = (RepairAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_REPAIR);
+            consolidator = (ProposalConsolidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_PROPOSAL_CONSOLIDATOR);
+        }
     }
 
     public void setAiService(AiService aiService) {
@@ -58,12 +75,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
     @Override
     public OrchestratorResponse handle(TaskRequest taskRequest, TaskContext context) throws Exception {
-        // Evolutionary Architecture Change:
-        // EvolutionOrchestrator is now a 'Blind' Executor.
-        // It no longer manages execution loops or high-level strategic fallbacks.
-        // Orchestration MUST be driven by IterationManager.
-
-        IterationManager kernel = KernelFactory.create(context, aiService);
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
+        IterationManager kernel;
+        if (session instanceof SessionContext) {
+            kernel = KernelFactory.create(context, (SessionContext)session, aiService);
+        } else {
+            kernel = KernelFactory.create(context, aiService);
+        }
         return kernel.handle(taskRequest);
     }
 
@@ -91,11 +109,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
         context.checkPause();
 
-        // 1. Context
         ContextPackage contextPkg = ContextBuilder.build(task, context, 1, task.getFeedback());
         String contextPrompt = ContextBuilder.buildPrompt(contextPkg);
 
-        // 2. Execute (Generate + Apply)
         String patch = generatePatch(task, agent, context, task.getFeedback(), task.getPlan(), contextPrompt);
         String result = applyPatch(task, agent, context, task.getFeedback(), patch);
         task.setResponse(result);
@@ -114,7 +130,6 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
         if ("file".equalsIgnoreCase(taskType)) {
             String path = taskName.replaceFirst("(?i)^(Write|Create|Update|MKDIR|DELETE)\\s+", "").trim().split(" ")[0];
-            // Sanitization: Remove leading slashes and drive letters, and normalize separators
             path = path.replaceFirst("^([a-zA-Z]:)?[/\\\\]+", "").replace('\\', '/');
 
             if (path == null || path.isEmpty() || "null".equals(path)) {
@@ -135,6 +150,15 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
     private IAgent findAgentForTask(Task task, TaskContext context) {
         String type = task.getType().toLowerCase();
+        SessionContainer session = SessionManager.getInstance().getSession(context.getSessionId());
+
+        if (session instanceof SessionContext) {
+            Map<String, IAgent> registry = ((SessionContext)session).getAgentRegistry();
+            if (type.equals(EvolutionConstants.TASK_FILE)) return registry.get(EvolutionConstants.AGENT_FILE);
+            if (type.equals(EvolutionConstants.TASK_MAVEN)) return registry.get(EvolutionConstants.AGENT_MAVEN);
+            return registry.get(EvolutionConstants.AGENT_GENERAL);
+        }
+
         if (type.equals(EvolutionConstants.TASK_FILE)) return AgentFactory.getAgent(EvolutionConstants.AGENT_FILE);
         if (type.equals(EvolutionConstants.TASK_MAVEN)) return AgentFactory.getAgent(EvolutionConstants.AGENT_MAVEN);
         return AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);

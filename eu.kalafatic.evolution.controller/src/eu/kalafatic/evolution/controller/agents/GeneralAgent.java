@@ -8,7 +8,11 @@ import eu.kalafatic.evolution.controller.tools.ToolFactory;
  */
 public class GeneralAgent extends BaseAiAgent {
     public GeneralAgent() {
-        super(EvolutionConstants.AGENT_GENERAL, EvolutionConstants.AGENT_GENERAL);
+        super("General", "General");
+    }
+
+    public GeneralAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("General", "General", container);
         addTool(ToolFactory.getTool(EvolutionConstants.TOOL_FILE));
         addTool(ToolFactory.getTool(EvolutionConstants.TOOL_SHELL));
     }

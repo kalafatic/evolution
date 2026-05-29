@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.workspace;
+import java.util.stream.Collectors;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
@@ -16,6 +16,8 @@ import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityCont
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IWorkspaceContract;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import java.util.Collections;
 
 /**
@@ -26,9 +28,16 @@ public class SemanticWorkspace implements ICapability, IWorkspaceContract {
     private final Map<String, WorkspaceArtifact> artifacts = new ConcurrentHashMap<>();
     private final TrajectoryMemory trajectoryMemory = new TrajectoryMemory();
     private CapabilityStatus status = CapabilityStatus.STOPPED;
+    private String sessionId = "GLOBAL";
 
     // Decay constant
     private static final double DECAY_FACTOR = 0.95;
+
+    public SemanticWorkspace() {}
+
+    public SemanticWorkspace(String sessionId) {
+        this.sessionId = sessionId;
+    }
 
     @Override
     public String getCapabilityId() {
@@ -83,9 +92,12 @@ public class SemanticWorkspace implements ICapability, IWorkspaceContract {
     public void addArtifact(WorkspaceArtifact artifact) {
         artifacts.put(artifact.getArtifactId(), artifact);
 
-        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        RuntimeEventBus bus = (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+
+        bus.publish(new RuntimeEvent(
             RuntimeEventType.ARTIFACT_PROMOTED,
-            "GLOBAL",
+            sessionId,
             "SemanticWorkspace",
             artifact.getArtifactId())
             .withMetadata("type", artifact.getArtifactType()));
@@ -133,9 +145,6 @@ public class SemanticWorkspace implements ICapability, IWorkspaceContract {
         return trajectoryMemory;
     }
 
-    /**
-     * Applies decay mechanics to all artifacts in the workspace.
-     */
     public void applyDecay() {
         applyDecay(null);
     }
@@ -145,12 +154,9 @@ public class SemanticWorkspace implements ICapability, IWorkspaceContract {
         for (WorkspaceArtifact artifact : artifacts.values()) {
             double currentDecay = artifact.getDecayScore();
             artifact.setDecayScore(currentDecay * DECAY_FACTOR);
-
-            // Confidence also weakens as artifacts age without reinforcement
             artifact.setConfidence(artifact.getConfidence() * DECAY_FACTOR);
         }
 
-        // Remove artifacts that have decayed too much
         artifacts.entrySet().removeIf(entry -> entry.getValue().getDecayScore() < 0.1);
         int finalCount = artifacts.size();
 
@@ -166,25 +172,28 @@ public class SemanticWorkspace implements ICapability, IWorkspaceContract {
             ));
         }
 
-        RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        RuntimeEventBus bus = (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+
+        bus.publish(new RuntimeEvent(
             RuntimeEventType.MEMORY_DECAY_APPLIED,
-            "GLOBAL",
+            sessionId,
             "SemanticWorkspace",
             "Pruned " + (initialCount - artifacts.size()) + " stale artifacts."));
     }
 
-    /**
-     * Reinforces an artifact, increasing its relevance and decay score.
-     */
     public void reinforceArtifact(String id) {
         WorkspaceArtifact artifact = artifacts.get(id);
         if (artifact != null) {
             artifact.setDecayScore(Math.min(1.0, artifact.getDecayScore() + 0.1));
             artifact.setConfidence(Math.min(1.0, artifact.getConfidence() + 0.05));
 
-            RuntimeEventBus.getInstance().publish(new RuntimeEvent(
+            SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+            RuntimeEventBus bus = (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+
+            bus.publish(new RuntimeEvent(
                 RuntimeEventType.TRAJECTORY_STRENGTHENED,
-                "GLOBAL",
+                sessionId,
                 "SemanticWorkspace",
                 "Reinforced artifact: " + id));
         }

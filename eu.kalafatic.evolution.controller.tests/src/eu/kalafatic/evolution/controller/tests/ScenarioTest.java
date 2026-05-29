@@ -1,6 +1,9 @@
 package eu.kalafatic.evolution.controller.tests;
 
 import static org.junit.Assert.*;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
+import eu.kalafatic.evolution.controller.orchestration.SessionContext;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -135,6 +138,14 @@ public class ScenarioTest {
                 ((eu.kalafatic.evolution.controller.agents.BaseAiAgent)a).setAiService(aiService);
             }
         });
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
+        if (session instanceof SessionContext) {
+            ((SessionContext)session).getAgentRegistry().values().forEach(a -> {
+                if (a instanceof eu.kalafatic.evolution.controller.agents.BaseAiAgent) {
+                    ((eu.kalafatic.evolution.controller.agents.BaseAiAgent)a).setAiService(aiService);
+                }
+            });
+        }
 
         IterationManager manager = createManager(context);
         context.setAiService(aiService);
@@ -162,8 +173,7 @@ public class ScenarioTest {
         SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(tempDir, context);
         DarwinEngine darwinEngine = new DarwinEngine(context, memoryService, stateProvider);
 
-        return new IterationManager(
-            context,
+        return new IterationManager(context,
             aiService,
             gitManager,
             taskPlanner,

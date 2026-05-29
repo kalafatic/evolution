@@ -18,6 +18,10 @@ public class ValidatorAgent extends BaseAiAgent {
         super("Validator", "Validator");
     }
 
+    public ValidatorAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Validator", "Validator", container);
+    }
+
     @Override
     public void setAiService(eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
         super.setAiService(aiService);

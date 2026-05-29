@@ -9,6 +9,10 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
 public class ArchitectAgent extends BaseAiAgent {
     public ArchitectAgent() {
         super("Architect", "Architect");
+    }
+
+    public ArchitectAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Architect", "Architect", container);
         addTool(new FileTool());
         addTool(new ShellTool());
     }

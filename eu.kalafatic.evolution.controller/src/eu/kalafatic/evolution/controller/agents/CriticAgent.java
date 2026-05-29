@@ -13,6 +13,10 @@ public class CriticAgent extends BaseAiAgent {
         super("Critic", "Critic");
     }
 
+    public CriticAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Critic", "Critic", container);
+    }
+
     @Override
     protected String getAgentInstructions() {
         return "You are an AI Critic specializing in evaluating development plans.\n" +

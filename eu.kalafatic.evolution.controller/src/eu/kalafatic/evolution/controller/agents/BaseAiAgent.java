@@ -9,6 +9,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
@@ -19,10 +20,6 @@ import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.services.BestPracticesService;
 import eu.kalafatic.evolution.controller.services.NeuronContextService;
 import eu.kalafatic.evolution.controller.tools.ITool;
-
-/**
- * Base AI Agent that wraps existing AI model/chat code.
- */
 import eu.kalafatic.evolution.controller.orchestration.IOrchestrationFlow;
 import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.orchestration.ResultType;
@@ -36,14 +33,20 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
     protected final String type;
     protected final List<ITool> tools = new ArrayList<>();
     protected final LlmRouter llmRouter = new LlmRouter();
+    protected final SessionContainer sessionContainer;
     
     protected AiService aiService = new AiService();
     protected BestPracticesService bestPracticesService;
     protected NeuronContextService neuronContextService;
 
     public BaseAiAgent(String id, String type) {
+        this(id, type, null);
+    }
+
+    public BaseAiAgent(String id, String type, SessionContainer container) {
         this.id = id;
         this.type = type;
+        this.sessionContainer = container;
     }
 
     @Override
@@ -59,6 +62,10 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
     @Override
     public List<ITool> getTools() {
         return tools;
+    }
+
+    public SessionContainer getSessionContainer() {
+        return sessionContainer;
     }
 
     public void addTool(ITool tool) {
@@ -107,9 +114,6 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
         if (lastFeedback != null) {
             sb.append("### PREVIOUS FEEDBACK (FAILURE RECOVERY)\n").append(lastFeedback).append("\n\n");
         }
-
-        // Context Authority: All grounding and attachment logic MUST flow through ContextBuilder.
-        // Direct injection in agents is deprecated to ensure a single authoritative scoring path.
 
         sb.append("CURRENT TASK:\n").append(request).append("\n\n");
 

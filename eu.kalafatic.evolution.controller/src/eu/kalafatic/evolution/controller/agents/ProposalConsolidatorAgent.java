@@ -10,7 +10,11 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 public class ProposalConsolidatorAgent extends BaseAiAgent {
 
     public ProposalConsolidatorAgent() {
-        super("Consolidator", "Consolidator");
+        super("ProposalConsolidator", "ProposalConsolidator");
+    }
+
+    public ProposalConsolidatorAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("ProposalConsolidator", "ProposalConsolidator", container);
     }
 
     @Override
