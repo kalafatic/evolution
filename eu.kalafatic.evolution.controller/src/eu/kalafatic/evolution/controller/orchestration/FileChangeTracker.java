@@ -35,4 +35,10 @@ public class FileChangeTracker {
     public synchronized void clear() {
         changedFiles.clear();
     }
+
+    public synchronized void restore(Map<String, ChangeType> changes) {
+        if (changes != null) {
+            changedFiles.putAll(changes);
+        }
+    }
 }

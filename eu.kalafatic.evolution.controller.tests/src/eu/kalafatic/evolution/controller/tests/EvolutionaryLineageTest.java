@@ -73,8 +73,8 @@ public class EvolutionaryLineageTest {
         // Common Mappings
         mockLlm.addMapping("Provide a concise summary of the project structure", "Structure: Java Project");
         mockLlm.addMapping("Determine whether this request is a SINGLE deterministic artifact", "{\"atomic\": false, \"confidence\": 0.1}");
-        mockLlm.addMapping("Deconstruct and expand user intent", "{\"state\": \"CLEAR\", \"dominantIntent\": \"Refactor\", \"unresolvedDimensions\": [{\"id\":\"D1\", \"significanceScore\":0.5}], \"confidence\": {\"overallConfidence\": 1.0}}");
-        mockLlm.addMapping("Analyze the goal to identify UNRESOLVED SEMANTIC DIMENSIONS", "{\"state\": \"CLEAR\", \"dominantIntent\": \"Refactor\", \"unresolvedDimensions\": [{\"id\":\"D1\", \"significanceScore\":0.5}], \"confidence\": {\"overallConfidence\": 1.0}}");
+        mockLlm.addMapping("Deconstruct and expand user intent", "{\"state\": \"CLEAR\", \"dominantIntent\": \"Refactor\", \"unresolvedDimensions\": [{\"id\":\"D1\", \"description\":\"Complex refactoring dimension\", \"significanceScore\":0.9}], \"confidence\": {\"overallConfidence\": 1.0}}");
+        mockLlm.addMapping("Analyze the goal to identify UNRESOLVED SEMANTIC DIMENSIONS", "{\"state\": \"CLEAR\", \"dominantIntent\": \"Refactor\", \"unresolvedDimensions\": [{\"id\":\"D1\", \"description\":\"Complex refactoring dimension\", \"significanceScore\":0.9}], \"confidence\": {\"overallConfidence\": 1.0}}");
         mockLlm.addMapping("Generate the full source code for", "Code Content");
         mockLlm.addMapping("adaptive analysis", "{\"avoidGuidelines\": []}");
 

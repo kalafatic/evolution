@@ -23,7 +23,11 @@ public class EvolutionDimension {
     private List<String> dependencyDimensions = new ArrayList<>();
     private List<BranchVariant> candidateBranches = new ArrayList<>();
 
-    public EvolutionDimension(String id, String description, AbstractionLevel level, SemanticDomain domain) {
+    @com.fasterxml.jackson.annotation.JsonCreator
+    public EvolutionDimension(@com.fasterxml.jackson.annotation.JsonProperty("id") String id,
+                              @com.fasterxml.jackson.annotation.JsonProperty("description") String description,
+                              @com.fasterxml.jackson.annotation.JsonProperty("abstractionLevel") AbstractionLevel level,
+                              @com.fasterxml.jackson.annotation.JsonProperty("semanticDomain") SemanticDomain domain) {
         this.id = id;
         this.description = description;
         this.abstractionLevel = level;

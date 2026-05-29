@@ -156,4 +156,8 @@ public class OrchestrationState {
     public void setCognitiveTrace(CognitiveTrace cognitiveTrace) {
         this.cognitiveTrace = cognitiveTrace;
     }
+
+    public String getSessionId() {
+        return sessionId;
+    }
 }

@@ -86,7 +86,16 @@ public class ResultSynthesizer {
     }
 
     private void updateTrajectory(List<BranchVariant> variants, TaskContext context) {
-        Trajectory trajectory = (Trajectory) context.getOrchestrationState().getMetadata().get("trajectory");
+        Object trajObj = context.getOrchestrationState().getMetadata().get("trajectory");
+        Trajectory trajectory = null;
+        if (trajObj instanceof Trajectory) {
+            trajectory = (Trajectory) trajObj;
+        } else if (trajObj instanceof Map) {
+            trajectory = new com.fasterxml.jackson.databind.ObjectMapper()
+                .convertValue(trajObj, Trajectory.class);
+            context.getOrchestrationState().getMetadata().put("trajectory", trajectory);
+        }
+
         if (trajectory == null) {
             trajectory = new Trajectory();
             context.getOrchestrationState().getMetadata().put("trajectory", trajectory);

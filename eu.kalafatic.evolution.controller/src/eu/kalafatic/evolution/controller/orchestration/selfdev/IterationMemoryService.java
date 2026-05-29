@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import eu.kalafatic.evolution.controller.orchestration.Checkpoint;
 import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
 import eu.kalafatic.evolution.controller.supervision.AuditRecord;
 import eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord;
@@ -248,19 +249,16 @@ public class IterationMemoryService {
     }
 
     /**
-     * Saves a checkpoint of the current evolutionary state for restart recovery.
+     * Saves a full runtime checkpoint of the current evolutionary state for restart recovery.
      */
-    public void saveCheckpoint(String sessionId, String iterationId, String phase, String goal) {
-        File checkpointFile = new File(memoryDir, "checkpoint_" + sessionId + ".json");
-        Map<String, String> checkpoint = new HashMap<>();
-        checkpoint.put("sessionId", sessionId);
-        checkpoint.put("iterationId", iterationId);
-        checkpoint.put("phase", phase);
-        checkpoint.put("goal", goal);
-        checkpoint.put("timestamp", String.valueOf(System.currentTimeMillis()));
+    public void saveCheckpoint(Checkpoint checkpoint) {
+        if (checkpoint == null || checkpoint.getSessionId() == null) return;
+
+        File checkpointFile = new File(memoryDir, "checkpoint_" + checkpoint.getSessionId() + ".json");
+        checkpoint.setTimestamp(System.currentTimeMillis());
         try {
             mapper.writeValue(checkpointFile, checkpoint);
-            Log.log("[MEMORY] Checkpoint saved: Iteration=" + iterationId + ", Phase=" + phase);
+            Log.log("[MEMORY] Full runtime checkpoint saved for session: " + checkpoint.getSessionId() + ", Phase=" + checkpoint.getCurrentPhase());
         } catch (IOException e) {
             System.err.println("Failed to save checkpoint: " + e.getMessage());
         }
@@ -269,14 +267,28 @@ public class IterationMemoryService {
     /**
      * Loads the last saved checkpoint for a session.
      */
-    public Map<String, String> loadCheckpoint(String sessionId) {
+    public Checkpoint loadCheckpoint(String sessionId) {
         File checkpointFile = new File(memoryDir, "checkpoint_" + sessionId + ".json");
         if (!checkpointFile.exists()) return null;
         try {
-            return mapper.readValue(checkpointFile, Map.class);
+            Checkpoint checkpoint = mapper.readValue(checkpointFile, Checkpoint.class);
+            validateCheckpoint(checkpoint);
+            return checkpoint;
         } catch (IOException e) {
             System.err.println("Failed to load checkpoint: " + e.getMessage());
             return null;
+        }
+    }
+
+    private void validateCheckpoint(Checkpoint checkpoint) {
+        if (checkpoint.getSessionId() == null) {
+            throw new RuntimeException("Invalid checkpoint: Missing sessionId");
+        }
+        if (checkpoint.getCurrentPhase() == null) {
+            throw new RuntimeException("Invalid checkpoint: Missing currentPhase");
+        }
+        if (checkpoint.getTimestamp() == 0) {
+            throw new RuntimeException("Invalid checkpoint: Missing timestamp");
         }
     }
 

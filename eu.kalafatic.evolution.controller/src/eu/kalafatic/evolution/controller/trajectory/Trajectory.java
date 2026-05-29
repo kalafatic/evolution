@@ -125,7 +125,10 @@ public class Trajectory {
         public final Object value;
         public final long timestamp;
 
-        public SignalRecord(String signalName, Object value, long timestamp) {
+        @com.fasterxml.jackson.annotation.JsonCreator
+        public SignalRecord(@com.fasterxml.jackson.annotation.JsonProperty("signalName") String signalName,
+                            @com.fasterxml.jackson.annotation.JsonProperty("value") Object value,
+                            @com.fasterxml.jackson.annotation.JsonProperty("timestamp") long timestamp) {
             this.signalName = signalName;
             this.value = value;
             this.timestamp = timestamp;

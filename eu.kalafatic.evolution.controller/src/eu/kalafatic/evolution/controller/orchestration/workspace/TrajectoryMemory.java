@@ -89,6 +89,10 @@ public class TrajectoryMemory {
         }
     }
 
+    public Map<String, Trajectory> getTrajectories() {
+        return trajectories;
+    }
+
     public Trajectory getTrajectory(String trajectoryId) {
         if (trajectoryId == null) return null;
         return trajectories.get(trajectoryId);

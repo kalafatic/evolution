@@ -24,12 +24,19 @@ public final class DecisionSnapshot {
     private boolean explorationTriggered = false;
     private double avgShortTermFitness;
     private double avgLongTermStability;
-    private final long timestamp;
+    private long timestamp;
 
-    public DecisionSnapshot(String iterationId, String selectedVariantId, List<String> rankedVariants,
-                            Map<String, Double> aggregatedScores, List<String> criticalFailures,
-                            String activationReason, String resolverPolicy, double resolverConfidence,
-                            String recommendationSummary, double disagreementMetric) {
+    @com.fasterxml.jackson.annotation.JsonCreator
+    public DecisionSnapshot(@com.fasterxml.jackson.annotation.JsonProperty("iterationId") String iterationId,
+                            @com.fasterxml.jackson.annotation.JsonProperty("selectedVariantId") String selectedVariantId,
+                            @com.fasterxml.jackson.annotation.JsonProperty("rankedVariants") List<String> rankedVariants,
+                            @com.fasterxml.jackson.annotation.JsonProperty("aggregatedScores") Map<String, Double> aggregatedScores,
+                            @com.fasterxml.jackson.annotation.JsonProperty("criticalFailures") List<String> criticalFailures,
+                            @com.fasterxml.jackson.annotation.JsonProperty("activationReason") String activationReason,
+                            @com.fasterxml.jackson.annotation.JsonProperty("resolverPolicy") String resolverPolicy,
+                            @com.fasterxml.jackson.annotation.JsonProperty("resolverConfidence") double resolverConfidence,
+                            @com.fasterxml.jackson.annotation.JsonProperty("recommendationSummary") String recommendationSummary,
+                            @com.fasterxml.jackson.annotation.JsonProperty("disagreementMetric") double disagreementMetric) {
         this.iterationId = iterationId;
         this.selectedVariantId = selectedVariantId;
         this.rankedVariants = rankedVariants != null ? Collections.unmodifiableList(new ArrayList<>(rankedVariants)) : Collections.emptyList();
@@ -60,6 +67,41 @@ public final class DecisionSnapshot {
     public void setAvgLongTermStability(double avgLongTermStability) { this.avgLongTermStability = avgLongTermStability; }
     public void setExplorationTriggered(boolean explorationTriggered) { this.explorationTriggered = explorationTriggered; }
     public long getTimestamp() { return timestamp; }
+    public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+    public static DecisionSnapshot fromJson(org.json.JSONObject json) {
+        List<String> ranked = new ArrayList<>();
+        org.json.JSONArray rArr = json.optJSONArray("rankedVariants");
+        if (rArr != null) for (int i=0; i<rArr.length(); i++) ranked.add(rArr.getString(i));
+
+        List<String> fails = new ArrayList<>();
+        org.json.JSONArray fArr = json.optJSONArray("criticalFailures");
+        if (fArr != null) for (int i=0; i<fArr.length(); i++) fails.add(fArr.getString(i));
+
+        Map<String, Double> scores = new HashMap<>();
+        org.json.JSONObject sObj = json.optJSONObject("aggregatedScores");
+        if (sObj != null) {
+            for (Object key : sObj.keySet()) scores.put((String)key, sObj.getDouble((String)key));
+        }
+
+        DecisionSnapshot snap = new DecisionSnapshot(
+            json.optString("iterationId"),
+            json.optString("selectedVariantId"),
+            ranked,
+            scores,
+            fails,
+            json.optString("activationReason"),
+            json.optString("resolverPolicy"),
+            json.optDouble("resolverConfidence", 0.0),
+            json.optString("recommendationSummary"),
+            json.optDouble("disagreementMetric", 0.0)
+        );
+        snap.setExplorationTriggered(json.optBoolean("explorationTriggered"));
+        snap.setAvgShortTermFitness(json.optDouble("avgShortTermFitness"));
+        snap.setAvgLongTermStability(json.optDouble("avgLongTermStability"));
+        snap.setTimestamp(json.optLong("timestamp", System.currentTimeMillis()));
+        return snap;
+    }
 
     @Override
     public String toString() {

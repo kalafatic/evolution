@@ -140,7 +140,9 @@ public class TaskContext {
 
     public void setSessionId(String sessionId) {
         this.sessionId = sessionId;
-        this.orchestrationState = new OrchestrationState(sessionId);
+        if (this.orchestrationState == null || !this.orchestrationState.getSessionId().equals(sessionId)) {
+            this.orchestrationState = new OrchestrationState(sessionId);
+        }
     }
 
     public void log(String message) {
