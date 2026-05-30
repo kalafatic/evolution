@@ -41,12 +41,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
     private ProposalConsolidatorAgent consolidator;
     private final List<IAgent> availableAgents = new ArrayList<>();
     private AiService aiService = new AiService();
+    private final SessionContainer sessionContainer;
 
     public EvolutionOrchestrator() {
         this(null);
     }
 
     public EvolutionOrchestrator(SessionContainer container) {
+        this.sessionContainer = container;
         if (container != null) {
             if (container instanceof SessionContext) {
                 Map<String, IAgent> registry = ((SessionContext)container).getAgentRegistry();
@@ -75,13 +77,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
     @Override
     public OrchestratorResponse handle(TaskRequest taskRequest, TaskContext context) throws Exception {
-        SessionContainer session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
-        IterationManager kernel;
-        if (session instanceof SessionContext) {
-            kernel = KernelFactory.create(context, (SessionContext)session, aiService);
-        } else {
-            kernel = KernelFactory.create(context, aiService);
-        }
+        SessionContainer session = sessionContainer != null ? sessionContainer : SessionManager.getInstance().getOrCreateSession(context.getSessionId());
+        IterationManager kernel = KernelFactory.create(context, session, aiService);
         return kernel.handle(taskRequest);
     }
 
@@ -150,7 +147,7 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
     private IAgent findAgentForTask(Task task, TaskContext context) {
         String type = task.getType().toLowerCase();
-        SessionContainer session = SessionManager.getInstance().getSession(context.getSessionId());
+        SessionContainer session = sessionContainer != null ? sessionContainer : SessionManager.getInstance().getSession(context.getSessionId());
 
         if (session instanceof SessionContext) {
             Map<String, IAgent> registry = ((SessionContext)session).getAgentRegistry();

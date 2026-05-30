@@ -18,10 +18,12 @@ public class ProjectionService implements RuntimeEventListener {
     private final List<Consumer<RuntimeProjection>> observers = new CopyOnWriteArrayList<>();
 
     private ProjectionService() {
-        // In a real implementation, we would subscribe to the session-scoped buses.
-        // For now, we subscribe to the global one to maintain legacy compatibility while
-        // providing the new projection-based API.
-        RuntimeEventBus.getInstance().subscribe(this);
+        // ProjectionService is now a session-scoped service that subscribes to its session's event bus.
+        // The global subscription is removed.
+    }
+
+    public void initializeForSession(RuntimeEventBus bus) {
+        bus.subscribe(this);
     }
 
     public static ProjectionService getInstance() {

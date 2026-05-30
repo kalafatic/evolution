@@ -40,7 +40,10 @@ public class ContextResolver {
                 .collect(Collectors.toList());
 
         SessionContainer session = SessionManager.getInstance().getSession(sessionId);
-        RuntimeEventBus bus = (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+        if (session == null) {
+            throw new IllegalStateException("ContextResolver: session is null for sessionId: " + sessionId);
+        }
+        RuntimeEventBus bus = session.getEventBus();
 
         if (relevant.size() > MAX_ARTIFACTS_PER_INJECTION * 0.8) {
             bus.publish(new RuntimeEvent(

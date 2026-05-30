@@ -6,17 +6,10 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class WorkflowStepRegistry {
-    private static final WorkflowStepRegistry instance = new WorkflowStepRegistry();
     private final Map<String, WorkflowStep> steps = new ConcurrentHashMap<>();
     private final Map<String, List<String>> sessionSteps = new ConcurrentHashMap<>();
 
     public WorkflowStepRegistry() {}
-
-    /**
-     * @deprecated Use session-scoped registry instead.
-     */
-    @Deprecated
-    public static WorkflowStepRegistry getInstance() { return instance; }
 
     public void registerStep(String sessionId, WorkflowStep step) {
         steps.put(step.getId(), step);

@@ -48,7 +48,6 @@ public class RecursiveEvolutionTest {
 
     @Before
     public void setup() throws Exception {
-        eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry.getInstance().shutdown();
         mockLlm = new MockProvider();
         aiService = new AiService() {
             @Override
@@ -75,6 +74,7 @@ public class RecursiveEvolutionTest {
 
         context = new TaskContext(orchestrator, root);
         context.setSessionId("test-session");
+        eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession("test-session");
         context.getBehaviorProfile().addTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE);
         context.setAutoApprove(true);
         context.getMetadata().put("testMode", true);
@@ -99,8 +99,8 @@ public class RecursiveEvolutionTest {
         OrchestratorResponse response = manager.handle(request);
 
         // Verify that recursion occurred (Iteration Count should be > 1 if pressure was applied and stability not reached)
-        // Given our mocked components, we check if the evolution loop was entered
         assertTrue("Iteration count should be at least 1", context.getOrchestrationState().getIterationCount() >= 1);
+        // Given our mocked components, we check if the evolution loop was entered
     }
 
     @Test

@@ -39,7 +39,10 @@ public class DecisionResolver {
      * Resolves the winner variant, optionally with an explicit manual selection.
      */
     public DecisionSnapshot resolveWinner(String iterationId, List<BranchVariant> variants, TaskContext context, String manualSelectionId) {
-        List<EvaluationSignal> signals = SignalBus.getInstance().getAllSignals();
+        if (context == null) {
+            throw new IllegalStateException("DecisionResolver: context is null. Cannot resolve winner.");
+        }
+        List<EvaluationSignal> signals = context.getKernelContext().getSignalBus().getAllSignals();
 
         // Authority over selection engine
         ActivationResolver activationResolver = new ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory());

@@ -40,8 +40,7 @@ public class DarwinEvolutionTest {
 
     @Before
     public void setUp() throws Exception {
-        eu.kalafatic.evolution.controller.trajectory.SignalBus.getInstance().clearHistory();
-        eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry.getInstance().shutdown();
+        // SignalBus history is now session-scoped and cleared on session shutdown.
         System.setProperty("evolution.darwin.parallel.disabled", "true");
         tempDir = Files.createTempDirectory("darwin-test").toFile();
 

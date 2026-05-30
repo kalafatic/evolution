@@ -89,7 +89,14 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
 
-        RuntimeEventBus.getInstance().subscribe(this);
+        // Use the event bus from the active session if available
+        String sid = (orchestrator != null && orchestrator.getSelfDevSession() != null) ?
+            orchestrator.getSelfDevSession().getId() : "Default";
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sid);
+        if (session != null) {
+            session.getEventBus().subscribe(this);
+        }
+
         initImageRegistry();
         initMemoryService();
         createControl();
@@ -691,7 +698,12 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
 
     @Override
     public void dispose() {
-        RuntimeEventBus.getInstance().unsubscribe(this);
+        String sid = (orchestrator != null && orchestrator.getSelfDevSession() != null) ?
+            orchestrator.getSelfDevSession().getId() : "Default";
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sid);
+        if (session != null) {
+            session.getEventBus().unsubscribe(this);
+        }
         if (pollTimer != null) pollTimer.cancel();
         if (imageRegistry != null) imageRegistry.dispose();
         if (vizGroup != null) vizGroup.dispose();

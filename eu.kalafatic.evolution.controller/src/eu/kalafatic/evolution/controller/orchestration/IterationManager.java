@@ -265,7 +265,10 @@ public class IterationManager {
 
         // Register Capabilities
         try {
-            CapabilityRegistry reg = (sessionContainer != null) ? sessionContainer.getCapabilityRegistry() : CapabilityRegistry.getInstance();
+            if (sessionContainer == null) {
+                throw new IllegalStateException("IterationManager: sessionContainer is null. Cannot register capabilities.");
+            }
+            CapabilityRegistry reg = sessionContainer.getCapabilityRegistry();
             reg.register(evaluator);
             reg.register(darwinEngine);
             reg.register(context.getSemanticWorkspace());
@@ -404,7 +407,10 @@ public class IterationManager {
                 context.setPlatformMode(mode);
                 context.log("Platform Mode: " + mode.getType());
 
-                RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
+            if (sessionContainer == null) {
+                throw new IllegalStateException("IterationManager: sessionContainer is null. Cannot publish mode change event.");
+            }
+            RuntimeEventBus bus = sessionContainer.getEventBus();
                 bus.publish(
                     new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                         eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MODE_CHANGED,
@@ -498,7 +504,13 @@ public class IterationManager {
 
             WorkflowStep step = new WorkflowStep("step-" + System.currentTimeMillis(), entityId, type);
             step.setDescription(description);
-            StepModeController smc = (sessionContainer instanceof SessionContext) ? ((SessionContext)sessionContainer).getStepModeController() : StepModeController.getInstance();
+            if (sessionContainer == null) {
+                throw new IllegalStateException("IterationManager: sessionContainer is null. Cannot wait for step.");
+            }
+            StepModeController smc = (sessionContainer instanceof SessionContext) ? ((SessionContext)sessionContainer).getStepModeController() : null;
+            if (smc == null) {
+                throw new IllegalStateException("IterationManager: StepModeController is null.");
+            }
             WorkflowStatus result = smc.waitForStep(context.getSessionId(), step, context);
             if (result == WorkflowStatus.FAILED) {
                 throw new Exception("Step failed or rejected by user: " + description);
@@ -512,6 +524,9 @@ public class IterationManager {
     }
 
     public void transition(SystemState to, TaskContext ctx) {
+        if (sessionContainer == null) {
+            throw new IllegalStateException("IterationManager: sessionContainer is null. Cannot transition state.");
+        }
         SystemState current = ctx.getStateHolder().getState();
         if (current == to) return;
 
@@ -543,7 +558,7 @@ public class IterationManager {
             }
         }
 
-        RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
+        RuntimeEventBus bus = sessionContainer.getEventBus();
         bus.publish(
             new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                 eu.kalafatic.evolution.controller.workflow.RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
@@ -1291,7 +1306,10 @@ public class IterationManager {
 
         context.log("[KERNEL] Runtime continuity restored. Resuming at phase: " + cp.getCurrentPhase());
 
-        RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
+        if (sessionContainer == null) {
+            throw new IllegalStateException("IterationManager: sessionContainer is null. Cannot publish session resumed event.");
+        }
+        RuntimeEventBus bus = sessionContainer.getEventBus();
         bus.publish(new RuntimeEvent(RuntimeEventType.SESSION_RESUMED, context.getSessionId(), "Kernel", cp));
     }
 
@@ -1448,7 +1466,10 @@ public class IterationManager {
                 transition(SystemState.EXECUTING, context);
                 task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.RUNNING);
 
-                RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
+                if (sessionContainer == null) {
+                    throw new IllegalStateException("IterationManager: sessionContainer is null. Cannot publish task started event.");
+                }
+                RuntimeEventBus bus = sessionContainer.getEventBus();
                 bus.publish(
                     new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                         eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_STARTED,

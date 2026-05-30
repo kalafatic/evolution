@@ -13,6 +13,7 @@ import eu.kalafatic.evolution.controller.trajectory.SignalBus;
 import eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.StepModeController;
+import eu.kalafatic.evolution.controller.workflow.WorkflowGraphManager;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStepRegistry;
 
 /**
@@ -27,6 +28,7 @@ public class SessionContext implements SessionContainer {
     private final RuntimeEventBus eventBus;
     private final SignalBus signalBus;
     private final WorkflowStepRegistry workflowRegistry;
+    private final WorkflowGraphManager workflowGraphManager;
     private final EvolutionRegistry evolutionRegistry;
     private final EvolutionMemoryGraph evolutionMemoryGraph;
     private final FileChangeTracker fileChangeTracker;
@@ -47,6 +49,7 @@ public class SessionContext implements SessionContainer {
         this.eventBus = new RuntimeEventBus(sessionId);
         this.signalBus = new SignalBus(this.eventBus);
         this.workflowRegistry = new WorkflowStepRegistry();
+        this.workflowGraphManager = new WorkflowGraphManager(this.eventBus);
         this.evolutionRegistry = new EvolutionRegistry();
         this.capabilityRegistry = new CapabilityRegistry();
         this.stepModeController = new StepModeController(this.eventBus, this.workflowRegistry);
@@ -55,6 +58,17 @@ public class SessionContext implements SessionContainer {
         this.runtimeCoordinator = new RuntimeCoordinator(sessionId, this.eventBus, this.signalBus, this.workflowRegistry);
 
         this.runtimeCoordinator.initialize();
+
+        // Ensure UI projections are initialized for this session
+        try {
+            Class<?> projectionServiceClass = Class.forName("eu.kalafatic.evolution.view.projection.ProjectionService");
+            java.lang.reflect.Method getInstance = projectionServiceClass.getMethod("getInstance");
+            Object projectionService = getInstance.invoke(null);
+            java.lang.reflect.Method initMethod = projectionServiceClass.getMethod("initializeForSession", RuntimeEventBus.class);
+            initMethod.invoke(projectionService, this.eventBus);
+        } catch (Exception e) {
+            // View bundle might not be present in all environments (e.g. headless tests)
+        }
     }
 
     @Override
@@ -89,6 +103,11 @@ public class SessionContext implements SessionContainer {
     @Override
     public WorkflowStepRegistry getWorkflowRegistry() {
         return workflowRegistry;
+    }
+
+    @Override
+    public WorkflowGraphManager getWorkflowGraphManager() {
+        return workflowGraphManager;
     }
 
     @Override

@@ -102,7 +102,10 @@ public class ActivationGate {
 
     private RuntimeEventBus getEventBus() {
         SessionContainer session = SessionManager.getInstance().getSession(sessionId);
-        return (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+        if (session == null) {
+            throw new IllegalStateException("ActivationGate: session is null for sessionId: " + sessionId);
+        }
+        return session.getEventBus();
     }
 
     private String determineRationale(BranchVariant v, int rank) {

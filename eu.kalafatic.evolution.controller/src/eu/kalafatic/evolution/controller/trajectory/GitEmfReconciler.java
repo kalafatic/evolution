@@ -21,7 +21,10 @@ public class GitEmfReconciler {
     }
 
     private void subscribeToEvents() {
-        RuntimeEventBus.getInstance().subscribe(event -> {
+        if (context == null) {
+            throw new IllegalStateException("GitEmfReconciler: context is null. Cannot subscribe to events.");
+        }
+        context.getKernelContext().getEventBus().subscribe(event -> {
             if (event.getType() == RuntimeEventType.TOOL_EXECUTION_SUCCEEDED && "GitTool".equals(event.getSource())) {
                 reconcile(event);
             }
@@ -75,7 +78,10 @@ public class GitEmfReconciler {
             type,
             "Physical divergence [" + type + "] detected: " + message
         );
-        RuntimeEventBus.getInstance().publish(new RuntimeEvent(RuntimeEventType.EVALUATION_SIGNAL_CREATED, "GLOBAL", "GitEmfReconciler", signal));
+        if (context == null) {
+            throw new IllegalStateException("GitEmfReconciler: context is null. Cannot publish divergence signal.");
+        }
+        context.getKernelContext().getEventBus().publish(new RuntimeEvent(RuntimeEventType.EVALUATION_SIGNAL_CREATED, context.getSessionId(), "GitEmfReconciler", signal));
     }
 
     /**

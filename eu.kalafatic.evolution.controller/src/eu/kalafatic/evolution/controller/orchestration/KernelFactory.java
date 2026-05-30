@@ -21,15 +21,16 @@ public class KernelFactory {
         return create(context, new AiService());
     }
 
-    public static IterationManager create(TaskContext context, SessionContext sessionContext) {
+    public static IterationManager create(TaskContext context, SessionContainer sessionContext) {
         return create(context, sessionContext, new AiService());
     }
 
     public static IterationManager create(TaskContext context, AiService aiService) {
-        return create(context, null, aiService);
+        SessionContainer session = SessionManager.getInstance().getSession(context.getSessionId());
+        return create(context, session, aiService);
     }
 
-    public static IterationManager create(TaskContext context, SessionContext sessionContext, AiService aiService) {
+    public static IterationManager create(TaskContext context, SessionContainer sessionContext, AiService aiService) {
         GitManager gitManager = new GitManager(context.getProjectRoot());
         TaskPlanner taskPlanner = new TaskPlanner();
         TaskExecutor taskExecutor = new TaskExecutor(context, context.getOrchestrator());
@@ -48,7 +49,10 @@ public class KernelFactory {
 
         // Register static capabilities
         try {
-            CapabilityRegistry reg = (sessionContext != null) ? sessionContext.getCapabilityRegistry() : CapabilityRegistry.getInstance();
+            if (sessionContext == null) {
+                throw new IllegalStateException("KernelFactory: sessionContext is null for session " + context.getSessionId() + ". Cannot register capabilities.");
+            }
+            CapabilityRegistry reg = sessionContext.getCapabilityRegistry();
             reg.register(new KernelScheduler());
             reg.register(new ActivationResolver(memoryService.getTrajectoryMemory()));
         } catch (CapabilityException e) {

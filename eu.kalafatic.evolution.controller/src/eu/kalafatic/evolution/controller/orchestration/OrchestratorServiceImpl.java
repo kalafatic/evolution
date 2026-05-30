@@ -156,7 +156,10 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     @Override
     public void shutdownSession(String sessionId) {
         SessionContainer session = SessionManager.getInstance().getSession(sessionId);
-        RuntimeEventBus bus = session != null ? session.getEventBus() : RuntimeEventBus.getInstance();
+        if (session == null) {
+            throw new IllegalStateException("OrchestratorServiceImpl: session is null for sessionId: " + sessionId);
+        }
+        RuntimeEventBus bus = session.getEventBus();
         SessionManager.getInstance().shutdownSession(sessionId);
         tasks.remove(sessionId);
         bus.publish(new RuntimeEvent(RuntimeEventType.KERNEL_SHUTDOWN, sessionId, "OrchestratorService", null));

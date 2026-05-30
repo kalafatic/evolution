@@ -22,8 +22,11 @@ public class ResultSynthesizer {
     }
 
     public SynthesisResult synthesize(List<BranchVariant> variants, TaskContext context) {
+        if (context == null) {
+            throw new IllegalStateException("ResultSynthesizer: context is null. Cannot synthesize results.");
+        }
         SynthesisResult result = new SynthesisResult();
-        List<EvaluationSignal> signals = SignalBus.getInstance().getAllSignals();
+        List<EvaluationSignal> signals = context.getKernelContext().getSignalBus().getAllSignals();
 
         context.log("[SYNTHESIS] Merging results from " + variants.size() + " branches.");
 

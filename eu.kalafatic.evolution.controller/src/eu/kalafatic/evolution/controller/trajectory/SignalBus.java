@@ -25,8 +25,6 @@ import eu.kalafatic.utils.semantic.Stability;
     evolutionaryImpact = EvolutionaryImpact.HIGH
 )
 public class SignalBus {
-    private static final SignalBus INSTANCE = new SignalBus(RuntimeEventBus.getInstance());
-
     private final Map<String, List<EvaluationSignal>> signalHistory = new ConcurrentHashMap<>();
     private final RuntimeEventBus eventBus;
 
@@ -38,14 +36,6 @@ public class SignalBus {
                 publish((EvaluationSignal) event.getPayload());
             }
         });
-    }
-
-    /**
-     * @deprecated Use session-scoped bus instead.
-     */
-    @Deprecated
-    public static SignalBus getInstance() {
-        return INSTANCE;
     }
 
     /**

@@ -1,6 +1,9 @@
 package eu.kalafatic.evolution.controller.workflow;
 
 import eu.kalafatic.evolution.controller.orchestration.KernelFacade;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
+import eu.kalafatic.evolution.controller.orchestration.SessionContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 public class GraphActionExecutor {
@@ -53,20 +56,30 @@ public class GraphActionExecutor {
     private void handleStepAction(String entityId, WorkflowStatus status) {
 	System.err.println("[GraphActionExecutor] Handling step action for entity: " + entityId + " with status: " + status);
         String sid = sessionId != null ? sessionId : (context != null ? context.getSessionId() : "Default");
-        GraphEntity entity = WorkflowGraphManager.getInstance(sid).getEntity(sid, entityId);
+        SessionContainer session = SessionManager.getInstance().getSession(sid);
+        if (session == null) {
+            throw new IllegalStateException("GraphActionExecutor: session is null for sessionId: " + sid);
+        }
+        GraphEntity entity = session.getWorkflowGraphManager().getEntity(sid, entityId);
         if (entity != null && entity.getMetadata().has("currentStepId")) {
             String stepId = entity.getMetadata().getString("currentStepId");
-            StepModeController.getInstance().resumeStep(stepId, status);
+            if (session instanceof SessionContext) {
+                ((SessionContext)session).getStepModeController().resumeStep(stepId, status);
+            }
         }
     }
 
     private void handleInspect(String entityId) {
     	System.err.println("[GraphActionExecutor] Handling inspect action for entity: " + entityId);
         String sid = sessionId != null ? sessionId : (context != null ? context.getSessionId() : "Default");
-        GraphEntity entity = WorkflowGraphManager.getInstance(sid).getEntity(sid, entityId);
+        SessionContainer session = SessionManager.getInstance().getSession(sid);
+        if (session == null) {
+            throw new IllegalStateException("GraphActionExecutor: session is null for sessionId: " + sid);
+        }
+        GraphEntity entity = session.getWorkflowGraphManager().getEntity(sid, entityId);
         if (entity != null && entity.getMetadata().has("currentStepId")) {
             String stepId = entity.getMetadata().getString("currentStepId");
-            WorkflowStep step = WorkflowStepRegistry.getInstance().getStep(stepId);
+            WorkflowStep step = session.getWorkflowRegistry().getStep(stepId);
             if (step != null && context != null) {
                 context.log("[INSPECT] Step: " + step.getDescription());
                 context.log("[INSPECT] Type: " + step.getStepType());

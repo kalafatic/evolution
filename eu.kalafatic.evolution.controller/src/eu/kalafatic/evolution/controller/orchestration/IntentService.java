@@ -36,7 +36,10 @@ public class IntentService {
         );
 
         SessionContainer session = SessionManager.getInstance().getSession(context.getSessionId());
-        RuntimeEventBus bus = (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+        if (session == null) {
+            throw new IllegalStateException("IntentService: session is null for sessionId: " + context.getSessionId());
+        }
+        RuntimeEventBus bus = session.getEventBus();
 
         bus.publish(new RuntimeEvent(
             RuntimeEventType.EVALUATION_SIGNAL_CREATED,

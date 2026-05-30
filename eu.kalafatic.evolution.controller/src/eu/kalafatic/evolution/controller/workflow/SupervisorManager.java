@@ -41,10 +41,10 @@ public class SupervisorManager {
     }
 
     private RuntimeEventBus getEventBus() {
-        if (context != null) {
-            return SessionManager.getInstance().getOrCreateSession(context.getSessionId()).getEventBus();
+        if (context == null) {
+            throw new IllegalStateException("SupervisorManager: context is null. Cannot retrieve event bus.");
         }
-        return RuntimeEventBus.getInstance();
+        return SessionManager.getInstance().getOrCreateSession(context.getSessionId()).getEventBus();
     }
 
     private void publishStatus(String status) {

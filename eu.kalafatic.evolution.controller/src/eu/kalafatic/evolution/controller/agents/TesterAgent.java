@@ -48,7 +48,10 @@ public class TesterAgent extends BaseAiAgent {
             explanation
         );
 
-        RuntimeEventBus bus = (sessionContainer != null) ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance();
+        if (sessionContainer == null) {
+            throw new IllegalStateException("TesterAgent: sessionContainer is null. Cannot publish evaluation signal.");
+        }
+        RuntimeEventBus bus = sessionContainer.getEventBus();
         bus.publish(new RuntimeEvent(
             RuntimeEventType.EVALUATION_SIGNAL_CREATED,
             context.getSessionId(),
