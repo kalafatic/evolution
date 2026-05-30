@@ -6,7 +6,6 @@ import java.util.concurrent.CompletableFuture;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 public class StepModeController {
-    private static final StepModeController instance = new StepModeController(RuntimeEventBus.getInstance(), WorkflowStepRegistry.getInstance());
     private final Map<String, CompletableFuture<WorkflowStatus>> stepGates = new ConcurrentHashMap<>();
     private final RuntimeEventBus eventBus;
     private final WorkflowStepRegistry workflowRegistry;
@@ -15,12 +14,6 @@ public class StepModeController {
         this.eventBus = eventBus;
         this.workflowRegistry = workflowRegistry;
     }
-
-    /**
-     * @deprecated Use session-scoped controller instead.
-     */
-    @Deprecated
-    public static StepModeController getInstance() { return instance; }
 
     public WorkflowStatus waitForStep(String sessionId, WorkflowStep step, TaskContext context) {
         if (context.isAutoApprove()) {

@@ -93,7 +93,10 @@ public class ReviewerAgent extends BaseAiAgent {
         );
 
 
-        (sessionContainer != null ? sessionContainer.getEventBus() : RuntimeEventBus.getInstance()).publish(new RuntimeEvent(
+        if (sessionContainer == null) {
+            throw new IllegalStateException("ReviewerAgent: sessionContainer is null. Cannot publish evaluation signal.");
+        }
+        sessionContainer.getEventBus().publish(new RuntimeEvent(
             RuntimeEventType.EVALUATION_SIGNAL_CREATED,
             context.getSessionId(),
             "ReviewerAgent",

@@ -17,6 +17,8 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
+import eu.kalafatic.evolution.controller.trajectory.SignalBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.utils.log.Log;
 
 /**
@@ -357,7 +359,14 @@ public class TaskContext {
     public EvolutionKernelContext getKernelContext() {
         if (kernelContext == null) {
             Log.log("[CONTEXT] Initializing new EvolutionKernelContext for session: " + sessionId);
-            kernelContext = new EvolutionKernelContext(projectRoot);
+            SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+            if (session != null) {
+                kernelContext = new EvolutionKernelContext(projectRoot, session.getEventBus(), session.getSignalBus(), session.getMemoryService(projectRoot));
+            } else {
+                // Fallback for tests or situations where session is not yet registered in SessionManager
+                RuntimeEventBus bus = new RuntimeEventBus(sessionId);
+                kernelContext = new EvolutionKernelContext(projectRoot, bus, new SignalBus(bus), new eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService(projectRoot));
+            }
         }
         return kernelContext;
     }

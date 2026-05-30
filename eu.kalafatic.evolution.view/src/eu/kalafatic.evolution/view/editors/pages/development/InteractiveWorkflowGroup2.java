@@ -18,6 +18,8 @@ import org.json.JSONObject;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.workflow.WorkflowGraphManager;
 import eu.kalafatic.evolution.controller.workflow.GraphActionExecutor;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -26,13 +28,13 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.utils.factories.GUIFactory;
 import eu.kalafatic.evolution.view.application.Activator;
 
-public class InteractiveWorkflowGroup3 extends AEvoGroup {
+public class InteractiveWorkflowGroup2 extends AEvoGroup {
     private Browser browser;
     private String sessionId;
     private GraphActionExecutor executor;
     private boolean isLoaded = false;
 
-    public InteractiveWorkflowGroup3(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, String sessionId) {
+    public InteractiveWorkflowGroup2(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, String sessionId) {
         super(editor, orchestrator);
         this.sessionId = sessionId;
         this.executor = new GraphActionExecutor(editor.getCurrentContext());
@@ -50,8 +52,8 @@ public class InteractiveWorkflowGroup3 extends AEvoGroup {
         browserContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         try {
-            browser = GUIFactory.INSTANCE.createBrowser(browserContainer, 700);
-
+            browser = GUIFactory.INSTANCE.createBrowser(browserContainer, 300);
+          
             browser.addProgressListener(new org.eclipse.swt.browser.ProgressAdapter() {
                 @Override
                 public void completed(org.eclipse.swt.browser.ProgressEvent event) {
@@ -59,6 +61,10 @@ public class InteractiveWorkflowGroup3 extends AEvoGroup {
                     scheduleRefresh();
                 }
             });
+
+           
+
+            //loadWorkflowHtml();
             
             setupBrowser(browser);
             
@@ -129,12 +135,29 @@ public class InteractiveWorkflowGroup3 extends AEvoGroup {
         };
 	}
 
+//    private void loadWorkflowHtml() {
+//        try {
+//            if (Activator.getDefault() == null) return;
+//            URL url = FileLocator.find(Activator.getDefault().getBundle(), new Path("workflow/workflow.html"), null);
+//            if (url != null) {
+//                browser.setUrl(FileLocator.toFileURL(url).toExternalForm());
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     @Override
     protected void refreshUI() {
         if (browser != null && !browser.isDisposed() && isLoaded) {
-            JSONObject graph = WorkflowGraphManager.getInstance(sessionId).getGraphJson(sessionId);
-            browser.execute("if(window.updateGraph) window.updateGraph(" + graph.toString() + ");");
+            String sid = (sessionId != null) ? sessionId : "Default";
+            SessionContainer session = SessionManager.getInstance().getSession(sid);
+            if (session != null) {
+                JSONObject graph = session.getWorkflowGraphManager().getGraphJson(sid);
+                if (graph != null) {
+                    browser.execute("if(window.updateGraph) window.updateGraph(" + graph.toString() + ");");
+                }
+            }
         }
     }
 
@@ -144,7 +167,11 @@ public class InteractiveWorkflowGroup3 extends AEvoGroup {
 
     @Override
     public void dispose() {
-        WorkflowGraphManager.removeInstance(sessionId);
+        String sid = (sessionId != null) ? sessionId : "Default";
+        SessionContainer session = SessionManager.getInstance().getSession(sid);
+        if (session != null) {
+            session.getWorkflowGraphManager().removeInstance(sid);
+        }
         super.dispose();
     }
 }

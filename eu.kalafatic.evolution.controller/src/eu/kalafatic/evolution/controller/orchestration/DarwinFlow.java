@@ -76,6 +76,9 @@ public class DarwinFlow implements IOrchestrationFlow {
         this.aiService = aiService;
         this.manager = manager;
         this.sessionContainer = SessionManager.getInstance().getOrCreateSession(manager.getContext().getSessionId());
+        if (this.sessionContainer == null) {
+            throw new IllegalStateException("DarwinFlow: sessionContainer is null for sessionId: " + manager.getContext().getSessionId());
+        }
     }
 
     @Override
@@ -314,6 +317,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
             }
             TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
+            variantContext.setSessionId(context.getSessionId());
             variantContext.setKernelContext(context.getKernelContext());
             variantContext.getMetadata().put("variantId", variant.getId());
             variantContext.getMetadata().put("variantExecContext", variantExecContext);

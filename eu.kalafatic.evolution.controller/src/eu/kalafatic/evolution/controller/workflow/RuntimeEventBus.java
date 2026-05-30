@@ -10,20 +10,16 @@ import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
 public class RuntimeEventBus {
-    private static final RuntimeEventBus INSTANCE = new RuntimeEventBus("global");
     private final List<RuntimeEventListener> listeners = new CopyOnWriteArrayList<>();
     private ExecutionBudget budget = ExecutionBudget.defaultProfile();
     private final String sessionId;
 
     public RuntimeEventBus(String sessionId) {
         this.sessionId = sessionId;
+        if (sessionId == null || sessionId.isEmpty()) {
+            throw new IllegalArgumentException("RuntimeEventBus: sessionId cannot be null or empty.");
+        }
     }
-
-    /**
-     * @deprecated Use session-scoped bus instead.
-     */
-    @Deprecated
-    public static RuntimeEventBus getInstance() { return INSTANCE; }
 
     public void setBudget(ExecutionBudget budget) {
         this.budget = budget;

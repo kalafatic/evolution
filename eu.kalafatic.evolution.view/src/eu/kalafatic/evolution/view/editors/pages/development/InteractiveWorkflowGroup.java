@@ -17,6 +17,8 @@ import org.json.JSONObject;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.workflow.WorkflowGraphManager;
 import eu.kalafatic.evolution.controller.workflow.GraphActionExecutor;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -117,9 +119,12 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
             executor.setSessionId(sid);
             executor.setContext(editor.getCurrentContext());
 
-            JSONObject graph = WorkflowGraphManager.getInstance(sid).getGraphJson(sid);
-            if (graph != null) {
-                browser.execute("if(window.updateGraph) window.updateGraph(" + graph.toString() + ");");
+            SessionContainer session = SessionManager.getInstance().getSession(sid);
+            if (session != null) {
+                JSONObject graph = session.getWorkflowGraphManager().getGraphJson(sid);
+                if (graph != null) {
+                    browser.execute("if(window.updateGraph) window.updateGraph(" + graph.toString() + ");");
+                }
             }
         }
     }
@@ -130,7 +135,11 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
 
     @Override
     public void dispose() {
-        WorkflowGraphManager.removeInstance(sessionId);
+        String sid = sessionId != null ? sessionId : "Default";
+        SessionContainer session = SessionManager.getInstance().getSession(sid);
+        if (session != null) {
+            session.getWorkflowGraphManager().removeInstance(sid);
+        }
         super.dispose();
     }
 }

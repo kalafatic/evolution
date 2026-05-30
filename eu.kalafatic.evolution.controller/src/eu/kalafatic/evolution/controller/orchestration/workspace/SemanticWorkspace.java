@@ -93,7 +93,10 @@ public class SemanticWorkspace implements ICapability, IWorkspaceContract {
         artifacts.put(artifact.getArtifactId(), artifact);
 
         SessionContainer session = SessionManager.getInstance().getSession(sessionId);
-        RuntimeEventBus bus = (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+        if (session == null) {
+            throw new IllegalStateException("SemanticWorkspace: session is null for sessionId: " + sessionId);
+        }
+        RuntimeEventBus bus = session.getEventBus();
 
         bus.publish(new RuntimeEvent(
             RuntimeEventType.ARTIFACT_PROMOTED,
@@ -173,7 +176,10 @@ public class SemanticWorkspace implements ICapability, IWorkspaceContract {
         }
 
         SessionContainer session = SessionManager.getInstance().getSession(sessionId);
-        RuntimeEventBus bus = (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+        if (session == null) {
+            throw new IllegalStateException("SemanticWorkspace: session is null for sessionId: " + sessionId);
+        }
+        RuntimeEventBus bus = session.getEventBus();
 
         bus.publish(new RuntimeEvent(
             RuntimeEventType.MEMORY_DECAY_APPLIED,
@@ -189,7 +195,10 @@ public class SemanticWorkspace implements ICapability, IWorkspaceContract {
             artifact.setConfidence(Math.min(1.0, artifact.getConfidence() + 0.05));
 
             SessionContainer session = SessionManager.getInstance().getSession(sessionId);
-            RuntimeEventBus bus = (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+            if (session == null) {
+                throw new IllegalStateException("SemanticWorkspace: session is null for sessionId: " + sessionId);
+            }
+            RuntimeEventBus bus = session.getEventBus();
 
             bus.publish(new RuntimeEvent(
                 RuntimeEventType.TRAJECTORY_STRENGTHENED,

@@ -11,15 +11,9 @@ import java.util.stream.Collectors;
  * Central runtime catalog for AI Kernel capabilities.
  */
 public class CapabilityRegistry {
-    private static final CapabilityRegistry INSTANCE = new CapabilityRegistry();
-
     private final Map<String, ICapability> capabilities = new HashMap<>();
 
     public CapabilityRegistry() {}
-
-    public static CapabilityRegistry getInstance() {
-        return INSTANCE;
-    }
 
     public synchronized void register(ICapability capability) throws CapabilityException {
         if (capabilities.containsKey(capability.getCapabilityId())) {

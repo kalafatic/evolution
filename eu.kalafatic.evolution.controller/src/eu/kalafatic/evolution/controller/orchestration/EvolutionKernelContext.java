@@ -3,6 +3,8 @@ package eu.kalafatic.evolution.controller.orchestration;
 import eu.kalafatic.evolution.controller.supervision.AuthorityController;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
+import eu.kalafatic.evolution.controller.trajectory.SignalBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import java.io.File;
 
 /**
@@ -14,16 +16,28 @@ public class EvolutionKernelContext {
     private final AuthorityController authority;
     private final IterationMemoryService memoryService;
     private final File projectRoot;
+    private final RuntimeEventBus eventBus;
+    private final SignalBus signalBus;
     private GitManager gitManager;
 
-    public EvolutionKernelContext(File projectRoot) {
+    public EvolutionKernelContext(File projectRoot, RuntimeEventBus eventBus, SignalBus signalBus, IterationMemoryService memoryService) {
         this.projectRoot = projectRoot;
-        this.memoryService = new IterationMemoryService(projectRoot);
+        this.eventBus = eventBus;
+        this.signalBus = signalBus;
+        this.memoryService = memoryService != null ? memoryService : new IterationMemoryService(projectRoot);
         this.authority = new AuthorityController();
     }
 
     public AuthorityController getAuthority() {
         return authority;
+    }
+
+    public RuntimeEventBus getEventBus() {
+        return eventBus;
+    }
+
+    public SignalBus getSignalBus() {
+        return signalBus;
     }
 
     public IterationMemoryService getMemoryService() {

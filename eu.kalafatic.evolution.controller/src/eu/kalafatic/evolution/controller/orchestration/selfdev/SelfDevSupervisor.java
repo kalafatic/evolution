@@ -62,7 +62,7 @@ public class SelfDevSupervisor {
 
                 context.log("[SUPERVISOR] Starting Iteration " + i + " of " + maxIter);
 
-                eu.kalafatic.evolution.controller.workflow.RuntimeEventBus.getInstance().publish(
+                context.getKernelContext().getEventBus().publish(
                     new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                         eu.kalafatic.evolution.controller.workflow.RuntimeEventType.ITERATION_STARTED,
                         context.getSessionId(), "Supervisor", "iteration-" + i));

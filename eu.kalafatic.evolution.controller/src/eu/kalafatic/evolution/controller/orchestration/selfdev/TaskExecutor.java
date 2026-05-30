@@ -11,13 +11,13 @@ public class TaskExecutor {
     private final TaskContext context;
 
     public TaskExecutor(TaskContext context) {
-        this.context = context;
-        this.orchestrator = new EvolutionOrchestrator(eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId()));
+        this(context, context.getOrchestrator());
     }
 
     public TaskExecutor(TaskContext context, eu.kalafatic.evolution.model.orchestration.Orchestrator orchestrator) {
         this.context = context;
-        this.orchestrator = (orchestrator instanceof EvolutionOrchestrator) ? (EvolutionOrchestrator) orchestrator : new EvolutionOrchestrator(eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId()));
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
+        this.orchestrator = (orchestrator instanceof EvolutionOrchestrator) ? (EvolutionOrchestrator) orchestrator : new EvolutionOrchestrator(session);
     }
 
     public EvolutionOrchestrator getOrchestrator() {

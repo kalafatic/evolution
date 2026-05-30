@@ -6,19 +6,14 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.json.JSONObject;
 import org.json.JSONArray;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
 public class WorkflowGraphManager implements RuntimeEventListener {
-	private static final WorkflowGraphManager GLOBAL_INSTANCE = new WorkflowGraphManager();
-
 	private final Map<String, SessionGraphData> sessionGraphs = new ConcurrentHashMap<>();
 
-	private WorkflowGraphManager() {
-		RuntimeEventBus.getInstance().subscribe(this);
-	}
-
-	public static WorkflowGraphManager getInstance(String sessionId) {
-		// Return a wrapper or just use the global instance to manage data
-		return GLOBAL_INSTANCE;
+	public WorkflowGraphManager(RuntimeEventBus bus) {
+		bus.subscribe(this);
 	}
 
 	private SessionGraphData getSessionGraph(String sessionId) {
@@ -27,9 +22,9 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		return sessionGraphs.computeIfAbsent(sessionId, id -> new SessionGraphData(id));
 	}
 
-	public static void removeInstance(String sessionId) {
+	public void removeInstance(String sessionId) {
 		if (sessionId != null) {
-			GLOBAL_INSTANCE.sessionGraphs.remove(sessionId);
+			sessionGraphs.remove(sessionId);
 		}
 	}
 	
@@ -116,7 +111,9 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 
 		private void handleStepWaiting(RuntimeEvent event) {
 			String stepId = event.getPayload().toString();
-			WorkflowStep step = WorkflowStepRegistry.getInstance().getStep(stepId);
+			SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+			if (session == null) return;
+			WorkflowStep step = session.getWorkflowRegistry().getStep(stepId);
 			if (step != null) {
 				GraphEntity entity = entities.get(step.getEntityId());
 				if (entity == null) {
@@ -145,7 +142,9 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 
 		private void handleStepResumed(RuntimeEvent event) {
 			String stepId = event.getPayload().toString();
-			WorkflowStep step = WorkflowStepRegistry.getInstance().getStep(stepId);
+			SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+			if (session == null) return;
+			WorkflowStep step = session.getWorkflowRegistry().getStep(stepId);
 			if (step != null) {
 				GraphEntity entity = entities.get(step.getEntityId());
 				if (entity != null) {

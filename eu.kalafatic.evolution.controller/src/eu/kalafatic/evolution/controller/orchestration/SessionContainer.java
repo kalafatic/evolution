@@ -6,6 +6,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionMemoryGr
 import eu.kalafatic.evolution.controller.trajectory.SignalBus;
 import eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.WorkflowGraphManager;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStepRegistry;
 
 /**
@@ -16,6 +17,7 @@ public interface SessionContainer {
     RuntimeEventBus getEventBus();
     SignalBus getSignalBus();
     WorkflowStepRegistry getWorkflowRegistry();
+    WorkflowGraphManager getWorkflowGraphManager();
     EvolutionRegistry getEvolutionRegistry();
     CapabilityRegistry getCapabilityRegistry();
     ExecutorService getExecutorService();
@@ -23,6 +25,7 @@ public interface SessionContainer {
     FileChangeTracker getFileChangeTracker();
     OrchestrationState getSessionState();
     RuntimeCoordinator getRuntimeCoordinator();
+    eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService getMemoryService(java.io.File projectRoot);
 
     void shutdown();
 }

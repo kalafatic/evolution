@@ -226,7 +226,10 @@ public class Evaluator implements ICapability, IEvaluationContract {
 
     private RuntimeEventBus getEventBus() {
         SessionContainer session = SessionManager.getInstance().getSession(context.getSessionId());
-        return (session != null) ? session.getEventBus() : RuntimeEventBus.getInstance();
+        if (session == null) {
+            throw new IllegalStateException("Evaluator: session is null for sessionId: " + context.getSessionId());
+        }
+        return session.getEventBus();
     }
 
     private List<StateSnapshot.ErrorType> parseErrorTypes(String output) {

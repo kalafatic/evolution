@@ -412,26 +412,34 @@ public class AiChatPage extends AEvoPage {
 	public void handleSend() {
 		instructionsGroup.resetBackground();
 		String request = instructionsGroup.getRequest();
-		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+		String currentSessionId = getCurrentSessionName();
+		eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(currentSessionId);
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(currentSessionId);
 
 		// Check for active steps in Step Mode - allow resumption even if command is already running
-		WorkflowStep activeStep = WorkflowStepRegistry.getInstance().getActiveStepForSession(getCurrentSessionName());
+		WorkflowStep activeStep = (session != null) ? session.getWorkflowRegistry().getActiveStepForSession(currentSessionId) : null;
 		if (activeStep != null && activeStep.getStatus() == WorkflowStatus.WAITING_USER) {
 			String lower = request.toLowerCase().trim();
 			if (lower.equals("retry")) {
 				instructionsGroup.setOrchestrationRunning(true);
-				StepModeController.getInstance().resumeStep(activeStep.getId(), WorkflowStatus.RETRY);
+				if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+				    ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getStepModeController().resumeStep(activeStep.getId(), WorkflowStatus.RETRY);
+				}
 				instructionsGroup.setRequest("");
 				return;
 			} else if (lower.equals("skip")) {
 				instructionsGroup.setOrchestrationRunning(true);
-				StepModeController.getInstance().resumeStep(activeStep.getId(), WorkflowStatus.SKIPPED);
+				if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+				    ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getStepModeController().resumeStep(activeStep.getId(), WorkflowStatus.SKIPPED);
+				}
 				instructionsGroup.setRequest("");
 				return;
 			} else {
 				// Treat any other input (empty, "next", or random comments) as "CONTINUE"
 				instructionsGroup.setOrchestrationRunning(true);
-				StepModeController.getInstance().resumeStep(activeStep.getId(), WorkflowStatus.COMPLETED);
+				if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+				    ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getStepModeController().resumeStep(activeStep.getId(), WorkflowStatus.COMPLETED);
+				}
 				instructionsGroup.setRequest("");
 				return;
 			}
