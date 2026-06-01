@@ -45,6 +45,7 @@ public class Trajectory {
     private String prosConsAnalysis;
     private String semanticJustification;
     private List<Double> fitnessHistory = new ArrayList<>();
+    private List<Double> confidenceHistory = new ArrayList<>();
     
     // Physical truth anchoring
     private String counterfactualDelta;
@@ -85,6 +86,7 @@ public class Trajectory {
     public void setSemanticJustification(String semanticJustification) { this.semanticJustification = semanticJustification; }
     
     public List<Double> getFitnessHistory() { return fitnessHistory; }
+    public List<Double> getConfidenceHistory() { return confidenceHistory; }
 
     public String getCounterfactualDelta() { return counterfactualDelta; }
     public void setCounterfactualDelta(String counterfactualDelta) { this.counterfactualDelta = counterfactualDelta; }

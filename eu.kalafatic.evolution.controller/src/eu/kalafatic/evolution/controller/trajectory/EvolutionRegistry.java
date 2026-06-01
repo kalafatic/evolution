@@ -79,11 +79,8 @@ public class EvolutionRegistry {
             double f = (Double) fitness.getValue();
             trajectory.setStabilityScore(f);
 
-            if (f < 0.3) {
-                trajectory.setPhase(Trajectory.Phase.COLLAPSE);
-            } else if (f > 0.8) {
-                trajectory.setPhase(Trajectory.Phase.CONVERGENCE);
-            }
+            // Convergence logic is now managed by StabilityAnalyzer.
+            // Registry only synchronizes scalar fitness to stability score.
         }
 
         // Record signal history in trajectory

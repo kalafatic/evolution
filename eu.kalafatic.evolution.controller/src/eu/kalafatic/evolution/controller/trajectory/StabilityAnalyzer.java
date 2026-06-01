@@ -25,6 +25,53 @@ public class StabilityAnalyzer {
 
     public double calculateStability(Trajectory trajectory, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
         if (trajectory == null) return 0.0;
+
+        double pressureResolution = calculatePressureResolution(trajectory, context);
+        double mutationEffectiveness = calculateMutationEffectiveness(trajectory, context);
+        double deltaDecay = calculateDeltaDecay(trajectory, context);
+        double confidenceStability = calculateConfidenceStability(trajectory, context);
+
+        // System Equilibrium: Weighted combination of factors
+        double stability = (pressureResolution * 0.3) +
+                          (mutationEffectiveness * 0.2) +
+                          (deltaDecay * 0.3) +
+                          (confidenceStability * 0.2);
+
+        context.log(String.format("[STABILITY] Trajectory %s | Stability: %.2f (PR: %.2f, ME: %.2f, DD: %.2f, CS: %.2f)",
+            trajectory.getTrajectoryId(), stability, pressureResolution, mutationEffectiveness, deltaDecay, confidenceStability));
+
+        return stability;
+    }
+
+    private double calculatePressureResolution(Trajectory trajectory, TaskContext context) {
+        List<eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector> history = trajectory.getPressureHistory();
+        if (history == null || history.size() < 2) return 0.5;
+
+        double first = history.get(0).getTotalPressure();
+        double last = history.get(history.size() - 1).getTotalPressure();
+
+        if (first <= 0.0) return 1.0;
+
+        // Higher resolution (lower pressure) means higher stability
+        double resolution = 1.0 - (last / first);
+        return Math.max(0.0, Math.min(1.0, 0.5 + resolution));
+    }
+
+    private double calculateMutationEffectiveness(Trajectory trajectory, TaskContext context) {
+        List<Double> fitness = trajectory.getFitnessHistory();
+        if (fitness == null || fitness.size() < 2) return 0.5;
+
+        double gain = fitness.get(fitness.size() - 1) - fitness.get(0);
+        int generations = trajectory.getGeneration();
+
+        if (generations <= 0) return 0.5;
+
+        // Effectiveness: Gain per generation
+        double effectiveness = gain / generations;
+        return Math.max(0.0, Math.min(1.0, 0.5 + effectiveness));
+    }
+
+    private double calculateDeltaDecay(Trajectory trajectory, TaskContext context) {
         List<Double> history = trajectory.getFitnessHistory();
         if (history == null || history.size() < 2) return 0.0;
 
@@ -32,10 +79,19 @@ public class StabilityAnalyzer {
         double prev = history.get(history.size() - 2);
 
         double delta = Math.abs(last - prev);
-        double stability = Math.max(0.0, 1.0 - (delta * 5.0)); // Highly sensitive to change
+        // Delta decay: Smaller delta means higher stability
+        return Math.max(0.0, 1.0 - (delta * 4.0));
+    }
 
-        context.log("[STABILITY] Trajectory " + trajectory.getTrajectoryId() + " stability: " + stability + " (Delta: " + delta + ")");
-        return stability;
+    private double calculateConfidenceStability(Trajectory trajectory, TaskContext context) {
+        List<Double> history = trajectory.getConfidenceHistory();
+        if (history == null || history.size() < 2) return 0.5;
+
+        double last = history.get(history.size() - 1);
+        double prev = history.get(history.size() - 2);
+
+        double delta = Math.abs(last - prev);
+        return Math.max(0.0, 1.0 - (delta * 2.0));
     }
 
     public boolean isConverged(Trajectory trajectory, TaskContext context) {
@@ -53,13 +109,13 @@ public class StabilityAnalyzer {
             }
         }
 
-        double stability = calculateStability(trajectory, context);
+        double stability = calculateStability(trajectory, context, pressure);
 
         // Check if test mode is active to allow accelerated convergence
         boolean isTestMode = context != null && context.getMetadata().containsKey("testMode");
 
         // Convergence requires high stability. Minimum depth is now handled by shouldProgress.
-        boolean converged = stability > 0.9;
+        boolean converged = stability > 0.85; // Lower threshold for multi-factor stability
 
         if (converged) {
             context.log("[STABILITY] Architectural equilibrium reached for trajectory: " + trajectory.getTrajectoryId());
