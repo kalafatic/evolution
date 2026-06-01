@@ -6,9 +6,6 @@ import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
  * Agent specialized in Web Searching and Documentation.
  */
 public class WebSearchAgent extends BaseAiAgent {
-    public WebSearchAgent() {
-        super("Web-Search", "Web-Search");
-    }
 
     public WebSearchAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("Web-Search", "Web-Search", container);

@@ -14,17 +14,12 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
  * Specialized agent for testing and validation.
  */
 public class TesterAgent extends BaseAiAgent {
-    public TesterAgent() {
-        super("Tester", "Tester");
-        addTool(new MavenTool());
-        addTool(new ShellTool());
-    }
-
     public TesterAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("Tester", "Tester", container);
         addTool(new MavenTool());
         addTool(new ShellTool());
     }
+
 
     @Override
     protected String getAgentInstructions() {

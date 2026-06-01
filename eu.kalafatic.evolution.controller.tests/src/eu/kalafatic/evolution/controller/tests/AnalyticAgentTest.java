@@ -7,6 +7,8 @@ import org.junit.Test;
 
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.llm.ILlmProvider;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -20,6 +22,7 @@ public class AnalyticAgentTest {
     private TaskContext context;
     private MockLlmProvider mockLlm;
     private File tempRoot;
+    private SessionContainer session;
 
     @Before
     public void setUp() throws Exception {
@@ -27,11 +30,12 @@ public class AnalyticAgentTest {
         orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
         context = new TaskContext(orchestrator, tempRoot);
         mockLlm = new MockLlmProvider();
+        session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
     }
 
     @Test
     public void testAmbiguousRequest() throws Exception {
-        AnalyticAgent agent = new AnalyticAgent();
+        AnalyticAgent agent = new AnalyticAgent(session);
         injectMockLlm(agent, mockLlm);
 
         String response = "{\n" +
@@ -52,7 +56,7 @@ public class AnalyticAgentTest {
 
     @Test
     public void testClearRequest() throws Exception {
-        AnalyticAgent agent = new AnalyticAgent();
+        AnalyticAgent agent = new AnalyticAgent(session);
         injectMockLlm(agent, mockLlm);
 
         String response = "{\n" +
@@ -73,7 +77,7 @@ public class AnalyticAgentTest {
 
     @Test
     public void testSimplestSolutionDirective() throws Exception {
-        AnalyticAgent agent = new AnalyticAgent();
+        AnalyticAgent agent = new AnalyticAgent(session);
         injectMockLlm(agent, mockLlm);
 
         String response = "{\n" +
@@ -86,7 +90,6 @@ public class AnalyticAgentTest {
                 "}";
         mockLlm.setResponse(response);
 
-        // This simulates what the orchestrator does: it appends shared memory and passes the new request
         orchestrator.setSharedMemory("Initial user request: create java example");
 
         JSONObject analysis = agent.analyze("Execute the simplest working solution.", context);
@@ -97,7 +100,7 @@ public class AnalyticAgentTest {
 
     @Test
     public void testGreetingRequest() throws Exception {
-        AnalyticAgent agent = new AnalyticAgent();
+        AnalyticAgent agent = new AnalyticAgent(session);
         injectMockLlm(agent, mockLlm);
 
         String response = "{\n" +
@@ -117,10 +120,9 @@ public class AnalyticAgentTest {
 
     @Test
     public void testRecoveryFromNonJsonResponse() throws Exception {
-        AnalyticAgent agent = new AnalyticAgent();
+        AnalyticAgent agent = new AnalyticAgent(session);
         injectMockLlm(agent, mockLlm);
 
-        // Simulate a small model outputting text instead of JSON
         String response = "Category: CODING\n" +
                 "Objective: Create class\n" +
                 "isAmbiguous: false\n" +
@@ -130,7 +132,7 @@ public class AnalyticAgentTest {
         JSONObject analysis = agent.analyze("create print class", context);
         assertNotNull(analysis);
         assertEquals("CODING", analysis.getString("category"));
-        assertFalse(analysis.getBoolean("isAmbiguous")); // Verified: normalizeKey ensures CamelCase
+        assertFalse(analysis.getBoolean("isAmbiguous"));
         assertTrue(analysis.getString("refinedPrompt").contains("PrintText"));
     }
 
@@ -150,11 +152,7 @@ public class AnalyticAgentTest {
 
     private static class MockLlmProvider implements ILlmProvider {
         private String response;
-
-        public void setResponse(String response) {
-            this.response = response;
-        }
-
+        public void setResponse(String response) { this.response = response; }
         @Override
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
             return response;

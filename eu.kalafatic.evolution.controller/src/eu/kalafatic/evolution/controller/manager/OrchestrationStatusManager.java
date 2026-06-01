@@ -13,8 +13,12 @@ public class OrchestrationStatusManager {
     private final Map<String, String> statusMap = new ConcurrentHashMap<>();
     private final Map<String, String> agentStatusMap = new ConcurrentHashMap<>();
 
-    private OrchestrationStatusManager() {}
+    public OrchestrationStatusManager() {}
 
+    /**
+     * @deprecated Use session-scoped OrchestrationStatusManager via SessionContainer.
+     */
+    @Deprecated
     public static OrchestrationStatusManager getInstance() {
         return INSTANCE;
     }

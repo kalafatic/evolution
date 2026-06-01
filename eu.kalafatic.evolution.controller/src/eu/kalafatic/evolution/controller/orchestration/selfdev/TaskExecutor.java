@@ -31,9 +31,10 @@ public class TaskExecutor {
     public boolean executeTasks(List<Task> tasks, eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
         context.log("[EXECUTOR] Routing " + tasks.size() + " tasks to the Kernel Control Plane.");
         try {
+            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
             eu.kalafatic.evolution.controller.orchestration.IterationManager kernel = (aiService != null) ?
-                eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(context, aiService) :
-                eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(context);
+                eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(context, session, aiService) :
+                eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(context, session);
             return kernel.executeTasksWithRetries(tasks);
         } catch (Exception e) {
             context.log("[EXECUTOR] Kernel execution failed: " + e.getMessage());

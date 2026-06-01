@@ -15,7 +15,14 @@ public class ModeRouter {
      * Resolves the appropriate orchestration flow based on the platform mode.
      */
     public IOrchestrationFlow resolveFlow(PlatformMode mode, AiService aiService, IterationManager manager) {
-        if (mode == null) return (IOrchestrationFlow) eu.kalafatic.evolution.controller.agents.AgentFactory.getAgent(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL); // Fallback to basic chat
+        String sessionId = manager.getContext().getSessionId();
+        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        if (mode == null) {
+            if (session != null) {
+                return (IOrchestrationFlow) session.getAgentRegistry().get(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL);
+            }
+            return null; // Should not happen with session isolation
+        }
 
         switch (mode.getType()) {
             case DARWIN_MODE:
@@ -29,7 +36,10 @@ public class ModeRouter {
                 return new DarwinFlow(aiService, manager);
             case SIMPLE_CHAT:
             default:
-                return (IOrchestrationFlow) eu.kalafatic.evolution.controller.agents.AgentFactory.getAgent(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL);
+                if (session != null) {
+                    return (IOrchestrationFlow) session.getAgentRegistry().get(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL);
+                }
+                return null;
         }
     }
 

@@ -19,8 +19,8 @@ import eu.kalafatic.utils.semantic.Stability;
 )
 public class IntentClarificationEngine extends BaseAiAgent {
 
-    public IntentClarificationEngine(AiService aiService) {
-        super("IntentClarificationEngine", "IntentClarificationEngine");
+    public IntentClarificationEngine(AiService aiService, eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("IntentClarificationEngine", "IntentClarificationEngine", container);
         setAiService(aiService);
     }
 
@@ -35,7 +35,7 @@ public class IntentClarificationEngine extends BaseAiAgent {
         context.log("[CLARIFICATION] Resolving initial intent grounding for: " + prompt);
 
         // This leverages the existing expansion logic but scoped strictly to clarification
-        IntentExpansionEngine expansionEngine = new IntentExpansionEngine();
+        IntentExpansionEngine expansionEngine = new IntentExpansionEngine(getSessionContainer());
         expansionEngine.setAiService(this.aiService);
 
         return expansionEngine.expand(prompt, context);

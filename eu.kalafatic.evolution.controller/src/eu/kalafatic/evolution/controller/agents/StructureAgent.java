@@ -4,22 +4,17 @@ import eu.kalafatic.evolution.controller.tools.FileTool;
 import eu.kalafatic.evolution.controller.tools.ShellTool;
 
 /**
- * Agent specialized in Project Structure and Analysis.
+ * Agent for analyzing project structure.
  */
 public class StructureAgent extends BaseAiAgent {
-    public StructureAgent() {
-        super("Structure", "Structure");
-    }
-
     public StructureAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("Structure", "Structure", container);
-        addTool(new ShellTool());
         addTool(new FileTool());
+        addTool(new ShellTool());
     }
 
     @Override
     protected String getAgentInstructions() {
-        return "You are an AI Structure Agent. Your goal is to analyze the project's directory structure and codebase organization.\n" +
-               "Use tools like ls-tree or file reading to understand and report on how the project is built.";
+        return "You are an AI Structure Agent. Your goal is to analyze and report on the project's file and architectural structure.";
     }
 }

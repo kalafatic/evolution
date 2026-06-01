@@ -1,4 +1,6 @@
 package eu.kalafatic.evolution.controller.tests;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
 import static org.junit.Assert.*;
 import java.util.List;
@@ -28,7 +30,7 @@ public class PlannerCategorizationTest {
 
     @Test
     public void testCreateFileCategorization() throws Exception {
-        PlannerAgent planner = new PlannerAgent();
+        PlannerAgent planner = new PlannerAgent(null);
         injectMockLlm(planner, mockLlm);
 
         // This response mimics a miscategorization (what happened in the bug report)
@@ -45,7 +47,7 @@ public class PlannerCategorizationTest {
 
     @Test
     public void testImprovedCategorization() throws Exception {
-        PlannerAgent planner = new PlannerAgent();
+        PlannerAgent planner = new PlannerAgent(null);
         injectMockLlm(planner, mockLlm);
 
         // This response mimics what we expect from the improved prompt
@@ -61,7 +63,7 @@ public class PlannerCategorizationTest {
 
     @Test
     public void testGreetingPlanning() throws Exception {
-        PlannerAgent planner = new PlannerAgent();
+        PlannerAgent planner = new PlannerAgent(null);
         injectMockLlm(planner, mockLlm);
 
         String greetingResponse = "[ { \"id\": \"t1\", \"name\": \"General: Respond to greeting\", \"description\": \"Politely acknowledge user.\", \"taskType\": \"llm\", \"approvalRequired\": false } ]";

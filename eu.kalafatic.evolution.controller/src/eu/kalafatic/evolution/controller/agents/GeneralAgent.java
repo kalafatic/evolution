@@ -7,15 +7,10 @@ import eu.kalafatic.evolution.controller.tools.ToolFactory;
  * Specialized agent for general reasoning and conversational tasks.
  */
 public class GeneralAgent extends BaseAiAgent {
-    public GeneralAgent() {
-        super("General", "General");
-    }
-
     public GeneralAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("General", "General", container);
-        addTool(ToolFactory.getTool(EvolutionConstants.TOOL_FILE));
-        addTool(ToolFactory.getTool(EvolutionConstants.TOOL_SHELL));
     }
+
 
     @Override
     protected String getAgentInstructions() {

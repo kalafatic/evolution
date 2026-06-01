@@ -12,8 +12,8 @@ import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 public class ArchitectureSummarizer {
     private final ArchitectAgent architectAgent;
 
-    public ArchitectureSummarizer() {
-        this.architectAgent = (ArchitectAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ARCHITECT);
+    public ArchitectureSummarizer(eu.kalafatic.evolution.controller.orchestration.SessionContainer sessionContainer) {
+        this.architectAgent = (ArchitectAgent) AgentFactory.createIsolatedAgents(sessionContainer).stream().filter(a -> a.getType().equals(EvolutionConstants.AGENT_ARCHITECT)).findFirst().orElse(null);
     }
 
     public String summarize(TaskContext context, AiService aiService) throws Exception {

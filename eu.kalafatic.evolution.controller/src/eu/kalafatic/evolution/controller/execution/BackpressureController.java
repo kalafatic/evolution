@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Monitors system saturation and produces backpressure signals.
  */
-public class BackpressureController {
+public class BackpressureController implements eu.kalafatic.evolution.controller.orchestration.capability.ICapability {
     private static final BackpressureController INSTANCE = new BackpressureController();
     private final AtomicInteger activeEvaluations = new AtomicInteger(0);
     private final AtomicLong signalCount = new AtomicLong(0);
@@ -18,9 +18,52 @@ public class BackpressureController {
     public BackpressureController() {}
 
     /**
-     * @deprecated Consider using session-scoped monitoring if system-wide metrics aren't needed.
+     * @deprecated Use session-scoped BackpressureController via SessionContainer.
      */
+    @Deprecated
     public static BackpressureController getInstance() { return INSTANCE; }
+
+    @Override
+    public String getCapabilityId() {
+        return "capability.backpressure";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus getStatus() {
+        return eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus.STARTED;
+    }
+
+    @Override
+    public void initialize(eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext context) throws eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException {
+    }
+
+    @Override
+    public void start() throws eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException {
+    }
+
+    @Override
+    public void stop() throws eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException {
+    }
+
+    @Override
+    public java.util.List<String> getSupportedContracts() {
+        return java.util.Collections.emptyList();
+    }
+
+    @Override
+    public java.util.List<String> getDependencies() {
+        return java.util.Collections.emptyList();
+    }
+
+    @Override
+    public eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth getHealth() {
+        return new eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth(1.0, "Healthy", 0);
+    }
 
     public void incrementEvaluations() { activeEvaluations.incrementAndGet(); }
     public void decrementEvaluations() { activeEvaluations.decrementAndGet(); }

@@ -11,13 +11,10 @@ import eu.kalafatic.evolution.model.orchestration.TaskStatus;
  */
 public class FinalResponseAgent extends BaseAiAgent {
 
-    public FinalResponseAgent() {
-        super("FinalResponse", "FinalResponse");
-    }
-
     public FinalResponseAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("FinalResponse", "FinalResponse", container);
     }
+
 
     @Override
     protected String getAgentInstructions() {

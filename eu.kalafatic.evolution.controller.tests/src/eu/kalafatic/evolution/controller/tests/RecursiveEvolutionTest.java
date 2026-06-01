@@ -1,4 +1,5 @@
 package eu.kalafatic.evolution.controller.tests;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
 import static org.junit.Assert.assertTrue;
 
@@ -85,7 +86,7 @@ public class RecursiveEvolutionTest {
 
     @Test
     public void testRecursiveArchitecturalRefinement() throws Exception {
-        IterationManager manager = KernelFactory.create(context, aiService);
+        IterationManager manager = KernelFactory.create(context, null, aiService);
 
         // We simulate a survival path that takes multiple iterations to stabilize
         // Generation 0: Initial implementation
@@ -106,7 +107,7 @@ public class RecursiveEvolutionTest {
     @Test
     public void testMediatedModePressurePersistence() throws Exception {
         context.getBehaviorProfile().addTrait(BehaviorTrait.SUPERVISION_MEDIATED);
-        IterationManager manager = KernelFactory.create(context, aiService);
+        IterationManager manager = KernelFactory.create(context, null, aiService);
 
         TaskRequest request = new TaskRequest();
         request.setPrompt("Analyze project architecture");

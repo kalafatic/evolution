@@ -38,11 +38,28 @@ public class RuntimeEventBus {
     }
 
     public void publish(RuntimeEvent event) {
+        if (event == null) {
+            throw new IllegalArgumentException("RuntimeEventBus [" + sessionId + "]: Cannot publish null event.");
+        }
+        if (!sessionId.equals(event.getSessionId())) {
+            throw new IllegalArgumentException("RuntimeEventBus [" + sessionId + "]: Session mismatch. Event sessionId is " + event.getSessionId());
+        }
+
         if (event.getType() == RuntimeEventType.EVALUATION_SIGNAL_CREATED) {
-            BackpressureController.getInstance().recordSignal();
-            if (BackpressureController.getInstance().shouldThrottleSignals(budget)) {
-                System.err.println("[BUS] [" + sessionId + "] Throttling evaluation signal: " + event.getSource());
-                return;
+            SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+            if (session != null) {
+                BackpressureController bpc = session.getBackpressureController();
+                bpc.recordSignal();
+                if (bpc.shouldThrottleSignals(budget)) {
+                    System.err.println("[BUS] [" + sessionId + "] Throttling evaluation signal: " + event.getSource());
+                    return;
+                }
+            } else {
+                BackpressureController.getInstance().recordSignal();
+                if (BackpressureController.getInstance().shouldThrottleSignals(budget)) {
+                    System.err.println("[BUS] [" + sessionId + "] Throttling evaluation signal: " + event.getSource());
+                    return;
+                }
             }
         }
 
@@ -58,16 +75,14 @@ public class RuntimeEventBus {
 
     private void propagateToRegistry(RuntimeEvent event) {
         try {
-            eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry registry = null;
             SessionContainer session = SessionManager.getInstance().getSession(sessionId);
             if (session != null) {
-                registry = session.getEvolutionRegistry();
+                eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry registry = session.getEvolutionRegistry();
+                if (registry != null) {
+                    registry.processEvent(event, "default-trajectory");
+                }
             } else {
-                registry = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getEvolutionRegistry();
-            }
-
-            if (registry != null) {
-                registry.processEvent(event, "default-trajectory");
+                System.err.println("[BUS] [" + sessionId + "] Warning: Session not found in SessionManager. Cannot propagate event to registry.");
             }
         } catch (NoClassDefFoundError | ExceptionInInitializerError e) {
             System.err.println("[BUS] [" + sessionId + "] Skipping signal propagation - Registry not yet available: " + e.getMessage());

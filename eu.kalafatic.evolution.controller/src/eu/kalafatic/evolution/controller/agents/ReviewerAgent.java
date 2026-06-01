@@ -17,8 +17,8 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
  */
 public class ReviewerAgent extends BaseAiAgent {
 
-    public ReviewerAgent() {
-        super("Reviewer", "Reviewer");
+    public ReviewerAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Reviewer", "Reviewer", container);
     }
 
     @Override

@@ -128,7 +128,8 @@ public class SelfDevSupervisor {
     }
 
     protected IterationManager createIterationManager(Iteration iteration, eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
-        return KernelFactory.create(context, aiService);
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
+        return KernelFactory.create(context, session, aiService);
     }
 
     public void stopSession() {

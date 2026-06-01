@@ -6,14 +6,10 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
  * Agent specialized in Observability and Logs.
  */
 public class ObservabilityAgent extends BaseAiAgent {
-    public ObservabilityAgent() {
-        super("Observability", "Observability");
-    }
-
     public ObservabilityAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("Observability", "Observability", container);
-        addTool(new ShellTool());
     }
+
 
     @Override
     protected String getAgentInstructions() {

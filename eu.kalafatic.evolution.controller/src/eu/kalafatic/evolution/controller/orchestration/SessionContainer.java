@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import java.util.concurrent.ExecutorService;
+import eu.kalafatic.evolution.controller.execution.BackpressureController;
+import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionMemoryGraph;
 import eu.kalafatic.evolution.controller.trajectory.SignalBus;
@@ -23,6 +25,10 @@ public interface SessionContainer {
     ExecutorService getExecutorService();
     EvolutionMemoryGraph getEvolutionMemoryGraph();
     FileChangeTracker getFileChangeTracker();
+    SelectionState getSelectionState();
+    BackpressureController getBackpressureController();
+    OrchestrationStatusManager getStatusManager();
+    java.util.Map<String, eu.kalafatic.evolution.controller.agents.IAgent> getAgentRegistry();
     OrchestrationState getSessionState();
     RuntimeCoordinator getRuntimeCoordinator();
     eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService getMemoryService(java.io.File projectRoot);
