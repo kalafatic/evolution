@@ -8,7 +8,8 @@ import org.junit.Test;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
-import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentConfidence;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.MissingRequirement;
 import eu.kalafatic.evolution.controller.orchestration.intent.Ambiguity;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -19,34 +20,37 @@ import java.nio.file.Files;
 public class ClarificationManagerTest {
 
     private ClarificationManager manager;
-    private IntentAnalysisResult result;
+    private IntentExpansionResult result;
     private TaskContext context;
     private Orchestrator orchestrator;
 
     @Before
     public void setUp() throws Exception {
         manager = new ClarificationManager();
-        result = new IntentAnalysisResult();
+        result = new IntentExpansionResult();
+        IntentConfidence confidence = new IntentConfidence();
+        confidence.setOverallConfidence(1.0);
+        result.setConfidence(confidence);
         orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
         context = new TaskContext(orchestrator, new File("."));
     }
 
     @Test
     public void testShouldClarifyLowConfidence() {
-        result.setConfidenceScore(0.5);
+        result.getConfidence().setOverallConfidence(0.5);
         assertTrue(manager.shouldClarify(result));
     }
 
     @Test
     public void testShouldClarifyAmbiguity() {
-        result.setConfidenceScore(0.9);
+        result.getConfidence().setOverallConfidence(0.9);
         result.getAmbiguities().add(new Ambiguity("test", "reason"));
         assertTrue(manager.shouldClarify(result));
     }
 
     @Test
     public void testShouldNotClarify() {
-        result.setConfidenceScore(0.9);
+        result.getConfidence().setOverallConfidence(0.9);
         assertFalse(manager.shouldClarify(result));
     }
 

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
@@ -19,7 +18,6 @@ import java.util.UUID;
  */
 public class OrchestrationState {
     private String rawInput;
-    private IntentAnalysisResult intentAnalysis;
     private Set<TaskIntent> taskIntents;
     private String attachmentContext;
     private List<Task> executionPlan = new ArrayList<>();
@@ -54,13 +52,6 @@ public class OrchestrationState {
         this.rawInput = rawInput;
     }
 
-    public IntentAnalysisResult getIntentAnalysis() {
-        return intentAnalysis;
-    }
-
-    public void setIntentAnalysis(IntentAnalysisResult intentAnalysis) {
-        this.intentAnalysis = intentAnalysis;
-    }
 
     public Set<TaskIntent> getTaskIntents() {
         return taskIntents;

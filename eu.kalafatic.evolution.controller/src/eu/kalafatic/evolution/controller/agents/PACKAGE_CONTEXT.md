@@ -8,7 +8,7 @@
 * `FileAgent.java`: package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.tools.ToolFactory;
 * `ConstraintAgent.java`: package eu.kalafatic.evolution.controller.agents; import org.json.JSONObject; import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 * `PlannerAgent.java`: package eu.kalafatic.evolution.controller.agents; import java.util.ArrayList; import java.util.List;
-* `AnalyticAgent.java`: package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
+* `AnalyticAgent.java`: package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 * `MetadataAgent.java`: package eu.kalafatic.evolution.controller.agents; import java.io.File; import java.io.IOException;
 * `AgentFactory.java`: package eu.kalafatic.evolution.controller.agents; import java.util.ArrayList; import java.util.List;
 * `CriticAgent.java`: package eu.kalafatic.evolution.controller.agents; import org.json.JSONObject; import eu.kalafatic.evolution.controller.parsers.JsonUtils;

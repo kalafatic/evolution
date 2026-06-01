@@ -5,7 +5,7 @@ A user wants to create a simple utility class in a Java project.
 
 ## 1. Intent Analysis
 - **User Prompt**: "Create a StringUtils class with a capitalize method in package com.example.util"
-- **IntentService**: Detects `IMPLEMENTATION` intent.
+- **IntentExpansionEngine**: Detects `IMPLEMENTATION` intent.
 - **EPS Calculation**:
     - Ambiguity: Low (Specific class and method mentioned).
     - Risk: Low (New file creation).

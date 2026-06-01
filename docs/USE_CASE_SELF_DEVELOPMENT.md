@@ -5,7 +5,7 @@ The AI kernel identifies a bottleneck in its own `SignalBus` and proposes an opt
 
 ## 1. Intent Analysis
 - **System Intent**: "Optimize SignalBus performance by introducing a concurrent lock-free queue."
-- **IntentService**: Detects `OPTIMIZATION` and `SELF-DEVELOPMENT`.
+- **IntentExpansionEngine**: Detects `OPTIMIZATION` and `SELF-DEVELOPMENT`.
 - **EPS Score**: High (~0.90) due to self-modifying risk.
 
 ## 2. Orchestration Routing

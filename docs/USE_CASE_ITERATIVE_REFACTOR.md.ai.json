@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "A user wants to refactor a complex, messy class to follow SOLID principles. - **User Prompt**: \"Refactor the OrderProcessor class to improve maintainability and remove the God Object smell.\" - **IntentService**: Detects `REFACTORING` and `ANALYSIS` intents.",
+  "summary": "A user wants to refactor a complex, messy class to follow SOLID principles. - **User Prompt**: \"Refactor the OrderProcessor class to improve maintainability and remove the God Object smell.\" - **IntentExpansionEngine**: Detects `REFACTORING` and `ANALYSIS` intents.",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

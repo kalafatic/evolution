@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "A user wants to create a simple utility class in a Java project. - **User Prompt**: \"Create a StringUtils class with a capitalize method in package com.example.util\" - **IntentService**: Detects `IMPLEMENTATION` intent.",
+  "summary": "A user wants to create a simple utility class in a Java project. - **User Prompt**: \"Create a StringUtils class with a capitalize method in package com.example.util\" - **IntentExpansionEngine**: Detects `IMPLEMENTATION` intent.",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

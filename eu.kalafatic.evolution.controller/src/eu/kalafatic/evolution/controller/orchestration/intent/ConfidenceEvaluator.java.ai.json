@@ -5,7 +5,7 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; public class ConfidenceEvaluator { public static double evaluate(IntentAnalysisResult result) {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; public class ConfidenceEvaluator { public static double evaluate(IntentExpansionResult result) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
   "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
