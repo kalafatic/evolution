@@ -19,13 +19,10 @@ import eu.kalafatic.evolution.model.orchestration.Task;
  */
 public class PlannerAgent extends BaseAiAgent implements IPlanner {
 
-    public PlannerAgent() {
-        super("Planner", "Planner");
-    }
-
     public PlannerAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("Planner", "Planner", container);
     }
+
 
     @Override
     protected String getFooterInstructions() {

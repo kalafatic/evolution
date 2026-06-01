@@ -6,6 +6,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.io.File;
 import eu.kalafatic.evolution.controller.agents.IAgent;
+import eu.kalafatic.evolution.controller.execution.BackpressureController;
+import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionMemoryGraph;
@@ -32,6 +34,9 @@ public class SessionContext implements SessionContainer {
     private final EvolutionRegistry evolutionRegistry;
     private final EvolutionMemoryGraph evolutionMemoryGraph;
     private final FileChangeTracker fileChangeTracker;
+    private final SelectionState selectionState;
+    private final BackpressureController backpressureController;
+    private final OrchestrationStatusManager statusManager;
     private final RuntimeCoordinator runtimeCoordinator;
 
     private final Map<String, IAgent> agentRegistry = new ConcurrentHashMap<>();
@@ -55,9 +60,19 @@ public class SessionContext implements SessionContainer {
         this.stepModeController = new StepModeController(this.eventBus, this.workflowRegistry);
         this.evolutionMemoryGraph = new EvolutionMemoryGraph();
         this.fileChangeTracker = new FileChangeTracker();
+        this.selectionState = new SelectionState();
+        this.backpressureController = new BackpressureController();
+        this.statusManager = new OrchestrationStatusManager();
         this.runtimeCoordinator = new RuntimeCoordinator(sessionId, this.eventBus, this.signalBus, this.workflowRegistry);
 
         this.runtimeCoordinator.initialize();
+
+        // Register session-scoped services in capability registry
+        try {
+            this.capabilityRegistry.register(this.backpressureController);
+        } catch (Exception e) {
+            // Log if needed
+        }
 
         // Ensure UI projections are initialized for this session
         try {
@@ -69,6 +84,21 @@ public class SessionContext implements SessionContainer {
         } catch (Exception e) {
             // View bundle might not be present in all environments (e.g. headless tests)
         }
+    }
+
+    @Override
+    public BackpressureController getBackpressureController() {
+        return backpressureController;
+    }
+
+    @Override
+    public OrchestrationStatusManager getStatusManager() {
+        return statusManager;
+    }
+
+    @Override
+    public SelectionState getSelectionState() {
+        return selectionState;
     }
 
     @Override
@@ -135,6 +165,7 @@ public class SessionContext implements SessionContainer {
         return runtimeCoordinator;
     }
 
+    @Override
     public Map<String, IAgent> getAgentRegistry() {
         return agentRegistry;
     }

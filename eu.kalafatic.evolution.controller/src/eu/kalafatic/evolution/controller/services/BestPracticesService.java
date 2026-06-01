@@ -73,7 +73,6 @@ public class BestPracticesService {
         if (role == null) return "";
         role = role.toLowerCase();
 
-        // Map common agent types to best practice roles
         String roleKey = role;
         if (role.contains("planner")) roleKey = "planner";
         else if (role.contains("architect")) roleKey = "architect";
@@ -115,7 +114,6 @@ public class BestPracticesService {
     }
 
     public String getSpecialContext(String fileName) {
-        // PREVENT DISK POLLUTION: Do not create directories if they don't exist
         File instructionsDir = new File(projectRoot, "orchestrator/best_practices");
         if (instructionsDir.exists()) {
             File specialFile = new File(instructionsDir, "special" + File.separator + fileName);

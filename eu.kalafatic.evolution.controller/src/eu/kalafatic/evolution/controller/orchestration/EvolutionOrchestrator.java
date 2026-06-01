@@ -50,20 +50,26 @@ public class EvolutionOrchestrator implements IOrchestrator {
     public EvolutionOrchestrator(SessionContainer container) {
         this.sessionContainer = container;
         if (container != null) {
-            if (container instanceof SessionContext) {
-                Map<String, IAgent> registry = ((SessionContext)container).getAgentRegistry();
-                availableAgents.addAll(registry.values());
-                analyticAgent = (AnalyticAgent) registry.get(EvolutionConstants.AGENT_ANALYTIC);
-                validator = (ValidatorAgent) registry.get(EvolutionConstants.AGENT_VALIDATOR);
-                repairAgent = (RepairAgent) registry.get(EvolutionConstants.AGENT_REPAIR);
-                consolidator = (ProposalConsolidatorAgent) registry.get(EvolutionConstants.AGENT_PROPOSAL_CONSOLIDATOR);
+            Map<String, IAgent> registry = (container instanceof SessionContext) ?
+                    ((SessionContext)container).getAgentRegistry() : new java.util.HashMap<>();
+
+            if (registry.isEmpty()) {
+                List<IAgent> isolated = AgentFactory.createIsolatedAgents(container);
+                isolated.forEach(a -> registry.put(a.getType(), a));
             }
+
+            availableAgents.addAll(registry.values());
+            analyticAgent = (AnalyticAgent) registry.get(EvolutionConstants.AGENT_ANALYTIC);
+            validator = (ValidatorAgent) registry.get(EvolutionConstants.AGENT_VALIDATOR);
+            repairAgent = (RepairAgent) registry.get(EvolutionConstants.AGENT_REPAIR);
+            consolidator = (ProposalConsolidatorAgent) registry.get(EvolutionConstants.AGENT_PROPOSAL_CONSOLIDATOR);
         } else {
-            availableAgents.addAll(AgentFactory.getAllAgents());
-            analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
-            validator = (ValidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_VALIDATOR);
-            repairAgent = (RepairAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_REPAIR);
-            consolidator = (ProposalConsolidatorAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_PROPOSAL_CONSOLIDATOR);
+            // Orchestrator without a container is now discouraged but kept for some legacy paths
+            // We should ideally throw an exception here if we want STRICT isolation
+            analyticAgent = null;
+            validator = null;
+            repairAgent = null;
+            consolidator = null;
         }
     }
 
@@ -149,15 +155,14 @@ public class EvolutionOrchestrator implements IOrchestrator {
         String type = task.getType().toLowerCase();
         SessionContainer session = sessionContainer != null ? sessionContainer : SessionManager.getInstance().getSession(context.getSessionId());
 
-        if (session instanceof SessionContext) {
-            Map<String, IAgent> registry = ((SessionContext)session).getAgentRegistry();
+        if (session != null) {
+            Map<String, IAgent> registry = (session instanceof SessionContext) ?
+                    ((SessionContext)session).getAgentRegistry() : new java.util.HashMap<>();
             if (type.equals(EvolutionConstants.TASK_FILE)) return registry.get(EvolutionConstants.AGENT_FILE);
             if (type.equals(EvolutionConstants.TASK_MAVEN)) return registry.get(EvolutionConstants.AGENT_MAVEN);
             return registry.get(EvolutionConstants.AGENT_GENERAL);
         }
 
-        if (type.equals(EvolutionConstants.TASK_FILE)) return AgentFactory.getAgent(EvolutionConstants.AGENT_FILE);
-        if (type.equals(EvolutionConstants.TASK_MAVEN)) return AgentFactory.getAgent(EvolutionConstants.AGENT_MAVEN);
-        return AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
+        return null;
     }
 }

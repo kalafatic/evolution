@@ -25,8 +25,8 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
     private final StructuredResponsePipeline pipeline = new StructuredResponsePipeline();
 
-    public IntentExpansionEngine() {
-        super("IntentExpansionEngine", "IntentExpansionEngine");
+    public IntentExpansionEngine(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("IntentExpansionEngine", "IntentExpansionEngine", container);
     }
 
     @Override

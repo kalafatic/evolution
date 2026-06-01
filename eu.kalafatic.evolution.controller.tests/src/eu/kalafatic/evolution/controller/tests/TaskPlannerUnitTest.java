@@ -1,4 +1,6 @@
 package eu.kalafatic.evolution.controller.tests;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
 import static org.junit.Assert.*;
 import java.util.List;
@@ -13,7 +15,7 @@ public class TaskPlannerUnitTest {
 
     @Test
     public void testGenerateTasksFromVariantWithNullTarget() throws Exception {
-        TaskPlanner planner = new TaskPlanner();
+        TaskPlanner planner = new TaskPlanner(SessionManager.getInstance().getOrCreateSession("test"));
         TaskContext context = new TaskContext(OrchestrationFactory.eINSTANCE.createOrchestrator(), null);
 
         BranchVariant variant = new BranchVariant();
@@ -33,7 +35,7 @@ public class TaskPlannerUnitTest {
 
     @Test
     public void testGenerateTasksFromVariantWithLiteralNullTarget() throws Exception {
-        TaskPlanner planner = new TaskPlanner();
+        TaskPlanner planner = new TaskPlanner(SessionManager.getInstance().getOrCreateSession("test"));
         TaskContext context = new TaskContext(OrchestrationFactory.eINSTANCE.createOrchestrator(), null);
 
         BranchVariant variant = new BranchVariant();

@@ -28,8 +28,12 @@ public class KernelScheduler implements ICapability, ISchedulingContract {
     }
 
     public KernelScheduler(ExecutionBudget budget) {
+        this(budget, BackpressureController.getInstance());
+    }
+
+    public KernelScheduler(ExecutionBudget budget, BackpressureController backpressure) {
         this.budget = budget;
-        this.backpressure = BackpressureController.getInstance();
+        this.backpressure = backpressure;
         this.policy = new DefaultSchedulingPolicy();
     }
 

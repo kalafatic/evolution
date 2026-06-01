@@ -9,8 +9,8 @@ import eu.kalafatic.evolution.controller.tools.ShellTool;
  * Specialized agent for C and C++ development tasks.
  */
 public class CppDevAgent extends BaseAiAgent {
-    public CppDevAgent() {
-        super("CppDev", "CppDev");
+    public CppDevAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("CppDev", "CppDev", container);
         addTool(new FileTool());
         addTool(new CppTool());
         addTool(new GitTool());

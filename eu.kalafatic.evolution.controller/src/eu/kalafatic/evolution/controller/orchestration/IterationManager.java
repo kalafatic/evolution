@@ -173,23 +173,13 @@ public class IterationManager {
     public IterationMemoryService getMemoryService() { return memoryService; }
     public AnalyticAgent getAnalyticAgent() { return analyticAgent; }
     public FinalResponseAgent getFinalResponseAgent() { return finalResponseAgent; }
-    public Iteration getCurrentIterationModel() { return currentIterationModel; }
+    public SessionContainer getSessionContainer() { return sessionContainer; }
+    public eu.kalafatic.evolution.model.orchestration.Iteration getCurrentIterationModel() { return currentIterationModel; }
+
 
     public IterationManager(
             TaskContext context,
-            AiService aiService,
-            GitManager gitManager,
-            TaskPlanner taskPlanner,
-            TaskExecutor taskExecutor,
-            Evaluator evaluator,
-            DarwinEngine darwinEngine,
-            IterationMemoryService memoryService) {
-        this(context, SessionManager.getInstance().getOrCreateSession(context.getSessionId()), aiService, gitManager, taskPlanner, taskExecutor, evaluator, darwinEngine, memoryService);
-    }
-
-    public IterationManager(
-            TaskContext context,
-            SessionContainer sessionContainer,
+            eu.kalafatic.evolution.controller.orchestration.SessionContainer sessionContainer,
             AiService aiService,
             GitManager gitManager,
             TaskPlanner taskPlanner,
@@ -215,7 +205,7 @@ public class IterationManager {
             }
             availableAgents.addAll(registry.values());
         } else {
-            availableAgents.addAll(AgentFactory.getAllAgents());
+            throw new IllegalArgumentException("IterationManager: sessionContainer cannot be null. Session isolation is mandatory.");
         }
 
         analyticAgent = (AnalyticAgent) getInternalAgent(EvolutionConstants.AGENT_ANALYTIC);
@@ -285,9 +275,9 @@ public class IterationManager {
         }
 
         this.intentService = new IntentService(aiService);
-        this.intentExpansionEngine = new IntentExpansionEngine();
+        this.intentExpansionEngine = new IntentExpansionEngine(sessionContainer);
         this.intentExpansionEngine.setAiService(aiService);
-        this.intentClarificationEngine = new IntentClarificationEngine(aiService);
+        this.intentClarificationEngine = new IntentClarificationEngine(aiService, sessionContainer);
         this.dimensionInferenceEngine = new DefaultDimensionInferenceEngine(intentExpansionEngine);
 
         // Inject AiService into agents
@@ -527,6 +517,8 @@ public class IterationManager {
         if (sessionContainer == null) {
             throw new IllegalStateException("IterationManager: sessionContainer is null. Cannot transition state.");
         }
+        sessionContainer.getStatusManager().updateStatus(ctx.getSessionId(), 0.0, to.toString());
+
         SystemState current = ctx.getStateHolder().getState();
         if (current == to) return;
 
@@ -1193,7 +1185,7 @@ public class IterationManager {
     }
 
     public IterationManager createVariantManager(TaskContext variantContext, AiService aiService) {
-        return KernelFactory.create(variantContext, aiService);
+        return KernelFactory.create(variantContext, sessionContainer, aiService);
     }
 
     private Trajectory getActiveTrajectory(TaskContext context) {
@@ -1544,10 +1536,10 @@ public class IterationManager {
 
     private IAgent getInternalAgent(String type) {
         if (sessionContainer != null) {
-            Map<String, IAgent> registry = (sessionContainer instanceof SessionContext) ? ((SessionContext)sessionContainer).getAgentRegistry() : new java.util.HashMap<>();
+            Map<String, IAgent> registry = sessionContainer.getAgentRegistry();
             return registry.get(type);
         }
-        return AgentFactory.getAgent(type);
+        return null;
     }
 
     public void updateVariantFromInput(List<BranchVariant> variants, String input) {

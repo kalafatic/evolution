@@ -18,10 +18,6 @@ import eu.kalafatic.evolution.controller.parsers.JsonUtils;
  */
 public class AnalyticAgent extends BaseAiAgent {
 
-    public AnalyticAgent() {
-        super("Analytic", "Analytic");
-    }
-
     public AnalyticAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("Analytic", "Analytic", container);
     }

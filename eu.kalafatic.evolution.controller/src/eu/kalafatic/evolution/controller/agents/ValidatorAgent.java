@@ -11,16 +11,15 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
  * @evo:21:A reason=unified-validator-role
  */
 public class ValidatorAgent extends BaseAiAgent {
-    private final ReviewerAgent reviewer = new ReviewerAgent();
-    private final ConstraintAgent constraintAgent = new ConstraintAgent();
-
-    public ValidatorAgent() {
-        super("Validator", "Validator");
-    }
+    private final ReviewerAgent reviewer;
+    private final ConstraintAgent constraintAgent;
 
     public ValidatorAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("Validator", "Validator", container);
+        this.reviewer = new ReviewerAgent(container);
+        this.constraintAgent = new ConstraintAgent(container);
     }
+
 
     @Override
     public void setAiService(eu.kalafatic.evolution.controller.orchestration.AiService aiService) {

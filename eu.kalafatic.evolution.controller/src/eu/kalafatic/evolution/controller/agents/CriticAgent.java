@@ -9,13 +9,10 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
  */
 public class CriticAgent extends BaseAiAgent {
 
-    public CriticAgent() {
-        super("Critic", "Critic");
-    }
-
     public CriticAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("Critic", "Critic", container);
     }
+
 
     @Override
     protected String getAgentInstructions() {

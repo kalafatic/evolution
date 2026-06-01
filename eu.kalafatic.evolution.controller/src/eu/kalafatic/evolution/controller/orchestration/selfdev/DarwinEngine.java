@@ -34,11 +34,13 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.Evolutio
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.RejectionPatternAnalyzer;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
+
 public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationContract {
     private final TaskContext context;
     private final IterationMemoryService memoryService;
     private final SystemStateSignalProvider stateProvider;
-    private final RejectionPatternAnalyzer rejectionAnalyzer = new RejectionPatternAnalyzer();
+    private final RejectionPatternAnalyzer rejectionAnalyzer;
     private final EvolutionaryPenaltyModel penaltyModel = new EvolutionaryPenaltyModel();
     private final DiversityPressureController diversityController = new DiversityPressureController();
     private final eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine pressureEngine = new eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine();
@@ -48,10 +50,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private CapabilityStatus status = CapabilityStatus.STOPPED;
 
     public DarwinEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
-        super("DarwinEngine", "DarwinEngine");
+        super("DarwinEngine", "DarwinEngine", SessionManager.getInstance().getSession(context.getSessionId()));
         this.context = context;
         this.memoryService = memoryService;
         this.stateProvider = stateProvider;
+        this.rejectionAnalyzer = new RejectionPatternAnalyzer(getSessionContainer());
     }
 
     @Override

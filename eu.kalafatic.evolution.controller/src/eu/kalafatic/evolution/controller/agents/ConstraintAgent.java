@@ -17,8 +17,8 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
  */
 public class ConstraintAgent extends BaseAiAgent {
 
-    public ConstraintAgent() {
-        super("Constraint", "Constraint");
+    public ConstraintAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("Constraint", "Constraint", container);
     }
 
     @Override

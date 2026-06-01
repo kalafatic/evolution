@@ -18,8 +18,8 @@ import eu.kalafatic.evolution.controller.parsers.JsonUtils;
  */
 public class RejectionPatternAnalyzer extends BaseAiAgent {
 
-    public RejectionPatternAnalyzer() {
-        super("RejectionPatternAnalyzer", "RejectionAnalyzer");
+    public RejectionPatternAnalyzer(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("RejectionPatternAnalyzer", "RejectionAnalyzer", container);
     }
 
     @Override

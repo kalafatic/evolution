@@ -12,8 +12,8 @@ import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 public class SelfDevRequestAnalyzer {
     private final AnalyticAgent analyticAgent;
 
-    public SelfDevRequestAnalyzer() {
-        this.analyticAgent = (AnalyticAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_ANALYTIC);
+    public SelfDevRequestAnalyzer(eu.kalafatic.evolution.controller.orchestration.SessionContainer sessionContainer) {
+        this.analyticAgent = (AnalyticAgent) AgentFactory.createIsolatedAgents(sessionContainer).stream().filter(a -> a.getType().equals(EvolutionConstants.AGENT_ANALYTIC)).findFirst().orElse(null);
     }
 
     public JSONObject analyze(String prompt, TaskContext context) throws Exception {

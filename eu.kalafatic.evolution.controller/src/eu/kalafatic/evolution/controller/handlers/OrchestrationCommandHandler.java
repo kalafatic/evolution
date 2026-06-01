@@ -79,7 +79,8 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
 
     private void executeOrchestration(Orchestrator orchestrator, IProject project, IProgressMonitor monitor) throws Exception {
         String id = orchestrator.getId();
-        OrchestrationStatusManager.getInstance().updateStatus(id, 0.0, "Starting");
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(id);
+        session.getStatusManager().updateStatus(id, 0.0, "Starting");
 
         monitor.beginTask("Orchestration: " + orchestrator.getName(), 100);
 
@@ -103,7 +104,7 @@ public class OrchestrationCommandHandler extends AbstractOrchestratorHandler {
         request.getContext().put("orchestrator", orchestrator);
         core.handle(request, context);
 
-        OrchestrationStatusManager.getInstance().updateStatus(id, 1.0, "Completed");
+        session.getStatusManager().updateStatus(id, 1.0, "Completed");
         monitor.done();
     }
 

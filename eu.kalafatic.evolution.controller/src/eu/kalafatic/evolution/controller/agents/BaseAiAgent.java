@@ -39,11 +39,10 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
     protected BestPracticesService bestPracticesService;
     protected NeuronContextService neuronContextService;
 
-    public BaseAiAgent(String id, String type) {
-        this(id, type, null);
-    }
-
     public BaseAiAgent(String id, String type, SessionContainer container) {
+        if (container == null) {
+            throw new IllegalArgumentException("BaseAiAgent [" + id + "]: SessionContainer cannot be null. Explicit session context injection is mandatory.");
+        }
         this.id = id;
         this.type = type;
         this.sessionContainer = container;
@@ -85,20 +84,20 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
             sb.append("PROJECT ROOT: ").append(context.getProjectRoot().getAbsolutePath()).append("\n\n");
         }
 
-        if (bestPracticesService == null && context.getProjectRoot() != null) {
-            bestPracticesService = new BestPracticesService(context.getOrchestrator(), context.getProjectRoot());
+        BestPracticesService bp = new BestPracticesService(context.getOrchestrator(), context.getProjectRoot());
+        String practices = bp.getCombinedPractices();
+        if (practices != null && !practices.isEmpty()) {
+            sb.append(practices).append("\n\n");
         }
 
-        if (bestPracticesService != null) {
-            if (context.getOrchestrator().getAiChat() != null && context.getOrchestrator().getAiChat().getPromptInstructions() != null) {
-                if (context.getOrchestrator().getAiChat().getPromptInstructions().isIterativeMode()) {
-                    sb.append("--- ITERATIVE LOOP CONTEXT ---\n");
-                    sb.append(bestPracticesService.getSpecialContext("iterative_loop.md")).append("\n\n");
-                }
-                if (context.getOrchestrator().getAiChat().getPromptInstructions().isSelfIterativeMode()) {
-                    sb.append("--- SELF DEVELOPMENT CONTEXT ---\n");
-                    sb.append(bestPracticesService.getSpecialContext("self_development.md")).append("\n\n");
-                }
+        if (context.getOrchestrator().getAiChat() != null && context.getOrchestrator().getAiChat().getPromptInstructions() != null) {
+            if (context.getOrchestrator().getAiChat().getPromptInstructions().isIterativeMode()) {
+                sb.append("--- ITERATIVE LOOP CONTEXT ---\n");
+                sb.append(bp.getSpecialContext("iterative_loop.md")).append("\n\n");
+            }
+            if (context.getOrchestrator().getAiChat().getPromptInstructions().isSelfIterativeMode()) {
+                sb.append("--- SELF DEVELOPMENT CONTEXT ---\n");
+                sb.append(bp.getSpecialContext("self_development.md")).append("\n\n");
             }
         }
 

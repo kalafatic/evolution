@@ -84,7 +84,8 @@ public class AuthorityController {
 
         // AUDIT TRAIL
         if (context != null) {
-            IterationManager manager = KernelFactory.create(context);
+            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
+            IterationManager manager = KernelFactory.create(context, session);
             if (manager.getMemoryService() != null) {
                 AuditRecord audit = new AuditRecord(
                     iterationId,
@@ -121,7 +122,8 @@ public class AuthorityController {
     }
 
     private void auditTransition(TaskContext context, BranchVariant variant, BranchVariant.ActivationState oldState, BranchVariant.ActivationState newState, String reason) {
-        IterationManager manager = KernelFactory.create(context);
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
+        IterationManager manager = KernelFactory.create(context, session);
         if (manager.getMemoryService() != null) {
             AuditRecord audit = new AuditRecord(
                 context.getOrchestrationState().getCurrentIterationId(),

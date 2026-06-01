@@ -14,8 +14,8 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 
 public class TaskPlanner extends BaseAiAgent {
 
-    public TaskPlanner() {
-        super("TaskPlanner", "SelfDevPlanner");
+    public TaskPlanner(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
+        super("TaskPlanner", "SelfDevPlanner", container);
     }
 
     @Override

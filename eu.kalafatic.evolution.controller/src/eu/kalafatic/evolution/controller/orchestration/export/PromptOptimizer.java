@@ -12,8 +12,8 @@ import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 public class PromptOptimizer {
     private final GeneralAgent promptAgent;
 
-    public PromptOptimizer() {
-        this.promptAgent = (GeneralAgent) AgentFactory.getAgent(EvolutionConstants.AGENT_GENERAL);
+    public PromptOptimizer(eu.kalafatic.evolution.controller.orchestration.SessionContainer sessionContainer) {
+        this.promptAgent = (GeneralAgent) AgentFactory.createIsolatedAgents(sessionContainer).stream().filter(a -> a.getType().equals(EvolutionConstants.AGENT_GENERAL)).findFirst().orElse(null);
     }
 
     public String optimize(String originalRequest, String architectureSummary, TaskContext context, AiService aiService) throws Exception {

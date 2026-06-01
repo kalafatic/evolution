@@ -17,22 +17,13 @@ import eu.kalafatic.evolution.controller.supervision.ActivationResolver;
  */
 public class KernelFactory {
 
-    public static IterationManager create(TaskContext context) {
-        return create(context, new AiService());
-    }
-
     public static IterationManager create(TaskContext context, SessionContainer sessionContext) {
         return create(context, sessionContext, new AiService());
     }
 
-    public static IterationManager create(TaskContext context, AiService aiService) {
-        SessionContainer session = SessionManager.getInstance().getSession(context.getSessionId());
-        return create(context, session, aiService);
-    }
-
     public static IterationManager create(TaskContext context, SessionContainer sessionContext, AiService aiService) {
         GitManager gitManager = new GitManager(context.getProjectRoot());
-        TaskPlanner taskPlanner = new TaskPlanner();
+        TaskPlanner taskPlanner = new TaskPlanner(sessionContext);
         TaskExecutor taskExecutor = new TaskExecutor(context, context.getOrchestrator());
         if (taskExecutor.getOrchestrator() != null) {
             taskExecutor.getOrchestrator().setAiService(aiService);
@@ -53,35 +44,24 @@ public class KernelFactory {
                 throw new IllegalStateException("KernelFactory: sessionContext is null for session " + context.getSessionId() + ". Cannot register capabilities.");
             }
             CapabilityRegistry reg = sessionContext.getCapabilityRegistry();
-            reg.register(new KernelScheduler());
+            reg.register(new eu.kalafatic.evolution.controller.execution.KernelScheduler(
+                eu.kalafatic.evolution.controller.execution.ExecutionBudget.defaultProfile(),
+                sessionContext.getBackpressureController()));
             reg.register(new ActivationResolver(memoryService.getTrajectoryMemory()));
         } catch (CapabilityException e) {
             context.log("[KERNEL] Factory capability registration error: " + e.getMessage());
         }
 
-        if (sessionContext != null) {
-            return new IterationManager(
-                context,
-                sessionContext,
-                aiService,
-                gitManager,
-                taskPlanner,
-                taskExecutor,
-                evaluator,
-                darwinEngine,
-                memoryService
-            );
-        } else {
-            return new IterationManager(
-                context,
-                aiService,
-                gitManager,
-                taskPlanner,
-                taskExecutor,
-                evaluator,
-                darwinEngine,
-                memoryService
-            );
-        }
+        return new IterationManager(
+            context,
+            sessionContext,
+            aiService,
+            gitManager,
+            taskPlanner,
+            taskExecutor,
+            evaluator,
+            darwinEngine,
+            memoryService
+        );
     }
 }
