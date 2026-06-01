@@ -12,11 +12,9 @@
 * `IntentExpansionResult.java`: package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.List;
 * `MissingRequirement.java`: package eu.kalafatic.evolution.controller.orchestration.intent; public class MissingRequirement { private final String field;
 * `PACKAGE_CONTEXT.md`: 
-* `IntentAnalysisResult.java`: package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.List;
-* `ConfidenceEvaluator.java`: package eu.kalafatic.evolution.controller.orchestration.intent; public class ConfidenceEvaluator { public static double evaluate(IntentAnalysisResult result) {
+* `ConfidenceEvaluator.java`: package eu.kalafatic.evolution.controller.orchestration.intent; public class ConfidenceEvaluator { public static double evaluate(IntentExpansionResult result) {
 * `IntentHypothesis.java`: package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.List;
 * `IntentDimension.java`: package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.List;
-* `IntentAnalyzer.java`: package eu.kalafatic.evolution.controller.orchestration.intent; import org.json.JSONArray; import org.json.JSONObject;
 * `IntentConfidence.java`: package eu.kalafatic.evolution.controller.orchestration.intent; public class IntentConfidence { private double overallConfidence;
 * `ConfirmedRequirements.java`: package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.Collections;
 * `IntentExpansionEngine.java`: package eu.kalafatic.evolution.controller.orchestration.intent; import org.json.JSONArray; import org.json.JSONObject;

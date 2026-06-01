@@ -5,7 +5,7 @@ A user wants to make a high-risk architectural change in `MEDIATED` mode.
 
 ## 1. Intent Analysis
 - **User Prompt**: "Change the event bus from synchronous to asynchronous across the whole platform."
-- **IntentService**: Detects `ARCHITECTURE`, `REFACTORING`, and `ANALYSIS`.
+- **IntentExpansionEngine**: Detects `ARCHITECTURE`, `REFACTORING`, and `ANALYSIS`.
 - **EPS Calculation**:
     - Ambiguity: Medium.
     - Risk: High (Cross-cutting architectural change).

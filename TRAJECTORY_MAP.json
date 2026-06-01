@@ -61,7 +61,6 @@
     { "path": "c:\Users\petrk\git\evolution\eu.kalafatic.evolution.model.tests\src\eu\kalafatic\evolution\model\orchestration\tests\LLMTest.java", "role": "orchestration", "importance": 1.0 },
     { "path": "c:\Users\petrk\git\evolution\eu.kalafatic.evolution.controller\src\eu\kalafatic\evolution\controller\supervision\AuditRecord.java", "role": "supervision", "importance": 1.0 },
     { "path": "c:\Users\petrk\git\evolution\eu.kalafatic.evolution.model\src\eu\kalafatic\evolution\model\orchestration\impl\AgentImpl.java", "role": "orchestration", "importance": 1.0 },
-    { "path": "c:\Users\petrk\git\evolution\eu.kalafatic.evolution.controller\src\eu\kalafatic\evolution\controller\orchestration\IterativeFlow.java", "role": "orchestration", "importance": 1.0 },
     { "path": "c:\Users\petrk\git\evolution\eu.kalafatic.evolution.model\src\eu\kalafatic\evolution\model\orchestration\impl\GitImpl.java", "role": "orchestration", "importance": 1.0 },
     { "path": "c:\Users\petrk\git\evolution\eu.kalafatic.evolution.controller\src\eu\kalafatic\evolution\controller\orchestration\attachments\TaskIntentClassifier.java", "role": "orchestration", "importance": 1.0 },
     { "path": "c:\Users\petrk\git\evolution\eu.kalafatic.evolution.controller\src\eu\kalafatic\evolution\controller\orchestration\FinalResponse.java", "role": "orchestration", "importance": 1.0 },

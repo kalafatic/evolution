@@ -28,6 +28,17 @@ public class IntentExpansionResult {
     private double evolutionOpportunityScore;
     private List<String> implementationStrategies = new ArrayList<>();
 
+    // Merged from IntentAnalysisResult
+    private String language;
+    private String framework;
+    private String targetPlatform;
+    private String expectedOutput;
+    private List<String> constraints = new ArrayList<>();
+    private List<MissingRequirement> missingInformation = new ArrayList<>();
+    private List<Ambiguity> ambiguities = new ArrayList<>();
+    private List<String> contradictions = new ArrayList<>();
+    private String clarificationQuestion;
+
     public String getOriginalPrompt() { return originalPrompt; }
     public void setOriginalPrompt(String originalPrompt) { this.originalPrompt = originalPrompt; }
 
@@ -72,4 +83,35 @@ public class IntentExpansionResult {
 
     public List<String> getImplementationStrategies() { return implementationStrategies; }
     public void setImplementationStrategies(List<String> implementationStrategies) { this.implementationStrategies = implementationStrategies; }
+
+    public String getLanguage() { return language; }
+    public void setLanguage(String language) { this.language = language; }
+
+    public String getFramework() { return framework; }
+    public void setFramework(String framework) { this.framework = framework; }
+
+    public String getTargetPlatform() { return targetPlatform; }
+    public void setTargetPlatform(String targetPlatform) { this.targetPlatform = targetPlatform; }
+
+    public String getExpectedOutput() { return expectedOutput; }
+    public void setExpectedOutput(String expectedOutput) { this.expectedOutput = expectedOutput; }
+
+    public List<String> getConstraints() { return constraints; }
+    public void setConstraints(List<String> constraints) { this.constraints = constraints; }
+
+    public List<MissingRequirement> getMissingInformation() { return missingInformation; }
+    public void setMissingInformation(List<MissingRequirement> missingInformation) { this.missingInformation = missingInformation; }
+
+    public List<Ambiguity> getAmbiguities() { return ambiguities; }
+    public void setAmbiguities(List<Ambiguity> ambiguities) { this.ambiguities = ambiguities; }
+
+    public List<String> getContradictions() { return contradictions; }
+    public void setContradictions(List<String> contradictions) { this.contradictions = contradictions; }
+
+    public String getClarificationQuestion() { return clarificationQuestion; }
+    public void setClarificationQuestion(String question) { this.clarificationQuestion = question; }
+
+    public boolean isAmbiguous() {
+        return !ambiguities.isEmpty() || !missingInformation.isEmpty() || !contradictions.isEmpty() || state == InterpretationState.NEEDS_CLARIFICATION;
+    }
 }

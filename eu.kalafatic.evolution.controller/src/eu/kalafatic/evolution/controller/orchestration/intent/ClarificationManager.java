@@ -21,8 +21,8 @@ public class ClarificationManager {
     /**
      * Determines if clarification is needed based on the analysis result.
      */
-    public boolean shouldClarify(IntentAnalysisResult result) {
-        if (result.getConfidenceScore() < confidenceThreshold) {
+    public boolean shouldClarify(IntentExpansionResult result) {
+        if (result.getConfidence().getOverallConfidence() < confidenceThreshold) {
             return true;
         }
         return result.isAmbiguous();
@@ -31,7 +31,7 @@ public class ClarificationManager {
     /**
      * Generates a clarification question based on missing info, ambiguities and contradictions.
      */
-    public String generateClarificationQuestion(IntentAnalysisResult result, TaskContext context) {
+    public String generateClarificationQuestion(IntentExpansionResult result, TaskContext context) {
         if (result.getClarificationQuestion() != null && !result.getClarificationQuestion().trim().isEmpty()) {
             return result.getClarificationQuestion().trim();
         }
@@ -48,7 +48,7 @@ public class ClarificationManager {
         } else if (!result.getAmbiguities().isEmpty()) {
             Ambiguity amb = result.getAmbiguities().get(0);
             sb.append("The part '").append(amb.getPart()).append("' is a bit unclear: ").append(amb.getReason()).append(". ");
-        } else if (result.getConfidenceScore() < confidenceThreshold) {
+        } else if (result.getConfidence().getOverallConfidence() < confidenceThreshold) {
             sb.append("I'm not entirely sure I understand the goal. Could you provide more details? ");
         }
 
@@ -60,7 +60,7 @@ public class ClarificationManager {
     /**
      * Updates the conversation state with clarification info.
      */
-    public void updateState(ConversationState state, IntentAnalysisResult result, String question) {
+    public void updateState(ConversationState state, IntentExpansionResult result, String question) {
         List<String> pending = new ArrayList<>();
         if (!result.getContradictions().isEmpty()) pending.addAll(result.getContradictions());
         for (MissingRequirement req : result.getMissingInformation()) pending.add(req.toString());

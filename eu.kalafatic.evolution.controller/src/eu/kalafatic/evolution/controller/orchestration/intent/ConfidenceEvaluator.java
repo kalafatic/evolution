@@ -6,14 +6,12 @@ package eu.kalafatic.evolution.controller.orchestration.intent;
 public class ConfidenceEvaluator {
 
     /**
-     * Evaluates the confidence score based on missing info and ambiguities.
-     * @param result The result to evaluate.
-     * @return A confidence score between 0.0 and 1.0.
+     * Evaluates the confidence score for IntentExpansionResult.
      */
-    public static double evaluate(IntentAnalysisResult result) {
+    public static double evaluate(IntentExpansionResult result) {
         double score = 1.0;
 
-        if (result.getGoal() == null || result.getGoal().trim().isEmpty()) {
+        if (result.getDominantIntent() == null || result.getDominantIntent().trim().isEmpty()) {
             score -= 0.4;
         }
 

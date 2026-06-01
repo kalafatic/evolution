@@ -6,7 +6,6 @@ Kernel
 
 Flows
  ├─ DarwinFlow
- ├─ IterativeFlow
  └─ AtomicFlow
 
 Agents

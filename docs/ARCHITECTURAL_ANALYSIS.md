@@ -6,7 +6,7 @@ The following entities represent the discovered fundamental building blocks of t
 
 | Primitive | Semantic Meaning | Lifecycle Role | Ownership |
 | :--- | :--- | :--- | :--- |
-| **Intent** | The high-fidelity engineering goal reconstructed from raw input and repository context. | **Discovery** | `IntentService` |
+| **Intent** | The high-fidelity engineering goal reconstructed from raw input and repository context. | **Discovery** | `IntentExpansionEngine` |
 | **BitState** | A 64-bit policy field defining Mode, Supervision, Interaction, Reasoning, and Workflow. | **Policy** | `OrchestrationState` |
 | **Context** | A filtered, compressed manifest of repository state, history, and active signals. | **Grounding** | `ContextBuilder` |
 | **Task** | An atomic, executable unit of work targeting a specific tool or agent. | **Execution** | `IterationManager` |

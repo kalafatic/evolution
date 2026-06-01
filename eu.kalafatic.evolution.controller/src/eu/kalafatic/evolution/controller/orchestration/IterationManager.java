@@ -38,7 +38,6 @@ import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
-import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.InterpretationState;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentClarificationEngine;
 import eu.kalafatic.evolution.controller.trajectory.EvolutionaryTrajectoryEngine;
@@ -50,7 +49,6 @@ import eu.kalafatic.evolution.controller.orchestration.diagnostics.ReplayEngine;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
-import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionEngine;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
@@ -134,7 +132,6 @@ public class IterationManager {
     private final TrajectoryEngine trajectoryEngine;
     private final GitEvolutionAdapter gitAdapter;
     private final ClarificationManager clarificationManager = new ClarificationManager();
-    private final IntentService intentService;
     private final IntentExpansionEngine intentExpansionEngine;
     private final IntentClarificationEngine intentClarificationEngine;
     private final DimensionInferenceEngine dimensionInferenceEngine;
@@ -274,7 +271,6 @@ public class IterationManager {
             context.log("[KERNEL] Capability registration error: " + e.getMessage());
         }
 
-        this.intentService = new IntentService(aiService);
         this.intentExpansionEngine = new IntentExpansionEngine(sessionContainer);
         this.intentExpansionEngine.setAiService(aiService);
         this.intentClarificationEngine = new IntentClarificationEngine(aiService, sessionContainer);
@@ -431,10 +427,6 @@ public class IterationManager {
             } else {
                 context.log("[KERNEL] No significant semantic uncertainty detected. Evolution will proceed with discovery grounding.");
             }
-
-            transition(SystemState.ANALYZING, context);
-            context.consoleLog("[KERNEL] Performing repository-grounded intent analysis.");
-            intentService.analyze(request, context);
 
             context.log("[KERNEL] Routing to unified iterative evolutionary kernel.");
             OrchestratorResponse result = evolve(request, context, initialAssessment);
@@ -653,15 +645,9 @@ public class IterationManager {
 
     public EvaluationResult runIteration(Iteration iteration) {
         this.currentIterationModel = iteration;
-        BehaviorProfile profile = context.getBehaviorProfile();
-        boolean darwinEnabled = profile.hasTrait(BehaviorTrait.REASONING_DARWIN_ITERATIVE);
 
         try {
-            if (darwinEnabled && gitManager.isGitRepository()) {
-                return runDarwinIteration(context, new DarwinFlow(aiService, this));
-            } else {
-                return runPEV();
-            }
+            return runDarwinIteration(context, new DarwinFlow(aiService, this));
         } catch (Exception e) {
             context.log("[KERNEL] Critical error in iteration: " + e.getMessage());
             if (System.getProperty("evolution.test.debug") != null) {
@@ -671,51 +657,6 @@ public class IterationManager {
             result.setSuccess(false);
             result.setDecision(SelfDevDecision.ROLLBACK);
             return result;
-        }
-    }
-
-    public EvaluationResult runPEV() throws Exception {
-        transition(SystemState.INIT, context);
-        transition(SystemState.ANALYZING, context);
-        String goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
-        try {
-            List<Task> tasks = iterativePlan(goal, context);
-            transition(SystemState.PLAN_LOCKED, context);
-            transition(SystemState.EXECUTING, context);
-            boolean success = executeTasksWithRetries(tasks);
-            transition(SystemState.VERIFYING, context);
-            EvaluationResult result = evaluator.evaluate();
-            if (currentIterationModel != null) {
-                currentIterationModel.setEvaluationResult(result);
-                currentIterationModel.setRationale("PEV Execution Result: " + (result.isSuccess() ? "SUCCESS" : "FAILURE"));
-                if (result.getFitnessHistory() != null) {
-                    currentIterationModel.setJustification(currentIterationModel.getJustification() + "\nFitness: " + result.getFitnessHistory());
-                }
-            }
-            if (result.isSuccess() && result.getDecision() == SelfDevDecision.CONTINUE) {
-                if (currentIterationModel != null) {
-                    gitManager.commit("Self-Development Iteration " + currentIterationModel.getId());
-
-                    WorkspaceArtifact decisionArtifact = new WorkspaceArtifact("impl-decision-" + currentIterationModel.getId(), "implementation-decision");
-                    decisionArtifact.setContent("Successfully implemented: " + goal);
-                    decisionArtifact.setSourceIteration(currentIterationModel.getId());
-                    decisionArtifact.getSemanticTags().add("success");
-                    decisionArtifact.getSemanticTags().add("implementation");
-                    context.getSemanticWorkspace().addArtifact(decisionArtifact);
-                }
-
-                context.getSemanticWorkspace().applyDecay(context.getOrchestrationState().getCognitiveTrace());
-
-                transition(SystemState.DONE, context);
-            } else {
-                gitManager.rollback();
-                transition(SystemState.FAILED, context);
-            }
-            return result;
-        } catch (Exception e) {
-            gitManager.rollback();
-            transition(SystemState.FAILED, context);
-            throw e;
         }
     }
 
@@ -780,7 +721,6 @@ public class IterationManager {
         if (phase == EvolutionPhase.INTENT_EXPANSION) {
             transition(SystemState.ANALYZING, context);
             IntentExpansionResult expansion = getIntentExpansionEngine().expand(goal, context);
-            state.setIntentAnalysis(null);
             state.getMetadata().put("intentExpansion", expansion);
 
             context.consoleLog("[KERNEL] Intent Interpretation: " + expansion.getState());
@@ -1173,9 +1113,6 @@ public class IterationManager {
     }
 
     public IOrchestrationFlow resolveFlow(ModeRouter router, AtomicIntentAnalysis atomicAnalysis) {
-        BehaviorProfile profile = context.getBehaviorProfile();
-        context.log("[KERNEL] Resolving flow. Profile traits: " + profile.getTraits());
-
         return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
     }
 
@@ -1305,31 +1242,6 @@ public class IterationManager {
         bus.publish(new RuntimeEvent(RuntimeEventType.SESSION_RESUMED, context.getSessionId(), "Kernel", cp));
     }
 
-    private OrchestratorResponse deterministicExecution(String request, TaskContext context) throws Exception {
-        context.log("[KERNEL] Starting Deterministic Execution (No unresolved semantic dimensions).");
-        OrchestrationState state = context.getOrchestrationState();
-
-        EvolutionPhaseMachine phaseMachine = new EvolutionPhaseMachine();
-        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
-
-        if (!hasStateChangeIntent(context)) {
-            context.log("[KERNEL] Non-implementation task detected. Routing to GeneralAgent.");
-            String resultStr = ((GeneralAgent)getInternalAgent(EvolutionConstants.AGENT_GENERAL)).process(request, context, null);
-            OrchestratorResponse response = new OrchestratorResponse();
-            response.setResultType(ResultType.CHAT);
-            response.setSummary(resultStr);
-            response.setContent(resultStr);
-            return response;
-        }
-
-        context.log("[KERNEL] Implementation task detected. Routing to deterministic PEV loop.");
-        EvaluationResult result = runPEV();
-
-        OrchestratorResponse response = new OrchestratorResponse();
-        response.setResultType(ResultType.CHAT);
-        response.setSummary(result.isSuccess() ? "Execution completed successfully." : "Execution failed.");
-        return response;
-    }
 
     private String performMediatedExportConvergence(String request, TaskContext context) {
         try {
@@ -1402,46 +1314,6 @@ public class IterationManager {
         }
     }
 
-    public List<Task> iterativePlan(String request, TaskContext context) throws Exception {
-        context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Starting iterative planning.");
-        checkStep("planner", "PLANNING", "Generating and critiquing implementation plan for: " + request);
-        List<Task> currentTasks = strategicPlanner.plan(request, context);
-        for (int i = 1; i <= EvolutionConstants.MAX_PLANNING_ITERATIONS; i++) {
-            JSONArray taskArray = new JSONArray();
-            for (Task t : currentTasks) {
-                JSONObject tObj = new JSONObject();
-                tObj.put("id", t.getId());
-                tObj.put("name", t.getName());
-                tObj.put("description", t.getDescription());
-                tObj.put("taskType", t.getType());
-                taskArray.put(tObj);
-            }
-            JSONObject critiqueResult = criticAgent.critique(request, taskArray.toString(), context);
-            if (critiqueResult.optBoolean("isCorrect", false) && critiqueResult.optDouble("qualityScore", 0.0) >= EvolutionConstants.PLANNING_QUALITY_THRESHOLD) {
-                context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Plan approved by critic at iteration " + i);
-                break;
-            }
-            context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Plan critique failure at iteration " + i + ": " + critiqueResult.optString("feedback"));
-            if (i < EvolutionConstants.MAX_PLANNING_ITERATIONS) {
-                String repairedPlanResponse = repairAgent.process("ORIGINAL REQUEST: " + request + "\\nCURRENT PLAN: " + taskArray.toString() + "\\nCRITIQUE: " + critiqueResult.toString(), context, null);
-                JSONArray repairedJsonArray = JsonUtils.extractJsonArrayFlexible(repairedPlanResponse);
-                if (repairedJsonArray != null) {
-                    List<Task> repairedTasks = new ArrayList<>();
-                    for (int j = 0; j < repairedJsonArray.length(); j++) {
-                        JSONObject obj = repairedJsonArray.getJSONObject(j);
-                        Task task = OrchestrationFactory.eINSTANCE.createTask();
-                        task.setId(obj.optString("id", "rt" + j));
-                        task.setName(obj.optString("name", "Task " + j));
-                        task.setDescription(obj.optString("description", ""));
-                        task.setType(obj.optString("taskType", "llm"));
-                        repairedTasks.add(task);
-                    }
-                    currentTasks = repairedTasks;
-                }
-            }
-        }
-        return currentTasks;
-    }
 
     public boolean executeTasksWithRetries(List<Task> tasks) throws Exception {
         return executeTasksWithRetries(tasks, null);

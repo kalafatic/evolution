@@ -6,6 +6,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
@@ -17,6 +19,11 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomainRes
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.parsers.structured.StructuredResponsePipeline;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.trajectory.SignalSeverity;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 /**
  * Engine for expanding user intent and exploring ambiguity before Darwin execution.
@@ -33,6 +40,14 @@ public class IntentExpansionEngine extends BaseAiAgent {
     protected String getAgentInstructions() {
         return "You are an Intent Expansion Engine. Your goal is to analyze user requests and CONSTRUCT THE EVOLUTIONARY SEARCH SPACE.\n" +
                "Identify implementation polymorphism - multiple valid ways to implement the intent.\n" +
+               "\n" +
+               "PHASE 0 - INTENT EXTRACTION:\n" +
+               "Extract high-level metadata from the request:\n" +
+               "- Goal: Concise engineering objective.\n" +
+               "- Language/Framework/TargetPlatform: Detected technical stack.\n" +
+               "- Constraints: Explicit constraints provided by user.\n" +
+               "- Missing Information: Fields that need clarification.\n" +
+               "- Ambiguities/Contradictions: Detected semantic conflicts.\n" +
                "\n" +
                "PHASE 1 - SEMANTIC DIMENSION DISCOVERY:\n" +
                "Analyze the goal to identify UNRESOLVED SEMANTIC DIMENSIONS.\n" +
@@ -62,6 +77,17 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "{\n" +
                "  \"state\": \"CLEAR\",\n" +
                "  \"dominantIntent\": \"string\",\n" +
+               "  \"metadata\": {\n" +
+               "    \"language\": \"string\",\n" +
+               "    \"framework\": \"string\",\n" +
+               "    \"targetPlatform\": \"string\",\n" +
+               "    \"expectedOutput\": \"string\",\n" +
+               "    \"constraints\": [\"string\"],\n" +
+               "    \"missingInformation\": [{ \"field\": \"string\", \"description\": \"string\" }],\n" +
+               "    \"ambiguities\": [{ \"part\": \"string\", \"reason\": \"string\" }],\n" +
+               "    \"contradictions\": [\"string\"],\n" +
+               "    \"clarificationQuestion\": \"string\"\n" +
+               "  },\n" +
                "  \"unresolvedDimensions\": [\n" +
                "    {\n" +
                "      \"id\": \"string\",\n" +
@@ -146,6 +172,44 @@ public class IntentExpansionEngine extends BaseAiAgent {
         result.setDominantIntent(json.optString("dominantIntent"));
         result.setDominantConfidence(json.optDouble("dominantConfidence", 0.5));
 
+        // Parse Metadata
+        JSONObject metadata = json.optJSONObject("metadata");
+        if (metadata != null) {
+            result.setLanguage(metadata.optString("language"));
+            result.setFramework(metadata.optString("framework"));
+            result.setTargetPlatform(metadata.optString("targetPlatform"));
+            result.setExpectedOutput(metadata.optString("expectedOutput"));
+            result.setClarificationQuestion(metadata.optString("clarificationQuestion"));
+            result.setConstraints(JsonUtils.toStringList(metadata.optJSONArray("constraints")));
+            result.setContradictions(JsonUtils.toStringList(metadata.optJSONArray("contradictions")));
+
+            JSONArray missing = metadata.optJSONArray("missingInformation");
+            if (missing != null) {
+                for (int i = 0; i < missing.length(); i++) {
+                    JSONObject m = missing.optJSONObject(i);
+                    if (m != null) {
+                        result.getMissingInformation().add(new MissingRequirement(
+                            m.optString("field", "unknown"),
+                            m.optString("description", m.toString())
+                        ));
+                    }
+                }
+            }
+
+            JSONArray ambiguities = metadata.optJSONArray("ambiguities");
+            if (ambiguities != null) {
+                for (int i = 0; i < ambiguities.length(); i++) {
+                    JSONObject a = ambiguities.optJSONObject(i);
+                    if (a != null) {
+                        result.getAmbiguities().add(new Ambiguity(
+                            a.optString("part", "unknown"),
+                            a.optString("reason", a.toString())
+                        ));
+                    }
+                }
+            }
+        }
+
         // Parse Engineering Dimensions
         JSONObject dimensions = json.optJSONObject("engineeringDimensions");
         if (dimensions != null) {
@@ -226,7 +290,14 @@ public class IntentExpansionEngine extends BaseAiAgent {
             c.setOverallConfidence(0.5);
             c.setRationale("No confidence data provided by AI");
         }
+
+        // Final sanity check/adjustment of confidence if needed
+        if (c.getOverallConfidence() == 0 && result.getDominantIntent() != null) {
+            c.setOverallConfidence(ConfidenceEvaluator.evaluate(result));
+        }
         result.setConfidence(c);
+
+        emitIntentSignal(result, context);
 
         // DIAGNOSTICS: Emit causal node for intent expansion
         context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
@@ -240,6 +311,32 @@ public class IntentExpansionEngine extends BaseAiAgent {
         ));
 
         return result;
+    }
+
+    private void emitIntentSignal(IntentExpansionResult result, TaskContext context) {
+        double confidence = result.getConfidence().getOverallConfidence();
+        EvaluationSignal signal = new EvaluationSignal(
+            "intent-analysis",
+            "IntentExpansionEngine",
+            confidence,
+            1.0,
+            confidence > 0.7 ? SignalSeverity.INFO : SignalSeverity.WARNING,
+            "Intent confidence: " + confidence
+        );
+
+        SessionContainer session = getSessionContainer();
+        if (session == null) {
+            session = SessionManager.getInstance().getSession(context.getSessionId());
+        }
+        if (session != null) {
+            RuntimeEventBus bus = session.getEventBus();
+            bus.publish(new RuntimeEvent(
+                RuntimeEventType.EVALUATION_SIGNAL_CREATED,
+                context.getSessionId(),
+                "IntentExpansionEngine",
+                signal
+            ));
+        }
     }
 
     public static InterpretationState parseState(String stateStr, TaskContext context) {
