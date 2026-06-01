@@ -39,7 +39,6 @@ import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 import eu.kalafatic.evolution.controller.orchestration.intent.InterpretationState;
-import eu.kalafatic.evolution.controller.orchestration.intent.IntentClarificationEngine;
 import eu.kalafatic.evolution.controller.trajectory.EvolutionaryTrajectoryEngine;
 import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
@@ -133,7 +132,6 @@ public class IterationManager {
     private final GitEvolutionAdapter gitAdapter;
     private final ClarificationManager clarificationManager = new ClarificationManager();
     private final IntentExpansionEngine intentExpansionEngine;
-    private final IntentClarificationEngine intentClarificationEngine;
     private final DimensionInferenceEngine dimensionInferenceEngine;
     private final ClarificationPlanner clarificationPlanner = new ClarificationPlanner();
 
@@ -273,7 +271,6 @@ public class IterationManager {
 
         this.intentExpansionEngine = new IntentExpansionEngine(sessionContainer);
         this.intentExpansionEngine.setAiService(aiService);
-        this.intentClarificationEngine = new IntentClarificationEngine(aiService, sessionContainer);
         this.dimensionInferenceEngine = new DefaultDimensionInferenceEngine(intentExpansionEngine);
 
         // Inject AiService into agents
@@ -586,21 +583,7 @@ public class IterationManager {
         int safetyCounter = 0;
         DarwinFlow darwinFlow = new DarwinFlow(aiService, this);
 
-        // 1. Initial Grounding (Intent Clarification)
-        context.log("[KERNEL] Phase: Intent Clarification & Grounding.");
-        IntentExpansionResult clarification = intentClarificationEngine.clarify(request, context);
-        state.getMetadata().put("intentExpansion", clarification);
-
-        if (clarification.getState() == InterpretationState.NEEDS_CLARIFICATION) {
-            context.log("[KERNEL] Intent clarification required before evolution.");
-            handleClarification(context, clarificationPlanner, clarification, request);
-            OrchestratorResponse response = new OrchestratorResponse();
-            response.setResultType(ResultType.CHAT);
-            response.setSummary("Clarification required.");
-            return response;
-        }
-
-        // 2. Recursive Evolutionary Loop
+        // 1. Recursive Evolutionary Loop
         context.log("[KERNEL] Phase: Recursive Evolutionary Trajectory System.");
         while (safetyCounter < 10 && !context.isPaused()) {
             result = runDarwinIteration(context, darwinFlow);
@@ -608,7 +591,7 @@ public class IterationManager {
 
             // Evaluate Stability and Evolutionary Pressure
             Trajectory activeTrajectory = getActiveTrajectory(context);
-            if (activeTrajectory != null) {
+            if (activeTrajectory != null && !isIntentExpansionPhase(context)) {
                 boolean stabilized = evolutionaryTrajectoryEngine.evolve(activeTrajectory, context);
                 if (stabilized) {
                     context.log("[KERNEL] Evolutionary equilibrium detected. Converging.");
@@ -725,13 +708,6 @@ public class IterationManager {
 
             context.consoleLog("[KERNEL] Intent Interpretation: " + expansion.getState());
 
-            if (expansion.getUnresolvedDimensions() != null) {
-                for (EvolutionDimension dim : expansion.getUnresolvedDimensions()) {
-                    sessionContainer.getEvolutionMemoryGraph().recordDimension(dim);
-                    context.log("[KERNEL] Discovered Dimension: " + dim.getId() + " (" + dim.getAbstractionLevel() + ")");
-                }
-            }
-
             if (!handleIntentReview(context, expansion, goal)) {
                 return failedResult();
             }
@@ -754,16 +730,6 @@ public class IterationManager {
                 }
             }
 
-            if (strategy == ClarificationPlanner.Strategy.BRANCH_PARALLEL) {
-                context.log("[KERNEL] Ambiguity detected but evolvable. Spawning parallel implementation branches.");
-                EvolutionPhase nextPhase = evolutionaryTrajectoryEngine.determineNextPhase(phase, getActiveTrajectory(context), context);
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
-                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                res.setSuccess(true);
-                res.setDecision(phaseMachine.determineDecision(nextPhase));
-                return res;
-            }
-
             if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER) {
                 if (!handleClarification(context, planner, expansion, goal)) {
                     return failedResult();
@@ -774,16 +740,17 @@ public class IterationManager {
                 return res;
             }
 
-            EvolutionPhase nextPhase = evolutionaryTrajectoryEngine.determineNextPhase(phase, getActiveTrajectory(context), context);
+            // Progression from INTENT_EXPANSION is now unified.
+            // Dimension discovery and pressure injection are handled in the following architectural phases.
+            EvolutionPhase nextPhase = evolutionaryTrajectoryEngine.determineNextPhase(phase, null, context);
             state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
 
-            if (strategy != ClarificationPlanner.Strategy.AUTO_INFER || !context.isAutoApprove()) {
-                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                res.setSuccess(true);
-                res.setDecision(SelfDevDecision.CONTINUE);
-                return res;
-            }
-            context.log("[KERNEL] Intent clear. Proceeding to architectural exploration.");
+            context.log("[KERNEL] Intent grounding complete. Progressing to " + nextPhase);
+
+            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+            res.setSuccess(true);
+            res.setDecision(SelfDevDecision.CONTINUE);
+            return res;
         }
 
         Object intentExpansionObj = state.getMetadata().get("intentExpansion");
@@ -798,19 +765,6 @@ public class IterationManager {
         }
 
         final IntentExpansionResult intentExpansion = intentExpansionFinal;
-        if (intentExpansion != null && intentExpansion.getActiveDimensionId() != null) {
-            context.log("[KERNEL] Evolving Semantic Dimension: " + intentExpansion.getActiveDimensionId() + " (Generation: " + state.getIterationCount() + ")");
-
-            EvolutionDimension activeDim = intentExpansion.getUnresolvedDimensions().stream()
-                .filter(d -> d.getId().equals(intentExpansion.getActiveDimensionId()))
-                .findFirst().orElse(null);
-
-            if (activeDim != null && activeDim.getAbstractionLevel() == AbstractionLevel.ARCHITECTURE) {
-                if (activeDim.getEvolutionaryPressure() < 0.3) {
-                    context.log("[KERNEL] Architecture Emergence Rule: Low pressure detected. Suppressing architectural branching.");
-                }
-            }
-        }
 
         checkStep(state.getCurrentPhase(), "BRANCH_GENERATION", "Spawning competing trajectories for: " + goal);
         List<BranchVariant> variants = darwinFlow.generateProposals(context, goal);
@@ -1084,6 +1038,11 @@ public class IterationManager {
         }
 
         return v;
+    }
+
+    private boolean isIntentExpansionPhase(TaskContext context) {
+        String phaseStr = context.getOrchestrationState().getCurrentPhase();
+        return EvolutionPhase.INTENT_EXPANSION.name().equals(phaseStr) || "INTENT_EXPANSION".equals(phaseStr);
     }
 
     private String sanitizeForBranch(String s) {

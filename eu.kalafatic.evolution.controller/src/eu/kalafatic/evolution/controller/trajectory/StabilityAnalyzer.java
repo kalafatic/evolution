@@ -36,6 +36,15 @@ public class StabilityAnalyzer {
 
     public boolean isConverged(Trajectory trajectory, TaskContext context) {
         if (trajectory == null) return false;
+
+        // Intent expansion never triggers convergence logic
+        if (context != null && context.getOrchestrationState() != null) {
+            String phase = context.getOrchestrationState().getCurrentPhase();
+            if (EvolutionPhase.INTENT_EXPANSION.name().equals(phase) || "INTENT_EXPANSION".equals(phase)) {
+                return false;
+            }
+        }
+
         double stability = calculateStability(trajectory, context);
 
         // Check if test mode is active to allow accelerated convergence
@@ -55,6 +64,12 @@ public class StabilityAnalyzer {
      * Determines if the evolution should progress to the next phase or stay in the current one.
      */
     public boolean shouldProgress(EvolutionPhase current, Trajectory trajectory, TaskContext context) {
+        // Intent expansion always progresses once intent is clear (handled in IterationManager)
+        if (current == EvolutionPhase.INTENT_EXPANSION) {
+            context.log("[STABILITY] Intent expansion phase complete. Progressing.");
+            return true;
+        }
+
         if (trajectory == null) return true;
 
         int generation = trajectory.getGeneration();
@@ -80,6 +95,6 @@ public class StabilityAnalyzer {
         }
 
         // Default to recursion in evolutionary phases if not converged and depth not reached
-        return current == EvolutionPhase.INTENT_EXPANSION || current == EvolutionPhase.IMPLEMENTATION_PLAN || current == EvolutionPhase.FINAL_SYNTHESIS;
+        return current == EvolutionPhase.IMPLEMENTATION_PLAN || current == EvolutionPhase.FINAL_SYNTHESIS;
     }
 }
