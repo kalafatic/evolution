@@ -13,6 +13,7 @@ public class EvolutionDecision {
     private final Map<String, Double> aggregatedScores;
     private final Map<String, Object> policyMetadata;
     private final AuthorityController.DecisionType type;
+    private eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure;
 
     public EvolutionDecision(
             AuthorityController.DecisionType type,
@@ -51,5 +52,13 @@ public class EvolutionDecision {
 
     public Map<String, Object> getPolicyMetadata() {
         return policyMetadata;
+    }
+
+    public eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector getPressure() {
+        return pressure;
+    }
+
+    public void setPressure(eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
+        this.pressure = pressure;
     }
 }

@@ -116,7 +116,13 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
 
-        List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory);
+        eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure = null;
+        if (trajectory != null) {
+            pressure = manager.getPressureEngine().analyze(trajectory, context);
+            trajectory.recordPressure(pressure);
+        }
+
+        List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory, pressure);
 
         if (rawVariants.isEmpty()) {
             return Collections.emptyList();
@@ -211,7 +217,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
             }
 
-            winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit);
+            winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit, decision.getPressure());
 
             ResultSynthesizer synthesizer = new ResultSynthesizer();
             synthesizer.synthesize(List.of(selectedVariant), context);
@@ -267,8 +273,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
             context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", isSignificant);
 
-            IEvaluationContract evaluator = sessionContainer.getCapabilityRegistry().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
-            EvaluationResult result = evaluator.evaluate(context.getProjectRoot(), context, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
+            EvaluationResult result = manager.getFitnessEngine().evaluate(context.getProjectRoot(), context, decision.getPressure());
 
             if (result.isSuccess() || selectedVariant != null) {
                 String completedPhase = context.getOrchestrationState().getCurrentPhase();
@@ -303,7 +308,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
     }
 
-    private VariantExecutionContext evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context, String baseCommit) {
+    private VariantExecutionContext evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context, String baseCommit, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
         File tempDir = null;
         AuthorityController authority = context.getKernelContext().getAuthority();
         VariantExecutionContext variantExecContext = new VariantExecutionContext(variant.getId());
@@ -391,8 +396,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
             variant.setSuccess(success);
 
-            IEvaluationContract evaluator = sessionContainer.getCapabilityRegistry().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
-            EvaluationResult result = evaluator.evaluate(tempDir, variantContext, manager.getEvaluator() != null ? manager.getEvaluator().getMavenTool() : null);
+            EvaluationResult result = manager.getFitnessEngine().evaluate(tempDir, variantContext, pressure);
             variant.setSuccess(result.isSuccess());
             if (result.isSuccess()) {
                 manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);

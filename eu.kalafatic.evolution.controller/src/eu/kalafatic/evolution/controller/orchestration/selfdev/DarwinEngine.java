@@ -43,7 +43,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private final RejectionPatternAnalyzer rejectionAnalyzer;
     private final EvolutionaryPenaltyModel penaltyModel = new EvolutionaryPenaltyModel();
     private final DiversityPressureController diversityController = new DiversityPressureController();
-    private final eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine pressureEngine = new eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine();
+    private final eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine pressureEngine;
 
     private final PolicyResolver policyResolver = new PolicyResolver();
     private final PromptComposer promptComposer = new PromptComposer();
@@ -54,6 +54,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         this.context = context;
         this.memoryService = memoryService;
         this.stateProvider = stateProvider;
+        this.pressureEngine = getSessionContainer().getPressureEngine();
         this.rejectionAnalyzer = new RejectionPatternAnalyzer(getSessionContainer());
     }
 
@@ -123,7 +124,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         return "CRITICAL: Return a valid JSON object for the requested Darwin evolutionary trajectory.";
     }
 
-    public List<BranchVariant> generateVariants(String goal, StateSnapshot snapshot, FailureMemory failureMemory, Trajectory trajectory) throws Exception {
+    public List<BranchVariant> generateVariants(String goal, StateSnapshot snapshot, FailureMemory failureMemory, Trajectory trajectory, EvolutionaryPressureVector pressure) throws Exception {
         context.log("[DARWIN] Generating trajectory-driven variants for goal: " + goal);
 
         AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
@@ -224,13 +225,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         double eps = (epsObj instanceof Double) ? (Double) epsObj : 0.5;
         basePrompt += "\n[SYSTEM_DIRECTIVE] Evolution Pressure Scalar (EPS): " + String.format("%.2f", eps) + ".\n";
 
-        if (trajectory != null) {
-            EvolutionaryPressureVector currentPressure = pressureEngine.analyze(trajectory, context);
-            trajectory.recordPressure(currentPressure);
+        if (pressure != null) {
             basePrompt += "\n[EVOLUTIONARY_PRESSURE] Detected pressures: " +
-                          "Ambiguity=" + currentPressure.ambiguity + ", " +
-                          "Resilience=" + currentPressure.failureExposure + ", " +
-                          "Extensibility=" + currentPressure.extensibility + ".\n";
+                          "Ambiguity=" + pressure.ambiguity + ", " +
+                          "Resilience=" + pressure.failureExposure + ", " +
+                          "Extensibility=" + pressure.extensibility + ".\n";
             basePrompt += "[INSTRUCTION] Each mutation MUST specifically address at least one identified pressure.\n";
         }
 
@@ -326,7 +325,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         if (atomicAnalysis != null) {
             isAtomicRound = atomicAnalysis.isAtomic() && atomicAnalysis.getComplexityVector().determinismConfidence > 0.8;
         }
-        ranker.rank(uniqueVariants, isAtomicRound, currentIteration);
+        ranker.rank(uniqueVariants, isAtomicRound, currentIteration, pressure);
 
         // Manual override for test stability (only active in testMode)
         if (context.getMetadata().containsKey("testMode")) {

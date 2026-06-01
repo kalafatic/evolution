@@ -17,8 +17,14 @@ public class DefaultFitnessEngine implements FitnessEngine {
     }
 
     @Override
-    public EvaluationResult evaluate(File projectRoot, TaskContext context) throws Exception {
+    public EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) throws Exception {
         IEvaluationContract contract = sessionContainer.getCapabilityRegistry().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
+
+        // Inject pressure into context for evaluation if needed
+        if (pressure != null) {
+            context.getMetadata().put("evolutionaryPressure", pressure);
+        }
+
         return contract.evaluate(projectRoot, context, evaluator != null ? evaluator.getMavenTool() : null);
     }
 

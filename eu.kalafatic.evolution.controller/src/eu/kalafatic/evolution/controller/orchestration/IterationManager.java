@@ -129,6 +129,7 @@ public class IterationManager {
     private final RealityEngine realityEngine;
     private final AuthorityEngine authorityEngine;
     private final TrajectoryEngine trajectoryEngine;
+    private final EvolutionaryPressureEngine pressureEngine;
     private final GitEvolutionAdapter gitAdapter;
     private final ClarificationManager clarificationManager = new ClarificationManager();
     private final IntentExpansionEngine intentExpansionEngine;
@@ -162,6 +163,7 @@ public class IterationManager {
     public RealityEngine getRealityEngine() { return realityEngine; }
     public AuthorityEngine getAuthorityEngine() { return authorityEngine; }
     public TrajectoryEngine getTrajectoryEngine() { return trajectoryEngine; }
+    public EvolutionaryPressureEngine getPressureEngine() { return pressureEngine; }
     public GitEvolutionAdapter getGitAdapter() { return gitAdapter; }
     public IntentExpansionEngine getIntentExpansionEngine() { return intentExpansionEngine; }
     public ClarificationPlanner getClarificationPlanner() { return clarificationPlanner; }
@@ -244,6 +246,7 @@ public class IterationManager {
         this.realityEngine = new DefaultRealityEngine(context.getProjectRoot(), context);
         this.authorityEngine = new DefaultAuthorityEngine(context.getKernelContext().getAuthority());
         this.trajectoryEngine = new DefaultTrajectoryEngine(memoryService);
+        this.pressureEngine = sessionContainer.getPressureEngine();
         this.gitAdapter = new DefaultGitEvolutionAdapter(gitManager);
 
         context.getKernelContext().setGitManager(gitManager);
@@ -794,6 +797,12 @@ public class IterationManager {
 
         String iterId = currentIterationModel != null ? currentIterationModel.getId() : "default";
         eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = decide(iterId, variants, context, manualId);
+
+        // Propagate pressure to decision for consistent evaluation
+        Trajectory activeTrajectory = getActiveTrajectory(context);
+        if (activeTrajectory != null) {
+            decision.setPressure(pressureEngine.analyze(activeTrajectory, context));
+        }
 
         if ("force solution".equalsIgnoreCase(manualId)) {
             context.log("[KERNEL] Committing selected trajectory via Force Solution.");

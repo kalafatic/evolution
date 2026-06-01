@@ -38,6 +38,7 @@ public class SessionContext implements SessionContainer {
     private final BackpressureController backpressureController;
     private final OrchestrationStatusManager statusManager;
     private final RuntimeCoordinator runtimeCoordinator;
+    private final eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine pressureEngine;
 
     private final Map<String, IAgent> agentRegistry = new ConcurrentHashMap<>();
     private IterationMemoryService memoryService;
@@ -64,6 +65,7 @@ public class SessionContext implements SessionContainer {
         this.backpressureController = new BackpressureController();
         this.statusManager = new OrchestrationStatusManager();
         this.runtimeCoordinator = new RuntimeCoordinator(sessionId, this.eventBus, this.signalBus, this.workflowRegistry);
+        this.pressureEngine = new eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine();
 
         this.runtimeCoordinator.initialize();
 
@@ -168,6 +170,11 @@ public class SessionContext implements SessionContainer {
     @Override
     public Map<String, IAgent> getAgentRegistry() {
         return agentRegistry;
+    }
+
+    @Override
+    public eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine getPressureEngine() {
+        return pressureEngine;
     }
 
     public synchronized IterationMemoryService getMemoryService(File projectRoot) {
