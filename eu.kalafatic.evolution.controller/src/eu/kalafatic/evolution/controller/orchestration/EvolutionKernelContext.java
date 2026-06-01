@@ -14,7 +14,7 @@ import java.io.File;
  */
 public class EvolutionKernelContext {
     private final AuthorityController authority;
-    private final IterationMemoryService memoryService;
+    private IterationMemoryService memoryService;
     private final File projectRoot;
     private final RuntimeEventBus eventBus;
     private final SignalBus signalBus;
@@ -42,6 +42,10 @@ public class EvolutionKernelContext {
 
     public IterationMemoryService getMemoryService() {
         return memoryService;
+    }
+
+    public void setMemoryService(IterationMemoryService memoryService) {
+        this.memoryService = memoryService;
     }
 
     public File getProjectRoot() {

@@ -7,6 +7,7 @@ import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifa
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 
 /**
@@ -42,6 +43,18 @@ public class Checkpoint {
     private Map<String, List<String>> rejectedBranches;
     private List<Double> entropyHistory;
     private List<EvolutionDimension> dimensions;
+    private Map<String, String> rationales;
+    private List<String> convergenceReasoning;
+    private List<EvolutionaryPressureVector> globalPressureHistory;
+
+    // FailureMemory
+    private Map<String, Integer> failureFingerprints;
+    private Map<String, Integer> strategyFailures;
+    private Map<String, Double> mutationEffectiveness;
+
+    // IterationHistory
+    private List<IterationRecord> allRecords;
+    private Map<String, Integer> architectureHotspots;
 
     // TrajectoryMemory
     private Map<String, Trajectory> trajectories;
@@ -91,6 +104,30 @@ public class Checkpoint {
 
     public List<EvolutionDimension> getDimensions() { return dimensions; }
     public void setDimensions(List<EvolutionDimension> dimensions) { this.dimensions = dimensions; }
+
+    public Map<String, String> getRationales() { return rationales; }
+    public void setRationales(Map<String, String> rationales) { this.rationales = rationales; }
+
+    public List<String> getConvergenceReasoning() { return convergenceReasoning; }
+    public void setConvergenceReasoning(List<String> convergenceReasoning) { this.convergenceReasoning = convergenceReasoning; }
+
+    public List<EvolutionaryPressureVector> getGlobalPressureHistory() { return globalPressureHistory; }
+    public void setGlobalPressureHistory(List<EvolutionaryPressureVector> globalPressureHistory) { this.globalPressureHistory = globalPressureHistory; }
+
+    public Map<String, Integer> getFailureFingerprints() { return failureFingerprints; }
+    public void setFailureFingerprints(Map<String, Integer> failureFingerprints) { this.failureFingerprints = failureFingerprints; }
+
+    public Map<String, Integer> getStrategyFailures() { return strategyFailures; }
+    public void setStrategyFailures(Map<String, Integer> strategyFailures) { this.strategyFailures = strategyFailures; }
+
+    public Map<String, Double> getMutationEffectiveness() { return mutationEffectiveness; }
+    public void setMutationEffectiveness(Map<String, Double> mutationEffectiveness) { this.mutationEffectiveness = mutationEffectiveness; }
+
+    public List<IterationRecord> getAllRecords() { return allRecords; }
+    public void setAllRecords(List<IterationRecord> allRecords) { this.allRecords = allRecords; }
+
+    public Map<String, Integer> getArchitectureHotspots() { return architectureHotspots; }
+    public void setArchitectureHotspots(Map<String, Integer> architectureHotspots) { this.architectureHotspots = architectureHotspots; }
 
     public Map<String, Trajectory> getTrajectories() { return trajectories; }
     public void setTrajectories(Map<String, Trajectory> trajectories) { this.trajectories = trajectories; }

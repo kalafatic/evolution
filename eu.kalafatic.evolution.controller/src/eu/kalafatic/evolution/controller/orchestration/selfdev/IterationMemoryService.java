@@ -271,7 +271,7 @@ public class IterationMemoryService {
         File checkpointFile = new File(memoryDir, "checkpoint_" + sessionId + ".json");
         if (!checkpointFile.exists()) return null;
         try {
-            Checkpoint checkpoint = mapper.readValue(checkpointFile, Checkpoint.class);
+            Checkpoint checkpoint = mapper.readerFor(Checkpoint.class).readValue(checkpointFile);
             validateCheckpoint(checkpoint);
             return checkpoint;
         } catch (IOException e) {
