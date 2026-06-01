@@ -202,6 +202,11 @@ public class ActivationResolver implements ICapability {
                 t.setFitnessScore(score);
                 t.getFitnessHistory().add(score);
                 
+                // Track confidence stability
+                double confidence = variant.getScore(); // Or calculate from signals if needed
+                t.setConfidenceLevel(confidence);
+                t.getConfidenceHistory().add(confidence);
+
                 // Adaptive step forecasting: if fitness is high, extend projection
                 if (score > 0.8 && t.getProjectedSteps().size() < 3) {
                     t.getProjectedSteps().add("REINFORCE: " + variant.getStrategy());
