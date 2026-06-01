@@ -756,7 +756,7 @@ public class IterationManager {
 
             if (strategy == ClarificationPlanner.Strategy.BRANCH_PARALLEL) {
                 context.log("[KERNEL] Ambiguity detected but evolvable. Spawning parallel implementation branches.");
-                EvolutionPhase nextPhase = phaseMachine.next(phase, false, context.getOrchestrationState().getIterationCount());
+                EvolutionPhase nextPhase = evolutionaryTrajectoryEngine.determineNextPhase(phase, getActiveTrajectory(context), context);
                 state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
@@ -774,7 +774,7 @@ public class IterationManager {
                 return res;
             }
 
-            EvolutionPhase nextPhase = phaseMachine.next(phase, false, context.getOrchestrationState().getIterationCount());
+            EvolutionPhase nextPhase = evolutionaryTrajectoryEngine.determineNextPhase(phase, getActiveTrajectory(context), context);
             state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
 
             if (strategy != ClarificationPlanner.Strategy.AUTO_INFER || !context.isAutoApprove()) {
@@ -849,9 +849,8 @@ public class IterationManager {
 
         if (result.isSuccess()) {
             EvolutionPhase currentPhaseEnum = EvolutionPhase.fromString(state.getCurrentPhase());
-            boolean converged = darwinFlow.checkConvergence(variants, context);
 
-            EvolutionPhase nextPhase = phaseMachine.next(currentPhaseEnum, converged, state.getIterationCount());
+            EvolutionPhase nextPhase = evolutionaryTrajectoryEngine.determineNextPhase(currentPhaseEnum, getActiveTrajectory(context), context);
             state.setIterationCount(state.getIterationCount() + 1);
 
             if (nextPhase == currentPhaseEnum) {
@@ -1138,9 +1137,8 @@ public class IterationManager {
     }
 
     public void advanceEvolutionPhase(OrchestrationState state) {
-        EvolutionPhaseMachine phaseMachine = new EvolutionPhaseMachine();
         EvolutionPhase current = EvolutionPhase.fromString(state.getCurrentPhase());
-        EvolutionPhase next = phaseMachine.next(current, false, state.getIterationCount());
+        EvolutionPhase next = evolutionaryTrajectoryEngine.determineNextPhase(current, getActiveTrajectory(context), context);
         state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(next));
     }
 
