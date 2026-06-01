@@ -29,8 +29,15 @@ public class DarwinFitnessRanker {
      * Ranks variants by fitness score with optional atomic priority.
      */
     public void rank(List<JSONObject> variants, boolean isAtomicRound, int generation) {
+        rank(variants, isAtomicRound, generation, null);
+    }
+
+    /**
+     * Ranks variants by fitness score with pressure awareness.
+     */
+    public void rank(List<JSONObject> variants, boolean isAtomicRound, int generation, EvolutionaryPressureVector pressure) {
         for (JSONObject v : variants) {
-            double score = calculateFitness(v, generation);
+            double score = calculateFitness(v, generation, pressure);
             if (isAtomicRound && DarwinStrategyType.PROBABLE_SURVIVOR.name().equals(v.optString("strategy_type"))) {
                 score = Math.max(score, 0.95);
             }
@@ -41,8 +48,13 @@ public class DarwinFitnessRanker {
         variants.sort(Comparator.comparingDouble((JSONObject v) -> v.optDouble("score")).reversed());
     }
 
-    private double calculateFitness(JSONObject variant, int generation) {
+    private double calculateFitness(JSONObject variant, int generation, EvolutionaryPressureVector pressure) {
         double score = 0.4; // Base
+
+        if (pressure != null) {
+            // Adjust base score based on pressure intensity
+            score += (pressure.getTotalPressure() * 0.1);
+        }
 
         // 1. Structural Completeness
         if (variant.has("tradeoffs") && variant.optString("tradeoffs").length() > 20) score += 0.1;

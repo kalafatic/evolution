@@ -36,8 +36,8 @@ public class EvolutionaryTrajectoryEngine {
         EvolutionaryPressureVector pressure = pressureEngine.analyze(trajectory, context);
 
         // 2. Check Stability
-        if (stabilityAnalyzer.isConverged(trajectory, context)) {
-            context.log("[EVOLUTION] Trajectory " + trajectory.getTrajectoryId() + " has reached stability. Convergence confirmed.");
+        if (stabilityAnalyzer.isConverged(trajectory, context, pressure)) {
+            context.log("[EVOLUTION] Trajectory " + trajectory.getTrajectoryId() + " has reached stability under pressure. Convergence confirmed.");
             return true;
         }
 
@@ -55,7 +55,13 @@ public class EvolutionaryTrajectoryEngine {
      * Determines the next phase based on trajectory stability and progression rules.
      */
     public EvolutionPhase determineNextPhase(EvolutionPhase current, Trajectory trajectory, TaskContext context) {
-        if (stabilityAnalyzer.isConverged(trajectory, context)) {
+        // Compute pressure for informed decision making
+        EvolutionaryPressureVector pressure = null;
+        if (trajectory != null) {
+            pressure = pressureEngine.analyze(trajectory, context);
+        }
+
+        if (stabilityAnalyzer.isConverged(trajectory, context, pressure)) {
              // If converged, we can skip to FINAL_SYNTHESIS if not already there or further
              if (current.ordinal() < EvolutionPhase.FINAL_SYNTHESIS.ordinal()) {
                  context.log("[EVOLUTION] Stability reached. Accelerating to FINAL_SYNTHESIS.");
@@ -63,7 +69,7 @@ public class EvolutionaryTrajectoryEngine {
              }
         }
 
-        if (stabilityAnalyzer.shouldProgress(current, trajectory, context)) {
+        if (stabilityAnalyzer.shouldProgress(current, trajectory, context, pressure)) {
             EvolutionPhase next = phaseMachine.next(current);
             context.log("[EVOLUTION] Progression allowed. Next phase: " + next);
             return next;

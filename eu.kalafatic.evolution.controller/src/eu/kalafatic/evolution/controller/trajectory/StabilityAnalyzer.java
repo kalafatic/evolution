@@ -20,6 +20,10 @@ import eu.kalafatic.utils.semantic.Stability;
 public class StabilityAnalyzer {
 
     public double calculateStability(Trajectory trajectory, TaskContext context) {
+        return calculateStability(trajectory, context, null);
+    }
+
+    public double calculateStability(Trajectory trajectory, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
         if (trajectory == null) return 0.0;
         List<Double> history = trajectory.getFitnessHistory();
         if (history == null || history.size() < 2) return 0.0;
@@ -35,6 +39,10 @@ public class StabilityAnalyzer {
     }
 
     public boolean isConverged(Trajectory trajectory, TaskContext context) {
+        return isConverged(trajectory, context, null);
+    }
+
+    public boolean isConverged(Trajectory trajectory, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
         if (trajectory == null) return false;
 
         // Intent expansion never triggers convergence logic
@@ -64,6 +72,13 @@ public class StabilityAnalyzer {
      * Determines if the evolution should progress to the next phase or stay in the current one.
      */
     public boolean shouldProgress(EvolutionPhase current, Trajectory trajectory, TaskContext context) {
+        return shouldProgress(current, trajectory, context, null);
+    }
+
+    /**
+     * Determines if the evolution should progress to the next phase or stay in the current one with pressure awareness.
+     */
+    public boolean shouldProgress(EvolutionPhase current, Trajectory trajectory, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
         // Intent expansion always progresses once intent is clear (handled in IterationManager)
         if (current == EvolutionPhase.INTENT_EXPANSION) {
             context.log("[STABILITY] Intent expansion phase complete. Progressing.");
