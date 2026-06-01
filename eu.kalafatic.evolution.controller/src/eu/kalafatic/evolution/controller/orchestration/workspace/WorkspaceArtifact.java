@@ -19,7 +19,9 @@ public class WorkspaceArtifact {
     private double decayScore = 1.0;
     private double relevanceScore = 0.0;
 
-    public WorkspaceArtifact(String artifactId, String artifactType) {
+    @com.fasterxml.jackson.annotation.JsonCreator
+    public WorkspaceArtifact(@com.fasterxml.jackson.annotation.JsonProperty("artifactId") String artifactId,
+                             @com.fasterxml.jackson.annotation.JsonProperty("artifactType") String artifactType) {
         this.artifactId = artifactId;
         this.artifactType = artifactType;
         this.timestamp = System.currentTimeMillis();

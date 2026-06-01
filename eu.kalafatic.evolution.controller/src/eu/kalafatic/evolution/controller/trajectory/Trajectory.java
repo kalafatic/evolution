@@ -54,7 +54,9 @@ public class Trajectory {
         this("traj-" + System.currentTimeMillis(), "Autonomous Evolution");
     }
 
-    public Trajectory(String trajectoryId, String goalContext) {
+    @com.fasterxml.jackson.annotation.JsonCreator
+    public Trajectory(@com.fasterxml.jackson.annotation.JsonProperty("trajectoryId") String trajectoryId,
+                      @com.fasterxml.jackson.annotation.JsonProperty("goalContext") String goalContext) {
         this.trajectoryId = trajectoryId;
         this.goalContext = goalContext;
     }

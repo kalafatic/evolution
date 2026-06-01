@@ -39,4 +39,37 @@ public class EvolutionMemoryGraph {
 
     public void recordGlobalPressure(EvolutionaryPressureVector pressure) { globalPressureHistory.add(pressure); }
     public List<EvolutionaryPressureVector> getGlobalPressureHistory() { return globalPressureHistory; }
+
+    public synchronized void restore(
+            List<EvolutionDimension> dimensions,
+            Map<String, List<String>> rejectedBranches,
+            Map<String, String> rationales,
+            List<Double> entropyHistory,
+            List<String> convergenceReasoning,
+            List<EvolutionaryPressureVector> globalPressureHistory) {
+        if (dimensions != null) {
+            this.dimensions.clear();
+            this.dimensions.addAll(dimensions);
+        }
+        if (rejectedBranches != null) {
+            this.rejectedBranches.clear();
+            this.rejectedBranches.putAll(rejectedBranches);
+        }
+        if (rationales != null) {
+            this.rationales.clear();
+            this.rationales.putAll(rationales);
+        }
+        if (entropyHistory != null) {
+            this.entropyHistory.clear();
+            this.entropyHistory.addAll(entropyHistory);
+        }
+        if (convergenceReasoning != null) {
+            this.convergenceReasoning.clear();
+            this.convergenceReasoning.addAll(convergenceReasoning);
+        }
+        if (globalPressureHistory != null) {
+            this.globalPressureHistory.clear();
+            this.globalPressureHistory.addAll(globalPressureHistory);
+        }
+    }
 }

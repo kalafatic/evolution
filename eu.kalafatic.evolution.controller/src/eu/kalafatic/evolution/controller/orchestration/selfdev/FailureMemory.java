@@ -40,4 +40,30 @@ public class FailureMemory {
     public Map<String, Integer> getFingerprints() {
         return fingerprints;
     }
+
+    public Map<String, Integer> getStrategyFailures() {
+        return strategyFailures;
+    }
+
+    public Map<String, Double> getMutationEffectiveness() {
+        return mutationEffectiveness;
+    }
+
+    public synchronized void restore(
+            Map<String, Integer> fingerprints,
+            Map<String, Integer> strategyFailures,
+            Map<String, Double> mutationEffectiveness) {
+        if (fingerprints != null) {
+            this.fingerprints.clear();
+            this.fingerprints.putAll(fingerprints);
+        }
+        if (strategyFailures != null) {
+            this.strategyFailures.clear();
+            this.strategyFailures.putAll(strategyFailures);
+        }
+        if (mutationEffectiveness != null) {
+            this.mutationEffectiveness.clear();
+            this.mutationEffectiveness.putAll(mutationEffectiveness);
+        }
+    }
 }

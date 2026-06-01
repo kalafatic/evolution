@@ -1126,8 +1126,19 @@ public class IterationManager {
         cp.setArtifacts(context.getSemanticWorkspace().getAllArtifacts());
         cp.setCognitiveTraceNodes(state.getCognitiveTrace().getNodes());
         cp.setRejectedBranches(memoryService.getEvolutionGraph().getRejectedBranches());
+        cp.setRationales(memoryService.getEvolutionGraph().getRationales());
         cp.setEntropyHistory(memoryService.getEvolutionGraph().getEntropyHistory());
         cp.setDimensions(memoryService.getEvolutionGraph().getDimensions());
+        cp.setConvergenceReasoning(memoryService.getEvolutionGraph().getConvergenceReasoning());
+        cp.setGlobalPressureHistory(memoryService.getEvolutionGraph().getGlobalPressureHistory());
+
+        cp.setFailureFingerprints(memoryService.getFailureMemory().getFingerprints());
+        cp.setStrategyFailures(memoryService.getFailureMemory().getStrategyFailures());
+        cp.setMutationEffectiveness(memoryService.getFailureMemory().getMutationEffectiveness());
+
+        cp.setAllRecords(memoryService.getRecords());
+        cp.setArchitectureHotspots(memoryService.getArchitectureHotspots());
+
         cp.setTrajectories(context.getSemanticWorkspace().getTrajectoryMemory().getTrajectories());
 
         Object lastSnapshot = state.getMetadata().get("lastSnapshot");
@@ -1161,18 +1172,37 @@ public class IterationManager {
             cp.getCognitiveTraceNodes().forEach(node -> state.getCognitiveTrace().addNode(node));
         }
 
-        if (cp.getRejectedBranches() != null) {
-            cp.getRejectedBranches().forEach((dimId, branches) -> {
-                branches.forEach(b -> memoryService.getEvolutionGraph().recordRejection(dimId, b, "Restored from checkpoint"));
+        if (memoryService.getEvolutionGraph() != null) {
+            memoryService.getEvolutionGraph().restore(
+                    cp.getDimensions(),
+                    cp.getRejectedBranches(),
+                    cp.getRationales(),
+                    cp.getEntropyHistory(),
+                    cp.getConvergenceReasoning(),
+                    cp.getGlobalPressureHistory()
+            );
+        }
+
+        if (memoryService.getFailureMemory() != null) {
+            memoryService.getFailureMemory().restore(
+                    cp.getFailureFingerprints(),
+                    cp.getStrategyFailures(),
+                    cp.getMutationEffectiveness()
+            );
+        }
+
+        if (cp.getAllRecords() != null) {
+            cp.getAllRecords().forEach(r -> {
+                boolean exists = memoryService.getRecords().stream()
+                        .anyMatch(existing -> r.getBranchId() != null && r.getBranchId().equals(existing.getBranchId()));
+                if (!exists) {
+                    memoryService.getRecords().add(r);
+                }
             });
         }
 
-        if (cp.getEntropyHistory() != null) {
-            cp.getEntropyHistory().forEach(e -> memoryService.getEvolutionGraph().recordEntropy(e));
-        }
-
-        if (cp.getDimensions() != null) {
-            cp.getDimensions().forEach(d -> memoryService.getEvolutionGraph().recordDimension(d));
+        if (cp.getArchitectureHotspots() != null) {
+            memoryService.getArchitectureHotspots().putAll(cp.getArchitectureHotspots());
         }
 
         if (cp.getTrajectories() != null) {
