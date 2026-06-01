@@ -70,9 +70,7 @@ public class FeedbackGroup extends AEvoGroup {
                 setAutoStatus(level.getName() + " (auto)");
             } else {
                 setAutoStatus("");
-            }
-
-            updateVisibility(null);
+            }       
         } finally {
             isUpdating = false;
         }
@@ -185,53 +183,6 @@ public class FeedbackGroup extends AEvoGroup {
         });
     }
 
-    public void showSatisfaction(boolean visible) {
-        if (satisfactionBox == null || satisfactionBox.isDisposed()) return;
-        if (visible) {
-            updateVisibility(satisfactionBox);
-            page.expandFeedbackSection();
-        } else {
-            setVisibleSafe(satisfactionBox, false);
-            setExclude(satisfactionBox, true);
-            updateVisibility(null);
-        }
-    }
-
-    public void showApproval(String message) {
-        if (approvalBox == null || approvalBox.isDisposed()) return;
-        updateVisibility(approvalBox);
-        page.expandFeedbackSection();
-    }
-
-    public void hideApproval() {
-        if (approvalBox == null || approvalBox.isDisposed()) return;
-        setVisibleSafe(approvalBox, false);
-        setExclude(approvalBox, true);
-        updateVisibility(null);
-    }
-
-    public void showInput(String message) {
-        if (inputBox == null || inputBox.isDisposed()) return;
-        updateVisibility(inputBox);
-        inputText.setFocus();
-        page.expandFeedbackSection();
-    }
-
-    public void hideInput() {
-        if (inputBox == null || inputBox.isDisposed()) return;
-        setVisibleSafe(inputBox, false);
-        setExclude(inputBox, true);
-        updateVisibility(null);
-    }
-
-    private void setExclude(org.eclipse.swt.widgets.Control control, boolean exclude) {
-        if (control == null || control.isDisposed()) return;
-        Object layoutData = control.getLayoutData();
-        if (layoutData instanceof GridData) {
-            ((GridData) layoutData).exclude = exclude;
-        }
-    }
-
     private void updateLevelSelection(int selectedIndex) {
         isUpdating = true;
         for (int i = 0; i < levelButtons.length; i++) {
@@ -245,54 +196,4 @@ public class FeedbackGroup extends AEvoGroup {
             setTextSafe(autoStatusLabel, text);
         }
     }
-
-    private void updateVisibility(Composite visibleBox) {
-        if (group == null || group.isDisposed()) return;
-
-        if (visibleBox != null) {
-            // Hide others
-            if (satisfactionBox != null && satisfactionBox != visibleBox) {
-                setVisibleSafe(satisfactionBox, false);
-                setExclude(satisfactionBox, true);
-            }
-            if (approvalBox != null && approvalBox != visibleBox) {
-                setVisibleSafe(approvalBox, false);
-                setExclude(approvalBox, true);
-            }
-            if (inputBox != null && inputBox != visibleBox) {
-                setVisibleSafe(inputBox, false);
-                setExclude(inputBox, true);
-            }
-
-            // Show this one
-            setVisibleSafe(visibleBox, true);
-            setExclude(visibleBox, false);
-        }
-
-        // Group is always visible now as it contains Feedback Depth controls
-        setVisibleSafe(group, true);
-        setExclude(group, false);
-
-        if (group.getParent() instanceof Section) {
-            Section section = (Section) group.getParent();
-            setVisibleSafe(section, true);
-            Object layoutData = section.getLayoutData();
-            if (layoutData instanceof GridData) {
-                GridData gd = (GridData) layoutData;
-                if (gd.exclude) {
-                    gd.exclude = false;
-                    section.setLayoutData(gd);
-                }
-            }
-        }
-        page.updateScrolledContent();
-    }
-
-    public void updateVisibility() {
-        updateVisibility(null);
-    }
-
-    public boolean isSatisfactionVisible() { return satisfactionBox != null && !satisfactionBox.isDisposed() && satisfactionBox.getVisible(); }
-    public boolean isApprovalVisible() { return approvalBox != null && !approvalBox.isDisposed() && approvalBox.getVisible(); }
-    public boolean isInputVisible() { return inputBox != null && !inputBox.isDisposed() && inputBox.getVisible(); }
 }

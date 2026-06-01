@@ -620,13 +620,6 @@ public class AiChatPage extends AEvoPage {
 					chatGroup.setThinking(projection.isRunning() && !projection.isPaused());
 
 					updateModeDisplay();
-
-					// Re-check status if running
-					if (projection.isRunning()) {
-						if (projection.isWaitingForUser()) {
-							feedbackGroup.showApproval(projection.getLastWaitingMessage());
-						}
-					}
 					updateScrolledContent();
 				});
 	}
@@ -818,7 +811,7 @@ public class AiChatPage extends AEvoPage {
 			if (last.getEvaluationResult() == null) last.setEvaluationResult(OrchestrationFactory.eINSTANCE.createEvaluationResult());
 			last.getEvaluationResult().setUserSatisfaction(satisfaction); last.setComments(comments);
 			NeuronService.getInstance().train(orchestrator, comments, "coding", satisfaction);
-			editor.setDirty(true); feedbackGroup.showSatisfaction(false);
+			editor.setDirty(true); 
 			updateModeDisplay();
 			scheduleRefresh();
 			MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK); mb.setText("Thank You"); mb.setMessage("Your feedback has been recorded and will be used to improve the AI."); mb.open();
@@ -842,7 +835,6 @@ public class AiChatPage extends AEvoPage {
 		OrchestratorServiceImpl.getInstance().provideApproval(taskId, approved);
 
 		if (sessionId.equals(getCurrentSessionName())) {
-			feedbackGroup.hideApproval();
 			updateModeDisplay();
 			scheduleRefresh();
 		}
@@ -1045,7 +1037,6 @@ public class AiChatPage extends AEvoPage {
 		OrchestratorServiceImpl.getInstance().provideInput(taskId, input);
 
 		if (sessionId.equals(getCurrentSessionName())) {
-			feedbackGroup.hideInput();
 			updateModeDisplay();
 			scheduleRefresh();
 		}
