@@ -44,4 +44,33 @@ public interface OrchestratorService {
      * @param request The task request.
      */
     void submit(String sessionId, TaskRequest request);
+
+    /**
+     * Updates the configuration for a session.
+     * @param sessionId The session ID.
+     * @param settings The settings to update.
+     */
+    void updateConfiguration(String sessionId, java.util.Map<String, Object> settings);
+
+    /**
+     * Provides input for a waiting task.
+     * @param taskId The task ID (usually sessionId).
+     * @param input The user input.
+     */
+    void provideInput(String taskId, String input);
+
+    /**
+     * Provides approval for a waiting task.
+     * @param taskId The task ID (usually sessionId).
+     * @param approved True if approved.
+     */
+    void provideApproval(String taskId, boolean approved);
+
+    /**
+     * Resumes a specific step in a session.
+     * @param sessionId The session ID.
+     * @param stepId The step ID.
+     * @param status The target status for resumption.
+     */
+    void resumeStep(String sessionId, String stepId, eu.kalafatic.evolution.controller.workflow.WorkflowStatus status);
 }

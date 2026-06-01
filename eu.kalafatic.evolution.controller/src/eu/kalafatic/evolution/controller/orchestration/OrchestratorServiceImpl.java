@@ -177,6 +177,73 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     }
 
     @Override
+    public void updateConfiguration(String sessionId, java.util.Map<String, Object> settings) {
+        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        Orchestrator model = (this.orchestrator != null) ? this.orchestrator : null;
+
+        if (session instanceof SessionContext) {
+            TaskContext context = ((SessionContext)session).getTaskContext();
+            if (context != null) {
+                model = context.getOrchestrator();
+            }
+        }
+
+        if (model == null) return;
+
+        boolean changed = false;
+        if (settings.containsKey("aiMode")) {
+            model.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get((Integer)settings.get("aiMode")));
+            changed = true;
+        }
+        if (settings.containsKey("localModel")) {
+            model.setLocalModel((String)settings.get("localModel"));
+            if (model.getOllama() != null) model.getOllama().setModel((String)settings.get("localModel"));
+            changed = true;
+        }
+        if (settings.containsKey("remoteModel")) {
+            model.setRemoteModel((String)settings.get("remoteModel"));
+            changed = true;
+        }
+        if (settings.containsKey("darwinMode")) {
+            model.setDarwinMode((Boolean)settings.get("darwinMode"));
+            changed = true;
+        }
+
+        // Handle ChatSession settings if sessionId matches
+        if (model.getAiChat() != null) {
+            final String sid = sessionId;
+            model.getAiChat().getSessions().stream()
+                .filter(s -> sid.equals(s.getId()))
+                .findFirst()
+                .ifPresent(s -> {
+                    if (settings.containsKey("iterativeMode")) s.setIterativeMode((Boolean)settings.get("iterativeMode"));
+                    if (settings.containsKey("selfIterativeMode")) s.setSelfIterativeMode((Boolean)settings.get("selfIterativeMode"));
+                    if (settings.containsKey("darwinMode")) s.setDarwinMode((Boolean)settings.get("darwinMode"));
+                    if (settings.containsKey("gitAutomation")) s.setGitAutomation((Boolean)settings.get("gitAutomation"));
+                    if (settings.containsKey("stepMode")) s.setStepMode((Boolean)settings.get("stepMode"));
+                    if (settings.containsKey("maxIterations")) s.setMaxIterations((Integer)settings.get("maxIterations"));
+                });
+
+            PromptInstructions pi = model.getAiChat().getPromptInstructions();
+            if (pi != null) {
+                if (settings.containsKey("iterativeMode")) pi.setIterativeMode((Boolean)settings.get("iterativeMode"));
+                if (settings.containsKey("selfIterativeMode")) pi.setSelfIterativeMode((Boolean)settings.get("selfIterativeMode"));
+                if (settings.containsKey("gitAutomation")) pi.setGitAutomation((Boolean)settings.get("gitAutomation"));
+                if (settings.containsKey("stepMode")) pi.setStepMode((Boolean)settings.get("stepMode"));
+                if (settings.containsKey("maxIterations")) pi.setPreferredMaxIterations((Integer)settings.get("maxIterations"));
+                if (settings.containsKey("autoApprove")) pi.setAutoApprove((Boolean)settings.get("autoApprove"));
+            }
+        }
+
+        if (changed || !settings.isEmpty()) {
+            RuntimeEventBus bus = (session != null) ? session.getEventBus() : null;
+            if (bus != null) {
+                bus.publish(new RuntimeEvent(RuntimeEventType.CONFIGURATION_UPDATED, sessionId, "OrchestratorService", settings));
+            }
+        }
+    }
+
+    @Override
     public void submit(String sessionId, TaskRequest request) {
         final SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
         final RuntimeEventBus bus = session.getEventBus();
@@ -367,6 +434,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         }
     }
 
+    @Override
     public void provideApproval(String taskId, boolean approved) {
         SessionContainer session = SessionManager.getInstance().getSession(taskId);
         TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
@@ -381,6 +449,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         }
     }
 
+    @Override
     public void provideInput(String taskId, String input) {
         SessionContainer session = SessionManager.getInstance().getSession(taskId);
         TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
@@ -392,6 +461,14 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 result.setStatus(TaskResult.Status.RUNNING);
                 result.setWaitingMessage(null);
             }
+        }
+    }
+
+    @Override
+    public void resumeStep(String sessionId, String stepId, eu.kalafatic.evolution.controller.workflow.WorkflowStatus status) {
+        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        if (session instanceof SessionContext) {
+            ((SessionContext)session).getStepModeController().resumeStep(stepId, status);
         }
     }
 

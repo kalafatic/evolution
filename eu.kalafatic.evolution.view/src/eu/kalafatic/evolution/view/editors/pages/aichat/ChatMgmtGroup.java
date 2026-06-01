@@ -165,9 +165,9 @@ public class ChatMgmtGroup extends AEvoGroup {
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.updateModelSetting(orch -> {
-                    orch.setAiMode(AiMode.get(aiModeCombo.getSelectionIndex()));
-                });
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("aiMode", aiModeCombo.getSelectionIndex());
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
                 page.updateModeDisplay();
             }
@@ -176,49 +176,27 @@ public class ChatMgmtGroup extends AEvoGroup {
         aiRemoteCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.updateModelSetting(orch -> {
-                    String providerName = aiRemoteCombo.getText();
-                    orch.setRemoteModel(providerName);
-
-                    ProviderConfig config = AiProviders.PROVIDERS.get(providerName);
-                    if (config != null) {
-                        orch.setOpenAiModel(config.getDefaultModel());
-                    }
-
-                    eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved = eu.kalafatic.evolution.controller.security.TokenSecurityService
-                            .getInstance().resolve(orch, providerName);
-                    if (resolved != null) {
-                        if (orch.getAiChat() == null) {
-                            orch.setAiChat(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAiChat());
-                        }
-                        orch.getAiChat().setUrl(resolved.url != null ? resolved.url : "");
-                        eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
-                            .updateToken(orch, providerName, resolved.token != null ? resolved.token : "");
-                    }
-                });
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("remoteModel", aiRemoteCombo.getText());
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
                 page.updateModeDisplay();
             }
         });
 
         remoteTokenText.addModifyListener(e -> {
-            if (orchestrator != null && !isUpdating) {
-                page.updateModelSetting(orch -> {
-                    String providerName = aiRemoteCombo.getText();
-                    eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
-                        .updateToken(orch, providerName, remoteTokenText.getText());
-                });
+            if (!isUpdating) {
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("token_" + aiRemoteCombo.getText(), remoteTokenText.getText());
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
         });
         remoteUrlText.addModifyListener(e -> {
-            if (orchestrator != null && !isUpdating) {
-                page.updateModelSetting(orch -> {
-                    if (orch.getAiChat() == null) {
-                        orch.setAiChat(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAiChat());
-                    }
-                    orch.getAiChat().setUrl(remoteUrlText.getText());
-                });
+            if (!isUpdating) {
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("url_" + aiRemoteCombo.getText(), remoteUrlText.getText());
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
         });
@@ -229,15 +207,10 @@ public class ChatMgmtGroup extends AEvoGroup {
         // selection listener
         combo.addListener(SWT.Selection, e -> {
             int index = combo.getSelectionIndex();
-            if (index >= 0 && orchestrator != null) {
-                page.updateModelSetting(orch -> {
-                    String model = combo.getText();
-                    orch.setLocalModel(model);
-                    orch.setHybridModel(model);
-                    if (orch.getOllama() != null) {
-                        orch.getOllama().setModel(model);
-                    }
-                });
+            if (index >= 0) {
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("localModel", combo.getText());
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
                 page.updateModeDisplay();
                 page.updateStatusInfo();
@@ -249,10 +222,14 @@ public class ChatMgmtGroup extends AEvoGroup {
     private boolean isUpdating = false;
 
     public void load(){
-        if (orchestrator != null && !isUpdating) {
+        if (!isUpdating) {
             isUpdating = true;
             try {
-                AiMode mode = orchestrator.getAiMode();
+                eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(page.getCurrentSessionName());
+                java.util.Map<String, Object> config = projection.getConfiguration();
+
+                int modeVal = (int) config.getOrDefault("aiMode", orchestrator != null ? orchestrator.getAiMode().getValue() : 0);
+                AiMode mode = AiMode.get(modeVal);
                 if (aiModeCombo.getSelectionIndex() != mode.getValue()) {
                     aiModeCombo.select(mode.getValue());
                 }
@@ -269,19 +246,16 @@ public class ChatMgmtGroup extends AEvoGroup {
                     }
                 }
 
-                String remoteModel = orchestrator.getRemoteModel();
-                if (remoteModel == null || remoteModel.isEmpty()) {
-                    remoteModel = "deepseek";
-                }
+                String remoteModel = (String) config.getOrDefault("remoteModel", orchestrator != null ? orchestrator.getRemoteModel() : "deepseek");
                 if (remoteModel != null) {
                     selectSafe(aiRemoteCombo, remoteModel);
                 }
 
-                eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved = eu.kalafatic.evolution.controller.security.TokenSecurityService
-                        .getInstance().resolve(orchestrator, aiRemoteCombo.getText());
+                String token = (String) config.getOrDefault("token_" + aiRemoteCombo.getText(), "");
+                String url = (String) config.getOrDefault("url_" + aiRemoteCombo.getText(), "");
 
-                setTextSafe(remoteTokenText, (resolved != null && resolved.token != null) ? resolved.token : "");
-                setTextSafe(remoteUrlText, (resolved != null && resolved.url != null) ? resolved.url : "");
+                setTextSafe(remoteTokenText, token);
+                setTextSafe(remoteUrlText, url);
 
                 // 2. Populate Model combo
                 if (localModelCombo != null) {
@@ -306,12 +280,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                         }
                     }
 
-                    String model = orchestrator.getLocalModel();
-
-                    if (model == null || model.isEmpty()) {
-                        if (orchestrator.getOllama() != null)
-                            model = orchestrator.getOllama().getModel();
-                    }
+                    String model = (String) config.getOrDefault("localModel", orchestrator != null ? orchestrator.getLocalModel() : "");
                     if (model != null) {
                         selectSafe(localModelCombo, model);
                     }

@@ -18,13 +18,15 @@ public class RuntimeProjection {
     private final List<RuntimeEvent> events;
     private final String lastWaitingMessage;
     private final boolean waitingForUser;
+    private final java.util.Map<String, Object> configuration;
 
     public RuntimeProjection(String sessionId) {
-        this(sessionId, false, false, "INITIALIZING...", 0.0, Collections.emptyList(), null, false);
+        this(sessionId, false, false, "INITIALIZING...", 0.0, Collections.emptyList(), null, false, Collections.emptyMap());
     }
 
     private RuntimeProjection(String sessionId, boolean running, boolean paused, String status, double progress,
-                             List<RuntimeEvent> events, String lastWaitingMessage, boolean waitingForUser) {
+                             List<RuntimeEvent> events, String lastWaitingMessage, boolean waitingForUser,
+                             java.util.Map<String, Object> configuration) {
         this.sessionId = sessionId;
         this.running = running;
         this.paused = paused;
@@ -33,6 +35,7 @@ public class RuntimeProjection {
         this.events = Collections.unmodifiableList(new ArrayList<>(events));
         this.lastWaitingMessage = lastWaitingMessage;
         this.waitingForUser = waitingForUser;
+        this.configuration = Collections.unmodifiableMap(new java.util.HashMap<>(configuration));
     }
 
     public RuntimeProjection withEvent(RuntimeEvent event) {
@@ -45,6 +48,7 @@ public class RuntimeProjection {
         double newProgress = this.progress;
         String newWaitingMessage = this.lastWaitingMessage;
         boolean newWaitingForUser = this.waitingForUser;
+        java.util.Map<String, Object> newConfiguration = new java.util.HashMap<>(this.configuration);
 
         switch (event.getType()) {
             case KERNEL_STARTED:
@@ -75,11 +79,18 @@ public class RuntimeProjection {
                 newWaitingForUser = false;
                 newStatus = "RESUMED";
                 break;
+            case CONFIGURATION_UPDATED:
+                if (event.getPayload() instanceof java.util.Map) {
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<String, Object> settings = (java.util.Map<String, Object>) event.getPayload();
+                    newConfiguration.putAll(settings);
+                }
+                break;
             default:
                 break;
         }
 
-        return new RuntimeProjection(sessionId, newRunning, newPaused, newStatus, newProgress, newEvents, newWaitingMessage, newWaitingForUser);
+        return new RuntimeProjection(sessionId, newRunning, newPaused, newStatus, newProgress, newEvents, newWaitingMessage, newWaitingForUser, newConfiguration);
     }
 
     public String getSessionId() { return sessionId; }
@@ -90,4 +101,5 @@ public class RuntimeProjection {
     public List<RuntimeEvent> getEvents() { return events; }
     public String getLastWaitingMessage() { return lastWaitingMessage; }
     public boolean isWaitingForUser() { return waitingForUser; }
+    public java.util.Map<String, Object> getConfiguration() { return configuration; }
 }
