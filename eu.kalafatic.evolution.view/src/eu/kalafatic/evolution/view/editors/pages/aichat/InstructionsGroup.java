@@ -175,22 +175,13 @@ public class InstructionsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 boolean sel = selfIterativeCheck.getSelection();
-                page.updateSessionSetting(s -> {
-                    s.setSelfIterativeMode(sel);
-                    if (sel) {
-                        s.setIterativeMode(true);
-                        s.setDarwinMode(true);
-                        if (s.getMaxIterations() <= 1) s.setMaxIterations(4);
-                    }
-                });
-                page.updatePromptInstructions(pi -> {
-                    pi.setSelfIterativeMode(sel);
-                    if (sel) {
-                        pi.setIterativeMode(true);
-                        orchestrator.setDarwinMode(true);
-                        if (pi.getPreferredMaxIterations() <= 1) pi.setPreferredMaxIterations(4);
-                    }
-                });
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("selfIterativeMode", sel);
+                if (sel) {
+                    settings.put("iterativeMode", true);
+                    settings.put("darwinMode", true);
+                }
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
         });
@@ -202,14 +193,9 @@ public class InstructionsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 boolean sel = darwinCheck.getSelection();
-                page.updateModelSetting(orch -> orch.setDarwinMode(sel));
-                page.updateSessionSetting(s -> {
-                    s.setDarwinMode(sel);
-                    if (sel && s.getMaxIterations() <= 1) s.setMaxIterations(4);
-                });
-                page.updatePromptInstructions(pi -> {
-                    if (sel && pi.getPreferredMaxIterations() <= 1) pi.setPreferredMaxIterations(4);
-                });
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("darwinMode", sel);
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
         });
@@ -219,7 +205,9 @@ public class InstructionsGroup extends AEvoGroup {
         autoApproveCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.updatePromptInstructions(pi -> pi.setAutoApprove(autoApproveCheck.getSelection()));
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("autoApprove", autoApproveCheck.getSelection());
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
         });
@@ -229,9 +217,9 @@ public class InstructionsGroup extends AEvoGroup {
         gitAutomationCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                boolean sel = gitAutomationCheck.getSelection();
-                page.updateSessionSetting(s -> s.setGitAutomation(sel));
-                page.updatePromptInstructions(pi -> pi.setGitAutomation(sel));
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("gitAutomation", gitAutomationCheck.getSelection());
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
         });
@@ -241,9 +229,9 @@ public class InstructionsGroup extends AEvoGroup {
         stepModeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                boolean sel = stepModeCheck.getSelection();
-                page.updateSessionSetting(s -> s.setStepMode(sel));
-                page.updatePromptInstructions(pi -> pi.setStepMode(sel));
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("stepMode", stepModeCheck.getSelection());
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
         });
@@ -254,9 +242,9 @@ public class InstructionsGroup extends AEvoGroup {
         iterativeCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                boolean sel = iterativeCheck.getSelection();
-                page.updateSessionSetting(s -> s.setIterativeMode(sel));
-                page.updatePromptInstructions(pi -> pi.setIterativeMode(sel));
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("iterativeMode", iterativeCheck.getSelection());
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
         });
@@ -270,9 +258,9 @@ public class InstructionsGroup extends AEvoGroup {
         maxIterationsSpinner.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                int val = maxIterationsSpinner.getSelection();
-                page.updateSessionSetting(s -> s.setMaxIterations(val));
-                page.updatePromptInstructions(pi -> pi.setPreferredMaxIterations(val));
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("maxIterations", maxIterationsSpinner.getSelection());
+                page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
         });
@@ -309,34 +297,22 @@ public class InstructionsGroup extends AEvoGroup {
 
     @Override
     protected void refreshUI() {
-        if (orchestrator != null && !isUpdating) {
+        if (!isUpdating) {
             isUpdating = true;
             try {
-                eu.kalafatic.evolution.model.orchestration.ChatSession thread = page.getCurrentSession();
-                if (thread != null) {
-                    setSelectionSafe(iterativeCheck, thread.isIterativeMode());
-                    setSelectionSafe(selfIterativeCheck, thread.isSelfIterativeMode());
-                    setSelectionSafe(darwinCheck, thread.isDarwinMode());
-                    setSelectionSafe(gitAutomationCheck, thread.isGitAutomation());
-                    if (maxIterationsSpinner.getSelection() != thread.getMaxIterations()) {
-                        maxIterationsSpinner.setSelection(thread.getMaxIterations());
-                    }
-                    setSelectionSafe(stepModeCheck, thread.isStepMode());
-                } else {
-                    setSelectionSafe(darwinCheck, orchestrator.isDarwinMode());
-                    if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
-                        PromptInstructions promptInstructions = orchestrator.getAiChat().getPromptInstructions();
-                        setSelectionSafe(iterativeCheck, promptInstructions.isIterativeMode());
-                        setSelectionSafe(selfIterativeCheck, promptInstructions.isSelfIterativeMode());
-                        setSelectionSafe(gitAutomationCheck, promptInstructions.isGitAutomation());
-                        if (maxIterationsSpinner.getSelection() != promptInstructions.getPreferredMaxIterations()) {
-                            maxIterationsSpinner.setSelection(promptInstructions.getPreferredMaxIterations());
-                        }
-                        setSelectionSafe(stepModeCheck, promptInstructions.isStepMode());
-                    }
-                }
-                if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
-                    setSelectionSafe(autoApproveCheck, orchestrator.getAiChat().getPromptInstructions().isAutoApprove());
+                eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(page.getCurrentSessionName());
+                java.util.Map<String, Object> config = projection.getConfiguration();
+
+                setSelectionSafe(iterativeCheck, (Boolean) config.getOrDefault("iterativeMode", false));
+                setSelectionSafe(selfIterativeCheck, (Boolean) config.getOrDefault("selfIterativeMode", false));
+                setSelectionSafe(darwinCheck, (Boolean) config.getOrDefault("darwinMode", false));
+                setSelectionSafe(gitAutomationCheck, (Boolean) config.getOrDefault("gitAutomation", false));
+                setSelectionSafe(stepModeCheck, (Boolean) config.getOrDefault("stepMode", false));
+                setSelectionSafe(autoApproveCheck, (Boolean) config.getOrDefault("autoApprove", false));
+
+                int maxIter = (Integer) config.getOrDefault("maxIterations", 1);
+                if (maxIterationsSpinner.getSelection() != maxIter) {
+                    maxIterationsSpinner.setSelection(maxIter);
                 }
             } finally {
                 isUpdating = false;

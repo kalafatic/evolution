@@ -29,12 +29,16 @@ import org.eclipse.ui.IFileEditorInput;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl;
+import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevBootstrapController;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
+import eu.kalafatic.evolution.view.projection.ProjectionService;
+import eu.kalafatic.evolution.view.projection.RuntimeProjection;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -89,18 +93,15 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
 
-        // Use the event bus from the active session if available
-        String sid = (orchestrator != null && orchestrator.getSelfDevSession() != null) ?
-            orchestrator.getSelfDevSession().getId() : "Default";
-        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sid);
-        if (session != null) {
-            session.getEventBus().subscribe(this);
-        }
-
         initImageRegistry();
         initMemoryService();
         createControl();
-        startPolling();
+
+        ProjectionService.getInstance().subscribe(p -> {
+            if (p.getSessionId().equals(getCurrentSessionName())) {
+                scheduleRefresh();
+            }
+        });
     }
 
     private void initImageRegistry() {
@@ -295,17 +296,22 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         return viewerColumn;
     }
 
+    private String getCurrentSessionName() {
+        return (orchestrator != null && orchestrator.getSelfDevSession() != null) ?
+                orchestrator.getSelfDevSession().getId() : "Default";
+    }
+
     private void handleSelfDevAction(SelfDevRow row, int columnIndex) {
         if (columnIndex == 0) { // Action
             if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
-                if (bootstrapController != null && bootstrapController.isRunning()) {
-                    bootstrapController.stopBootstrap();
-                } else if (bootstrapController != null) {
-                    try {
-                        bootstrapController.startBootstrap();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+                if (projection.isRunning()) {
+                    OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
+                } else {
+                    TaskRequest request = new TaskRequest("Start Self-Dev Bootstrap", projectRoot);
+                    request.getContext().put("orchestrator", orchestrator);
+                    request.getContext().put("sessionId", getCurrentSessionName());
+                    OrchestratorServiceImpl.getInstance().submit(getCurrentSessionName(), request);
                 }
             } else {
                 if ("running".equals(row.status)) {
@@ -339,40 +345,6 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         }
     }
 
-    private void startPolling() {
-        pollTimer = new java.util.Timer(true);
-        pollTimer.scheduleAtFixedRate(new java.util.TimerTask() {
-            @Override
-            public void run() {
-                if (isDisposed()) {
-                    pollTimer.cancel();
-                    return;
-                }
-
-                boolean memoryChanged = (memoryService != null) && memoryService.refresh();
-                JSONObject supervisorStatus = bootstrapController != null ? bootstrapController.getStatus() : null;
-                String statusStr = supervisorStatus != null ? supervisorStatus.toString() : "";
-
-                Display.getDefault().asyncExec(() -> {
-                    if (!isDisposed()) {
-                        boolean statusChanged = !statusStr.equals(lastSupervisorStatusStr);
-                        if (statusChanged) {
-                            updateSelfDevStatus(supervisorStatus);
-                            lastSupervisorStatusStr = statusStr;
-                        }
-
-                        if (statusChanged || memoryChanged || (orchestrator != null && orchestrator.eResource() != null && orchestrator.eResource().isModified())) {
-                            updateSessionStatus();
-                            syncWorkflowSession();
-                            if (archViz != null) archViz.scheduleRefresh();
-                            if (workflowGroup != null) workflowGroup.scheduleRefresh();
-                            refreshBrowser();
-                        }
-                    }
-                });
-            }
-        }, 2000, 2000);
-    }
 
     private void updateSelfDevStatus(JSONObject status) {
         String phase = (bootstrapController != null && bootstrapController.isRunning()) ? "bootstrapping" : "ready";
@@ -413,7 +385,12 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
 
     @Override
     protected void refreshUI() {
-        updateSessionStatus();
+        RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+        updateRowStatus(SelfDevRow.SELF_DEV_LOOP, projection.getStatus().toLowerCase());
+
+        sessionStatusLabel.setText("Session: " + projection.getStatus());
+        sessionProgressLabel.setText(String.format("Progress: %.0f%%", projection.getProgress() * 100));
+
         syncWorkflowSession();
         if (supervisorGroup != null) supervisorGroup.refreshUI();
         if (archViz != null) archViz.scheduleRefresh();

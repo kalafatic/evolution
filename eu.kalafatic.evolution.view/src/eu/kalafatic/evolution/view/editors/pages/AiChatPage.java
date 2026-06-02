@@ -128,8 +128,9 @@ public class AiChatPage extends AEvoPage {
 						Display.getDefault().asyncExec(() -> {
 							String token = requestToken(provider);
 							if (token != null) {
-								eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()
-									.updateToken(orchestrator, provider, token);
+								java.util.Map<String, Object> settings = new java.util.HashMap<>();
+								settings.put("token_" + provider, token);
+								OrchestratorServiceImpl.getInstance().updateConfiguration(getCurrentSessionName(), settings);
 								future.complete(token);
 							} else {
 								future.completeExceptionally(new Exception("Token request cancelled by user."));
@@ -159,7 +160,6 @@ public class AiChatPage extends AEvoPage {
 
 	public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, editor, orchestrator);
-		OrchestratorServiceImpl.getInstance().setOrchestrator(orchestrator);
 		initResources();
 		this.outputController = ConversationOutputController.getInstance();
 		this.outputController.subscribe(messageSubscriber);
@@ -337,14 +337,15 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void updateModeDisplay() {
-		if (orchestrator == null || modeIndicatorLabel == null || modeIndicatorLabel.isDisposed()) return;
-		AiMode mode = orchestrator.getAiMode();
-		String modelName = "UNKNOWN";
-		if (mode == AiMode.LOCAL) {
-			modelName = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "NONE";
-		} else {
-			modelName = orchestrator.getRemoteModel();
-		}
+		if (modeIndicatorLabel == null || modeIndicatorLabel.isDisposed()) return;
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+		java.util.Map<String, Object> config = projection.getConfiguration();
+
+		int modeVal = (int) config.getOrDefault("aiMode", orchestrator != null ? orchestrator.getAiMode().getValue() : 0);
+		AiMode mode = AiMode.get(modeVal);
+
+		String modelName = (String) config.getOrDefault(mode == AiMode.LOCAL ? "localModel" : "remoteModel", "UNKNOWN");
+
 		if (modelName == null) modelName = "NOT SET";
 
 		setTextSafe(modeIndicatorLabel, mode.getName().toUpperCase() + " MODE ACTIVE - " + modelName.toUpperCase());
@@ -413,36 +414,21 @@ public class AiChatPage extends AEvoPage {
 		instructionsGroup.resetBackground();
 		String request = instructionsGroup.getRequest();
 		String currentSessionId = getCurrentSessionName();
-		eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(currentSessionId);
 		RuntimeProjection projection = ProjectionService.getInstance().getProjection(currentSessionId);
 
 		// Check for active steps in Step Mode - allow resumption even if command is already running
+		eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(currentSessionId);
 		WorkflowStep activeStep = (session != null) ? session.getWorkflowRegistry().getActiveStepForSession(currentSessionId) : null;
 		if (activeStep != null && activeStep.getStatus() == WorkflowStatus.WAITING_USER) {
 			String lower = request.toLowerCase().trim();
-			if (lower.equals("retry")) {
-				instructionsGroup.setOrchestrationRunning(true);
-				if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
-				    ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getStepModeController().resumeStep(activeStep.getId(), WorkflowStatus.RETRY);
-				}
-				instructionsGroup.setRequest("");
-				return;
-			} else if (lower.equals("skip")) {
-				instructionsGroup.setOrchestrationRunning(true);
-				if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
-				    ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getStepModeController().resumeStep(activeStep.getId(), WorkflowStatus.SKIPPED);
-				}
-				instructionsGroup.setRequest("");
-				return;
-			} else {
-				// Treat any other input (empty, "next", or random comments) as "CONTINUE"
-				instructionsGroup.setOrchestrationRunning(true);
-				if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
-				    ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getStepModeController().resumeStep(activeStep.getId(), WorkflowStatus.COMPLETED);
-				}
-				instructionsGroup.setRequest("");
-				return;
-			}
+			WorkflowStatus targetStatus = WorkflowStatus.COMPLETED;
+			if (lower.equals("retry")) targetStatus = WorkflowStatus.RETRY;
+			else if (lower.equals("skip")) targetStatus = WorkflowStatus.SKIPPED;
+
+			instructionsGroup.setOrchestrationRunning(true);
+			OrchestratorServiceImpl.getInstance().resumeStep(currentSessionId, activeStep.getId(), targetStatus);
+			instructionsGroup.setRequest("");
+			return;
 		}
 
 		// Check if we are waiting for user input or approval and unblock via chat if possible
@@ -502,20 +488,14 @@ public class AiChatPage extends AEvoPage {
 
 		// Start Self-Dev Supervisor if (Self-Development OR Darwin mode is enabled) AND it's NOT a simple chat.
 		// Darwin is now the unified basic flow for all implementation requests.
-		if (!isSimpleChat && orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
-		    (orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode() || orchestrator.isDarwinMode())) {
+		boolean isSelfDev = (boolean) projection.getConfiguration().getOrDefault("selfIterativeMode", orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode());
+		boolean isDarwin = (boolean) projection.getConfiguration().getOrDefault("darwinMode", orchestrator != null && orchestrator.isDarwinMode());
+
+		if (!isSimpleChat && (isSelfDev || isDarwin)) {
 			startSelfDevAction(request);
 			return;
 		}
 		
-		if (orchestrator != null) {
-			if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
-			if (orchestrator.getLlm() == null) orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
-			String category = getCategory();
-			NeuronService.getInstance().train(orchestrator, request, category, 3);
-			editor.setDirty(true);
-			if (orchestrator.getId() == null || orchestrator.getId().isEmpty()) orchestrator.setId("chat-" + System.currentTimeMillis());
-		}
 		if (assistAdapter != null) assistAdapter.closeProposalPopup();
 
 		String sessionId = getCurrentSessionName();
@@ -731,26 +711,20 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void updateStatusInfo() {
-		if (orchestrator != null && orchestrator.getOllama() != null) {
-			String url = orchestrator.getOllama().getUrl(); String model = orchestrator.getOllama().getModel();
-			ollamaService = OllamaManager.getInstance().getService(url);
-			float temp = orchestrator.getLlm() != null ? orchestrator.getLlm().getTemperature() : 0.7f;
-			ollamaService.setTemperature(temp);
-			if (model != null) ollamaService.setModel(model);
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+		String model = (String) projection.getConfiguration().getOrDefault("localModel", orchestrator != null ? orchestrator.getLocalModel() : "Not Configured");
+		String url = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
 
-			systemStatusGroup.updateModelStatus(model != null ? model : "Not Configured");
-			new Thread(() -> {
-				boolean isOnline = ollamaService.ping();
-				Display.getDefault().asyncExec(() -> {
-					if (!systemStatusGroup.isDisposed()) {
-						systemStatusGroup.updateOllamaStatus((isOnline ? "Online (" : "Offline (") + url + ")", Display.getDefault().getSystemColor(isOnline ? SWT.COLOR_DARK_GREEN : SWT.COLOR_RED));
-					}
-				});
-			}).start();
-		} else {
-			systemStatusGroup.updateOllamaStatus("Not Configured", Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
-			systemStatusGroup.updateModelStatus("Not Configured");
-		}
+		ollamaService = OllamaManager.getInstance().getService(url);
+		systemStatusGroup.updateModelStatus(model != null ? model : "Not Configured");
+		new Thread(() -> {
+			boolean isOnline = ollamaService.ping();
+			Display.getDefault().asyncExec(() -> {
+				if (!systemStatusGroup.isDisposed()) {
+					systemStatusGroup.updateOllamaStatus((isOnline ? "Online (" : "Offline (") + url + ")", Display.getDefault().getSystemColor(isOnline ? SWT.COLOR_DARK_GREEN : SWT.COLOR_RED));
+				}
+			});
+		}).start();
 	}
 
 	@Override
@@ -761,7 +735,7 @@ public class AiChatPage extends AEvoPage {
 
 	@Override
 	protected void refreshUI() {
-		if (orchestrator != null && chatMgmtGroup != null && !isUpdating) {
+		if (chatMgmtGroup != null && !isUpdating) {
 			isUpdating = true;
 			try {
 				RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
@@ -782,10 +756,6 @@ public class AiChatPage extends AEvoPage {
 				instructionsGroup.setOrchestrationRunning(projection.isRunning());
 				instructionsGroup.setPaused(projection.isPaused());
 				chatGroup.setThinking(projection.isRunning() && !projection.isPaused());
-
-				if (currentSession != null) {
-					chatGroup.setSession(currentSession);
-				}
 
 				// Centralize layout at the end of refresh
 				updateScrolledContent();
@@ -930,34 +900,8 @@ public class AiChatPage extends AEvoPage {
 		handleSend();
 	}
 
-	public void updateModelSetting(java.util.function.Consumer<Orchestrator> update) {
-		if (orchestrator == null) return;
-		update.accept(orchestrator);
-		editor.setDirty(true);
-	}
-
-	public void updateSessionSetting(java.util.function.Consumer<ChatSession> update) {
-		if (currentSession == null) return;
-		update.accept(currentSession);
-		editor.setDirty(true);
-	}
-
-	public void updatePromptInstructions(java.util.function.Consumer<PromptInstructions> update) {
-		if (orchestrator == null) return;
-		if (orchestrator.getAiChat() == null) {
-			orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
-		}
-		PromptInstructions pi = orchestrator.getAiChat().getPromptInstructions();
-		if (pi == null) {
-			pi = OrchestrationFactory.eINSTANCE.createPromptInstructions();
-			orchestrator.getAiChat().setPromptInstructions(pi);
-		}
-		boolean wasAutoApprove = pi.isAutoApprove();
-		update.accept(pi);
-		if (!wasAutoApprove && pi.isAutoApprove()) {
-			resumeWaitingSessions();
-		}
-		editor.setDirty(true);
+	public void updateConfiguration(java.util.Map<String, Object> settings) {
+		OrchestratorServiceImpl.getInstance().updateConfiguration(getCurrentSessionName(), settings);
 	}
 
 	public void handleFeedbackLevelChange(FeedbackLevel level) {

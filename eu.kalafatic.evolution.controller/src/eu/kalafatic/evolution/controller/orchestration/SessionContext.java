@@ -201,6 +201,7 @@ public class SessionContext implements SessionContainer {
     @Override
     public void shutdown() {
         executorService.shutdownNow();
+        eventBus.shutdown();
         capabilityRegistry.shutdown();
     }
 }
