@@ -50,18 +50,20 @@ public abstract class AEvoPage extends SharedScrolledComposite {
             long now = System.currentTimeMillis();
             long delay = Math.max(0, REFRESH_THROTTLE_MS - (now - lastRefreshTime));
 
-            Display.getDefault().timerExec((int)delay, () -> {
-                try {
-                    refreshPending.set(false);
-                    if (!isDisposed() && isVisible()) {
-                        lastRefreshTime = System.currentTimeMillis();
-                        needsRefresh = false;
-                        refreshUI();
+            Display.getDefault().asyncExec(() -> {
+                Display.getDefault().timerExec((int)delay, () -> {
+                    try {
+                        refreshPending.set(false);
+                        if (!isDisposed() && isVisible()) {
+                            lastRefreshTime = System.currentTimeMillis();
+                            needsRefresh = false;
+                            refreshUI();
+                        }
+                    } catch (Exception e) {
+                        // Log error but don't crash the background process
+                        System.err.println("Error during UI refresh in " + getClass().getSimpleName() + ": " + e.getMessage());
                     }
-                } catch (Exception e) {
-                    // Log error but don't crash the background process
-                    System.err.println("Error during UI refresh in " + getClass().getSimpleName() + ": " + e.getMessage());
-                }
+                });
             });
         }
     }

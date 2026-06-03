@@ -77,11 +77,13 @@ public class ChatGroup extends AEvoGroup {
     public void scheduleRefresh() {
         // Debounce browser refreshes to handle high-frequency log updates
         if (refreshPending.compareAndSet(false, true)) {
-            Display.getDefault().timerExec(100, () -> {
-                refreshPending.set(false);
-                if (group != null && !group.isDisposed()) {
-                    refreshUI();
-                }
+            Display.getDefault().asyncExec(() -> {
+                Display.getDefault().timerExec(100, () -> {
+                    refreshPending.set(false);
+                    if (group != null && !group.isDisposed()) {
+                        refreshUI();
+                    }
+                });
             });
         }
     }
@@ -145,8 +147,10 @@ public class ChatGroup extends AEvoGroup {
                 setupJavaScriptBridges();
 
                 // give JS a moment, then refresh
-                Display.getDefault().timerExec(200, () -> {
-                    refreshBrowser();
+                Display.getDefault().asyncExec(() -> {
+                    Display.getDefault().timerExec(200, () -> {
+                        refreshBrowser();
+                    });
                 });
             }
         });
