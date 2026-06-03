@@ -315,13 +315,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         String agentType = "ai";
         MessagePriority priority = MessagePriority.PROGRESS;
 
-        java.util.regex.Pattern logPattern = java.util.regex.Pattern.compile("^([A-Z][A-Z0-9-]*)(?:\\s+\\[([^\\]*)\\])?(?:\\s+\\(\\d{2}:\\d{2}:\\d{2}\\))?:\\s*([\\s\\S]*)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Pattern logPattern = java.util.regex.Pattern.compile("^([A-Z][A-Z0-9-]*)(?:\\s+\\[(.*?)\\])?(?:\\s+\\(\\d{2}:\\d{2}:\\d{2}\\))?:\\s*([\\s\\S]*)$", java.util.regex.Pattern.CASE_INSENSITIVE);
         java.util.regex.Matcher matcher = logPattern.matcher(trimmedText);
 
         if (matcher.find()) {
             sender = matcher.group(1);
             String extra = matcher.group(2);
-            content = matcher.group(4);
+            content = matcher.group(3);
 
             String senderUpper = sender.toUpperCase();
             if (senderUpper.startsWith("USER")) agentType = "user";
