@@ -77,7 +77,7 @@ public class FeedbackGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Session Interaction & Feedback", 1, false);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Session Interaction & Feedback", 1, true);
 
         // 1. Satisfaction Box
         satisfactionBox = GUIFactory.INSTANCE.createComposite(group, 2);

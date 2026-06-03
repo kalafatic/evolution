@@ -65,7 +65,7 @@ public class InstructionsGroup extends AEvoGroup {
         requestText = new StyledText(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
         page.setupContextAssist(requestText);
         GridData requestGridData = new GridData(GridData.FILL_BOTH);
-        requestGridData.heightHint = 66;
+        requestGridData.heightHint = 30;
         requestText.setLayoutData(requestGridData);
         
         Composite composite = GUIFactory.INSTANCE.createComposite(group,2, SWT.BORDER);
