@@ -15,6 +15,7 @@ import static eu.kalafatic.utils.constants.FConstants.PREFERENCES;
 import java.util.logging.Logger;
 
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
@@ -84,32 +85,36 @@ public abstract class ALog implements ILog {
 	 * @param logElement the log element
 	 */
 	protected static void printConsole(LogElement logElement) {
-		IWorkbenchWindow workbenchWindow;
-
 		try {
 			if (!PlatformUI.isWorkbenchRunning()) {
 				return;
 			}
-			workbenchWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+
+			Display display = PlatformUI.getWorkbench().getDisplay();
+			if (display == null || display.isDisposed()) {
+				return;
+			}
+
+			display.asyncExec(() -> {
+				IWorkbenchWindow workbenchWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+
+				if (workbenchWindow != null && workbenchWindow.getActivePage() != null && console == null) {
+					try {
+						console = (ConsoleView) workbenchWindow.getActivePage().showView(EView.CONSOLE.ID);
+
+					} catch (PartInitException e) {
+						e.printStackTrace();
+					} catch (NullPointerException e1) {
+						e1.printStackTrace();
+					}
+				}
+				if (console != null) {
+					console.refresh();
+				}
+			});
 		} catch (Throwable e) {
 			// e.printStackTrace();
 			return;
-		}
-
-		// LOGS.add(0, logElement);
-
-		if (workbenchWindow != null && workbenchWindow.getActivePage() != null && console == null) {
-			try {
-				console = (ConsoleView) workbenchWindow.getActivePage().showView(EView.CONSOLE.ID);
-
-			} catch (PartInitException e) {
-				e.printStackTrace();
-			} catch (NullPointerException e1) {
-				e1.printStackTrace();
-			}
-		}
-		if (console != null) {
-			console.refresh();
 		}
 	}
 

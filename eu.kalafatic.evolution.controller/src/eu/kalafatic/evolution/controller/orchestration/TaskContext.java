@@ -19,7 +19,7 @@ import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import eu.kalafatic.evolution.controller.trajectory.SignalBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
-import eu.kalafatic.utils.log.Log;
+import eu.kalafatic.evolution.controller.log.Log;
 
 /**
  * Shared context for an orchestration task, including project info, state, and logs.

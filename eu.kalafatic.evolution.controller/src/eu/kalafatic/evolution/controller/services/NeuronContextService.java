@@ -10,7 +10,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.utils.log.Log;
+import eu.kalafatic.evolution.controller.log.Log;
 
 /**
  * Learns from previous IterationRecords and provides context for future tasks.

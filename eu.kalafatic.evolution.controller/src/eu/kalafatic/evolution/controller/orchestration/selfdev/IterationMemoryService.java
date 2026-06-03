@@ -17,7 +17,7 @@ import eu.kalafatic.evolution.controller.orchestration.Checkpoint;
 import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
 import eu.kalafatic.evolution.controller.supervision.AuditRecord;
 import eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord;
-import eu.kalafatic.utils.log.Log;
+import eu.kalafatic.evolution.controller.log.Log;
 
 
 public class IterationMemoryService {

@@ -19,7 +19,7 @@ import eu.kalafatic.utils.Activator;
 import eu.kalafatic.utils.constants.FCoreImageConstants;
 import eu.kalafatic.utils.hack.EclipseSplashHandler;
 import eu.kalafatic.utils.lib.AppData;
-import eu.kalafatic.utils.log.Log;
+import eu.kalafatic.evolution.controller.log.Log;
 import eu.kalafatic.utils.preferences.ECorePreferences;
 import eu.kalafatic.utils.ui.ImageUtils;
 
