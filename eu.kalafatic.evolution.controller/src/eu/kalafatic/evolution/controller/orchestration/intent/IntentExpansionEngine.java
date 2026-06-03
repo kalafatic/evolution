@@ -160,6 +160,8 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
         JSONObject json = pipeline.process(response, schema, context);
 
+        int currentIteration = context.getOrchestrationState().getIterationCount();
+        json.put("iteration", currentIteration);
         context.log("[DARWIN_BRANCHES] " + json.toString());
 
         IntentExpansionResult result = new IntentExpansionResult();

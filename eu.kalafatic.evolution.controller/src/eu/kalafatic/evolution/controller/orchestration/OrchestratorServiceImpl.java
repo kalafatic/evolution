@@ -281,6 +281,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 context.getMetadata().put("sessionContext", session);
                 context.setStartTime(java.time.Instant.now());
 
+                // Clear any existing listeners from previous turns to prevent duplication
+                context.clearListeners();
+
                 // Add log propagation to UI via ConversationOutputController
                 context.addLogListener(log -> processLogEntry(log, sessionId, turnId));
                 context.addApprovalListener(msg -> processLogEntry(msg, sessionId, turnId));
