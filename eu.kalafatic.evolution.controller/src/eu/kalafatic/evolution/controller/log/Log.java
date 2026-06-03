@@ -79,7 +79,7 @@ public class Log {
         logToConsole(msg);
     }
 
-    public static void log(String module, Exception e) {
+    public static void log(Object module, Exception e) {
         String msg = "ERROR [" + module + "]: " + e.getMessage();
         log(msg);
         if (fileLogger != null) {
