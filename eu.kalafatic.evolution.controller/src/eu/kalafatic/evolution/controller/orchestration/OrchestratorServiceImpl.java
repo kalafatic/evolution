@@ -376,7 +376,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             priority = MessagePriority.USER_ACTION_REQUIRED;
         }
 
-        java.util.regex.Pattern approvedPattern = java.util.regex.Pattern.compile("\\[(APPROVED|REJECTED|KEPT):([^\\]+)\\]");
+        java.util.regex.Pattern approvedPattern = java.util.regex.Pattern.compile("\\[(APPROVED|REJECTED|KEPT):([^]]+)\\]");
         java.util.regex.Matcher approvedMatcher = approvedPattern.matcher(content);
         if (approvedMatcher.find()) {
             String status = approvedMatcher.group(1).toLowerCase();

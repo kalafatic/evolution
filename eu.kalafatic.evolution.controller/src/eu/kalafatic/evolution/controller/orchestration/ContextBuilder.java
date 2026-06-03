@@ -150,7 +150,7 @@ public class ContextBuilder {
         Set<String> files = new HashSet<>();
         String combined = (task.getName() + " " + task.getDescription() + " " + task.getGoal());
 
-        Pattern fileTagPattern = Pattern.compile("\\[FILE:([^\\]]+)\\]", Pattern.CASE_INSENSITIVE);
+        Pattern fileTagPattern = Pattern.compile("\\[FILE:([^]]+)\\]", Pattern.CASE_INSENSITIVE);
         Matcher tagMatcher = fileTagPattern.matcher(combined);
         while (tagMatcher.find()) {
             files.add(tagMatcher.group(1));
