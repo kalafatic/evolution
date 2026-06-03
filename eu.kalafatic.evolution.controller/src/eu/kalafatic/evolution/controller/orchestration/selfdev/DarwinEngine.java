@@ -317,6 +317,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
         ranker.rank(uniqueVariants, isAtomicRound, currentIteration, pressure);
 
+        JSONObject branchesJson = new JSONObject();
+        branchesJson.put("iteration", currentIteration);
+        branchesJson.put("variants", new JSONArray(uniqueVariants));
+        context.log("[DARWIN_BRANCHES] " + branchesJson.toString());
+
         // Manual override for test stability (only active in testMode)
         if (context.getMetadata().containsKey("testMode")) {
             for (JSONObject v : uniqueVariants) {
@@ -328,8 +333,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
             uniqueVariants.sort((v1, v2) -> Double.compare(v2.optDouble("score"), v1.optDouble("score")));
         }
-
-        context.log("[DARWIN_BRANCHES] " + uniqueVariants.toString());
 
         List<BranchVariant> variants = new ArrayList<>();
         for (JSONObject obj : uniqueVariants) {

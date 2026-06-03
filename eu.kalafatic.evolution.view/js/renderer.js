@@ -325,6 +325,8 @@ window.ChatApp.Renderer = {
                  throw new Error("Darwin message must contain an array of variants/proposals/hypotheses");
             }
 
+            const iteration = data.iteration !== undefined ? data.iteration : null;
+
             const role = (m.agentType || '').toLowerCase();
             const isApproved = role.includes('approved');
             const approvedId = isApproved && role.includes(':') ? role.split(':').pop().trim() : null;
@@ -342,7 +344,8 @@ window.ChatApp.Renderer = {
                 col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '') + (isThisKept ? ' kept' : '');
 
                 // Simplified Darwin Header
-                let headerHtml = `<div class="branch-header">PROPOSAL ${index + 1}${isThisKept ? ' [KEPT]' : ''}</div>`;
+                let headerLabel = iteration !== null ? `ITERATION ${iteration} - PROPOSAL ${index + 1}` : `PROPOSAL ${index + 1}`;
+                let headerHtml = `<div class="branch-header">${headerLabel}${isThisKept ? ' [KEPT]' : ''}</div>`;
                 let strategy = v.strategy || v.description;
                 if (strategy) headerHtml += `<div class="branch-strategy">${strategy}</div>`;
 

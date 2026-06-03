@@ -72,6 +72,34 @@
         .message.waiting { align-self: flex-start; background: var(--waiting-bg); border: 1px solid #fbbf24; }
         .message.error { align-self: center; background: var(--error-bg); border: 1px solid #ef4444; color: #b91c1c; }
 
+        /* Darwin Branch Styles */
+        .branch-container {
+            display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; margin-top: 10px; width: 100%;
+        }
+        .branch-column {
+            flex: 0 0 300px; background: white; border: 1px solid var(--border); border-radius: 8px;
+            display: flex; flex-direction: column; transition: all 0.2s;
+        }
+        .branch-column.best { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+        .branch-column.approved { border-color: #10b981; background: #f0fdf4; }
+        .branch-column.rejected { opacity: 0.6; filter: grayscale(0.5); }
+        .branch-column.kept { border-color: #166534; background: #f0fdf4; }
+
+        .branch-header {
+            padding: 10px; background: #f8fafc; border-bottom: 1px solid var(--border);
+            font-weight: bold; font-size: 11px; color: #64748b; border-radius: 8px 8px 0 0;
+        }
+        .branch-strategy { padding: 10px; font-weight: 500; font-size: 13px; line-height: 1.4; border-bottom: 1px solid var(--border); }
+        .branch-body { padding: 10px; flex: 1; font-size: 11px; line-height: 1.5; color: #475569; overflow-y: auto; max-height: 200px; }
+        .branch-footer { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 5px; flex-wrap: wrap; }
+
+        .branch-btn {
+            padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: white;
+        }
+        .branch-btn.select { background: #10b981; color: white; border: none; }
+        .branch-btn.keep { background: #3b82f6; color: white; border: none; }
+        .branch-btn.reject { background: #ef4444; color: white; border: none; }
+
         .message-meta { font-size: 10px; opacity: 0.5; margin-bottom: 4px; display: flex; justify-content: space-between; }
 
         #input-area {
@@ -283,24 +311,31 @@
             lastSequenceNumber = msg.sequenceNumber;
 
             const div = document.createElement('div');
-            let className = 'message ' + msg.agentType;
+            let agentType = msg.agentType || 'ai';
+            let className = 'message ' + agentType;
             if (msg.priority === 3) className += ' waiting';
             if (msg.priority === 1) className += ' progress';
-            if (msg.agentType === 'error') className += ' error';
+            if (agentType === 'error') className += ' error';
 
             div.className = className;
 
             const meta = document.createElement('div');
             meta.className = 'message-meta';
-            meta.innerHTML = `<span>${msg.sender}</span><span>${msg.timestamp}</span>`;
+            meta.innerHTML = `<span>${getIconForAgentType(agentType.split(' ')[0])} ${msg.sender}</span><span>${msg.timestamp}</span>`;
 
-            const text = document.createElement('div');
-            text.innerText = msg.text;
+            const content = document.createElement('div');
+
+            if (agentType.includes('darwin-branches')) {
+                div.style.maxWidth = '100%';
+                content.appendChild(renderDarwin(msg));
+            } else {
+                content.innerText = msg.text;
+            }
 
             div.appendChild(meta);
-            div.appendChild(text);
+            div.appendChild(content);
 
-            if (msg.priority === 3) {
+            if (msg.priority === 3 && !agentType.includes('darwin-branches')) {
                 const actions = document.createElement('div');
                 actions.className = 'approval-buttons';
 
@@ -436,6 +471,81 @@
         function cleanChat() {
             chatArea.innerHTML = '';
             lastSequenceNumber = 0;
+        }
+
+        function getIconForAgentType(type) {
+            const icons = {
+                'user': '👤', 'ai': '🤖', 'planner': '📋', 'architect': '📐', 'javadev': '💻',
+                'tester': '🧪', 'reviewer': '⚖️', 'tool': '⚙️', 'analytic': '🔍', 'general': '🧠',
+                'terminal': '📟', 'file': '📂', 'maven': '📦', 'git': '🌿', 'structure': '🌳',
+                'websearch': '🌐', 'quality': '✨', 'observability': '📊', 'orchestrator': '🎼',
+                'darwin': '🧬', 'darwin-branches': '🧬', 'final-response': '✅', 'error': '❌', 'thinking': '💭'
+            };
+            return icons[type] || '🤖';
+        }
+
+        function renderDarwin(m) {
+            const container = document.createElement('div');
+            container.className = 'branch-container';
+            try {
+                let text = (m.text || '').trim();
+                text = text.replace(/^(\[[^\{\"\[]+\]\s*)+/g, ''); // Strip technically prefixes
+
+                const data = JSON.parse(text);
+                const variants = Array.isArray(data) ? data : (data.variants || []);
+                const iteration = data.iteration !== undefined ? data.iteration : null;
+
+                const role = (m.agentType || '').toLowerCase();
+                const isApproved = role.includes('approved');
+                const approvedId = isApproved && role.includes(':') ? role.split(':').pop().trim() : null;
+                const isRejected = role.includes('rejected');
+                const rejectedId = isRejected && role.includes(':') ? role.split(':').pop().trim() : null;
+                const isWaiting = role.includes('waiting');
+
+                variants.forEach((v, index) => {
+                    const vId = String(v.id || index);
+                    const isThisApproved = isApproved && (approvedId === null || approvedId === vId);
+                    const isThisRejected = (isApproved && approvedId !== null && approvedId !== vId) || (isRejected && rejectedId === vId);
+                    const isThisKept = v.status === 'KEPT';
+
+                    const col = document.createElement('div');
+                    col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '') + (isThisKept ? ' kept' : '');
+
+                    let headerLabel = iteration !== null ? `ITERATION ${iteration} - PROPOSAL ${index + 1}` : `PROPOSAL ${index + 1}`;
+                    let headerHtml = `<div class="branch-header">${headerLabel}${isThisKept ? ' [KEPT]' : ''}</div>`;
+                    let strategy = v.strategy || v.description || 'No strategy description';
+
+                    let footerContent = "";
+                    if (isThisApproved) footerContent = '<div style="color: #10b981; font-weight: bold; font-size: 11px;">APPROVED</div>';
+                    else if (isThisRejected) footerContent = '<div style="color: #ef4444; font-weight: bold; font-size: 11px;">REJECTED</div>';
+                    else if (isThisKept && !isWaiting) footerContent = '<div style="color: #166534; font-weight: bold; font-size: 11px;">KEPT</div>';
+                    else if (isWaiting) {
+                        footerContent = `
+                            <button class="branch-btn select" onclick="sendBypass('Approve variant ${vId}')">Select</button>
+                            <button class="branch-btn keep" onclick="sendBypass('Keep variant ${vId}')">Keep</button>
+                            <button class="branch-btn reject" onclick="sendBypass('Reject variant ${vId}')">Reject</button>`;
+                    }
+
+                    col.innerHTML = `
+                        ${headerHtml}
+                        <div class="branch-strategy">${strategy}</div>
+                        <div class="branch-body">
+                            ${v.survival_argument ? `<b>Survival:</b> ${v.survival_argument}<br><br>` : ''}
+                            ${v.tradeoffs ? `<b>Tradeoffs:</b> ${v.tradeoffs}` : ''}
+                        </div>
+                        <div class="branch-footer">${footerContent}</div>
+                    `;
+                    container.appendChild(col);
+                });
+            } catch(e) {
+                container.innerText = "Failed to parse Darwin: " + e.message;
+            }
+            return container;
+        }
+
+        async function sendBypass(text) {
+            userInput.value = text;
+            await sendMessage();
         }
 
         // Initialize

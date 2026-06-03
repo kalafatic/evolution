@@ -174,6 +174,13 @@ public class TaskContext {
         tokenRequestListeners.add(listener);
     }
 
+    public void clearListeners() {
+        listeners.clear();
+        approvalListeners.clear();
+        inputListeners.clear();
+        tokenRequestListeners.clear();
+    }
+
     private void notifyListeners(String message) {
         for (LogListener listener : listeners) {
             listener.onLog(message);
