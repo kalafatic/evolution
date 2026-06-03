@@ -100,8 +100,8 @@ public class LlmRouter {
                         trimmedResponse.equalsIgnoreCase("Yes") ||
                         trimmedResponse.equalsIgnoreCase("Proceed") ||
                         trimmedResponse.equalsIgnoreCase("OK")) {
-                        context.log("LlmRouter-Mediated: User approved locally prepared prompt as result.");
-                        return augmentedPrompt;
+                        context.log("LlmRouter-Mediated: User approved locally prepared prompt. Executing winner locally...");
+                        return sendLocalRequest(orchestrator, augmentedPrompt, temperature, proxyUrl, context);
                     }
 
                     return response;

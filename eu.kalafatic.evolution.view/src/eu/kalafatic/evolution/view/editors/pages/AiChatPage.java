@@ -345,11 +345,16 @@ public class AiChatPage extends AEvoPage {
 		int modeVal = (int) config.getOrDefault("aiMode", orchestrator != null ? orchestrator.getAiMode().getValue() : 0);
 		AiMode mode = AiMode.get(modeVal);
 
-		String modelName = (String) config.getOrDefault(mode == AiMode.LOCAL ? "localModel" : "remoteModel", "UNKNOWN");
-
+		String modelName = (String) config.getOrDefault(mode == AiMode.LOCAL ? "localModel" : "remoteModel", null);
+		if (modelName == null && orchestrator != null) {
+			modelName = (mode == AiMode.LOCAL) ? orchestrator.getLocalModel() : orchestrator.getRemoteModel();
+		}
 		if (modelName == null) modelName = "NOT SET";
 
-		setTextSafe(modeIndicatorLabel, mode.getName().toUpperCase() + " MODE ACTIVE - " + modelName.toUpperCase());
+		File projectRoot = getProjectRoot();
+		String targetPath = projectRoot != null ? projectRoot.getAbsolutePath() : "UNKNOWN";
+
+		setTextSafe(modeIndicatorLabel, mode.getName().toUpperCase() + " - " + modelName.toUpperCase() + " - " + targetPath);
 		setForegroundSafe(modeIndicatorLabel, Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
 
 		Color targetBg = lightGreen;
