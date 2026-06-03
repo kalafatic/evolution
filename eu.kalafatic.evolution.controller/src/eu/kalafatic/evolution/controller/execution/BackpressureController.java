@@ -21,7 +21,10 @@ public class BackpressureController implements eu.kalafatic.evolution.controller
      * @deprecated Use session-scoped BackpressureController via SessionContainer.
      */
     @Deprecated
-    public static BackpressureController getInstance() { return INSTANCE; }
+    public static BackpressureController getInstance() {
+        eu.kalafatic.evolution.controller.kernel.RuntimeInvariant.checkNoGlobalAccess("BackpressureController.getInstance");
+        return INSTANCE;
+    }
 
     @Override
     public String getCapabilityId() {

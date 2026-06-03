@@ -287,6 +287,15 @@ public class IterationManager {
     }
 
     public OrchestratorResponse handle(TaskRequest taskRequest) throws Exception {
+        eu.kalafatic.evolution.controller.kernel.SessionBoundaryGuard.enterSession(context.getSessionId());
+        try {
+            return handleInternal(taskRequest);
+        } finally {
+            eu.kalafatic.evolution.controller.kernel.SessionBoundaryGuard.exitSession();
+        }
+    }
+
+    private OrchestratorResponse handleInternal(TaskRequest taskRequest) throws Exception {
         context.setStartTime(Instant.now());
         String request = taskRequest.getPrompt();
         OrchestrationState state = context.getOrchestrationState();
@@ -1080,6 +1089,7 @@ public class IterationManager {
     }
 
     public IOrchestrationFlow resolveFlow(ModeRouter router, AtomicIntentAnalysis atomicAnalysis) {
+        eu.kalafatic.evolution.controller.kernel.RuntimeInvariant.checkSession(context.getSessionId(), "IterationManager.resolveFlow");
         return new eu.kalafatic.evolution.controller.orchestration.DarwinFlow(aiService, this);
     }
 
