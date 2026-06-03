@@ -111,12 +111,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
     @Override
     protected String getAgentInstructions() {
-        return "Role: Darwin Engine. Strategy: Trajectory-driven engineering evolution.\n" +
+        return "Role: Darwin Engine. Strategy: Lineage-driven evolutionary mutation.\n" +
                "EVOLUTIONARY MANDATE:\n" +
-               "- Evolve EXACTLY ONE semantic dimension per iteration.\n" +
-               "- If an activeDimension is provided, generate candidate branches ONLY for that dimension.\n" +
-               "- Preserve lineage continuity. Each branch must modify the surviving parent trajectory.\n" +
-               "- Diversity must be semantic, not just architectural.";
+               "- You are a materializer of architectural lineages.\n" +
+               "- You do NOT invent new dimensions or discover recursion depth.\n" +
+               "- You MUST materialize the EXACT blueprint provided by the orchestrator.\n" +
+               "- Preserve lineage continuity: every mutation MUST inherit from the surviving ancestor.\n" +
+               "- Address identified evolutionary pressures (reliability, extensibility, etc.) in your implementation.";
     }
 
     @Override
@@ -245,30 +246,19 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         boolean isMediated = policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED;
 
         List<TrajectoryBlueprint> currentBlueprints = new ArrayList<>();
-        if (expansion != null && expansion.getActiveDimensionId() != null) {
-            EvolutionDimension activeDim = expansion.getUnresolvedDimensions().stream()
-                .filter(d -> d.getId().equals(expansion.getActiveDimensionId()))
-                .findFirst().orElse(null);
+        int generation = trajectory != null ? trajectory.getGeneration() : 0;
 
-            if (activeDim != null && !activeDim.getCandidateBranches().isEmpty()) {
-                context.log("[DARWIN] Dimension-Scoped Branching: " + activeDim.getId());
-                for (BranchVariant bv : activeDim.getCandidateBranches()) {
-                    TrajectoryBlueprint bp = new TrajectoryBlueprint(bv.getId(), goal, bv.getStrategy());
-                    bp.setSurvivalArgument(bv.getSurvivalArgument());
-                    bp.setTradeoffs(bv.getTradeoffs());
-                    currentBlueprints.add(bp);
-                }
-            }
-        }
-
-        if (currentBlueprints.isEmpty()) {
+        if (generation == 0) {
             if (isMediated) {
-                context.log("[DARWIN] Mediated Mode: Spawning cognitive interpretation trajectories.");
+                context.log("[DARWIN] Gen 0 (Mediated): Spawning divergent cognitive seeds.");
                 currentBlueprints.addAll(generateMediatedBlueprints(goal));
             } else {
-                context.log("[DARWIN] Orchestrator Planning: Spawning MANDATORY 4-branch architectural blueprints.");
+                context.log("[DARWIN] Gen 0 (Evolutionary Seeds): Spawning divergent architectural blueprints.");
                 currentBlueprints.addAll(generateStandardBlueprints(goal));
             }
+        } else {
+            context.log("[DARWIN] Gen " + generation + " (Lineage Mutation): Targeting unresolved pressures.");
+            currentBlueprints.addAll(generateMutationBlueprints(goal, pressure, trajectory));
         }
 
         // Model Capability Coefficient
@@ -434,6 +424,53 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         service.getEngineeringDimensions().put("testing_strategy", "contract");
         service.getEngineeringDimensions().put("extensibility", "high");
         blueprints.add(service);
+
+        return blueprints;
+    }
+
+    private List<TrajectoryBlueprint> generateMutationBlueprints(String goal, EvolutionaryPressureVector pressure, Trajectory trajectory) {
+        List<TrajectoryBlueprint> blueprints = new ArrayList<>();
+
+        if (pressure.failureExposure > 0.5) {
+            TrajectoryBlueprint bp = new TrajectoryBlueprint("reliability_mutation", goal, "Reliability and Fault Tolerance");
+            bp.setStrategyType(DarwinStrategyType.STABILIZATION_RECOVERY);
+            bp.setArchitecturalDirection("Strengthen the lineage with error handling, validation, and recovery logic to address failure exposure pressure.");
+            bp.addRequiredCharacteristic("Input validation");
+            bp.addRequiredCharacteristic("Exception recovery");
+            bp.addRequiredCharacteristic("Robustness wrappers");
+            bp.getEngineeringDimensions().put("risk_acceptance", "conservative");
+            blueprints.add(bp);
+        }
+
+        if (pressure.extensibility > 0.4) {
+            TrajectoryBlueprint bp = new TrajectoryBlueprint("extensibility_mutation", goal, "Structural Extensibility and Abstraction");
+            bp.setStrategyType(DarwinStrategyType.PHILOSOPHY_MUTATION);
+            bp.setArchitecturalDirection("Mutate the lineage to improve modularity and extensibility, resolving hardcoded dependencies.");
+            bp.addRequiredCharacteristic("Interface extraction");
+            bp.addRequiredCharacteristic("Decoupled state");
+            bp.addRequiredCharacteristic("Plugin/Service hooks");
+            bp.getEngineeringDimensions().put("abstraction_depth", "high");
+            blueprints.add(bp);
+        }
+
+        if (pressure.ambiguity > 0.5) {
+            TrajectoryBlueprint bp = new TrajectoryBlueprint("observability_mutation", goal, "Observability and Technical Clarity");
+            bp.setArchitecturalDirection("Enhance the lineage with logging, telemetry, and self-documenting structures to resolve semantic ambiguity.");
+            bp.addRequiredCharacteristic("Structured logging");
+            bp.addRequiredCharacteristic("State telemetry");
+            bp.addRequiredCharacteristic("Traceability hooks");
+            bp.getEngineeringDimensions().put("runtime_behavior", "observable");
+            blueprints.add(bp);
+        }
+
+        // Always provide at least one "Refinement" branch if no specific high pressure
+        if (blueprints.isEmpty()) {
+            TrajectoryBlueprint bp = new TrajectoryBlueprint("refinement_mutation", goal, "Continuous Refinement");
+            bp.setArchitecturalDirection("General refinement of the surviving lineage to improve overall technical quality.");
+            bp.addRequiredCharacteristic("Code cleanup");
+            bp.addRequiredCharacteristic("Optimization");
+            blueprints.add(bp);
+        }
 
         return blueprints;
     }

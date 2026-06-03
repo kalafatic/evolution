@@ -375,7 +375,7 @@ public class IterationManager {
 
             // 2. ANALYZING stage
             transition(SystemState.ANALYZING, context);
-            if (gitManager.isGitRepository()) {
+            if (gitManager.isGitRepository() || context.getMetadata().containsKey("testMode")) {
                 gitManager.ensureInitialCommit();
 
                 PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?

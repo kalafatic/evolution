@@ -26,20 +26,39 @@ public class EvolutionaryPressureEngine {
 
         EvolutionaryPressureVector vector = new EvolutionaryPressureVector();
 
-        // In a real implementation, this would use LLM or heuristic analysis of the trajectory and workspace
-        // For now, we simulate pressure based on the trajectory state and history
+        // 1. Reliability/Failure Exposure Pressure (Driven by fitness and test failures)
+        double fitness = trajectory.getFitnessScore();
+        vector.failureExposure = (fitness < 0.8) ? 1.0 - fitness : 0.1;
 
+        // 2. Ambiguity/Cognitive Pressure (Driven by trajectory confidence and discovery depth)
         vector.ambiguity = Math.max(0.1, 1.0 - trajectory.getConfidenceLevel());
-        vector.extensibility = 0.5; // Baseline pressure
-        vector.scalability = 0.3;
-        vector.failureExposure = trajectory.getFitnessScore() < 0.5 ? 0.8 : 0.2;
-        vector.implementationUncertainty = 0.4;
-        vector.dependencyComplexity = 0.3;
-        vector.integrationInstability = 0.2;
+
+        // 3. Extensibility Pressure (Higher in early generations to drive modularity)
+        int generation = trajectory.getGeneration();
+        vector.extensibility = generation < 3 ? 0.8 : 0.3;
+
+        // 4. Maintainability/Complexity Pressure (Increases with trajectory size/actions)
+        int actions = trajectory.getMutationLineage().size();
+        vector.dependencyComplexity = Math.min(0.9, actions * 0.15);
+
+        // 5. Implementation Uncertainty (Based on fitness trend)
+        if (trajectory.getFitnessHistory().size() >= 2) {
+            double last = trajectory.getFitnessHistory().get(trajectory.getFitnessHistory().size() - 1);
+            double prev = trajectory.getFitnessHistory().get(trajectory.getFitnessHistory().size() - 2);
+            vector.implementationUncertainty = (last <= prev) ? 0.8 : 0.2;
+        } else {
+            vector.implementationUncertainty = 0.5;
+        }
+
+        // 6. Operational Pressure (Baseline for simulation, can be grounded in runtime signals later)
+        vector.scalability = 0.2;
+        vector.integrationInstability = 0.3;
         vector.concurrencyPressure = 0.1;
         vector.performanceSensitivity = 0.1;
 
-        context.log("[PRESSURE] Total pressure: " + vector.getTotalPressure());
+        context.log(String.format("[PRESSURE] Trajectory %s | Total: %.2f (Fail: %.2f, Amb: %.2f, Ext: %.2f, Cmplx: %.2f)",
+            trajectory.getTrajectoryId(), vector.getTotalPressure(), vector.failureExposure, vector.ambiguity, vector.extensibility, vector.dependencyComplexity));
+
         return vector;
     }
 }

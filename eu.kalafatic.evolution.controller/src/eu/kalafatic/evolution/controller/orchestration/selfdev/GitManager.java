@@ -17,7 +17,8 @@ public class GitManager {
     }
 
     public boolean isGitRepository() {
-        return new File(root, ".git").exists();
+        File gitDir = new File(root, ".git");
+        return gitDir.exists() && gitDir.isDirectory();
     }
 
     public void cleanupLocks() {
@@ -29,17 +30,34 @@ public class GitManager {
 
     public void ensureInitialCommit() throws Exception {
         cleanupLocks();
-        if (!isGitRepository()) {
-            gitTool.execute("init", root, null);
+        if (!root.exists()) {
+            root.mkdirs();
         }
 
-        // Ensure HEAD exists (it won't in a fresh init without commits)
-        try {
-            gitTool.execute("rev-parse HEAD", root, null);
-        } catch (Exception e) {
-            // HEAD does not exist, create initial commit
-            gitTool.execute("add .", root, null);
-            gitTool.execute("commit --allow-empty -m \"Initial commit [EVO-SEED]\"", root, null);
+        if (!isGitRepository()) {
+            try {
+                gitTool.execute("init", root, null);
+                gitTool.execute("config user.email \"evolution@kalafatic.eu\"", root, null);
+                gitTool.execute("config user.name \"Evolution Kernel\"", root, null);
+                gitTool.execute("config commit.gpgsign false", root, null);
+            } catch (Exception e) {
+                // Ignore init failures in environments without git
+            }
+        }
+
+        if (isGitRepository()) {
+            // Ensure HEAD exists (it won't in a fresh init without commits)
+            try {
+                gitTool.execute("rev-parse --verify HEAD", root, null);
+            } catch (Exception e) {
+                // HEAD does not exist, create initial commit
+                try {
+                    gitTool.execute("add .", root, null);
+                    gitTool.execute("commit --allow-empty -m \"Initial commit [EVO-SEED]\"", root, null);
+                } catch (Exception ex) {
+                    // Non-critical if commit fails in restricted environments
+                }
+            }
         }
     }
 

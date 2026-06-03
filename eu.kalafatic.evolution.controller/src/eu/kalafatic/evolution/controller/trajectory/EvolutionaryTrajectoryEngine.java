@@ -34,16 +34,17 @@ public class EvolutionaryTrajectoryEngine {
 
         // 1. Analyze Pressure
         EvolutionaryPressureVector pressure = pressureEngine.analyze(trajectory, context);
+        trajectory.recordPressure(pressure);
 
         // 2. Check Stability
         if (stabilityAnalyzer.isConverged(trajectory, context, pressure)) {
-            context.log("[EVOLUTION] Trajectory " + trajectory.getTrajectoryId() + " has reached stability under pressure. Convergence confirmed.");
+            context.log("[EVOLUTION] Trajectory " + trajectory.getTrajectoryId() + " has reached stability under pressure (Gen: " + trajectory.getGeneration() + "). Convergence confirmed.");
             return true;
         }
 
-        // 3. Propose Mutations
+        // 3. Propose Mutations (Orchestrator-owned discovery of territorial expansion)
         List<BranchVariant.Action> mutations = mutationEngine.proposeMutations(trajectory, pressure, context);
-        context.log("[EVOLUTION] Proposed " + mutations.size() + " mutations for generation " + (trajectory.getGeneration() + 1));
+        context.log("[EVOLUTION] Orchestrator proposed " + mutations.size() + " targeted mutations for generation " + (trajectory.getGeneration() + 1));
 
         // Update trajectory generation
         trajectory.setGeneration(trajectory.getGeneration() + 1);
