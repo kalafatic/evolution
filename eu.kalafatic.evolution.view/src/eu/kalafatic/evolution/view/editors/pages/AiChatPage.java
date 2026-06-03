@@ -488,8 +488,13 @@ public class AiChatPage extends AEvoPage {
 
 		// Start Self-Dev Supervisor if (Self-Development OR Darwin mode is enabled) AND it's NOT a simple chat.
 		// Darwin is now the unified basic flow for all implementation requests.
-		boolean isSelfDev = (boolean) projection.getConfiguration().getOrDefault("selfIterativeMode", orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode());
-		boolean isDarwin = (boolean) projection.getConfiguration().getOrDefault("darwinMode", orchestrator != null && orchestrator.isDarwinMode());
+		boolean isSelfDev = (boolean) projection.getConfiguration().getOrDefault("selfIterativeMode",
+				currentSession != null ? currentSession.isSelfIterativeMode() :
+				(orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()));
+
+		boolean isDarwin = (boolean) projection.getConfiguration().getOrDefault("darwinMode",
+				currentSession != null ? currentSession.isDarwinMode() :
+				(orchestrator != null && orchestrator.isDarwinMode()));
 
 		if (!isSimpleChat && (isSelfDev || isDarwin)) {
 			startSelfDevAction(request);
@@ -639,8 +644,16 @@ public class AiChatPage extends AEvoPage {
 		if (request == null || request.isEmpty()) request = "Analyze the project and suggest improvements.";
 
 		final String finalRequest = request;
-		boolean isSelfDev = orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode();
-		boolean isDarwin = orchestrator != null && orchestrator.isDarwinMode();
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+
+		boolean isSelfDev = (boolean) projection.getConfiguration().getOrDefault("selfIterativeMode",
+				currentSession != null ? currentSession.isSelfIterativeMode() :
+				(orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()));
+
+		boolean isDarwin = (boolean) projection.getConfiguration().getOrDefault("darwinMode",
+				currentSession != null ? currentSession.isDarwinMode() :
+				(orchestrator != null && orchestrator.isDarwinMode()));
+
 		final String modeLabel = isDarwin ? "DARWIN" : (isSelfDev ? "SELF-DEV" : "EVO");
 		String idPrefix = isSelfDev ? "selfdev-" : (isDarwin ? "darwin-" : "chat-");
 

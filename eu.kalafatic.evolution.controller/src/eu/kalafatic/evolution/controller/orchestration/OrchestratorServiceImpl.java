@@ -183,12 +183,22 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
         if (session instanceof SessionContext) {
             TaskContext context = ((SessionContext)session).getTaskContext();
-            if (context != null) {
+            if (context != null && context.getOrchestrator() != null) {
                 model = context.getOrchestrator();
             }
         }
 
-        if (model == null) return;
+        if (model == null) {
+            // If no model found, we still want to publish the event if session exists
+            // to update the projection, but we can't update any EMF model.
+            if (session != null) {
+                RuntimeEventBus bus = session.getEventBus();
+                if (bus != null) {
+                    bus.publish(new RuntimeEvent(RuntimeEventType.CONFIGURATION_UPDATED, sessionId, "OrchestratorService", settings));
+                }
+            }
+            return;
+        }
 
         boolean changed = false;
         if (settings.containsKey("aiMode")) {
@@ -254,7 +264,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         session.getExecutorService().submit(() -> {
             bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, sessionId, "OrchestratorService", request.getPrompt()));
             try {
-                Orchestrator orchModel = this.orchestrator != null ? this.orchestrator : (Orchestrator) request.getContext().get("orchestrator");
+                Orchestrator orchModel = (Orchestrator) request.getContext().get("orchestrator");
+                if (orchModel == null) orchModel = this.orchestrator;
+
                 orchModel = ensureOrchestratorModel(orchModel, sessionId);
 
                 TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;

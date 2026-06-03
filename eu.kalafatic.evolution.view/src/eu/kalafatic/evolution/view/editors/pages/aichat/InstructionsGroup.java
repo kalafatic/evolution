@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.custom.StyledText;
@@ -303,14 +304,20 @@ public class InstructionsGroup extends AEvoGroup {
                 eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(page.getCurrentSessionName());
                 java.util.Map<String, Object> config = projection.getConfiguration();
 
-                setSelectionSafe(iterativeCheck, (Boolean) config.getOrDefault("iterativeMode", false));
-                setSelectionSafe(selfIterativeCheck, (Boolean) config.getOrDefault("selfIterativeMode", false));
-                setSelectionSafe(darwinCheck, (Boolean) config.getOrDefault("darwinMode", false));
-                setSelectionSafe(gitAutomationCheck, (Boolean) config.getOrDefault("gitAutomation", false));
-                setSelectionSafe(stepModeCheck, (Boolean) config.getOrDefault("stepMode", false));
-                setSelectionSafe(autoApproveCheck, (Boolean) config.getOrDefault("autoApprove", false));
+                ChatSession session = page.getCurrentSession();
+                PromptInstructions pi = (orchestrator != null && orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getPromptInstructions() : null;
 
-                int maxIter = (Integer) config.getOrDefault("maxIterations", 1);
+                setSelectionSafe(iterativeCheck, (Boolean) config.getOrDefault("iterativeMode", session != null ? session.isIterativeMode() : (pi != null ? pi.isIterativeMode() : true)));
+                setSelectionSafe(selfIterativeCheck, (Boolean) config.getOrDefault("selfIterativeMode", session != null ? session.isSelfIterativeMode() : (pi != null ? pi.isSelfIterativeMode() : false)));
+                setSelectionSafe(darwinCheck, (Boolean) config.getOrDefault("darwinMode", session != null ? session.isDarwinMode() : (orchestrator != null ? orchestrator.isDarwinMode() : true)));
+                setSelectionSafe(gitAutomationCheck, (Boolean) config.getOrDefault("gitAutomation", session != null ? session.isGitAutomation() : (pi != null ? pi.isGitAutomation() : false)));
+                setSelectionSafe(stepModeCheck, (Boolean) config.getOrDefault("stepMode", session != null ? session.isStepMode() : (pi != null ? pi.isStepMode() : false)));
+                setSelectionSafe(autoApproveCheck, (Boolean) config.getOrDefault("autoApprove", pi != null ? pi.isAutoApprove() : false));
+
+                int defaultMaxIter = session != null ? session.getMaxIterations() : (pi != null ? pi.getPreferredMaxIterations() : 4);
+                if (defaultMaxIter <= 0) defaultMaxIter = 4;
+
+                int maxIter = (Integer) config.getOrDefault("maxIterations", defaultMaxIter);
                 if (maxIterationsSpinner.getSelection() != maxIter) {
                     maxIterationsSpinner.setSelection(maxIter);
                 }
