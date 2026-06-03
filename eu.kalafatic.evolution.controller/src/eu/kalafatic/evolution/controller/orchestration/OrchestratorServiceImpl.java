@@ -296,7 +296,10 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 // Refresh workspace
                 try {
                     org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                	  processLogEntry("Error: " + e.getMessage(), sessionId, turnId);
+                }
+                
 
                 bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, sessionId, "OrchestratorService", response));
             } catch (Exception e) {
