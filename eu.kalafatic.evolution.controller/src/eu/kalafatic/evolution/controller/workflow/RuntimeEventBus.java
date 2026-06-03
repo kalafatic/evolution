@@ -55,6 +55,10 @@ public class RuntimeEventBus {
         if (event == null) {
             throw new IllegalArgumentException("RuntimeEventBus [" + sessionId + "]: Cannot publish null event.");
         }
+
+        // Enforce session isolation and invariant checks
+        eu.kalafatic.evolution.controller.kernel.RuntimeInvariant.checkSession(event.getSessionId(), "RuntimeEventBus.publish");
+
         if (!sessionId.equals(event.getSessionId())) {
             throw new IllegalArgumentException("RuntimeEventBus [" + sessionId + "]: Session mismatch. Event sessionId is " + event.getSessionId());
         }
@@ -70,6 +74,9 @@ public class RuntimeEventBus {
                     return;
                 }
             } else {
+                // Violation: Falling back to global singleton is no longer allowed
+                eu.kalafatic.evolution.controller.kernel.RuntimeInvariant.checkNoGlobalAccess("RuntimeEventBus.publish.backpressure");
+
                 BackpressureController.getInstance().recordSignal();
                 if (BackpressureController.getInstance().shouldThrottleSignals(budget)) {
                     System.err.println("[BUS] [" + sessionId + "] Throttling evaluation signal: " + event.getSource());
@@ -108,6 +115,9 @@ public class RuntimeEventBus {
 
     private void propagateToRegistry(RuntimeEvent event) {
         try {
+            // Enforce session integrity
+            eu.kalafatic.evolution.controller.kernel.RuntimeInvariant.checkSession(sessionId, "RuntimeEventBus.propagateToRegistry");
+
             SessionContainer session = SessionManager.getInstance().getSession(sessionId);
             if (session != null) {
                 eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry registry = session.getEvolutionRegistry();
