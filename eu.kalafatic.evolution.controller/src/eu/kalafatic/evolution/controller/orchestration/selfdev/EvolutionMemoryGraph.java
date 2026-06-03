@@ -16,9 +16,38 @@ public class EvolutionMemoryGraph {
     private List<String> convergenceReasoning = new ArrayList<>();
     private List<EvolutionaryPressureVector> globalPressureHistory = new ArrayList<>();
 
+    // Evolutionary Territory
+    private List<String> architectureDimensions = new ArrayList<>();
+    private List<String> implementationConcerns = new ArrayList<>();
+    private List<String> runtimeConcerns = new ArrayList<>();
+    private List<String> stabilityConcerns = new ArrayList<>();
+    private List<String> integrationConcerns = new ArrayList<>();
+    private List<String> operationalConcerns = new ArrayList<>();
+    private List<String> extensibilityConcerns = new ArrayList<>();
+
     public void recordDimension(EvolutionDimension dimension) {
         dimensions.add(dimension);
     }
+
+    public void recordTerritory(String type, String concern) {
+        switch (type.toUpperCase()) {
+            case "ARCHITECTURE": architectureDimensions.add(concern); break;
+            case "IMPLEMENTATION": implementationConcerns.add(concern); break;
+            case "RUNTIME": runtimeConcerns.add(concern); break;
+            case "STABILITY": stabilityConcerns.add(concern); break;
+            case "INTEGRATION": integrationConcerns.add(concern); break;
+            case "OPERATIONAL": operationalConcerns.add(concern); break;
+            case "EXTENSIBILITY": extensibilityConcerns.add(concern); break;
+        }
+    }
+
+    public List<String> getArchitectureDimensions() { return architectureDimensions; }
+    public List<String> getImplementationConcerns() { return implementationConcerns; }
+    public List<String> getRuntimeConcerns() { return runtimeConcerns; }
+    public List<String> getStabilityConcerns() { return stabilityConcerns; }
+    public List<String> getIntegrationConcerns() { return integrationConcerns; }
+    public List<String> getOperationalConcerns() { return operationalConcerns; }
+    public List<String> getExtensibilityConcerns() { return extensibilityConcerns; }
 
     public void recordRejection(String dimensionId, String branchId, String rationale) {
         rejectedBranches.computeIfAbsent(dimensionId, k -> new ArrayList<>()).add(branchId);

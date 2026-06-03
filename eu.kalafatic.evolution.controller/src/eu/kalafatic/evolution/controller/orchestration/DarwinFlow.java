@@ -122,6 +122,16 @@ public class DarwinFlow implements IOrchestrationFlow {
             trajectory.recordPressure(pressure);
         }
 
+        // ORCHESTRATOR-OWNED TOPOLOGY: Discovery of territorial dimensions before spawning
+        if (trajectory != null && trajectory.getGeneration() == 0) {
+            context.log("[DARWIN] Orchestrator: Mapping evolutionary territory...");
+            var graph = context.getKernelContext().getMemoryService().getEvolutionGraph();
+            graph.recordTerritory("ARCHITECTURE", "Implementation Dimensions");
+            graph.recordTerritory("ARCHITECTURE", "Divergent Blueprints");
+            graph.recordTerritory("STABILITY", "Reliability Pressure");
+            graph.recordTerritory("EXTENSIBILITY", "Service Orientation");
+        }
+
         List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory, pressure);
 
         if (rawVariants.isEmpty()) {

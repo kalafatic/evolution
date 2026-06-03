@@ -115,7 +115,7 @@ public class StabilityAnalyzer {
         boolean isTestMode = context != null && context.getMetadata().containsKey("testMode");
 
         // Convergence requires high stability. Minimum depth is now handled by shouldProgress.
-        boolean converged = stability > 0.85; // Lower threshold for multi-factor stability
+        boolean converged = stability > 0.92; // Higher threshold for stability-based convergence
 
         if (converged) {
             context.log("[STABILITY] Architectural equilibrium reached for trajectory: " + trajectory.getTrajectoryId());
@@ -144,28 +144,28 @@ public class StabilityAnalyzer {
         if (trajectory == null) return true;
 
         int generation = trajectory.getGeneration();
-        boolean converged = isConverged(trajectory, context);
+        boolean converged = isConverged(trajectory, context, pressure);
 
-        // Mandatory evolutionary depth for early stages
-        if (generation < 3 && !converged) {
-            if (current == EvolutionPhase.ARCHITECTURE_VARIANTS || current == EvolutionPhase.SELECTION_REFINEMENT) {
-                context.log("[STABILITY] Mandatory evolutionary depth not reached (Gen: " + generation + "). Recursing in " + current);
-                return false;
-            }
+        // MANDATORY EVOLUTIONARY DEPTH (CRITICAL)
+        // We force multiple generations even for simple tasks to ensure lineage evolution.
+        if (generation < 5 && !converged) {
+             context.log("[STABILITY] Mandatory evolutionary depth not reached (Gen: " + generation + "). Recursing in " + current);
+             return false;
         }
 
         if (converged) {
-            context.log("[STABILITY] Stability confirmed. Ready to progress from " + current);
+            context.log("[STABILITY] Stability confirmed through pressure resolution and improvement decay. Ready to progress from " + current);
             return true;
         }
 
-        // If not converged, we might still want to progress after some effort
-        if (generation >= 5) {
-            context.log("[STABILITY] Maximum generation limit reached for phase. Forcing progression from " + current);
+        // If not converged, we might still want to progress after significant effort
+        if (generation >= 8) {
+            context.log("[STABILITY] Maximum generation limit reached for phase (Gen: " + generation + "). Forcing progression from " + current);
             return true;
         }
 
         // Default to recursion in evolutionary phases if not converged and depth not reached
-        return current == EvolutionPhase.IMPLEMENTATION_PLAN || current == EvolutionPhase.FINAL_SYNTHESIS;
+        context.log("[STABILITY] Stability not yet reached. Continuing evolution in phase: " + current);
+        return false;
     }
 }
