@@ -178,7 +178,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
     @Override
     public void updateConfiguration(String sessionId, java.util.Map<String, Object> settings) {
-        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
         Orchestrator model = (this.orchestrator != null) ? this.orchestrator : null;
 
         if (session instanceof SessionContext) {
@@ -188,39 +188,28 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             }
         }
 
-        if (model == null) {
-            // If no model found, we still want to publish the event if session exists
-            // to update the projection, but we can't update any EMF model.
-            if (session != null) {
-                RuntimeEventBus bus = session.getEventBus();
-                if (bus != null) {
-                    bus.publish(new RuntimeEvent(RuntimeEventType.CONFIGURATION_UPDATED, sessionId, "OrchestratorService", settings));
-                }
+        boolean changed = !settings.isEmpty();
+
+        if (model != null) {
+            if (settings.containsKey("aiMode")) {
+                model.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get((Integer)settings.get("aiMode")));
             }
-            return;
-        }
+            if (settings.containsKey("localModel")) {
+                model.setLocalModel((String)settings.get("localModel"));
+                if (model.getOllama() != null) model.getOllama().setModel((String)settings.get("localModel"));
+            }
+            if (settings.containsKey("remoteModel")) {
+                model.setRemoteModel((String)settings.get("remoteModel"));
+            }
+            if (settings.containsKey("darwinMode")) {
+                model.setDarwinMode((Boolean)settings.get("darwinMode"));
+            }
 
-        boolean changed = false;
-        if (settings.containsKey("aiMode")) {
-            model.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get((Integer)settings.get("aiMode")));
-            changed = true;
-        }
-        if (settings.containsKey("localModel")) {
-            model.setLocalModel((String)settings.get("localModel"));
-            if (model.getOllama() != null) model.getOllama().setModel((String)settings.get("localModel"));
-            changed = true;
-        }
-        if (settings.containsKey("remoteModel")) {
-            model.setRemoteModel((String)settings.get("remoteModel"));
-            changed = true;
-        }
-        if (settings.containsKey("darwinMode")) {
-            model.setDarwinMode((Boolean)settings.get("darwinMode"));
-            changed = true;
-        }
+            // Handle ChatSession settings if sessionId matches
+            if (model.getAiChat() == null) {
+                model.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+            }
 
-        // Handle ChatSession settings if sessionId matches
-        if (model.getAiChat() != null) {
             final String sid = sessionId;
             model.getAiChat().getSessions().stream()
                 .filter(s -> sid.equals(s.getId()))
@@ -235,18 +224,21 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 });
 
             PromptInstructions pi = model.getAiChat().getPromptInstructions();
-            if (pi != null) {
-                if (settings.containsKey("iterativeMode")) pi.setIterativeMode((Boolean)settings.get("iterativeMode"));
-                if (settings.containsKey("selfIterativeMode")) pi.setSelfIterativeMode((Boolean)settings.get("selfIterativeMode"));
-                if (settings.containsKey("gitAutomation")) pi.setGitAutomation((Boolean)settings.get("gitAutomation"));
-                if (settings.containsKey("stepMode")) pi.setStepMode((Boolean)settings.get("stepMode"));
-                if (settings.containsKey("maxIterations")) pi.setPreferredMaxIterations((Integer)settings.get("maxIterations"));
-                if (settings.containsKey("autoApprove")) pi.setAutoApprove((Boolean)settings.get("autoApprove"));
+            if (pi == null) {
+                pi = OrchestrationFactory.eINSTANCE.createPromptInstructions();
+                model.getAiChat().setPromptInstructions(pi);
             }
+
+            if (settings.containsKey("iterativeMode")) pi.setIterativeMode((Boolean)settings.get("iterativeMode"));
+            if (settings.containsKey("selfIterativeMode")) pi.setSelfIterativeMode((Boolean)settings.get("selfIterativeMode"));
+            if (settings.containsKey("gitAutomation")) pi.setGitAutomation((Boolean)settings.get("gitAutomation"));
+            if (settings.containsKey("stepMode")) pi.setStepMode((Boolean)settings.get("stepMode"));
+            if (settings.containsKey("maxIterations")) pi.setPreferredMaxIterations((Integer)settings.get("maxIterations"));
+            if (settings.containsKey("autoApprove")) pi.setAutoApprove((Boolean)settings.get("autoApprove"));
         }
 
-        if (changed || !settings.isEmpty()) {
-            RuntimeEventBus bus = (session != null) ? session.getEventBus() : null;
+        if (changed && session != null) {
+            RuntimeEventBus bus = session.getEventBus();
             if (bus != null) {
                 bus.publish(new RuntimeEvent(RuntimeEventType.CONFIGURATION_UPDATED, sessionId, "OrchestratorService", settings));
             }
