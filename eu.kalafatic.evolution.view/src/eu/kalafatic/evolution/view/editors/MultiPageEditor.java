@@ -263,6 +263,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
         if (orchestrator != null) {
             orchestrator.eAdapters().add(modelAdapter);
+            eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().setOrchestrator(orchestrator);
         }
     }
 
@@ -387,6 +388,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         this.orchestrator = orchestrator;
         if (this.orchestrator != null) {
             this.orchestrator.eAdapters().add(modelAdapter);
+            eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().setOrchestrator(orchestrator);
         }
 
         if (aiChatPage != null) aiChatPage.setOrchestrator(orchestrator);
