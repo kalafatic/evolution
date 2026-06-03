@@ -267,10 +267,11 @@ public class AiChatPage extends AEvoPage {
 			public void run() {
 				Display.getDefault().asyncExec(() -> {
 					if (!content.isDisposed()) {
-						String id = orchestrator != null ? orchestrator.getId() : null;
-						if (id != null) {
-							double progress = OrchestrationStatusManager.getInstance().getProgress(id);
-							String status = OrchestrationStatusManager.getInstance().getStatus(id);
+						String sid = getCurrentSessionName();
+						eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sid);
+						if (session != null) {
+							double progress = session.getStatusManager().getProgress(sid);
+							String status = session.getStatusManager().getStatus(sid);
 							systemStatusGroup.updateProgress(status, (int) (progress * 100));
 						}
 						Display.getDefault().timerExec(500, this);

@@ -39,14 +39,18 @@ public class SessionIsolationStressTest {
                         RuntimeEventType.TASK_STARTED, sessionId, "Test", "task-" + j));
                 }
 
-                // Verify that ALL received events for this subscriber belong to this session
-                for (RuntimeEvent event : sessionEvents) {
-                    if (!sessionId.equals(event.getSessionId())) {
-                        return -1; // SIGNAL BLEED!
-                    }
-                }
+                // Wait for throttled delivery (RuntimeEventBus uses 100ms throttle)
+                Thread.sleep(500);
 
-                return sessionEvents.size();
+                // Verify that ALL received events for this subscriber belong to this session
+                synchronized (sessionEvents) {
+                    for (RuntimeEvent event : sessionEvents) {
+                        if (!sessionId.equals(event.getSessionId())) {
+                            return -1; // SIGNAL BLEED!
+                        }
+                    }
+                    return sessionEvents.size();
+                }
             }));
         }
 
