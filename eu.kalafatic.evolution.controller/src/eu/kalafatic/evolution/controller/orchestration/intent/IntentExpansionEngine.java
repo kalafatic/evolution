@@ -233,49 +233,74 @@ public class IntentExpansionEngine extends BaseAiAgent {
         SemanticDomainResolver domainResolver = new SemanticDomainResolver();
         if (unresolved != null) {
             for (int i = 0; i < unresolved.length(); i++) {
-                JSONObject dimObj = unresolved.getJSONObject(i);
+                Object item = unresolved.opt(i);
+                if (item == null) continue;
 
-                String levelStr = dimObj.optString("abstractionLevel", "IMPLEMENTATION");
-                AbstractionLevel level = AbstractionLevel.IMPLEMENTATION;
-                try {
-                    level = AbstractionLevel.valueOf(levelStr.trim().toUpperCase());
-                } catch (Exception e) {}
+                EvolutionDimension dim;
+                if (item instanceof JSONObject) {
+                    JSONObject dimObj = (JSONObject) item;
+                    String levelStr = dimObj.optString("abstractionLevel", "IMPLEMENTATION");
+                    AbstractionLevel level = AbstractionLevel.IMPLEMENTATION;
+                    try {
+                        level = AbstractionLevel.valueOf(levelStr.trim().toUpperCase());
+                    } catch (Exception e) {}
 
-                EvolutionDimension dim = new EvolutionDimension(
-                    dimObj.optString("id"),
-                    dimObj.optString("description"),
-                    level,
-                    domainResolver.resolve(dimObj.optString("semanticDomain", "EXECUTION"))
-                );
-                dim.setAmbiguityScore(dimObj.optDouble("ambiguityScore", 0.0));
-                dim.setSignificanceScore(dimObj.optDouble("significanceScore", 0.5));
+                    dim = new EvolutionDimension(
+                        dimObj.optString("id"),
+                        dimObj.optString("description"),
+                        level,
+                        domainResolver.resolve(dimObj.optString("semanticDomain", "EXECUTION"))
+                    );
+                    dim.setAmbiguityScore(dimObj.optDouble("ambiguityScore", 0.0));
+                    dim.setSignificanceScore(dimObj.optDouble("significanceScore", 0.5));
 
-                JSONObject pressureObj = dimObj.optJSONObject("pressure");
-                if (pressureObj != null) {
-                    EvolutionaryPressureVector pressure = new EvolutionaryPressureVector();
-                    pressure.ambiguity = pressureObj.optDouble("ambiguity", 0.0);
-                    pressure.extensibility = pressureObj.optDouble("extensibility", 0.0);
-                    pressure.scalability = pressureObj.optDouble("scalability", 0.0);
-                    pressure.failureExposure = pressureObj.optDouble("failureExposure", 0.0);
-                    pressure.implementationUncertainty = pressureObj.optDouble("implementationUncertainty", 0.0);
-                    pressure.dependencyComplexity = pressureObj.optDouble("dependencyComplexity", 0.0);
-                    pressure.integrationInstability = pressureObj.optDouble("integrationInstability", 0.0);
-                    pressure.concurrencyPressure = pressureObj.optDouble("concurrencyPressure", 0.0);
-                    pressure.performanceSensitivity = pressureObj.optDouble("performanceSensitivity", 0.0);
-                    dim.setEvolutionaryPressure(pressure.getTotalPressure());
-                }
-
-                JSONArray blueprints = dimObj.optJSONArray("candidateBlueprints");
-                if (blueprints != null) {
-                    for (int j = 0; j < blueprints.length(); j++) {
-                        JSONObject bpObj = blueprints.getJSONObject(j);
-                        BranchVariant bv = new BranchVariant();
-                        bv.setId(bpObj.optString("id"));
-                        bv.setStrategy(bpObj.optString("strategy"));
-                        bv.setSurvivalArgument(bpObj.optString("survival_argument"));
-                        bv.setTradeoffs(bpObj.optString("tradeoffs"));
-                        dim.getCandidateBranches().add(bv);
+                    JSONObject pressureObj = dimObj.optJSONObject("pressure");
+                    if (pressureObj != null) {
+                        EvolutionaryPressureVector pressure = new EvolutionaryPressureVector();
+                        pressure.ambiguity = pressureObj.optDouble("ambiguity", 0.0);
+                        pressure.extensibility = pressureObj.optDouble("extensibility", 0.0);
+                        pressure.scalability = pressureObj.optDouble("scalability", 0.0);
+                        pressure.failureExposure = pressureObj.optDouble("failureExposure", 0.0);
+                        pressure.implementationUncertainty = pressureObj.optDouble("implementationUncertainty", 0.0);
+                        pressure.dependencyComplexity = pressureObj.optDouble("dependencyComplexity", 0.0);
+                        pressure.integrationInstability = pressureObj.optDouble("integrationInstability", 0.0);
+                        pressure.concurrencyPressure = pressureObj.optDouble("concurrencyPressure", 0.0);
+                        pressure.performanceSensitivity = pressureObj.optDouble("performanceSensitivity", 0.0);
+                        dim.setEvolutionaryPressure(pressure.getTotalPressure());
                     }
+
+                    JSONArray blueprints = dimObj.optJSONArray("candidateBlueprints");
+                    if (blueprints != null) {
+                        for (int j = 0; j < blueprints.length(); j++) {
+                            Object bpItem = blueprints.opt(j);
+                            if (bpItem instanceof JSONObject) {
+                                JSONObject bpObj = (JSONObject) bpItem;
+                                BranchVariant bv = new BranchVariant();
+                                bv.setId(bpObj.optString("id"));
+                                bv.setStrategy(bpObj.optString("strategy"));
+                                bv.setSurvivalArgument(bpObj.optString("survival_argument"));
+                                bv.setTradeoffs(bpObj.optString("tradeoffs"));
+                                dim.getCandidateBranches().add(bv);
+                            } else if (bpItem instanceof String) {
+                                BranchVariant bv = new BranchVariant();
+                                bv.setId("v-" + j);
+                                bv.setStrategy((String) bpItem);
+                                bv.setSurvivalArgument("Inferred variant");
+                                dim.getCandidateBranches().add(bv);
+                            }
+                        }
+                    }
+                } else if (item instanceof String) {
+                    dim = new EvolutionDimension(
+                        "dim-" + i,
+                        (String) item,
+                        AbstractionLevel.IMPLEMENTATION,
+                        domainResolver.resolve("EXECUTION")
+                    );
+                    dim.setAmbiguityScore(0.5);
+                    dim.setSignificanceScore(0.5);
+                } else {
+                    continue;
                 }
                 result.getUnresolvedDimensions().add(dim);
             }
