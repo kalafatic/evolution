@@ -644,8 +644,7 @@ public class AiChatPage extends AEvoPage {
 		if (request == null || request.isEmpty()) request = "Analyze the project and suggest improvements.";
 
 		final String finalRequest = request;
-		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
-
+	
 		boolean isSelfDev = (boolean) projection.getConfiguration().getOrDefault("selfIterativeMode",
 				currentSession != null ? currentSession.isSelfIterativeMode() :
 				(orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()));
