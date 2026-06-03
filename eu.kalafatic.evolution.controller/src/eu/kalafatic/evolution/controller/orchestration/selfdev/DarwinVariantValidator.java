@@ -45,8 +45,8 @@ public class DarwinVariantValidator {
             return null;
         }
 
-        // 4. Validate Required Fields
-        List<String> requiredFields = List.of("id", "strategy_type", "strategy", "survival_argument", "semantic_justification", "tradeoffs", "failure_risks", "actions");
+        // 4. Validate Required Fields (ID is injected by Spawner if missing)
+        List<String> requiredFields = List.of("strategy_type", "strategy", "survival_argument", "semantic_justification", "tradeoffs", "failure_risks", "actions");
         for (String field : requiredFields) {
             if (!json.has(field)) {
                 if (context != null) context.log("[VALIDATOR] Error: Missing required field: " + field);
