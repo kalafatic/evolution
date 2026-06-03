@@ -99,8 +99,11 @@ public class FeedbackGroup extends AEvoGroup {
             }
         });
       
+        
+        Composite buttonBox = GUIFactory.INSTANCE.createComposite(group, 2);
+        
         // 2. Approval Box
-        approvalBox = GUIFactory.INSTANCE.createComposite(group, 5);
+        approvalBox = GUIFactory.INSTANCE.createComposite(buttonBox, 5);
         GUIFactory.INSTANCE.createLabel(approvalBox, "Decision Required:");
         
         Button approveButton = GUIFactory.INSTANCE.createButton(approvalBox, "Approve");
@@ -127,24 +130,10 @@ public class FeedbackGroup extends AEvoGroup {
             }
         });
         GUIFactory.INSTANCE.createLabel(approvalBox); // Spacer
+     
 
-        // 3. Input Box
-        inputBox = GUIFactory.INSTANCE.createComposite(group, 3);
-        promptLabel = GUIFactory.INSTANCE.createLabel(inputBox, "Clarification Required:", SWT.WRAP);
-
-        inputText = GUIFactory.INSTANCE.createText(inputBox, "", SWT.BORDER);
-
-        Button submitButton = GUIFactory.INSTANCE.createButton(inputBox, "Send", SWT.PUSH);
-        submitButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.provideInput(inputText.getText());
-                inputText.setText("");
-            }
-        });
-
-        // 4. Feedback Level Controls (Always Visible inside the group)
-        Composite levelBox = GUIFactory.INSTANCE.createComposite(group, 3);
+        // 3. Feedback Level Controls (Always Visible inside the group)
+        Composite levelBox = GUIFactory.INSTANCE.createComposite(buttonBox, 3);
        
 
         GUIFactory.INSTANCE.createLabel(levelBox, "Feedback Depth:");
