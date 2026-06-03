@@ -274,6 +274,10 @@ public class DarwinVariantSpawner {
                     String response = aiService.sendRequest(orchestrator, seedPrompt, context);
                     validated = validator.validate(response, seed.getType(), context);
                     if (validated != null) {
+                        // Ensure ID is injected if missing from LLM response
+                        if (!validated.has("id")) {
+                            validated.put("id", "v-" + seed.getType().name().toLowerCase());
+                        }
                         break;
                     }
                     context.log("[SPAWNER] Validation failed for " + seed.getType() + ". Retry " + (retry + 1) + "/2...");
