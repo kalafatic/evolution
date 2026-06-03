@@ -43,9 +43,29 @@ public class Log {
     private static final int LOG_FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
     private static final int LOG_FILE_COUNT = 5;
 
+    // Cache reflection lookups for performance
+    private static Class<?> displayClass;
+    private static java.lang.reflect.Method getCurrentMethod;
+    private static java.lang.reflect.Method getDefaultMethod;
+    private static java.lang.reflect.Method asyncExecMethod;
+    private static boolean swtAvailable = false;
+
     static {
         initFileLogger();
         zipOldLogs();
+        initSwtReflection();
+    }
+
+    private static void initSwtReflection() {
+        try {
+            displayClass = Class.forName("org.eclipse.swt.widgets.Display");
+            getCurrentMethod = displayClass.getMethod("getCurrent");
+            getDefaultMethod = displayClass.getMethod("getDefault");
+            asyncExecMethod = displayClass.getMethod("asyncExec", Runnable.class);
+            swtAvailable = true;
+        } catch (Throwable t) {
+            swtAvailable = false;
+        }
     }
 
     private static void initFileLogger() {
@@ -127,13 +147,37 @@ public class Log {
     }
 
     private static void logToConsole(String message) {
+        if (!swtAvailable) return;
+
+        try {
+            // Check if we are in a headless or test environment that shouldn't touch SWT
+            if (Boolean.getBoolean("evolution.test.headless")) return;
+            if (System.getProperty("osgi.console") != null) return;
+
+            Object display = getCurrentMethod.invoke(null);
+
+            if (display != null) {
+                doLogToConsole(message);
+            } else {
+                // Background thread, use asyncExec via reflection
+                Object defaultDisplay = getDefaultMethod.invoke(null);
+                if (defaultDisplay != null) {
+                    asyncExecMethod.invoke(defaultDisplay, (Runnable) () -> doLogToConsole(message));
+                }
+            }
+        } catch (Exception | Error e) {
+            // Silently ignore - could be SWT not available, GTK init failure, or reflection issue
+        }
+    }
+
+    private static void doLogToConsole(String message) {
         try {
             initConsole();
             if (consoleStream != null) {
                 consoleStream.println(message);
             }
-        } catch (NoClassDefFoundError | Exception e) {
-            // Silently ignore if console is not available (e.g. headless mode)
+        } catch (Exception e) {
+            // Silently ignore
         }
     }
 
