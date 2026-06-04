@@ -40,6 +40,7 @@ public class FeedbackGroup extends AEvoGroup {
 
     // Feedback Level controls
     private Button[] levelButtons;
+    private Scale expansionScale;
     private Button autoEscalateCheck;
     private Label autoStatusLabel;
     private boolean isUpdating = false;
@@ -64,6 +65,12 @@ public class FeedbackGroup extends AEvoGroup {
                 }
             }
             setSelectionSafe(autoEscalateCheck, task.isAutoEscalate());
+
+            eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(page.getCurrentSessionName());
+            int maxIter = (Integer) projection.getConfiguration().getOrDefault("maxIterations", 4);
+            if (expansionScale != null && !expansionScale.isDisposed()) {
+                expansionScale.setSelection(maxIter);
+            }
 
             // Update (auto) status
             if (task.isAutoEscalate() && level.getValue() > FeedbackLevel.SIMPLE_VALUE) {
@@ -168,6 +175,28 @@ public class FeedbackGroup extends AEvoGroup {
                     orchestrator.getTasks().get(0).setAutoEscalate(autoEscalateCheck.getSelection());
                     editor.setDirty(true);
                 }
+            }
+        });
+
+        // 4. Expansion Depth Slider
+        Composite expansionBox = GUIFactory.INSTANCE.createComposite(group, 2);
+        GUIFactory.INSTANCE.createLabel(expansionBox, "Expansion Depth (Atomic - Multiple):");
+        expansionScale = new Scale(expansionBox, SWT.HORIZONTAL);
+        expansionScale.setMinimum(1);
+        expansionScale.setMaximum(10);
+        expansionScale.setIncrement(1);
+        expansionScale.setPageIncrement(2);
+        expansionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        expansionScale.setToolTipText("Adjust the depth of evolutionary iterations and architectural branching.");
+
+        expansionScale.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (isUpdating) return;
+                int val = expansionScale.getSelection();
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("maxIterations", val);
+                page.updateConfiguration(settings);
             }
         });
     }

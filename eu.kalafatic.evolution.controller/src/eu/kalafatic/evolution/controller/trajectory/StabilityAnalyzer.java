@@ -109,6 +109,11 @@ public class StabilityAnalyzer {
             }
         }
 
+        if (context != null && context.getOrchestrationState().getMetadata().get("forceSolution") != null) {
+            context.log("[STABILITY] Force Solution detected. Forcing convergence.");
+            return true;
+        }
+
         double stability = calculateStability(trajectory, context, pressure);
 
         // Check if test mode is active to allow accelerated convergence
@@ -138,6 +143,11 @@ public class StabilityAnalyzer {
         // Intent expansion always progresses once intent is clear (handled in IterationManager)
         if (current == EvolutionPhase.INTENT_EXPANSION) {
             context.log("[STABILITY] Intent expansion phase complete. Progressing.");
+            return true;
+        }
+
+        if (context != null && context.getOrchestrationState().getMetadata().get("forceSolution") != null) {
+            context.log("[STABILITY] Force Solution detected. Forcing progression.");
             return true;
         }
 
