@@ -234,7 +234,18 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             if (settings.containsKey("gitAutomation")) pi.setGitAutomation((Boolean)settings.get("gitAutomation"));
             if (settings.containsKey("stepMode")) pi.setStepMode((Boolean)settings.get("stepMode"));
             if (settings.containsKey("maxIterations")) pi.setPreferredMaxIterations((Integer)settings.get("maxIterations"));
-            if (settings.containsKey("autoApprove")) pi.setAutoApprove((Boolean)settings.get("autoApprove"));
+            if (settings.containsKey("autoApprove")) {
+                boolean autoApprove = (Boolean)settings.get("autoApprove");
+                pi.setAutoApprove(autoApprove);
+
+                // If auto-approve is enabled while waiting, resume the session
+                if (autoApprove && session instanceof SessionContext) {
+                    TaskContext taskContext = ((SessionContext)session).getTaskContext();
+                    if (taskContext != null && (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput())) {
+                        provideApproval(sessionId, true);
+                    }
+                }
+            }
         }
 
         if (changed && session != null) {
