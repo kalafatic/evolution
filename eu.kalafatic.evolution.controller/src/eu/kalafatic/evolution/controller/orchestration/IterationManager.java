@@ -1281,18 +1281,37 @@ public class IterationManager {
                 extractor.extractToSnapshot(snapshot);
             }
 
-            List<String> selectedPaths = (List<String>) context.getOrchestrationState().getMetadata().get("current_selected_files");
-            if (selectedPaths == null || selectedPaths.isEmpty()) {
-                context.log("[KERNEL] Mediated Mode: No evolved file selection found. Falling back to static curation.");
-                ContextCurator curator = new ContextCurator();
-                selectedPaths = curator.selectContext(snapshot, request, 16);
+            Object winningCandidateObj = context.getOrchestrationState().getMetadata().get("winningMediationCandidate");
+            eu.kalafatic.evolution.controller.mediation.model.MediationCandidate winningCandidate = null;
+            if (winningCandidateObj instanceof eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) {
+                winningCandidate = (eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) winningCandidateObj;
             }
 
-            String evolvedUnderstanding = (String) context.getOrchestrationState().getMetadata().get("current_understanding");
-            String evolvedReasoningFocus = (String) context.getOrchestrationState().getMetadata().get("current_reasoning_focus");
+            List<String> selectedPaths;
+            String optimizedPrompt;
+            String architectureSummary = null;
+            String dependencies = null;
+            String executionInstructions = null;
 
-            PromptSynthesizer synthesizer = new PromptSynthesizer();
-            String optimizedPrompt = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths, evolvedUnderstanding + "\n\nREASONING FOCUS: " + evolvedReasoningFocus);
+            if (winningCandidate != null) {
+                context.log("[KERNEL] Mediated Mode: Using evolved mediation candidate.");
+                selectedPaths = winningCandidate.getSelectedFiles();
+                optimizedPrompt = winningCandidate.getPrompt();
+                architectureSummary = winningCandidate.getArchitectureSummary();
+                dependencies = winningCandidate.getDependencies();
+                executionInstructions = winningCandidate.getExecutionInstructions();
+            } else {
+                context.log("[KERNEL] Mediated Mode: No evolved mediation candidate found. Falling back to static curation and synthesis.");
+                selectedPaths = (List<String>) context.getOrchestrationState().getMetadata().get("current_selected_files");
+                if (selectedPaths == null || selectedPaths.isEmpty()) {
+                    ContextCurator curator = new ContextCurator();
+                    selectedPaths = curator.selectContext(snapshot, request, 16);
+                }
+                String evolvedUnderstanding = (String) context.getOrchestrationState().getMetadata().get("current_understanding");
+                String evolvedReasoningFocus = (String) context.getOrchestrationState().getMetadata().get("current_reasoning_focus");
+                PromptSynthesizer synthesizer = new PromptSynthesizer();
+                optimizedPrompt = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths, evolvedUnderstanding + "\n\nREASONING FOCUS: " + evolvedReasoningFocus);
+            }
 
             if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && !context.isAutoApprove()) {
                 context.log("[KERNEL] Mediated Mode: Pausing for final export package review.");
@@ -1312,7 +1331,7 @@ public class IterationManager {
             MediatedExportManager exportManager = new MediatedExportManager();
             String metadataJson = snapshot.getMetadata().toString();
             String historyAnalysis = memoryService.getHistoryAnalysis();
-            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis);
+            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions);
 
             StringBuilder summaryBuilder = new StringBuilder();
             summaryBuilder.append("### Mediated Darwin Evolution Complete\n\n");
@@ -1325,7 +1344,7 @@ public class IterationManager {
             summaryBuilder.append(memoryService.getHistoryAnalysis()).append("\n\n");
 
             summaryBuilder.append("**Optimized Prompt Sample:**\n\n");
-            if (optimizedPrompt.length() > 500) {
+            if (optimizedPrompt != null && optimizedPrompt.length() > 500) {
                 summaryBuilder.append(optimizedPrompt.substring(0, 500)).append("...\n");
             } else {
                 summaryBuilder.append(optimizedPrompt);

@@ -177,7 +177,8 @@ public class DarwinVariantSpawner {
         if (isMediated) {
             sb.append("MEDIATED MODE COGNITION RULES (CRITICAL):\n")
               .append("- Focus on ARCHITECTURAL UNDERSTANDING, not code.\n")
-              .append("- USE ONLY REAL repository evidence.\n\n");
+              .append("- USE ONLY REAL repository evidence.\n")
+              .append("- Your goal is to produce a high-quality mediation candidate for external LLM processing.\n\n");
 
             if (context != null && context.getOrchestrationState() != null) {
                 var metadata = context.getOrchestrationState().getMetadata();
@@ -238,8 +239,20 @@ public class DarwinVariantSpawner {
           .append("    \"dependency_assumptions\": \"none/internal/external\",\n")
           .append("    \"runtime_behavior\": \"deterministic/async/etc\",\n")
           .append("    \"risk_acceptance\": \"conservative/experimental/etc\"\n")
-          .append("  },\n")
-          .append("  \"selected_files\": [\"src/main/java/App.java\"],\n")
+          .append("  },\n");
+
+        if (isMediated) {
+            sb.append("  \"mediation_candidate\": {\n")
+              .append("    \"prompt\": \"(The optimized prompt for the external LLM)\",\n")
+              .append("    \"selected_files\": [\"file1.java\", \"file2.java\"],\n")
+              .append("    \"architecture_summary\": \"(Concise architecture mapping)\",\n")
+              .append("    \"dependencies\": \"(Key module relationships and third-party deps)\",\n")
+              .append("    \"execution_instructions\": \"(Specific instructions for the external LLM)\",\n")
+              .append("    \"evaluation\": \"(Self-evaluation of this candidate's quality)\"\n")
+              .append("  },\n");
+        }
+
+        sb.append("  \"selected_files\": [\"src/main/java/App.java\"],\n")
           .append("  \"survival_argument\": \"(Technical justification)\",\n")
           .append("  \"tradeoffs\": \"(Technical tradeoffs)\",\n")
           .append("  \"failure_risks\": \"(Potential failure modes)\",\n")
@@ -337,7 +350,7 @@ public class DarwinVariantSpawner {
               .append("- Your goal is to EVOLVE ARCHITECTURAL UNDERSTANDING, not code.\n")
               .append("- DO NOT hallucinate synthetic runtime context, sensors, or memory systems.\n")
               .append("- USE ONLY REAL repository evidence provided in the context (files, structure, technologies).\n")
-              .append("- Focus on identifying architecture hotspots, important files, and high-value reasoning context.\n")
+              .append("- Focus on producing high-quality mediation candidates (prompt, context, instructions).\n")
               .append("- Strictly prohibit invented APIs or fictitious infrastructure.\n\n");
 
             if (context != null && context.getOrchestrationState() != null) {
@@ -386,7 +399,7 @@ public class DarwinVariantSpawner {
         }
 
         if (seed.getType() == DarwinStrategyType.MAXIMAL_DIVERGENCE) {
-            sb.append("TRAJECTORY GOAL: MAXIMAL DIVERGENCE\n")
+            sb.append("TRAJECTORY GOAL: MAXIMAL_DIVERGENCE\n")
               .append("Maximize conceptual distance from ALL previous trajectories. Explore unconventional engineering tradeoffs.\n\n");
         }
 
@@ -419,54 +432,67 @@ public class DarwinVariantSpawner {
           .append(basePrompt).append("\n\n")
           .append("CRITICAL: If an EXPECTED TARGET ARTIFACT is provided in the context, you MUST use it in your actions. Do NOT use placeholders like 'actual path' or 'WRITE or DELETE'.\n\n");
 
-        return sb.toString() +
-               "REQUIRED SCHEMA (CRITICAL: PROVIDE SPECIFIC TECHNICAL VALUES):\n" +
-               "<BEGIN_DARWIN_JSON>\n" +
-               "{\n" +
-               "  \"id\": \"v-" + seed.getType().name().toLowerCase() + "\",\n" +
-               "  \"strategy_type\": \"" + seed.getType() + "\",\n" +
-               "  \"strategy\": \"precise engineering strategy for this trajectory\",\n" +
-               "  \"reasoning_focus\": \"specific architectural focus for this mediated trajectory\",\n" +
-               "  \"selected_files\": [\"src/main/java/Main.java\"],\n" +
-               "  \"engineering_dimensions\": {\n" +
-               "    \"philosophy\": \"specific philosophy for this branch\",\n" +
-               "    \"execution_model\": \"atomic/service/reactive/etc\",\n" +
-               "    \"abstraction_depth\": \"low/medium/high\",\n" +
-               "    \"modularity_approach\": \"monolithic/modular/functional/etc\",\n" +
-               "    \"testing_strategy\": \"unit/integration/tdd/etc\",\n" +
-               "    \"extensibility\": \"low/medium/high\",\n" +
-               "    \"dependency_assumptions\": \"none/internal/external\",\n" +
-               "    \"runtime_behavior\": \"deterministic/async/etc\",\n" +
-               "    \"risk_acceptance\": \"conservative/experimental/etc\"\n" +
-               "  },\n" +
-               "  \"survival_argument\": \"why this specific future should survive technically\",\n" +
-               "  \"tradeoffs\": \"specific technical tradeoffs compared to other trajectories\",\n" +
-               "  \"failure_risks\": \"potential failure modes for this trajectory\",\n" +
-               "  \"pros_cons\": \"detailed pros/cons analysis\",\n" +
-               "  \"semantic_justification\": \"engineering philosophy justification\",\n" +
-               "  \"projected_steps\": [\"next logical step 1\", \"next logical step 2\"],\n" +
-               "  \"expected_outputs\": [\"expected file/artifact 1\"],\n" +
-               "  \"score\": 0.5,\n" +
-               "  \"suffix\": \"" + seed.getType().name().toLowerCase() + "\",\n" +
-               "  \"actions\": [\n" +
-               "    {\n" +
-               "      \"domain\": \"file\",\n" +
-               "      \"operation\": \"WRITE\",\n" +
-               "      \"target\": \"src/main/java/Main.java\",\n" +
-               "      \"description\": \"specific technical instruction for this action\"\n" +
-               "    }\n" +
-               "  ],\n" +
-               "  \"hypothesis\": {\n" +
-               "    \"description\": \"testable hypothesis for why this trajectory works\",\n" +
-               "    \"expected_effects\": [\"measurable effect 1\"]\n" +
-               "  },\n" +
-               "  \"expected_effect\": {\n" +
-               "    \"short_term\": \"expected result after execution\",\n" +
-               "    \"long_term\": \"long-term architectural impact\",\n" +
-               "    \"risk\": 0.5,\n" +
-               "    \"reversibility\": 1.0\n" +
-               "  }\n" +
-               "}\n" +
-               "<END_DARWIN_JSON>";
+        sb.append("REQUIRED SCHEMA (CRITICAL: PROVIDE SPECIFIC TECHNICAL VALUES):\n")
+               .append("<BEGIN_DARWIN_JSON>\n")
+               .append("{\n")
+               .append("  \"id\": \"v-").append(seed.getType().name().toLowerCase()).append("\",\n")
+               .append("  \"strategy_type\": \"").append(seed.getType()).append("\",\n")
+               .append("  \"strategy\": \"precise engineering strategy for this trajectory\",\n")
+               .append("  \"reasoning_focus\": \"specific architectural focus for this mediated trajectory\",\n")
+               .append("  \"selected_files\": [\"src/main/java/Main.java\"],\n")
+               .append("  \"engineering_dimensions\": {\n")
+               .append("    \"philosophy\": \"specific philosophy for this branch\",\n")
+               .append("    \"execution_model\": \"atomic/service/reactive/etc\",\n")
+               .append("    \"abstraction_depth\": \"low/medium/high\",\n")
+               .append("    \"modularity_approach\": \"monolithic/modular/functional/etc\",\n")
+               .append("    \"testing_strategy\": \"unit/integration/tdd/etc\",\n")
+               .append("    \"extensibility\": \"low/medium/high\",\n")
+               .append("    \"dependency_assumptions\": \"none/internal/external\",\n")
+               .append("    \"runtime_behavior\": \"deterministic/async/etc\",\n")
+               .append("    \"risk_acceptance\": \"conservative/experimental/etc\"\n")
+               .append("  },\n");
+
+        if (isMediated) {
+            sb.append("  \"mediation_candidate\": {\n")
+              .append("    \"prompt\": \"(The optimized prompt for the external LLM)\",\n")
+              .append("    \"selected_files\": [\"file1.java\", \"file2.java\"],\n")
+              .append("    \"architecture_summary\": \"(Concise architecture mapping)\",\n")
+              .append("    \"dependencies\": \"(Key module relationships and third-party deps)\",\n")
+              .append("    \"execution_instructions\": \"(Specific instructions for the external LLM)\",\n")
+              .append("    \"evaluation\": \"(Self-evaluation of this candidate's quality)\"\n")
+              .append("  },\n");
+        }
+
+        sb.append("  \"survival_argument\": \"why this specific future should survive technically\",\n")
+          .append("  \"tradeoffs\": \"specific technical tradeoffs compared to other trajectories\",\n")
+          .append("  \"failure_risks\": \"potential failure modes for this trajectory\",\n")
+          .append("  \"pros_cons\": \"detailed pros/cons analysis\",\n")
+          .append("  \"semantic_justification\": \"engineering philosophy justification\",\n")
+          .append("  \"projected_steps\": [\"next logical step 1\", \"next logical step 2\"],\n")
+          .append("  \"expected_outputs\": [\"expected file/artifact 1\"],\n")
+          .append("  \"score\": 0.5,\n")
+          .append("  \"suffix\": \"").append(seed.getType().name().toLowerCase()).append("\",\n")
+          .append("  \"actions\": [\n")
+          .append("    {\n")
+          .append("      \"domain\": \"file\",\n")
+          .append("      \"operation\": \"WRITE\",\n")
+          .append("      \"target\": \"src/main/java/Main.java\",\n")
+          .append("      \"description\": \"specific technical instruction for this action\"\n")
+          .append("    }\n")
+          .append("  ],\n")
+          .append("  \"hypothesis\": {\n")
+          .append("    \"description\": \"testable hypothesis for why this trajectory works\",\n")
+          .append("    \"expected_effects\": [\"measurable effect 1\"]\n")
+          .append("  },\n")
+          .append("  \"expected_effect\": {\n")
+          .append("    \"short_term\": \"expected result after execution\",\n")
+          .append("    \"long_term\": \"long-term architectural impact\",\n")
+          .append("    \"risk\": 0.5,\n")
+          .append("    \"reversibility\": 1.0\n")
+          .append("  }\n")
+          .append("}\n")
+          .append("<END_DARWIN_JSON>");
+
+        return sb.toString();
     }
 }
