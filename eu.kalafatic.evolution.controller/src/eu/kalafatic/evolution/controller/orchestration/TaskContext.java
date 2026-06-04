@@ -340,10 +340,16 @@ public class TaskContext {
         if (behaviorProfile == null) {
             eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver resolver = new eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorResolver();
             behaviorProfile = resolver.resolve(this);
+
+            // BREAK RECURSION: Use direct field access or lazy state init without triggering profile refresh again.
+            if (orchestrationState == null) {
+                orchestrationState = new OrchestrationState(sessionId);
+            }
+
             long resolvedBitState = resolver.resolveBitState(this);
-            if (getOrchestrationState().getBitState() != resolvedBitState) {
-                log("[KERNEL] Synchronizing Policy State: " + resolvedBitState);
-                getOrchestrationState().setBitState(resolvedBitState);
+            if (orchestrationState.getBitState() != resolvedBitState) {
+                orchestrationState.setBitState(resolvedBitState);
+                log("[KERNEL] Policy state synchronized: " + resolvedBitState);
             }
         }
         return behaviorProfile;
@@ -356,9 +362,6 @@ public class TaskContext {
     public OrchestrationState getOrchestrationState() {
         if (orchestrationState == null) {
             orchestrationState = new OrchestrationState(sessionId);
-        }
-        if (orchestrationState.getBitState() == 0) {
-            getBehaviorProfile();
         }
         return orchestrationState;
     }

@@ -183,9 +183,6 @@ public class SessionContext implements SessionContainer {
     public synchronized IterationMemoryService getMemoryService(File projectRoot) {
         if (memoryService == null) {
             memoryService = new IterationMemoryService(projectRoot);
-            if (taskContext != null) {
-                taskContext.getKernelContext().setMemoryService(memoryService);
-            }
         }
         return memoryService;
     }

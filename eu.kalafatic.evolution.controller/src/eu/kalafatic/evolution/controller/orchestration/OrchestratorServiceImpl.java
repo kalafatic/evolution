@@ -308,7 +308,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 
 
                 bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, sessionId, "OrchestratorService", response));
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                Log.log("CRITICAL ERROR in orchestration thread: " + e.getMessage());
                 processLogEntry("Error: " + e.getMessage(), sessionId, turnId);
                 bus.publish(new RuntimeEvent(RuntimeEventType.TASK_FAILED, sessionId, "OrchestratorService", e.getMessage()));
             }
