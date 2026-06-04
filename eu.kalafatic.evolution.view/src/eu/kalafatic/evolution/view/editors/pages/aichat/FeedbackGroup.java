@@ -88,12 +88,36 @@ public class FeedbackGroup extends AEvoGroup {
 
         // 1. Satisfaction Box
         satisfactionBox = GUIFactory.INSTANCE.createComposite(group, 2);
-        GUIFactory.INSTANCE.createLabel(satisfactionBox, "Rate Session (1-5):");
+        GUIFactory.INSTANCE.createLabel(satisfactionBox, "Rate Session (1-10):");
         satisfactionScale = new Scale(satisfactionBox, SWT.HORIZONTAL);
         satisfactionScale.setMinimum(1);
-        satisfactionScale.setMaximum(5);
-        satisfactionScale.setSelection(3);       
+        satisfactionScale.setMaximum(10);
+        satisfactionScale.setIncrement(1);
+        satisfactionScale.setSelection(5);       
         satisfactionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        
+       // 4. Expansion Depth Slider
+        Composite expansionBox = GUIFactory.INSTANCE.createComposite(group, 2);
+        GUIFactory.INSTANCE.createLabel(expansionBox, "Expansion Depth (Atomic - Multiple):");
+        expansionScale = new Scale(expansionBox, SWT.HORIZONTAL);
+        expansionScale.setMinimum(1);
+        expansionScale.setMaximum(10);
+        expansionScale.setIncrement(1);
+        expansionScale.setSelection(5);       
+        expansionScale.setPageIncrement(2);
+        expansionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        expansionScale.setToolTipText("Adjust the depth of evolutionary iterations and architectural branching.");
+
+        expansionScale.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (isUpdating) return;
+                int val = expansionScale.getSelection();
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("maxIterations", val);
+                page.updateConfiguration(settings);
+            }
+        });
         
         feedbackBox = GUIFactory.INSTANCE.createComposite(group, 3);
         GUIFactory.INSTANCE.createLabel(feedbackBox, "Session Feedback:");
@@ -178,27 +202,7 @@ public class FeedbackGroup extends AEvoGroup {
             }
         });
 
-        // 4. Expansion Depth Slider
-        Composite expansionBox = GUIFactory.INSTANCE.createComposite(group, 2);
-        GUIFactory.INSTANCE.createLabel(expansionBox, "Expansion Depth (Atomic - Multiple):");
-        expansionScale = new Scale(expansionBox, SWT.HORIZONTAL);
-        expansionScale.setMinimum(1);
-        expansionScale.setMaximum(10);
-        expansionScale.setIncrement(1);
-        expansionScale.setPageIncrement(2);
-        expansionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        expansionScale.setToolTipText("Adjust the depth of evolutionary iterations and architectural branching.");
-
-        expansionScale.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (isUpdating) return;
-                int val = expansionScale.getSelection();
-                java.util.Map<String, Object> settings = new java.util.HashMap<>();
-                settings.put("maxIterations", val);
-                page.updateConfiguration(settings);
-            }
-        });
+        
     }
 
     private void updateLevelSelection(int selectedIndex) {
