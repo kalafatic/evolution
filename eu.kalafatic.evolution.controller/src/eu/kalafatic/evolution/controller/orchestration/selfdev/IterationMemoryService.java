@@ -274,8 +274,8 @@ public class IterationMemoryService {
             Checkpoint checkpoint = mapper.readerFor(Checkpoint.class).readValue(checkpointFile);
             validateCheckpoint(checkpoint);
             return checkpoint;
-        } catch (IOException e) {
-            System.err.println("Failed to load checkpoint: " + e.getMessage());
+        } catch (Exception e) {
+            Log.log("[MEMORY] Failed to load checkpoint: " + e.getMessage() + ". Starting fresh.");
             return null;
         }
     }
@@ -285,7 +285,8 @@ public class IterationMemoryService {
             throw new RuntimeException("Invalid checkpoint: Missing sessionId");
         }
         if (checkpoint.getCurrentPhase() == null) {
-            throw new RuntimeException("Invalid checkpoint: Missing currentPhase");
+            Log.log("[MEMORY] Warning: Checkpoint missing currentPhase. Defaulting to INTENT_EXPANSION.");
+            checkpoint.setCurrentPhase(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.PHASE_INTENT_EXPANSION);
         }
         if (checkpoint.getTimestamp() == 0) {
             throw new RuntimeException("Invalid checkpoint: Missing timestamp");

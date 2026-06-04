@@ -181,6 +181,7 @@ public class ModeRouter {
     private boolean isAnalytical(String prompt) {
         if (prompt == null) return false;
         String lower = prompt.toLowerCase();
-        return lower.contains("analyze") || lower.contains("investigate") || lower.contains("report") || lower.contains("summarize");
+        return lower.contains("analyze") || lower.contains("aalyze") || lower.contains("anlyze") ||
+               lower.contains("investigate") || lower.contains("report") || lower.contains("summarize");
     }
 }
