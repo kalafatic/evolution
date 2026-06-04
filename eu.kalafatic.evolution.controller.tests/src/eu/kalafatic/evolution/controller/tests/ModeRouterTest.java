@@ -102,7 +102,7 @@ public class ModeRouterTest {
         orchestrator.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED);
 
         PlatformMode mode = router.route("analyze project c:\\Users\\petrk\\git\\test-evo\\", orchestrator);
-        assertEquals(PlatformType.ASSISTED_CODING, mode.getType());
+        assertEquals(PlatformType.HYBRID_MANUAL_EXPORT, mode.getType());
     }
 
     @Test

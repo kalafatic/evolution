@@ -90,13 +90,16 @@ public class LlmRouter {
                             "--- END PREPARED PROMPT ---";
 
                     String response = context.requestInput(mediationInstruction).get();
-                    if (response == null || response.isEmpty() || "Rejected".equalsIgnoreCase(response)) {
-                        throw new Exception("Mediation rejected or empty. Stopping flow.");
+                    String trimmedResponse = (response != null) ? response.trim() : "";
+
+                    if ("Rejected".equalsIgnoreCase(trimmedResponse)) {
+                        throw new Exception("Mediation rejected. Stopping flow.");
                     }
 
                     // NEW: Fast-approval logic for MEDIATED mode
-                    String trimmedResponse = response.trim();
-                    if (trimmedResponse.equalsIgnoreCase("Approved") ||
+                    // Empty response (Enter/Send without text) now means Approve
+                    if (trimmedResponse.isEmpty() ||
+                        trimmedResponse.equalsIgnoreCase("Approved") ||
                         trimmedResponse.equalsIgnoreCase("Yes") ||
                         trimmedResponse.equalsIgnoreCase("Proceed") ||
                         trimmedResponse.equalsIgnoreCase("OK")) {

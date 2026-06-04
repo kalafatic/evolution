@@ -118,7 +118,8 @@ public class ModeRouter {
             // Fallback for MEDIATED if no iterative mode is active
             if (isMediated) {
                 if (isAnalytical(lowerPrompt)) {
-                    return createAssistedCodingMode();
+                    // Mediated mode analytical prompts should use Export for repository grounding
+                    return createHybridManualExportMode();
                 }
                 return createHybridManualExportMode();
             }

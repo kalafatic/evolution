@@ -911,13 +911,15 @@ public class IterationManager {
         String clarificationRequest = planner.formatClarificationRequest(expansion);
         context.log(clarificationRequest);
         String userResponse = context.requestInput(clarificationRequest).get();
-        if ("Rejected".equalsIgnoreCase(userResponse)) {
+        String trimmed = (userResponse != null) ? userResponse.trim() : "";
+
+        if ("Rejected".equalsIgnoreCase(trimmed)) {
             recordRejection(goal, "User rejected clarification request.");
             transition(SystemState.FAILED, context);
             return false;
         }
 
-        if (userResponse.equalsIgnoreCase("Approved") || userResponse.equalsIgnoreCase("Proceed") || userResponse.equalsIgnoreCase("Yes") || userResponse.equalsIgnoreCase("OK")) {
+        if (trimmed.isEmpty() || trimmed.equalsIgnoreCase("Approved") || trimmed.equalsIgnoreCase("Proceed") || trimmed.equalsIgnoreCase("Yes") || trimmed.equalsIgnoreCase("OK")) {
             context.log("[KERNEL] User approved intent expansion.");
             return true;
         } else {
@@ -971,9 +973,17 @@ public class IterationManager {
             sb.append("Select a trajectory to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
 
             String input = context.requestInput(sb.toString()).get();
-            if (input == null || input.trim().isEmpty()) continue;
+            String trimmed = (input != null) ? input.trim() : "";
 
-            if ("Force Solution".equalsIgnoreCase(input)) {
+            if (trimmed.isEmpty() || "Approved".equalsIgnoreCase(trimmed) || "Yes".equalsIgnoreCase(trimmed) || "Proceed".equalsIgnoreCase(trimmed) || "OK".equalsIgnoreCase(trimmed)) {
+                context.log("[KERNEL] User approved best trajectory via fast-approval.");
+                return variants.stream()
+                        .max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
+                        .map(v -> v.getId())
+                        .orElse(null);
+            }
+
+            if ("Force Solution".equalsIgnoreCase(trimmed)) {
                 context.log("[KERNEL] Force Solution requested. Picking best variant and enabling final convergence.");
                 context.getOrchestrationState().getMetadata().put("forceSolution", true);
                 context.setAutoApprove(true);
@@ -985,8 +995,8 @@ public class IterationManager {
                         .orElse(null);
             }
 
-            if (input.startsWith("Select ") || input.startsWith("Approve variant ")) {
-                String manualId = input.startsWith("Select ") ? input.substring(7).trim() : input.substring(16).trim();
+            if (trimmed.startsWith("Select ") || trimmed.startsWith("Approve variant ")) {
+                String manualId = trimmed.startsWith("Select ") ? trimmed.substring(7).trim() : trimmed.substring(16).trim();
                 boolean found = variants.stream().anyMatch(v -> v.getId().equals(manualId));
                 if (found) {
                     context.log("[KERNEL] User selected trajectory: " + manualId);
@@ -994,30 +1004,30 @@ public class IterationManager {
                 } else {
                     context.log("[KERNEL] Warning: Selected trajectory ID not found: " + manualId);
                 }
-            } else if (input.startsWith("Keep variant ")) {
-                String keepId = input.substring(13).trim();
+            } else if (trimmed.startsWith("Keep variant ")) {
+                String keepId = trimmed.substring(13).trim();
                 variants.stream().filter(v -> v.getId().equals(keepId)).findFirst().ifPresent(v -> {
                     v.setActivationState(BranchVariant.ActivationState.KEPT);
                     context.log("[KERNEL] Trajectory " + keepId + " marked as KEPT for final evaluation.");
                 });
-            } else if (input.startsWith("Reject variant ")) {
-                String rejectedId = input.substring(15).trim();
+            } else if (trimmed.startsWith("Reject variant ")) {
+                String rejectedId = trimmed.substring(15).trim();
                 context.log("[KERNEL] User rejected trajectory: " + rejectedId + ". Evolution stopped by user.");
                 recordRejection(goal, "Darwin trajectory " + rejectedId + " rejected by user ('no way').");
                 sessionContainer.getEvolutionMemoryGraph().recordRejection("MANUAL_SELECTION", rejectedId, "User rejected explicitly.");
                 return "STOP";
-            } else if ("Rejected".equalsIgnoreCase(input) || "Reject".equalsIgnoreCase(input) || "No".equalsIgnoreCase(input)) {
+            } else if ("Rejected".equalsIgnoreCase(trimmed) || "Reject".equalsIgnoreCase(trimmed) || "No".equalsIgnoreCase(trimmed)) {
                 recordRejection(goal, "Darwin trajectories rejected by user.");
                 sessionContainer.getEvolutionMemoryGraph().recordEntropy(1.0);
                 return "FAILED";
-            } else if (input.startsWith("Propose:") || input.trim().startsWith("{")) {
+            } else if (trimmed.startsWith("Propose:") || trimmed.startsWith("{")) {
                 context.log("[KERNEL] User injected a new trajectory. Integrating as a first-class candidate.");
-                BranchVariant userVariant = createUserVariant(input, goal, context);
+                BranchVariant userVariant = createUserVariant(trimmed, goal, context);
                 variants.add(userVariant);
                 context.log("[KERNEL] User trajectory " + userVariant.getId() + " added to the evolutionary pool.");
             } else {
-                context.log("[KERNEL] User provided guidance: " + input + ". Refining intent and regenerating trajectories.");
-                String newGoal = goal + " (Guidance: " + input + ")";
+                context.log("[KERNEL] User provided guidance: " + trimmed + ". Refining intent and regenerating trajectories.");
+                String newGoal = goal + " (Guidance: " + trimmed + ")";
                 context.getOrchestrationState().setRawInput(newGoal);
                 if (context.getOrchestrator().getSelfDevSession() != null) {
                      context.getOrchestrator().getSelfDevSession().setInitialRequest(newGoal);
