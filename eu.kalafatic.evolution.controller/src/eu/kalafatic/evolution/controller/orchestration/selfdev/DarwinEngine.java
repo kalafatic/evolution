@@ -33,6 +33,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.Diversit
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.EvolutionaryPenaltyModel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.RejectionPatternAnalyzer;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
+import eu.kalafatic.evolution.controller.mediation.model.MediationCandidate;
 
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
@@ -481,49 +482,41 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private List<TrajectoryBlueprint> generateMediatedBlueprints(String goal) {
         List<TrajectoryBlueprint> blueprints = new ArrayList<>();
 
-        // BRANCH A - ARCHITECTURE_MAPPING
-        TrajectoryBlueprint arch = new TrajectoryBlueprint("architecture_mapping", goal, "Structural and architectural mapping");
-        arch.addRequiredCharacteristic("Map core components");
-        arch.addRequiredCharacteristic("Identify structural patterns");
-        arch.addForbiddenOverlap("dependency details");
-        arch.addForbiddenOverlap("implementation hotspots");
-        arch.setArchitecturalDirection("Focus: High-level topology. Philosophy: structural mapping.");
+        // BRANCH A - CONCISE_MAPPING
+        TrajectoryBlueprint concise = new TrajectoryBlueprint("concise_mapping", goal, "Minimal and concise mediation package");
+        concise.addRequiredCharacteristic("Minimal high-signal context");
+        concise.addRequiredCharacteristic("Concise reasoning instructions");
+        concise.setArchitecturalDirection("Focus: Information density. Strategy: concise prompt and minimal context.");
+        concise.getEngineeringDimensions().put("philosophy", "information density distillation");
+        concise.getEngineeringDimensions().put("abstraction_depth", "high");
+        blueprints.add(concise);
+
+        // BRANCH B - ARCHITECTURE_DRIVEN
+        TrajectoryBlueprint arch = new TrajectoryBlueprint("architecture_driven", goal, "Architecture-focused mediation package");
+        arch.addRequiredCharacteristic("Detailed architectural mapping");
+        arch.addRequiredCharacteristic("Structural reasoning instructions");
+        arch.setArchitecturalDirection("Focus: Structural topology. Strategy: architecture-driven prompt and structural context.");
         arch.getEngineeringDimensions().put("philosophy", "structural mapping");
         arch.getEngineeringDimensions().put("abstraction_depth", "high");
         blueprints.add(arch);
 
-        // BRANCH B - DEPENDENCY_AUDIT
-        TrajectoryBlueprint dep = new TrajectoryBlueprint("dependency_audit", goal, "Dependency and relationship exploration");
-        dep.addRequiredCharacteristic("Analyze module relationships");
-        dep.addRequiredCharacteristic("Identify cross-cutting concerns");
-        dep.addForbiddenOverlap("architectural patterns");
-        dep.addForbiddenOverlap("technical debt analysis");
-        dep.setArchitecturalDirection("Focus: Interaction graphs. Philosophy: relationship auditing.");
-        dep.getEngineeringDimensions().put("philosophy", "relationship auditing");
-        dep.getEngineeringDimensions().put("execution_model", "analytical");
+        // BRANCH C - IMPLEMENTATION_DRIVEN
+        TrajectoryBlueprint impl = new TrajectoryBlueprint("implementation_driven", goal, "Implementation-focused mediation package");
+        impl.addRequiredCharacteristic("Direct implementation hotspots");
+        impl.addRequiredCharacteristic("Logic-oriented reasoning instructions");
+        impl.setArchitecturalDirection("Focus: Functional logic. Strategy: implementation-driven prompt and logic-dense context.");
+        impl.getEngineeringDimensions().put("philosophy", "relationship auditing");
+        impl.getEngineeringDimensions().put("execution_model", "analytical");
+        blueprints.add(impl);
+
+        // BRANCH D - DEPENDENCY_EXPANDED
+        TrajectoryBlueprint dep = new TrajectoryBlueprint("dependency_expanded", goal, "Dependency-expanded mediation package");
+        dep.addRequiredCharacteristic("Broad dependency context");
+        dep.addRequiredCharacteristic("Cross-module reasoning instructions");
+        dep.setArchitecturalDirection("Focus: Module interactions. Strategy: dependency-expanded prompt and interaction context.");
+        dep.getEngineeringDimensions().put("philosophy", "instability analysis");
+        dep.getEngineeringDimensions().put("risk_acceptance", "experimental");
         blueprints.add(dep);
-
-        // BRANCH C - HOTSPOT_ANALYSIS
-        TrajectoryBlueprint hotspot = new TrajectoryBlueprint("hotspot_analysis", goal, "Complexity and technical debt analysis");
-        hotspot.addRequiredCharacteristic("Identify technical debt");
-        hotspot.addRequiredCharacteristic("Identify high-complexity areas");
-        hotspot.addForbiddenOverlap("minimal context selection");
-        hotspot.addForbiddenOverlap("structural mapping");
-        hotspot.setArchitecturalDirection("Focus: Risk and debt. Philosophy: instability analysis.");
-        hotspot.getEngineeringDimensions().put("philosophy", "instability analysis");
-        hotspot.getEngineeringDimensions().put("risk_acceptance", "experimental");
-        blueprints.add(hotspot);
-
-        // BRANCH D - CONTEXT_DISTILLATION
-        TrajectoryBlueprint contextBlueprint = new TrajectoryBlueprint("context_distillation", goal, "High-signal context package evolution");
-        contextBlueprint.addRequiredCharacteristic("Distill minimal context");
-        contextBlueprint.addRequiredCharacteristic("Zero-noise file selection");
-        contextBlueprint.addForbiddenOverlap("dependency graphs");
-        contextBlueprint.addForbiddenOverlap("architectural hotspots");
-        contextBlueprint.setArchitecturalDirection("Focus: Reasoning efficiency. Philosophy: information density distillation.");
-        contextBlueprint.getEngineeringDimensions().put("philosophy", "information density distillation");
-        contextBlueprint.getEngineeringDimensions().put("abstraction_depth", "high");
-        blueprints.add(contextBlueprint);
 
         return blueprints;
     }
@@ -591,6 +584,21 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 action.setDescription(aObj.optString("description"));
                 v.getActions().add(action);
             }
+        }
+
+        JSONObject medObj = obj.optJSONObject("mediation_candidate");
+        if (medObj != null) {
+            MediationCandidate med = new MediationCandidate();
+            med.setPrompt(medObj.optString("prompt"));
+            JSONArray medFiles = medObj.optJSONArray("selected_files");
+            if (medFiles != null) {
+                for (int i = 0; i < medFiles.length(); i++) med.getSelectedFiles().add(medFiles.getString(i));
+            }
+            med.setArchitectureSummary(medObj.optString("architecture_summary"));
+            med.setDependencies(medObj.optString("dependencies"));
+            med.setExecutionInstructions(medObj.optString("execution_instructions"));
+            med.setEvaluation(medObj.optString("evaluation"));
+            v.setMediationCandidate(med);
         }
 
         JSONObject hypObj = obj.optJSONObject("hypothesis");

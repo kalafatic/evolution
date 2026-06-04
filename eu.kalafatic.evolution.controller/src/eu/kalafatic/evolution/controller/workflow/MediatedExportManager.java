@@ -12,7 +12,7 @@ import java.util.zip.ZipOutputStream;
  */
 public class MediatedExportManager {
 
-    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis) throws IOException {
+    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions) throws IOException {
         String fileName = "mediated_export_" + sessionId + "_" + System.currentTimeMillis() + ".zip";
         File targetDir = projectRoot;
         if (outputPath != null && !outputPath.isEmpty()) {
@@ -25,21 +25,32 @@ public class MediatedExportManager {
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
             // 1. Add Prompt
-            addStringToZip(zos, "PROMPT.md", prompt);
+            addStringToZip(zos, "prompt.md", prompt);
 
             // 2. Add Metadata and Analysis
             if (metadataJson != null) {
-                addStringToZip(zos, "METADATA.json", metadataJson);
+                addStringToZip(zos, "metadata.json", metadataJson);
             }
             if (historyAnalysis != null) {
-                addStringToZip(zos, "EVOLUTION_ANALYSIS.md", historyAnalysis);
+                addStringToZip(zos, "evolution-analysis.md", historyAnalysis);
             }
 
-            // 3. Add Selected File Contents
+            // 3. Add Architectural Artifacts
+            if (architectureSummary != null) {
+                addStringToZip(zos, "architecture.md", architectureSummary);
+            }
+            if (dependencies != null) {
+                addStringToZip(zos, "dependencies.md", dependencies);
+            }
+            if (executionInstructions != null) {
+                addStringToZip(zos, "execution-instructions.md", executionInstructions);
+            }
+
+            // 4. Add Selected File Contents
             for (String relativePath : selectedPaths) {
                 File file = new File(projectRoot, relativePath);
                 if (file.exists() && file.isFile()) {
-                    addFileToZip(zos, "context/" + relativePath, file);
+                    addFileToZip(zos, "affected-files/" + relativePath, file);
                 }
             }
         }

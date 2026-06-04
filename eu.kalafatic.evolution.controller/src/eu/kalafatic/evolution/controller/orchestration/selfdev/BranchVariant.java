@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.ArrayList;
 import java.util.List;
+import eu.kalafatic.evolution.controller.mediation.model.MediationCandidate;
 
 public class BranchVariant {
     public enum ActivationState {
@@ -31,6 +32,7 @@ public class BranchVariant {
     private double score;
     private boolean success;
     private String errorMessage;
+    private MediationCandidate mediationCandidate;
 
     // Extended Darwin Branch Model fields
     private String branchId;
@@ -137,6 +139,9 @@ public class BranchVariant {
 
     public double getLongTermStability() { return longTermStability; }
     public void setLongTermStability(double longTermStability) { this.longTermStability = longTermStability; }
+
+    public MediationCandidate getMediationCandidate() { return mediationCandidate; }
+    public void setMediationCandidate(MediationCandidate mediationCandidate) { this.mediationCandidate = mediationCandidate; }
 
     public String getTrajectoryId() { return trajectoryId; }
     public void setTrajectoryId(String trajectoryId) { this.trajectoryId = trajectoryId; }

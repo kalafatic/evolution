@@ -253,6 +253,9 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.getOrchestrationState().getMetadata().put("current_reasoning_focus", selectedVariant.getReasoningFocus());
                 context.getOrchestrationState().getMetadata().put("current_selected_files", selectedVariant.getSelectedFiles());
                 context.getOrchestrationState().getMetadata().put("current_actions", selectedVariant.getActions());
+                if (selectedVariant.getMediationCandidate() != null) {
+                    context.getOrchestrationState().getMetadata().put("winningMediationCandidate", selectedVariant.getMediationCandidate());
+                }
             }
 
             if (winningContext != null) {
