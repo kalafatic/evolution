@@ -869,7 +869,8 @@ public class IterationManager {
                 String userResponse = context.requestInput("Intent interpretation complete. State: " + expansion.getState() + ". Review and select a hypothesis to proceed, or reject to refine.").get();
 
                 if ("Force Solution".equalsIgnoreCase(userResponse)) {
-                    context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                    context.log("[KERNEL] Force Solution requested. Enabling auto-approval and final convergence.");
+                    context.getOrchestrationState().getMetadata().put("forceSolution", true);
                     context.setAutoApprove(true);
                     return true;
                 } else if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse) || "Rejected".equalsIgnoreCase(userResponse)) {
@@ -941,7 +942,8 @@ public class IterationManager {
             try {
                 String userResponse = context.requestInput("Phase completed successfully. Proceed to " + nextPhase + "? (Yes/No)").get();
                 if ("Force Solution".equalsIgnoreCase(userResponse)) {
-                    context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                    context.log("[KERNEL] Force Solution requested. Enabling auto-approval and final convergence.");
+                    context.getOrchestrationState().getMetadata().put("forceSolution", true);
                     context.setAutoApprove(true);
                     return true;
                 } else if ("No".equalsIgnoreCase(userResponse) || "Reject".equalsIgnoreCase(userResponse)) {
@@ -972,9 +974,15 @@ public class IterationManager {
             if (input == null || input.trim().isEmpty()) continue;
 
             if ("Force Solution".equalsIgnoreCase(input)) {
-                context.log("[KERNEL] Force Solution requested. Enabling auto-approval for the rest of this session.");
+                context.log("[KERNEL] Force Solution requested. Picking best variant and enabling final convergence.");
+                context.getOrchestrationState().getMetadata().put("forceSolution", true);
                 context.setAutoApprove(true);
-                return null;
+
+                // Return best variant to proceed with execution immediately
+                return variants.stream()
+                        .max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
+                        .map(v -> v.getId())
+                        .orElse(null);
             }
 
             if (input.startsWith("Select ") || input.startsWith("Approve variant ")) {
