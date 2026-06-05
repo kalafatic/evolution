@@ -72,7 +72,13 @@ public class EvolutionOrchestrator implements IOrchestrator {
     @Override
     public OrchestratorResponse handle(TaskRequest taskRequest, TaskContext context) throws Exception {
         SessionContainer session = sessionContainer != null ? sessionContainer : SessionManager.getInstance().getOrCreateSession(context.getSessionId());
-        IterationManager kernel = KernelFactory.create(context, session, aiService);
+
+        IterationManager kernel = session.getIterationManager();
+        if (kernel == null) {
+            kernel = KernelFactory.create(context, session, aiService);
+            session.setIterationManager(kernel);
+        }
+
         return kernel.handle(taskRequest);
     }
 

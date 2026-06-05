@@ -30,14 +30,19 @@ public class TaskExecutor {
 
     public boolean executeTasks(List<Task> tasks, eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
         context.log("[EXECUTOR] Routing " + tasks.size() + " tasks to the Kernel Control Plane.");
+        // If this is called, it might be from a legacy path or a recursive variant evaluation.
+        // We SHOULD NOT create a new IterationManager here if we are already in one,
+        // but TaskExecutor currently doesn't have a direct reference to its parent IterationManager
+        // to avoid circular dependencies in constructors.
+
+        // HOWEVER, EvolutionOrchestrator (which this class owns) can execute tasks directly.
         try {
-            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
-            eu.kalafatic.evolution.controller.orchestration.IterationManager kernel = (aiService != null) ?
-                eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(context, session, aiService) :
-                eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(context, session);
-            return kernel.executeTasksWithRetries(tasks);
+            for (Task task : tasks) {
+                orchestrator.executeTask(task, context);
+            }
+            return true;
         } catch (Exception e) {
-            context.log("[EXECUTOR] Kernel execution failed: " + e.getMessage());
+            context.log("[EXECUTOR] Direct execution failed: " + e.getMessage());
             return false;
         }
     }
