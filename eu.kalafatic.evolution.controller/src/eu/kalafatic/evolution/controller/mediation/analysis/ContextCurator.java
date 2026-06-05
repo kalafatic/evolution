@@ -40,7 +40,7 @@ public class ContextCurator {
             .map(f -> f.getPath())
             .collect(Collectors.toList()));
 
-        return curatedPaths.stream().distinct().collect(Collectors.toList());
+        return curatedPaths.stream().distinct().limit(16).collect(Collectors.toList());
     }
 
     public List<String> selectContext(TargetSnapshot snapshot, String query, int maxFiles) {
@@ -78,7 +78,8 @@ public class ContextCurator {
         List<SemanticNode> criticalNodes = snapshot.getNodes().values().stream()
             .filter(node -> node.getTags().contains("Entry Point") ||
                             node.getPath().endsWith("pom.xml") ||
-                            node.getPath().endsWith("package.json"))
+                            node.getPath().endsWith("package.json") ||
+                            node.getTags().contains("Interface"))
             .collect(Collectors.toList());
 
         for (SemanticNode node : criticalNodes) {

@@ -155,7 +155,7 @@ public class DarwinVariantSpawner {
                 eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = (eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
                 if (snapshot != null) {
                     eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator curator = new eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator();
-                    List<String> files = curator.selectContext(snapshot, bp.getGoal(), 16);
+                    List<String> files = curator.selectContext(snapshot, bp.getGoal(), 12); // Aim for sweet spot 12
 
                     JSONObject mediationCandidate = new JSONObject();
                     org.json.JSONArray medFiles = new org.json.JSONArray();
@@ -165,11 +165,11 @@ public class DarwinVariantSpawner {
                     }
 
                     mediationCandidate.put("selected_files", medFiles);
-                    mediationCandidate.put("prompt", "Analyze and propose improvements based on the provided repository context.");
-                    mediationCandidate.put("architecture_summary", "Auto-recovered architecture mapping.");
-                    mediationCandidate.put("dependencies", "Auto-recovered dependency mapping.");
-                    mediationCandidate.put("execution_instructions", "Perform deep reasoning on the provided files.");
-                    mediationCandidate.put("evaluation", "Auto-repaired fallback candidate.");
+                    mediationCandidate.put("prompt", "Analyze and propose improvements based on the provided high-density repository context. Focus on the core architectural hotspots.");
+                    mediationCandidate.put("architecture_summary", "Auto-recovered high-signal architecture mapping.");
+                    mediationCandidate.put("dependencies", "Auto-recovered critical dependency mapping.");
+                    mediationCandidate.put("execution_instructions", "Perform deep reasoning on the provided distilled files. Do not exceed the scope of the provided context.");
+                    mediationCandidate.put("evaluation", "Auto-repaired distilled fallback candidate (High Signal).");
                     repair.put("mediation_candidate", mediationCandidate);
                 }
             }
@@ -210,7 +210,9 @@ public class DarwinVariantSpawner {
             sb.append("MEDIATED MODE COGNITION RULES (CRITICAL):\n")
               .append("- Focus on ARCHITECTURAL UNDERSTANDING, not code.\n")
               .append("- USE ONLY REAL repository evidence from the provided candidate list.\n")
-              .append("- You MUST select 8-16 most important files for the mediation package.\n")
+              .append("- You MUST select 4-16 most important high-signal files for the mediation package.\n")
+              .append("- Focus on INFORMATION DENSITY: smallest set of files capable of explaining the problem.\n")
+              .append("- Strictly avoid context bloat (> 16 files is PENALIZED).\n")
               .append("- Your goal is to produce a high-quality mediation candidate for external LLM processing.\n\n");
 
             if (context != null && context.getOrchestrationState() != null) {
@@ -388,7 +390,9 @@ public class DarwinVariantSpawner {
               .append("- Your goal is to EVOLVE ARCHITECTURAL UNDERSTANDING, not code.\n")
               .append("- DO NOT hallucinate synthetic runtime context, sensors, or memory systems.\n")
               .append("- USE ONLY REAL repository evidence from the provided candidate list (files, structure, technologies).\n")
-              .append("- You MUST select 8-16 most important files for the mediation package.\n")
+              .append("- You MUST select 4-16 most important high-signal files for the mediation package.\n")
+              .append("- Focus on INFORMATION DENSITY: smallest set of files capable of explaining the problem.\n")
+              .append("- Strictly avoid context bloat (> 16 files is PENALIZED).\n")
               .append("- Focus on producing high-quality mediation candidates (prompt, context, instructions).\n")
               .append("- Strictly prohibit invented APIs or fictitious infrastructure.\n\n");
 
@@ -494,7 +498,7 @@ public class DarwinVariantSpawner {
         if (isMediated) {
             sb.append("  \"mediation_candidate\": {\n")
               .append("    \"prompt\": \"(The optimized prompt for the external LLM)\",\n")
-              .append("    \"selected_files\": [\"(Select 8-16 key files from the candidate list)\"],\n")
+              .append("    \"selected_files\": [\"(Select 4-16 HIGH-SIGNAL files from the candidate list)\"],\n")
               .append("    \"architecture_summary\": \"(Concise architecture mapping)\",\n")
               .append("    \"dependencies\": \"(Key module relationships and third-party deps)\",\n")
               .append("    \"execution_instructions\": \"(Specific instructions for the external LLM)\",\n")

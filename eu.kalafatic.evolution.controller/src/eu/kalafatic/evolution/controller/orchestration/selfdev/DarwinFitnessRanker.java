@@ -56,6 +56,11 @@ public class DarwinFitnessRanker {
             score += (pressure.getTotalPressure() * 0.1);
         }
 
+        // 0. Specialized Mediation Fitness (High Density focus)
+        if (variant.has("mediation_candidate")) {
+            score += calculateMediationFitness(variant.optJSONObject("mediation_candidate"));
+        }
+
         // 1. Structural Completeness
         if (variant.has("tradeoffs") && variant.optString("tradeoffs").length() > 20) score += 0.1;
         if (variant.has("failure_risks") && variant.optString("failure_risks").length() > 20) score += 0.1;
@@ -90,5 +95,37 @@ public class DarwinFitnessRanker {
         }
 
         return Math.min(1.0, score);
+    }
+
+    private double calculateMediationFitness(JSONObject med) {
+        if (med == null) return 0.0;
+        double medScore = 0.0;
+
+        // 1. File Selection Count (Sweet spot: 4-16 files)
+        JSONArray files = med.optJSONArray("selected_files");
+        if (files != null) {
+            int count = files.length();
+            if (count >= 4 && count <= 16) {
+                medScore += 0.2; // Reward ideal range
+            } else if (count > 0 && count < 4) {
+                medScore += 0.05; // Penalize too small
+            } else if (count > 16) {
+                medScore -= Math.min(0.3, (count - 16) * 0.02); // Penalize bloat aggressively
+            }
+        }
+
+        // 2. Information Density (Completeness of summaries)
+        if (med.optString("architecture_summary").length() > 50) medScore += 0.05;
+        if (med.optString("dependencies").length() > 30) medScore += 0.05;
+        if (med.optString("execution_instructions").length() > 50) medScore += 0.05;
+        if (med.optString("prompt").length() > 100) medScore += 0.05;
+
+        // 3. Signal to Noise (Self-evaluation)
+        String evaluation = med.optString("evaluation").toLowerCase();
+        if (evaluation.contains("density") || evaluation.contains("signal") || evaluation.contains("distilled")) {
+            medScore += 0.05;
+        }
+
+        return medScore;
     }
 }
