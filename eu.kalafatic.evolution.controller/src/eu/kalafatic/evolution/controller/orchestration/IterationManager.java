@@ -321,13 +321,21 @@ public class IterationManager {
                            prompt.equalsIgnoreCase("proceed");
 
         String checkpointGoal = (String) state.getMetadata().get("checkpoint_goal");
-        if (!isControl && checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
-            context.log("[KERNEL] New request detected. Invalidating stale evolution phase: " + state.getCurrentPhase());
-            state.setCurrentPhase(null);
-            state.setIterationCount(0);
+        if (!isControl) {
+            if (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
+                context.log("[KERNEL] New request detected. Invalidating stale evolution phase: " + state.getCurrentPhase());
+                state.setCurrentPhase(null);
+                state.setIterationCount(0);
+
+                // Also reset trajectory lineage
+                context.getKernelContext().getMemoryService().getRecords().clear();
+            }
+            state.setRawInput(request);
+            state.getMetadata().put("checkpoint_goal", request);
+        } else if (state.getRawInput() == null || state.getRawInput().isEmpty()) {
+            state.setRawInput(request);
+            state.getMetadata().put("checkpoint_goal", request);
         }
-        state.setRawInput(request);
-        state.getMetadata().put("checkpoint_goal", request);
 
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
@@ -447,7 +455,10 @@ public class IterationManager {
             if (result != null && result.getResultType() == ResultType.ERROR) {
                 transition(SystemState.FAILED, context);
             } else {
+            // Final response handled inside evolve if terminal phase reached
+            if (!context.getStateHolder().getState().equals(SystemState.DONE)) {
                 transition(SystemState.DONE, context);
+            }
             }
 
             if (result != null && result.getResultType() != ResultType.ERROR) {
@@ -611,13 +622,21 @@ public class IterationManager {
                 boolean stabilized = evolutionaryTrajectoryEngine.evolve(activeTrajectory, context);
                 if (stabilized) {
                     context.log("[KERNEL] Evolutionary equilibrium detected. Converging.");
-                    break;
+                    // After convergence, we might need one more iteration to reach terminal phase
+                    if (!state.getCurrentPhase().contains("TERMINAL") && !state.getCurrentPhase().contains("SYNTHESIS")) {
+                        advanceEvolutionPhase(state);
+                    }
                 }
             }
 
             saveFullCheckpoint();
 
             if (result.getDecision() != SelfDevDecision.CONTINUE) {
+                break;
+            }
+
+            // If we reached a terminal phase during the iteration, break the loop
+            if (state.getCurrentPhase().contains("TERMINAL")) {
                 break;
             }
         }
@@ -634,6 +653,7 @@ public class IterationManager {
             } else {
                 summary = getFinalResponseAgent().generateFinalResponse(request, context.getOrchestrator().getTasks(), context);
             }
+            transition(SystemState.DONE, context);
         } else {
             summary = "Evolution completed at phase: " + state.getCurrentPhase();
         }

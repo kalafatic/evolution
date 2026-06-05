@@ -81,6 +81,7 @@ public class EvolutionProgressPublisher {
     }
 
     private static void publish(TaskContext context, EvolutionProgressEvent event) {
+        populateSessionProperties(context, event);
         JSONObject payload = toJson(event);
 
         // 1. Publish to RuntimeEventBus for real-time UI updates
@@ -110,6 +111,21 @@ public class EvolutionProgressPublisher {
         );
     }
 
+    private static void populateSessionProperties(TaskContext context, EvolutionProgressEvent event) {
+        event.setAutoApprove(context.isAutoApprove());
+        if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
+            String sid = context.getSessionId();
+            context.getOrchestrator().getAiChat().getSessions().stream()
+                .filter(s -> sid.equals(s.getId()))
+                .findFirst()
+                .ifPresent(s -> {
+                    event.setGitAutomation(s.isGitAutomation());
+                    event.setStepMode(s.isStepMode());
+                    event.setMaxIterations(s.getMaxIterations());
+                });
+        }
+    }
+
     private static JSONObject toJson(EvolutionProgressEvent event) {
         JSONObject json = new JSONObject();
         json.put("sessionId", event.getSessionId());
@@ -122,6 +138,10 @@ public class EvolutionProgressPublisher {
         json.put("currentBranch", event.getCurrentBranch());
         json.put("currentModel", event.getCurrentModel());
         json.put("currentTask", event.getCurrentTask());
+        json.put("autoApprove", event.isAutoApprove());
+        json.put("gitAutomation", event.isGitAutomation());
+        json.put("stepMode", event.isStepMode());
+        json.put("maxIterations", event.getMaxIterations());
         json.put("timestamp", event.getTimestamp());
         json.put("startTime", event.getStartTime());
 

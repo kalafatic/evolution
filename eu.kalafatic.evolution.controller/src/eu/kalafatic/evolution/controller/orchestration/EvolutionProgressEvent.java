@@ -17,6 +17,10 @@ public class EvolutionProgressEvent {
     private String currentBranch;
     private String currentModel;
     private String currentTask;
+    private boolean autoApprove;
+    private boolean gitAutomation;
+    private boolean stepMode;
+    private int maxIterations;
     private long timestamp;
     private long startTime;
     private List<BranchStatus> branchStatuses = new ArrayList<>();
@@ -54,6 +58,18 @@ public class EvolutionProgressEvent {
 
     public String getCurrentTask() { return currentTask; }
     public void setCurrentTask(String currentTask) { this.currentTask = currentTask; }
+
+    public boolean isAutoApprove() { return autoApprove; }
+    public void setAutoApprove(boolean autoApprove) { this.autoApprove = autoApprove; }
+
+    public boolean isGitAutomation() { return gitAutomation; }
+    public void setGitAutomation(boolean gitAutomation) { this.gitAutomation = gitAutomation; }
+
+    public boolean isStepMode() { return stepMode; }
+    public void setStepMode(boolean stepMode) { this.stepMode = stepMode; }
+
+    public int getMaxIterations() { return maxIterations; }
+    public void setMaxIterations(int maxIterations) { this.maxIterations = maxIterations; }
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }

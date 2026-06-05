@@ -428,6 +428,12 @@ window.ChatApp.Renderer = {
                     <span>Generation <b>${data.generation}</b></span>
                     <span>Lineage <b>${data.lineage}</b></span>
                 </div>
+                <div class="session-properties-row">
+                    <span class="badge ${data.autoApprove ? 'active' : ''}">Auto-Approve</span>
+                    <span class="badge ${data.gitAutomation ? 'active' : ''}">Auto-Git</span>
+                    <span class="badge ${data.stepMode ? 'active' : ''}">Step Mode</span>
+                    <span class="badge active">Max: ${data.maxIterations}</span>
+                </div>
                 <div class="global-progress-container">
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill" style="width: ${percent}%"></div>

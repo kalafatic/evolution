@@ -254,6 +254,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             if (isMediated) {
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
+                res.setDecision(eu.kalafatic.evolution.model.orchestration.SelfDevDecision.CONTINUE);
                 return res;
             }
 
