@@ -348,7 +348,7 @@ public class InstructionsGroup extends AEvoGroup {
                 setSelectionSafe(darwinCheck, (Boolean) config.getOrDefault("darwinMode", session != null ? session.isDarwinMode() : (orchestrator != null ? orchestrator.isDarwinMode() : true)));
                 setSelectionSafe(gitAutomationCheck, (Boolean) config.getOrDefault("gitAutomation", session != null ? session.isGitAutomation() : (pi != null ? pi.isGitAutomation() : false)));
                 setSelectionSafe(stepModeCheck, (Boolean) config.getOrDefault("stepMode", session != null ? session.isStepMode() : (pi != null ? pi.isStepMode() : false)));
-                setSelectionSafe(autoApproveCheck, (Boolean) config.getOrDefault("autoApprove", pi != null ? pi.isAutoApprove() : false));
+                setSelectionSafe(autoApproveCheck, (Boolean) config.getOrDefault("autoApprove", session != null ? session.isAutoApprove() : (pi != null ? pi.isAutoApprove() : false)));
 
                 int defaultMaxIter = session != null ? session.getMaxIterations() : (pi != null ? pi.getPreferredMaxIterations() : 4);
                 if (defaultMaxIter <= 0) defaultMaxIter = 4;

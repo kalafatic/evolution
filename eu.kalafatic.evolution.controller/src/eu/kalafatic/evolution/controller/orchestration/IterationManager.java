@@ -801,7 +801,7 @@ public class IterationManager {
             context.log("[KERNEL] EVOLUTIONARY MANDATE: Attempting to maximize vector diversity within capability envelope.");
         }
 
-        if (!context.isAutoApprove() || profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+        if (!context.isAutoApprove()) {
             manualId = handleVariantSelection(context, variants, goal);
             if ("REGENERATE".equals(manualId)) {
                 return runDarwinIteration(context, darwinFlow);
@@ -1326,7 +1326,7 @@ public class IterationManager {
                 optimizedPrompt = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths, evolvedUnderstanding + "\n\nREASONING FOCUS: " + evolvedReasoningFocus);
             }
 
-            if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED) && !context.isAutoApprove()) {
+            if (!context.isAutoApprove()) {
                 context.log("[KERNEL] Mediated Mode: Pausing for final export package review.");
                 boolean approved = context.requestApproval("Final review: Ready to generate export package with " + selectedPaths.size() + " files?").get();
                 if (!approved) return "Export cancelled by user.";

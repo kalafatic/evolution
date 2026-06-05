@@ -80,6 +80,11 @@ public class LlmRouter {
                 String augmentedPrompt = buildContextLocally(orchestrator, prompt, temperature, proxyUrl, context);
 
                 if (context != null) {
+                    if (context.isAutoApprove()) {
+                        context.log("LlmRouter-Mediated: Auto-approve enabled. Bypassing human mediation and executing locally.");
+                        return sendLocalRequest(orchestrator, augmentedPrompt, temperature, proxyUrl, context);
+                    }
+
                     context.log("LlmRouter-Mediated: Prompt prepared. Requesting human-in-the-loop reasoning...");
                     String mediationInstruction = "### HUMAN MEDIATION REQUIRED ###\n" +
                             "Please process the following context-aware prompt in your preferred high-reasoning external LLM (e.g. GPT-4o, Claude 3.5, O1) " +

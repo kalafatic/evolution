@@ -9,7 +9,8 @@ package eu.kalafatic.evolution.controller.orchestration.behavior;
  * bits 16–23   → INTERACTION MODE (CONTINUOUS / STEP / GUIDED)
  * bits 24–31   → REASONING STYLE (ATOMIC / DARWIN / CONSERVATIVE / EXPLORATORY / ANALYTICAL)
  * bits 32–39   → WORKFLOW (TASK / SELF_DEV / HYBRID / EXPORT)
- * bits 40–63   → EXTENSIONS / FUTURE FEATURES
+ * bits 40–47   → OPTIONS (Bit 0: AUTO_APPROVE)
+ * bits 48–63   → EXTENSIONS / FUTURE FEATURES
  */
 public class BitState {
     private static final int MODE_SHIFT = 0;
@@ -17,20 +18,26 @@ public class BitState {
     private static final int INTERACTION_SHIFT = 16;
     private static final int REASONING_SHIFT = 24;
     private static final int WORKFLOW_SHIFT = 32;
+    private static final int OPTIONS_SHIFT = 40;
 
     private static final long MASK = 0xFFL;
 
     public static long encode(int mode, int supervision, int interaction, int reasoning) {
-        return encode(mode, supervision, interaction, reasoning, WORKFLOW_TASK_ORIENTED);
+        return encode(mode, supervision, interaction, reasoning, WORKFLOW_TASK_ORIENTED, 0);
     }
 
     public static long encode(int mode, int supervision, int interaction, int reasoning, int workflow) {
+        return encode(mode, supervision, interaction, reasoning, workflow, 0);
+    }
+
+    public static long encode(int mode, int supervision, int interaction, int reasoning, int workflow, int options) {
         long state = 0;
         state |= ((long) (mode & 0xFF)) << MODE_SHIFT;
         state |= ((long) (supervision & 0xFF)) << SUPERVISION_SHIFT;
         state |= ((long) (interaction & 0xFF)) << INTERACTION_SHIFT;
         state |= ((long) (reasoning & 0xFF)) << REASONING_SHIFT;
         state |= ((long) (workflow & 0xFF)) << WORKFLOW_SHIFT;
+        state |= ((long) (options & 0xFF)) << OPTIONS_SHIFT;
         return state;
     }
 
@@ -52,6 +59,14 @@ public class BitState {
 
     public static int getWorkflow(long state) {
         return (int) ((state >> WORKFLOW_SHIFT) & MASK);
+    }
+
+    public static int getOptions(long state) {
+        return (int) ((state >> OPTIONS_SHIFT) & MASK);
+    }
+
+    public static boolean isAutoApprove(long state) {
+        return (getOptions(state) & OPTION_AUTO_APPROVE) != 0;
     }
 
     // --- MODE Constants ---
@@ -84,6 +99,9 @@ public class BitState {
     public static final int WORKFLOW_SELF_DEV = 1;
     public static final int WORKFLOW_HYBRID = 2;
     public static final int WORKFLOW_EXPORT_ONLY = 3;
+
+    // --- OPTIONS Constants ---
+    public static final int OPTION_AUTO_APPROVE = 1 << 0;
 
     // --- UI Labels ---
     public static final String[] MODES = {"LOCAL", "HYBRID", "REMOTE", "PROXY", "MEDIATED"};
