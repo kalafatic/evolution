@@ -208,6 +208,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             state.append("Architecture Inference: ").append(snapshotMed.getMetadata().get("architectureInference")).append("\n");
             state.append("Detected Technologies: ").append(snapshotMed.getMetadata().get("detectedTechnologies")).append("\n");
             state.append("Total Semantic Nodes: ").append(snapshotMed.getNodes().size()).append("\n");
+
+            // File Selection Assistance: Provide a curated list of candidate paths for the LLM to choose from
+            eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator curator = new eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator();
+            List<String> candidates = curator.selectContext(snapshotMed, goal, 30);
+            state.append("\n--- HIGH-VALUE CANDIDATE FILES (8-16 MUST BE SELECTED) ---\n");
+            candidates.forEach(path -> state.append("- ").append(path).append("\n"));
         }
 
         List<IterationRecord> records = memoryService.getRecords();

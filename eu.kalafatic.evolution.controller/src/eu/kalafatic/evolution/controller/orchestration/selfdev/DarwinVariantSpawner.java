@@ -116,7 +116,10 @@ public class DarwinVariantSpawner {
             repair.put("strategy", synthesizedStrategy);
 
             repair.put("reasoning_focus", "Deterministic architectural recovery for " + bp.getId());
-            repair.put("selected_files", new org.json.JSONArray());
+
+            org.json.JSONArray selectedFiles = new org.json.JSONArray();
+            repair.put("selected_files", selectedFiles);
+
             repair.put("survival_argument", "Mandatory architectural diversity branch ensured by orchestrator.");
             repair.put("tradeoffs", "Deterministic fallback; lacks LLM-refined implementation nuance.");
             repair.put("failure_risks", "Lower specificity than materialized variants.");
@@ -146,6 +149,30 @@ public class DarwinVariantSpawner {
                 dimensions.put("philosophy", bp.getPhilosophy());
             }
             repair.put("engineering_dimensions", dimensions);
+
+            // AUTO-REPAIR MEDIATION: Ensure mediated mode still gets a valid context package
+            if (context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.SUPERVISION_MEDIATED)) {
+                eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = (eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+                if (snapshot != null) {
+                    eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator curator = new eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator();
+                    List<String> files = curator.selectContext(snapshot, bp.getGoal(), 16);
+
+                    JSONObject mediationCandidate = new JSONObject();
+                    org.json.JSONArray medFiles = new org.json.JSONArray();
+                    for (String f : files) {
+                        medFiles.put(f);
+                        selectedFiles.put(f);
+                    }
+
+                    mediationCandidate.put("selected_files", medFiles);
+                    mediationCandidate.put("prompt", "Analyze and propose improvements based on the provided repository context.");
+                    mediationCandidate.put("architecture_summary", "Auto-recovered architecture mapping.");
+                    mediationCandidate.put("dependencies", "Auto-recovered dependency mapping.");
+                    mediationCandidate.put("execution_instructions", "Perform deep reasoning on the provided files.");
+                    mediationCandidate.put("evaluation", "Auto-repaired fallback candidate.");
+                    repair.put("mediation_candidate", mediationCandidate);
+                }
+            }
 
             return repair;
         } catch (Exception e) {
@@ -182,7 +209,8 @@ public class DarwinVariantSpawner {
         if (isMediated) {
             sb.append("MEDIATED MODE COGNITION RULES (CRITICAL):\n")
               .append("- Focus on ARCHITECTURAL UNDERSTANDING, not code.\n")
-              .append("- USE ONLY REAL repository evidence.\n")
+              .append("- USE ONLY REAL repository evidence from the provided candidate list.\n")
+              .append("- You MUST select 8-16 most important files for the mediation package.\n")
               .append("- Your goal is to produce a high-quality mediation candidate for external LLM processing.\n\n");
 
             if (context != null && context.getOrchestrationState() != null) {
@@ -359,7 +387,8 @@ public class DarwinVariantSpawner {
               .append("- You are performing ITERATIVE REPOSITORY COGNITION.\n")
               .append("- Your goal is to EVOLVE ARCHITECTURAL UNDERSTANDING, not code.\n")
               .append("- DO NOT hallucinate synthetic runtime context, sensors, or memory systems.\n")
-              .append("- USE ONLY REAL repository evidence provided in the context (files, structure, technologies).\n")
+              .append("- USE ONLY REAL repository evidence from the provided candidate list (files, structure, technologies).\n")
+              .append("- You MUST select 8-16 most important files for the mediation package.\n")
               .append("- Focus on producing high-quality mediation candidates (prompt, context, instructions).\n")
               .append("- Strictly prohibit invented APIs or fictitious infrastructure.\n\n");
 
