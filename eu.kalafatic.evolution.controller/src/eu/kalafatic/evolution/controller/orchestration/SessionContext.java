@@ -43,6 +43,7 @@ public class SessionContext implements SessionContainer {
 
     private final Map<String, IAgent> agentRegistry = new ConcurrentHashMap<>();
     private IterationMemoryService memoryService;
+    private IterationManager iterationManager;
     private TaskContext taskContext;
 
     public SessionContext(String sessionId) {
@@ -164,6 +165,16 @@ public class SessionContext implements SessionContainer {
     @Override
     public OrchestrationState getSessionState() {
         return taskContext != null ? taskContext.getOrchestrationState() : null;
+    }
+
+    @Override
+    public IterationManager getIterationManager() {
+        return iterationManager;
+    }
+
+    @Override
+    public void setIterationManager(IterationManager manager) {
+        this.iterationManager = manager;
     }
 
     @Override

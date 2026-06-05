@@ -1,10 +1,9 @@
 package eu.kalafatic.evolution.controller.supervision;
 
 import java.util.List;
-import eu.kalafatic.evolution.controller.orchestration.IterationManager;
-import eu.kalafatic.evolution.controller.orchestration.KernelFactory;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
@@ -84,9 +83,8 @@ public class AuthorityController {
 
         // AUDIT TRAIL
         if (context != null) {
-            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
-            IterationManager manager = KernelFactory.create(context, session);
-            if (manager.getMemoryService() != null) {
+            IterationMemoryService memoryService = context.getKernelContext().getMemoryService();
+            if (memoryService != null) {
                 AuditRecord audit = new AuditRecord(
                     iterationId,
                     winnerId,
@@ -97,7 +95,7 @@ public class AuthorityController {
                     decision.getActivationReason(),
                     context.getSessionId()
                 );
-                manager.getMemoryService().appendAuditRecord(audit);
+                memoryService.appendAuditRecord(audit);
             }
         }
 
@@ -122,9 +120,8 @@ public class AuthorityController {
     }
 
     private void auditTransition(TaskContext context, BranchVariant variant, BranchVariant.ActivationState oldState, BranchVariant.ActivationState newState, String reason) {
-        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
-        IterationManager manager = KernelFactory.create(context, session);
-        if (manager.getMemoryService() != null) {
+        IterationMemoryService memoryService = context.getKernelContext().getMemoryService();
+        if (memoryService != null) {
             AuditRecord audit = new AuditRecord(
                 context.getOrchestrationState().getCurrentIterationId(),
                 variant.getId(),
@@ -135,7 +132,7 @@ public class AuthorityController {
                 reason,
                 context.getSessionId()
             );
-            manager.getMemoryService().appendAuditRecord(audit);
+            memoryService.appendAuditRecord(audit);
         }
     }
 

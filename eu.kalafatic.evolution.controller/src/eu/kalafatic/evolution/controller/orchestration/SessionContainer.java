@@ -31,6 +31,8 @@ public interface SessionContainer {
     OrchestrationStatusManager getStatusManager();
     java.util.Map<String, eu.kalafatic.evolution.controller.agents.IAgent> getAgentRegistry();
     OrchestrationState getSessionState();
+    IterationManager getIterationManager();
+    void setIterationManager(IterationManager manager);
     RuntimeCoordinator getRuntimeCoordinator();
     eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService getMemoryService(java.io.File projectRoot);
     eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine getPressureEngine();
