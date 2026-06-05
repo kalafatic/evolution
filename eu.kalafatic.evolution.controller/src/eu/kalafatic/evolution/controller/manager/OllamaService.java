@@ -26,7 +26,6 @@ public class OllamaService {
 
     private final String baseUrl;
     private String model;
-    private final HttpClient httpClient;
     private final java.util.Map<String, List<Message>> sessionMessages = new java.util.concurrent.ConcurrentHashMap<>();
 
     private List<OllamaModel> cachedModels = null;
@@ -43,8 +42,12 @@ public class OllamaService {
     public OllamaService(String url, String model) {
         this.baseUrl = (url != null && !url.isEmpty()) ? url : "http://localhost:11434";
         this.model = (model != null && !model.isEmpty()) ? model : "llama3.2:3b";
-        this.httpClient = HttpClient.newBuilder()
+    }
+
+    private HttpClient createClient() {
+        return HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
+                .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
     }
 
@@ -98,7 +101,7 @@ public class OllamaService {
                     .timeout(Duration.ofSeconds(2))
                     .GET()
                     .build();
-            HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+            HttpResponse<Void> response = createClient().send(request, HttpResponse.BodyHandlers.discarding());
             return response.statusCode() == 200;
         } catch (Exception e) {
             return false;
@@ -117,7 +120,7 @@ public class OllamaService {
                     .timeout(Duration.ofSeconds(2))
                     .GET()
                     .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 JSONObject obj = new JSONObject(response.body());
                 return obj.optString("version", "Unknown");
@@ -151,7 +154,7 @@ public class OllamaService {
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
             throw new RuntimeException("Ollama error: " + response.statusCode() + " - " + response.body());
@@ -187,7 +190,7 @@ public class OllamaService {
                 .POST(HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
             throw new RuntimeException("Ollama generate error: " + response.statusCode() + " - " + response.body());
@@ -241,7 +244,7 @@ public class OllamaService {
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
                 .build();
 
-        HttpResponse<java.util.stream.Stream<String>> response = httpClient.send(request,
+        HttpResponse<java.util.stream.Stream<String>> response = createClient().send(request,
                 HttpResponse.BodyHandlers.ofLines());
 
         if (response.statusCode() != 200) {
@@ -289,7 +292,7 @@ public class OllamaService {
                     .GET()
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 JSONObject obj = new JSONObject(response.body());
                 JSONArray models = obj.getJSONArray("models");

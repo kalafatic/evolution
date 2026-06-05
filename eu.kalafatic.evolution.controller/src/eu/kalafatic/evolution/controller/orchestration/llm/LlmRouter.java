@@ -75,40 +75,10 @@ public class LlmRouter {
             } else if (mode == AiMode.REMOTE) {
                 return sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
             } else if (mode == AiMode.MEDIATED) {
-                // For MEDIATED mode, we use local intelligence to prepare/optimize
-                if (context != null) context.log("LlmRouter-Mediated: Using local intelligence for preparation.");
-                String augmentedPrompt = buildContextLocally(orchestrator, prompt, temperature, proxyUrl, context);
-
-                if (context != null) {
-                    context.log("LlmRouter-Mediated: Prompt prepared. Requesting human-in-the-loop reasoning...");
-                    String mediationInstruction = "### HUMAN MEDIATION REQUIRED ###\n" +
-                            "Please process the following context-aware prompt in your preferred high-reasoning external LLM (e.g. GPT-4o, Claude 3.5, O1) " +
-                            "and paste the response below to continue the evolution.\n\n" +
-                            "Alternatively, you may reply with **'Approved'**, **'Yes'**, or **'Proceed'** to use the locally prepared context as the final result.\n\n" +
-                            "--- START PREPARED PROMPT ---\n" +
-                            augmentedPrompt + "\n" +
-                            "--- END PREPARED PROMPT ---";
-
-                    String response = context.requestInput(mediationInstruction).get();
-                    String trimmedResponse = (response != null) ? response.trim() : "";
-
-                    if ("Rejected".equalsIgnoreCase(trimmedResponse)) {
-                        throw new Exception("Mediation rejected. Stopping flow.");
-                    }
-
-                    // NEW: Fast-approval logic for MEDIATED mode
-                    // Empty response (Enter/Send without text) now means Approve
-                    if (trimmedResponse.isEmpty() ||
-                        trimmedResponse.equalsIgnoreCase("Approved") ||
-                        trimmedResponse.equalsIgnoreCase("Yes") ||
-                        trimmedResponse.equalsIgnoreCase("Proceed") ||
-                        trimmedResponse.equalsIgnoreCase("OK")) {
-                        context.log("LlmRouter-Mediated: User approved locally prepared prompt. Executing winner locally...");
-                        return sendLocalRequest(orchestrator, augmentedPrompt, temperature, proxyUrl, context);
-                    }
-
-                    return response;
-                }
+                // For MEDIATED mode, the Darwin loop uses local intelligence to evolve mediation candidates.
+                // The final mediation export happens at convergence.
+                // If we are here, we are likely in a variant generation or refined context step.
+                if (context != null) context.log("LlmRouter-Mediated: Routing to local model for evolutionary cognition.");
                 return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
             }
         } catch (Exception e) {
