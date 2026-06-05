@@ -351,7 +351,7 @@ public class InstructionsGroup extends AEvoGroup {
                 setSelectionSafe(autoApproveCheck, (Boolean) config.getOrDefault("autoApprove", session != null ? session.isAutoApprove() : (pi != null ? pi.isAutoApprove() : false)));
 
                 if (expansionScale != null && !expansionScale.isDisposed()) {
-                    int defaultExpansion = session != null ? (int)session.getBitState() : 5; // Placeholder use of bitState for expansion depth if needed
+                    int defaultExpansion = session != null ? session.getExpansion() : 5;
                     expansionScale.setSelection((Integer) config.getOrDefault("expansion", defaultExpansion));
                 }
 

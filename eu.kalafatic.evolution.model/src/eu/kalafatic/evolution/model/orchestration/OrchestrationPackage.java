@@ -3154,13 +3154,22 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_SESSION__BIT_STATE = 15;
 
 	/**
+	 * The feature id for the '<em><b>Expansion</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_SESSION__EXPANSION = 16;
+
+	/**
 	 * The number of structural features of the '<em>Chat Session</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_SESSION_FEATURE_COUNT = 16;
+	int CHAT_SESSION_FEATURE_COUNT = 17;
 
 	/**
 	 * The number of operations of the '<em>Chat Session</em>' class.
@@ -6304,6 +6313,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getChatSession_BitState();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getExpansion <em>Expansion</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Expansion</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getExpansion()
+	 * @see #getChatSession()
+	 * @generated
+	 */
+	EAttribute getChatSession_Expansion();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage <em>Chat Message</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -8862,6 +8882,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_SESSION__BIT_STATE = eINSTANCE.getChatSession_BitState();
+
+		/**
+		 * The meta object literal for the '<em><b>Expansion</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_SESSION__EXPANSION = eINSTANCE.getChatSession_Expansion();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.

@@ -46,6 +46,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getLocalModel <em>Local Model</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getRemoteModel <em>Remote Model</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getBitState <em>Bit State</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getExpansion <em>Expansion</em>}</li>
  * </ul>
  *
  * @generated
@@ -360,6 +361,49 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @ordered
 	 */
 	protected long bitState = BIT_STATE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getExpansion() <em>Expansion</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getExpansion()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int EXPANSION_EDEFAULT = 5;
+
+	/**
+	 * The cached value of the '{@link #getExpansion() <em>Expansion</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getExpansion()
+	 * @generated
+	 * @ordered
+	 */
+	protected int expansion = EXPANSION_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getExpansion() {
+		return expansion;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setExpansion(int newExpansion) {
+		int oldExpansion = expansion;
+		expansion = newExpansion;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__EXPANSION, oldExpansion, expansion));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -792,6 +836,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return getRemoteModel();
 			case OrchestrationPackage.CHAT_SESSION__BIT_STATE:
 				return getBitState();
+			case OrchestrationPackage.CHAT_SESSION__EXPANSION:
+				return getExpansion();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -854,6 +900,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__BIT_STATE:
 				setBitState((Long)newValue);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__EXPANSION:
+				setExpansion((Integer)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -914,6 +963,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__BIT_STATE:
 				setBitState(BIT_STATE_EDEFAULT);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__EXPANSION:
+				setExpansion(EXPANSION_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -958,6 +1010,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return REMOTE_MODEL_EDEFAULT == null ? remoteModel != null : !REMOTE_MODEL_EDEFAULT.equals(remoteModel);
 			case OrchestrationPackage.CHAT_SESSION__BIT_STATE:
 				return bitState != BIT_STATE_EDEFAULT;
+			case OrchestrationPackage.CHAT_SESSION__EXPANSION:
+				return expansion != EXPANSION_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1002,6 +1056,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		result.append(remoteModel);
 		result.append(", bitState: ");
 		result.append(bitState);
+		result.append(", expansion: ");
+		result.append(expansion);
 		result.append(')');
 		return result.toString();
 	}

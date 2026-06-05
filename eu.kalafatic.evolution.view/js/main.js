@@ -10,18 +10,28 @@ window.ChatApp = window.ChatApp || {};
         pendingChanges: null,
         searchQuery: '',
         searchMatches: [],
-        currentMatchIndex: -1
+        currentMatchIndex: -1,
+        lastSessionId: null
     };
 
-    window.updateMessages = function(messages) {
+    window.updateMessages = function(messages, sessionId) {
         if (!state.isUiReady) {
             state.pendingMessages = messages;
+            state.pendingSessionId = sessionId;
             return;
         }
 
         if (!messages || !Array.isArray(messages)) {
             console.error('updateMessages: expected array, got', typeof messages);
             return;
+        }
+
+        // Reset UI components that should not persist across session switches
+        if (sessionId !== state.lastSessionId) {
+            if (window.ChatApp.Renderer.resetProgressPanel) {
+                window.ChatApp.Renderer.resetProgressPanel();
+            }
+            state.lastSessionId = sessionId;
         }
 
         // Ensure strictly monotonic order by sequence number before rendering
@@ -242,8 +252,9 @@ window.ChatApp = window.ChatApp || {};
 
         state.isUiReady = true;
         if (state.pendingMessages) {
-            window.updateMessages(state.pendingMessages);
+            window.updateMessages(state.pendingMessages, state.pendingSessionId);
             state.pendingMessages = null;
+            state.pendingSessionId = null;
         }
         if (state.pendingChanges) {
             window.updateChanges(state.pendingChanges);

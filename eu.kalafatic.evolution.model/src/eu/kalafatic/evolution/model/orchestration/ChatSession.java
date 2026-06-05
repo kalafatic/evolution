@@ -27,6 +27,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getTargetType <em>Target Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getOutputPath <em>Output Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isAutoApprove <em>Auto Approve</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getExpansion <em>Expansion</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession()
@@ -386,5 +387,28 @@ public interface ChatSession extends EObject {
 	 * @generated
 	 */
 	void setBitState(long value);
+
+	/**
+	 * Returns the value of the '<em><b>Expansion</b></em>' attribute.
+	 * The default value is <code>"5"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Expansion</em>' attribute.
+	 * @see #setExpansion(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_Expansion()
+	 * @model default="5"
+	 * @generated
+	 */
+	int getExpansion();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getExpansion <em>Expansion</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Expansion</em>' attribute.
+	 * @see #getExpansion()
+	 * @generated
+	 */
+	void setExpansion(int value);
 
 } // ChatSession
