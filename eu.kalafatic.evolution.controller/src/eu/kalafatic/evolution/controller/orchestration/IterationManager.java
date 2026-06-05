@@ -1309,6 +1309,18 @@ public class IterationManager {
             if (winningCandidate != null) {
                 context.log("[KERNEL] Mediated Mode: Using evolved mediation candidate.");
                 selectedPaths = winningCandidate.getSelectedFiles();
+
+                // Ensure context completeness: If LLM failed to select enough files, fall back to curation
+                if (selectedPaths == null || selectedPaths.size() < 4) {
+                    context.log("[KERNEL] Mediated Mode: Evolved candidate contains insufficient context (" + (selectedPaths == null ? 0 : selectedPaths.size()) + " files). Supplementing with curated files.");
+                    ContextCurator curator = new ContextCurator();
+                    List<String> curated = curator.selectContext(snapshot, request, 12);
+                    if (selectedPaths == null) selectedPaths = new ArrayList<>();
+                    for (String path : curated) {
+                        if (!selectedPaths.contains(path)) selectedPaths.add(path);
+                    }
+                }
+
                 optimizedPrompt = winningCandidate.getPrompt();
                 architectureSummary = winningCandidate.getArchitectureSummary();
                 dependencies = winningCandidate.getDependencies();

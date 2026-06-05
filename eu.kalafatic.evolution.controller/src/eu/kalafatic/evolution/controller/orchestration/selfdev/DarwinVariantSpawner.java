@@ -277,7 +277,7 @@ public class DarwinVariantSpawner {
         if (isMediated) {
             sb.append("  \"mediation_candidate\": {\n")
               .append("    \"prompt\": \"(The optimized prompt for the external LLM)\",\n")
-              .append("    \"selected_files\": [\"file1.java\", \"file2.java\"],\n")
+              .append("    \"selected_files\": [\"(Select 8-16 key files from the candidate list)\"],\n")
               .append("    \"architecture_summary\": \"(Concise architecture mapping)\",\n")
               .append("    \"dependencies\": \"(Key module relationships and third-party deps)\",\n")
               .append("    \"execution_instructions\": \"(Specific instructions for the external LLM)\",\n")
@@ -285,7 +285,7 @@ public class DarwinVariantSpawner {
               .append("  },\n");
         }
 
-        sb.append("  \"selected_files\": [\"src/main/java/App.java\"],\n")
+        sb.append("  \"selected_files\": [\"(Select 4-16 key files from the candidate list)\"],\n")
           .append("  \"survival_argument\": \"(Technical justification)\",\n")
           .append("  \"tradeoffs\": \"(Technical tradeoffs)\",\n")
           .append("  \"failure_risks\": \"(Potential failure modes)\",\n")
@@ -494,7 +494,7 @@ public class DarwinVariantSpawner {
         if (isMediated) {
             sb.append("  \"mediation_candidate\": {\n")
               .append("    \"prompt\": \"(The optimized prompt for the external LLM)\",\n")
-              .append("    \"selected_files\": [\"file1.java\", \"file2.java\"],\n")
+              .append("    \"selected_files\": [\"(Select 8-16 key files from the candidate list)\"],\n")
               .append("    \"architecture_summary\": \"(Concise architecture mapping)\",\n")
               .append("    \"dependencies\": \"(Key module relationships and third-party deps)\",\n")
               .append("    \"execution_instructions\": \"(Specific instructions for the external LLM)\",\n")
