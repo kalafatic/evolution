@@ -1346,9 +1346,14 @@ public class IterationManager {
             String historyAnalysis = memoryService.getHistoryAnalysis();
             File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions);
 
+            // Record as a change so it appears in Changes view
+            context.getFileChangeTracker().recordChange(exportPackage.getName(), FileChangeTracker.ChangeType.NEW);
+
             StringBuilder summaryBuilder = new StringBuilder();
             summaryBuilder.append("### Mediated Darwin Evolution Complete\n\n");
-            summaryBuilder.append("**Export Package:** `").append(exportPackage.getName()).append("`\n");
+
+            String packageUri = exportPackage.toURI().toString();
+            summaryBuilder.append("**Export Package:** [").append(exportPackage.getName()).append("](").append(packageUri).append(")\n");
             summaryBuilder.append("**Selected Files:** ").append(selectedPaths.size()).append(" (Limit: 16)\n\n");
             summaryBuilder.append("**Target Type:** ").append(snapshot.getTargetType()).append("\n");
             summaryBuilder.append("**Inferred Architecture:** ").append(snapshot.getMetadata().get("architectureInference")).append("\n\n");
