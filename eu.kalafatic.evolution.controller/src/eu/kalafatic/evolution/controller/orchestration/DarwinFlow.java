@@ -178,18 +178,18 @@ public class DarwinFlow implements IOrchestrationFlow {
             return manager.failedResult();
         }
 
-        context.log("[APPROVED:" + finalWinnerId + "] [COGNITION] Surviving trajectory committed: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
-        EvolutionProgressPublisher.updateStage(context, EvolutionStage.SAVE_LINEAGE);
+        StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
+        outcomeBuilder.append("[APPROVED:").append(finalWinnerId).append("] ");
 
         for (BranchVariant v : variants) {
             if (v.getId().equals(finalWinnerId)) continue;
-
-            String status = "REJECTED";
-            if (v.getActivationState() == BranchVariant.ActivationState.KEPT) {
-                status = "KEPT";
-            }
-            context.log("[" + status + ":" + v.getId() + "] [KERNEL] Trajectory " + v.getId() + " marked as " + status);
+            String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? "KEPT" : "REJECTED";
+            outcomeBuilder.append("[").append(status).append(":").append(v.getId()).append("] ");
         }
+        outcomeBuilder.append("[COGNITION] Surviving trajectory committed: ").append(selectedVariant.getStrategy());
+
+        context.log(outcomeBuilder.toString());
+        EvolutionProgressPublisher.updateStage(context, EvolutionStage.SAVE_LINEAGE);
 
         if (currentIterationModelImpl != null) {
             currentIterationModelImpl.setSurvivalArgument(selectedVariant.getSurvivalArgument());

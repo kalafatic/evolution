@@ -414,11 +414,16 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
         java.util.regex.Pattern approvedPattern = java.util.regex.Pattern.compile("\\[(APPROVED|REJECTED|KEPT):([^]]+)\\]");
         java.util.regex.Matcher approvedMatcher = approvedPattern.matcher(content);
-        if (approvedMatcher.find()) {
+        boolean foundStatus = false;
+        while (approvedMatcher.find()) {
+            foundStatus = true;
             String status = approvedMatcher.group(1).toLowerCase();
             String variantId = approvedMatcher.group(2);
-            if (!agentType.contains(status)) {
-                agentType = agentType.replace("waiting", "").trim();
+
+            if (!agentType.contains(status + ":" + variantId)) {
+                if (agentType.contains("waiting")) {
+                    agentType = agentType.replace("waiting", "").trim();
+                }
                 if (agentType.isEmpty()) agentType = "ai";
                 agentType += " " + status + ":" + variantId;
             }
@@ -426,9 +431,11 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
             if (agentType.contains("darwin-branches")) {
                  content = content.replaceAll("\\[[\\s\\S]*\\]", "").trim();
-                 if (content.isEmpty()) content = "Variant " + variantId + " " + status + ".";
+                 if (content.isEmpty()) content = "Evolution variant " + variantId + " " + status + ".";
             }
+        }
 
+        if (foundStatus) {
             priority = MessagePriority.NORMAL;
         }
 
