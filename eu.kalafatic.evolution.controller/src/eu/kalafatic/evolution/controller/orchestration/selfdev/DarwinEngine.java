@@ -262,7 +262,40 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 currentBlueprints.addAll(generateMediatedBlueprints(goal, branchingLimit));
             } else {
                 context.log("[DARWIN] Gen 0 (Evolutionary Seeds): Spawning divergent architectural blueprints.");
-                currentBlueprints.addAll(generateStandardBlueprints(goal, branchingLimit));
+
+                // ORCHESTRATOR-DRIVEN DYNAMIC BLUEPRINTS: Prefer blueprints from intent expansion
+                if (expansion != null && !expansion.getUnresolvedDimensions().isEmpty()) {
+                    String activeDimId = expansion.getActiveDimensionId();
+                    EvolutionDimension activeDim = expansion.getUnresolvedDimensions().stream()
+                        .filter(d -> activeDimId != null && activeDimId.equals(d.getId()))
+                        .findFirst()
+                        .orElse(expansion.getUnresolvedDimensions().get(0));
+
+                    if (activeDim != null && !activeDim.getCandidateBranches().isEmpty()) {
+                        context.log("[DARWIN] Using " + activeDim.getCandidateBranches().size() + " dynamic blueprints from dimension: " + activeDim.getId());
+                        for (BranchVariant bv : activeDim.getCandidateBranches()) {
+                            TrajectoryBlueprint bp = new TrajectoryBlueprint(bv.getId(), goal, bv.getStrategy());
+                            bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
+                            bp.setArchitecturalDirection(bv.getStrategy());
+                            bp.setSurvivalArgument(bv.getSurvivalArgument());
+                            bp.setTradeoffs(bv.getTradeoffs());
+                            bp.setPhilosophy(activeDim.getDescription());
+                            currentBlueprints.add(bp);
+                        }
+                    }
+                }
+
+                if (currentBlueprints.isEmpty()) {
+                    boolean isSimpleTask = (expansion != null && expansion.getConfidence() != null && expansion.getConfidence().getOverallConfidence() > 0.8) ||
+                                          (goal.toLowerCase().contains("create") && goal.toLowerCase().contains("class"));
+
+                    if (isSimpleTask) {
+                        context.log("[DARWIN] Simple task detected. Using task-aware simple blueprints.");
+                        currentBlueprints.addAll(generateSimpleBlueprints(goal, branchingLimit));
+                    } else {
+                        currentBlueprints.addAll(generateStandardBlueprints(goal, branchingLimit));
+                    }
+                }
             }
         } else {
             context.log("[DARWIN] Gen " + generation + " (Lineage Mutation): Targeting unresolved pressures.");
@@ -353,6 +386,44 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         return variants;
+    }
+
+    private List<TrajectoryBlueprint> generateSimpleBlueprints(String goal, int limit) {
+        List<TrajectoryBlueprint> blueprints = new ArrayList<>();
+
+        // BRANCH A - DIRECT_STANDARD
+        TrajectoryBlueprint standard = new TrajectoryBlueprint("direct_standard", goal, "Standard idiomatic implementation");
+        standard.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
+        standard.addRequiredCharacteristic("Direct implementation of goal");
+        standard.addRequiredCharacteristic("Standard library usage");
+        standard.setArchitecturalDirection("A clean, idiomatic implementation using standard patterns without unnecessary abstractions.");
+        standard.getEngineeringDimensions().put("philosophy", "standard/idiomatic");
+        standard.getEngineeringDimensions().put("abstraction_depth", "low");
+        blueprints.add(standard);
+
+        // BRANCH B - OPTIMIZED_ATOMIC
+        TrajectoryBlueprint optimized = new TrajectoryBlueprint("optimized_atomic", goal, "Optimized and concise implementation");
+        optimized.addRequiredCharacteristic("Minimal footprint");
+        optimized.addRequiredCharacteristic("Performance-oriented logic");
+        optimized.setArchitecturalDirection("A performance-focused approach, minimizing object creation and using efficient algorithms.");
+        optimized.getEngineeringDimensions().put("philosophy", "performance/conciseness");
+        optimized.getEngineeringDimensions().put("execution_model", "atomic");
+        blueprints.add(optimized);
+
+        // BRANCH C - DEFENSIVE_ROBUST
+        TrajectoryBlueprint robust = new TrajectoryBlueprint("defensive_robust", goal, "Robust implementation with validation");
+        robust.setStrategyType(DarwinStrategyType.STABILIZATION_RECOVERY);
+        robust.addRequiredCharacteristic("Input validation");
+        robust.addRequiredCharacteristic("Basic error handling");
+        robust.setArchitecturalDirection("A defensive approach prioritizing stability through validation and basic exception management.");
+        robust.getEngineeringDimensions().put("philosophy", "defensive/robust");
+        robust.getEngineeringDimensions().put("risk_acceptance", "conservative");
+        blueprints.add(robust);
+
+        if (limit > 0 && blueprints.size() > limit) {
+            return blueprints.subList(0, limit);
+        }
+        return blueprints;
     }
 
     private List<TrajectoryBlueprint> generateStandardBlueprints(String goal, int limit) {

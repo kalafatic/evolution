@@ -265,6 +265,33 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
         bus.publish(new RuntimeEvent(RuntimeEventType.USER_INTERACTION_RECEIVED, sessionId, "UI", request.getPrompt()));
 
+        // CONTINUATION HANDLING: If the session is waiting for input/approval, treat the prompt as a response
+        if (session instanceof SessionContext) {
+            TaskContext context = ((SessionContext)session).getTaskContext();
+            if (context != null && (context.isWaitingForApproval() || context.isWaitingForInput())) {
+                String prompt = request.getPrompt().trim();
+                boolean isControl = prompt.equalsIgnoreCase("yes") || prompt.equalsIgnoreCase("no") ||
+                                   prompt.toLowerCase().startsWith("select ") ||
+                                   prompt.toLowerCase().startsWith("approve variant ") ||
+                                   prompt.toLowerCase().startsWith("reject variant ") ||
+                                   prompt.toLowerCase().startsWith("keep variant ") ||
+                                   prompt.equalsIgnoreCase("force solution") ||
+                                   prompt.equalsIgnoreCase("approved") ||
+                                   prompt.equalsIgnoreCase("rejected") ||
+                                   prompt.equalsIgnoreCase("proceed");
+
+                if (isControl) {
+                    Log.log("[SERVICE] Continuation detected: " + prompt + ". Routing to existing wait.");
+                    if (context.isWaitingForApproval()) {
+                        provideApproval(sessionId, prompt.equalsIgnoreCase("yes") || prompt.equalsIgnoreCase("approved") || prompt.equalsIgnoreCase("proceed"));
+                    } else {
+                        provideInput(sessionId, prompt);
+                    }
+                    return;
+                }
+            }
+        }
+
         session.getExecutorService().submit(() -> {
             bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, sessionId, "OrchestratorService", request.getPrompt()));
             try {

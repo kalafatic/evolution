@@ -52,6 +52,11 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "PHASE 1 - SEMANTIC DIMENSION DISCOVERY:\n" +
                "Analyze the goal to identify UNRESOLVED SEMANTIC DIMENSIONS.\n" +
                "A dimension is a decision point (e.g., Error Handling Strategy, Output Target, Persistence Model).\n" +
+               "For SIMPLE ATOMIC TASKS (e.g., 'create a class', 'add a method'), avoid over-engineering. Identify simple dimensions like:\n" +
+               "- Implementation Style (e.g., standard vs. optimized, static vs. instance)\n" +
+               "- Naming/Structure (e.g., package choice, filename vs. class name)\n" +
+               "- Operational Logic (e.g., specific output content, method signatures)\n" +
+               "\n" +
                "For each dimension, analyze:\n" +
                "- Abstraction Level: [PHILOSOPHY, STRATEGY, ARCHITECTURE, DESIGN, IMPLEMENTATION, SYNTAX]\n" +
                "- Semantic Domain: [EXECUTION, PERSISTENCE, RESILIENCE, COMMUNICATION, STRUCTURE, VALIDATION]\n" +
@@ -61,9 +66,11 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "PHASE 2 - DIMENSION PRIORITIZATION:\n" +
                "Select exactly ONE dimension to evolve in this iteration.\n" +
                "Priority Rule: Higher abstraction levels (Philosophy/Strategy) MUST be resolved before lower levels (Architecture/Implementation).\n" +
+               "For simple tasks, focus on IMPLEMENTATION or DESIGN dimensions immediately if Philosophy/Architecture is obvious.\n" +
                "\n" +
                "PHASE 3 - CANDIDATE TRAJECTORIES:\n" +
                "For the selected dimension, define sibling branches (blueprints) that compete to resolve it.\n" +
+               "MANDATORY: You MUST provide 'candidateBlueprints' with specific engineering strategies.\n" +
                "\n" +
                "STRICT RULES:\n" +
                "1. Do NOT generate code, tasks, or actual implementation branches.\n" +
