@@ -41,6 +41,7 @@ public class FeedbackGroup extends AEvoGroup {
     // Feedback Level controls
     private Button[] levelButtons;
     private Scale expansionScale;
+    private Label expansionValueLabel;
     private Button autoEscalateCheck;
     private Label autoStatusLabel;
     private boolean isUpdating = false;
@@ -70,6 +71,9 @@ public class FeedbackGroup extends AEvoGroup {
             int maxIter = (Integer) projection.getConfiguration().getOrDefault("maxIterations", 4);
             if (expansionScale != null && !expansionScale.isDisposed()) {
                 expansionScale.setSelection(maxIter);
+            }
+            if (expansionValueLabel != null && !expansionValueLabel.isDisposed()) {
+                expansionValueLabel.setText(maxIter + "/10");
             }
 
             // Update (auto) status
@@ -108,11 +112,18 @@ public class FeedbackGroup extends AEvoGroup {
         expansionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         expansionScale.setToolTipText("Adjust the depth of evolutionary iterations and architectural branching.");
 
+        expansionValueLabel = toolkit.createLabel(expansionBox, "");
+        GridData evlGd = new GridData();
+        evlGd.widthHint = 40;
+        expansionValueLabel.setLayoutData(evlGd);
+
         expansionScale.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (isUpdating) return;
                 int val = expansionScale.getSelection();
+                expansionValueLabel.setText(val + "/10");
+                expansionValueLabel.getParent().layout();
                 java.util.Map<String, Object> settings = new java.util.HashMap<>();
                 settings.put("maxIterations", val);
                 page.updateConfiguration(settings);

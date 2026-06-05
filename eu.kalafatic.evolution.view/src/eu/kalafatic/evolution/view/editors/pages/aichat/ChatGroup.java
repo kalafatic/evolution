@@ -52,6 +52,7 @@ import eu.kalafatic.utils.factories.GUIFactory;
 public class ChatGroup extends AEvoGroup {
     private Browser browser;
     private AiChatPage page;
+    private Section chatSection;
     private boolean isLoaded = false;
     private boolean isJsReady = false;
     private ChatSession currentSession;
@@ -70,7 +71,17 @@ public class ChatGroup extends AEvoGroup {
 
     @Override
     public void refreshUI() {
+        updateSectionTitle();
         refreshBrowser();
+    }
+
+    private void updateSectionTitle() {
+        if (chatSection != null && !chatSection.isDisposed()) {
+            String sid = page.getCurrentSessionName();
+            eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(sid);
+            int maxIter = (Integer) projection.getConfiguration().getOrDefault("maxIterations", 4);
+            chatSection.setText("Chat - Expansion " + maxIter + "/10");
+        }
     }
 
     @Override
@@ -93,7 +104,8 @@ public class ChatGroup extends AEvoGroup {
         group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Chat", 1, true, true);
 
         if (group.getParent() instanceof Section) {
-            Section section = (Section) group.getParent();
+            chatSection = (Section) group.getParent();
+            Section section = chatSection;
             Composite toolbar = toolkit.createComposite(section);
             toolbar.setLayout(new GridLayout(5, false));
 

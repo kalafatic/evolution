@@ -249,17 +249,24 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         List<TrajectoryBlueprint> currentBlueprints = new ArrayList<>();
         int generation = trajectory != null ? trajectory.getGeneration() : 0;
 
+        int preferredMaxIterations = 4;
+        if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null &&
+            context.getOrchestrator().getAiChat().getPromptInstructions() != null) {
+            preferredMaxIterations = context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations();
+        }
+        int branchingLimit = Math.max(1, preferredMaxIterations / 2);
+
         if (generation == 0) {
             if (isMediated) {
                 context.log("[DARWIN] Gen 0 (Mediated): Spawning divergent cognitive seeds.");
-                currentBlueprints.addAll(generateMediatedBlueprints(goal));
+                currentBlueprints.addAll(generateMediatedBlueprints(goal, branchingLimit));
             } else {
                 context.log("[DARWIN] Gen 0 (Evolutionary Seeds): Spawning divergent architectural blueprints.");
-                currentBlueprints.addAll(generateStandardBlueprints(goal));
+                currentBlueprints.addAll(generateStandardBlueprints(goal, branchingLimit));
             }
         } else {
             context.log("[DARWIN] Gen " + generation + " (Lineage Mutation): Targeting unresolved pressures.");
-            currentBlueprints.addAll(generateMutationBlueprints(goal, pressure, trajectory));
+            currentBlueprints.addAll(generateMutationBlueprints(goal, pressure, trajectory, branchingLimit));
         }
 
         // Model Capability Coefficient
@@ -348,7 +355,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         return variants;
     }
 
-    private List<TrajectoryBlueprint> generateStandardBlueprints(String goal) {
+    private List<TrajectoryBlueprint> generateStandardBlueprints(String goal, int limit) {
         List<TrajectoryBlueprint> blueprints = new ArrayList<>();
 
         // BRANCH A - DIRECT_MINIMAL
@@ -429,10 +436,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         service.getEngineeringDimensions().put("extensibility", "high");
         blueprints.add(service);
 
+        if (limit > 0 && blueprints.size() > limit) {
+            return blueprints.subList(0, limit);
+        }
         return blueprints;
     }
 
-    private List<TrajectoryBlueprint> generateMutationBlueprints(String goal, EvolutionaryPressureVector pressure, Trajectory trajectory) {
+    private List<TrajectoryBlueprint> generateMutationBlueprints(String goal, EvolutionaryPressureVector pressure, Trajectory trajectory, int limit) {
         List<TrajectoryBlueprint> blueprints = new ArrayList<>();
 
         if (pressure.failureExposure > 0.5) {
@@ -476,10 +486,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             blueprints.add(bp);
         }
 
+        if (limit > 0 && blueprints.size() > limit) {
+            return blueprints.subList(0, limit);
+        }
         return blueprints;
     }
 
-    private List<TrajectoryBlueprint> generateMediatedBlueprints(String goal) {
+    private List<TrajectoryBlueprint> generateMediatedBlueprints(String goal, int limit) {
         List<TrajectoryBlueprint> blueprints = new ArrayList<>();
 
         // BRANCH A - CONCISE_MAPPING
@@ -518,6 +531,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         dep.getEngineeringDimensions().put("risk_acceptance", "experimental");
         blueprints.add(dep);
 
+        if (limit > 0 && blueprints.size() > limit) {
+            return blueprints.subList(0, limit);
+        }
         return blueprints;
     }
 
