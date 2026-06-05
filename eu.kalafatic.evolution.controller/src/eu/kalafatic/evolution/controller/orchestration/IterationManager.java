@@ -317,8 +317,19 @@ public class IterationManager {
 
         transition(SystemState.INIT, context);
 
+        String prompt = request.trim();
+        boolean isControl = prompt.equalsIgnoreCase("yes") || prompt.equalsIgnoreCase("no") ||
+                           prompt.toLowerCase().startsWith("select ") ||
+                           prompt.toLowerCase().startsWith("approve variant ") ||
+                           prompt.toLowerCase().startsWith("reject variant ") ||
+                           prompt.toLowerCase().startsWith("keep variant ") ||
+                           prompt.equalsIgnoreCase("force solution") ||
+                           prompt.equalsIgnoreCase("approved") ||
+                           prompt.equalsIgnoreCase("rejected") ||
+                           prompt.equalsIgnoreCase("proceed");
+
         String checkpointGoal = (String) state.getMetadata().get("checkpoint_goal");
-        if (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
+        if (!isControl && checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
             context.log("[KERNEL] New request detected. Invalidating stale evolution phase: " + state.getCurrentPhase());
             state.setCurrentPhase(null);
             state.setIterationCount(0);
