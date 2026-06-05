@@ -300,8 +300,9 @@ public class IterationManager {
         String request = taskRequest.getPrompt();
         OrchestrationState state = context.getOrchestrationState();
 
-        if (taskRequest.getContext() != null) {
-            state.getMetadata().putAll(taskRequest.getContext());
+        Map<String, Object> contextMap = taskRequest.getContext();
+        if (contextMap != null) {
+            state.getMetadata().putAll(contextMap);
         }
 
         if (context.getStateHolder().getState() == SystemState.EXECUTING && !context.getOrchestrator().getTasks().isEmpty()) {
@@ -1182,7 +1183,10 @@ public class IterationManager {
         state.setCurrentPhase(cp.getCurrentPhase());
         state.setRawInput(cp.getRawInput());
         state.setIterationCount(cp.getIterationCount());
-        state.getMetadata().putAll(cp.getMetadata());
+
+        if (cp.getMetadata() != null) {
+            state.getMetadata().putAll(cp.getMetadata());
+        }
 
         if (cp.getChangedFiles() != null) {
             context.getFileChangeTracker().restore(cp.getChangedFiles());
