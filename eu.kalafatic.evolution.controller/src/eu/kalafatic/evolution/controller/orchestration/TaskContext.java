@@ -244,8 +244,27 @@ public class TaskContext {
         if (localAutoApprove != null) {
             return localAutoApprove;
         }
-        if (orchestrator != null && orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
-            return orchestrator.getAiChat().getPromptInstructions().isAutoApprove();
+
+        // 1. Check BitState (Most accurate reflection of current policy)
+        if (orchestrationState != null && orchestrationState.getBitState() != 0) {
+            if (eu.kalafatic.evolution.controller.orchestration.behavior.BitState.isAutoApprove(orchestrationState.getBitState())) {
+                return true;
+            }
+        }
+
+        // 2. Check Session-specific model
+        if (orchestrator != null && orchestrator.getAiChat() != null) {
+            var session = orchestrator.getAiChat().getSessions().stream()
+                    .filter(s -> sessionId.equals(s.getId()))
+                    .findFirst().orElse(null);
+            if (session != null && session.isAutoApprove()) {
+                return true;
+            }
+
+            // 3. Fallback to PromptInstructions
+            if (orchestrator.getAiChat().getPromptInstructions() != null) {
+                return orchestrator.getAiChat().getPromptInstructions().isAutoApprove();
+            }
         }
         return false;
     }

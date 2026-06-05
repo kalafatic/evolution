@@ -68,6 +68,7 @@ public class BehaviorResolver {
 
         // 5. INTERACTION & ITERATIVE Overrides
         int interaction = BitState.INTERACTION_CONTINUOUS;
+        int options = 0;
         if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
             var instructions = orchestrator.getAiChat().getPromptInstructions();
             if (instructions.isStepMode()) {
@@ -82,9 +83,12 @@ public class BehaviorResolver {
             if (instructions.isSelfIterativeMode()) {
                 workflow = BitState.WORKFLOW_SELF_DEV;
             }
+            if (instructions.isAutoApprove()) {
+                options |= BitState.OPTION_AUTO_APPROVE;
+            }
         }
 
-        return BitState.encode(mode, supervision, interaction, reasoning, workflow);
+        return BitState.encode(mode, supervision, interaction, reasoning, workflow, options);
     }
 
     public BehaviorProfile resolve(TaskContext context) {

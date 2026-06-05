@@ -26,6 +26,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getTargetPath <em>Target Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getTargetType <em>Target Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getOutputPath <em>Output Path</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isAutoApprove <em>Auto Approve</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession()
@@ -270,5 +271,28 @@ public interface ChatSession extends EObject {
 	 * @generated
 	 */
 	void setOutputPath(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Auto Approve</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Auto Approve</em>' attribute.
+	 * @see #setAutoApprove(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_AutoApprove()
+	 * @model default="false"
+	 * @generated
+	 */
+	boolean isAutoApprove();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isAutoApprove <em>Auto Approve</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Auto Approve</em>' attribute.
+	 * @see #isAutoApprove()
+	 * @generated
+	 */
+	void setAutoApprove(boolean value);
 
 } // ChatSession

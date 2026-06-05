@@ -219,6 +219,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     if (settings.containsKey("gitAutomation")) s.setGitAutomation((Boolean)settings.get("gitAutomation"));
                     if (settings.containsKey("stepMode")) s.setStepMode((Boolean)settings.get("stepMode"));
                     if (settings.containsKey("maxIterations")) s.setMaxIterations((Integer)settings.get("maxIterations"));
+                    if (settings.containsKey("autoApprove")) s.setAutoApprove((Boolean)settings.get("autoApprove"));
                 });
 
             PromptInstructions pi = model.getAiChat().getPromptInstructions();

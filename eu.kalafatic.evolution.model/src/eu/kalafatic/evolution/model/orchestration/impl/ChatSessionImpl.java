@@ -40,6 +40,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isStepMode <em>Step Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getTargetPath <em>Target Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getTargetType <em>Target Type</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isAutoApprove <em>Auto Approve</em>}</li>
  * </ul>
  *
  * @generated
@@ -254,6 +255,49 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @ordered
 	 */
 	protected String outputPath = OUTPUT_PATH_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isAutoApprove() <em>Auto Approve</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isAutoApprove()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean AUTO_APPROVE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isAutoApprove() <em>Auto Approve</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isAutoApprove()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean autoApprove = AUTO_APPROVE_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isAutoApprove() {
+		return autoApprove;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAutoApprove(boolean newAutoApprove) {
+		boolean oldAutoApprove = autoApprove;
+		autoApprove = newAutoApprove;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE, oldAutoApprove, autoApprove));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -561,6 +605,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return getTargetType();
 			case OrchestrationPackage.CHAT_SESSION__OUTPUT_PATH:
 				return getOutputPath();
+			case OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE:
+				return isAutoApprove();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -608,6 +654,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__OUTPUT_PATH:
 				setOutputPath((String)newValue);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE:
+				setAutoApprove((Boolean)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -653,6 +702,9 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__OUTPUT_PATH:
 				setOutputPath(OUTPUT_PATH_EDEFAULT);
 				return;
+			case OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE:
+				setAutoApprove(AUTO_APPROVE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -687,6 +739,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return TARGET_TYPE_EDEFAULT == null ? targetType != null : !TARGET_TYPE_EDEFAULT.equals(targetType);
 			case OrchestrationPackage.CHAT_SESSION__OUTPUT_PATH:
 				return OUTPUT_PATH_EDEFAULT == null ? outputPath != null : !OUTPUT_PATH_EDEFAULT.equals(outputPath);
+			case OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE:
+				return autoApprove != AUTO_APPROVE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -721,6 +775,8 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		result.append(targetType);
 		result.append(", outputPath: ");
 		result.append(outputPath);
+		result.append(", autoApprove: ");
+		result.append(autoApprove);
 		result.append(')');
 		return result.toString();
 	}

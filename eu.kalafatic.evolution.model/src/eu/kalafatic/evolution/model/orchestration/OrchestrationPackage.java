@@ -3109,13 +3109,22 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_SESSION__OUTPUT_PATH = 10;
 
 	/**
+	 * The feature id for the '<em><b>Auto Approve</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_SESSION__AUTO_APPROVE = 11;
+
+	/**
 	 * The number of structural features of the '<em>Chat Session</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_SESSION_FEATURE_COUNT = 11;
+	int CHAT_SESSION_FEATURE_COUNT = 12;
 
 	/**
 	 * The number of operations of the '<em>Chat Session</em>' class.
@@ -6204,6 +6213,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getChatSession_OutputPath();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isAutoApprove <em>Auto Approve</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Auto Approve</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#isAutoApprove()
+	 * @see #getChatSession()
+	 * @generated
+	 */
+	EAttribute getChatSession_AutoApprove();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage <em>Chat Message</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -8722,6 +8742,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_SESSION__OUTPUT_PATH = eINSTANCE.getChatSession_OutputPath();
+
+		/**
+		 * The meta object literal for the '<em><b>Auto Approve</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_SESSION__AUTO_APPROVE = eINSTANCE.getChatSession_AutoApprove();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.
