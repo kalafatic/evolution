@@ -224,6 +224,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     if (settings.containsKey("localModel")) s.setLocalModel((String)settings.get("localModel"));
                     if (settings.containsKey("remoteModel")) s.setRemoteModel((String)settings.get("remoteModel"));
                     if (settings.containsKey("bitState")) s.setBitState((Long)settings.get("bitState"));
+                    if (settings.containsKey("expansion")) s.setExpansion((Integer)settings.get("expansion"));
                     if (settings.containsKey("targetPath")) s.setTargetPath((String)settings.get("targetPath"));
                 });
 

@@ -234,6 +234,7 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
             children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__LOCAL_MODEL, "Local Model"));
             children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__REMOTE_MODEL, "Remote Model"));
             children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__BIT_STATE, "Bit State"));
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__EXPANSION, "Expansion"));
             children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__TARGET_PATH, "Target Path"));
             children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__ITERATIVE_MODE, "Iterative"));
             children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__DARWIN_MODE, "Darwin"));

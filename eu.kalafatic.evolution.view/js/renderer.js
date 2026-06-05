@@ -379,6 +379,15 @@ window.ChatApp.Renderer = {
         return container;
     },
 
+    resetProgressPanel: function() {
+        const panel = document.getElementById('progress-panel');
+        const content = document.getElementById('progress-content');
+        if (panel) panel.style.width = '0px';
+        if (content) {
+            content.innerHTML = '<div style="text-align: center; color: #94a3b8; margin-top: 40px; font-size: 11px;">Evolution tracking inactive.</div>';
+        }
+    },
+
     updateProgressPanel: function(m) {
         const panel = document.getElementById('progress-panel');
         const content = document.getElementById('progress-content');

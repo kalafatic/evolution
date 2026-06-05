@@ -890,9 +890,10 @@ public class ChatGroup extends AEvoGroup {
         }
         lastJson = json;
 
+        String sid = currentSession != null ? currentSession.getId() : "";
         browser.execute(
                 "if(window.updateMessages) {" +
-                "  window.updateMessages(" + json + ");" +
+                "  window.updateMessages(" + json + ", '" + sid + "');" +
                 "} else {" +
                 "  console.log('updateMessages not ready');" +
                 "}"
