@@ -1,9 +1,5 @@
 .progress-monitor {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    margin: 8px 0;
+    padding: 2px;
     font-family: var(--font-family);
     color: var(--text-primary);
 }

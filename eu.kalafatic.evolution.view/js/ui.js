@@ -10,29 +10,41 @@ window.ChatApp.UI = {
     },
 
     initResizing: function() {
-        const panel = document.getElementById('side-panel');
-        const handle = document.getElementById('resize-handle');
+        this.setupPanelResizing('side-panel', 'resize-handle');
+        this.setupPanelResizing('progress-panel', 'progress-resize-handle');
+    },
+
+    setupPanelResizing: function(panelId, handleId) {
+        const panel = document.getElementById(panelId);
+        const handle = document.getElementById(handleId);
         if (!handle || !panel) return;
 
+        let startX, startWidth;
+
         handle.addEventListener("mousedown", (e) => {
-            this.m_pos = e.x;
+            startX = e.clientX;
+            startWidth = parseInt(getComputedStyle(panel).width);
             panel.style.transition = 'none';
-            document.addEventListener("mousemove", resize, false);
+
+            const onMouseMove = (moveEvent) => {
+                const dx = startX - moveEvent.clientX;
+                const newWidth = startWidth + dx;
+                if (newWidth > 0) {
+                    panel.style.width = newWidth + "px";
+                }
+            };
+
+            const onMouseUp = () => {
+                panel.style.transition = 'width 0.3s ease';
+                document.removeEventListener("mousemove", onMouseMove);
+                document.removeEventListener("mouseup", onMouseUp);
+                document.body.style.cursor = '';
+            };
+
+            document.addEventListener("mousemove", onMouseMove);
+            document.addEventListener("mouseup", onMouseUp);
             document.body.style.cursor = 'col-resize';
             e.preventDefault();
-        }, false);
-
-        const resize = (e) => {
-            const dx = this.m_pos - e.x;
-            this.m_pos = e.x;
-            const newWidth = (parseInt(getComputedStyle(panel, '').width) + dx);
-            if (newWidth > 50) panel.style.width = newWidth + "px";
-        };
-
-        document.addEventListener("mouseup", () => {
-            panel.style.transition = 'width 0.3s ease';
-            document.removeEventListener("mousemove", resize, false);
-            document.body.style.cursor = '';
         }, false);
     },
 

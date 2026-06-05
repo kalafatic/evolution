@@ -825,7 +825,7 @@ public class IterationManager {
         eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = decide(iterId, variants, context, manualId);
 
         // Propagate pressure to decision for consistent evaluation
-        Trajectory activeTrajectory = getActiveTrajectory(context);
+        activeTrajectory = getActiveTrajectory(context);
         if (activeTrajectory != null) {
             decision.setPressure(pressureEngine.analyze(activeTrajectory, context));
         }

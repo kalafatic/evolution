@@ -61,7 +61,8 @@ public class DarwinVariantSpawner {
                 variants.add(validated);
                 currentRoundVariants.add(validated);
                 context.log("[SPAWNER] Successfully materialized blueprint: " + bp.getId());
-                EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "complete", validated.optDouble("score"));
+                double score = validated.optDouble("score", 0.0);
+                EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "complete", Double.isNaN(score) ? null : score);
             } else {
                 context.log("[SPAWNER] Materialization retries failed for " + bp.getId() + ". Attempting deterministic auto-repair.");
                 JSONObject repaired = autoRepair(bp, context);
@@ -310,7 +311,8 @@ public class DarwinVariantSpawner {
                 variants.add(validated);
                 currentRoundVariants.add(validated);
                 context.log("[SPAWNER] Successfully generated " + seed.getType() + " trajectory.");
-                EvolutionProgressPublisher.updateBranchStatus(context, validated.optString("id"), seed.getType().name(), "complete", validated.optDouble("score"));
+                double score = validated.optDouble("score", 0.0);
+                EvolutionProgressPublisher.updateBranchStatus(context, validated.optString("id"), seed.getType().name(), "complete", Double.isNaN(score) ? null : score);
             } else if (seed.isMandatory()) {
                 context.log("[SPAWNER] FAILED to generate mandatory " + seed.getType() + " trajectory after retries.");
             }

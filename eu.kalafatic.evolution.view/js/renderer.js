@@ -35,8 +35,8 @@ window.ChatApp.Renderer = {
         }
 
         if (role.includes('evolution-progress')) {
-            content.style.flexDirection = 'column';
-            content.appendChild(this.renderEvolutionProgress(m));
+            this.updateProgressPanel(m);
+            return null; // Don't render in main chat stream
         } else if (isDarwin) {
             content.style.flexDirection = 'column';
             content.appendChild(this.renderDarwin(m));
@@ -379,9 +379,16 @@ window.ChatApp.Renderer = {
         return container;
     },
 
-    renderEvolutionProgress: function(m) {
-        const container = document.createElement('div');
-        container.className = 'progress-monitor';
+    updateProgressPanel: function(m) {
+        const panel = document.getElementById('progress-panel');
+        const content = document.getElementById('progress-content');
+        if (!panel || !content) return;
+
+        // Auto-open panel if closed and iteration is starting
+        if (panel.style.width === '0px' || panel.style.width === '0') {
+             panel.style.width = '320px';
+        }
+
         try {
             const data = JSON.parse(m.text);
             const stages = [
@@ -414,7 +421,8 @@ window.ChatApp.Renderer = {
             const minutes = Math.floor(displayElapsed / 60).toString().padStart(2, '0');
             const seconds = (displayElapsed % 60).toString().padStart(2, '0');
 
-            container.innerHTML = `
+            content.innerHTML = `
+                <div class="progress-monitor">
                 <div class="progress-header">
                     <span>Iteration <b>#${data.iterationCount}</b></span>
                     <span>Generation <b>${data.generation}</b></span>
@@ -462,8 +470,8 @@ window.ChatApp.Renderer = {
                         <span>${minutes}:${seconds}</span>
                     </div>
                 </div>
+                </div>
             `;
-        } catch(e) { container.innerHTML = `<div class="bubble error">Failed to parse Progress: ${e.message}</div>`; }
-        return container;
+        } catch(e) { content.innerHTML = `<div class="bubble error">Failed to parse Progress: ${e.message}</div>`; }
     }
 };
