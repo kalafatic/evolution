@@ -48,7 +48,7 @@ public class ApprovalPage extends AEvoPage {
 		summaryGroup = new SummaryGroup(toolkit, comp, editor, orchestrator);
 		sessionGroup = new SelfDevSessionGroup(toolkit, comp, editor, orchestrator);
 		reviewGroup = new ReviewGroup(toolkit, comp, editor, orchestrator);
-		feedbackGroup = new FeedbackGroup(toolkit, comp, editor, orchestrator);
+		feedbackGroup = new FeedbackGroup(toolkit, comp, editor, orchestrator, this);
 		proposedTasksGroup = new ProposedTasksGroup(toolkit, comp, editor, orchestrator, this);
 		actionsGroup = new ActionsGroup(toolkit, comp, editor, orchestrator, this);
 
@@ -162,6 +162,24 @@ public class ApprovalPage extends AEvoPage {
 
 	public void updateUI() {
 		scheduleRefresh();
+	}
+
+	public void submitFeedback(int satisfaction, String comments) {
+		if (orchestrator != null) {
+			if (orchestrator.getSelfDevSession() != null && !orchestrator.getSelfDevSession().getIterations().isEmpty()) {
+				eu.kalafatic.evolution.model.orchestration.Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
+				last.setRating(satisfaction);
+				last.setComments(comments);
+			}
+
+			// Centralized Feedback Persistence
+			eu.kalafatic.evolution.controller.services.FeedbackService.getInstance().recordFeedback(orchestrator, "coding", satisfaction);
+
+			eu.kalafatic.evolution.controller.manager.NeuronService.getInstance().train(orchestrator, comments, "coding", satisfaction);
+			editor.setDirty(true);
+			scheduleRefresh();
+			MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK); mb.setText("Thank You"); mb.setMessage("Your feedback has been recorded and will be used to improve the AI."); mb.open();
+		}
 	}
 
 	public void handleApprove() {
