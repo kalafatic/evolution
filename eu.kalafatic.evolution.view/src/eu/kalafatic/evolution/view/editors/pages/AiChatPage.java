@@ -793,12 +793,22 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void submitFeedback(int satisfaction, String comments) {
-		if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
-			if (orchestrator.getSelfDevSession().getIterations().isEmpty()) orchestrator.getSelfDevSession().getIterations().add(OrchestrationFactory.eINSTANCE.createIteration());
-			eu.kalafatic.evolution.model.orchestration.Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
-			if (last.getEvaluationResult() == null) last.setEvaluationResult(OrchestrationFactory.eINSTANCE.createEvaluationResult());
-			last.getEvaluationResult().setUserSatisfaction(satisfaction); last.setComments(comments);
-			NeuronService.getInstance().train(orchestrator, comments, "coding", satisfaction);
+		if (orchestrator != null) {
+			if (orchestrator.getSelfDevSession() != null) {
+				if (orchestrator.getSelfDevSession().getIterations().isEmpty()) orchestrator.getSelfDevSession().getIterations().add(OrchestrationFactory.eINSTANCE.createIteration());
+				eu.kalafatic.evolution.model.orchestration.Iteration last = orchestrator.getSelfDevSession().getIterations().get(orchestrator.getSelfDevSession().getIterations().size() - 1);
+				if (last.getEvaluationResult() == null) last.setEvaluationResult(OrchestrationFactory.eINSTANCE.createEvaluationResult());
+				last.getEvaluationResult().setUserSatisfaction(satisfaction); last.setComments(comments);
+			}
+
+			boolean isDarwin = currentSession != null ? currentSession.isDarwinMode() : orchestrator.isDarwinMode();
+			boolean isSelfDev = currentSession != null ? currentSession.isSelfIterativeMode() : (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null && orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode());
+			String category = (isSelfDev || isDarwin) ? "coding" : "chat";
+
+			// Centralized Feedback Persistence
+			eu.kalafatic.evolution.controller.services.FeedbackService.getInstance().recordFeedback(orchestrator, category, satisfaction);
+
+			eu.kalafatic.evolution.controller.manager.NeuronService.getInstance().train(orchestrator, comments, category, satisfaction);
 			editor.setDirty(true); 
 			updateModeDisplay();
 			scheduleRefresh();
